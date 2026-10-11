@@ -1,4 +1,5 @@
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
+import { canAccessSpomovePreset } from '../../lib/spomoveTrialAccess';
 
 export type MasterCapability = 'authenticated' | 'libraryBrowse' | 'library' | 'classTools' | 'attendance' | 'records' | 'spomove';
 
@@ -87,6 +88,20 @@ export function getMasterRouteRequirement(pathname: string, basePath = '/spokedu
     return { capability: 'records' };
   }
   return { capability: 'authenticated' };
+}
+
+export function hasMasterPathAccess(
+  snapshot: MasterAccessSnapshot | null | undefined,
+  pathname: string,
+  currentPathWithQuery: string,
+  basePath = '/spokedu-master',
+) {
+  const requirement = getMasterRouteRequirement(pathname, basePath);
+  if (requirement.capability !== 'spomove') return hasMasterRouteCapability(snapshot, requirement.capability);
+  const isSession = pathname === `${basePath}/spomove/session` || pathname.startsWith(`${basePath}/spomove/session/`);
+  if (!isSession) return hasMasterRouteCapability(snapshot, 'spomove');
+  const query = currentPathWithQuery.split('?')[1] ?? '';
+  return canAccessSpomovePreset(snapshot, new URLSearchParams(query).get('preset'));
 }
 
 const SAFE_MASTER_RETURN_EXACT = new Set(['/spokedu-master']);

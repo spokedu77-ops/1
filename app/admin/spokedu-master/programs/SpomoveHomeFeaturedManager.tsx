@@ -16,11 +16,12 @@ import {
   type OfficialSpomovePreset,
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import { getSpomovePresetDisplayModel } from '@/app/spokedu-master/spomove/spomovePresetDisplayModel';
+import { isHubRunnablePreset } from '@/app/spokedu-master/spomove/movements/isHubVisiblePreset';
 import { readAdminJsonSafe } from './readAdminJsonSafe';
 
 const koreanTitleCollator = new Intl.Collator('ko');
 
-const READY_PRESETS = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.isReady);
+const READY_PRESETS = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset);
 
 function buildPresetAdminLabel(preset: OfficialSpomovePreset) {
   const display = getSpomovePresetDisplayModel(preset);
@@ -357,6 +358,9 @@ export function SpomoveHomeFeaturedManager() {
                   <p className="text-[13px] font-black text-slate-900">
                     {index + 1}번 추천 슬롯
                   </p>
+                  {index === 0 ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-700">Lite 주간 체험</span>
+                  ) : null}
                   {selectedId != null ? (
                     <button
                       type="button"
@@ -380,6 +384,11 @@ export function SpomoveHomeFeaturedManager() {
                 ) : (
                   <p className="mt-1.5 text-[11px] font-bold text-slate-400">비어 있음</p>
                 )}
+                {index === 0 ? (
+                  <p className="mt-2 text-[11px] font-semibold leading-4 text-emerald-700">
+                    이 슬롯을 명시적으로 지정해야 Lite 이용자가 체험할 수 있습니다. 비우면 자동 추천은 표시되지만 체험 권한은 열리지 않습니다.
+                  </p>
+                ) : null}
               </div>
             );
           })}

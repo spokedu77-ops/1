@@ -88,7 +88,8 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
     const gate = read('app/spokedu-master/lib/masterGateIntent.ts');
     expect(dashboard).toContain('`home_weekly_${program.id}`');
-    expect(dashboard).toContain('locked={!accessSnapshot.canUseSpomove}');
+    expect(dashboard).toContain('locked={!canAccessSpomovePreset(accessSnapshot, preset.id)}');
+    expect(dashboard).toContain('Lite 주간 체험');
     expect(dashboard).toContain('`home_spomove_${preset.id}`');
     expect(dashboard).toContain('>Premium</span>');
     expect(gate).toContain("ctaLabel: 'Lite로 계속하기'");

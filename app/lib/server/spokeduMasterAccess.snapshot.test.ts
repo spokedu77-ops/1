@@ -51,6 +51,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
         current_period_end: '2099-01-01T00:00:00.000Z',
       }),
       isAdmin: false,
+      spomoveTrialPresetId: 'dive-standard',
     })).toMatchObject({
       plan: 'lite',
       subscriptionStatus: 'active',
@@ -59,7 +60,23 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       canUseAttendance: true,
       canUseRecords: true,
       canUseSpomove: false,
+      spomoveTrialPresetId: 'dive-standard',
     });
+  });
+
+  it('does not retain a trial preset for expired Lite or full-access plans', () => {
+    const expired = buildSpokeduMasterAccessSnapshot({
+      row: row({ plan: 'lite', status: 'expired', period_end: '2020-01-01T00:00:00.000Z' }),
+      isAdmin: false,
+      spomoveTrialPresetId: 'dive-standard',
+    });
+    const premium = buildSpokeduMasterAccessSnapshot({
+      row: row({ plan: 'premium', status: 'active', period_end: '2099-01-01T00:00:00.000Z' }),
+      isAdmin: false,
+      spomoveTrialPresetId: 'dive-standard',
+    });
+    expect(expired.spomoveTrialPresetId).toBeNull();
+    expect(premium.spomoveTrialPresetId).toBeNull();
   });
 
   it('allows premium SPOMOVE', () => {

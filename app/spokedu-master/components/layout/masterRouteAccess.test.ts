@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterRouteCapability, isProtectedMasterRoute } from './masterRouteAccess';
+import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterPathAccess, hasMasterRouteCapability, isProtectedMasterRoute } from './masterRouteAccess';
 
 const basePath = '/spokedu-master';
 
@@ -128,7 +128,11 @@ describe('SPOKEDU MASTER route access policy', () => {
       canUseLibrary: true,
       canUseAttendance: true,
       canUseRecords: true,
+      spomoveTrialPresetId: 'dive-standard',
     };
     expect(hasMasterRouteCapability(lite, 'spomove')).toBe(false);
+    expect(hasMasterPathAccess(lite, '/spokedu-master/spomove', '/spokedu-master/spomove')).toBe(false);
+    expect(hasMasterPathAccess(lite, '/spokedu-master/spomove/session', '/spokedu-master/spomove/session?preset=dive-standard')).toBe(true);
+    expect(hasMasterPathAccess(lite, '/spokedu-master/spomove/session', '/spokedu-master/spomove/session?preset=other')).toBe(false);
   });
 });

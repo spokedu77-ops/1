@@ -19,7 +19,7 @@ describe('Premium SPOMOVE media boundary', () => {
 
   it('gates and signs only private-bucket objects on the server', () => {
     const route = read('app/api/spokedu-master/spomove/guide-video/route.ts');
-    expect(route).toContain("requireSpokeduMasterCapability('spomove')");
+    expect(route).toContain('requireSpokeduMasterSpomovePresetAccess(presetId)');
     expect(route).toContain('SPOMOVE_PREMIUM_MEDIA_BUCKET');
     expect(read('app/lib/spomove/spomoveOfficialAssets.ts')).toContain("'spokedu-master-premium-media'");
     expect(route).toContain('createSignedUrl');

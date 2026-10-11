@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
@@ -14,7 +14,7 @@ import type { MasterAccessApiResponse, MasterAccessSnapshot } from '../../lib/ma
 import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../../store';
-import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterRouteCapability, isProtectedMasterRoute } from './masterRouteAccess';
+import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterPathAccess, isProtectedMasterRoute } from './masterRouteAccess';
 import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 import { spokeduLabIntroductionHref } from '@/app/spokedu/data/public-routes';
@@ -36,10 +36,6 @@ type MasterAccessGuard = {
 function currentLoginRedirectHref() {
   if (typeof window === 'undefined') return '/spokedu-lab/login';
   return buildMasterLoginHref(`${window.location.pathname}${window.location.search}`);
-}
-
-function hasRouteCapability(snapshot: MasterAccessSnapshot | null, capability: Parameters<typeof hasMasterRouteCapability>[1]) {
-  return hasMasterRouteCapability(snapshot, capability);
 }
 
 const OPERATIONAL_DATA_ROUTE_PREFIXES = [
@@ -216,6 +212,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
 
 export function AppShell({ children, basePath = '/spokedu-master' }: { children: ReactNode; basePath?: string }) {
   const pathname = normalizeMasterAppPath(usePathname());
+  const searchParams = useSearchParams();
   const activeBasePath = pathname.startsWith('/spokedu-lab/') ? '/spokedu-lab' : basePath;
   const router = useRouter();
   const profile = useProfile();
@@ -236,7 +233,10 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     spomatShopAvailable: false,
   });
   const [accessRetryKey, setAccessRetryKey] = useState(0);
-  const [currentPathWithQuery, setCurrentPathWithQuery] = useState(pathname);
+  const currentPathWithQuery = useMemo(
+    () => buildCurrentMasterPath(pathname, new URLSearchParams(searchParams.toString())),
+    [pathname, searchParams],
+  );
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
 
@@ -273,12 +273,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const routeGateDenied =
     isProtectedRoute &&
     accessGuard.status === 'allowed' &&
-    !hasRouteCapability(accessGuard.snapshot, routeRequirement.capability);
+    !hasMasterPathAccess(accessGuard.snapshot, pathname, currentPathWithQuery, activeBasePath);
   const [gateJourneyId, setGateJourneyId] = useState('');
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setCurrentPathWithQuery(buildCurrentMasterPath(pathname, params));
-  }, [pathname]);
   const gateContext = useMemo(() => {
     if (routeRequirement.capability === 'authenticated' || routeRequirement.capability === 'classTools' || routeRequirement.capability === 'libraryBrowse') return null;
     return buildMasterGateContext({
@@ -442,7 +438,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     return () => {
       cancelled = true;
     };
-  }, [accessRetryKey, isProtectedRoute, router]);
+  }, [accessRetryKey, currentPathWithQuery, isProtectedRoute, router]);
 
   useEffect(() => {
     if (!isProtectedRoute) return;

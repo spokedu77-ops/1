@@ -6,8 +6,9 @@ import {
   isPublicSpomoveGuideVideoRef,
   normalizeSpomoveGuideVideoMap,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
-import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterSpomovePresetAccess } from '@/app/lib/server/spokeduMasterAccess';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { isHubRunnablePreset } from '@/app/spokedu-master/spomove/movements/isHubVisiblePreset';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -35,13 +36,14 @@ function resolvePrivateObjectPath(value: string): string | null {
 }
 
 export async function GET(request: Request) {
-  const access = await requireSpokeduMasterCapability('spomove');
-  if (!access.ok) return withPrivateNoStore(access.response);
-
   const presetId = new URL(request.url).searchParams.get('preset')?.trim() ?? '';
-  if (!presetId || !findOfficialSpomovePreset(presetId)) {
+  const preset = findOfficialSpomovePreset(presetId);
+  if (!preset || !isHubRunnablePreset(preset)) {
     return privateNoStoreJson({ error: '유효하지 않은 SPOMOVE 활동입니다.' }, { status: 400 });
   }
+
+  const access = await requireSpokeduMasterSpomovePresetAccess(presetId);
+  if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
   const { data: pack, error: packError } = await supabase

@@ -16,9 +16,15 @@ describe('SPOKEDU MASTER direct API authorization boundaries', () => {
     ['app/api/spokedu-master/sessions/[sessionId]/parent-notice/route.ts', 'records'],
     ['app/api/spokedu-master/favorites/route.ts', 'library'],
     ['app/api/spokedu-master/program-favorites/route.ts', 'library'],
-    ['app/api/spokedu-master/spomove/guide-video/route.ts', 'spomove'],
   ])('%s enforces the %s server capability', (path, capability) => {
     expect(read(path)).toContain(`requireSpokeduMasterCapability('${capability}')`);
+  });
+
+  it('authorizes guide media against the requested SPOMOVE preset', () => {
+    const source = read('app/api/spokedu-master/spomove/guide-video/route.ts');
+    expect(source).toContain('requireSpokeduMasterSpomovePresetAccess(presetId)');
+    expect(source.indexOf('requireSpokeduMasterSpomovePresetAccess(presetId)'))
+      .toBeLessThan(source.indexOf('createSignedUrl'));
   });
 
   it.each([

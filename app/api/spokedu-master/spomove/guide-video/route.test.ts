@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/app/lib/server/spokeduMasterAccess', () => ({
-  requireSpokeduMasterCapability: mocks.requireCapability,
+  requireSpokeduMasterSpomovePresetAccess: mocks.requireCapability,
 }));
 
 vi.mock('@/app/lib/server/adminAuth', () => ({
@@ -52,6 +52,27 @@ describe('SPOMOVE guide video route', () => {
     await expect(response.json()).resolves.toEqual({
       data: { url: 'https://youtu.be/0N-JTIgX3fU', expiresIn: null },
     });
+    expect(mocks.createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it('returns the configured video when the server authorizes a Lite trial preset', async () => {
+    mocks.requireCapability.mockResolvedValue({ ok: true, userId: 'lite-user', isAdmin: false, plan: 'lite' });
+
+    const response = await GET(new Request('http://localhost/api/spokedu-master/spomove/guide-video?preset=dive-standard'));
+
+    expect(response.status).toBe(200);
+    expect(mocks.requireCapability).toHaveBeenCalledWith('dive-standard');
+  });
+
+  it('does not expose media when preset access is denied', async () => {
+    mocks.requireCapability.mockResolvedValue({
+      ok: false,
+      response: new Response(JSON.stringify({ error: 'denied' }), { status: 403 }),
+    });
+
+    const response = await GET(new Request('http://localhost/api/spokedu-master/spomove/guide-video?preset=dive-standard'));
+
+    expect(response.status).toBe(403);
     expect(mocks.createSignedUrl).not.toHaveBeenCalled();
   });
 });
