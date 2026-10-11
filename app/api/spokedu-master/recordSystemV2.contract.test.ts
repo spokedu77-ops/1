@@ -117,7 +117,9 @@ describe('Record System V2 migration and privacy contract', () => {
   it('builds reports from completed sessions without private guidance notes', () => {
     expect(reportPage).toContain("session.status === 'completed'");
     expect(reportPage).toContain('resolveParentNotice(selected)');
-    expect(parentNoticeModel).toContain('session.memo');
+    expect(parentNoticeModel).not.toContain('session.attendance');
+    expect(parentNoticeModel).not.toContain('studentName');
+    expect(parentNoticeModel).not.toContain('session.memo');
     expect(reportPage).not.toContain('classRecords');
     expect(reportPage).not.toContain('guidanceNote');
   });

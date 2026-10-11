@@ -12,11 +12,12 @@ describe('Session based report contract', () => {
     expect(source).not.toContain('classRecords');
   });
 
-  it('uses attendance, completed programs, and the class memo', () => {
+  it('uses completed programs without attendance or the class memo', () => {
     expect(source).toContain('resolveParentNotice(selected)');
-    expect(noticeModel).toContain("item.status === 'present'");
     expect(noticeModel).toContain('item.isCompleted');
-    expect(noticeModel).toContain('session.memo');
+    expect(noticeModel).not.toContain('session.attendance');
+    expect(noticeModel).not.toContain('studentName');
+    expect(noticeModel).not.toContain('session.memo');
   });
 
   it('does not recreate a report or review write model', () => {
