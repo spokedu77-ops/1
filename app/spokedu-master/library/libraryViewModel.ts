@@ -28,6 +28,10 @@ function normalizeSearchValue(value: string) {
   return value.trim().toLocaleLowerCase('ko');
 }
 
+function compactSearchValue(value: string) {
+  return normalizeSearchValue(value).replace(/\s+/g, '');
+}
+
 export function rankLibraryPrograms<T>(
   programs: T[],
   query: string,
@@ -36,6 +40,7 @@ export function rankLibraryPrograms<T>(
   const phrase = normalizeSearchValue(query);
   if (!phrase) return programs;
   const terms = [...new Set(phrase.split(/\s+/).filter(Boolean))];
+  const compactPhrase = compactSearchValue(phrase);
 
   return programs.flatMap((program, index) => {
     const fields = getFields(program);
@@ -44,20 +49,33 @@ export function rankLibraryPrograms<T>(
     const structured = fields.structured.map(normalizeSearchValue).filter(Boolean);
     const body = fields.body.map(normalizeSearchValue).filter(Boolean);
     const searchable = [title, category, ...structured, ...body];
-    if (!terms.every((term) => searchable.some((value) => value.includes(term)))) return [];
+    const compactSearchable = searchable.map(compactSearchValue);
+    if (!terms.every((term) => {
+      const compactTerm = compactSearchValue(term);
+      return searchable.some((value) => value.includes(term))
+        || compactSearchable.some((value) => value.includes(compactTerm));
+    })) return [];
 
     let score = title === phrase ? 1200 : title.startsWith(phrase) ? 900 : title.includes(phrase) ? 700 : 0;
+    if (score === 0) {
+      const compactTitle = compactSearchValue(title);
+      score = compactTitle === compactPhrase ? 1200 : compactTitle.startsWith(compactPhrase) ? 900 : compactTitle.includes(compactPhrase) ? 700 : 0;
+    }
     if (category === phrase) score += 500;
     else if (category.includes(phrase)) score += 350;
+    else if (compactSearchValue(category).includes(compactPhrase)) score += 350;
     if (structured.some((value) => value === phrase)) score += 400;
     else if (structured.some((value) => value.includes(phrase))) score += 260;
+    else if (structured.some((value) => compactSearchValue(value).includes(compactPhrase))) score += 260;
     if (body.some((value) => value.includes(phrase))) score += 80;
+    else if (body.some((value) => compactSearchValue(value).includes(compactPhrase))) score += 80;
 
     for (const term of terms) {
-      if (title.includes(term)) score += 100;
-      else if (category.includes(term)) score += 60;
-      else if (structured.some((value) => value.includes(term))) score += 40;
-      else if (body.some((value) => value.includes(term))) score += 10;
+      const compactTerm = compactSearchValue(term);
+      if (title.includes(term) || compactSearchValue(title).includes(compactTerm)) score += 100;
+      else if (category.includes(term) || compactSearchValue(category).includes(compactTerm)) score += 60;
+      else if (structured.some((value) => value.includes(term) || compactSearchValue(value).includes(compactTerm))) score += 40;
+      else if (body.some((value) => value.includes(term) || compactSearchValue(value).includes(compactTerm))) score += 10;
     }
     return [{ program, score, index }];
   }).sort((left, right) => right.score - left.score || left.index - right.index)

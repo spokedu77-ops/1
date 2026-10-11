@@ -94,6 +94,24 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(source).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
     expect(source).not.toContain('href="/spokedu-lab/spomove" className="inline-flex h-14');
+    expect(source.indexOf('aria-label="라이브러리 검색"')).toBeLessThan(
+      source.indexOf('<RecommendationShelf'),
+    );
+    expect(source).toContain('!hasSearchIntent ? <>');
+    expect(source).toContain('data-library-result-count');
+    expect(source).toContain('data-library-active-filters');
+    expect(source).toContain('onClick={() => removeFilter(filter)}');
+    expect(source).toContain('전체 초기화');
+  });
+
+  it('preserves URL search state and the inner list position across navigation', () => {
+    expect(source).toContain("params.set('q', trimmedQuery)");
+    expect(source).toContain("params.append('filters', `${filter.group}:${filter.value}`)");
+    expect(source).toContain('LIBRARY_HISTORY_STATE_KEY');
+    expect(source).toContain('scrollContainer.scrollTop = saved.scrollTop');
+    expect(source).toContain('window.scrollTo({ top: saved.scrollTop })');
+    expect(source).toContain("scrollContainer?.addEventListener('scroll', rememberLibraryPosition");
+    expect(source).toContain('sourceLibrarySearch={sourceLibrarySearch}');
   });
 
   it('leads with two Home-parity recommendation shelves and then the full catalog', () => {
