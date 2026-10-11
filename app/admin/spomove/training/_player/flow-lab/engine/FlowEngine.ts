@@ -402,6 +402,14 @@ export class FlowEngine {
 
   // ── GLB 자산 로딩 ────────────────────────────────────────────────────────
 
+  /** Asset Hub 응답은 엔진 초기화보다 늦을 수 있으므로 장면을 재생성하지 않고 반영한다. */
+  async updatePanorama(highUrl?: string, lowUrl?: string, yawDeg = 0): Promise<void> {
+    const environment = this.spaceEnv;
+    if (!environment || this.disposed) return;
+    environment.setYawDeg(yawDeg);
+    await environment.loadPanorama(highUrl, lowUrl);
+  }
+
   private async loadGlbScenes(): Promise<THREE.Object3D | null> {
     const nonGateStages = this.stageList.filter((stage) => !stage.isColorGate);
     const needsCrate = nonGateStages.some((stage) => stage.activeModules.has('jump'));

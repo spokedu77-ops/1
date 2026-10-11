@@ -217,7 +217,11 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, motionScale, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
+  }, [stages.length, motionScale, bgmEnabled, sfxEnabled, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, initKey]); // bgmPath와 파노라마는 late-load로 처리한다.
+
+  useEffect(() => {
+    void engineRef.current?.updatePanorama(panoramaHighUrl, panoramaLowUrl, panoramaYawDeg);
+  }, [panoramaHighUrl, panoramaLowUrl, panoramaYawDeg]);
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 

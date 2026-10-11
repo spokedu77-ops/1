@@ -12,6 +12,7 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/admin/camera',
   '/admin/spomove/training/_player',
   '/pro',
+  '/spokedu-lab',
   '/spokedu-master',
   '/teacher',
   '/move-report',
@@ -21,7 +22,8 @@ const PUBLIC_MARKETING_PATH_PREFIXES = Object.values(SPOKEDU_PATHS);
 
 export function isPublicMarketingPath(pathname: string): boolean {
   return PUBLIC_MARKETING_PATH_PREFIXES.some(
-    (p) => pathname === p || (p !== '/' && pathname.startsWith(`${p}/`))
+    (p) => pathname === p
+      || (p !== '/' && p !== SPOKEDU_PATHS.subscription && pathname.startsWith(`${p}/`))
   );
 }
 
