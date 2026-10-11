@@ -1,4 +1,5 @@
 import type { BillingOrder, BillingSubscription } from './spokeduMasterBillingAdmin';
+import { SPOKEDU_MASTER_BILLING_PROCESSING_WARNING_MS } from './spokeduMasterBillingOrders';
 
 export type BillingWebhook = { event_key: string; event_type: string; order_id: string | null; status: string; created_at: string };
 export type BillingRun = { id: string; started_at: string; completed_at: string | null; status: string; attempted: number; succeeded: number; failed: number; skipped: number; error_code: string | null };
@@ -11,7 +12,7 @@ export function buildBillingIncidents(input: { orders: BillingOrder[]; subscript
   const addOrder = (order: BillingOrder, type: string, severity: 'warning' | 'danger', errorCode: string | null) => incidents.push({ id: `order:${order.order_id}:${type}`, scope: 'customer', type, severity, userId: order.user_id, orderId: order.order_id, firstOccurredAt: order.created_at, lastOccurredAt: order.last_processed_at ?? order.updated_at, status: order.status, errorCode, occurrenceCount: 1, needsAction: true });
   for (const order of input.orders) {
     if (order.paymentApproved && (!order.applied_at || order.status === 'recoverable_failed')) addOrder(order, 'approved_apply_failed', 'danger', order.last_error_code);
-    else if (order.status === 'processing' && Date.parse(order.last_processed_at ?? order.updated_at) < now - 10 * 60_000) addOrder(order, 'processing_stale', 'danger', order.last_error_code);
+    else if (order.status === 'processing' && Date.parse(order.last_processed_at ?? order.updated_at) < now - SPOKEDU_MASTER_BILLING_PROCESSING_WARNING_MS) addOrder(order, 'processing_stale', 'danger', order.last_error_code);
     else if (order.status === 'recoverable_failed') addOrder(order, 'recoverable_failed', 'danger', order.last_error_code);
     else if (order.status === 'failed') addOrder(order, 'payment_failed', 'warning', order.last_error_code);
     const subscription = subscriptionByUser.get(order.user_id);

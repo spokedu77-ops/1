@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ClipboardCopy, CreditCard, Gift, Loader2, Search, Settings, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { MemberDetailPanel } from './MemberDetailPanel';
-import { MemberListPanel } from './MemberListPanel';
+import { invalidateMemberListCache, MemberListPanel } from './MemberListPanel';
 import { GrantHistoryPanel } from './GrantHistoryPanel';
 import { OverviewPanel } from './OverviewPanel';
 import { AuditPanel } from './AuditPanel';
@@ -81,11 +81,16 @@ export default function MasterAdminClient() {
   const [membersPageSize, setMembersPageSize] = useState(20);
   const [query, setQuery] = useState('');
   const [memberScope, setMemberScope] = useState<MemberScope>('production');
-  const [selected, setSelected] = useState<Member | null>(null);
+  const [selectedGrantMember, setSelectedGrantMember] = useState<Member | null>(null);
+  const [detailMemberId, setDetailMemberId] = useState<string | null>(null);
   const [memberDetail, setMemberDetail] = useState<any>(null);
   const [memberDetailLoading, setMemberDetailLoading] = useState(false);
   const [memberDetailError, setMemberDetailError] = useState('');
   const detailRequest = useRef<AbortController | null>(null);
+  const detailOpener = useRef<HTMLElement | null>(null);
+  const grantSettingsRef = useRef<HTMLElement | null>(null);
+  const grantPreviewRequest = useRef<AbortController | null>(null);
+  const grantTargetIdRef = useRef<string | null>(null);
   const [invites, setInvites] = useState<any[]>([]);
   const [plan, setPlan] = useState<'lite' | 'premium'>('lite');
   const [duration, setDuration] = useState(30);
@@ -121,57 +126,79 @@ export default function MasterAdminClient() {
   useEffect(() => { if (tab === 'entitlements' && entTab === 'invite') void loadInvites().catch((e) => setError(e.message)); }, [tab, entTab, loadInvites]);
 
   const changeMemberSearch = (value: string) => { setQuery(value); setMembersPage(1); };
-  const selectedUserId = selected?.id ?? null;
+  const openMemberDetail = useCallback((userId: string) => {
+    if (!userId) return;
+    detailOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setMemberDetail(null);
+    setMemberDetailError('');
+    setDetailMemberId(userId);
+  }, []);
+  const closeMemberDetail = useCallback(() => {
+    detailRequest.current?.abort();
+    setDetailMemberId(null);
+    setMemberDetail(null);
+    setMemberDetailError('');
+    window.setTimeout(() => detailOpener.current?.focus(), 0);
+  }, []);
+  const retryMemberDetail = () => setDetailVersion((value) => value + 1);
+  const changeTab = (nextTab: Tab) => { closeMemberDetail(); setTab(nextTab); };
+  const selectGrantMember = (member: Member) => {
+    grantPreviewRequest.current?.abort();
+    setPending(false);
+    grantTargetIdRef.current = member.id;
+    setSelectedGrantMember(member);
+    setPreview(null);
+    if (window.matchMedia('(max-width: 639px)').matches) window.setTimeout(() => grantSettingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
+
   useEffect(() => {
     detailRequest.current?.abort();
-    if (!selectedUserId) { setMemberDetail(null); setMemberDetailError(''); return; }
+    if (!detailMemberId) { setMemberDetail(null); setMemberDetailError(''); setMemberDetailLoading(false); return; }
     const controller = new AbortController();
     detailRequest.current = controller;
+    setMemberDetail(null);
     setMemberDetailLoading(true);
     setMemberDetailError('');
-    void readJson(`/api/admin/spokedu-master-admin/members/${selectedUserId}`, { signal: controller.signal })
+    void readJson(`/api/admin/spokedu-master-admin/members/${detailMemberId}`, { signal: controller.signal })
       .then((data) => { if (!controller.signal.aborted) setMemberDetail(data); })
-      .catch((error) => { if (!controller.signal.aborted) setMemberDetailError(error instanceof Error ? error.message : 'Member detail lookup failed'); })
+      .catch((error) => { if (!controller.signal.aborted) setMemberDetailError(error instanceof Error ? error.message : '회원 상세를 불러오지 못했습니다.'); })
       .finally(() => { if (!controller.signal.aborted) setMemberDetailLoading(false); });
     return () => controller.abort();
-  }, [selectedUserId, detailVersion]);
+  }, [detailMemberId, detailVersion]);
 
-  const closeMemberDetail = () => { detailRequest.current?.abort(); setSelected(null); setMemberDetail(null); setMemberDetailError(''); };
-
-  const changeMemberScope = (scope: MemberScope) => { setMemberScope(scope); setMembersPage(1); setSelected(null); };
   const memberPageCount = Math.max(1, Math.ceil(membersTotal / membersPageSize));
-
-  const selectedAccess = useMemo(() => selected ? [
-    ['계정 역할', accountRoleName(selected.accountRole)],
-    ['현재 이용권', selected.accountRole === 'admin' ? '적용 대상 아님' : planName(selected.effectivePlan)], ['유료 구독', selected.accountRole === 'admin' || selected.paidPlan === 'free' ? '없음' : planName(selected.paidPlan)],
-    ['구독 상태', selected.paidStatus], ['자동결제', selected.subscription ? selected.subscription.cancelAtPeriodEnd ? '해지 예정' : '활성' : '없음'],
-    ['운영 판단', selected.billingIncident.label], ['현재 이용 종료일', date(selected.subscription?.currentPeriodEnd)],
-    ['다음 결제일', date(selected.subscription?.nextBillingAt)], ['최근 주문 상태', selected.latestOrder?.status ?? '없음'],
-    ['최근 주문 플랜', selected.latestOrder ? planName(selected.latestOrder.plan) : '-'], ['최근 주문 금액', selected.latestOrder?.amount == null ? '-' : `${selected.latestOrder.amount.toLocaleString()}원`],
-    ['결제 승인 확인', selected.latestOrder?.paymentApproved ? '승인 근거 있음' : '없음'], ['이용권 반영일', date(selected.latestOrder?.appliedAt, true)],
-    ['주문 오류', selected.latestOrder?.lastErrorCode ?? '-'], ['최근 주문 확인 시각', date(selected.latestOrder?.updatedAt, true)],
-    ['갱신 재시도 횟수', String(selected.subscription?.renewalRetryCount ?? 0)], ['다음 재시도', date(selected.subscription?.nextRetryAt, true)],
-    ['최근 갱신 오류', selected.subscription?.lastBillingError ?? '-'], ['프로모션', selected.promoPlan ? planName(selected.promoPlan) : '없음'],
-    ['프로모션 시작', date(selected.promoStartsAt)], ['프로모션 종료', date(selected.promoEndsAt)], ['종료 후 예상', planName(selected.fallbackPlan)],
-  ] : [], [selected]);
   const grantableMembers = useMemo(() => members.filter((member) => member.accountRole !== 'admin'), [members]);
 
   const requestPreview = async () => {
-    if (!selected || !reason.trim()) return toast.error('회원과 지급 사유를 확인해 주세요.');
+    const member = selectedGrantMember;
+    if (pending) return;
+    if (!member || member.accountRole === 'admin' || !reason.trim()) return toast.error('회원과 지급 사유를 확인해 주세요.');
+    if (!Number.isInteger(duration) || duration < 1 || duration > 366) return toast.error('기간은 1~366일로 입력해 주세요.');
+    grantPreviewRequest.current?.abort();
+    const controller = new AbortController();
+    grantPreviewRequest.current = controller;
+    const targetId = member.id;
     setPending(true);
-    try { const data = await readJson('/api/admin/spokedu-master/entitlement-grants', { method: 'POST', body: JSON.stringify({ userId: selected.id, plan, durationDays: duration, reason, campaignId: campaign, preview: true }) }); setPreview(data.preview); }
-    catch (e) { toast.error(e instanceof Error ? e.message : '확인에 실패했습니다.'); } finally { setPending(false); }
+    try {
+      const data = await readJson('/api/admin/spokedu-master/entitlement-grants', { signal: controller.signal, method: 'POST', body: JSON.stringify({ userId: targetId, plan, durationDays: duration, reason, campaignId: campaign, preview: true }) });
+      if (!controller.signal.aborted && grantTargetIdRef.current === targetId) setPreview(data.preview);
+    } catch (error) {
+      if (!controller.signal.aborted) toast.error(error instanceof Error ? error.message : '확인에 실패했습니다.');
+    } finally {
+      if (!controller.signal.aborted) setPending(false);
+    }
   };
   const createGrant = async () => {
-    if (!selected) return;
+    const member = selectedGrantMember;
+    if (pending || !member || member.accountRole === 'admin' || grantTargetIdRef.current !== member.id || !preview) return;
     setPending(true);
-    try { const data = await readJson('/api/admin/spokedu-master/entitlement-grants', { method: 'POST', body: JSON.stringify({ userId: selected.id, plan, durationDays: duration, reason, campaignId: campaign }) }); setPreview(null); setSuccess(data.preview); setReason(''); await refresh(); toast.success(`${planName(plan)} 이용권이 지급되었습니다.`); }
+    try { const data = await readJson('/api/admin/spokedu-master/entitlement-grants', { method: 'POST', body: JSON.stringify({ userId: member.id, plan, durationDays: duration, reason, campaignId: campaign }) }); invalidateMemberListCache(); setPreview(null); setSuccess(data.preview); setReason(''); await refresh(); toast.success(`${planName(plan)} 이용권이 지급되었습니다.`); }
     catch (e) { toast.error(e instanceof Error ? e.message : '지급에 실패했습니다.'); } finally { setPending(false); }
   };
   const revoke = async (grant: any) => {
     const first = await readJson(`/api/admin/spokedu-master/entitlement-grants/${grant.id}`, { method: 'PATCH', body: JSON.stringify({ preview: true }) });
     if (!window.confirm(`${grant.memberName} 회원의 ${planName(grant.plan)} 이용권을 회수합니다.\n현재 이용권: ${planName(first.preview.before.effectivePlan)}\n회수 후 이용권: ${planName(first.preview.afterPlan)}`)) return;
-    setPending(true); try { await readJson(`/api/admin/spokedu-master/entitlement-grants/${grant.id}`, { method: 'PATCH', body: '{}' }); await refresh(); toast.success('이용권을 회수했습니다.'); } catch (e) { toast.error(e instanceof Error ? e.message : '회수에 실패했습니다.'); } finally { setPending(false); }
+    setPending(true); try { await readJson(`/api/admin/spokedu-master/entitlement-grants/${grant.id}`, { method: 'PATCH', body: '{}' }); invalidateMemberListCache(); await refresh(); toast.success('이용권을 회수했습니다.'); } catch (e) { toast.error(e instanceof Error ? e.message : '회수에 실패했습니다.'); } finally { setPending(false); }
   };
   const openExtension = (grant: any) => { setExtensionTarget(grant); setExtensionDays(7); setExtensionReason(''); };
   const extendGrant = async () => {
@@ -179,6 +206,7 @@ export default function MasterAdminClient() {
     setPending(true);
     try {
       await readJson(`/api/admin/spokedu-master/entitlement-grants/${extensionTarget.id}`, { method: 'PATCH', body: JSON.stringify({ action: 'extend', days: extensionDays, reason: extensionReason }) });
+      invalidateMemberListCache();
       setAuditVersion((value) => value + 1);
       setDetailVersion((value) => value + 1);
       toast.success(`${planName(extensionTarget.plan)} 이용권이 ${extensionDays}일 연장되었습니다.`);
@@ -194,39 +222,39 @@ export default function MasterAdminClient() {
   return <div className="min-h-screen bg-slate-50">
     <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
       <header className="mb-6"><div className="flex items-center gap-3"><span className="rounded-xl bg-blue-600 p-2 text-white"><Settings size={20}/></span><h1 className="text-2xl font-black tracking-tight text-slate-950">LAB ADMIN</h1></div><p className="mt-2 text-sm text-slate-500">SPOKEDU LAB 회원, 이용권, 구독 및 결제 상태를 관리합니다.</p></header>
-      <nav className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1" aria-label="LAB ADMIN 탭">{([['overview','운영 현황'],['members','회원 관리'],['entitlements','이용권 관리'],['billing','결제·구독'],['audit','작업 이력']] as const).map(([id,label]) => <button key={id} onClick={() => setTab(id)} className={`min-h-11 shrink-0 rounded-lg px-4 text-sm font-bold transition ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{label}</button>)}</nav>
+      <nav className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1" aria-label="LAB ADMIN 탭">{([['overview','운영 현황'],['members','회원 관리'],['entitlements','이용권 관리'],['billing','결제·구독'],['audit','작업 이력']] as const).map(([id,label]) => <button key={id} onClick={() => changeTab(id)} className={`min-h-11 shrink-0 rounded-lg px-4 text-sm font-bold transition ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{label}</button>)}</nav>
       {error && <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}
       {loading ? <Spinner/> : <>
-        {tab === 'overview' && <><OverviewPanel summary={summary} activities={activities} refresh={()=>void loadOverview()} onSelect={(userId)=>{setTab('members');setSelected({id:userId} as Member);}}/><div className="mt-5"><OverviewBillingIncidents summary={summary} incidents={activities?.billingIncidents} onOpen={(userId)=>{if(userId)setSelected({id:userId} as Member);setTab('billing');}}/></div></>}
-        {tab === 'members' && <MemberListPanel onSelect={(member) => setSelected(member as unknown as Member)} />}
+        {tab === 'overview' && <><OverviewPanel summary={summary} activities={activities} refresh={()=>void loadOverview()} onSelect={openMemberDetail}/><div className="mt-5"><OverviewBillingIncidents summary={summary} incidents={activities?.billingIncidents} onOpen={(userId)=>{ if (userId) openMemberDetail(userId); }}/></div></>}
+        {tab === 'members' && <MemberListPanel onSelect={openMemberDetail} />}
         {tab === 'entitlements' && <section className="space-y-5"><div className="flex flex-wrap gap-2">{([['grant','회원 이용권 지급'],['invite','초대 이용권'],['history','지급 내역']] as const).map(([id,label])=><button key={id} onClick={()=>setEntTab(id)} className={`rounded-lg border px-4 py-2 text-sm font-bold ${entTab===id?'border-blue-600 bg-blue-50 text-blue-700':'border-slate-200 bg-white text-slate-500'}`}>{label}</button>)}</div>
           {entTab==='grant'&&<div className="grid items-start gap-5 lg:grid-cols-[minmax(280px,2fr)_minmax(0,3fr)]">
             <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" aria-label="이용권 지급 회원 선택">
               <label className="relative block"><Search className="absolute left-3 top-3 text-slate-400" size={18}/><input value={query} onChange={(e)=>changeMemberSearch(e.target.value)} placeholder="이름 또는 이메일로 회원 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-blue-500"/></label>
               <div className="mt-4 max-h-[32rem] overflow-y-auto rounded-xl border border-slate-200">
-                {grantableMembers.map((m)=><button key={m.id} type="button" onClick={()=>setSelected(m)} aria-pressed={selected?.id===m.id} className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 ${selected?.id===m.id?'bg-blue-50 ring-1 ring-inset ring-blue-500':'bg-white hover:bg-slate-50'}`}><b className="block text-sm text-slate-900">{m.name}</b><span className="mt-0.5 block break-all text-xs text-slate-500">{m.email ?? '-'}</span></button>)}
+                {grantableMembers.map((m)=><button key={m.id} type="button" onClick={()=>selectGrantMember(m)} aria-pressed={selectedGrantMember?.id===m.id} className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 ${selectedGrantMember?.id===m.id?'bg-blue-50 ring-1 ring-inset ring-blue-500':'bg-white hover:bg-slate-50'}`}><b className="block text-sm text-slate-900">{m.name}</b><span className="mt-0.5 block break-all text-xs text-slate-500">{m.email ?? '-'}</span></button>)}
                 {grantableMembers.length===0&&<Empty>검색 결과가 없습니다.</Empty>}
               </div>
               <MemberPagination page={membersPage} pageCount={memberPageCount} total={membersTotal} setPage={setMembersPage}/>
             </section>
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" aria-label="이용권 지급 설정">
-              {!selected||selected.accountRole==='admin'?<p className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">왼쪽에서 이용권을 지급할 회원을 선택해 주세요.</p>:<div className="space-y-5">
-                <div className="flex items-start gap-3 border-b border-slate-100 pb-5"><span className="rounded-xl bg-blue-50 p-2 text-blue-600"><Users size={20}/></span><div className="min-w-0"><h2 className="font-bold text-slate-900">{selected.name}</h2><p className="break-all text-sm text-slate-500">{selected.email ?? '-'}</p></div></div>
-                <dl className="grid gap-2 rounded-xl bg-slate-50 p-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-slate-500">계정 역할</dt><dd className="text-right font-bold text-slate-900">{accountRoleName(selected.accountRole)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">현재 이용권</dt><dd className="text-right font-bold text-slate-900">{planName(selected.effectivePlan)}</dd></div></dl>
+            <section ref={grantSettingsRef} className="scroll-mt-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" aria-label="이용권 지급 설정">
+              {!selectedGrantMember||selectedGrantMember.accountRole==='admin'?<p className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">왼쪽에서 이용권을 지급할 회원을 선택해 주세요.</p>:<div className="space-y-5">
+                <div className="flex items-start gap-3 border-b border-slate-100 pb-5"><span className="rounded-xl bg-blue-50 p-2 text-blue-600"><Users size={20}/></span><div className="min-w-0 flex-1"><h2 className="font-bold text-slate-900">{selectedGrantMember.name}</h2><p className="break-all text-sm text-slate-500">{selectedGrantMember.email ?? '-'}</p></div><button type="button" onClick={()=>openMemberDetail(selectedGrantMember.id)} className="min-h-11 shrink-0 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">상세 보기</button></div>
+                <dl className="grid gap-2 rounded-xl bg-slate-50 p-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-slate-500">계정 역할</dt><dd className="text-right font-bold text-slate-900">{accountRoleName(selectedGrantMember.accountRole)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">현재 이용권</dt><dd className="text-right font-bold text-slate-900">{planName(selectedGrantMember.effectivePlan)}</dd></div></dl>
 
                 <div className="grid gap-4 sm:grid-cols-2"><Field label="플랜"><select value={plan} onChange={(e)=>setPlan(e.target.value as any)} className="input"><option value="premium">Premium</option><option value="lite">Lite</option></select></Field><Field label="기간 (1~366일, 30/60/90 권장)"><input type="number" min={1} max={366} value={duration} onChange={(e)=>setDuration(Number(e.target.value))} className="input"/></Field><Field label="지급 사유 (필수)"><input value={reason} onChange={(e)=>setReason(e.target.value)} className="input" placeholder="예: 2026 교사 세미나"/></Field><Field label="캠페인 / Source"><input value={campaign} onChange={(e)=>setCampaign(e.target.value)} className="input" placeholder="선택 입력"/></Field></div>
                 <button disabled={pending||!reason.trim()} onClick={requestPreview} className="min-h-11 w-full rounded-xl bg-blue-600 font-bold text-white disabled:opacity-50">{pending?'확인 중...':'이용권 지급'}</button>
               </div>}
             </section>
           </div>}
-          {entTab==='invite'&&<div className="space-y-5"><InvitePanel form={inviteForm} setForm={setInviteForm} create={createInvite} pending={pending} result={createdInvite}/><InviteTable invites={invites}/></div>} {entTab==='history'&&<GrantHistoryPanel version={auditVersion} onSelect={(userId)=>setSelected({id:userId} as Member)} revoke={revoke} extend={openExtension} pending={pending}/>}</section>}
-        {tab === 'audit' && <AuditPanel version={auditVersion} onSelect={(userId)=>{setTab('members');setSelected({id:userId} as Member);}}/>}
-        {tab === 'billing' && <BillingOperationsPanel version={auditVersion} onSelectMember={(userId)=>setSelected({id:userId} as Member)}/>}
+          {entTab==='invite'&&<div className="space-y-5"><InvitePanel form={inviteForm} setForm={setInviteForm} create={createInvite} pending={pending} result={createdInvite}/><InviteTable invites={invites}/></div>} {entTab==='history'&&<GrantHistoryPanel version={auditVersion} onSelect={openMemberDetail} revoke={revoke} extend={openExtension} pending={pending}/>}</section>}
+        {tab === 'audit' && <AuditPanel version={auditVersion} onSelect={openMemberDetail}/>}
+        {tab === 'billing' && <BillingOperationsPanel version={auditVersion} onSelectMember={openMemberDetail}/>}
       </>}
     </div>
-    {preview&&<ConfirmDialog member={selected!} preview={preview} plan={plan} duration={duration} reason={reason} pending={pending} cancel={()=>setPreview(null)} confirm={createGrant}/>} {success&&<SuccessDialog preview={success} plan={plan} close={()=>setSuccess(null)}/>} 
+    {preview&&<ConfirmDialog member={selectedGrantMember!} preview={preview} plan={plan} duration={duration} reason={reason} pending={pending} cancel={()=>setPreview(null)} confirm={createGrant}/>} {success&&<SuccessDialog preview={success} plan={plan} close={()=>setSuccess(null)}/>}
     {extensionTarget&&<ExtensionDialog grant={extensionTarget} days={extensionDays} reason={extensionReason} pending={pending} setDays={setExtensionDays} setReason={setExtensionReason} cancel={()=>setExtensionTarget(null)} confirm={extendGrant}/>}
-    <MemberDetailPanel detail={memberDetail} loading={memberDetailLoading} error={memberDetailError} onClose={closeMemberDetail}/>
+    {detailMemberId&&<MemberDetailPanel detail={memberDetail} loading={memberDetailLoading} error={memberDetailError} onClose={closeMemberDetail} onRetry={retryMemberDetail}/> }
     <style jsx global>{`.input{height:44px;width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:0 12px;font-size:14px;background:#fff}.input:focus{outline:2px solid #bfdbfe;border-color:#3b82f6}`}</style>
   </div>;
 }

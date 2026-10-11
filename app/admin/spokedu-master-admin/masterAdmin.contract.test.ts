@@ -48,9 +48,13 @@ describe('MASTER ADMIN contract', () => {
     expect(client).toContain('lg:grid-cols-[minmax(280px,2fr)_minmax(0,3fr)]');
     expect(client).toContain('max-h-[32rem] overflow-y-auto');
     expect(client).toContain('왼쪽에서 이용권을 지급할 회원을 선택해 주세요.');
-    expect(client).toContain('aria-pressed={selected?.id===m.id}');
+    expect(client).toContain('aria-pressed={selectedGrantMember?.id===m.id}');
+    expect(client).toContain('const [detailMemberId, setDetailMemberId]');
+    expect(client).toContain('onClick={()=>selectGrantMember(m)}');
+    expect(client).toContain('onClick={()=>openMemberDetail(selectedGrantMember.id)}');
+    expect(client).not.toContain('setSelected({id:userId} as Member)');
     expect(client).not.toContain('grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2');
-    expect(client).toContain("body: JSON.stringify({ userId: selected.id, plan, durationDays: duration, reason, campaignId: campaign, preview: true })");
+    expect(client).toContain("body: JSON.stringify({ userId: targetId, plan, durationDays: duration, reason, campaignId: campaign, preview: true })");
   });
   it('defaults seminar grants and invites to Lite and confirms the exact member and period', () => {
     const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
@@ -101,9 +105,12 @@ describe('MASTER ADMIN contract', () => {
   });
   it('returns read-only payment incident evidence without hiding non-active orders', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/billing/route.ts');
+    const members = read('app/api/admin/spokedu-master-admin/route.ts');
     const client = read('app/admin/spokedu-master-admin/BillingOperationsPanel.tsx');
     expect(dashboard).toContain('last_error_code');
-    expect(dashboard).toContain('paymentApproved: Boolean(payment_key)');
+    expect(members).toContain('paymentApproved: Boolean(payment.paymentApproved)');
+    expect(members).toContain("rawPayments.map(({ payment_key, ...row }");
+    expect(dashboard).toContain("rawOrders.map(({ payment_key, ...row })");
     expect(dashboard).not.toContain(".eq('status', 'active')");
     expect(dashboard).toContain('classifyBillingIssue');
     expect(client).toContain('summary?.applyFailed');

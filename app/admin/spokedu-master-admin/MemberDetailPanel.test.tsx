@@ -16,18 +16,18 @@ describe('MemberDetailPanel payment evidence', () => {
     const pending = renderToStaticMarkup(<MemberDetailPanel detail={{
       ...baseDetail,
       latestOrder: { order_id: 'order-1', plan: 'premium', amount: 28900, status: 'active', updated_at: '2026-10-10T01:02:03.000Z', applied_at: null, last_error_code: 'entitlement_apply_failed', paymentApproved: true },
-    }} loading={false} error="" onClose={() => undefined}/>);
+    }} loading={false} error="" onClose={() => undefined} onRetry={() => undefined}/>);
     expect(pending).toContain('승인 확인 · 반영 미확인');
 
     const applied = renderToStaticMarkup(<MemberDetailPanel detail={{
       ...baseDetail,
       latestOrder: { order_id: 'order-1', plan: 'premium', amount: 28900, status: 'active', updated_at: '2026-10-10T01:02:03.000Z', applied_at: '2026-10-10T01:03:00.000Z', last_error_code: null, paymentApproved: true },
-    }} loading={false} error="" onClose={() => undefined}/>);
+    }} loading={false} error="" onClose={() => undefined} onRetry={() => undefined}/>);
     expect(applied).toContain('승인 및 반영 확인');
   });
 
   it('renders an empty recent-order state', () => {
-    const markup = renderToStaticMarkup(<MemberDetailPanel detail={{ ...baseDetail, latestOrder: null }} loading={false} error="" onClose={() => undefined}/>);
+    const markup = renderToStaticMarkup(<MemberDetailPanel detail={{ ...baseDetail, latestOrder: null }} loading={false} error="" onClose={() => undefined} onRetry={() => undefined}/>);
     expect(markup).toContain('최근 주문');
     expect(markup).toContain('없음');
   });

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { AlertTriangle, Loader2, X } from 'lucide-react';
 
 type Detail = {
@@ -19,16 +20,22 @@ const planName = (plan: string | null | undefined) => plan === 'premium' || plan
 const sourceName = (source: string) => source === 'billing' ? '유료 결제' : source === 'promotion' ? '증정 이용권' : '기본';
 const statusName = (status: string) => ({ active: '활성', scheduled: '예정', expired: '만료', revoked: '회수' }[status] ?? status);
 
-export function MemberDetailPanel({ detail, loading, error, onClose }: { detail: Detail | null; loading: boolean; error: string; onClose: () => void }) {
-  if (!detail && !loading && !error) return null;
-  return <aside className="fixed inset-0 z-[450] overflow-y-auto bg-white p-4 sm:p-6 lg:inset-y-0 lg:left-auto lg:w-[520px] lg:border-l lg:border-slate-200 lg:shadow-2xl" aria-label="회원 상세">
+export function MemberDetailPanel({ detail, loading, error, onClose, onRetry }: { detail: Detail | null; loading: boolean; error: string; onClose: () => void; onRetry: () => void }) {
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [onClose]);
+  return <aside className="fixed inset-0 z-[450] overflow-y-auto bg-white p-4 sm:p-6 lg:inset-y-0 lg:left-auto lg:w-[520px] lg:border-l lg:border-slate-200 lg:shadow-2xl" role="dialog" aria-modal="true" aria-label="회원 상세">
     <div className="mx-auto max-w-xl">
       <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
         <div><p className="text-xs font-bold text-blue-700">회원 상세</p><h2 className="mt-1 text-xl font-bold text-slate-950">{detail?.member.name || detail?.member.email || '회원 정보'}</h2></div>
-        <button type="button" onClick={onClose} className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-slate-200" aria-label="회원 상세 닫기"><X size={18}/></button>
+        <button ref={closeButtonRef} type="button" onClick={onClose} className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-slate-200" aria-label="회원 상세 닫기"><X size={18}/></button>
       </div>
       {loading && <div className="grid min-h-64 place-items-center"><Loader2 className="animate-spin text-blue-600"/></div>}
-      {error && <div className="mt-5 flex gap-2 rounded-xl bg-rose-50 p-4 text-sm text-rose-700"><AlertTriangle size={18}/>{error}</div>}
+      {error && !loading && <div className="mt-5 rounded-xl bg-rose-50 p-4 text-sm text-rose-700"><div className="flex gap-2"><AlertTriangle className="shrink-0" size={18}/><span>{error}</span></div><button type="button" onClick={onRetry} className="mt-3 min-h-11 rounded-lg border border-rose-200 bg-white px-4 font-bold">다시 시도</button></div>}
       {detail && !loading && <div className="space-y-8 py-6">
         <Section title="기본 정보"><Facts rows={[
           ['이름', detail.member.name || '-'], ['이메일', detail.member.email || '-'], ['회원 ID', detail.member.id],

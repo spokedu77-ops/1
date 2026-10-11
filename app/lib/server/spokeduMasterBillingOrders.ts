@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** processing 주문이 이 시간보다 오래되면 다른 워커가 claim을 재개할 수 있다. */
+/** 운영자가 지연 가능성을 확인하는 조기 경고 기준. 워커 재claim 기준은 아니다. */
+export const SPOKEDU_MASTER_BILLING_PROCESSING_WARNING_MS = 10 * 60 * 1000;
+/** 결제 워커가 processing 주문을 다시 claim할 수 있는 lease 만료 기준. */
 export const SPOKEDU_MASTER_BILLING_PROCESSING_STALE_MS = 15 * 60 * 1000;
 
 export type SpokeduMasterBillingOrderClaimRow = {

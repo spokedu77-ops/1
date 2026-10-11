@@ -14,6 +14,7 @@ import {
   selectLatestMasterAdminOrders,
 } from '@/app/lib/server/spokeduMasterAdminRead';
 import { buildBillingIncidents, type BillingRun, type BillingWebhook } from '@/app/lib/server/spokeduMasterBillingIncidents';
+import { readSpokeduMasterAdminCache } from '@/app/lib/server/spokeduMasterAdminCache';
 
 export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 20;
@@ -67,11 +68,12 @@ async function identities() {
 
 async function accessMaps(userIds: string[]) {
   const now = new Date().toISOString();
-  const [subscriptions, grantRows, payments] = await Promise.all([
+  const [subscriptions, grantRows, rawPayments] = await Promise.all([
     readRowsByIds('spokedu_master_subscriptions', 'id,user_id,plan,status,pg_provider,toss_order_id,provider_customer_key,created_at,period_end,cancel_at_period_end,next_billing_at,current_period_end,renewal_retry_count,last_billing_error,next_retry_at,last_payment_at', 'user_id', userIds),
     readRowsByIds('spokedu_master_entitlement_grants', 'id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at,revoked_at,created_at,granted_by,metadata', 'user_id', userIds),
     readRowsByIds('spokedu_master_payment_orders', 'order_id,user_id,plan,amount,status,payment_key,created_at,updated_at,applied_at,last_processed_at,last_error_code', 'user_id', userIds),
   ]);
+  const payments = rawPayments.map(({ payment_key, ...row }: any) => ({ ...row, paymentApproved: Boolean(payment_key) }));
   return {
     subscriptionMap: new Map(subscriptions.map((row: any) => [row.user_id, row])),
     grantMap: selectActiveMasterAdminGrants(grantRows, now),
@@ -122,6 +124,13 @@ async function funnelEvidence(members: Array<{
   };
 }
 
+async function billingOperationsEvidence() {
+  return Promise.all([
+    readAllMasterAdminPages<any>({ fetchPage: async (page, pageSize) => { const from = (page - 1) * pageSize; const result = await getServiceSupabase().from('spokedu_master_payment_webhook_events').select('event_key,event_type,order_id,status,created_at').order('created_at', { ascending: false }).range(from, from + pageSize - 1); if (result.error) throw result.error; return result.data ?? []; } }),
+    readAllMasterAdminPages<any>({ fetchPage: async (page, pageSize) => { const from = (page - 1) * pageSize; const result = await getServiceSupabase().from('spokedu_master_billing_runs').select('id,started_at,completed_at,status,attempted,succeeded,failed,skipped,error_code').order('started_at', { ascending: false }).range(from, from + pageSize - 1); if (result.error) throw result.error; return result.data ?? []; } }),
+  ]);
+}
+
 function matchesScope(accountClass: MasterAccountClass, scope: string) {
   if (scope === 'production') return accountClass === 'production';
   if (scope === 'qa_test') return accountClass === 'qa_test';
@@ -145,8 +154,12 @@ export async function GET(request: Request) {
     const planFilter = url.searchParams.get('plan') ?? 'all';
     const sourceFilter = url.searchParams.get('source') ?? 'all';
     const onboardingFilter = url.searchParams.get('onboarding') ?? 'all';
-    const [profiles, { users, appUsers, authProfiles }] = await Promise.all([populationEvidence(), identities()]);
-    const { subscriptionMap, grantMap, paymentMap, subscriptionRows, paymentRows } = await accessMaps([...profiles.keys()]);
+    const core = await readSpokeduMasterAdminCache('member-core', 10_000, async () => {
+      const [profiles, identityRows] = await Promise.all([populationEvidence(), identities()]);
+      const access = await accessMaps([...profiles.keys()]);
+      return { profiles, ...identityRows, ...access };
+    });
+    const { profiles, users, appUsers, authProfiles, subscriptionMap, grantMap, paymentMap, subscriptionRows, paymentRows } = core.value;
 
     const rows = users.filter((user) => profiles.has(user.id)).map((user) => {
       const profile = profiles.get(user.id) ?? null;
@@ -162,7 +175,7 @@ export async function GET(request: Request) {
         updatedAt: payment.updated_at ?? null,
         appliedAt: payment.applied_at ?? null,
         lastErrorCode: payment.last_error_code ?? null,
-        paymentApproved: Boolean(payment.payment_key),
+        paymentApproved: Boolean(payment.paymentApproved),
       } : null;
       const accountClass = classifyMasterAccount({
         hasMasterProfile: true,
@@ -251,14 +264,14 @@ export async function GET(request: Request) {
       }
       const productionIds = new Set(production.map((row) => row.id));
       const productionById = new Map(production.map((row) => [row.id, row]));
-      const [recentGrantEvents, recentPaymentEvents, funnel, webhookRows, billingRuns] = await Promise.all([
+      const [recentGrantEvents, recentPaymentEvents, funnel, billingOperations] = await Promise.all([
         recentOperationalRows('spokedu_master_entitlement_grants', 'id,user_id,plan,created_at', 'created_at', productionIds),
         recentOperationalRows('spokedu_master_payment_orders', 'order_id,user_id,status,payment_key,updated_at,applied_at', 'updated_at', productionIds, 8, 'order_id'),
         funnelEvidence(production),
-        readAllMasterAdminPages<any>({ fetchPage: async (page, pageSize) => { const from = (page - 1) * pageSize; const result = await getServiceSupabase().from('spokedu_master_payment_webhook_events').select('event_key,event_type,order_id,status,created_at').order('created_at', { ascending: false }).range(from, from + pageSize - 1); if (result.error) throw result.error; return result.data ?? []; } }),
-        readAllMasterAdminPages<any>({ fetchPage: async (page, pageSize) => { const from = (page - 1) * pageSize; const result = await getServiceSupabase().from('spokedu_master_billing_runs').select('id,started_at,completed_at,status,attempted,succeeded,failed,skipped,error_code').order('started_at', { ascending: false }).range(from, from + pageSize - 1); if (result.error) throw result.error; return result.data ?? []; } }),
+        readSpokeduMasterAdminCache('overview-billing-operations', 30_000, billingOperationsEvidence),
       ]);
-      const billingIncidents = buildBillingIncidents({ orders: paymentRows.filter((row: any) => productionIds.has(row.user_id)).map(({ payment_key, ...row }: any) => ({ ...row, paymentApproved: Boolean(payment_key) })), subscriptions: subscriptionRows.filter((row: any) => productionIds.has(row.user_id)), webhooks: webhookRows as BillingWebhook[], runs: billingRuns as BillingRun[] });
+      const [webhookRows, billingRuns] = billingOperations.value;
+      const billingIncidents = buildBillingIncidents({ orders: paymentRows.filter((row: any) => productionIds.has(row.user_id)), subscriptions: subscriptionRows.filter((row: any) => productionIds.has(row.user_id)), webhooks: webhookRows as BillingWebhook[], runs: billingRuns as BillingRun[] });
       summary.billingCustomerIncidents = billingIncidents.filter((incident) => incident.scope === 'customer').length;
       summary.billingSystemIncidents = billingIncidents.filter((incident) => incident.scope === 'system').length;
       const newest = <T extends { at: string | null }>(items: T[]) => items.filter((item) => item.at).sort((a, b) => Date.parse(b.at!) - Date.parse(a.at!)).slice(0, 8);

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { withPrivateNoStore } from '@/app/lib/server/privateNoStore';
+import { invalidateSpokeduMasterAdminCache } from '@/app/lib/server/spokeduMasterAdminCache';
 import { buildMasterAdminAccess, grantStatus } from '@/app/lib/server/spokeduMasterAdmin';
 import { ensureSpokeduMasterEntitlement, evaluateSpokeduMasterEffectiveEntitlement, getActiveSpokeduMasterEntitlementGrant } from '@/app/lib/server/spokeduMasterAccess';
 import { isPlatformAdminIdentity } from '@/app/lib/auth/platformAdminIdentity';
@@ -119,5 +120,6 @@ export async function POST(request: Request) {
     .select('id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at,granted_by,created_at,revoked_at')
     .single();
   if (error) return NextResponse.json({ error: 'Grant creation failed' }, { status: 500 });
+  invalidateSpokeduMasterAdminCache('member-core');
   return NextResponse.json({ grant: data, preview: previewResult }, { status: 201 });
 }
