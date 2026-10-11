@@ -121,5 +121,14 @@ describe('SPOKEDU MASTER route access policy', () => {
     expect(hasMasterRouteCapability(free, 'library')).toBe(false);
     expect(hasMasterRouteCapability(free, 'attendance')).toBe(false);
     expect(hasMasterRouteCapability(free, 'spomove')).toBe(false);
+    const lite = {
+      ...free,
+      plan: 'lite' as const,
+      subscriptionStatus: 'active' as const,
+      canUseLibrary: true,
+      canUseAttendance: true,
+      canUseRecords: true,
+    };
+    expect(hasMasterRouteCapability(lite, 'spomove')).toBe(false);
   });
 });

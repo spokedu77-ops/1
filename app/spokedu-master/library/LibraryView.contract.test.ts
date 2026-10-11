@@ -133,10 +133,16 @@ describe('LibraryView favorites contract', () => {
   });
 
   it('returns the existing loading skeleton before rendering the catalog', () => {
-    const loadingIndex = source.indexOf('if (!programsLoaded) return <LibrarySkeleton />');
+    const loadingIndex = source.indexOf('if (!programsLoaded || programsLoading) return <LibrarySkeleton />');
     const catalogIndex = source.indexOf('id="library-catalog"');
     expect(loadingIndex).toBeGreaterThan(-1);
     expect(catalogIndex).toBeGreaterThan(loadingIndex);
+  });
+
+  it('does not render an empty result while the catalog request is running', () => {
+    expect(source).toContain('programsLoading');
+    expect(source).toContain('data-library-state="empty"');
+    expect(source).toContain('if (!programsError)');
   });
 
   it('uses recovery actions that match each catalog load failure', () => {

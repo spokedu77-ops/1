@@ -31,10 +31,20 @@ describe('MASTER execution screen access boundary', () => {
     expect(spomove).not.toContain('OfficialAccessState');
   });
 
-  it('soft-rechecks access on SPOMOVE session without flipping to checking', () => {
-    expect(shell).toContain('// SPOMOVE session: soft entitlement recheck');
+  it('soft-rechecks access on protected routes without flipping to checking', () => {
+    expect(shell).toContain('// Keep one verified access snapshot across protected client-side navigation.');
+    expect(shell).toContain('if (!isProtectedRoute) return;');
     expect(shell).toContain('setInterval(() => void softRecheck(), 60_000)');
     expect(shell).toContain("document.addEventListener('visibilitychange', onVisible)");
     expect(shell).toContain("status: 'allowed'");
+  });
+
+  it('invalidates a retained snapshot when identity changes or revalidation fails', () => {
+    expect(shell).toContain('shouldInvalidateMasterAccessIdentity(accessGuard.userId, userId)');
+    expect(shell).toContain('auth.onAuthStateChange');
+    expect(shell).toContain('resetProfile()');
+    expect(shell).toContain("status: 'checking', userId: null, snapshot: null");
+    expect(shell).toContain("status: 'error', userId: null, snapshot: null");
+    expect(shell).not.toContain('// Keep current session UI on transient network errors.');
   });
 });

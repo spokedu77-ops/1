@@ -69,6 +69,7 @@ export type ContentLoadError = 'unauthorized' | 'forbidden' | 'server' | 'networ
 interface MasterState {
   programs: Program[];
   programsLoaded: boolean;
+  programsLoading: boolean;
   programsError: ContentLoadError;
   loadPrograms: () => Promise<void>;
   reloadPrograms: () => Promise<void>;
@@ -438,6 +439,7 @@ async function fetchAndSetPrograms(
   get: StoreGet,
   cacheOption: RequestCache,
 ): Promise<void> {
+  set({ programsLoading: true });
   try {
     const res = await fetch('/api/spokedu-master/programs', { cache: cacheOption });
     if (!res.ok) {
@@ -445,6 +447,7 @@ async function fetchAndSetPrograms(
       set((state) => ({
         programs: error === 'unauthorized' || error === 'forbidden' ? [] : state.programs,
         programsLoaded: true,
+        programsLoading: false,
         programsError: error,
       }));
       return;
@@ -455,16 +458,17 @@ async function fetchAndSetPrograms(
       set((state) => ({
         programs,
         programsLoaded: true,
+        programsLoading: false,
         programsError: null,
         ...resolvePendingFavoriteMigration(state, programs),
       }));
       return;
     }
   } catch {
-    set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'network' }));
+    set((state) => ({ programs: state.programs, programsLoaded: true, programsLoading: false, programsError: 'network' }));
     return;
   }
-  set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'server' }));
+  set((state) => ({ programs: state.programs, programsLoaded: true, programsLoading: false, programsError: 'server' }));
 }
 
 function shareProgramsLoad(set: StoreSet, get: StoreGet, cacheOption: RequestCache) {
@@ -513,6 +517,7 @@ export const useMasterStore = create<MasterState>()(
     (set, get) => ({
       programs: [],
       programsLoaded: false,
+      programsLoading: false,
       programsError: null,
       homePrograms: [],
       homeProgramsLoaded: false,

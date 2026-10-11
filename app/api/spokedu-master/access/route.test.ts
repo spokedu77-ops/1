@@ -68,6 +68,7 @@ describe('SPOKEDU MASTER access endpoint', () => {
     await expect(response.json()).resolves.toEqual({
       ok: true,
       allowed: true,
+      userId: access.userId,
       spomatShopAvailable: false,
       ...access.snapshot,
     });

@@ -1,7 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
@@ -17,11 +18,17 @@ import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterRouteCapab
 import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 import { spokeduLabIntroductionHref } from '@/app/spokedu/data/public-routes';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { normalizeMasterAppPath } from './masterPathAlias';
+import { shouldInvalidateMasterAccessIdentity } from './masterAccessIdentity';
+
+export { normalizeMasterAppPath } from './masterPathAlias';
 
 type MasterAccessGuardStatus = 'checking' | 'allowed' | 'redirecting' | 'denied' | 'error';
 type MasterAccessGuard = {
   pathname: string;
   status: MasterAccessGuardStatus;
+  userId: string | null;
   snapshot: MasterAccessSnapshot | null;
   spomatShopAvailable: boolean;
 };
@@ -33,6 +40,50 @@ function currentLoginRedirectHref() {
 
 function hasRouteCapability(snapshot: MasterAccessSnapshot | null, capability: Parameters<typeof hasMasterRouteCapability>[1]) {
   return hasMasterRouteCapability(snapshot, capability);
+}
+
+const OPERATIONAL_DATA_ROUTE_PREFIXES = [
+  '/activity',
+  '/class-tools',
+  '/classes',
+  '/dashboard',
+  '/library',
+  '/manage',
+  '/profile',
+  '/report',
+  '/spomove',
+  '/students',
+] as const;
+
+export function masterRouteNeedsOperationalData(pathname: string, basePath: string) {
+  const suffix = pathname.startsWith(basePath) ? pathname.slice(basePath.length) || '/' : pathname;
+  return OPERATIONAL_DATA_ROUTE_PREFIXES.some((prefix) => suffix === prefix || suffix.startsWith(`${prefix}/`));
+}
+
+export function masterRouteNeedsExplanationData(pathname: string, basePath: string) {
+  const suffix = pathname.startsWith(basePath) ? pathname.slice(basePath.length) || '/' : pathname;
+  return suffix === '/profile';
+}
+
+export function masterRouteNeedsProgramCatalog(pathname: string, basePath: string) {
+  const suffix = pathname.startsWith(basePath) ? pathname.slice(basePath.length) || '/' : pathname;
+  return suffix === '/dashboard'
+    || suffix === '/favorites'
+    || suffix === '/library'
+    || suffix.startsWith('/library/')
+    || suffix === '/manage'
+    || suffix === '/activity'
+    || suffix === '/spomove/session';
+}
+
+export function masterRouteNeedsFavoriteSync(pathname: string, basePath: string) {
+  const suffix = pathname.startsWith(basePath) ? pathname.slice(basePath.length) || '/' : pathname;
+  return suffix === '/dashboard'
+    || suffix === '/favorites'
+    || suffix === '/library'
+    || suffix.startsWith('/library/')
+    || suffix === '/spomove'
+    || suffix.startsWith('/spomove/');
 }
 
 function isLegacyRootServiceWorker(registration: ServiceWorkerRegistration) {
@@ -164,11 +215,12 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
 }
 
 export function AppShell({ children, basePath = '/spokedu-master' }: { children: ReactNode; basePath?: string }) {
-  const pathname = usePathname();
+  const pathname = normalizeMasterAppPath(usePathname());
   const activeBasePath = pathname.startsWith('/spokedu-lab/') ? '/spokedu-lab' : basePath;
   const router = useRouter();
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
+  const resetProfile = useMasterStore((state) => state.resetProfile);
   const setOnline = useMasterStore((state) => state.setOnline);
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
@@ -179,11 +231,14 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const [accessGuard, setAccessGuard] = useState<MasterAccessGuard>({
     pathname: '',
     status: 'checking',
+    userId: null,
     snapshot: null,
     spomatShopAvailable: false,
   });
   const [accessRetryKey, setAccessRetryKey] = useState(0);
   const [currentPathWithQuery, setCurrentPathWithQuery] = useState(pathname);
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
   const isAdmin = activeBasePath.startsWith('/admin');
   const isSession = pathname.startsWith(`${activeBasePath}/spomove/session`);
@@ -199,21 +254,24 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isPublicDocument = pathname === `${activeBasePath}/terms` || pathname === `${activeBasePath}/privacy`;
   const isLogin = pathname === `${activeBasePath}/login` || pathname.startsWith(`${activeBasePath}/auth`);
   const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
+  const needsOperationalData = masterRouteNeedsOperationalData(pathname, activeBasePath);
+  const needsExplanationData = masterRouteNeedsExplanationData(pathname, activeBasePath);
+  const needsProgramCatalog = masterRouteNeedsProgramCatalog(pathname, activeBasePath);
+  const needsFavoriteSync = masterRouteNeedsFavoriteSync(pathname, activeBasePath);
   const hideChrome = isOnboarding || isParentView || isPromotionRedeem || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
   const isProtectedRoute = isProtectedMasterRoute(pathname, activeBasePath);
   const routeRequirement = getMasterRouteRequirement(pathname, activeBasePath);
   const isAccessGuardPending =
     isProtectedRoute &&
-    (accessGuard.pathname !== pathname ||
+    (!accessGuard.snapshot ||
       accessGuard.status === 'checking' ||
       accessGuard.status === 'redirecting');
   const isAccessGuardError =
-    isProtectedRoute && accessGuard.pathname === pathname && accessGuard.status === 'error';
+    isProtectedRoute && accessGuard.status === 'error';
   const isAccessGuardDenied =
-    isProtectedRoute && accessGuard.pathname === pathname && accessGuard.status === 'denied';
+    isProtectedRoute && accessGuard.status === 'denied';
   const routeGateDenied =
     isProtectedRoute &&
-    accessGuard.pathname === pathname &&
     accessGuard.status === 'allowed' &&
     !hasRouteCapability(accessGuard.snapshot, routeRequirement.capability);
   const [gateJourneyId, setGateJourneyId] = useState('');
@@ -246,7 +304,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   useEffect(() => {
     if (isLanding || isPublicDocument) return;
     void Promise.all([syncSubscription(), syncMasterProfile()]);
-  }, [isLanding, isPublicDocument, syncMasterProfile, syncSubscription]);
+  }, [accessGuard.userId, isLanding, isPublicDocument, syncMasterProfile, syncSubscription]);
 
   const canBrowseLibrary = accessGuard.snapshot?.canBrowseLibrary === true;
   const canSyncFavorites = accessGuard.snapshot?.canUseLibrary === true;
@@ -256,18 +314,18 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     if (!canBrowseLibrary) return;
     if (pathname === `${activeBasePath}/dashboard`) void loadHomePrograms();
-    else void loadPrograms();
-    if (canSyncFavorites) void syncFavoriteProgramsFromServer();
-  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
+    else if (needsProgramCatalog) void loadPrograms();
+    if (canSyncFavorites && needsFavoriteSync) void syncFavoriteProgramsFromServer();
+  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, needsFavoriteSync, needsProgramCatalog, pathname, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
       if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
       if (isProtectedRoute && accessGuard.status !== 'allowed') return;
       if (!canBrowseLibrary) return;
-      if (pathname === `${activeBasePath}/dashboard`) return;
+      if (pathname === `${activeBasePath}/dashboard` || !needsProgramCatalog) return;
       void reloadPrograms();
-      if (canSyncFavorites) void syncFavoriteProgramsFromServer();
+      if (canSyncFavorites && needsFavoriteSync) void syncFavoriteProgramsFromServer();
     };
     window.addEventListener('focus', refreshProgramsOnFocus);
     document.addEventListener('visibilitychange', refreshProgramsOnFocus);
@@ -275,7 +333,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, needsFavoriteSync, needsProgramCatalog, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -324,7 +382,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     if (isAdmin || isLanding || isPublicDocument || !isProtectedRoute) return;
-    if (accessGuard.pathname !== pathname || accessGuard.status !== 'allowed' || !accessGuard.snapshot) return;
+    if (accessGuard.status !== 'allowed' || !accessGuard.snapshot) return;
     if (!isSession && !isOnboarding && !isParentView && !isPayment && !accessGuard.snapshot.onboardingDone) {
       const next = getSafeMasterReturnPath(currentPathWithQuery);
       router.replace(`${activeBasePath}/onboarding?next=${encodeURIComponent(next)}`);
@@ -333,12 +391,12 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     if (!isProtectedRoute) {
-      setAccessGuard({ pathname, status: 'allowed', snapshot: null, spomatShopAvailable: false });
+      setAccessGuard({ pathname: pathnameRef.current, status: 'allowed', userId: null, snapshot: null, spomatShopAvailable: false });
       return;
     }
 
     let cancelled = false;
-    setAccessGuard({ pathname, status: 'checking', snapshot: null, spomatShopAvailable: false });
+    setAccessGuard({ pathname: pathnameRef.current, status: 'checking', userId: null, snapshot: null, spomatShopAvailable: false });
 
     fetch('/api/spokedu-master/access', {
       cache: 'no-store',
@@ -349,12 +407,13 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
         if (response.ok) {
           const payload = await response.json() as MasterAccessApiResponse;
-          const { ok, allowed, spomatShopAvailable, ...snapshot } = payload;
+          const { ok, allowed, userId, spomatShopAvailable, ...snapshot } = payload;
           void ok;
           void allowed;
           setAccessGuard({
-            pathname,
+            pathname: pathnameRef.current,
             status: 'allowed',
+            userId,
             snapshot: snapshot as MasterAccessSnapshot,
             spomatShopAvailable: spomatShopAvailable === true,
           });
@@ -362,32 +421,49 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         }
 
         if (response.status === 401) {
-          setAccessGuard({ pathname, status: 'redirecting', snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname: pathnameRef.current, status: 'redirecting', userId: null, snapshot: null, spomatShopAvailable: false });
           router.replace(currentLoginRedirectHref());
           return;
         }
 
         if (response.status === 403) {
-          setAccessGuard({ pathname, status: 'denied', snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname: pathnameRef.current, status: 'denied', userId: null, snapshot: null, spomatShopAvailable: false });
           return;
         }
 
-        setAccessGuard({ pathname, status: 'error', snapshot: null, spomatShopAvailable: false });
+        setAccessGuard({ pathname: pathnameRef.current, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
       })
       .catch(() => {
         if (!cancelled) {
-          setAccessGuard({ pathname, status: 'error', snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname: pathnameRef.current, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [accessRetryKey, isProtectedRoute, pathname, router]);
+  }, [accessRetryKey, isProtectedRoute, router]);
 
-  // SPOMOVE session: soft entitlement recheck without flipping to "checking" (no mid-play interrupt).
   useEffect(() => {
-    if (!isSession || !isProtectedRoute) return;
+    if (!isProtectedRoute) return;
+    const { data: { subscription } } = getSupabaseBrowserClient().auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      const nextUserId = session?.user?.id ?? null;
+      if (!shouldInvalidateMasterAccessIdentity(accessGuard.userId, nextUserId)) return;
+      resetProfile();
+      setAccessGuard({ pathname: pathnameRef.current, status: 'checking', userId: null, snapshot: null, spomatShopAvailable: false });
+      if (!nextUserId) {
+        router.replace(currentLoginRedirectHref());
+        return;
+      }
+      setAccessRetryKey((key) => key + 1);
+    });
+    return () => subscription.unsubscribe();
+  }, [accessGuard.userId, isProtectedRoute, resetProfile, router]);
+
+  // Keep one verified access snapshot across protected client-side navigation.
+  // Focus/visibility/interval checks refresh it without blanking the active workflow.
+  useEffect(() => {
+    if (!isProtectedRoute) return;
 
     let cancelled = false;
     const softRecheck = async () => {
@@ -400,30 +476,42 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         if (cancelled) return;
 
         if (response.status === 401) {
-          setAccessGuard({ pathname, status: 'redirecting', snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname, status: 'redirecting', userId: null, snapshot: null, spomatShopAvailable: false });
           router.replace(currentLoginRedirectHref());
           return;
         }
 
         if (response.status === 403) {
-          setAccessGuard({ pathname, status: 'denied', snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname, status: 'denied', userId: null, snapshot: null, spomatShopAvailable: false });
           return;
         }
 
-        if (!response.ok) return;
+        if (!response.ok) {
+          setAccessGuard({ pathname, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
+          return;
+        }
 
         const payload = await response.json() as MasterAccessApiResponse;
-        const { ok, allowed, spomatShopAvailable, ...snapshot } = payload;
+        const { ok, allowed, userId, spomatShopAvailable, ...snapshot } = payload;
         void ok;
         void allowed;
+        if (shouldInvalidateMasterAccessIdentity(accessGuard.userId, userId)) {
+          resetProfile();
+          setAccessGuard({ pathname, status: 'checking', userId: null, snapshot: null, spomatShopAvailable: false });
+          setAccessRetryKey((key) => key + 1);
+          return;
+        }
         setAccessGuard({
           pathname,
           status: 'allowed',
+          userId,
           snapshot: snapshot as MasterAccessSnapshot,
           spomatShopAvailable: spomatShopAvailable === true,
         });
       } catch {
-        // Keep current session UI on transient network errors.
+        if (!cancelled) {
+          setAccessGuard({ pathname, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
+        }
       }
     };
 
@@ -439,7 +527,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', onVisible);
       window.clearInterval(intervalId);
     };
-  }, [isProtectedRoute, isSession, pathname, router]);
+  }, [accessGuard.userId, isProtectedRoute, pathname, resetProfile, router]);
 
   if (isSession) {
     return (
@@ -494,9 +582,13 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
                     snapshot={accessGuard.snapshot}
                     spomatShopAvailable={accessGuard.spomatShopAvailable}
                   >
-                    <OperationalDataProvider>
-                      <ExplanationDataProvider enabled={accessGuard.snapshot.canUseRecords}>{children}</ExplanationDataProvider>
-                    </OperationalDataProvider>
+                    {needsOperationalData ? (
+                      <OperationalDataProvider>
+                        {needsExplanationData ? (
+                          <ExplanationDataProvider enabled={accessGuard.snapshot.canUseRecords}>{children}</ExplanationDataProvider>
+                        ) : children}
+                      </OperationalDataProvider>
+                    ) : children}
                   </MasterAccessProvider>
                 ) : (
                   children

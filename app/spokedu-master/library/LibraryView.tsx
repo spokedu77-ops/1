@@ -368,7 +368,7 @@ function RecommendationShelf({
 export default function LibraryView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { programs, programsLoaded, programsError, reloadPrograms } = useMasterStore();
+  const { programs, programsLoaded, programsLoading, programsError, reloadPrograms } = useMasterStore();
   const profile = useMasterStore((state) => state.profile);
   const ownerId = getFavoritesOwnerId(profile);
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
@@ -550,7 +550,17 @@ export default function LibraryView() {
   const isAdvancedOpen = showAdvanced || filters.length > 0;
 
   if (pool.length === 0) {
-    if (!programsLoaded) return <LibrarySkeleton />;
+    if (!programsLoaded || programsLoading) return <LibrarySkeleton />;
+    if (!programsError) {
+      return (
+        <main data-library-state="empty" className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
+          <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center">
+            <h1 className="text-xl font-semibold text-[color:var(--spm-t)]">등록된 수업이 없습니다.</h1>
+            <p className="mt-3 text-sm font-medium leading-6 text-[color:var(--spm-t2)]">새 수업이 등록되면 이곳에서 확인할 수 있습니다.</p>
+          </section>
+        </main>
+      );
+    }
     const message =
       programsError === 'unauthorized'
         ? '로그인 후 놀이체육을 확인할 수 있습니다.'
@@ -558,7 +568,7 @@ export default function LibraryView() {
           ? '이용 기간이 종료되어 놀이체육을 불러올 수 없습니다. 구독을 시작하면 전체 수업을 이용할 수 있습니다.'
           : '놀이체육을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
-      <main className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
+      <main data-library-state="error" className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-sm">
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
           <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">놀이체육을 불러올 수 없습니다.</h1>
@@ -583,7 +593,7 @@ export default function LibraryView() {
 
   return (
     <>
-      <main className="h-full overflow-y-auto pb-24 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+      <main data-library-state="ready" className="h-full overflow-y-auto pb-24 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
         <MasterPageShell variant="editorial" className="max-w-[1120px]">
         {sessionContext ? <div className="mb-3 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
           <p className="min-w-0 truncate text-xs font-semibold text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>

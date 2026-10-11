@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
 import { MASTER_NAV_ITEMS } from './masterNavLabels';
 import { hasMasterRouteCapability } from './masterRouteAccess';
+import { normalizeMasterAppPath } from './masterPathAlias';
 
 const TAB_ICONS = {
   dashboard: Home,
@@ -39,7 +40,7 @@ export function TabBar({
   basePath?: string;
   snapshot?: MasterAccessSnapshot | null;
 }) {
-  const pathname = usePathname();
+  const pathname = normalizeMasterAppPath(usePathname());
   const router = useRouter();
   const primaryTabs = buildPrimaryTabs(basePath);
 

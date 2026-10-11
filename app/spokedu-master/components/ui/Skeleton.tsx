@@ -101,7 +101,7 @@ export function DashboardSkeleton() {
 
 export function LibrarySkeleton() {
   return (
-    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
+    <div data-library-state="loading" className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <div className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <Skeleton height={12} width={100} className="mb-2" />
         <Skeleton height={42} width={200} className="mb-5" />

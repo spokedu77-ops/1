@@ -33,6 +33,7 @@ export type MasterAccessSnapshot = {
 export type MasterAccessApiResponse = MasterAccessSnapshot & {
   ok: boolean;
   allowed: boolean;
+  userId: string;
   spomatShopAvailable?: boolean;
 };
 
