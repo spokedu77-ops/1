@@ -18,6 +18,8 @@ describe('MASTER BottomSheet viewport ownership', () => {
     expect(source).toContain("isSession ? 'mr-2 pr-2' : 'pr-3'");
     expect(source).toContain('data-sheet-footer');
     expect(source).toContain('shrink-0');
+    expect(source).toContain("footerVariant === 'preview-mobile'");
+    expect(source).toContain('pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden');
     expect(source).not.toContain("hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'");
   });
 

@@ -15,6 +15,13 @@ describe('splitLessonCardTitle', () => {
       subtitle: '',
     });
   });
+
+  it('does not treat a korean parenthetical note as an english subtitle', () => {
+    expect(splitLessonCardTitle('꼬리잡기 (저학년용)')).toEqual({
+      title: '꼬리잡기 (저학년용)',
+      subtitle: '',
+    });
+  });
 });
 
 describe('joinCatalogMeta', () => {
