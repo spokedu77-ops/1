@@ -28,7 +28,11 @@ export function assertQaAuthAllowed(baseUrl, email) {
   }
 }
 
-export async function applyMasterAdminSession(context, baseUrl, email) {
+function emitDiagnostic(onDiagnostic, stage, ok, detail = {}) {
+  onDiagnostic?.({ stage, ok, ...detail });
+}
+
+export async function applyMasterAdminSession(context, baseUrl, email, { onDiagnostic } = {}) {
   const normalizedEmail = email?.trim().toLowerCase();
   if (!normalizedEmail) throw new Error('MASTER QA email is required');
   assertQaAuthAllowed(baseUrl, normalizedEmail);
@@ -38,12 +42,20 @@ export async function applyMasterAdminSession(context, baseUrl, email) {
   const serviceRole = requiredEnv('SUPABASE_SERVICE_ROLE_KEY');
   const service = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
   const { data: usersData, error: usersError } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (usersError) throw new Error(`Could not look up MASTER QA user: ${usersError.message}`);
+  if (usersError) {
+    emitDiagnostic(onDiagnostic, 'qa-user', false);
+    throw new Error(`Could not look up MASTER QA user: ${usersError.message}`);
+  }
   const qaUser = usersData.users.find((user) => user.email?.trim().toLowerCase() === normalizedEmail);
-  if (!qaUser) throw new Error('MASTER QA user does not exist');
+  if (!qaUser) {
+    emitDiagnostic(onDiagnostic, 'qa-user', false);
+    throw new Error('MASTER QA user does not exist');
+  }
   if (qaUser.app_metadata?.spokedu_master_qa !== true) {
+    emitDiagnostic(onDiagnostic, 'qa-user', false);
     throw new Error('Refusing MASTER QA admin auth for a non-QA account');
   }
+  emitDiagnostic(onDiagnostic, 'qa-user', true);
 
   const { data, error } = await service.auth.admin.generateLink({
     type: 'magiclink',
@@ -51,13 +63,18 @@ export async function applyMasterAdminSession(context, baseUrl, email) {
     options: { redirectTo: `${baseUrl.replace(/\/$/, '')}/` },
   });
   if (error || !data?.properties?.action_link) {
+    emitDiagnostic(onDiagnostic, 'otp-link', false);
     throw new Error(`Could not create MASTER QA login link: ${error?.message ?? 'missing action link'}`);
   }
+  emitDiagnostic(onDiagnostic, 'otp-link', true);
 
   const actionUrl = new URL(data.properties.action_link);
   const tokenHash = actionUrl.searchParams.get('token');
   const verificationType = actionUrl.searchParams.get('type') ?? 'magiclink';
-  if (!tokenHash) throw new Error('Could not resolve MASTER QA login token');
+  if (!tokenHash) {
+    emitDiagnostic(onDiagnostic, 'otp-link', false);
+    throw new Error('Could not resolve MASTER QA login token');
+  }
 
   const cookies = [];
   const ssr = createServerClient(supabaseUrl, anonKey, {
@@ -66,22 +83,48 @@ export async function applyMasterAdminSession(context, baseUrl, email) {
       setAll: (nextCookies) => cookies.splice(0, cookies.length, ...nextCookies),
     },
   });
-  const { error: verifyError } = await ssr.auth.verifyOtp({
+  const { data: verifyData, error: verifyError } = await ssr.auth.verifyOtp({
     token_hash: tokenHash,
     type: verificationType,
   });
-  if (verifyError) throw new Error(`MASTER QA OTP verification failed: ${verifyError.message}`);
+  if (verifyError) {
+    emitDiagnostic(onDiagnostic, 'otp-session', false);
+    throw new Error(`MASTER QA OTP verification failed: ${verifyError.message}`);
+  }
+  if (!verifyData?.session || !verifyData?.user) {
+    emitDiagnostic(onDiagnostic, 'otp-session', false);
+    throw new Error('MASTER QA OTP verification returned no session or user');
+  }
+  emitDiagnostic(onDiagnostic, 'otp-session', true);
+
+  const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
+  const expectedCookiePrefix = `sb-${projectRef}-auth-token`;
+  if (cookies.length === 0 || cookies.some((cookie) => !cookie.name.startsWith(expectedCookiePrefix))) {
+    emitDiagnostic(onDiagnostic, 'cookie-created', false, { count: cookies.length, projectRefMatches: false });
+    throw new Error('MASTER QA SSR cookie does not match the configured Supabase project');
+  }
+  emitDiagnostic(onDiagnostic, 'cookie-created', true, { count: cookies.length, projectRefMatches: true });
 
   await context.addCookies(cookies.map((cookie) => ({
     name: cookie.name,
     value: cookie.value,
     url: baseUrl,
     httpOnly: cookie.options?.httpOnly,
-    secure: cookie.options?.secure,
+    secure: new URL(baseUrl).protocol === 'https:' ? cookie.options?.secure : false,
     sameSite: cookie.options?.sameSite === 'strict'
       ? 'Strict'
       : cookie.options?.sameSite === 'none'
         ? 'None'
         : 'Lax',
   })));
+
+  const appliedCookies = await context.cookies(baseUrl);
+  const appliedNames = new Set(appliedCookies.map((cookie) => cookie.name));
+  if (cookies.some((cookie) => !appliedNames.has(cookie.name))) {
+    emitDiagnostic(onDiagnostic, 'browser-cookie', false, { count: cookies.length, projectRefMatches: true });
+    throw new Error('MASTER QA SSR cookie was not applied to the BrowserContext');
+  }
+  emitDiagnostic(onDiagnostic, 'browser-cookie', true, { count: cookies.length, projectRefMatches: true });
+
+  return { userId: verifyData.user.id, projectRef, cookieCount: cookies.length };
 }

@@ -1,6 +1,5 @@
 import nextEnv from '@next/env';
-import { applyMasterStorageState, assertMasterQaAccess, getMasterStorageStatePath } from './lib/spokedu-master-auth-state.mjs';
-import { applyMasterAdminSession } from './lib/spokedu-master-admin-auth.mjs';
+import { ensureMasterQaAccess, getMasterStorageStatePath } from './lib/spokedu-master-auth-state.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -348,12 +347,10 @@ async function assertDevServerReachable() {
 }
 
 async function authenticateMasterQa(context) {
-  try {
-    await applyMasterStorageState(context);
-  } catch {
-    await applyMasterAdminSession(context, BASE, QA_ID);
-  }
-  await assertMasterQaAccess(context, BASE);
+  await ensureMasterQaAccess(context, BASE, {
+    email: QA_ID,
+    onDiagnostic: ({ stage, ok, status }) => logStep(`[auth:${stage}] ${ok ? 'PASS' : 'FAIL'}${status ? ` HTTP ${status}` : ''}`),
+  });
 }
 
 async function loginWithMockCredentials(context) {

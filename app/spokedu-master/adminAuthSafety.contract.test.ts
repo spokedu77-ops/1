@@ -40,4 +40,20 @@ describe('SPOKEDU MASTER QA admin auth safety', () => {
     expect(source.indexOf('spokedu_master_qa !== true')).toBeLessThan(source.indexOf('service.auth.admin.generateLink'));
     expect(source).not.toMatch(/console\.(?:log|info|debug).*serviceRole|console\.(?:log|info|debug).*token/i);
   });
+
+  it('verifies the OTP result and configured project cookie before applying it', () => {
+    const source = readFileSync(join(process.cwd(), 'scripts/lib/spokedu-master-admin-auth.mjs'), 'utf8');
+    expect(source).toContain('verifyData?.session');
+    expect(source).toContain('verifyData?.user');
+    expect(source).toContain('expectedCookiePrefix');
+    expect(source).toContain('context.cookies(baseUrl)');
+  });
+
+  it('recovers an unauthorized stored session only once before server preflight', () => {
+    const source = readFileSync(join(process.cwd(), 'scripts/lib/spokedu-master-auth-state.mjs'), 'utf8');
+    expect(source).toContain('status !== 401');
+    expect(source).toContain('clearMasterQaCookies(context)');
+    expect(source.match(/applyMasterAdminSession\(/g)).toHaveLength(1);
+    expect(source).toContain("stage: 'server-auth'");
+  });
 });
