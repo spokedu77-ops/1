@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -210,7 +210,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-export function AppShell({ children, basePath = '/spokedu-master' }: { children: ReactNode; basePath?: string }) {
+function AppShellContent({ children, basePath = '/spokedu-master' }: { children: ReactNode; basePath?: string }) {
   const pathname = normalizeMasterAppPath(usePathname());
   const searchParams = useSearchParams();
   const activeBasePath = pathname.startsWith('/spokedu-lab/') ? '/spokedu-lab' : basePath;
@@ -597,5 +597,13 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         </div>
       </div>
     </div>
+  );
+}
+
+export function AppShell(props: { children: ReactNode; basePath?: string }) {
+  return (
+    <Suspense fallback={<MasterAccessCheckingState />}>
+      <AppShellContent {...props} />
+    </Suspense>
   );
 }
