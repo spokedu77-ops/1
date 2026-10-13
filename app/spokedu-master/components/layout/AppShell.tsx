@@ -313,14 +313,14 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, []);
 
   useEffect(() => {
-    if (!accessGuard.snapshot || !profile) return;
+    if (accessGuard.pathname !== pathname || !accessGuard.snapshot || !profile) return;
     const serverFields = {
       onboardingDone: accessGuard.snapshot.onboardingDone,
     };
     if (profile.onboardingDone === serverFields.onboardingDone) return;
     setProfile(serverFields);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onboardingDone만 서버와 동기화
-  }, [accessGuard.snapshot?.onboardingDone, profile, setProfile]);
+  }, [accessGuard.pathname, accessGuard.snapshot?.onboardingDone, pathname, profile, setProfile]);
 
   useEffect(() => {
     if (isAdmin || isLanding || isPublicDocument || !isProtectedRoute) return;

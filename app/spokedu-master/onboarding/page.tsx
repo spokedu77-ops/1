@@ -48,7 +48,8 @@ export default function OnboardingPage() {
   const serverOnboardingDone = accessContext?.snapshot.onboardingDone ?? false;
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
-  const [saving, setSaving] = useState(false);
+  const [completionState, setCompletionState] = useState<'idle' | 'saving' | 'verifying' | 'navigating' | 'navigation-error'>('idle');
+  const [profileSaved, setProfileSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [role, setRole] = useState<UserRole>(profile?.role ?? 'teacher');
@@ -74,8 +75,37 @@ export default function OnboardingPage() {
     setter(list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
   };
 
-  const finish = () => {
+  const saving = completionState === 'saving' || completionState === 'verifying' || completionState === 'navigating';
+
+  const verifyAccessAndNavigate = async () => {
+    setCompletionState('verifying');
+    const accessResponse = await fetch('/api/spokedu-master/access', {
+      cache: 'no-store',
+      credentials: 'include',
+    });
+    if (!accessResponse.ok) {
+      throw new Error(accessResponse.status === 401 ? 'session expired' : 'access verification failed');
+    }
+    const access = await accessResponse.json() as { onboardingDone?: boolean };
+    if (access.onboardingDone !== true) throw new Error('onboarding access not updated');
+
+    const destination = getSafeMasterLoginReturnPath(searchParams.get('next'));
+    setCompletionState('navigating');
+    window.location.replace(destination);
+    window.setTimeout(() => setCompletionState('navigation-error'), 3_000);
+  };
+
+  const finish = async () => {
     if (saving) return;
+    if (profileSaved) {
+      setSaveError(null);
+      try {
+        await verifyAccessAndNavigate();
+      } catch {
+        setCompletionState('navigation-error');
+      }
+      return;
+    }
     const payload = {
       name: name.trim() || '선생님',
       school: school.trim(),
@@ -84,36 +114,44 @@ export default function OnboardingPage() {
       programTypes,
       onboardingDone: true,
     };
-    setSaving(true);
+    let profileWasSaved = false;
+    setCompletionState('saving');
     setSaveError(null);
-    void fetch('/api/spokedu-master/profile', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          const json = await response.json().catch(() => ({})) as { error?: string };
-          throw new Error(json.error ?? 'profile save failed');
-        }
-        setProfile({
-          name: payload.name,
-          school: payload.school,
-          role,
-          centerId: null,
-          centerName: null,
-          ageGroups,
-          programTypes,
-          onboardingDone: true,
-        });
-        router.replace(searchParams.has('next') ? returnPath : '/spokedu-lab/dashboard');
-      })
-      .catch(() => {
-        setSaveError('시작 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-      })
-      .finally(() => {
-        setSaving(false);
+    try {
+      const response = await fetch('/api/spokedu-master/profile', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
       });
+      const json = await response.json().catch(() => ({})) as {
+        error?: string;
+        data?: { onboardingDone?: boolean } | null;
+      };
+      if (!response.ok) throw new Error(json.error ?? 'profile save failed');
+      if (json.data?.onboardingDone !== true) throw new Error('profile save was not confirmed');
+
+      setProfile({
+        name: payload.name,
+        school: payload.school,
+        role,
+        centerId: null,
+        centerName: null,
+        ageGroups,
+        programTypes,
+        onboardingDone: true,
+      });
+      profileWasSaved = true;
+      setProfileSaved(true);
+      await verifyAccessAndNavigate();
+    } catch {
+      if (profileWasSaved) {
+        setCompletionState('navigation-error');
+      } else {
+        setCompletionState('idle');
+        setSaveError('시작 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    }
   };
 
   return (
@@ -195,8 +233,13 @@ export default function OnboardingPage() {
                     {saveError}
                   </p>
                 ) : null}
+                {profileSaved && completionState === 'navigation-error' ? (
+                  <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-grn-a14)', color: 'var(--spm-t)' }}>
+                    가입 정보는 저장되었습니다. 이동을 다시 시도해 주세요.
+                  </p>
+                ) : null}
                 <button type="button" onClick={finish} disabled={saving} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none disabled:opacity-50">
-                  {saving ? '시작하는 중...' : 'LAB 시작하기'}
+                  {completionState === 'navigation-error' && profileSaved ? '대시보드 이동 다시 시도' : saving ? '시작하는 중...' : 'LAB 시작하기'}
                 </button>
               </div>
             ) : null}

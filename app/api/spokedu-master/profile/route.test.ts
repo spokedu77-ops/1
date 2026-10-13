@@ -36,6 +36,7 @@ describe('SPOKEDU MASTER profile endpoint', () => {
     getSpokeduMasterProfile.mockReset();
     upsertSpokeduMasterProfile.mockReset();
     recordMasterFunnelEvent.mockReset();
+    recordMasterFunnelEvent.mockResolvedValue({ stored: true, error: null });
   });
 
   it('returns null profile data when no row exists', async () => {
@@ -79,5 +80,25 @@ describe('SPOKEDU MASTER profile endpoint', () => {
       name: 'onboarding_completed',
       userId: 'user-1',
     }));
+  });
+
+  it('does not delay a successful profile response for analytics recording', async () => {
+    requireSpokeduMasterSession.mockResolvedValue({ ok: true, userId: 'user-1', isAdmin: false });
+    upsertSpokeduMasterProfile.mockResolvedValue({
+      row: { name: 'Teacher' },
+      error: null,
+    });
+    recordMasterFunnelEvent.mockReturnValue(new Promise(() => undefined));
+
+    const response = await PATCH(new Request('http://localhost/api/spokedu-master/profile', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Teacher', onboardingDone: true }),
+    }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      data: expect.objectContaining({ name: 'Teacher', onboardingDone: true }),
+    });
   });
 });

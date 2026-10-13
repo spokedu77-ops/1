@@ -20,7 +20,10 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
   it('keeps onboarding to account setup only', () => {
     const source = read('app/spokedu-master/onboarding/page.tsx');
 
-    expect(source).toContain("router.replace(searchParams.has('next') ? returnPath : '/spokedu-lab/dashboard')");
+    expect(source).toContain("const destination = getSafeMasterLoginReturnPath(searchParams.get('next'))");
+    expect(source).toContain("if (access.onboardingDone !== true)");
+    expect(source).toContain('window.location.replace(destination)');
+    expect(source).toContain("completionState === 'navigation-error'");
     expect(source).toContain('if (serverOnboardingDone)');
     expect(source).not.toContain('serverOnboardingDone || profile?.onboardingDone');
     expect(source).toContain('LAB 시작하기');

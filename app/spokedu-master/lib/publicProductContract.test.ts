@@ -74,7 +74,7 @@ describe('MASTER public product contract', () => {
 
   it('wires real MASTER handoff paths', () => {
     const { handoff } = getPublicProductContract();
-    expect(handoff.freeStartHref).toBe('/spokedu-lab/login?next=/spokedu-lab/onboarding');
+    expect(handoff.freeStartHref).toBe('/spokedu-lab/login?next=/spokedu-lab/dashboard');
     expect(handoff.loginHref).toBe('/spokedu-lab/login?next=/spokedu-lab/dashboard');
     expect(handoff.landingHref).toBe('/spokedu-lab');
     expect(handoff.paymentPlanHref('lite')).toBe('/spokedu-lab/payment?plan=lite');

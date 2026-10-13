@@ -42,6 +42,11 @@ function normalizeLabReturnPath(pathname: string) {
     : pathname;
 }
 
+function isOnboardingSelfReturn(pathname: string) {
+  const normalizedPathname = normalizeLabReturnPath(pathname);
+  return /^\/spokedu-master\/onboarding\/*$/.test(normalizedPathname);
+}
+
 export function getSafeMasterLoginReturnPath(
   value: string | null | undefined,
   fallback = MASTER_LOGIN_FALLBACK,
@@ -56,6 +61,7 @@ export function getSafeMasterLoginReturnPath(
   }
 
   if (parsed.origin !== 'https://spokedu.local') return fallback;
+  if (isOnboardingSelfReturn(parsed.pathname)) return MASTER_LOGIN_FALLBACK;
   const normalizedPathname = normalizeLabReturnPath(parsed.pathname);
   if (
     !SAFE_MASTER_LOGIN_RETURN_EXACT.has(normalizedPathname)

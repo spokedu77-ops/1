@@ -108,7 +108,7 @@ export function getPublicPlanComparison(): readonly PublicPlanComparisonRow[] {
 
 const HANDOFF_PATHS = {
   landing: '/spokedu-lab',
-  onboardingLogin: '/spokedu-lab/login?next=/spokedu-lab/onboarding',
+  onboardingLogin: '/spokedu-lab/login?next=/spokedu-lab/dashboard',
   dashboardLogin: '/spokedu-lab/login?next=/spokedu-lab/dashboard',
   payment: '/spokedu-lab/payment',
   shop: '/spokedu-lab/shop',

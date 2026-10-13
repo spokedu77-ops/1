@@ -19,7 +19,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
   it('owns /spokedu-lab and permanently redirects the legacy landing', () => {
     expect(canonicalPage).toContain('CommercialLanding');
     expect(canonicalPage).toContain("`${SITE_URL}/spokedu-lab`");
-    expect(legacyPage).toContain("permanentRedirect('/spokedu-lab')");
+    expect(legacyPage).toContain("permanentRedirect('/spokedu-lab?view=landing')");
     expect(nextConfig).toContain('{ source: "/subscription", destination: "/spokedu-lab", permanent: true }');
     expect(commercialPage).toContain('<MasterLocalNav');
     expect(commercialPage).toContain('<LandingFooter');
@@ -34,7 +34,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
     expect(sections).toContain('product.plans.map');
     expect(sections).toContain('product.comparison.map');
     expect(getPublicProductContract().plans.map((plan) => plan.code)).toEqual(['free', 'lite', 'premium']);
-    expect(getPublicProductContract().handoff.freeStartHref).toBe('/spokedu-lab/login?next=/spokedu-lab/onboarding');
+    expect(getPublicProductContract().handoff.freeStartHref).toBe('/spokedu-lab/login?next=/spokedu-lab/dashboard');
     expect(getPublicProductContract().handoff.loginHref).toBe('/spokedu-lab/login?next=/spokedu-lab/dashboard');
     expect(getPublicProductContract().handoff.paymentPlanHref('lite')).toBe('/spokedu-lab/payment?plan=lite');
     expect(getPublicProductContract().handoff.paymentPlanHref('premium')).toBe('/spokedu-lab/payment?plan=premium');

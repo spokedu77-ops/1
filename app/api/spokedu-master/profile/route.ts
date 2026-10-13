@@ -59,12 +59,21 @@ export async function PATCH(request: Request) {
   }
 
   if (input.onboardingDone) {
-    await recordMasterFunnelEvent({
+    void recordMasterFunnelEvent({
       service: supabase,
       name: 'onboarding_completed',
       userId: session.userId,
       context: { surface: 'onboarding' },
-    });
+    }).then((result) => {
+      if (!result.error) return;
+      return reportError(result.error, {
+        context: 'spokedu_master.profile',
+        tags: { method: 'PATCH', stage: 'funnel_event' },
+      });
+    }).catch((error) => reportError(error, {
+      context: 'spokedu_master.profile',
+      tags: { method: 'PATCH', stage: 'funnel_event' },
+    }));
   }
 
   return privateNoStoreJson({

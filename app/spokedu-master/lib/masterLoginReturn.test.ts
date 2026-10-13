@@ -16,7 +16,7 @@ describe('SPOKEDU MASTER safe login return', () => {
     '/spokedu-master/activity', '/spokedu-master/classes/class-1',
     '/spokedu-master/spomove', '/spokedu-master/profile',
     '/spokedu-master/subscription', '/spokedu-master/payment',
-    '/spokedu-master/onboarding', '/spokedu-master/shop',
+    '/spokedu-master/shop',
     '/spokedu-master/promotions/redeem',
   ])('preserves an approved internal deep-link: %s', (path) => {
     expect(getSafeMasterLoginReturnPath(path)).toBe(path);
@@ -32,6 +32,16 @@ describe('SPOKEDU MASTER safe login return', () => {
     expect(getSafeMasterLoginReturnPath(path)).toBe('/spokedu-lab/dashboard');
   });
 
+  it.each([
+    '/spokedu-lab/onboarding',
+    '/spokedu-lab/onboarding/',
+    '/spokedu-lab/onboarding///?next=%2Fspokedu-lab%2Flibrary',
+    '/spokedu-master/onboarding',
+    '/spokedu-master/onboarding/?source=legacy',
+  ])('normalizes an onboarding self-return to the LAB dashboard: %s', (path) => {
+    expect(getSafeMasterLoginReturnPath(path)).toBe('/spokedu-lab/dashboard');
+  });
+
   it('strips sensitive auth and payment query keys while preserving safe context', () => {
     expect(getSafeMasterLoginReturnPath(
       '/spokedu-master/payment/success?paymentKey=pk&orderId=order&authKey=auth&customerKey=customer&plan=premium&q=safe',
@@ -44,6 +54,18 @@ describe('SPOKEDU MASTER safe login return', () => {
     expect(buildMasterLoginHref(path)).toBe(
       '/spokedu-lab/login?next=%2Fspokedu-lab%2Flibrary%3Fsource%3Dhome',
     );
+  });
+
+  it('preserves the requested LAB library destination through incomplete and completed entry', () => {
+    const next = '/spokedu-lab/library?source=login';
+    expect(resolveMasterEntryDestination(
+      { authenticated: true, onboardingDone: false, isAdmin: false },
+      next,
+    )).toBe('/spokedu-lab/onboarding?next=%2Fspokedu-lab%2Flibrary%3Fsource%3Dlogin');
+    expect(resolveMasterEntryDestination(
+      { authenticated: true, onboardingDone: true, isAdmin: false },
+      next,
+    )).toBe(next);
   });
 
   it('returns to promotion redemption without carrying its one-time token through login', () => {
