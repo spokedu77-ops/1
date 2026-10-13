@@ -6,6 +6,8 @@ import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
 import { isMasterPremiumAssignedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { FREE_PREVIEW_PROGRAM_IDS } from '@/app/spokedu-master/lib/commercialProgramAccess';
+import { normalizeSpomoveHomeFeaturedSlots, SPOMOVE_HOME_FEATURED_PACK_ID } from '@/app/lib/spomove/spomoveOfficialAssets';
+import { resolveLiteSpomoveTrialPresetId } from '@/app/spokedu-master/lib/spomoveTrialAccess';
 
 const EXPIRED_ACCESS_MESSAGE =
   '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 이용권을 다시 선택해 주세요.';
@@ -47,6 +49,7 @@ export type SpokeduMasterAccessSnapshot = {
   canUseAttendance: boolean;
   canUseRecords: boolean;
   canUseSpomove: boolean;
+  spomoveTrialPresetId: string | null;
   entitlementSource: 'none' | 'billing' | 'promotion' | 'admin';
   promotionalPlan: 'lite' | 'premium' | null;
   promotionalEndsAt: string | null;
@@ -237,6 +240,7 @@ export function buildSpokeduMasterAccessSnapshot(input: {
   grant?: SpokeduMasterEntitlementGrantRow | null;
   isAdmin: boolean;
   onboardingDone?: boolean;
+  spomoveTrialPresetId?: string | null;
 }): SpokeduMasterAccessSnapshot {
   if (input.isAdmin) {
     return {
@@ -251,6 +255,7 @@ export function buildSpokeduMasterAccessSnapshot(input: {
       entitlementSource: 'admin',
       promotionalPlan: null,
       promotionalEndsAt: null,
+      spomoveTrialPresetId: null,
       ...buildCapabilities('team', 'active', true),
     };
   }
@@ -276,6 +281,9 @@ export function buildSpokeduMasterAccessSnapshot(input: {
     entitlementSource: entitlement.source,
     promotionalPlan: input.grant?.plan ?? null,
     promotionalEndsAt: input.grant?.ends_at ?? null,
+    spomoveTrialPresetId: plan === 'lite' && subscriptionStatus === 'active'
+      ? input.spomoveTrialPresetId ?? null
+      : null,
     ...buildCapabilities(plan, subscriptionStatus, false),
   };
 }
@@ -296,11 +304,23 @@ export function applyMasterPremiumEntitlement(
     entitlementSource: 'none',
     promotionalPlan: null,
     promotionalEndsAt: null,
+    spomoveTrialPresetId: null,
     ...buildCapabilities('premium', 'active', false),
   };
 }
 
 type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
+
+export async function getConfiguredLiteSpomoveTrialPresetId(serviceSupabase: ServiceSupabase) {
+  const { data, error } = await serviceSupabase
+    .from('think_asset_packs')
+    .select('assets_json')
+    .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
+    .maybeSingle();
+  if (error) return { presetId: null, error };
+  const slots = normalizeSpomoveHomeFeaturedSlots(data?.assets_json);
+  return { presetId: resolveLiteSpomoveTrialPresetId(slots), error: null };
+}
 
 export async function getActiveSpokeduMasterEntitlementGrant(
   serviceSupabase: ServiceSupabase,
@@ -495,10 +515,11 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
     }
 
     const serviceSupabase = getServiceSupabase();
-    const [{ row: subscription, error }, { row: grant, error: grantError }, { row: profile, error: profileError }] = await Promise.all([
+    const [{ row: subscription, error }, { row: grant, error: grantError }, { row: profile, error: profileError }, trial] = await Promise.all([
       ensureSpokeduMasterEntitlement(serviceSupabase, user.id),
       getActiveSpokeduMasterEntitlementGrant(serviceSupabase, user.id),
       getSpokeduMasterProfile(serviceSupabase, user.id),
+      getConfiguredLiteSpomoveTrialPresetId(serviceSupabase),
     ]);
 
     if (error || grantError || profileError) {
@@ -528,6 +549,7 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
         grant,
         isAdmin: false,
         onboardingDone,
+        spomoveTrialPresetId: trial.error ? null : trial.presetId,
       }),
     };
   } catch (err) {
@@ -560,6 +582,28 @@ export async function requireSpokeduMasterCapability(
     return {
       ok: false,
       response: NextResponse.json({ error }, { status: 403 }),
+    };
+  }
+  return {
+    ok: true,
+    userId: access.userId,
+    isAdmin: access.snapshot.isAdmin,
+    plan: access.snapshot.isAdmin ? 'admin' : access.snapshot.plan as MasterPlan,
+    canUseLibrary: access.snapshot.canUseLibrary,
+  };
+}
+
+export async function requireSpokeduMasterSpomovePresetAccess(presetId: string): Promise<MasterAccessResult> {
+  const access = await getSpokeduMasterAccessSnapshot();
+  if (!access.ok) return access;
+  const allowed = access.snapshot.canUseSpomove
+    || (access.snapshot.plan === 'lite'
+      && access.snapshot.subscriptionStatus === 'active'
+      && access.snapshot.spomoveTrialPresetId === presetId);
+  if (!allowed) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'SPOMOVE 이용 권한이 없습니다.' }, { status: 403 }),
     };
   }
   return {

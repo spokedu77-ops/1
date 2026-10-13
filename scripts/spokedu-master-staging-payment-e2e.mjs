@@ -1,4 +1,5 @@
 import nextEnv from '@next/env';
+import { applyMasterAdminSession } from './lib/spokedu-master-admin-auth.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -8,15 +9,10 @@ const MANUAL_ONLY = process.argv.includes('--manual-only');
 const MOCK_ACTIVATION = process.argv.includes('--mock-activation');
 const SKIP_SERVER = process.argv.includes('--skip-server-check');
 
-const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
 const PAYMENT_QA_ID =
   process.env.SPOKEDU_MASTER_QA_SECONDARY_ID ||
   process.env.SPM_QA_EXPIRED_EMAIL ||
   'spm.qa.expired@spokedu.test';
-const PAYMENT_QA_PASSWORD =
-  process.env.SPOKEDU_MASTER_QA_SECONDARY_PASSWORD ||
-  process.env.SPM_QA_EXPIRED_PASSWORD ||
-  QA_PASSWORD;
 const PLAN = process.env.SPOKEDU_MASTER_PAYMENT_E2E_PLAN === 'premium' ? 'premium' : 'lite';
 const AUTH_KEY = process.env.SPOKEDU_MASTER_PAYMENT_E2E_AUTH_KEY || '';
 const CUSTOMER_KEY = process.env.SPOKEDU_MASTER_PAYMENT_E2E_CUSTOMER_KEY || '';
@@ -55,22 +51,8 @@ async function assertServerReachable() {
   assert(response && response.status < 500, `dev server not reachable at ${BASE}`);
 }
 
-async function login(context, { id = PAYMENT_QA_ID, password = PAYMENT_QA_PASSWORD, next = `/spokedu-master/payment?plan=${PLAN}` } = {}) {
-  const page = await context.newPage();
-  await page.goto(`${BASE}/login?next=${encodeURIComponent(next)}`, {
-    waitUntil: 'domcontentloaded',
-  });
-  const passwordInput = page.locator('input[type="password"]').first();
-  if ((await passwordInput.count()) === 0) {
-    await page.locator('[role="tab"]').nth(1).waitFor({ state: 'visible', timeout: 10_000 });
-    await page.locator('[role="tab"]').nth(1).click();
-  }
-  await passwordInput.waitFor({ state: 'visible', timeout: 10_000 });
-  await page.locator('input[type="text"], input[type="email"]').first().fill(id);
-  await passwordInput.fill(password);
-  await page.locator('button[type="submit"]').click();
-  await page.waitForURL(/\/spokedu-master\//, { timeout: 90_000, waitUntil: 'domcontentloaded' });
-  await page.close();
+async function login(context, { id = PAYMENT_QA_ID } = {}) {
+  await applyMasterAdminSession(context, BASE, id);
 }
 
 async function fetchJson(context, path) {
@@ -142,7 +124,7 @@ async function runMockActivation(context, plan) {
   });
   await page.route('**/api/spokedu-master/access', async (route) => {
     accessCalls += 1;
-    if (accessCalls === 1) {
+    if (accessCalls === 2) {
       await route.fulfill({
         status: 403,
         contentType: 'application/json',
@@ -170,7 +152,7 @@ async function runMockActivation(context, plan) {
       }),
     });
   });
-  await page.route('**/spokedu-master/library', async (route) => {
+  await page.route('**/spokedu-lab/library', async (route) => {
     if (route.request().resourceType() !== 'document') {
       await route.fallback();
       return;
@@ -193,12 +175,12 @@ async function runMockActivation(context, plan) {
     throw new Error(`payment success UI missing (url=${page.url()}, body=${body.slice(0, 500).replace(/\s+/g, ' ')}): ${error instanceof Error ? error.message : error}`);
   }
   assert(billingCalls === 1, `billing/issue mock was called ${billingCalls} times`);
-  assert(accessCalls >= 2, `access polling mock was called ${accessCalls} times`);
+  assert(accessCalls >= 3, `access polling mock was called ${accessCalls} times`);
 
-  const libraryLink = page.locator('a[href="/spokedu-master/library"]').first();
+  const libraryLink = page.locator('a[href="/spokedu-lab/library"]').first();
   await libraryLink.waitFor({ state: 'visible', timeout: 10_000 });
   const href = await libraryLink.getAttribute('href');
-  assert(href === '/spokedu-master/library', 'success CTA does not point to library');
+  assert(href === '/spokedu-lab/library', 'success CTA does not point to library');
   log('mock-activation', `success UI + library CTA ok (plan=${plan}, no Toss)`);
   await page.close();
 }
@@ -229,6 +211,7 @@ async function main() {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     try {
+      await applyMasterAdminSession(context, BASE, PAYMENT_QA_ID);
       await runMockActivation(context, PLAN);
       console.log(JSON.stringify({
         ok: true,
@@ -244,8 +227,7 @@ async function main() {
     }
   }
 
-  assert(QA_PASSWORD, 'SPOKEDU_MASTER_QA_PASSWORD (or SPM_QA_PASSWORD) is required');
-  assert(PAYMENT_QA_ID && PAYMENT_QA_PASSWORD, 'payment QA credentials are required (secondary/expired account)');
+  assert(PAYMENT_QA_ID, 'payment QA email is required (secondary/expired account)');
   assert(isTestTossKey(TOSS_CLIENT), 'NEXT_PUBLIC_TOSS_CLIENT_KEY must be a Toss test key');
   assert(isTestTossKey(TOSS_SECRET), 'TOSS_SECRET_KEY must be a Toss test key');
 
@@ -297,7 +279,7 @@ async function main() {
 
       const access = await verifyAccessAfterPayment(context, PLAN);
       const libraryPage = await context.newPage();
-      await libraryPage.goto(`${BASE}/spokedu-master/library`, { waitUntil: 'domcontentloaded' });
+      await libraryPage.goto(`${BASE}/spokedu-lab/library`, { waitUntil: 'domcontentloaded' });
       await libraryPage.waitForLoadState('networkidle').catch(() => undefined);
       const libraryText = await libraryPage.locator('body').innerText();
       assert(!/이용권이 필요/.test(libraryText), 'library still gated after payment');

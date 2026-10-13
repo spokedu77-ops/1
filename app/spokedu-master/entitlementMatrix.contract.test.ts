@@ -149,7 +149,7 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(nav).toContain("capability: 'classTools'");
     expect(tabBar).toContain('hasMasterRouteCapability');
     expect(statusBar).toContain('hasMasterRouteCapability');
-    expect(appShell).toContain('hasMasterRouteCapability');
+    expect(appShell).toContain('hasMasterPathAccess');
     expect(appShell).toContain('canBrowseLibrary');
     expect(appShell).toContain('canSyncFavorites');
     expect(routeAccess).toContain('snapshot.canUseLibrary');
@@ -164,7 +164,8 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     const gate = read('app/spokedu-master/components/ui/SubscriptionGateWall.tsx');
     expect(gate).toContain('수업 기록은 Lite에서 이용할 수 있습니다');
     expect(gate).toContain('이용권이 만료되어도 기존 데이터는 유지됩니다');
-    expect(gate).toContain('SPOMOVE는 프리미엄에서 이용할 수 있습니다');
+    expect(gate).toContain('전체 SPOMOVE는 프리미엄에서 이용할 수 있습니다');
+    expect(gate).toContain('관리자 지정 주간 체험 1개');
     expect(gate).toContain('기본 수업 도구는 Free에서도 사용할 수 있습니다');
     expect(gate).toContain('spm-btn-primary');
   });

@@ -1,3 +1,4 @@
+import { getOrganizationSameAsUrls } from '../data/brand';
 import { seoMeta } from '../data/seo';
 import { SPOKEDU_IMAGES } from '../data/images';
 import { getSpokeduSiteUrl } from '../lib/site-url';
@@ -7,6 +8,8 @@ export function HomeStructuredData() {
   const siteUrl = getSpokeduSiteUrl();
   const homeUrl = `${siteUrl}/`;
   const heroImage = `${siteUrl}${SPOKEDU_IMAGES.home.hero.src}`;
+  const logoImage = `${siteUrl}${SPOKEDU_IMAGES.brand.logo.src}`;
+  const sameAs = [...getOrganizationSameAsUrls()];
 
   const graph = {
     '@context': 'https://schema.org',
@@ -17,8 +20,9 @@ export function HomeStructuredData() {
         name: '스포키듀',
         alternateName: ['SPOKEDU', '스포키듀'],
         url: homeUrl,
-        logo: heroImage,
+        logo: logoImage,
         image: heroImage,
+        sameAs,
         description: seoMeta.home.description,
       },
       {

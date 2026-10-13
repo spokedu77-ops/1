@@ -72,6 +72,8 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
+import { canAccessSpomovePreset } from '../lib/spomoveTrialAccess';
+import { resolveDashboardPrimaryAction } from './dashboardPrimaryAction';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
 import { buildClassToolHref, getClassToolDefinition, type ClassToolId } from '../lib/classTools';
 import {
@@ -329,7 +331,7 @@ function FirstStartGuide({ canUseAttendance, onFreePreview }: { canUseAttendance
       <p className="mt-2 max-w-xl text-[15px] font-normal leading-6 text-slate-600">
         {canUseAttendance
           ? '콘텐츠부터 찾아도, 수업반부터 준비해도 같은 준비 흐름으로 이어집니다.'
-          : '이번 주 첫 무료 수업 1개를 빠르게 미리보고, Library를 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
+          : '이번 주 첫 무료 수업 1개를 빠르게 미리보고, 놀이체육을 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
       </p>
       <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
         {firstStartPaths.map(({ title, description, href }) => {
@@ -364,6 +366,7 @@ function SpomoveCard({
   favoriteEnabled,
   onFavorite,
   locked,
+  liteTrial = false,
   priority = false,
 }: {
   preset: OfficialSpomovePreset;
@@ -375,6 +378,7 @@ function SpomoveCard({
   favoriteEnabled: boolean;
   onFavorite: () => void;
   locked: boolean;
+  liteTrial?: boolean;
   priority?: boolean;
 }) {
   const displayModel = getHomeSpomoveShelfCopy(preset, contentOverride);
@@ -418,6 +422,9 @@ function SpomoveCard({
       )}
       {locked ? (
         <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-[6px] bg-violet-600 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">Premium</span>
+      ) : null}
+      {liteTrial ? (
+        <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-[6px] bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">Lite 주간 체험</span>
       ) : null}
       <Link href={cardHref} data-spm-spomove-card-action="start" aria-label={`${displayModel.title} ${locked ? 'Premium 이용 안내' : '바로 시작'}`} className="absolute bottom-1 right-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
         <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100"><Play className="h-3.5 w-3.5 fill-current" aria-hidden /></span>
@@ -703,7 +710,8 @@ function EntitledDashboardView() {
     homeHeroCacheBust,
   } = assetPacks;
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
-  const guideVideo = useSpomoveGuideVideo(previewSpomove?.id ?? null, isPremium);
+  const previewSpomoveAllowed = canAccessSpomovePreset(accessSnapshot, previewSpomove?.id);
+  const guideVideo = useSpomoveGuideVideo(previewSpomove?.id ?? null, previewSpomoveAllowed);
   const launchMode = usePreferredLaunchMode();
 
   useEffect(() => {
@@ -831,9 +839,15 @@ function EntitledDashboardView() {
   const programPool = programs;
   const weeklyPrograms = useMemo(() => selectWeeklyProgramsById(programs), [programs]);
   const freePreviewProgram = weeklyPrograms.find((program) => program.id === FREE_PREVIEW_PROGRAM_ID) ?? null;
-  const featuredSpomove = useMemo(
-    () => resolveHomeFeaturedSpomove(featuredSpomoveSlotIds),
-    [featuredSpomoveSlotIds],
+  const featuredSpomove = useMemo(() => {
+    const authoritativeSlots = accessSnapshot.plan === 'lite' && accessSnapshot.spomoveTrialPresetId
+      ? [accessSnapshot.spomoveTrialPresetId, ...featuredSpomoveSlotIds.slice(1)]
+      : featuredSpomoveSlotIds;
+    return resolveHomeFeaturedSpomove(authoritativeSlots);
+  }, [accessSnapshot.plan, accessSnapshot.spomoveTrialPresetId, featuredSpomoveSlotIds]);
+  const liteTrialPreset = useMemo(
+    () => featuredSpomove.find((preset) => preset.id === accessSnapshot.spomoveTrialPresetId) ?? null,
+    [accessSnapshot.spomoveTrialPresetId, featuredSpomove],
   );
   const latestRecentActivity = useMemo(() => {
     return [...validLessonActivities, ...validSpomoveActivities]
@@ -849,6 +863,15 @@ function EntitledDashboardView() {
       .filter((session) => session.status === 'scheduled' && !session.startedAt && !session.programs.some((item) => item.isCompleted) && classIds.has(session.classId) && new Date(session.startAt).getTime() > Date.now())
       .sort((left, right) => left.startAt.localeCompare(right.startAt))[0] ?? null;
   }, [operationalClasses, operationalSessions]);
+  const nextSessionHref = nextSession
+    ? `/spokedu-lab/activity?session=${encodeURIComponent(nextSession.id)}`
+    : null;
+  const isLite = accessSnapshot.plan === 'lite' && accessSnapshot.subscriptionStatus === 'active';
+  const primaryAction = resolveDashboardPrimaryAction({
+    access: accessSnapshot,
+    hasFreePreview: freePreviewProgram != null,
+    nextSessionHref,
+  });
   const lastClassTool = recentActivityOwnerId ? lastClassToolByOwner[recentActivityOwnerId] ?? null : null;
   const recentClassTool = getClassToolDefinition(lastClassTool?.id ?? 'stopwatch');
   const RecentClassToolIcon = HOME_CLASS_TOOL_ICONS[recentClassTool.id];
@@ -865,16 +888,16 @@ function EntitledDashboardView() {
     const isUnauthorized = programsError === 'unauthorized';
     const isForbidden = programsError === 'forbidden';
     const message = isUnauthorized
-      ? '로그인 후 수업 라이브러리를 불러올 수 있습니다.'
+      ? '로그인 후 놀이체육을 불러올 수 있습니다.'
       : isForbidden
-        ? '이용 기간이 종료되어 수업 라이브러리를 불러올 수 없습니다.'
+        ? '이용 기간이 종료되어 놀이체육을 불러올 수 없습니다.'
         : programsError === 'network'
-          ? '네트워크 문제로 수업 라이브러리를 불러오지 못했습니다. 연결 상태를 확인해 주세요.'
-          : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          ? '네트워크 문제로 놀이체육을 불러오지 못했습니다. 연결 상태를 확인해 주세요.'
+          : '놀이체육을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className={`${MV_EDITORIAL_WIDTH} flex h-full items-center justify-center overflow-y-auto px-4 py-16`} style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl text-center">
-          <h1 className={MV_SECTION_TITLE}>수업 라이브러리를 불러올 수 없습니다.</h1>
+          <h1 className={MV_SECTION_TITLE}>놀이체육을 불러올 수 없습니다.</h1>
           <p className="mt-3 text-[15px] font-normal leading-6 text-slate-600">{message}</p>
           {isUnauthorized ? (
             <Link href="/spokedu-lab/login?next=/spokedu-lab/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
@@ -922,9 +945,23 @@ function EntitledDashboardView() {
               놀이체육과 SPOMOVE를 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
             </p>
             <div data-dashboard-hero-actions="true" className="mt-5 grid grid-cols-2 gap-2.5 min-[768px]:flex min-[768px]:flex-wrap">
-              <button data-dashboard-primary-cta="true" type="button" disabled={!freePreviewProgram} onClick={() => { if (freePreviewProgram) openPreview(freePreviewProgram); }} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none disabled:opacity-50">
-                무료 수업 보기 <ArrowRight size={15} aria-hidden />
-              </button>
+              {primaryAction.kind === 'freePreview' && freePreviewProgram ? (
+                <button data-dashboard-primary-cta="true" type="button" onClick={() => openPreview(freePreviewProgram)} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
+                  {primaryAction.label} <ArrowRight size={15} aria-hidden />
+                </button>
+              ) : primaryAction.kind === 'link' ? (
+                <Link data-dashboard-primary-cta="true" href={primaryAction.href} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
+                  {primaryAction.label} <ArrowRight size={15} aria-hidden />
+                </Link>
+              ) : liteTrialPreset ? (
+                <button data-dashboard-primary-cta="true" type="button" onClick={() => setPreviewSpomove(liteTrialPreset)} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
+                  {primaryAction.label} <ArrowRight size={15} aria-hidden />
+                </button>
+              ) : (
+                <Link data-dashboard-primary-cta="true" href="/spokedu-lab/library" className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
+                  놀이체육 찾기 <ArrowRight size={15} aria-hidden />
+                </Link>
+              )}
               {accessSnapshot.canUseAttendance ? (
                 <Link href="/spokedu-lab/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   수업 일정 보기
@@ -1053,9 +1090,9 @@ function EntitledDashboardView() {
             </div>
           ) : (
             <div>
-              <p className="text-[15px] text-slate-600">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
+              <p className="text-[15px] text-slate-600">오늘 쓸 수업을 놀이체육에서 골라 보세요.</p>
               <Link href="/spokedu-lab/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[14px] font-semibold focus-visible:outline-none">
-                수업 라이브러리 열기
+                놀이체육 열기
               </Link>
             </div>
           )}
@@ -1079,6 +1116,7 @@ function EntitledDashboardView() {
         <div data-dashboard-grid="spomove" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1024px]:grid-cols-4">
           {featuredSpomove.slice(0, 4).map((preset) => {
             const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
+            const liteTrial = isLite && preset.id === accessSnapshot.spomoveTrialPresetId;
             return (
                 <div key={preset.id} data-dashboard-card="spomove" className="flex h-full min-w-0">
                 <SpomoveCard
@@ -1090,7 +1128,8 @@ function EntitledDashboardView() {
                   favorite={isFavoriteContent(favoritesOwnerId, { type: 'spomove', id: preset.id })}
                   favoriteEnabled={favoriteEnabled}
                   onFavorite={() => toggleFavoriteContent(favoritesOwnerId, { type: 'spomove', id: preset.id })}
-                  locked={!accessSnapshot.canUseSpomove}
+                  locked={!canAccessSpomovePreset(accessSnapshot, preset.id)}
+                  liteTrial={liteTrial}
                 />
               </div>
             );

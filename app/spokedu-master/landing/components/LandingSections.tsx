@@ -14,33 +14,30 @@ import {
 } from 'lucide-react';
 import { TrackedLink } from '@/app/spokedu/components/home/tracked-link';
 import { CLASS_TOOLS, FREE_CLASS_TOOL_IDS } from '../../lib/classTools';
-import { MASTER_FAQS } from '../../lib/masterFaq';
-import { localizeLandingCopy, type LandingPlan } from '../models/landingProduct';
+import { LANDING_FAQS } from '../landingFaq';
+import type { LandingPlan } from '../models/landingProduct';
 import type { ReturnTypeOfLandingModel } from './types';
 import { LandingConversionActions } from './LandingAuthControls';
 import styles from '../landing.module.css';
 
 const ASSETS = {
   home: '/images/spokedu/home/field-editorial/home-master-ui.png',
-  library: '/images/spokedu/subscription/library-program-cards.png',
-  lesson: '/images/spokedu/subscription/prepare-lesson-plan.png',
+  library: '/images/spokedu/subscription/library-program-cards-20261008-final.png',
+  lesson: '/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png',
   tools: '/images/spokedu/subscription/prepare-class-tools.png',
   build: '/images/spokedu-master/landing/build-session.png',
   session: '/images/spokedu-master/landing/run-session.png',
   attendance: '/images/spokedu-master/landing/run-attendance.png',
-  record: '/images/spokedu-master/landing/remember-report.png',
-  recordDetail: '/images/spokedu-master/landing/remember-report-detail.png',
   gear: '/images/spokedu/subscription/prepare-gear-setting.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
-  field: '/images/spokedu/records/yangcheon-paps.jpg',
+  field: '/images/spokedu/home/field-editorial/home-spomove-dive-field.webp',
 } as const;
 
 const WORKFLOW = [
-  ['01', '수업 찾기', '오늘 수업에 맞는 활동을 고릅니다.'],
-  ['02', '수업 준비', '준비물과 진행 방법을 확인합니다.'],
-  ['03', '반과 일정에 연결', '활동을 수업반과 날짜에 담습니다.'],
-  ['04', '현장에서 운영', '출석과 활동 순서를 이어서 씁니다.'],
-  ['05', '기록하고 이어가기', '남긴 맥락을 다음 준비에 활용합니다.'],
+  ['01', '수업 찾기', '오늘 수업에 맞는 놀이체육을 찾습니다.'],
+  ['02', '수업 준비', '영상, 준비물, 진행 방법을 확인합니다.'],
+  ['03', '수업 구성', '수업반과 일정에 프로그램을 추가합니다.'],
+  ['04', '현장 운영', '출석과 활동 순서를 확인하며 수업을 진행합니다.'],
 ] as const;
 
 function SectionHeading({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
@@ -79,10 +76,9 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
         <p className={styles.eyebrow}>유아·초등 체육 교사와 강사를 위한 수업 운영</p>
-        <h1>체육수업을 찾고,<br />운영하고,<br />다음 수업까지 이어갑니다.</h1>
+        <h1>놀이체육을 찾고,<br />수업을 구성하고,<br />현장에서 운영합니다.</h1>
         <p className={styles.heroBody}>
-          놀이체육 활동을 찾고, 수업반과 일정에 담고, 현장에서 운영한 출석과 기록까지 다음 수업으로 이어갑니다.
-          매번 &apos;오늘 뭐 하지?&apos;부터 다시 시작하지 않아도 됩니다.
+          필요한 놀이체육 프로그램을 찾아 수업반과 일정에 담으세요. 수업 당일에는 출석과 활동 순서를 한 화면에서 확인하며 운영할 수 있습니다.
         </p>
         <div className={styles.heroActions}>
           <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="hero" />
@@ -90,7 +86,7 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
             요금 보기 <ArrowDown size={17} aria-hidden />
           </a>
         </div>
-        <p className={styles.freeNote}>수업 도구 3종 · 수업 자료실 둘러보기 · 이번 주 추천 프로그램 1개 전체 이용</p>
+        <p className={styles.freeNote}>놀이체육 둘러보기 · 지정된 놀이체육 프로그램 1개 미리보기 · 스탑워치·타이머·점수판 이용</p>
       </div>
       <div className={styles.heroVisual} aria-label="SPOKEDU LAB 실제 홈 화면">
         <div className={styles.heroHalo} />
@@ -128,7 +124,7 @@ export function ProductOverview() {
 export function CoreProductStory() {
   return (
     <div className={styles.storyFlow}>
-      <section id="library" className={styles.storySection}>
+      <section id="library" className={`${styles.storySection} ${styles.librarySection}`}>
         <div className={styles.storyCopy}>
           <p className={styles.stepLabel}>찾기 · 준비하기</p>
           <h2>오늘 수업에 필요한 프로그램을 더 빠르게 찾으세요.</h2>
@@ -136,7 +132,7 @@ export function CoreProductStory() {
           <ul><li>수업 대상과 공간에 맞는 프로그램 검색</li><li>추천 프로그램과 다양한 놀이체육 활동 탐색</li><li>준비물과 교구 배치 및 진행 방법 확인</li><li>필요한 활동을 실제 수업 준비에 활용</li></ul>
         </div>
         <div className={styles.mediaStack}>
-          <ProductFrame src={ASSETS.library} alt="검색과 6가지 세부 필터 및 프로그램 카드가 보이는 SPOKEDU LAB 수업 자료실" />
+          <ProductFrame src={ASSETS.library} alt="검색과 6가지 세부 필터 및 프로그램 카드가 보이는 SPOKEDU LAB 놀이체육" />
           <div className={styles.insetFrame}><ProductFrame src={ASSETS.lesson} alt="교구 배치와 수업 스크립트가 보이는 프로그램 상세 화면" ratio="portrait" position="50% 18%" /></div>
         </div>
       </section>
@@ -166,7 +162,7 @@ export function CoreProductStory() {
           <SectionHeading
             eyebrow="현장에서 운영하기"
             title="현장에서는 출석과 활동을 한 흐름에서 운영합니다."
-            body="오늘 수업의 출석 상태와 활동 순서를 먼저 확인하고, 진행에 필요한 도구는 바로 곁에서 꺼내 씁니다."
+            body="수업반과 일정을 등록하고 필요한 놀이체육 프로그램을 추가하세요. 수업 당일에는 출석 상태와 활동 순서를 한 화면에서 확인하며 수업을 운영할 수 있습니다."
           />
           <div className={styles.runFacts}>
             <span><ClipboardCheck size={18} aria-hidden /> 출석과 참여 범위</span>
@@ -184,31 +180,12 @@ export function CoreProductStory() {
               <ProductFrame src={ASSETS.attendance} alt="수업반과 날짜별 출석 상태가 보이는 실제 SPOKEDU LAB 출석 화면" position="50% 54%" />
               <p><strong>수업반 출석과 참여 상태</strong><span>날짜별 출석을 실제 수업 흐름에 연결</span></p>
             </div>
-            <div className={styles.runUtility}>
-              <ProductFrame src={ASSETS.tools} alt="스탑워치, 타이머, 점수판, 팀 나누기가 보이는 실제 수업 도구 화면" position="50% 20%" />
-              <p><strong>필요할 때 바로 쓰는 보조 도구</strong><span>타이머 · 점수판 · 팀 나누기 · 순서 정하기</span></p>
-            </div>
           </div>
         </div>
       </section>
 
       <ClassToolsSection />
 
-      <section id="records" className={`${styles.storySection} ${styles.memorySection}`}>
-        <div className={styles.storyCopy}>
-          <p className={styles.stepLabel}>기억하고 이어가기 · 라이트</p>
-          <h2>지난 수업이 다음 준비의 출발점이 됩니다.</h2>
-          <p>수업 메모와 학생 관찰, 다음 수업 노트, 수업 안내문을 남겨 필요한 순간 다시 확인합니다. 기록은 자동으로 수업을 만들지 않습니다. 교사가 남긴 실제 맥락을 다음 준비에 활용합니다.</p>
-          <ul><li>수업 메모와 학생별 관찰</li><li>이전 수업의 활동과 다음 수업 노트</li><li>수업 안내문 저장·복사</li></ul>
-        </div>
-        <div className={styles.memoryVisual}>
-          <ProductFrame src={ASSETS.record} alt="완료한 수업의 활동과 메모를 다음 수업 안내로 이어 쓰는 실제 SPOKEDU LAB 안내문 화면" ratio="portrait" position="50% 12%" />
-          <div className={styles.memoryContextCrop} aria-hidden="true">
-            <Image src={ASSETS.recordDetail} alt="" fill sizes="280px" />
-          </div>
-          <div className={styles.memoryCaption}><span>수업 후</span><strong>남긴 기록을 다음 준비에서 다시 확인</strong></div>
-        </div>
-      </section>
     </div>
   );
 }
@@ -234,11 +211,9 @@ export function ClassToolsSection() {
 }
 
 const BEFORE_AFTER = [
-  ['여러 채널에서 활동 검색', '수업 자료실에서 탐색'],
-  ['준비물·규칙·세팅을 별도로 정리', '상세에서 한 번에 확인'],
-  ['타이머·점수·팀 편성을 다른 도구로 실행', '수업 도구에서 바로 실행'],
-  ['수업 후 기억에 의존', '수업 기록으로 남김'],
-  ['다음 수업을 다시 처음부터 준비', '이전 기록을 다음 준비에서 확인'],
+  ['여러 곳에서 프로그램 검색', '놀이체육에서 바로 찾기'],
+  ['수업반·일정·활동을 따로 관리', '한 수업에 프로그램 연결'],
+  ['출석과 활동 순서를 따로 확인', '한 화면에서 운영'],
 ] as const;
 
 export function WhyMasterSection() {
@@ -326,7 +301,7 @@ export function FieldProofSection() {
       <SectionHeading
         eyebrow="SPOKEDU의 현장에서 시작했습니다"
         title="실제 수업 현장에서 필요한 흐름을 제품으로 만들었습니다."
-        body="SPOKEDU는 유아·초등·특수체육과 기관 수업을 직접 운영하며, 준비부터 현장 진행과 기록까지 반복해서 필요한 과정을 LAB 안에 연결했습니다."
+        body="SPOKEDU는 유아·초등·특수체육 수업을 직접 운영하며 현장에서 반복적으로 필요한 프로그램 탐색, 수업 구성, 출석과 활동 관리를 SPOKEDU LAB에 연결했습니다."
       />
       <div className={styles.fieldGrid}>
         <figure className={styles.fieldPhoto}>
@@ -378,7 +353,7 @@ export function PlansSection({ product }: { product: ReturnTypeOfLandingModel })
       <SectionHeading
         eyebrow="무료로 확인하고, 필요한 만큼 이어가세요"
         title="무료로 시작하고, 필요한 기능만 더하세요."
-        body="무료로 수업 자료실과 기본 수업 도구를 확인하세요. 일반 수업관리와 기록·안내문은 라이트, SPOMOVE까지 이용하려면 프리미엄을 선택할 수 있습니다."
+        body="무료로 놀이체육과 기본 수업 도구를 확인하세요. 일반 수업관리와 기록·안내문은 라이트, SPOMOVE까지 이용하려면 프리미엄을 선택할 수 있습니다."
       />
       <div className={styles.planGrid}>{product.plans.map((plan) => <PlanCard key={plan.code} plan={plan} />)}</div>
       <div className={styles.comparisonWrap}>
@@ -411,10 +386,10 @@ export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel 
       <section id="faq" className={styles.faqSection}>
         <SectionHeading eyebrow="시작하기 전에" title="자주 묻는 질문" body="무료 이용부터 자동결제와 현장 사용까지, 실제 제품 기준으로 답했습니다." />
         <div className={styles.faqList}>
-          {MASTER_FAQS.map(([question, answer]) => (
+          {LANDING_FAQS.map(([question, answer]) => (
             <details key={question}>
-              <summary>{localizeLandingCopy(question)}<ChevronDown size={18} aria-hidden /></summary>
-              <p>{localizeLandingCopy(answer)}</p>
+              <summary>{question}<ChevronDown size={18} aria-hidden /></summary>
+              <p>{answer}</p>
             </details>
           ))}
         </div>
@@ -422,7 +397,7 @@ export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel 
       <section id="final-cta" className={styles.finalCta}>
         <p className={styles.eyebrow}>다음 수업 하나부터</p>
         <h2>무료로 직접 확인해 보세요.</h2>
-        <p>수업 도구를 열고, 수업 자료실을 둘러보고, 이번 주 추천 프로그램 1개를 끝까지 이용할 수 있습니다.</p>
+        <p>놀이체육을 둘러보고, 지정된 놀이체육 프로그램 1개를 미리보며, 스탑워치·타이머·점수판을 이용할 수 있습니다. 전체 프로그램 상세 자료는 라이트 이상에서 제공됩니다.</p>
         <div className={styles.finalActions}>
           <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="final" />
         </div>

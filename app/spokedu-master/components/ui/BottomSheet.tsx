@@ -39,6 +39,7 @@ export function BottomSheet({
   headerActions,
   children,
   footer,
+  footerVariant = 'default',
   onClose,
   size = 'default',
   nested = false,
@@ -51,6 +52,7 @@ export function BottomSheet({
   headerActions?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  footerVariant?: 'default' | 'preview-mobile';
   onClose: () => void | boolean;
   size?: 'default' | 'document' | 'preview' | 'launch' | 'session';
   nested?: boolean;
@@ -181,6 +183,7 @@ export function BottomSheet({
   const isLaunch = size === 'launch';
   const isSession = size === 'session';
   const hasDetachedFooter = Boolean(footer);
+  const hasPreviewMobileFooter = hasDetachedFooter && footerVariant === 'preview-mobile';
 
   const panelClassName =
     size === 'preview'
@@ -215,10 +218,10 @@ export function BottomSheet({
         ref={dialogRef}
         data-bottom-sheet-panel
         data-bottom-sheet-size={size}
-        className={`${panelClassName} ${isSession ? 'lg:pointer-events-auto' : ''}`}
+        className={`${panelClassName} ${isSession ? 'lg:pointer-events-auto' : ''} ${hasPreviewMobileFooter ? 'pb-0 lg:pb-5' : ''}`}
         style={{
           ...(isSession ? {} : { background: '#ffffff', border: '1px solid #e2e8f0' }),
-          paddingBottom: hasDetachedFooter ? 0 : 'max(16px, env(safe-area-inset-bottom))',
+          paddingBottom: hasDetachedFooter && !hasPreviewMobileFooter ? 0 : undefined,
         }}
         role="dialog"
         aria-modal={isSession ? !desktopSession : true}
@@ -263,7 +266,18 @@ export function BottomSheet({
           </div>
         </div>
         <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'mr-2 pr-2' : 'pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
-        {footer ? <div data-sheet-footer className="shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none">{footer}</div> : null}
+        {footer ? (
+          <div
+            data-sheet-footer
+            className={`shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none ${
+              hasPreviewMobileFooter
+                ? 'border-t border-slate-200 bg-white pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden'
+                : ''
+            }`}
+          >
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   );

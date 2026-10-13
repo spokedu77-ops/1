@@ -278,11 +278,11 @@ export async function PUT(request: Request) {
 
   const supabase = getServiceSupabase();
   let { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
-    .select('id,class_id,status,roster_locked_at')
+    .select('id,class_id,status,started_at,roster_locked_at')
     .eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
   if (isMissingRosterLockedAtColumn(sessionError)) {
     ({ data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
-      .select('id,class_id,status')
+      .select('id,class_id,status,started_at')
       .eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle());
     if (session) session = { ...session, roster_locked_at: null };
   }
@@ -292,6 +292,9 @@ export async function PUT(request: Request) {
   }
   if (!session) return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
   if (session.class_id !== input.classId) return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
+  if (session.status !== 'completed' && !session.started_at) {
+    return privateNoStoreJson({ error: 'Only started sessions can be completed' }, { status: 409 });
+  }
   const [{ data: memberships, error: rosterError }, { data: historicalAttendance, error: historicalAttendanceError }] = await Promise.all([
     supabase.from('spokedu_master_class_students').select('student_id').eq('owner_id', access.userId).eq('class_id', session.class_id),
     session.status === 'completed' || session.roster_locked_at

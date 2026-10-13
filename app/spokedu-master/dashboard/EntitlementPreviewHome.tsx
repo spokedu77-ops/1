@@ -20,7 +20,7 @@ import {
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const LITE_FEATURES = [
-  'Library · 수업반 · 학생 · 일정 · 출석',
+  '놀이체육 · 수업반 · 학생 · 일정 · 출석',
   '수업 메모 · 학생 관찰 · 다음 수업 기록',
   '지난 기록 활용 · 안내문 작성·복사',
 ] as const;
@@ -56,7 +56,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         <p className="mt-3 max-w-[560px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           {isLapsed
             ? '놀이체육 둘러보기, 이번 주 첫 무료 수업 1개, 스탑워치·타이머·점수판은 계속 사용할 수 있습니다. 수업반·출석·기록 데이터는 유지되며, 다시 열려면 Lite를 선택해 주세요.'
-            : '스탑워치·타이머·점수판과 놀이체육 둘러보기는 Free에서도 사용할 수 있습니다. 일반 수업관리와 기록은 Lite, SPOMOVE는 Premium에서 이용합니다.'}
+            : '스탑워치·타이머·점수판과 놀이체육 둘러보기는 Free에서도 사용할 수 있습니다. 일반 수업관리와 기록은 Lite, 전체 SPOMOVE는 Premium에서 이용하며 Lite는 지정된 주간 체험 1개를 실행할 수 있습니다.'}
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
@@ -83,7 +83,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
           이런 수업을 찾을 수 있어요
         </h2>
         <p className="mt-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-          대표 수업 유형입니다. 이용권 시작 후 전체 라이브러리를 탐색할 수 있습니다.
+          대표 수업 유형입니다. 이용권 시작 후 전체 놀이체육을 탐색할 수 있습니다.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {LIBRARY_PREVIEW_CATEGORIES.map(({ label, desc }) => (
@@ -141,8 +141,8 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         <h2 className="text-[16px] font-extrabold" style={{ color: 'var(--spm-t)' }}>이용권으로 이어지는 수업 루프</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
-            { icon: BookOpen, label: '수업 전', desc: '라이브러리에서 오늘 수업 고르기' },
-            { icon: Timer, label: '수업 중', desc: '기본 도구 3종은 Free, 명단 도구는 Lite, SPOMOVE는 Premium' },
+            { icon: BookOpen, label: '수업 전', desc: '놀이체육에서 오늘 수업 고르기' },
+            { icon: Timer, label: '수업 중', desc: '기본 도구 3종은 Free, 명단 도구는 Lite, 전체 SPOMOVE는 Premium' },
             { icon: ClipboardList, label: '수업 후', desc: '관찰 남기고 같은 기록 보강하기' },
             { icon: FileText, label: '안내문', desc: '학부모·기관용 안내문 작성·복사' },
           ].map(({ icon: Icon, label, desc }) => (
@@ -159,7 +159,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         </div>
         <p className="mt-4 flex items-center gap-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
           <MonitorPlay size={14} color="var(--spm-acc)" />
-          SPOMOVE 큰 화면 실행은 프리미엄 이용권에서 이용할 수 있습니다.
+          전체 SPOMOVE 큰 화면 실행은 프리미엄에서, 관리자 지정 주간 체험 1개는 Lite에서도 이용할 수 있습니다.
         </p>
       </section>
     </main>

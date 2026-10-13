@@ -22,7 +22,9 @@ describe('MASTER ADMIN contract', () => {
   it('shows and searches the full Auth email only behind the admin-protected member API', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
     const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
-    expect(dashboard.indexOf('await requireAdmin()')).toBeLessThan(dashboard.indexOf('const [{ evidence, profiles }'));
+    expect(dashboard.indexOf('await requireAdmin()')).toBeLessThan(dashboard.indexOf('const [profiles,'));
+    expect(dashboard).toContain('readAllMasterAdminPages<UserIdentity>');
+    expect(dashboard).toContain('service.auth.admin.listUsers({ page, perPage: pageSize })');
     expect(dashboard).toContain('email: user.email ?? appUser?.email ?? null');
     expect(dashboard).toContain("(user.email ?? '').toLowerCase().includes(query)");
     expect(dashboard).not.toContain('maskedEmail:');
@@ -46,9 +48,32 @@ describe('MASTER ADMIN contract', () => {
     expect(client).toContain('lg:grid-cols-[minmax(280px,2fr)_minmax(0,3fr)]');
     expect(client).toContain('max-h-[32rem] overflow-y-auto');
     expect(client).toContain('왼쪽에서 이용권을 지급할 회원을 선택해 주세요.');
-    expect(client).toContain('aria-pressed={selected?.id===m.id}');
+    expect(client).toContain('aria-pressed={selectedGrantMember?.id===m.id}');
+    expect(client).toContain('const [detailMemberId, setDetailMemberId]');
+    expect(client).toContain('onClick={()=>selectGrantMember(m)}');
+    expect(client).toContain('onClick={()=>openMemberDetail(selectedGrantMember.id)}');
+    expect(client).not.toContain('setSelected({id:userId} as Member)');
     expect(client).not.toContain('grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2');
-    expect(client).toContain("body: JSON.stringify({ userId: selected.id, plan, durationDays: duration, reason, campaignId: campaign, preview: true })");
+    expect(client).toContain("body: JSON.stringify({ userId: targetId, plan, durationDays: duration, reason, campaignId: campaign, preview: true })");
+  });
+  it('defaults seminar grants and invites to Lite and confirms the exact member and period', () => {
+    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(client).toContain("useState<'lite' | 'premium'>('lite')");
+    expect(client).toContain("plan: 'lite', durationDays: 30");
+    for (const label of ['대상 회원', '이메일', '지급 요금제', '시작일', '종료일']) expect(client).toContain(label);
+    expect(client).toContain('기존 자동결제는 변경되거나 취소되지 않습니다.');
+    expect(client).toContain('활성 프로모션이 있습니다.');
+  });
+  it('supports exact email search and pagination beyond the first 20 members', () => {
+    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
+    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(dashboard).toContain("(user.email ?? '').toLowerCase().includes(query)");
+    expect(dashboard).toContain('const PAGE_SIZE = 20');
+    expect(dashboard).toContain('paginateMasterAdminRows(filtered, page, PAGE_SIZE)');
+    expect(dashboard).toContain('members: paged.rows');
+    expect(client).toContain('&page=${page}');
+    expect(client).toContain('setMembersTotal(data.total)');
+    expect(client).toContain('MemberPagination');
   });
   it('keeps promotional mutations isolated from billing and Toss', () => {
     const sources = [read('app/api/admin/spokedu-master/entitlement-grants/route.ts'), read('app/api/admin/spokedu-master/entitlement-grants/[grantId]/route.ts')].join('\n');
@@ -67,7 +92,9 @@ describe('MASTER ADMIN contract', () => {
     expect(grantRoute).not.toContain("from('spokedu_master_subscriptions').update");
     expect(client).toContain('기간 연장');
     expect(client).toContain("action: 'extend'");
-    expect(client).toContain('await loadGrants()');
+    expect(client).toContain('setAuditVersion((value) => value + 1)');
+    expect(client).toContain('setDetailVersion((value) => value + 1)');
+    expect(client).not.toContain('await loadGrants()');
   });
   it('never exposes token hashes or payment secrets from admin read APIs', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
@@ -77,40 +104,44 @@ describe('MASTER ADMIN contract', () => {
     expect(dashboard).not.toContain('paymentKey: payment.payment_key');
   });
   it('returns read-only payment incident evidence without hiding non-active orders', () => {
-    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
-    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    const dashboard = read('app/api/admin/spokedu-master-admin/billing/route.ts');
+    const members = read('app/api/admin/spokedu-master-admin/route.ts');
+    const client = read('app/admin/spokedu-master-admin/BillingOperationsPanel.tsx');
     expect(dashboard).toContain('last_error_code');
-    expect(dashboard).toContain('paymentApproved: Boolean(payment.payment_key)');
+    expect(members).toContain('paymentApproved: Boolean(payment.paymentApproved)');
+    expect(members).toContain("rawPayments.map(({ payment_key, ...row }");
+    expect(dashboard).toContain("rawOrders.map(({ payment_key, ...row })");
     expect(dashboard).not.toContain(".eq('status', 'active')");
-    expect(dashboard).toContain('deriveMasterAdminBillingIncident');
-    expect(client).toContain('결제 승인 / 이용권 반영 실패');
-    expect(client).toContain('조회 전용');
+    expect(dashboard).toContain('classifyBillingIssue');
+    expect(client).toContain('summary?.applyFailed');
+    expect(client).toContain('BillingOperationsPanel');
   });
-  it('loads billing members independently from member-management scope and search state', () => {
-    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
-    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
-    expect(dashboard).toContain("if (view === 'billing')");
-    expect(dashboard).toContain("row.accountClass === 'production'");
-    expect(dashboard).toContain('!isSpokeduStaffEmail(row.email)');
-    expect(dashboard).toContain('Boolean(row.subscription || row.latestOrder)');
-    expect(client).toContain("readJson('/api/admin/spokedu-master-admin?view=billing')");
-    expect(client).toContain('setBillingMembers(data.members)');
-    expect(client).toContain('{billingMembers.map(m=>');
-    expect(client).not.toContain('members.filter(m=>m.subscription||m.latestOrder)');
+  it('loads billing operations independently from member-management scope and search state', () => {
+    const dashboard = read('app/api/admin/spokedu-master-admin/billing/route.ts');
+    const client = read('app/admin/spokedu-master-admin/BillingOperationsPanel.tsx');
+    const parent = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(dashboard).toContain('spokedu_master_payment_orders');
+    expect(dashboard).toContain('paginateBillingRows(rows, page)');
+    expect(client).toContain('/api/admin/spokedu-master-admin/billing?page=');
+    expect(parent).toContain('<BillingOperationsPanel');
+    expect(parent).not.toContain('setBillingMembers');
   });
   it('keeps Auth search separate from the production MASTER population', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
     const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    const memberList = read('app/admin/spokedu-master-admin/MemberListPanel.tsx');
     expect(dashboard).toContain("accountClass === 'production'");
     expect(dashboard).toContain("accountClass !== 'spokedu_only'");
     expect(dashboard).not.toContain("scope === 'all'");
-    expect(dashboard).toContain('hasMasterProfile: membershipEvidence.profile');
+    expect(dashboard).toContain("from('spokedu_master_profiles')");
+    expect(dashboard).toContain('users.filter((user) => profiles.has(user.id))');
+    expect(dashboard).toContain('hasMasterProfile: true');
     expect(dashboard).toContain("scope') ?? 'production'");
     expect(client).toContain("useState<MemberScope>('production')");
-    expect(client).toContain("['qa_test','테스트 계정']");
-    expect(client).not.toContain("['all','전체 계정']");
+    expect(memberList).toContain("['qa_test'");
+    expect(memberList).not.toContain("['all','all accounts']");
     expect(client).not.toContain('전체 SPOKEDU 계정');
-    expect(client).toContain('강사 관리에서 생성한 계정은 포함되지 않습니다.');
+    expect(memberList).toContain("['production'");
     expect(dashboard).not.toContain('const summary = { total: rows.length');
   });
   it('excludes spokedu.com staff from 가입 회원 while preserving the 운영진 scope', () => {

@@ -7,6 +7,7 @@ import {
   SPOMOVE_HOME_FEATURED_SLOT_COUNT,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { isHubRunnablePreset } from '@/app/spokedu-master/spomove/movements/isHubVisiblePreset';
 
 function normalizeSlotIds(value: unknown): Array<string | null> {
   const source = Array.isArray(value) ? value.slice(0, SPOMOVE_HOME_FEATURED_SLOT_COUNT) : [];
@@ -28,7 +29,7 @@ function normalizeSlotIds(value: unknown): Array<string | null> {
     if (!preset) {
       throw new Error('선택한 SPOMOVE 중 공식 라이브러리에 없는 항목이 있습니다.');
     }
-    if (!preset.isReady) {
+    if (!isHubRunnablePreset(preset)) {
       throw new Error(`「${preset.title}」은(는) 아직 홈 추천에 쓸 수 없습니다.`);
     }
   }

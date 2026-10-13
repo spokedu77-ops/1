@@ -11,8 +11,12 @@ const session: MasterSessionDto = {
 
 describe('parent notice model', () => {
   it('builds a stable default from the completed session snapshot', () => {
-    expect(buildDefaultParentNotice(session)).toContain('꼬리잡기 활동을 진행했습니다.');
-    expect(buildDefaultParentNotice(session)).toContain('출석 1명, 결석 0명');
+    const notice = buildDefaultParentNotice(session);
+    expect(notice).toContain('꼬리잡기 활동을 진행했습니다.');
+    expect(notice).not.toContain('민수');
+    expect(notice).not.toContain('협동을 좋아합니다.');
+    expect(notice).not.toContain('출석');
+    expect(notice).not.toContain('결석');
   });
 
   it('prefers the teacher-edited persisted notice', () => {

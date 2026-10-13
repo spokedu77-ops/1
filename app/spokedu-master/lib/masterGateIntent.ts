@@ -279,7 +279,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
     description: 'Lite로 업그레이드하면 전체 수업 자료와 즐겨찾기를 이용할 수 있습니다. 선택한 수업으로 돌아와 바로 이어서 확인할 수 있습니다.',
     resourceTitle,
     evidence: [
-      { label: '선택한 수업', value: resourceTitle || '수업 라이브러리 콘텐츠' },
+      { label: '선택한 수업', value: resourceTitle || '놀이체육 콘텐츠' },
       { label: '확인할 내용', value: '준비물, 진행 순서, 지도 포인트' },
       { label: '필요 이용권', value: 'Lite' },
     ],

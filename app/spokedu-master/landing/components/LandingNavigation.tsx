@@ -9,7 +9,7 @@ import styles from '../landing.module.css';
 
 const LANDING_NAV = [
   ['서비스', '#workflow'],
-  ['수업 자료실', '#library'],
+  ['놀이체육', '#library'],
   ['SPOMOVE', '#spomove'],
   ['요금제', '#plans'],
   ['자주 묻는 질문', '#faq'],

@@ -1,6 +1,10 @@
 import { isDiveActionMoveUnityTheme } from '@/app/lib/spomove/diveThemes';
 
 import { formatElapsedSeconds } from './trainingResultSummary';
+import {
+  resolveSpomoveCompletionPresentation,
+  type SpomoveCompletionReason,
+} from '@/app/spokedu-master/spomove/session/sessionResultModel';
 
 /** DIVE 액션무브 리포트에 올릴 수 있는 동작. 센서 성적과는 무관하다. */
 export type DiveActionMoveId = 'SIDE' | 'JUMP' | 'DUCK' | 'BONUS';
@@ -113,14 +117,21 @@ function stageSeconds(stageDurationSec: number | null): number | null {
 export function buildDiveActionMoveReport(
   session: DiveActionMoveSession,
   elapsedMs: number,
+  completionReason?: SpomoveCompletionReason,
 ): DiveActionMoveReportView {
   const actions = resolveDiveActionMoveIds(session);
   const stageSec = stageSeconds(session.stageDurationSec);
   const stageValue = stageSec == null ? '—' : `${stageSec}초`;
   const stageLine = stageSec == null ? null : `스테이지 ${stageSec}초`;
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
-  const actionLine = actions.length > 0 ? actions.join(' · ') : null;
+  const configuredActions = actions.length > 0 ? actions.join(' · ') : null;
+  const actionLine = completionReason && configuredActions
+    ? `설정 액션 · ${configuredActions}`
+    : configuredActions;
   const completed = session.completed;
+  const completion = completionReason
+    ? resolveSpomoveCompletionPresentation(completionReason)
+    : null;
   const tags = (['SIDE', 'JUMP', 'DUCK'] as const)
     .filter((id) => actions.includes(id))
     .map((id) => MOVEMENT_LABEL[id]);
@@ -144,25 +155,29 @@ export function buildDiveActionMoveReport(
   }
 
   return {
-    title: completed ? 'DIVE 활동 완료' : '수업을 종료했습니다',
-    subtitle: completed
+    title: completion?.title ?? (completed ? 'DIVE 활동 완료' : '수업을 종료했습니다'),
+    subtitle: completion?.description ?? (completed
       ? '오늘 액션무브를 끝까지 완료했어요.'
-      : '액션무브 세션을 마쳤어요.',
+      : '액션무브 세션을 마쳤어요.'),
     actionLine,
     stageLine,
-    statusBadge: completed ? '활동 완료' : '중도 종료',
+    statusBadge: completion?.statusBadge ?? (completed ? '활동 완료' : '중도 종료'),
     activityTimeValue: elapsedLabel,
     stageTimeValue: stageValue,
-    sessionStatusValue: completed ? '활동 완료' : '중도 종료',
-    movementBody: movementBody(actions),
+    sessionStatusValue: completion?.statusBadge ?? (completed ? '활동 완료' : '중도 종료'),
+    movementBody: completionReason
+      ? `설정된 액션 구성 · ${configuredActions ?? '별도 액션 없음'}`
+      : movementBody(actions),
     tags,
     snapshot: [
       { id: 'program', label: '프로그램', value: 'DIVE 액션무브', nowrap: true },
       { id: 'actions', label: '액션 구성', value: actionLine ?? '—', nowrap: false },
-      { id: 'stage', label: '스테이지 시간', value: stageValue, nowrap: true },
+      { id: 'stage', label: completionReason ? '설정 스테이지 시간' : '스테이지 시간', value: stageValue, nowrap: true },
       { id: 'elapsed', label: '전체 활동 시간', value: elapsedLabel, nowrap: true },
       { id: 'point', label: '활동 포인트', value: '시각 신호에 맞춰 전신 움직임을 전환하기', nowrap: false },
     ],
-    selfChecks: selfChecks.slice(0, 5),
+    selfChecks: completionReason
+      ? [{ id: 'measurement-note', label: '진행 시간 외의 실제 동작 횟수나 수행 성과는 자동 판정하지 않습니다.' }]
+      : selfChecks.slice(0, 5),
   };
 }

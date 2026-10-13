@@ -40,13 +40,13 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         </Section>
 
         <Section title="2. 제공 기능">
-          <p>SPOKEDU LAB은 수업 전 수업 라이브러리, 수업 중 수업 도구 또는 SPOMOVE, 수업 후 수업 기록·안내문을 제공하는 교육 운영 보조 서비스입니다.</p>
+          <p>SPOKEDU LAB은 수업 전 놀이체육, 수업 중 수업 도구 또는 SPOMOVE, 수업 후 수업 기록·안내문을 제공하는 교육 운영 보조 서비스입니다.</p>
           <p>학생 기록과 안내문은 교육 운영을 돕기 위한 자료이며 의료, 진단, 평가 자료가 아닙니다.</p>
         </Section>
 
         <Section title="3. 이용권과 결제">
-          <p>로그인 후 무료(Free) 이용자는 놀이체육 Library를 탐색하고, 이번 주 추천 첫 번째 프로그램을 빠른 미리보기로 확인하며, 스탑워치·타이머·점수판을 사용할 수 있습니다. 전체 상세 자료는 Lite부터 이용할 수 있으며, 기간제 유료 무료체험 상품은 제공하지 않습니다.</p>
-          <p>{lite.displayName}는 {lite.priceLabel} {lite.billingCycleLabel} 상품이며 전체 놀이체육 Library와 일반 수업 운영, 기록 및 안내문 기능을 제공합니다.</p>
+          <p>로그인 후 무료 이용자는 놀이체육을 둘러보고, 지정된 놀이체육 프로그램 1개를 빠른 미리보기로 확인하며, 스탑워치·타이머·점수판을 사용할 수 있습니다. 전체 프로그램 상세 자료는 라이트부터 이용할 수 있으며, 기간제 유료 무료체험 상품은 제공하지 않습니다.</p>
+          <p>{lite.displayName}는 {lite.priceLabel} {lite.billingCycleLabel} 상품이며 전체 놀이체육과 일반 수업 운영, 기록 및 안내문 기능을 제공합니다.</p>
           <p>{premium.displayName}은 {premium.priceLabel} {premium.billingCycleLabel} 상품이며 라이트 전체 기능에 SPOMOVE를 추가로 제공합니다.</p>
           <p>{center.displayName}은 {center.priceLabel} 상품이며 직접 결제를 제공하지 않습니다. 기관 도입은 별도 문의로 안내합니다.</p>
           <p>유료 기능 권한은 결제 성공 또는 별도 계약이 확인된 경우에만 부여됩니다. 결제 금액은 브라우저가 전달한 값이 아니라 서버가 계산한 견적을 기준으로 합니다.</p>
@@ -91,7 +91,7 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         </Section>
 
         <Section title="8. 데이터 삭제와 탈퇴">
-          <p>프로필에서 제공하는 기능은 MASTER 운영 데이터 삭제입니다. 학생 정보, 수업·출석 기록, 학생별 기록, 저장한 안내문, 즐겨찾기와 현재 기기의 MASTER 로컬 작업 데이터를 삭제합니다.</p>
+          <p>프로필에서 제공하는 기능은 SPOKEDU LAB 운영 데이터 삭제입니다. 학생 정보, 수업·출석 기록, 학생별 기록, 저장한 안내문, 즐겨찾기와 현재 기기의 SPOKEDU LAB 로컬 작업 데이터를 삭제합니다.</p>
           <p>로그인 계정, 이용권 결제 주문, 결제·환불 증빙, 법령상 보관이 필요한 기록은 삭제 대상이 아닙니다.</p>
           <p>회원 탈퇴는 자동 처리 기능을 제공하지 않습니다. 탈퇴 요청은 본인 확인 후 처리되며 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 문의해 주세요.</p>
         </Section>

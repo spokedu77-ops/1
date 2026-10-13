@@ -107,6 +107,6 @@ export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao'
   return {
     allowed: false,
     label,
-    reason: '첫 버전에서는 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 안내문을 우선 제공합니다.',
+    reason: '첫 버전에서는 자동 발송과 자동 리포트보다 놀이체육, SPOMOVE, 안내문을 우선 제공합니다.',
   };
 }

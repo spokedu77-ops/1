@@ -137,6 +137,13 @@ export class SpaceEnvironment {
     }
   }
 
+  setYawDeg(yawDeg = 0): void {
+    this.panoRotation = (yawDeg * Math.PI) / 180;
+    if (this.shaderMat) {
+      this.shaderMat.uniforms['uPanoRotation'].value = this.panoRotation;
+    }
+  }
+
   update(inp: SpaceEnvUpdateInput): void {
     if (inp.isIntroPhase) return;
 

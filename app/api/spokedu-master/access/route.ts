@@ -21,6 +21,7 @@ export async function GET() {
     return privateNoStoreJson({
       ok: true,
       allowed: true,
+      userId: access.userId,
       spomatShopAvailable: isSpomatShopAvailable(),
       ...access.snapshot,
     });

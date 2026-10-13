@@ -39,7 +39,11 @@ async function loadPlaywright() {
 
 function isExpectedRoute(route, currentPath) {
   return currentPath === route
-    || (route === '/spokedu-master/library' && currentPath === '/spokedu-master/library?view=all');
+    || (route === '/spokedu-master/library' && (
+      currentPath === '/spokedu-master/library?view=all'
+      || currentPath === '/spokedu-lab/library'
+      || currentPath === '/spokedu-lab/library?view=all'
+    ));
 }
 
 async function routeSnapshot(context, route, expectedProgramTitle = '') {

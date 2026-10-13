@@ -13,7 +13,7 @@ import {
 } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
-import { isNaturalSpomoveCompletion, type SpomoveCompletionReason } from './sessionResultModel';
+import { resolveSpomoveCompletionPresentation, type SpomoveCompletionReason } from './sessionResultModel';
 import type { SpomoveExecutionVolume } from './resolveSpomoveExecutionVolume';
 import type { MovementPick } from '../movements/movementTypes';
 
@@ -61,7 +61,7 @@ export function MasterSessionResult({
   onRetry: () => void;
 }) {
   const router = useRouter();
-  const done = isNaturalSpomoveCompletion(completionReason);
+  const completion = resolveSpomoveCompletionPresentation(completionReason);
   const fromSession = Boolean(sessionReturnHref);
   const marking = markCompleteStatus === 'saving';
   const cfg = settingsToTrainingResultConfig({
@@ -77,12 +77,13 @@ export function MasterSessionResult({
   return (
     <TrainingResultScreen
       cfg={cfg}
+      completionReason={completionReason}
       elapsedMs={elapsedMs}
       colorCounts={colorCounts}
       levelLabel={resultLevelLabel(engineMode, engineLevel)}
-      title={diveActionMove ? (done ? 'DIVE 활동 완료' : '수업을 종료했습니다') : (done ? '훈련 완료' : '수업을 종료했습니다')}
-      statusBadge={diveActionMove ? (done ? '활동 완료' : '중도 종료') : (done ? '정상 완료' : '중도 종료')}
-      diveActionMove={diveActionMove ? { ...diveActionMove, completed: done } : null}
+      title={completion.title}
+      statusBadge={completion.statusBadge}
+      diveActionMove={diveActionMove ? { ...diveActionMove, completed: completionReason === 'natural_complete' } : null}
       programTitle={activityTitle}
       volumeLabel={executionVolume.label}
       retryLabel="같은 설정으로 다시 준비"

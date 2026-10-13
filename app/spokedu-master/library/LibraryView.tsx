@@ -5,10 +5,11 @@ import {
   Lock,
   Search,
   SlidersHorizontal,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   LessonCatalogCard,
@@ -80,6 +81,26 @@ const MOVEMENT_LABEL: Record<string, string> = {
 type FilterGroupKey = LibraryFilterGroupKey;
 type ActiveFilter = LibraryActiveFilter;
 type ActiveFilters = ActiveFilter[];
+
+type LibraryHistoryState = {
+  search: string;
+  scrollTop: number;
+  visibleCount: number;
+};
+
+const LIBRARY_HISTORY_STATE_KEY = 'spokeduLibrary';
+
+function readLibraryHistoryState(): LibraryHistoryState | null {
+  if (typeof window === 'undefined') return null;
+  const value = window.history.state?.[LIBRARY_HISTORY_STATE_KEY] as Partial<LibraryHistoryState> | undefined;
+  if (
+    !value
+    || typeof value.search !== 'string'
+    || typeof value.scrollTop !== 'number'
+    || typeof value.visibleCount !== 'number'
+  ) return null;
+  return value as LibraryHistoryState;
+}
 
 type FilterGroup = {
   key: FilterGroupKey;
@@ -194,7 +215,7 @@ function ProgramCard({
       supportMeta={supportMeta}
       locked={locked}
       lockHref={lockHref}
-      lockLabel="Lite로 열기"
+      lockLabel="라이트로 이용하기"
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
       favoriteHint={favoriteHint}
@@ -368,7 +389,7 @@ function RecommendationShelf({
 export default function LibraryView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { programs, programsLoaded, programsError, reloadPrograms } = useMasterStore();
+  const { programs, programsLoaded, programsLoading, programsError, reloadPrograms } = useMasterStore();
   const profile = useMasterStore((state) => state.profile);
   const ownerId = getFavoritesOwnerId(profile);
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
@@ -390,7 +411,9 @@ export default function LibraryView() {
     ? '로그인 후 즐겨찾기할 수 있습니다'
     : 'Lite에서 즐겨찾기할 수 있습니다';
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
-  const [visibleCount, setVisibleCount] = useState(LIBRARY_PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = useState(
+    () => Math.max(LIBRARY_PAGE_SIZE, readLibraryHistoryState()?.visibleCount ?? LIBRARY_PAGE_SIZE),
+  );
   const [filters, setFilters] = useState<ActiveFilters>(() => {
     const group = searchParams.get('filterGroup') as FilterGroupKey | null;
     const value = searchParams.get('filter');
@@ -414,6 +437,21 @@ export default function LibraryView() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [addingProgramId, setAddingProgramId] = useState<string | null>(null);
   const [sessionAddError, setSessionAddError] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLElement>(null);
+  const hasMountedSearchStateRef = useRef(false);
+  const hasRestoredScrollRef = useRef(false);
+
+  const getActiveScrollContainer = () => {
+    let element: HTMLElement | null = scrollContainerRef.current;
+    while (element) {
+      const overflowY = window.getComputedStyle(element).overflowY;
+      if (element.scrollHeight > element.clientHeight && (overflowY === 'auto' || overflowY === 'scroll')) {
+        return element;
+      }
+      element = element.parentElement;
+    }
+    return document.scrollingElement as HTMLElement | null;
+  };
 
   const openPreview = (program: Program) => {
     if (isProgramLocked(program)) return;
@@ -462,9 +500,21 @@ export default function LibraryView() {
     }
     return params.toString();
   }, [filters, query, shelfId, reasonId, sessionContext, sessionReturnHref]);
+  const currentLibrarySearchRef = useRef(sourceLibrarySearch);
+  const currentVisibleCountRef = useRef(visibleCount);
 
   useEffect(() => {
+    currentLibrarySearchRef.current = sourceLibrarySearch;
+    currentVisibleCountRef.current = visibleCount;
+  }, [sourceLibrarySearch, visibleCount]);
+
+  useEffect(() => {
+    if (!hasMountedSearchStateRef.current) {
+      hasMountedSearchStateRef.current = true;
+      return;
+    }
     setVisibleCount(LIBRARY_PAGE_SIZE);
+    hasRestoredScrollRef.current = true;
   }, [query, filters, shelfId, reasonId]);
 
   useEffect(() => {
@@ -475,6 +525,19 @@ export default function LibraryView() {
     if (current === href) return;
     window.history.replaceState(window.history.state, '', href);
   }, [operationalStatus, sessionId, sourceLibrarySearch]);
+
+  useEffect(() => {
+    if (hasRestoredScrollRef.current || !programsLoaded) return;
+    hasRestoredScrollRef.current = true;
+    const saved = readLibraryHistoryState();
+    if (!saved || saved.search !== sourceLibrarySearch) return;
+    setVisibleCount(Math.max(LIBRARY_PAGE_SIZE, saved.visibleCount));
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const scrollContainer = getActiveScrollContainer();
+      if (scrollContainer) scrollContainer.scrollTop = saved.scrollTop;
+      window.scrollTo({ top: saved.scrollTop });
+    }));
+  }, [programsLoaded, sourceLibrarySearch]);
 
   const filteredPrograms = useMemo(() => {
     const base = filterLibraryPrograms(
@@ -510,6 +573,38 @@ export default function LibraryView() {
         : [...current, nextFilter];
     });
   };
+
+  const removeFilter = (filterToRemove: ActiveFilter) => {
+    setFilters((current) => current.filter(
+      (filter) => filter.group !== filterToRemove.group || filter.value !== filterToRemove.value,
+    ));
+  };
+
+  const rememberLibraryPosition = () => {
+    const scrollTop = Math.max(getActiveScrollContainer()?.scrollTop ?? 0, window.scrollY);
+    window.history.replaceState(
+      {
+        ...window.history.state,
+        [LIBRARY_HISTORY_STATE_KEY]: {
+          search: currentLibrarySearchRef.current,
+          scrollTop,
+          visibleCount: currentVisibleCountRef.current,
+        },
+      },
+      '',
+      `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    );
+  };
+
+  useEffect(() => {
+    const scrollContainer = getActiveScrollContainer();
+    scrollContainer?.addEventListener('scroll', rememberLibraryPosition, { passive: true });
+    window.addEventListener('scroll', rememberLibraryPosition, { passive: true });
+    return () => {
+      scrollContainer?.removeEventListener('scroll', rememberLibraryPosition);
+      window.removeEventListener('scroll', rememberLibraryPosition);
+    };
+  });
 
   const clearAllSearch = () => {
     setQuery('');
@@ -550,18 +645,28 @@ export default function LibraryView() {
   const isAdvancedOpen = showAdvanced || filters.length > 0;
 
   if (pool.length === 0) {
-    if (!programsLoaded) return <LibrarySkeleton />;
+    if (!programsLoaded || programsLoading) return <LibrarySkeleton />;
+    if (!programsError) {
+      return (
+        <main data-library-state="empty" className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
+          <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center">
+            <h1 className="text-xl font-semibold text-[color:var(--spm-t)]">등록된 수업이 없습니다.</h1>
+            <p className="mt-3 text-sm font-medium leading-6 text-[color:var(--spm-t2)]">새 수업이 등록되면 이곳에서 확인할 수 있습니다.</p>
+          </section>
+        </main>
+      );
+    }
     const message =
       programsError === 'unauthorized'
-        ? '로그인 후 수업 라이브러리를 확인할 수 있습니다.'
+        ? '로그인 후 놀이체육을 확인할 수 있습니다.'
         : programsError === 'forbidden'
-          ? '이용 기간이 종료되어 수업 라이브러리를 불러올 수 없습니다. 구독을 시작하면 전체 수업을 이용할 수 있습니다.'
-          : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          ? '이용 기간이 종료되어 놀이체육을 불러올 수 없습니다. 구독을 시작하면 전체 수업을 이용할 수 있습니다.'
+          : '놀이체육을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
-      <main className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
+      <main data-library-state="error" className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-sm">
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
-          <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
+          <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">놀이체육을 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
           {programsError === 'unauthorized' ? (
             <Link href={buildMasterLoginHref('/spokedu-lab/library')} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
@@ -583,7 +688,13 @@ export default function LibraryView() {
 
   return (
     <>
-      <main className="h-full overflow-y-auto pb-24 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+      <main
+        ref={scrollContainerRef}
+        data-library-state="ready"
+        className="h-full overflow-y-auto pb-24 lg:pb-12"
+        style={{ background: 'var(--spm-bg)' }}
+        onScroll={rememberLibraryPosition}
+      >
         <MasterPageShell variant="editorial" className="max-w-[1120px]">
         {sessionContext ? <div className="mb-3 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
           <p className="min-w-0 truncate text-xs font-semibold text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
@@ -592,8 +703,44 @@ export default function LibraryView() {
         {sessionAddError ? <p role="alert" className="mb-3 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
         <MasterPageHeader title="놀이체육" description="수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요." />
 
+        <section aria-label="라이브러리 검색" className="mt-6">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <label className="relative block min-w-[200px] flex-1">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="놀이체육 검색"
+                aria-label="놀이체육 활동 검색"
+                className="h-11 w-full rounded-[12px] border border-slate-200 bg-slate-100/80 pl-10 pr-3 text-[14px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)]/15"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              aria-expanded={isAdvancedOpen}
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              세부 필터
+              <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          {isAdvancedOpen ? (
+            <div className="mt-4 border-b border-slate-200 pb-5">
+              <div className="grid gap-3 lg:grid-cols-2">
+                {advancedGroups.map((group) => (
+                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+
         <div className="mt-10 space-y-16">
-          <RecommendationShelf
+          {!hasSearchIntent ? <>
+            <RecommendationShelf
             title="교실에서 진행"
             programs={classroomPrograms}
             priority
@@ -605,7 +752,7 @@ export default function LibraryView() {
             canUseLibrary={accessSnapshot.canUseLibrary}
             onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
           />
-          <RecommendationShelf
+            <RecommendationShelf
             title="미취학 추천"
             programs={preschoolPrograms}
             onPreview={openPreview}
@@ -615,48 +762,39 @@ export default function LibraryView() {
             favoriteHint={favoriteHint}
             canUseLibrary={accessSnapshot.canUseLibrary}
             onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
-          />
+            />
+          </> : null}
 
         <section id="library-catalog" className="scroll-mt-6">
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">전체 놀이체육</h2>
-            <div className="flex min-w-0 flex-wrap items-center gap-2 lg:w-[480px]">
-              <label className="relative block min-w-[200px] flex-1">
-                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="놀이체육 검색"
-                  aria-label="놀이체육 활동 검색"
-                  className="h-11 w-full rounded-[12px] border border-slate-200 bg-slate-100/80 pl-10 pr-3 text-[14px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)]/15"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowAdvanced((prev) => !prev)}
-                aria-expanded={isAdvancedOpen}
-                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                세부 필터
-                <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {hasSearchIntent ? (
-                <button type="button" onClick={clearAllSearch} className="inline-flex min-h-11 shrink-0 items-center px-1 text-[12px] font-semibold text-[var(--spm-acc)]">
-                  초기화
-                </button>
-              ) : null}
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">전체 놀이체육</h2>
+              <p data-library-result-count className="mt-1 text-[13px] font-medium text-[color:var(--spm-t2)]">
+                {hasSearchIntent ? `검색 결과 ${filteredPrograms.length}개` : `전체 ${filteredPrograms.length}개`}
+              </p>
             </div>
+            {hasSearchIntent ? (
+              <button type="button" onClick={clearAllSearch} className="inline-flex min-h-11 shrink-0 items-center px-1 text-[12px] font-semibold text-[var(--spm-acc)]">
+                전체 초기화
+              </button>
+            ) : null}
           </div>
 
-          {isAdvancedOpen ? (
-            <div className="mb-5 border-b border-slate-200 pb-5">
-              <div className="grid gap-3 lg:grid-cols-2">
-                {advancedGroups.map((group) => (
-                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
-                ))}
+          {hasActiveFilters ? (
+            <div data-library-active-filters className="mb-5 flex flex-wrap gap-2">
+              {filters.map((filter) => (
+                <button
+                  key={`${filter.group}:${filter.value}`}
+                  type="button"
+                  onClick={() => removeFilter(filter)}
+                  aria-label={`${tagDisplayLabel(filter.group, filter.value)} 필터 해제`}
+                  className="inline-flex min-h-9 items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 text-[12px] font-semibold text-blue-800"
+                >
+                  {tagDisplayLabel(filter.group, filter.value)}
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              ))}
               </div>
-            </div>
           ) : null}
 
           <ProgramGrid

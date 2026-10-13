@@ -372,7 +372,7 @@ function PaymentContent() {
             <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
               {paymentPageMode === 'liteUpgrade'
                 ? 'Lite의 수업관리 기능은 그대로 유지됩니다. Premium에서는 SPOMOVE 공식 활동과 전체 화면 실행을 추가로 이용할 수 있습니다.'
-                : 'Lite는 Library, 반·학생·일정·출석, 기록과 안내문까지 수업관리 흐름을 모두 제공합니다. Premium은 Lite 전체 기능에 SPOMOVE 디지털 움직임 콘텐츠를 더합니다.'}
+                : '라이트는 놀이체육, 반·학생·일정·출석, 기록과 안내문까지 수업관리 흐름을 모두 제공합니다. 프리미엄은 라이트 전체 기능에 SPOMOVE 디지털 움직임 콘텐츠를 더합니다.'}
             </p>
           </section>
         )}
@@ -407,7 +407,7 @@ function PaymentContent() {
             {paymentPageMode === 'liteUpgrade' ? (
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 Library, 수업 운영, 기록과 안내문을 모두 이용할 수 있습니다. Premium으로 올리면 SPOMOVE 공식 활동과 전체 화면 실행이 추가됩니다. 오늘 결제액은 라이트 잔여 기간을 반영한 차액이며, 프리미엄 정가를 새로 1개월 결제하지 않습니다.
+                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 놀이체육, 수업 운영, 기록과 안내문을 모두 이용할 수 있습니다. 프리미엄으로 올리면 SPOMOVE 공식 활동과 전체 화면 실행이 추가됩니다. 오늘 결제액은 라이트 잔여 기간을 반영한 차액이며, 프리미엄 정가를 새로 1개월 결제하지 않습니다.
                 </p>
                 {upgradeQuote ? (
                   <dl className="mt-4 grid gap-3 sm:grid-cols-3">

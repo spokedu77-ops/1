@@ -28,6 +28,16 @@ describe('library relevance ranking', () => {
     expect(rankLibraryPrograms(searchable, '협동 좁은 공간 공', fields).map((item) => item.id))
       .toEqual(['body']);
   });
+
+  it('matches Korean titles in both spaced and compact query forms', () => {
+    const spacedTitle = [{ id: 'spaced', title: '겟 더 콘', category: '', structured: [], body: [] }];
+    const compactTitle = [{ id: 'compact', title: '겟더콘', category: '', structured: [], body: [] }];
+
+    expect(rankLibraryPrograms(spacedTitle, '겟더콘', fields).map((item) => item.id))
+      .toEqual(['spaced']);
+    expect(rankLibraryPrograms(compactTitle, '겟 더 콘', fields).map((item) => item.id))
+      .toEqual(['compact']);
+  });
 });
 
 const programs = [

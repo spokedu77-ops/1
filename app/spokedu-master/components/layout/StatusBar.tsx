@@ -8,6 +8,7 @@ import { MV_HOME_FEATURE_WIDTH } from '../../lib/masterUiClasses';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
 import { MASTER_NAV_ITEMS } from './masterNavLabels';
 import { hasMasterRouteCapability } from './masterRouteAccess';
+import { normalizeMasterAppPath } from './masterPathAlias';
 
 const NAV_ICONS = {
   dashboard: Home,
@@ -38,7 +39,7 @@ function isActivePath(pathname: string, href: string) {
 }
 
 export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot | null }) {
-  const pathname = usePathname();
+  const pathname = normalizeMasterAppPath(usePathname());
   const operational = useOperationalStatus();
   const isHome = pathname === '/spokedu-lab/dashboard';
 

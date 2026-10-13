@@ -28,6 +28,9 @@ const dashboard = read("app/spokedu-master/dashboard/DashboardView.tsx");
 const masterResult = read(
   "app/spokedu-master/spomove/session/MasterSessionResult.tsx",
 );
+const sessionResultModel = read(
+  "app/spokedu-master/spomove/session/sessionResultModel.ts",
+);
 
 describe("SPOMOVE pilot flow contract", () => {
   it("opens Preview from discovery cards without execution actions", () => {
@@ -266,8 +269,10 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).toContain("finishSession('stopped_early')");
     expect(session).toContain("finishSession(payload.completionReason, payload)");
     expect(session).toContain("MasterSessionResult");
-    expect(masterResult).toContain("중도 종료");
-    expect(masterResult).toContain("훈련 완료");
+    expect(masterResult).toContain("resolveSpomoveCompletionPresentation(completionReason)");
+    expect(masterResult).toContain("completionReason={completionReason}");
+    expect(sessionResultModel).toContain("statusBadge: '중도 종료'");
+    expect(sessionResultModel).toContain("title: '훈련 완료'");
   });
 
   it("connects lesson-context completion to class records and keeps standalone sessions separate", () => {

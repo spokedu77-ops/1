@@ -36,6 +36,11 @@ describe('SPOKEDU MASTER Session workflow', () => {
     expect(assign).toContain('assign(session.id)');
     expect(assign).toContain('data.addSessionProgram');
     expect(assign).toContain("session.status === 'scheduled'");
+    expect(assign).toContain('getSessionActionPolicy(session.status, session.startedAt).addActivities');
+    expect(assign).toContain("data.status === 'idle' || data.status === 'loading'");
+    expect(assign).toContain("data.status === 'error'");
+    expect(assign).toContain("data.reload('hard')");
+    expect(assign).toContain('getProgramAssignmentAvailability(session, numericProgramId)');
     expect(assign).toContain('session.id');
     expect(assign).not.toContain('sessions[0]');
   });

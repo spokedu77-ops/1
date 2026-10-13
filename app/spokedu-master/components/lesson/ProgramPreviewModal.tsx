@@ -10,6 +10,7 @@ import { getLibraryProgramDetailHref } from '../../library/libraryNavigation';
 import type { LibraryViewMode } from '../../library/libraryViewModel';
 import { BottomSheet } from '../ui/BottomSheet';
 import { LessonPreviewContent } from './LessonPreviewContent';
+import { splitLessonCardTitle } from './lessonTitle';
 
 function hasSpomoveLink(program: Program) {
   if (program.hasSpomoveConnection) return true;
@@ -23,7 +24,7 @@ export function ProgramPreviewModal({
   accessLocked,
   detailLocked,
   lockHref = '/spokedu-lab/payment?plan=lite',
-  lockLabel = 'Lite로 열기',
+  lockLabel = '라이트로 이용하기',
   favorite,
   onFavorite,
   isTodayLesson = false,
@@ -53,17 +54,59 @@ export function ProgramPreviewModal({
   const fullDetailLocked = detailLocked ?? locked;
   void isPremium;
   const model = buildLessonDisplayModel(program);
+  const displayTitle = splitLessonCardTitle(model.title);
   const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
+  const footer = (
+    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        onClick={onClose}
+        className="hidden h-10 w-[96px] items-center justify-center rounded-[10px] border border-slate-200 px-4 text-[13px] font-bold tracking-normal text-slate-700 sm:inline-flex"
+      >
+        닫기
+      </button>
+      {locked ? (
+        <Link
+          href={lockHref}
+          className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
+        >
+          <Lock className="h-4 w-4" />
+          {lockLabel}
+        </Link>
+      ) : fullDetailLocked ? (
+        <Link
+          href={lockHref}
+          className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
+        >
+          <Lock className="h-4 w-4" />
+          라이트에서 상세 보기
+        </Link>
+      ) : (
+        <Link
+          href={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
+          className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
+        >
+          <BookOpen className="h-4 w-4" />
+          상세 준비 열기
+        </Link>
+      )}
+    </div>
+  );
 
   return (
     <BottomSheet
       open
       title={model.title}
       headerTitle={
-        <div>
-          <h2 className="truncate text-[22px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[color:var(--spm-t)]">
-            {model.title}
+        <div className="min-w-0">
+          <h2 className="line-clamp-2 text-[22px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[color:var(--spm-t)]">
+            {displayTitle.title}
           </h2>
+          {displayTitle.subtitle ? (
+            <p className="mt-0.5 hidden truncate text-[12px] font-semibold leading-[16px] tracking-normal text-slate-400 sm:block">
+              {displayTitle.subtitle}
+            </p>
+          ) : null}
           {meta.length > 0 ? (
             <p className="mt-1 truncate text-[13px] font-semibold leading-[18px] tracking-normal text-slate-500">{meta.join(' · ')}</p>
           ) : null}
@@ -71,6 +114,8 @@ export function ProgramPreviewModal({
       }
       onClose={onClose}
       size="preview"
+      footer={footer}
+      footerVariant="preview-mobile"
       headerActions={!locked && onFavorite ? (
         <button
           type="button"
@@ -119,7 +164,7 @@ export function ProgramPreviewModal({
             ) : null}
             {!locked && fullDetailLocked ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[13px] font-semibold leading-[18px] tracking-normal text-blue-700">
-                Free 미리보기
+                무료 미리보기
               </span>
             ) : null}
             {!locked && hasSpomoveLink(program) ? (
@@ -129,42 +174,7 @@ export function ProgramPreviewModal({
             ) : null}
           </>
         }
-        footer={
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="hidden h-10 w-[96px] items-center justify-center rounded-[10px] border border-slate-200 px-4 text-[13px] font-bold tracking-normal text-slate-700 sm:inline-flex"
-            >
-              닫기
-            </button>
-            {locked ? (
-              <Link
-                href={lockHref}
-                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
-              >
-                <Lock className="h-4 w-4" />
-                {lockLabel}
-              </Link>
-            ) : fullDetailLocked ? (
-              <Link
-                href={lockHref}
-                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
-              >
-                <Lock className="h-4 w-4" />
-                Lite에서 상세 열기
-              </Link>
-            ) : (
-              <Link
-                href={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
-                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
-              >
-                <BookOpen className="h-4 w-4" />
-                상세 준비 열기
-              </Link>
-            )}
-          </div>
-        }
+        footer={<div className="hidden lg:block">{footer}</div>}
       />
     </BottomSheet>
   );

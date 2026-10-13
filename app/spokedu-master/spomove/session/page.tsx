@@ -32,6 +32,7 @@ import {
   standardSpomoveDurationSec,
 } from '../officialSpomovePresets';
 import { canLaunchInternalSpomoveCandidate } from '../internalSpomoveCandidateAccess';
+import { canAccessSpomovePreset } from '../../lib/spomoveTrialAccess';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 import { resolveSpomovePublicDisplayTitle } from '../spomovePublicNaming';
 import { parseSpomoveHubReturnHref } from '../spomoveHubNavigation';
@@ -179,7 +180,7 @@ function SpomoveSessionContent() {
   const presetId = searchParams.get('preset') ?? '';
   const baseOfficialPreset = useMemo(() => findOfficialSpomovePreset(presetId), [presetId]);
   const masterAccess = useOptionalMasterAccessContext();
-  const canLaunchPreset = canLaunchInternalSpomoveCandidate(
+  const canLaunchPreset = canAccessSpomovePreset(masterAccess?.snapshot, presetId) && canLaunchInternalSpomoveCandidate(
     baseOfficialPreset,
     masterAccess?.snapshot.isAdmin,
   );
@@ -1032,7 +1033,9 @@ function SpomoveSessionContent() {
   ]);
 
   const sessionOrigin = readSpomoveSessionOrigin(searchParams);
-  const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
+  const hubReturnHref = masterAccess?.snapshot.canUseSpomove
+    ? parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'))
+    : '/spokedu-lab/dashboard';
   const sessionReturnHref = sessionOrigin.isSessionOrigin
     ? parseMasterWorkReturnHref(
       sessionOrigin.returnTo,

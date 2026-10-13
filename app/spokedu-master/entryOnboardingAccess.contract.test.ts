@@ -47,6 +47,10 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
     expect(source).toContain('주요 지도 대상');
     expect(source).toContain('여러 항목을 선택할 수 있어요');
     expect(source).toContain('로그인하면 스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.');
+    expect(source).toContain("useState(profile?.name ?? '')");
+    expect(source).toContain('name: name.trim(),');
+    expect(source).toContain('placeholder="실제 이름을 입력해 주세요"');
+    expect(source).not.toContain("name.trim() || '선생님'");
   });
 
   it('keeps SubscriptionGateWall as a presentation-only gate', () => {
@@ -75,7 +79,7 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
     expect(accessRoute).toContain('getSpokeduMasterAccessSnapshot');
     expect(accessRoute).not.toContain('requireSpokeduMasterAccess');
     expect(shell).toContain('getMasterRouteRequirement');
-    expect(shell).toContain('hasRouteCapability');
+    expect(shell).toContain('hasMasterPathAccess');
     expect(shell).toContain('<SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />');
     expect(shell).toContain('getSafeMasterReturnPath');
     expect(shell).toContain('buildMasterGateContext');

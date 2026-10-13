@@ -1,4 +1,5 @@
 import nextEnv from '@next/env';
+import { applyMasterAdminSession } from './lib/spokedu-master-admin-auth.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -7,9 +8,7 @@ const BASE = (process.argv.find((arg) => /^https?:\/\//.test(arg)) || 'http://lo
 const SKIP_SERVER = process.argv.includes('--skip-server-check');
 
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPM_QA_ID || '';
-const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
 const MARKER = `QA${Date.now().toString().slice(-10)}`;
-const LOGIN_TIMEOUT_MS = 45_000;
 const LOGIN_RETRY_DELAY_MS = 1_500;
 
 function log(step, detail = '') {
@@ -39,52 +38,6 @@ async function assertServerReachable() {
   assert(response && response.status < 500, `dev server not reachable at ${BASE}`);
 }
 
-async function gotoLogin(page, nextPath) {
-  const loginUrl = `${BASE}/login?next=${encodeURIComponent(nextPath)}`;
-  await page.goto(loginUrl, { waitUntil: 'commit', timeout: 30_000 });
-  await page.waitForTimeout(700);
-}
-
-async function ensurePasswordForm(page) {
-  const passwordLogin = page.getByRole('button', { name: /비밀번호로 로그인|기존 계정으로 로그인/ });
-  if (await passwordLogin.isVisible().catch(() => false)) {
-    await passwordLogin.click();
-    await page.waitForTimeout(400);
-  }
-  await page.locator('input[type="password"]').first().waitFor({ state: 'visible', timeout: 15_000 });
-}
-
-async function login(context, nextPath = '/spokedu-master/landing') {
-  let lastError = 'unknown';
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const page = await context.newPage();
-    try {
-      page.setDefaultTimeout(15_000);
-      page.setDefaultNavigationTimeout(30_000);
-      await gotoLogin(page, nextPath);
-      await ensurePasswordForm(page);
-      await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
-      await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
-      const submit = page.locator('button[type="submit"]').filter({ hasText: /login/i });
-      await submit.waitFor({ state: 'visible', timeout: 15_000 });
-      await Promise.all([
-        page.waitForURL(/\/spokedu-master\//, { timeout: LOGIN_TIMEOUT_MS }),
-        submit.click(),
-      ]);
-      await page.close();
-      return;
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
-      await page.close().catch(() => undefined);
-      if (attempt < 3) {
-        log('login-retry', `attempt ${attempt} failed (${lastError})`);
-        await new Promise((resolve) => setTimeout(resolve, LOGIN_RETRY_DELAY_MS));
-      }
-    }
-  }
-  fail(`login failed after 3 attempts: ${lastError}`);
-}
-
 async function fetchJson(context, path) {
   const response = await context.request.get(`${BASE}${path}`, { headers: { accept: 'application/json' } });
   const body = await response.json().catch(() => null);
@@ -101,7 +54,7 @@ async function patchJson(context, path, payload) {
 }
 
 async function main() {
-  assert(QA_ID && QA_PASSWORD, 'SPOKEDU_MASTER_QA_ID and SPOKEDU_MASTER_QA_PASSWORD are required');
+  assert(QA_ID, 'SPOKEDU_MASTER_QA_ID is required');
   if (!SKIP_SERVER) {
     await assertServerReachable();
     log('server', 'reachable');
@@ -112,7 +65,7 @@ async function main() {
 
   const writer = await browser.newContext({ viewport: { width: 390, height: 844 } });
   try {
-    await login(writer);
+    await applyMasterAdminSession(writer, BASE, QA_ID);
     log('session-a', 'login ok');
 
     const before = await fetchJson(writer, '/api/spokedu-master/profile');
@@ -144,7 +97,7 @@ async function main() {
 
   const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
   try {
-    await login(reader);
+    await applyMasterAdminSession(reader, BASE, QA_ID);
     log('session-b', 'fresh login ok');
 
     const profile = await fetchJson(reader, '/api/spokedu-master/profile');

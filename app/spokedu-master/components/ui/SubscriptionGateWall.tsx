@@ -41,8 +41,8 @@ const FEATURE_COPY = {
   },
   spomove: {
     icon: MonitorPlay,
-    title: 'SPOMOVE는 프리미엄에서 이용할 수 있습니다.',
-    desc: '수업 중 프로젝터, TV, 태블릿에 연결해 SPOMOVE 공식 활동을 전체 화면으로 시작하려면 프리미엄이 필요합니다.',
+    title: '전체 SPOMOVE는 프리미엄에서 이용할 수 있습니다.',
+    desc: 'Lite는 Dashboard의 관리자 지정 주간 체험 1개를 실행할 수 있습니다. 그 외 SPOMOVE 공식 활동을 시작하려면 프리미엄이 필요합니다.',
     access: 'SPOMOVE 공식 활동 및 전체 화면 실행',
   },
 } as const;

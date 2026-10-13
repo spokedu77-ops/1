@@ -1,0 +1,129 @@
+{
+  "campaign": "naver-blog-p0",
+  "updatedAt": "2026-10-10T00:10:00.000Z",
+  "revenueConversionP0": {
+    "source": "SPOKEDU_매출전환_P0_실행5건_20261010.json@0ba67731",
+    "queued": 5,
+    "linkPreflight": "contact·private·사례 블로그 URL HTTP 200",
+    "executionBlocked": "224381522801 미발행 탭 승인 전 + PostUpdateForm 앵커 DOM 1회 미확인"
+  },
+  "entries": [
+    {
+      "postId": "p0-family-sports-day",
+      "logNo": "224381522801",
+      "phase": "automation-verify",
+      "published": false,
+      "result": "pass",
+      "runVerifyExitCode": 0,
+      "notes": "미발행 유지(브라우저 미접촉).",
+      "verifiedAt": "2026-10-09T15:05:00.000Z"
+    },
+    {
+      "postId": "p0-keyum-center-spomove",
+      "logNo": "224418128066",
+      "phase": "P0-A-ready",
+      "published": false,
+      "result": "static-pass",
+      "notes": "manifest 등록·정적 검증만. UI 편집 대기."
+    },
+    {
+      "postId": "p0-seodaemun-children-booth",
+      "logNo": "224282789801",
+      "phase": "P0-A-ready",
+      "published": false,
+      "result": "static-pass",
+      "notes": "manifest 등록·정적 검증만. UI 편집 대기."
+    },
+    {
+      "postId": "p0-indoor-pe-games-verify",
+      "logNo": "224399173654",
+      "phase": "P0-A-verify-only",
+      "published": false,
+      "result": "static-pass",
+      "notes": "DOM 링크 검증만 예정. 편집 없음."
+    },
+    {
+      "postId": "p0-paps-grade-table",
+      "logNo": "224252759409",
+      "phase": "P0-B-source-review",
+      "published": false,
+      "result": "source-review-hold",
+      "sourceReviewBasis": "PAPS_390칸_검증갱신@2e4f9dec (+ prior a6b8be7e/fa40b310)",
+      "numericVerify": {
+        "별표4_390칸_합계": "386/390",
+        "본문_검증범위": "296/300",
+        "왕복오래달리기": "100/100 pass",
+        "BMI": "96/100 (4 mismatch)",
+        "앉아윗몸앞으로굽히기": "100/100 pass",
+        "기타종목": "HOLD"
+      },
+      "correctionCandidates": ["A 유연성 학년", "B PEI 누락", "C 남 고2·고3 BMI 4칸"],
+      "notes": "교정·발행 HOLD. 왕복·앉아윗몸 PASS 유지. BMI 4칸만 불일치 등록."
+    },
+    {
+      "postId": "p0-paps-middle-school-analysis",
+      "logNo": "224252753364",
+      "phase": "P0-B-source-review",
+      "published": false,
+      "result": "source-review-hold",
+      "sourceReviewBasis": "PAPS_390칸_검증갱신@2e4f9dec",
+      "numericVerify": {
+        "검증범위_90칸": "90/90 pass",
+        "왕복오래달리기": "30/30 pass",
+        "BMI": "30/30 pass",
+        "앉아윗몸앞으로굽히기": "30/30 pass",
+        "기타종목": "HOLD"
+      },
+      "notes": "검증 90칸 전부 일치. 미검증 종목 HOLD. 인과 표현 REVIEW."
+    },
+    {
+      "postId": "p0-paps-archive-2019",
+      "logNo": "221707459149",
+      "phase": "P0-B-archive-note",
+      "published": false,
+      "result": "source-review-hold",
+      "sourceReviewBasis": "PAPS_390칸_검증갱신@2e4f9dec",
+      "notes": "390칸 합산 대상 아님. 2019 보존·안내문 준비. UI HOLD."
+    },
+    {
+      "postId": "conv-maedong-neulbom",
+      "logNo": "224198130319",
+      "phase": "revenue-p0",
+      "published": false,
+      "result": "conversion-queued",
+      "notes": "copy-ready. 링크 OK. UI 편집·발행 대기."
+    },
+    {
+      "postId": "conv-dongjak-spomove-intro",
+      "logNo": "224224418043",
+      "phase": "revenue-p0",
+      "published": false,
+      "result": "conversion-queued",
+      "notes": "copy-ready. 링크 OK. UI 편집·발행 대기."
+    },
+    {
+      "postId": "conv-school-pe-adapt-8yo",
+      "logNo": "224311484324",
+      "phase": "revenue-p0",
+      "published": false,
+      "result": "conversion-queued",
+      "notes": "copy-ready. /private OK. UI 편집·발행 대기."
+    },
+    {
+      "postId": "conv-banpo-2to1",
+      "logNo": "224286856009",
+      "phase": "revenue-p0",
+      "published": false,
+      "result": "conversion-queued",
+      "notes": "copy-ready. /private OK. UI 편집·발행 대기."
+    },
+    {
+      "postId": "conv-keyum-family-mini",
+      "logNo": "224374597964",
+      "phase": "revenue-p0",
+      "published": false,
+      "result": "conversion-queued",
+      "notes": "copy-ready. 224381522801 링크는 미발행 글 — 편집 시 별도 탭·승인."
+    }
+  ]
+}

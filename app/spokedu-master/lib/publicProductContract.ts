@@ -3,7 +3,7 @@
  * entitlement key · 내부 결제 코드 · 실험 플래그는 노출하지 않는다.
  * 가격·purchasable은 productCatalog에서만 파생한다 (숫자 재선언 금지).
  *
- * Free SSOT (entitlement): 수업 도구 3종 + Library 탐색 + weekly 첫 슬롯 프로그램 전체 이용.
+ * Free SSOT (entitlement): 수업 도구 3종 + Library 탐색 + weekly 첫 슬롯 프로그램 빠른 미리보기.
  * 대시보드의 「추천 미리보기 1장」은 entitlement가 아니며 공개 기능 범위에 넣지 않는다.
  * Center: Lite/Premium peer 플랜이 아니라 sales_inquiry 전용.
  */
@@ -88,9 +88,9 @@ export type PublicPlanComparisonRow = {
 };
 
 const PUBLIC_PLAN_COMPARISON: readonly PublicPlanComparisonRow[] = [
-  { label: 'Library 탐색', free: true, lite: true, premium: true },
-  { label: '이번 주 추천 프로그램 1개', free: true, lite: true, premium: true },
-  { label: '전체 Library', free: false, lite: true, premium: true },
+  { label: '놀이체육 탐색', free: true, lite: true, premium: true },
+  { label: '지정 프로그램 1개 미리보기', free: true, lite: true, premium: true },
+  { label: '전체 놀이체육', free: false, lite: true, premium: true },
   { label: '즐겨찾기', free: false, lite: true, premium: true },
   { label: '수업 도구 3종', free: true, lite: true, premium: true },
   { label: '수업 도구 전체 8종', free: false, lite: true, premium: true },
@@ -140,7 +140,7 @@ const FREE_PLAN: PublicProductPlan = {
   billingCycleLabel: '로그인 후 이용',
   purchasable: false,
   contactRequired: false,
-  featureSummary: ['Library 탐색', '이번 주 추천 프로그램 1개 전체 이용', '수업 도구 3종'],
+  featureSummary: ['놀이체육 탐색', '지정 프로그램 1개 미리보기', '수업 도구 3종'],
   includesSpomove: false,
 };
 
@@ -178,7 +178,7 @@ export function getPublicProductContract(): PublicProductContract {
     annualSold: false,
     freeStartSupported: true,
     freeScopeNote:
-      '무료 범위는 로그인 후 Library 탐색, 이번 주 추천 프로그램 1개 전체 이용, 스탑워치·타이머·점수판입니다.',
+      '무료 범위는 로그인 후 놀이체육 탐색, 지정된 놀이체육 프로그램 1개 빠른 미리보기, 스탑워치·타이머·점수판입니다. 전체 프로그램 상세 자료는 라이트 이상에서 이용할 수 있습니다.',
     plans: [FREE_PLAN, catalogSubscriptionToPublic('lite'), catalogSubscriptionToPublic('premium')],
     centerInquiry: CENTER_INQUIRY,
     spomat: {

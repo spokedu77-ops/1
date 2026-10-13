@@ -5,12 +5,14 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('MASTER account support parity', () => {
-  it('shares the complete FAQ source between landing and profile', () => {
-    const faqs = read('app/spokedu-master/lib/masterFaq.ts');
+  it('keeps the complete landing and account FAQ sources wired to their surfaces', () => {
+    const accountFaqs = read('app/spokedu-master/lib/masterFaq.ts');
+    const landingFaqs = read('app/spokedu-master/landing/landingFaq.ts');
     const landing = read('app/spokedu-master/landing/components/LandingSections.tsx');
     const profile = read('app/spokedu-master/profile/page.tsx');
-    expect((faqs.match(/^  \['/gm) ?? [])).toHaveLength(11);
-    expect(landing).toContain('MASTER_FAQS.map');
+    expect((accountFaqs.match(/^  \['/gm) ?? [])).toHaveLength(11);
+    expect((landingFaqs.match(/^  \["/gm) ?? [])).toHaveLength(11);
+    expect(landing).toContain('LANDING_FAQS.map');
     expect(profile).toContain('MASTER_FAQS.map');
   });
 
@@ -20,4 +22,3 @@ describe('MASTER account support parity', () => {
     expect(businessInfo).toContain('MASTER_CUSTOMER_SERVICE_HREF = MASTER_KAKAO_CHANNEL_HREF');
   });
 });
-

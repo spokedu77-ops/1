@@ -16,6 +16,10 @@ import {
   type PadColorId,
   type TrainingResultConfig,
 } from './trainingResultSummary';
+import {
+  resolveSpomoveCompletionPresentation,
+  type SpomoveCompletionReason,
+} from '@/app/spokedu-master/spomove/session/sessionResultModel';
 
 export type SelfCheckItem = {
   id: string;
@@ -48,6 +52,31 @@ export type TrainingResultRichContent = {
   coachTip: string;
   selfCheckItems: SelfCheckItem[];
 };
+
+function applyMasterCompletionTruth(
+  content: TrainingResultRichContent,
+  completionReason?: SpomoveCompletionReason,
+): TrainingResultRichContent {
+  if (!completionReason) return content;
+  const completion = resolveSpomoveCompletionPresentation(completionReason);
+  return {
+    ...content,
+    praise: completion.title,
+    praiseSub: completion.description,
+    activityFeel: completion.statusBadge,
+    sessionSnapshot: [
+      ...content.sessionSnapshot.filter((item) => item.id !== 'feel' && item.id !== 'status'),
+      { id: 'status', label: '종료 상태', value: completion.statusBadge },
+    ].slice(0, 5),
+    programSummary: `${content.programTitle}의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.`,
+    benefitTags: [],
+    benefitLine: `설정된 활동 내용 · ${content.phaseName || content.programTitle}`,
+    selfCheckItems: [{
+      id: 'measurement-note',
+      label: '진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.',
+    }],
+  };
+}
 
 function findGuidePhase(mode: string, level: number): GuidePhase | undefined {
   const guide = GUIDE_BLOCKS.find((b) => b.id === mode);
@@ -501,7 +530,7 @@ export function resolveTrainingResultRichContent(
   cfg: TrainingResultConfig,
   elapsedMs: number,
   colorCounts: ColorStimulusCounts | null,
-  options?: { programTitle?: string; volumeLabel?: string },
+  options?: { programTitle?: string; volumeLabel?: string; completionReason?: SpomoveCompletionReason },
 ): TrainingResultRichContent {
   const mo = MODES[cfg.mode];
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
@@ -519,7 +548,7 @@ export function resolveTrainingResultRichContent(
       '바뀐 칸을 집중해서 찾아봤어요',
       '눈으로 살피고 머릿속에 담았어요',
     ], `${instantTitle}:${Math.round(elapsedMs / 1000)}`);
-    return {
+    return applyMasterCompletionTruth({
       praise: '색 배치 기억 활동을 마쳤어요!',
       praiseSub: `${instantTitle} 활동을 끝까지 진행했어요.`,
       activityFeel: instantFeel,
@@ -549,7 +578,7 @@ export function resolveTrainingResultRichContent(
         { id: 'focus', label: '배치가 바뀌는 순간에 집중했나요?' },
         { id: 'move', label: '기억한 위치에 맞춰 움직였나요?' },
       ], `${instantTitle}:${Math.round(elapsedMs / 100)}`, 5),
-    };
+    }, options?.completionReason);
   }
   const shapeCompletionTitle = '맞는 조각 찾아가기';
   if (cfg.mode === 'basic' && cfg.level === 8 && options?.programTitle === shapeCompletionTitle) {
@@ -560,7 +589,7 @@ export function resolveTrainingResultRichContent(
       '부분을 보고 전체 모습을 떠올렸어요',
       '모양을 비교하며 집중했어요',
     ], `${shapeCompletionTitle}:${Math.round(elapsedMs / 1000)}`);
-    return {
+    return applyMasterCompletionTruth({
       praise: '오늘도 멋지게 해냈어요!',
       praiseSub: `${withObjectParticle(shapeCompletionTitle)} 끝까지 완주했어요.`,
       activityFeel: shapeFeel,
@@ -590,7 +619,7 @@ export function resolveTrainingResultRichContent(
         { id: 'retry', label: '틀린 뒤에도 다음 문제에 다시 집중했나요?' },
         { id: 'steady', label: '서두르지 않고 후보를 차례로 살펴봤나요?' },
       ], `${shapeCompletionTitle}:${Math.round(elapsedMs / 100)}`, 5),
-    };
+    }, options?.completionReason);
   }
   const relativeCompassTitle = '내 자리에서 방향 따라가기';
   const isRelativeCompass =
@@ -606,7 +635,7 @@ export function resolveTrainingResultRichContent(
       '방향을 살피고 한 칸씩 이동했어요',
       '다음 방향에 집중하며 움직였어요',
     ], `${relativeCompassTitle}:${Math.round(elapsedMs / 1000)}`);
-    return {
+    return applyMasterCompletionTruth({
       praise: '오늘도 멋지게 해냈어요!',
       praiseSub: `${withObjectParticle(relativeCompassTitle)} 끝까지 완주했어요.`,
       activityFeel: relativeFeel,
@@ -636,10 +665,10 @@ export function resolveTrainingResultRichContent(
         { id: 'next', label: '다음 화살표가 나올 때까지 준비했나요?' },
         { id: 'balance', label: '한 칸 이동한 뒤 균형을 잡았나요?' },
       ], `${relativeCompassTitle}:${Math.round(elapsedMs / 100)}`, 5),
-    };
+    }, options?.completionReason);
   }
 
-  return {
+  return applyMasterCompletionTruth({
     praise,
     praiseSub,
     activityFeel,
@@ -655,5 +684,5 @@ export function resolveTrainingResultRichContent(
     benefitLine: buildBenefitLine(cfg.mode, cfg.level),
     coachTip: buildCoachTip(cfg.mode, cfg.level),
     selfCheckItems: buildSelfCheckItems(cfg.mode, cfg.level, options?.programTitle, elapsedMs),
-  };
+  }, options?.completionReason);
 }

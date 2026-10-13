@@ -25,6 +25,7 @@ export type MasterAccessSnapshot = {
   canUseAttendance: boolean;
   canUseRecords: boolean;
   canUseSpomove: boolean;
+  spomoveTrialPresetId?: string | null;
   entitlementSource?: 'none' | 'billing' | 'promotion' | 'admin';
   promotionalPlan?: 'lite' | 'premium' | null;
   promotionalEndsAt?: string | null;
@@ -33,6 +34,7 @@ export type MasterAccessSnapshot = {
 export type MasterAccessApiResponse = MasterAccessSnapshot & {
   ok: boolean;
   allowed: boolean;
+  userId: string;
   spomatShopAvailable?: boolean;
 };
 

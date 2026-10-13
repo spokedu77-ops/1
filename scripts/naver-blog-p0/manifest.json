@@ -1,0 +1,810 @@
+{
+  "blogId": "spokedu77",
+  "editorUrlTemplate": "https://blog.naver.com/PostUpdateForm.naver?blogId={blogId}&Redirect=Update&logNo={logNo}",
+  "sourceDataFile": "source/SPOKEDU_P0_잔여6건_Cursor_수정데이터_20261009.json",
+  "papsOfficialReview": {
+    "file": "source/PAPS_공식근거_검토_20261009.md",
+    "gitCommit": "fa40b310",
+    "reviewedAt": "2026-10-09",
+    "overallStatus": "official-policy-confirmed-numeric-unverified",
+    "gates": {
+      "pass": [
+        "2026 시행 대상·초3 시범(경기도교육청 2026 학교체육 업무매뉴얼)",
+        "학생건강정보센터·2021 자료 시점 확인",
+        "2019 글 측정종목 적용 학년 vs 2026 매뉴얼 차이 확인"
+      ],
+      "review": [
+        "2026 글 2건 등급 경계값 전체 vs 현행 공식 원표",
+        "제목 '학생정보건강센터' 오기·검색 영향",
+        "건강/집중력/척추질환 인과 주장 근거"
+      ],
+      "hold": [
+        "PAPS 3건 본문 수치·제목·발행일 수정 및 발행",
+        "224252759409 수치 검증 전 221707459149→224252759409 조건부 링크"
+      ]
+    }
+  },
+  "papsByl4Crosscheck": {
+    "file": "source/PAPS_법령별표4_실제대조_20261009.md",
+    "summaryFile": "source/paps-byl4-crosscheck-summary.json",
+    "gitCommit": "a6b8be7e",
+    "reviewedAt": "2026-10-09",
+    "overallNumericStatus": "partial-386-of-390-bmi-4-mismatch",
+    "officialSource": "학교건강검사규칙 별표4 (2025-03-10 개정)",
+    "cell390Update": {
+      "file": "source/PAPS_공식별표4_390칸_검증갱신_20261009.md",
+      "gitCommit": "2e4f9dec",
+      "scopeEvents": ["왕복오래달리기", "BMI", "앉아윗몸앞으로굽히기"],
+      "total": { "checked": 390, "match": 386, "mismatch": 4 },
+      "byLogNo": {
+        "224252759409": {
+          "checked": 300,
+          "match": 296,
+          "shuttleRun": "100/100",
+          "bmi": "96/100",
+          "sitReach": "100/100"
+        },
+        "224252753364": {
+          "checked": 90,
+          "match": 90,
+          "shuttleRun": "30/30",
+          "bmi": "30/30",
+          "sitReach": "30/30"
+        }
+      },
+      "disclaimer": "전 종목 합격 판정 아님. 미검증 종목 HOLD."
+    }
+  },
+  "executeOrder": [
+    "224418128066",
+    "224282789801",
+    "224399173654",
+    "224252759409",
+    "224252753364",
+    "221707459149"
+  ],
+  "revenueConversionP0": {
+    "sourceFile": "source/SPOKEDU_매출전환_P0_실행5건_20261010.json",
+    "gitCommit": "0ba67731",
+    "goal": "학부모·기관 상담/계약 연결",
+    "executeOrder": [
+      "224198130319",
+      "224224418043",
+      "224311484324",
+      "224286856009",
+      "224374597964"
+    ],
+    "preflightFile": "source/conversion-link-preflight-20261010.json",
+    "executionGate": "224381522801 미발행 탭 이동·재로드 사용자 승인 전 + 각 글 PostUpdateForm 앵커 1회 DOM 확인"
+  },
+  "posts": [
+    {
+      "id": "p0-family-sports-day",
+      "logNo": "224381522801",
+      "title": "가족운동회 게임 추천｜부모와 아이가 함께하는 운동회 종목 5가지",
+      "status": "edited-unpublished",
+      "phase": "P0-complete-unpublished",
+      "baselineFile": "baselines/224381522801-edited-unpublished.json",
+      "edits": [
+        {
+          "id": "mod-a-case-link",
+          "anchorText": "아래 운영 사례에서 확인할 수 있습니다.",
+          "anchorMatch": "exact",
+          "insertPosition": "afterAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                {
+                  "text": "실제 키움센터 가족 미니운동회 현장 보기",
+                  "link": "https://blog.naver.com/spokedu77/224374597964"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mod-b-contact",
+          "anchorText": "가족운동회 · 부모자녀 체육프로그램 · 기관 체육행사 문의 : SPOKEDU",
+          "anchorMatch": "includes",
+          "insertPosition": "beforeAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "가족운동회 및 기관 체육행사 상담" },
+                {
+                  "text": "유치원·어린이집·학교·키움센터의 가족운동회와 부모참여수업은 참여 연령, 가족 수, 공간, 행사 시간을 확인한 뒤 현장에 맞춰 구성합니다."
+                },
+                {
+                  "text": "기관 체육행사 상담하기",
+                  "link": "https://spokedu.kr/contact?type=dispatch"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "가족운동회 게임 추천｜부모와 아이가 함께하는 운동회 종목 5가지",
+        "imageComponentCount": 6,
+        "hashtags": [
+          "#가족운동회 #가족운동회게임 #운동회게임",
+          "#운동회게임추천 #운동회종목 #유치원운동회",
+          "#어린이집운동회 #부모참여수업 #가족체육프로그램",
+          "#스포키듀"
+        ],
+        "mustKeepTextSnippets": [
+          "아래 운영 사례에서 확인할 수 있습니다.",
+          "https://spokedu.kr"
+        ]
+      }
+    },
+    {
+      "id": "p0-keyum-center-spomove",
+      "logNo": "224418128066",
+      "title": "키움센터 체육 프로그램｜초등 돌봄 현장에 맞춘 놀이체육 수업 설계",
+      "status": "pending",
+      "phase": "P0-A-ready",
+      "baselineFile": null,
+      "notes": "기존 구형 문의 URL 1곳만 갱신. 기존 링크가 실제 동작하면 리디렉션 확인 후 진행.",
+      "edits": [
+        {
+          "id": "mod-a-records-link",
+          "anchorText": "MOVEMENT BECOMES LEARNING",
+          "anchorMatch": "exact",
+          "insertPosition": "beforeAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "실제 키움센터 정규수업 사례" },
+                {
+                  "text": "동작거점형 우리동네키움센터에서 화면의 신호를 확인하고 몸으로 반응하는 SPOMOVE 수업을 운영했습니다. 이는 다양한 기관 체육 프로그램 가운데 한 사례로 모든 키움센터 수업에 SPOMOVE가 포함되는 것은 아닙니다."
+                },
+                {
+                  "text": "키움센터 정규수업 사례 확인",
+                  "link": "https://spokedu.kr/records/dongjak-spomove"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "linkEdits": [
+        {
+          "id": "mod-b-dispatch-url",
+          "findText": "https://spokedu.kr/info/dispatch",
+          "replaceText": "https://spokedu.kr/contact?type=dispatch",
+          "anchorMatch": "exact"
+        }
+      ],
+      "preserve": {
+        "titleExact": "키움센터 체육 프로그램｜초등 돌봄 현장에 맞춘 놀이체육 수업 설계",
+        "hashtags": [],
+        "mustKeepTextSnippets": ["MOVEMENT BECOMES LEARNING"]
+      }
+    },
+    {
+      "id": "p0-seodaemun-children-booth",
+      "logNo": "224282789801",
+      "title": "어린이날 체육부스 운영 후기 서대문구 독립문공원 SPOMOVE 체험부스",
+      "status": "pending",
+      "phase": "P0-A-ready",
+      "baselineFile": null,
+      "notes": "원문 도입부에 행사·운영시간·운영 프로그램이 이미 있어 개요를 중복 삽입하지 않음. 이벤트 실적 수치 창작 금지.",
+      "edits": [
+        {
+          "id": "mod-a-event-contact",
+          "anchorText": "스포키듀 대표:",
+          "anchorMatch": "includes",
+          "insertPosition": "beforeAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "축제·체험부스 운영을 준비하고 계신가요?" },
+                {
+                  "text": "학교·지자체·청소년기관 등 행사 현장에 맞춰 참가 연령과 공간, 운영 시간, 교구 구성을 함께 검토합니다. 실제 운영 사례를 확인한 뒤 기관 행사 상담을 신청할 수 있습니다."
+                },
+                {
+                  "text": "서대문 어린이날 체험부스 사례 보기",
+                  "link": "https://spokedu.kr/records/seodaemun-event-booth"
+                },
+                {
+                  "text": "기관 행사 상담하기",
+                  "link": "https://spokedu.kr/contact?type=dispatch"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "어린이날 체육부스 운영 후기 서대문구 독립문공원 SPOMOVE 체험부스",
+        "hashtags": [],
+        "mustKeepTextSnippets": ["스포키듀 대표:"]
+      }
+    },
+    {
+      "id": "p0-indoor-pe-games-verify",
+      "logNo": "224399173654",
+      "title": "초등 실내 체육놀이 5가지｜비 오는 날 바로 쓰는 체육수업 게임",
+      "status": "verify-only",
+      "phase": "P0-A-verify-only",
+      "baselineFile": null,
+      "notes": "이미 기관 수업과 현장 사례 링크가 존재하므로 수정·발행 불필요. 오류가 확인되면 별도 보고.",
+      "edits": [],
+      "verifyChecks": [
+        {
+          "id": "check-education-link",
+          "anchor": "https://spokedu.kr/education"
+        },
+        {
+          "id": "check-records-link",
+          "anchor": "https://spokedu.kr/records"
+        }
+      ],
+      "preserve": {
+        "titleExact": "초등 실내 체육놀이 5가지｜비 오는 날 바로 쓰는 체육수업 게임",
+        "hashtags": [],
+        "mustKeepTextSnippets": [
+          "https://spokedu.kr/education",
+          "https://spokedu.kr/records"
+        ]
+      }
+    },
+    {
+      "id": "p0-paps-grade-table",
+      "logNo": "224252759409",
+      "title": "PAPS 등급 기준표 총정리 : 초등, 중등, 고등 한 눈에 보기 (교육부 학생정보건강센터 자료 첨부)",
+      "status": "source-review",
+      "phase": "P0-B-source-review",
+      "baselineFile": null,
+      "notes": "학교급별 등급 숫자와 BMI 구간은 공식 출처·기준연도 검증 전 보류. 자동 공개발행 금지.",
+      "sourceReview": {
+        "basisFiles": [
+          "source/PAPS_공식근거_검토_20261009.md",
+          "source/PAPS_법령별표4_실제대조_20261009.md",
+          "source/PAPS_공식별표4_390칸_검증갱신_20261009.md"
+        ],
+        "numericMatchOfficial": "partial-296-of-300-verified-scope",
+        "verifiedNumeric": [
+          {
+            "event": "왕복오래달리기",
+            "officialTable": "별표4",
+            "cells": "100/100",
+            "scope": "남녀 초3~고3",
+            "status": "pass"
+          },
+          {
+            "event": "BMI",
+            "officialTable": "별표4",
+            "cells": "96/100",
+            "scope": "검증 범위 내",
+            "status": "partial-4-mismatch"
+          },
+          {
+            "event": "앉아윗몸앞으로굽히기",
+            "officialTable": "별표4",
+            "cells": "100/100",
+            "scope": "검증 범위 내",
+            "status": "pass"
+          },
+          {
+            "event": "합계(검증 범위)",
+            "officialTable": "별표4",
+            "cells": "296/300",
+            "status": "partial"
+          }
+        ],
+        "numericMismatches": [
+          {
+            "grade": "남 고2",
+            "category": "경도비만 열",
+            "blog": "30.0 이상",
+            "official": "25.0~29.9 (과체중/경도비만 병합)"
+          },
+          {
+            "grade": "남 고2",
+            "category": "고도비만 열",
+            "blog": "-",
+            "official": "30.0 이상"
+          },
+          {
+            "grade": "남 고3",
+            "category": "경도비만 열",
+            "blog": "30.0 이상",
+            "official": "25.0~29.9 (과체중/경도비만 병합)"
+          },
+          {
+            "grade": "남 고3",
+            "category": "고도비만 열",
+            "blog": "-",
+            "official": "30.0 이상"
+          }
+        ],
+        "unverifiedNumeric": [
+          "오래달리기-걷기",
+          "스텝(PEI) 수치 표",
+          "팔굽/무릎대고팔굽혀펴기",
+          "윗몸말아올리기",
+          "악력",
+          "50m",
+          "제자리멀리뛰기",
+          "기타 미대조 종목"
+        ],
+        "correctionCandidates": [
+          {
+            "id": "A",
+            "topic": "종합유연성 적용학년 설명 오류",
+            "status": "registered",
+            "basisNote": "종합유연성이 초3에만 적용된다는 설명은 현행 별표와 다름. 남녀 초3~고3 공통 기준 4이하/5/6/7/8."
+          },
+          {
+            "id": "B",
+            "topic": "스텝검사(PEI) 표 누락",
+            "status": "registered",
+            "basisNote": "초3·초4 미실시, 초5~고3 공통 기준. 본문 남 초5 1행만·여학생 섹션 누락."
+          },
+          {
+            "id": "C",
+            "topic": "남학생 고2·고3 BMI 분류 셀 오류",
+            "status": "registered",
+            "mismatchCells": 4,
+            "correctionApproach": "표 셀 병합 정확 시 구조 수정; UI 불안정 시 BMI 표 아래 정정 문단 삽입(기존 수치·사진·레이아웃 보존). 표 구조 교체는 승인 후."
+          }
+        ],
+        "titleChangeAllowed": false,
+        "bodyNumericEditAllowed": false,
+        "plannedUiEditsAllowed": false,
+        "publishAllowed": false,
+        "findings": [
+          "기관명 어순 — 제목 변경은 검색 영향 분석 전 보류",
+          "2026 초3 시범·종목 선택 운영 설명 보강 필요(수치 변경 없이)"
+        ],
+        "editWhen": "미검증 종목 HOLD 유지 + 교정 후보(A/B/C) 승인·교정문안 확정 후 UI 반영"
+      },
+      "edits": [
+        {
+          "id": "mod-a-source-notice",
+          "anchorText": "0. PAPS 결과표, 가장 먼저 무엇을 봐야 할까요?",
+          "anchorMatch": "exact",
+          "insertPosition": "beforeAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "자료 확인 안내" },
+                {
+                  "text": "이 글은 PAPS 등급표를 이해하기 위한 참고 자료입니다. 실제 평가에 적용되는 측정 종목과 기준은 학교에서 안내한 해당 학년도 자료를 우선 확인해 주세요. 본문 수치의 공식 출처와 적용 시점을 점검하고 있습니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mod-b-followup-links",
+          "anchorText": "#PAPS #팝스기준표",
+          "anchorMatch": "exact",
+          "insertPosition": "beforeAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "등급표를 확인한 다음에는" },
+                {
+                  "text": "같은 등급이라도 학생마다 어려워하는 움직임과 운동 경험은 다릅니다. 숫자 자체를 높이는 것만을 목표로 하기보다 현재 수행 수준에 맞는 연습을 선택하는 것이 중요합니다."
+                },
+                {
+                  "text": "실제 PAPS 대비 수업 이야기",
+                  "link": "https://blog.naver.com/spokedu77/224238468151"
+                },
+                {
+                  "text": "개인·소그룹 수업 안내",
+                  "link": "https://spokedu.kr/private"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "PAPS 등급 기준표 총정리 : 초등, 중등, 고등 한 눈에 보기 (교육부 학생정보건강센터 자료 첨부)",
+        "hashtags": [],
+        "mustKeepTextSnippets": [
+          "0. PAPS 결과표, 가장 먼저 무엇을 봐야 할까요?",
+          "#PAPS #팝스기준표"
+        ],
+        "noNumericChangesUntilSourceVerified": true
+      }
+    },
+    {
+      "id": "p0-paps-middle-school-analysis",
+      "logNo": "224252753364",
+      "title": "[PAPS 완벽 분석] 중학생 우리 아이, 학업의 기본은 '체력'입니다. (등급별 기준표 총정리)",
+      "status": "source-review",
+      "phase": "P0-B-source-review",
+      "baselineFile": null,
+      "notes": "수업효과·집중력·척추측만·우울감 예방 등 건강 및 학업 인과 단정 문구는 별도 검토. 중학생 등급 수치 출처 검증 전 수정 금지.",
+      "sourceReview": {
+        "basisFiles": [
+          "source/PAPS_공식근거_검토_20261009.md",
+          "source/PAPS_법령별표4_실제대조_20261009.md",
+          "source/PAPS_공식별표4_390칸_검증갱신_20261009.md"
+        ],
+        "numericMatchOfficial": "partial-90-of-90-verified-scope",
+        "verifiedNumeric": [
+          {
+            "event": "왕복오래달리기",
+            "officialTable": "별표4",
+            "cells": "30/30",
+            "scope": "남녀 중1~중3",
+            "status": "pass"
+          },
+          {
+            "event": "BMI",
+            "officialTable": "별표4",
+            "cells": "30/30",
+            "scope": "남녀 중1~중3",
+            "status": "pass"
+          },
+          {
+            "event": "앉아윗몸앞으로굽히기",
+            "officialTable": "별표4",
+            "cells": "30/30",
+            "scope": "남녀 중1~중3",
+            "status": "pass"
+          },
+          {
+            "event": "합계(검증 범위)",
+            "officialTable": "별표4",
+            "cells": "90/90",
+            "status": "pass"
+          }
+        ],
+        "unverifiedNumeric": [
+          "오래달리기-걷기",
+          "스텝",
+          "팔굽/무릎대고팔굽혀펴기",
+          "윗몸말아올리기",
+          "악력",
+          "50m",
+          "제자리멀리뛰기"
+        ],
+        "causalExpressionReview": "ongoing",
+        "causalPhrasesForReview": [
+          "척추측만증이 오기 쉽다",
+          "집중력이 눈에 띄게 좋아집니다"
+        ],
+        "titleChangeAllowed": false,
+        "bodyNumericEditAllowed": false,
+        "plannedUiEditsAllowed": false,
+        "publishAllowed": false,
+        "findings": [
+          "검증 범위 90칸 전부 일치 — 전 종목 PASS 아님",
+          "건강·의학적 인과 주장 근거 검토 필요(REVIEW)"
+        ],
+        "editWhen": "미검증 종목 HOLD + 인과 표현 검수 완료 후"
+      },
+      "edits": [
+        {
+          "id": "mod-a-next-steps",
+          "anchorText": "스포키듀가 우리 아이들의 단단한 성장을 함께하겠습니다.",
+          "anchorMatch": "exact",
+          "insertPosition": "beforeAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "PAPS 결과 다음에는 어떤 운동을 해야 할까요?" },
+                {
+                  "text": "PAPS 결과는 아이의 운동 능력 전체를 단정하는 자료가 아닙니다. 어려워하는 움직임을 살펴보고 이후 활동을 계획할 때 참고할 수 있습니다."
+                },
+                {
+                  "text": "스포키듀는 청소년의 현재 운동 경험과 수행 수준을 확인한 뒤 달리기와 기초체력부터 스포츠 움직임까지 개인·소그룹 수업을 구성합니다."
+                },
+                {
+                  "text": "PAPS 등급을 더 자세히 확인하기",
+                  "link": "https://blog.naver.com/spokedu77/224252759409"
+                },
+                {
+                  "text": "개인·소그룹 체육수업 알아보기",
+                  "link": "https://spokedu.kr/private"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "[PAPS 완벽 분석] 중학생 우리 아이, 학업의 기본은 '체력'입니다. (등급별 기준표 총정리)",
+        "hashtags": [],
+        "mustKeepTextSnippets": [
+          "스포키듀가 우리 아이들의 단단한 성장을 함께하겠습니다."
+        ],
+        "noNumericChangesUntilSourceVerified": true
+      }
+    },
+    {
+      "id": "p0-paps-archive-2019",
+      "logNo": "221707459149",
+      "title": "팝스측정종목 및 기준표(왕복오래달리기, 앉아윗몸앞으로굽히기,윗몸말아올리기,50m달리기평가기준표)",
+      "status": "archive-note",
+      "phase": "P0-B-archive-note",
+      "baselineFile": null,
+      "notes": "2019 원문 제목·표 이미지 11개와 게시물 URL 절대 보존.",
+      "sourceReview": {
+        "basisFiles": [
+          "source/PAPS_공식근거_검토_20261009.md",
+          "source/PAPS_법령별표4_실제대조_20261009.md",
+          "source/PAPS_공식별표4_390칸_검증갱신_20261009.md"
+        ],
+        "numericMatchOfficial": "archive-2019-preserve",
+        "archiveNoticeStatus": "draft-ready",
+        "titleChangeAllowed": false,
+        "bodyNumericEditAllowed": false,
+        "plannedUiEditsAllowed": false,
+        "publishAllowed": false,
+        "findings": [
+          "2019 앉아윗몸앞으로굽히기 적용학년 vs 현행 별표4(초3·초4 포함) 차이 — 역사자료로 보존",
+          "최신 적용학년 안내문(상단) 초안 준비 완료 — UI 반영은 편집 승인 전 HOLD"
+        ],
+        "conditionalLinkTo224252759409": "blocked-until-224252759409-non-shuttle-items-verified",
+        "recommendedNoticeDraft": "※ 이 글은 2019년에 작성된 PAPS 자료입니다. 현재의 평가 적용 학년과 측정 종목은 달라질 수 있습니다. 실제 평가 준비 및 등급 확인 시에는 학교에서 제공하는 해당 학년도 PAPS 안내와 개인별 결과표를 우선 확인해 주세요."
+      },
+      "edits": [
+        {
+          "id": "mod-a-archive-notice",
+          "anchorText": "1. PAPS 측정 종목",
+          "anchorMatch": "exact",
+          "insertPosition": "beforeAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "과거 작성 자료 안내 (2019년 11월)" },
+                {
+                  "text": "아래 내용은 2019년 작성 당시의 PAPS 측정 종목과 기준을 소개한 자료입니다. 현재 학교 평가에 그대로 적용하기 전에는 해당 학년도 학교 및 공식 안내를 확인해 주세요."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mod-b-conditional-paps-ref",
+          "anchorText": "2019년 작성 당시의 PAPS 측정 종목과 기준을 소개한 자료입니다.",
+          "anchorMatch": "includes",
+          "insertPosition": "afterAnchorComponent",
+          "requiresCondition": "2026 PAPS 등급표 글의 공식 수치·적용 시점 검증을 마친 경우에만 링크 추가",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                {
+                  "text": "최근에 정리한 PAPS 등급표 참고하기",
+                  "link": "https://blog.naver.com/spokedu77/224252759409"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "팝스측정종목 및 기준표(왕복오래달리기, 앉아윗몸앞으로굽히기,윗몸말아올리기,50m달리기평가기준표)",
+        "hashtags": [],
+        "mustKeepTextSnippets": ["1. PAPS 측정 종목"],
+        "noNumericChangesUntilSourceVerified": true
+      }
+    },
+    {
+      "id": "conv-maedong-neulbom",
+      "logNo": "224198130319",
+      "title": "종로거점형키움센터에서 6개월동안 함께 했던 매동초등학교 늘봄 스포츠 수업을 마무리했습니다 !",
+      "status": "conversion-queued",
+      "phase": "revenue-p0",
+      "lane": "기관 정기계약",
+      "baselineFile": null,
+      "notes": "매출전환 P0. copy-ready-not-applied.",
+      "edits": [
+        {
+          "id": "mod-a-dispatch-after-phone",
+          "anchorText": "010-4437-9294",
+          "anchorMatch": "exact",
+          "insertPosition": "afterAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "학교·키움센터 정기 체육수업 도입 상담" },
+                {
+                  "text": "매동초등학교 늘봄 스포츠 수업처럼 학년과 참여 인원, 운영 기간에 맞춰 체육 프로그램을 구성합니다. 기관명, 대상 학년, 주당 수업 횟수, 운영 기간, 수업 공간을 알려주시면 가능한 운영 방식을 안내해 드립니다."
+                },
+                {
+                  "text": "기관 정기수업 상담하기",
+                  "link": "https://spokedu.kr/contact?type=dispatch"
+                },
+                {
+                  "text": "다른 키움센터의 SPOMOVE 정규수업 사례 보기",
+                  "link": "https://blog.naver.com/spokedu77/224224418043"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "종로거점형키움센터에서 6개월동안 함께 했던 매동초등학교 늘봄 스포츠 수업을 마무리했습니다 !",
+        "imageComponentCount": 46,
+        "hashtags": [],
+        "mustKeepTextSnippets": ["010-4437-9294"]
+      }
+    },
+    {
+      "id": "conv-dongjak-spomove-intro",
+      "logNo": "224224418043",
+      "title": "제 2호 동작거점형 우리동네키움센터에서 진행하는 스포키듀의 에듀테크 체육 수업 SPOMOVE를 소개합니다.",
+      "status": "conversion-queued",
+      "phase": "revenue-p0",
+      "lane": "기관·SPOMOVE 제휴",
+      "baselineFile": null,
+      "notes": "매출전환 P0. copy-ready-not-applied.",
+      "edits": [
+        {
+          "id": "mod-a-spomove-inquiry",
+          "anchorText": "SPOMOVE 놀이체육 프로그램이 궁금하시다면 스포키듀에 문의해주세요.",
+          "anchorMatch": "exact",
+          "insertPosition": "afterAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                {
+                  "text": "SPOMOVE 현장 적용 사례 더 보기",
+                  "link": "https://blog.naver.com/spokedu77/224252909846"
+                },
+                {
+                  "text": "키움센터·학교·복지기관에서 SPOMOVE를 체육수업에 활용하고 싶다면 대상 연령, 참여 인원, 공간, 영상 장비 유무를 알려주세요. 현장 조건에 맞는 운영 구성을 검토해 드립니다."
+                },
+                {
+                  "text": "기관 SPOMOVE 수업 문의",
+                  "link": "https://spokedu.kr/contact?type=dispatch"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "제 2호 동작거점형 우리동네키움센터에서 진행하는 스포키듀의 에듀테크 체육 수업 SPOMOVE를 소개합니다.",
+        "imageComponentCount": 22,
+        "hashtags": [],
+        "mustKeepTextSnippets": [
+          "SPOMOVE 놀이체육 프로그램이 궁금하시다면 스포키듀에 문의해주세요."
+        ]
+      }
+    },
+    {
+      "id": "conv-school-pe-adapt-8yo",
+      "logNo": "224311484324",
+      "title": "학교체육 적응을 돕는 8세 남학생 체육 수업 [동작구 8세 남학생 학교체육 수업 후기]",
+      "status": "conversion-queued",
+      "phase": "revenue-p0",
+      "lane": "학부모 개인수업",
+      "baselineFile": null,
+      "notes": "매출전환 P0. copy-ready-not-applied.",
+      "edits": [
+        {
+          "id": "mod-a-private-consult",
+          "anchorText": "아이가 편안하게 참여할 수 있는 단계적 체육 수업이 좋은 시작이 될 수 있습니다.",
+          "anchorMatch": "exact",
+          "insertPosition": "afterAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "초등 저학년 학교체육 적응 수업 상담" },
+                {
+                  "text": "학교 체육시간이 어렵거나 움직임에 자신감이 부족한 아이는 현재 가능한 동작부터 확인해 활동 난이도를 조절하는 것이 중요합니다. 자녀의 학년, 어려워하는 체육활동, 희망 지역을 알려주시면 수업 가능 여부와 방향을 안내해 드립니다."
+                },
+                {
+                  "text": "개인·소그룹 체육수업 알아보기",
+                  "link": "https://spokedu.kr/private"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "학교체육 적응을 돕는 8세 남학생 체육 수업 [동작구 8세 남학생 학교체육 수업 후기]",
+        "imageComponentCount": 11,
+        "hashtags": [],
+        "mustKeepTextSnippets": [
+          "아이가 편안하게 참여할 수 있는 단계적 체육 수업이 좋은 시작이 될 수 있습니다."
+        ]
+      }
+    },
+    {
+      "id": "conv-banpo-2to1",
+      "logNo": "224286856009",
+      "title": "[반포 8세 여아 2:1 학교체육 수업] 친구와 함께 움직이며 자신감을 키우는 시간",
+      "status": "conversion-queued",
+      "phase": "revenue-p0",
+      "lane": "학부모 소그룹수업",
+      "baselineFile": null,
+      "notes": "매출전환 P0. copy-ready-not-applied.",
+      "edits": [
+        {
+          "id": "mod-a-private-2to1",
+          "anchorText": "수업 문의: 대표 최지훈 (010-4437-9294)",
+          "anchorMatch": "exact",
+          "insertPosition": "afterAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                { "text": "친구·형제자매와 함께하는 2:1 체육수업 상담" },
+                {
+                  "text": "수업을 함께할 아이들의 학년, 운동 경험, 희망 지역과 일정을 알려주시면 소그룹 운영 가능 여부를 안내해 드립니다."
+                },
+                {
+                  "text": "개인·소그룹 체육수업 알아보기",
+                  "link": "https://spokedu.kr/private"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "[반포 8세 여아 2:1 학교체육 수업] 친구와 함께 움직이며 자신감을 키우는 시간",
+        "imageComponentCount": 12,
+        "hashtags": [],
+        "mustKeepTextSnippets": ["수업 문의: 대표 최지훈 (010-4437-9294)"]
+      }
+    },
+    {
+      "id": "conv-keyum-family-mini",
+      "logNo": "224374597964",
+      "title": "키움센터 가족 체육프로그램｜부모·자녀 미니운동회 운영 사례",
+      "status": "conversion-queued",
+      "phase": "revenue-p0",
+      "lane": "기관 가족행사 계약",
+      "baselineFile": null,
+      "notes": "매출전환 P0. 가족운동회 글(224381522801)로 역링크 예정 — 해당 미발행 글 탭은 승인 전 미접촉.",
+      "edits": [
+        {
+          "id": "mod-a-family-dispatch",
+          "anchorText": "기관 프로그램 문의: 010-4437-9294",
+          "anchorMatch": "exact",
+          "insertPosition": "afterAnchorComponent",
+          "blocks": [
+            {
+              "type": "text",
+              "paragraphs": [
+                {
+                  "text": "가족운동회 종목 구성 아이디어 보기",
+                  "link": "https://blog.naver.com/spokedu77/224381522801"
+                },
+                {
+                  "text": "기관명, 대상 학년, 예상 가족 수, 행사 장소와 일정을 알려주시면 현장에 적합한 종목과 운영 방식을 제안합니다."
+                },
+                {
+                  "text": "가족운동회·기관 행사 상담하기",
+                  "link": "https://spokedu.kr/contact?type=dispatch"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "preserve": {
+        "titleExact": "키움센터 가족 체육프로그램｜부모·자녀 미니운동회 운영 사례",
+        "imageComponentCount": 23,
+        "hashtags": [],
+        "mustKeepTextSnippets": ["기관 프로그램 문의: 010-4437-9294"]
+      }
+    }
+  ]
+}

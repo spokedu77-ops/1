@@ -14,6 +14,9 @@ import {
   isRemoteImage,
   normalizeImageSrc,
 } from '../../lib/program-media';
+import { splitLessonCardTitle } from './lessonTitle';
+
+export { splitLessonCardTitle } from './lessonTitle';
 
 /**
  * SPOMOVE 홈 카드와 같은 골격
@@ -25,14 +28,6 @@ import {
 /** SVG 플레이스홀더만 fill. 실사진은 cover로 비율 유지(잘림 허용). */
 function shouldStretchToSquare(_width: number, _height: number, src: string) {
   return /\.svg(\?|#|$)/i.test(src);
-}
-
-/** `한글 제목 (English Subtitle)` → 표시 제목 / 부제 분리 */
-export function splitLessonCardTitle(raw: string): { title: string; subtitle: string } {
-  const text = raw.trim();
-  const matched = text.match(/^(.+?)\s*[（(]([^）)]*[A-Za-z][^）)]*)[）)]\s*$/u);
-  if (!matched) return { title: text, subtitle: '' };
-  return { title: matched[1]!.trim(), subtitle: matched[2]!.trim() };
 }
 
 export function LessonNewMark() {
@@ -160,7 +155,7 @@ export function LessonCatalogCard({
   cornerLabel,
   locked = false,
   lockHref = '/spokedu-lab/payment?plan=lite',
-  lockLabel = 'Lite로 열기',
+  lockLabel = '라이트로 이용하기',
   used = false,
   favorite = false,
   favoriteEnabled = false,

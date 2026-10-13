@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { withPrivateNoStore } from '@/app/lib/server/privateNoStore';
+import { invalidateSpokeduMasterAdminCache } from '@/app/lib/server/spokeduMasterAdminCache';
 import { buildMasterAdminAccess, calculateGrantExtensionEnd } from '@/app/lib/server/spokeduMasterAdmin';
 import { ensureSpokeduMasterEntitlement, getActiveSpokeduMasterEntitlementGrant } from '@/app/lib/server/spokeduMasterAccess';
 
@@ -48,6 +49,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ grant
       .eq('id', grantId)
       .single();
     if (verifyError || verified.ends_at !== nextEndsAt) return NextResponse.json({ error: '연장 결과를 확인하지 못했습니다.' }, { status: 500 });
+    invalidateSpokeduMasterAdminCache('member-core');
     return NextResponse.json({ grant: verified, extension });
   }
 
@@ -64,5 +66,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ grant
     .maybeSingle();
   if (error) return NextResponse.json({ error: 'Grant revocation failed' }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'Active grant not found' }, { status: 404 });
+  invalidateSpokeduMasterAdminCache('member-core');
   return NextResponse.json({ grant: data, preview });
 }
