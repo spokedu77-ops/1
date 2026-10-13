@@ -5,6 +5,8 @@ import { AppShell } from './components/layout/AppShell';
 import { MasterFunnelTracker } from './components/analytics/MasterFunnelTracker';
 import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
 
+const SPOKEDU_LAB_OG_IMAGE = '/api/spokedu-master/og?v=20261013-2';
+
 export const metadata: Metadata = {
   title: {
     default: 'SPOKEDU LAB · 체육교육 수업 운영 서비스',
@@ -29,13 +31,13 @@ export const metadata: Metadata = {
     siteName: 'SPOKEDU LAB',
     title: 'SPOKEDU LAB · 체육교육 수업 운영 서비스',
     description: '놀이체육, SPOMOVE, 수업 기록과 안내문 흐름을 제공하는 체육교육 수업 운영 서비스입니다.',
-    images: [{ url: '/api/spokedu-master/og', width: 1200, height: 630, alt: 'SPOKEDU LAB' }],
+    images: [{ url: SPOKEDU_LAB_OG_IMAGE, width: 1200, height: 630, alt: 'SPOKEDU LAB 수업 운영 화면' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SPOKEDU LAB',
     description: '놀이체육과 SPOMOVE, 수업 기록과 안내문 흐름을 제공하는 SPOKEDU LAB 서비스',
-    images: ['/api/spokedu-master/og'],
+    images: [SPOKEDU_LAB_OG_IMAGE],
   },
   robots: {
     index: false,

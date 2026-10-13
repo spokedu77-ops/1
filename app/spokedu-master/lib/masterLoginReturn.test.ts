@@ -42,10 +42,34 @@ describe('SPOKEDU MASTER safe login return', () => {
     expect(getSafeMasterLoginReturnPath(path)).toBe('/spokedu-lab/dashboard');
   });
 
-  it('strips sensitive auth and payment query keys while preserving safe context', () => {
+  it('strips payment secrets but preserves a valid selected plan on payment routes', () => {
     expect(getSafeMasterLoginReturnPath(
       '/spokedu-master/payment/success?paymentKey=pk&orderId=order&authKey=auth&customerKey=customer&plan=premium&q=safe',
-    )).toBe('/spokedu-master/payment/success?q=safe');
+    )).toBe('/spokedu-master/payment/success?plan=premium&q=safe');
+  });
+
+  it.each([
+    ['/spokedu-lab/payment?plan=premium', '/spokedu-lab/payment?plan=premium'],
+    ['/spokedu-lab/payment?plan=lite', '/spokedu-lab/payment?plan=lite'],
+    ['/spokedu-master/payment/cancel?plan=premium', '/spokedu-master/payment/cancel?plan=premium'],
+    ['/spokedu-master/payment/success?plan=lite', '/spokedu-master/payment/success?plan=lite'],
+  ])('preserves an allowlisted plan through a payment return: %s', (path, expected) => {
+    expect(getSafeMasterLoginReturnPath(path)).toBe(expected);
+  });
+
+  it.each([
+    '/spokedu-lab/payment?plan=enterprise',
+    '/spokedu-lab/payment?plan=Premium',
+    '/spokedu-lab/payment?plan=premium&plan=lite',
+    '/spokedu-lab/payment/history?plan=premium',
+  ])('removes an invalid or ambiguous payment plan so the payment page uses its safe default: %s', (path) => {
+    expect(getSafeMasterLoginReturnPath(path)).toBe(path.replace(/\?plan=.*$/, ''));
+  });
+
+  it('removes commercial plan input from non-payment deep-links while preserving their context', () => {
+    expect(getSafeMasterLoginReturnPath(
+      '/spokedu-lab/library?plan=premium&source=login&q=%EB%86%8D%EA%B5%AC',
+    )).toBe('/spokedu-lab/library?source=login&q=%EB%86%8D%EA%B5%AC');
   });
 
   it('preserves a LAB alias deep-link and uses the LAB login address', () => {
@@ -67,6 +91,24 @@ describe('SPOKEDU MASTER safe login return', () => {
       next,
     )).toBe(next);
   });
+
+  it.each(['premium', 'lite'] as const)(
+    'preserves the selected %s plan through login and onboarding entry',
+    (plan) => {
+      const next = `/spokedu-lab/payment?plan=${plan}&intent=open_library&next=%2Fspokedu-lab%2Flibrary`;
+      expect(buildMasterLoginHref(next)).toBe(
+        `/spokedu-lab/login?next=${encodeURIComponent(next)}`,
+      );
+      expect(resolveMasterEntryDestination(
+        { authenticated: true, onboardingDone: false, isAdmin: false },
+        next,
+      )).toBe(`/spokedu-lab/onboarding?next=${encodeURIComponent(next)}`);
+      expect(resolveMasterEntryDestination(
+        { authenticated: true, onboardingDone: true, isAdmin: false },
+        next,
+      )).toBe(next);
+    },
+  );
 
   it('returns to promotion redemption without carrying its one-time token through login', () => {
     const path = '/spokedu-lab/promotions/redeem?token=one-time-secret';

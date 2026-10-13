@@ -13,6 +13,7 @@ import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
 
 const SITE_URL = getSpokeduSiteUrl();
 const CANONICAL_URL = `${SITE_URL}/spokedu-lab`;
+const OG_IMAGE_URL = `${SITE_URL}/api/spokedu-master/og?v=20261013-2`;
 const TITLE = '유아·초등 체육수업 준비·운영·기록 | SPOKEDU LAB';
 const DESCRIPTION = '유아·초등 체육 교사와 강사가 놀이체육 활동을 찾고, 수업반·일정·출석·기록을 관리하며 SPOMOVE까지 활용하는 수업 운영 서비스입니다.';
 
@@ -24,9 +25,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website', url: CANONICAL_URL, siteName: 'SPOKEDU LAB', title: TITLE,
     description: DESCRIPTION, locale: 'ko_KR',
-    images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU LAB 실제 수업 운영 화면' }],
+    images: [{ url: OG_IMAGE_URL, width: 1200, height: 630, alt: 'SPOKEDU LAB 실제 수업 운영 화면' }],
   },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION, images: [`${SITE_URL}/api/spokedu-master/og`] },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION, images: [OG_IMAGE_URL] },
 };
 
 type LandingSearchParams = Promise<Record<string, string | string[] | undefined>>;

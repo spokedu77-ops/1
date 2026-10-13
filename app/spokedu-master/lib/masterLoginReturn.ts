@@ -7,7 +7,13 @@ const BLOCKED_LOGIN_RETURN_KEYS = new Set([
   'orderId',
   'code',
   'token',
-  'plan',
+]);
+
+const SAFE_PAYMENT_PLANS = new Set(['lite', 'premium']);
+const PAYMENT_PLAN_RETURN_PATHS = new Set([
+  '/spokedu-master/payment',
+  '/spokedu-master/payment/success',
+  '/spokedu-master/payment/cancel',
 ]);
 
 const SAFE_MASTER_LOGIN_RETURN_EXACT = new Set(['/spokedu-master']);
@@ -47,6 +53,17 @@ function isOnboardingSelfReturn(pathname: string) {
   return /^\/spokedu-master\/onboarding\/*$/.test(normalizedPathname);
 }
 
+function sanitizePaymentPlan(parsed: URL, normalizedPathname: string) {
+  const canonicalPathname = normalizedPathname.replace(/\/+$/, '');
+  const isPaymentPath = PAYMENT_PLAN_RETURN_PATHS.has(canonicalPathname);
+  const plans = parsed.searchParams.getAll('plan');
+  const plan = plans.length === 1 ? plans[0] : null;
+
+  if (!isPaymentPath || !plan || !SAFE_PAYMENT_PLANS.has(plan)) {
+    parsed.searchParams.delete('plan');
+  }
+}
+
 export function getSafeMasterLoginReturnPath(
   value: string | null | undefined,
   fallback = MASTER_LOGIN_FALLBACK,
@@ -79,6 +96,7 @@ export function getSafeMasterLoginReturnPath(
   }
 
   for (const key of BLOCKED_LOGIN_RETURN_KEYS) parsed.searchParams.delete(key);
+  sanitizePaymentPlan(parsed, normalizedPathname);
   const query = parsed.searchParams.toString();
   return `${parsed.pathname}${query ? `?${query}` : ''}`;
 }
