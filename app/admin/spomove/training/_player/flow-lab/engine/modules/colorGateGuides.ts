@@ -38,23 +38,22 @@ export type ColorGateDifficulty = 'easy' | 'hard';
  * - solo-easy: 새 40개 중 쉬움 20개
  * - solo-normal: 쉬움 + 어려움 전체 40개 (저장 호환을 위해 legacy key 유지)
  * - together-easy: 2인 협동 단일 동작 5개
- * - together-normal: 2인 협동 복합 구성 전체 10개
+ * - together-normal: 2인 협동 복합 구성 전체 14개
  */
 export type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
 
 export const COLOR_GATE_TARGET_COUNT = 20;
 
 export const COLOR_GATE_POSE_DEFINITIONS = [
-  // 근력 · 근지구력 — easy 5
+  // 근력 · 근지구력 — easy 5, hard 5
   { key: 'squat', label: '스쿼트', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/squat.png' },
   { key: 'plank', label: '플랭크', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/plank.png' },
   { key: 'lunge', label: '런지', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/lunge.png' },
-  { key: 'bridge', label: '브리지', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/bridge.png' },
-  { key: 'superman-hold', label: '슈퍼맨 홀드', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/superman-hold.png' },
-  // 근력 · 근지구력 — hard 5
-  { key: 'push-up', label: '푸시업', category: 'strength', difficulty: 'hard', image: '/spomove/dive/color-gate/strength/push-up.png' },
+  { key: 'push-up', label: '푸시업', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/push-up.png' },
+  { key: 'bear-hold', label: '베어 홀드', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/bear-hold.png' },
+  { key: 'bridge', label: '브리지', category: 'strength', difficulty: 'hard', image: '/spomove/dive/color-gate/strength/bridge.png' },
   { key: 'side-plank', label: '사이드 플랭크', category: 'strength', difficulty: 'hard', image: '/spomove/dive/color-gate/strength/side-plank.png' },
-  { key: 'bear-hold', label: '베어 홀드', category: 'strength', difficulty: 'hard', image: '/spomove/dive/color-gate/strength/bear-hold.png' },
+  { key: 'superman-hold', label: '슈퍼맨 홀드', category: 'strength', difficulty: 'hard', image: '/spomove/dive/color-gate/strength/superman-hold.png' },
   { key: 'v-sit-hold', label: 'V싯 홀드', category: 'strength', difficulty: 'hard', image: '/spomove/dive/color-gate/strength/v-sit-hold.png' },
   { key: 'crab-bridge', label: '크랩 브리지', category: 'strength', difficulty: 'hard', image: '/spomove/dive/color-gate/strength/crab-bridge.png' },
 
@@ -63,13 +62,13 @@ export const COLOR_GATE_POSE_DEFINITIONS = [
   { key: 'butterfly', label: '나비 자세', category: 'flexibility', difficulty: 'easy', image: '/spomove/dive/color-gate/flexibility/butterfly.png' },
   { key: 'standing-side-stretch', label: '서서 옆구리 스트레칭', category: 'flexibility', difficulty: 'easy', image: '/spomove/dive/color-gate/flexibility/standing-side-stretch.png' },
   { key: 'child-pose', label: '어린이 자세', category: 'flexibility', difficulty: 'easy', image: '/spomove/dive/color-gate/flexibility/child-pose.png' },
-  { key: 'cobra', label: '코브라 자세', category: 'flexibility', difficulty: 'easy', image: '/spomove/dive/color-gate/flexibility/cobra.png' },
+  { key: 'overhead-lunge-stretch', label: '오버헤드 런지 스트레칭', category: 'flexibility', difficulty: 'easy', image: '/spomove/dive/color-gate/flexibility/overhead-lunge-stretch.png' },
   // 유연성 — hard 5
-  { key: 'seated-straddle', label: '앉아서 다리 벌리기', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/seated-straddle.png' },
+  { key: 'cobra', label: '코브라 자세', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/cobra.png' },
   { key: 'downward-dog', label: '다운독', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/downward-dog.png' },
   { key: 'standing-quad-stretch', label: '대퇴사두근 스트레칭', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/standing-quad-stretch.png' },
-  { key: 'seated-spinal-twist', label: '앉아서 척추 비틀기', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/seated-spinal-twist.png' },
-  { key: 'overhead-lunge-stretch', label: '오버헤드 런지 스트레칭', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/overhead-lunge-stretch.png' },
+  { key: 'seated-straddle', label: '앉아서 다리벌리기', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/seated-straddle.png' },
+  { key: 'straddle-one-foot-hold', label: '앉아서 다리벌리고 한 발 잡기', category: 'flexibility', difficulty: 'hard', image: '/spomove/dive/color-gate/flexibility/straddle-one-foot-hold.png' },
 
   // 평형성 — easy 5
   { key: 'single-leg-stand', label: '한발 서기', category: 'balance', difficulty: 'easy', image: '/spomove/dive/color-gate/balance/single-leg-stand.png' },
@@ -81,7 +80,7 @@ export const COLOR_GATE_POSE_DEFINITIONS = [
   { key: 'airplane-pose', label: '비행기 자세', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/airplane-pose.png' },
   { key: 'single-leg-floor-touch', label: '한발 바닥 터치', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/single-leg-floor-touch.png' },
   { key: 'side-leg-lift', label: '옆다리 들기', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/side-leg-lift.png' },
-  { key: 'flamingo-pose', label: '플라밍고 자세', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/flamingo-pose.png' },
+  { key: 'flamingo-pose', label: '한발 발잡기', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/one-leg-foot-hold.png' },
   { key: 't-balance', label: 'T자 균형', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/t-balance.png' },
 
   // 순발력 · 민첩성 — easy 5
@@ -89,25 +88,35 @@ export const COLOR_GATE_POSE_DEFINITIONS = [
   { key: 'star-jump', label: '스타 점프', category: 'power-jump', difficulty: 'easy', image: '/spomove/dive/color-gate/power-jump/star-jump.png' },
   { key: 'knee-up-jump', label: '무릎 올리기 점프', category: 'power-jump', difficulty: 'easy', image: '/spomove/dive/color-gate/power-jump/knee-up-jump.png' },
   { key: 'heel-kick-jump', label: '힐킥 점프', category: 'power-jump', difficulty: 'easy', image: '/spomove/dive/color-gate/power-jump/heel-kick-jump.png' },
-  { key: 'frog-jump', label: '개구리 점프', category: 'power-jump', difficulty: 'easy', image: '/spomove/dive/color-gate/power-jump/frog-jump.png' },
+  { key: 'clap-jump', label: '박수 점프', category: 'power-jump', difficulty: 'easy', image: '/spomove/dive/color-gate/power-jump/clap-jump.png' },
   // 순발력 · 민첩성 — hard 5
-  { key: 'tuck-jump', label: '턱 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/tuck-jump.png' },
-  { key: 'split-jump', label: '스플릿 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/split-jump.png' },
+  { key: 'frog-jump', label: '개구리 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/frog-jump.png' },
+  { key: 'rotation-jump', label: '한 바퀴 회전 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/rotation-jump.png' },
   { key: 'pike-jump', label: '파이크 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/pike-jump.png' },
   { key: 'cossack-jump', label: '코사크 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/cossack-jump.png' },
   { key: 'straddle-jump', label: '스트래들 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/straddle-jump.png' },
 
-  // 투게더 10동작
+  // 투게더 14동작 — easy 7, hard 7
   { key: 'partner-hold', label: '파트너 스쿼트 홀드', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/1528225d-ed67-4808-988e-6e962f156bb0.png' },
-  { key: 'partner-squat', label: '파트너 V밸런스', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/5a9b623d-b16f-4171-b380-945ee7f1304a.png' },
+  { key: 'partner-shoulder-waist-press', label: '파트너 어깨 잡고 허리 눌러주기', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/partner-shoulder-waist-press.png' },
   { key: 'partner-high-five', label: '파트너 하이파이브', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/ba690608-f817-4f77-9fa9-25cee0557425.png' },
-  { key: 'partner-back-to-back', label: '파트너 백투백', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/e42acf14-4946-4153-b9a1-473776b306d1.png' },
+  { key: 'partner-back-to-back', label: '파트너 백투백', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/partner-back-to-back-arms.png' },
   { key: 'partner-side-lunge', label: '파트너 사이드 런지', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/b4c03adf-8ee9-4fdb-8686-524099fe2776.png' },
-  { key: 'partner-pull-up', label: '파트너 풀업', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/528a5182-0e0b-4785-9c12-6de1fb7d300a.png' },
+  { key: 'partner-hand-jump', label: '파트너 손 잡고 점프', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/partner-hand-jump.png' },
   { key: 'partner-leg-touch', label: '파트너 다리 터치', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/afc808a0-8c74-409f-b16f-f0b2fce5e255.png' },
-  { key: 'partner-tunnel', label: '파트너 터널', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/4c1b42c6-6707-490d-8acf-c1a9d401055f.png' },
-  { key: 'partner-shoulder-balance', label: '파트너 어깨 밸런스', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/8f61c1fa-f873-450a-9c75-1cc98283e3f9.png' },
-  { key: 'partner-sit-to-stand', label: '파트너 앉았다 일어나기', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/b8357c09-081c-4ceb-a5dc-034f23d10a30.png' },
+  { key: 'partner-tunnel', label: '파트너 터널', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/4c1b42c6-6707-490d-8acf-c1a9d401055f.png' },
+  { key: 'partner-shoulder-balance', label: '파트너 어깨 밸런스', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/8f61c1fa-f873-450a-9c75-1cc98283e3f9.png' },
+  { key: 'partner-sit-to-stand', label: '파트너 앉았다 일어나기', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/b8357c09-081c-4ceb-a5dc-034f23d10a30.png' },
+  { key: 'partner-pull-up', label: '파트너 풀업', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/528a5182-0e0b-4785-9c12-6de1fb7d300a.png' },
+  { key: 'partner-squat', label: '파트너 V밸런스', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/5a9b623d-b16f-4171-b380-945ee7f1304a.png' },
+  { key: 'partner-stacking', label: '파트너 스태킹', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/partner-stacking.png' },
+  { key: 'partner-one-leg-high-five', label: '마주보고 한발 들고 하이파이브', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/partner-one-leg-high-five.png' },
+
+  // 가족 4동작 — 난이도 필터와 분리
+  { key: 'family-princess-carry', label: '공주님 안기', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-princess-carry.png' },
+  { key: 'family-airplane-play', label: '비행기 놀이', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-airplane-play.png' },
+  { key: 'family-piggyback', label: '어부바', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-piggyback.png' },
+  { key: 'family-hug', label: '안아주기', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-hug.png' },
 ] as const;
 
 export type ColorGatePoseKey = (typeof COLOR_GATE_POSE_DEFINITIONS)[number]['key'];
@@ -156,11 +165,11 @@ export const COLOR_GATE_VARIANT_POSES: Record<ColorGateVariant, readonly ColorGa
     .filter((pose) => pose.category !== 'partner')
     .map((pose) => pose.key),
   'together-easy': COLOR_GATE_POSE_DEFINITIONS
-    .filter((pose) => pose.category === 'partner')
+    .filter((pose) => pose.category === 'partner' && pose.difficulty !== 'family')
     .slice(0, 5)
     .map((pose) => pose.key),
   'together-normal': COLOR_GATE_POSE_DEFINITIONS
-    .filter((pose) => pose.category === 'partner')
+    .filter((pose) => pose.category === 'partner' && pose.difficulty !== 'family')
     .map((pose) => pose.key),
 };
 
