@@ -1,7 +1,9 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-unused-vars -- legacy inline panels remain during component migration */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ClipboardCopy, CreditCard, Gift, Loader2, Search, Settings, Users } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardCopy, Gift, Loader2, Search, Settings, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { MemberDetailPanel } from './MemberDetailPanel';
 import { invalidateMemberListCache, MemberListPanel } from './MemberListPanel';
@@ -41,11 +43,13 @@ async function readJson(url: string, init?: RequestInit) {
 }
 
 function PlanBadge({ plan }: { plan: string }) { return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${badge(plan)}`}>{planName(plan)}</span>; }
+// Retained while the member list migrates to MemberListPanel.
 function MemberAccessBadge({ member }: { member: Member }) {
   return member.accountRole === 'admin'
     ? <span className="inline-flex whitespace-nowrap rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">관리자</span>
     : <PlanBadge plan={member.effectivePlan}/>;
 }
+// Retained while billing incidents migrate to OverviewBillingIncidents.
 function IncidentBadge({ incident }: { incident: Member['billingIncident'] }) {
   const tone = incident.tone === 'danger' ? 'bg-rose-100 text-rose-700' : incident.tone === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700';
   return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${tone}`}>{incident.label}</span>;
@@ -80,7 +84,7 @@ export default function MasterAdminClient() {
   const [membersTotal, setMembersTotal] = useState(0);
   const [membersPageSize, setMembersPageSize] = useState(20);
   const [query, setQuery] = useState('');
-  const [memberScope, setMemberScope] = useState<MemberScope>('production');
+  const [memberScope] = useState<MemberScope>('production');
   const [selectedGrantMember, setSelectedGrantMember] = useState<Member | null>(null);
   const [detailMemberId, setDetailMemberId] = useState<string | null>(null);
   const [memberDetail, setMemberDetail] = useState<any>(null);

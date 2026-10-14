@@ -20,8 +20,8 @@ describe("SPOMOVE session lifecycle UX", () => {
     expect(page).not.toContain("StartBriefing");
     expect(settings).toContain("data-spm-session-settings-screen");
     expect(settings).toContain("data-spm-execution-volume={executionVolume.label}");
-    expect(settings).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
-    expect(settings).toContain("sec === recommendedCueSeconds");
+    expect(settings).toContain('type="range"');
+    expect(settings).toContain("추천 {recommendedCueSeconds}초");
     expect(settings).toContain("전환 안내 시간은 총 운동시간에 포함되지 않습니다.");
     expect(settings).toContain("수업 시작");
     expect(page).toContain(

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions -- evaluated as an MCP function expression */
 async (page) => {
   const { runPilotBatch, appendLedger } = await import('./playwright-runner.mjs');
   const out = await runPilotBatch(page, {

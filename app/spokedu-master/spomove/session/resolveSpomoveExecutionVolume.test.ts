@@ -38,6 +38,9 @@ function expectedVolume(
   const { mode, level } = preset.engine;
   const cue = preset.cueSeconds;
   const rounds = preset.rounds;
+  if (preset.programGroup !== 'sequential-memory' && preset.id !== 'dive-standard') {
+    return { kind: 'reps', label: `${rounds}회`, count: rounds, durationSec: 0, interval: null };
+  }
   const intervalApplies = Boolean(
     interval &&
       (mode === 'basic' || mode === 'flanker' || mode === 'stroop' || (mode === 'simon' && level !== 4 && level !== 5)),
@@ -91,9 +94,6 @@ function expectedVolume(
       interval: null,
     };
   }
-  if (preset.id === 'dive-color-gate-61') {
-    return { kind: 'reps', label: '20회', count: 20, durationSec: 0, interval: null };
-  }
   throw new Error(`no expected volume for ${preset.id}`);
 }
 
@@ -121,7 +121,7 @@ describe('resolveSpomoveExecutionVolume', () => {
       expect(actual.label).toBe(expected.label);
       counts[actual.kind] += 1;
     }
-    expect(counts).toEqual({ reps: 61, time: 3, rounds: 5, stage: 1, builtIn: 1, interval: 1 });
+    expect(counts).toEqual({ reps: 65, time: 0, rounds: 5, stage: 1, builtIn: 1, interval: 0 });
     expect(counts.stage + counts.builtIn).toBe(2);
   });
 
@@ -141,14 +141,24 @@ describe('resolveSpomoveExecutionVolume', () => {
       }).label;
     };
     expect(volume('reaction-cognition-space-direction-01')).toBe('20회');
-    expect(volume('visual-reaction-goalkeeper-42')).toBe('20회 + 보너스 15초');
-    expect(volume('visual-reaction-goalkeeper-easy-skeleton')).toBe('20회 + 보너스 15초');
+    expect(volume('visual-reaction-goalkeeper-42')).toBe('20회');
+    expect(volume('visual-reaction-goalkeeper-easy-skeleton')).toBe('20회');
     expect(volume('simon-balloon-flash-05')).toBe('20회');
     expect(volume('simon-balloon-hard-skeleton')).toBe('20회');
     expect(volume('sequential-memory-10color-52')).toBe('5라운드');
     expect(volume('sequential-memory-full-reveal-54')).toBe('10라운드');
     expect(volume('dive-standard')).toBe('5스테이지 · 스테이지당 20초 · 보너스 60초 · 운동 160초');
     expect(volume('dive-color-gate-61')).toBe('20회');
+  });
+
+  it.each([10, 15, 20, 30])('uses the selected color-gate repetition count: %i', (rounds) => {
+    const preset = presets.find((candidate) => candidate.id === 'dive-color-gate-61');
+    if (!preset) throw new Error('dive-color-gate-61');
+    expect(resolveSpomoveExecutionVolume({ preset, cueSeconds: preset.cueSeconds, rounds })).toMatchObject({
+      kind: 'reps',
+      count: rounds,
+      durationSec: 0,
+    });
   });
 
   it('wires Start and Result to the same resolver label', () => {

@@ -26,6 +26,6 @@ describe('public chrome P1 closure', () => {
       expect(source).not.toMatch(/(?:router\.(?:push|replace)|window\.location\.replace)\(\s*["'`]\/spokedu-lab\/landing/);
       expect(source).not.toMatch(/window\.location\.href\s*=\s*["'`]\/spokedu-lab\/landing/);
     }
-    expect(runtimeSources[2]).toContain('`${SPOKEDU_PATHS.subscription}#plans`');
+    expect(runtimeSources[2]).toContain("spokeduLabIntroductionHref('plans')");
   });
 });

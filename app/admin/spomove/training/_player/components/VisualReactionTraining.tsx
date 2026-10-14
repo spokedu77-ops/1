@@ -277,7 +277,7 @@ class SimonBalloon {
   triggerMs: number;
   maxScale: number;
 
-  constructor(g: GameState, _index = 0, total = 1) {
+  constructor(g: GameState, total = 1) {
     this.lane = Math.floor(Math.random() * 4);
     this.color = RT_COLORS[this.lane];
     const r0 = Math.max(Math.min(g.W, g.H) * 0.07, 44);
@@ -750,7 +750,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       root.appendChild(m);
       setTimeout(() => m.remove(), 900);
     },
-    []
+    [endGame, targetReps]
   );
 
   const onStim = useCallback(
@@ -941,8 +941,8 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
         // Do not consume the spawn deadline while the previous cue is still alive.
         // As soon as it fires, the next animation frame fills the empty slot.
         if (active >= concurrent) return;
-        for (let i = active; i < concurrent; i++) {
-          g.objs.push(new SimonBalloon(g, i, concurrent));
+        for (let remaining = concurrent - active; remaining > 0; remaining -= 1) {
+          g.objs.push(new SimonBalloon(g, concurrent));
         }
       } else {
         const pair = randomPair();
