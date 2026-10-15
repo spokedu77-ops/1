@@ -22,7 +22,6 @@ export const metadata: Metadata = {
   }),
 };
 
-const ENV_NAME = 'SPOMOVE_NOTION_CATALOG_URL';
 const SPOMOVE_HREF = SPOKEDU_PATHS.spomove;
 const CURRICULUM_HREF = SPOKEDU_PATHS.subscription;
 const DISPATCH_HREF = dispatchInquiryHref({ program: 'spomove' });
@@ -49,12 +48,9 @@ function CatalogFallback() {
           전체 카탈로그를 아직 표시할 수 없습니다
         </h1>
         <p className="mt-4 text-sm leading-[1.75] text-[#536279]">
-          외부 카탈로그 주소가 설정되지 않았거나 연결되지 않았습니다. SPOMOVE 소개와 이용 경로는 메인 페이지에서 확인할 수
-          있습니다.
+          프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는
+          아래에서 계속 확인할 수 있습니다.
         </p>
-        <code className="mt-5 block overflow-x-auto rounded-lg bg-[#F5F7FB] px-4 py-3 text-left text-sm font-bold text-[#0B1F46]">
-          {ENV_NAME}
-        </code>
         <div className="mt-7 flex flex-col gap-3 sm:items-center">
           <Link
             href={SPOMOVE_HREF}

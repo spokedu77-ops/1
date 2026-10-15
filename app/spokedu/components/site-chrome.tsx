@@ -511,7 +511,7 @@ export function SiteFooter() {
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
             <Link href="/spokedu-lab/terms" data-track-label="footer-master-terms" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
-              MASTER 이용약관
+              SPOKEDU LAB 이용약관
             </Link>
             <Link href="/spokedu-lab/privacy" data-track-label="footer-master-privacy" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
               개인정보처리방침
