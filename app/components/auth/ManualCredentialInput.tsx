@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type ChangeEvent, type InputHTMLAttributes } from 'react';
+import { type ChangeEvent, type InputHTMLAttributes } from 'react';
 
 type ManualCredentialInputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -21,8 +21,6 @@ export function ManualCredentialInput({
   onPaste,
   ...rest
 }: ManualCredentialInputProps) {
-  const typed = useRef(false);
-
   return (
     <input
       {...rest}
@@ -33,21 +31,9 @@ export function ManualCredentialInput({
       data-1p-ignore="true"
       data-lpignore="true"
       data-form-type="other"
-      onKeyDown={(event) => {
-        if (event.key === 'Backspace' || event.key === 'Delete' || event.key === 'Process' || event.key.length === 1) {
-          typed.current = true;
-        }
-        onKeyDown?.(event);
-      }}
-      onPaste={(event) => {
-        typed.current = true;
-        onPaste?.(event);
-      }}
+      onKeyDown={onKeyDown}
+      onPaste={onPaste}
       onChange={(event: ChangeEvent<HTMLInputElement>) => {
-        if (!typed.current) {
-          onValueChange('');
-          return;
-        }
         onValueChange(event.target.value);
       }}
     />

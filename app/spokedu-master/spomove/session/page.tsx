@@ -12,6 +12,10 @@ import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getAudioCtx, resumeExistingAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 import {
+  primeFlowAudioContext,
+  resumeFlowAudioContext,
+} from '@/app/admin/spomove/training/_player/flow-lab/engine/flowAudioActivation';
+import {
   resetSpomoveRuntimeClock,
   setSpomoveRuntimePaused,
   spomoveRuntimeNow,
@@ -740,13 +744,16 @@ function SpomoveSessionContent() {
       // ignore
     }
     await bgmPlayerRef.current?.play();
+    const flowAudioReady = officialPreset?.engine.mode === 'flow'
+      ? await resumeFlowAudioContext()
+      : true;
     const fullscreenBlocked = launchMode === 'projector' && !document.fullscreenElement;
-    const audioBlocked = bgmPlayerRef.current?.status === 'blocked';
+    const audioBlocked = bgmPlayerRef.current?.status === 'blocked' || !flowAudioReady;
     if (fullscreenBlocked && audioBlocked) setActivationBlocked('bothBlocked');
     else if (fullscreenBlocked) setActivationBlocked('fullscreenBlocked');
     else if (audioBlocked) setActivationBlocked('audioBlocked');
     else setActivationBlocked(null);
-  }, [audioChannels.effectsEnabled, launchMode]);
+  }, [audioChannels.effectsEnabled, launchMode, officialPreset?.engine.mode]);
 
   const startOfficialSession = useCallback(async () => {
     if (
@@ -771,17 +778,34 @@ function SpomoveSessionContent() {
     const nextRunId = createSpomoveRunId();
     runIdRef.current = nextRunId;
 
-    if (launchMode === 'projector' && !document.fullscreenElement) {
-      await document.documentElement.requestFullscreen?.().catch(() => undefined);
-    }
+    // Prime Flow/DIVE audio while this handler still owns the user's tap.
+    // Creating or resuming its AudioContext after fullscreen/engine loading is
+    // too late on iPad Safari and leaves the visual session running silently.
+    const flowAudioActivation = officialPreset.engine.mode === 'flow'
+      && (audioChannels.bgmEnabled || audioChannels.effectsEnabled)
+      ? primeFlowAudioContext()
+      : Promise.resolve(true);
 
+    // Request fullscreen and start HTMLAudio/WebAudio before the first await so
+    // every SPOMOVE mode remains inside the initiating tap on iPad Safari.
+    const fullscreenRequest = launchMode === 'projector' && !document.fullscreenElement
+      ? document.documentElement.requestFullscreen?.().catch(() => undefined)
+      : undefined;
     enterRunning();
+
+    const flowAudioReady = await flowAudioActivation;
+    await fullscreenRequest;
+    if (!flowAudioReady) {
+      const fullscreenBlocked = launchMode === 'projector' && !document.fullscreenElement;
+      setActivationBlocked(fullscreenBlocked ? 'bothBlocked' : 'audioBlocked');
+    }
 
     window.setTimeout(() => {
       startLockedRef.current = false;
     }, 400);
   }, [
     bgmLoading,
+    audioChannels,
     canStartSession,
     enterRunning,
     launchMode,
