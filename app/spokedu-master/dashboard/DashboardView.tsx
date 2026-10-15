@@ -38,7 +38,7 @@ import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
 import { ContentCardMetaLine } from '../components/content/ContentCardMetaLine';
 import { InstructionalThumb } from '../components/media/InstructionalThumb';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
-import { DashboardSkeleton } from '../components/ui/Skeleton';
+import { DashboardSkeleton, Skeleton } from '../components/ui/Skeleton';
 import { buildHomeWeeklySupportMeta, splitLessonTitle } from '../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
@@ -97,22 +97,20 @@ import {
   MV_SECTION_TITLE,
 } from '../lib/masterUiClasses';
 
-type SpomoveThumbnailPackQueryResult = {
-  data: { assets_json?: unknown; updated_at?: string | null } | null;
-  error: { code?: string } | null;
+type HomeAssetPackRow = {
+  id: string;
+  assets_json?: unknown;
+  updated_at?: string | null;
 };
 
-type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
-type SpomoveFeaturedPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
-type HomeMediaPackQueryResult = {
-  data: { assets_json?: unknown; updated_at?: string | null } | null;
-  error: { code?: string } | null;
+type HomeAssetPackQueryResult = {
+  data: HomeAssetPackRow[] | null;
+  error: unknown;
 };
 
 /**
  * 홈 진입 시 한 번에 그리기 위해 기다리는 원격 에셋 팩 묶음.
- * 각 팩은 독립적으로 적용되며(한 팩 실패가 다른 팩을 막지 않음),
- * 네 팩이 모두 settle된 시점만 별도로 추적한다.
+ * 네 팩을 한 요청으로 읽고 각 역할별 상태로 정규화한다.
  */
 type HomeAssetPackState = {
   spomoveThumbnailPaths: Record<string, string>;
@@ -144,8 +142,6 @@ let homeAssetPackCache: HomeAssetPackState | null = null;
  * 진입 데이터가 이 시간 안에 안정되지 않으면 현재 상태 그대로 그린다.
  * 네트워크 장애 시 스켈레톤에 영원히 갇히지 않도록 하는 안전장치.
  */
-const HOME_ENTRY_SETTLE_DEADLINE_MS = 4000;
-
 function getFirstStartPaths(canUseAttendance: boolean) {
   if (!canUseAttendance) {
     return [
@@ -699,7 +695,6 @@ function EntitledDashboardView() {
     () => homeAssetPackCache ?? EMPTY_HOME_ASSET_PACKS,
   );
   const [assetPacksSettled, setAssetPacksSettled] = useState(() => homeAssetPackCache != null);
-  const [entrySettleDeadlinePassed, setEntrySettleDeadlinePassed] = useState(false);
   const {
     spomoveThumbnailPaths,
     spomoveThumbnailCacheBust,
@@ -715,11 +710,6 @@ function EntitledDashboardView() {
   const launchMode = usePreferredLaunchMode();
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setEntrySettleDeadlinePassed(true), HOME_ENTRY_SETTLE_DEADLINE_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
     if (assetPacksSettled) homeAssetPackCache = assetPacks;
   }, [assetPacks, assetPacksSettled]);
 
@@ -731,93 +721,49 @@ function EntitledDashboardView() {
       setAssetPacks((current) => ({ ...current, ...patch }));
     };
 
-    const thumbnailRequest = supabase
+    const assetPackRequest = supabase
       .from('think_asset_packs')
-      .select('assets_json, updated_at')
-      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
-      .maybeSingle()
-      .then((thumbnailResult: SpomoveThumbnailPackQueryResult) => {
-        const { data, error } = thumbnailResult as SpomoveThumbnailPackQueryResult;
-        if (error && error.code !== 'PGRST116') {
-          patchAssetPacks({ spomoveThumbnailPaths: {}, spomoveThumbnailCacheBust: undefined });
-          return;
-        }
-        const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+      .select('id, assets_json, updated_at')
+      .in('id', [SPOMOVE_THUMBNAIL_PACK_ID, SPOMOVE_CONTENT_PACK_ID, SPOMOVE_HOME_FEATURED_PACK_ID, HOME_MEDIA_PACK_ID])
+      .then(({ data, error }: HomeAssetPackQueryResult) => {
+        if (error) throw error;
+        const packs = new Map((data ?? []).map((row) => [row.id, row]));
+        const thumbnailPack = packs.get(SPOMOVE_THUMBNAIL_PACK_ID);
+        const next = normalizeSpomoveThumbnailMap(thumbnailPack?.assets_json);
         patchAssetPacks({
           spomoveThumbnailPaths: next,
           spomoveThumbnailCacheBust: resolveSpomovePackCacheBust(
-            data?.updated_at as string | undefined,
+            thumbnailPack?.updated_at as string | undefined,
             Object.values(next),
           ),
-        });
-      })
-      .catch(() => {
-        patchAssetPacks({ spomoveThumbnailPaths: {}, spomoveThumbnailCacheBust: undefined });
-      });
-
-    const contentRequest = supabase
-      .from('think_asset_packs')
-      .select('assets_json')
-      .eq('id', SPOMOVE_CONTENT_PACK_ID)
-      .maybeSingle()
-      .then((contentResult: SpomoveContentPackQueryResult) => {
-        const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
-        if (contentError && contentError.code !== 'PGRST116') {
-          patchAssetPacks({ spomoveContentMap: {}, spomoveContentLoadState: 'error' });
-          return;
-        }
-        patchAssetPacks({
-          spomoveContentMap: normalizeSpomoveContentMap(contentData?.assets_json),
+          spomoveContentMap: normalizeSpomoveContentMap(packs.get(SPOMOVE_CONTENT_PACK_ID)?.assets_json),
           spomoveContentLoadState: 'ready',
+          featuredSpomoveSlotIds: normalizeSpomoveHomeFeaturedSlots(packs.get(SPOMOVE_HOME_FEATURED_PACK_ID)?.assets_json),
         });
-      })
-      .catch(() => {
-        patchAssetPacks({ spomoveContentMap: {}, spomoveContentLoadState: 'error' });
-      });
-
-    const featuredRequest = supabase
-      .from('think_asset_packs')
-      .select('assets_json')
-      .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
-      .maybeSingle()
-      .then((featuredResult: SpomoveFeaturedPackQueryResult) => {
-        const { data: featuredData, error: featuredError } = featuredResult;
-        if (featuredError && featuredError.code !== 'PGRST116') {
-          patchAssetPacks({ featuredSpomoveSlotIds: [null, null, null, null] });
-          return;
-        }
-        patchAssetPacks({ featuredSpomoveSlotIds: normalizeSpomoveHomeFeaturedSlots(featuredData?.assets_json) });
-      })
-      .catch(() => {
-        patchAssetPacks({ featuredSpomoveSlotIds: [null, null, null, null] });
-      });
-
-    const homeMediaRequest = supabase
-      .from('think_asset_packs')
-      .select('assets_json, updated_at')
-      .eq('id', HOME_MEDIA_PACK_ID)
-      .maybeSingle()
-      .then((homeMediaResult: HomeMediaPackQueryResult) => {
-        const { data, error } = homeMediaResult;
-        if (error && error.code !== 'PGRST116') {
-          patchAssetPacks({ homeHeroPath: null, homeHeroCacheBust: undefined });
-          return;
-        }
-        const next = normalizeMasterHomeMedia(data?.assets_json);
+        const homeMediaPack = packs.get(HOME_MEDIA_PACK_ID);
+        const homeMedia = normalizeMasterHomeMedia(homeMediaPack?.assets_json);
         patchAssetPacks({
-          homeHeroPath: next.heroImage,
+          homeHeroPath: homeMedia.heroImage,
           homeHeroCacheBust: resolveSpomovePackCacheBust(
-            data?.updated_at as string | undefined,
-            next.heroImage ? [next.heroImage] : [],
+            homeMediaPack?.updated_at as string | undefined,
+            homeMedia.heroImage ? [homeMedia.heroImage] : [],
           ),
         });
       })
       .catch(() => {
-        patchAssetPacks({ homeHeroPath: null, homeHeroCacheBust: undefined });
+        patchAssetPacks({
+          spomoveThumbnailPaths: {},
+          spomoveThumbnailCacheBust: undefined,
+          spomoveContentMap: {},
+          spomoveContentLoadState: 'error',
+          featuredSpomoveSlotIds: [null, null, null, null],
+          homeHeroPath: null,
+          homeHeroCacheBust: undefined,
+        });
       });
 
     // 각 팩은 위에서 독립적으로 적용된다. 여기서는 "모두 끝났다"는 사실만 기록한다.
-    void Promise.allSettled([thumbnailRequest, contentRequest, featuredRequest, homeMediaRequest]).then(() => {
+    void assetPackRequest.finally(() => {
       if (alive) setAssetPacksSettled(true);
     });
 
@@ -832,9 +778,8 @@ function EntitledDashboardView() {
   const operationalSettled = accessSnapshot.canUseAttendance
     ? operationalStatus === 'ready' || operationalStatus === 'error'
     : true;
-  const homeEntryReady =
-    entrySettleDeadlinePassed
-    || (programsLoaded && operationalSettled && recentActivityOwnerResolved && assetPacksSettled);
+  const continuitySettled = operationalSettled && recentActivityOwnerResolved;
+  const homeEntryReady = programsLoaded;
 
   const programPool = programs;
   const weeklyPrograms = useMemo(() => selectWeeklyProgramsById(programs), [programs]);
@@ -994,6 +939,12 @@ function EntitledDashboardView() {
               action="전체 보기"
             />
             <div data-dashboard-grid="operational" className="grid grid-cols-1 items-stretch gap-3 min-[768px]:grid-cols-3 min-[768px]:gap-4">
+              {!continuitySettled ? (
+                Array.from({ length: 3 }, (_, index) => (
+                  <Skeleton key={index} className="h-[120px] min-[768px]:h-[132px]" rounded="16px" />
+                ))
+              ) : (
+                <>
                 {latestRecentActivity?.action === 'spomove_started' && OFFICIAL_SPOMOVE_LIBRARY.some((item) => item.id === latestRecentActivity.programId) ? (
                   <RecentSpomoveReuseCard
                     activity={latestRecentActivity}
@@ -1044,6 +995,8 @@ function EntitledDashboardView() {
                     </span>
                   )}
                 />
+                </>
+              )}
             </div>
           </div>
         </section>

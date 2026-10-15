@@ -1,5 +1,9 @@
 ﻿import { chromium } from 'playwright';
 import fs from 'node:fs';
+import nextEnv from '@next/env';
+import { applyMasterAdminSession } from './lib/spokedu-master-admin-auth.mjs';
+
+nextEnv.loadEnvConfig(process.cwd());
 
 const BASE = (process.argv[2] || 'http://127.0.0.1:3100').replace(/\/$/, '');
 const VIEWPORTS = [
@@ -26,12 +30,12 @@ const assert = (condition,message) => { if (!condition) throw new Error(message)
 const family = width => width <= 767 ? 'mobile' : width <= 1199 ? 'tablet' : 'desktop';
 
 async function install(context,page,storeValue=store,operationalData={classes:[classItem],sessions:[session]}){
-  await context.addCookies([{name:'spm-qa-auth-bypass',value:'1',url:BASE,sameSite:'Lax'}]);
   await context.addInitScript(value=>localStorage.setItem('spokedu-master-store',value),storeValue);
   await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({status:200,contentType:'text/css',body:''}));
   await page.route('https://*.supabase.co/rest/v1/think_asset_packs**',route=>route.fulfill({status:200,contentType:'application/json',headers:{'content-range':'*/0'},body:'[]'}));
   await page.route('**/api/spokedu-master/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:[]})}));
   await page.route('**/api/spokedu-master/access',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(access)}));
+  await page.route('**/api/spokedu-master/subscription',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({userId:ownerId,email:profile.email,plan:'premium',status:'active',isAdmin:false,periodEnd:iso})}));
   await page.route('**/api/spokedu-master/profile**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:profile})}));
   await page.route('**/api/spokedu-master/programs**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:programs})}));
   await page.route('**/api/spokedu-master/students**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:students})}));
@@ -41,15 +45,27 @@ async function install(context,page,storeValue=store,operationalData={classes:[c
 const browser = await chromium.launch({headless:true});
 const results=[];
 try {
+  const authContext=await browser.newContext();
+  await applyMasterAdminSession(authContext,BASE,'spm.qa.pro@spokedu.test');
+  const storageState=await authContext.storageState();
+  await authContext.close();
   fs.mkdirSync('.tmp/f2d-evidence',{recursive:true});
   for (const viewport of VIEWPORTS) {
-    const context=await browser.newContext({viewport,serviceWorkers:'block'});
+    const context=await browser.newContext({viewport,serviceWorkers:'block',storageState});
     const page=await context.newPage(); await install(context,page);
     const errors=[]; page.on('pageerror',e=>errors.push(e.message)); page.on('console',m=>{if(m.type()==='error')errors.push(`${m.text()} @ ${m.location().url}`)});
     page.on('requestfailed',request=>errors.push(`${request.failure()?.errorText ?? 'request failed'} @ ${request.url()}`));
     await page.goto(`${BASE}/spokedu-master/dashboard`,{waitUntil:'domcontentloaded'});
-    await page.waitForSelector('[data-dashboard-chapter="opening"] h1');
+    try {
+      await page.waitForSelector('[data-dashboard-chapter="opening"] h1');
+    } catch (error) {
+      const diagnostic={viewport,url:page.url(),body:(await page.locator('body').innerText().catch(()=>'' )).slice(0,1000),errors};
+      fs.writeFileSync('.tmp/f2d-evidence/timeout-diagnostic.json',JSON.stringify(diagnostic,null,2));
+      await page.screenshot({path:'.tmp/f2d-evidence/timeout-diagnostic.png',fullPage:true}).catch(()=>undefined);
+      throw error;
+    }
     await page.waitForSelector('[data-dashboard-grid="operational"]');
+    await page.waitForSelector('[data-dashboard-operational-card="true"]');
     await page.waitForTimeout(500);
     const measured=await page.evaluate(async()=>{
       await document.fonts.ready;

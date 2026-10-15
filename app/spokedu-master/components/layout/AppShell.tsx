@@ -238,6 +238,8 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
     [pathname, searchParams],
   );
   const pathnameRef = useRef(pathname);
+  const accessRecheckInFlightRef = useRef<Promise<void> | null>(null);
+  const lastAccessRecheckAtRef = useRef(0);
   pathnameRef.current = pathname;
 
   const isAdmin = activeBasePath.startsWith('/admin');
@@ -299,8 +301,9 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   }, [gateJourneyId, routeGateDenied]);
   useEffect(() => {
     if (isLanding || isPublicDocument) return;
+    if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     void Promise.all([syncSubscription(), syncMasterProfile()]);
-  }, [accessGuard.userId, isLanding, isPublicDocument, syncMasterProfile, syncSubscription]);
+  }, [accessGuard.status, accessGuard.userId, isLanding, isProtectedRoute, isPublicDocument, syncMasterProfile, syncSubscription]);
 
   const canBrowseLibrary = accessGuard.snapshot?.canBrowseLibrary === true;
   const canSyncFavorites = accessGuard.snapshot?.canUseLibrary === true;
@@ -462,9 +465,13 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
     if (!isProtectedRoute) return;
 
     let cancelled = false;
-    const softRecheck = async () => {
+    const softRecheck = () => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-      try {
+      if (accessRecheckInFlightRef.current) return accessRecheckInFlightRef.current;
+      if (Date.now() - lastAccessRecheckAtRef.current < 5_000) return;
+      lastAccessRecheckAtRef.current = Date.now();
+      const task = (async () => {
+        try {
         const response = await fetch('/api/spokedu-master/access', {
           cache: 'no-store',
           credentials: 'include',
@@ -504,11 +511,16 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
           snapshot: snapshot as MasterAccessSnapshot,
           spomatShopAvailable: spomatShopAvailable === true,
         });
-      } catch {
+        } catch {
         if (!cancelled) {
           setAccessGuard({ pathname, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
         }
-      }
+        }
+      })().finally(() => {
+        if (accessRecheckInFlightRef.current === task) accessRecheckInFlightRef.current = null;
+      });
+      accessRecheckInFlightRef.current = task;
+      return task;
     };
 
     const onVisible = () => {

@@ -24,6 +24,7 @@ describe('OperationalDataProvider server-first contract', () => {
     expect(text).toContain('const clearData = useCallback');
     expect(text).toContain("reload('hard')");
     expect(text).toContain("reload('soft')");
+    expect(text).toContain('lastSoftRefreshAtRef');
     expect(text).toContain('activeOwnerRef.current = null');
     expect(text).toContain("mode === 'hard'");
   });

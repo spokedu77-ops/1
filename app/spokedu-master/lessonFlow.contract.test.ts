@@ -80,8 +80,10 @@ describe('lesson discovery and execution flow contract', () => {
     // 진입 게이트: 데이터가 안정될 때까지 스켈레톤 하나만 유지하되,
     // 데드라인 가드가 있어 네트워크 장애 시 스켈레톤에 갇히지 않는다.
     expect(dashboard).toContain('if (!homeEntryReady) return <DashboardSkeleton />');
-    expect(dashboard).toContain('HOME_ENTRY_SETTLE_DEADLINE_MS');
-    expect(dashboard).toContain('entrySettleDeadlinePassed');
+    expect(dashboard).toContain('const homeEntryReady = programsLoaded');
+    expect(dashboard).toContain('!continuitySettled');
+    expect(dashboard).toContain(".in('id', [SPOMOVE_THUMBNAIL_PACK_ID");
+    expect(dashboard).not.toContain('HOME_ENTRY_SETTLE_DEADLINE_MS');
     expect(dashboard).not.toContain('if (!mounted || !programsLoaded)');
   });
 

@@ -66,6 +66,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const ownerId = getProfileOwnerId(profile);
   const activeOwnerRef = useRef<string | null>(null);
   const reloadInFlightRef = useRef<{ ownerId: string; promise: Promise<void> } | null>(null);
+  const lastSoftRefreshAtRef = useRef(0);
   const [status, setStatus] = useState<OperationalDataStatus>('idle');
   const [students, setStudents] = useState<MasterStudentDto[]>([]);
   const [classes, setClasses] = useState<MasterClassDto[]>([]);
@@ -134,7 +135,10 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ownerId || !canUseAttendance) return;
     const refreshOnReturn = () => {
-      if (document.visibilityState === 'visible') void reload('soft');
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastSoftRefreshAtRef.current < 5_000) return;
+      lastSoftRefreshAtRef.current = Date.now();
+      void reload('soft');
     };
     window.addEventListener('focus', refreshOnReturn);
     document.addEventListener('visibilitychange', refreshOnReturn);
