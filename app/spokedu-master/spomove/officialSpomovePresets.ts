@@ -1556,7 +1556,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     description: '빨·노·초·파 색 관문을 확인하고 근력·유연성·평형성·순발력의 쉬운 동작 20가지를 수행하는 1인 모션 게이트 활동',
     salesCopy: '색상 판단과 쉬운 전신 동작 전환을 함께 훈련하는 1인 모션 게이트',
     cueSeconds: 3,
-    rounds: 1,
+    rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '색상 반응, 포즈 전환, 모션 게이트',

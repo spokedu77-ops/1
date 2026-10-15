@@ -513,7 +513,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
 
 const FLOW_COLOR_GATE_LEVEL_ID = 2;
 const ACTION_MOVE_STAGE_SECONDS = [15, 20, 25, 30, 35] as const;
-const COLOR_GATE_STAGE_SECONDS = [45, 60, 90, 120, 150] as const;
+const COLOR_GATE_REPETITION_COUNTS = [10, 15, 20, 30] as const;
 const DEFAULT_ACTION_MOVE_STAGE_SEC = 20;
 
 function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
@@ -533,12 +533,13 @@ function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchS
   }
   if (isFlowColorGateLevel(modeId, levelId)) {
     const featuresOk = launch.flowFeatures.length === 1 && launch.flowFeatures[0] === 'colorGate';
-    const durationOk = (COLOR_GATE_STAGE_SECONDS as readonly number[]).includes(launch.flowDuration);
-    if (featuresOk && durationOk) return launch;
+    const repetitionsOk = (COLOR_GATE_REPETITION_COUNTS as readonly number[]).includes(launch.targetReps);
+    if (featuresOk && repetitionsOk && launch.timeMode === 'reps') return launch;
     return {
       ...launch,
       flowFeatures: ['colorGate'],
-      flowDuration: durationOk ? launch.flowDuration : 60,
+      timeMode: 'reps',
+      targetReps: repetitionsOk ? launch.targetReps : 20,
     };
   }
 
@@ -2490,14 +2491,32 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* Flow 전용: 스테이지 시간 */}
-          {isFlowOrChallenge ? (
+          {isColorGateTheme ? (
             <section style={{ marginBottom: 12 }}>
               <div style={{ marginBottom: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>{isColorGateTheme ? '스테이지당 시간' : '스테이지 시간'}</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>반복 횟수</label>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
+                {COLOR_GATE_REPETITION_COUNTS.map((count) => {
+                  const active = launch.targetReps === count;
+                  return (
+                    <button key={count} type="button" onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: count }))} style={{ ...diveAdminChoiceStyle(active, accent), padding: '8px 10px', fontSize: 13, fontWeight: active ? 900 : 700, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      {count}회
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 액션 무브 전용: 스테이지 시간 */}
+          {isFlowOrChallenge && !isColorGateTheme ? (
+            <section style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>스테이지 시간</label>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {(isColorGateTheme ? COLOR_GATE_STAGE_SECONDS : ACTION_MOVE_STAGE_SECONDS).map((sec) => {
+                {ACTION_MOVE_STAGE_SECONDS.map((sec) => {
                   const active = launch.flowDuration === sec;
                   return (
                     <button

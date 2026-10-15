@@ -2184,24 +2184,24 @@ export default function MemoryGameApp({
                   </div>
                 )}
                 <div style={S.sec}>
-                  {stepNum(6, "Stage duration")}
+                  {stepNum(6, !isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') ? '반복 횟수' : 'Stage duration')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    Select the duration for each DIVE stage.
+                    {!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') ? '모션 게이트에서 통과할 목표 횟수를 선택하세요.' : 'Select the duration for each DIVE stage.'}
                   </p>
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                     {(!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1
-                      ? [45, 60, 90, 120, 150]
+                      ? [10, 15, 20, 30]
                       : [15, 20, 25, 30, 35]
                     ).map((n) => (
                       <button
                         key={n}
                         type="button"
-                        onClick={() => setSettings((s) => ({ ...s, flowDuration: n }))}
+                        onClick={() => setSettings((s) => !isDiveActionMoveUnityTheme(s.diveEnvironmentTheme) && s.flowFeatures.has('colorGate') ? ({ ...s, timeMode: 'reps', targetReps: n }) : ({ ...s, flowDuration: n }))}
                         style={{
-                          flex: 1, minWidth: '48px', padding: '0.55rem 0.4rem', borderRadius: '0.75rem', border: `2px solid ${settings.flowDuration === n ? '#3B82F6' : 'var(--border)'}`, background: settings.flowDuration === n ? 'rgba(59,130,246,0.12)' : 'var(--card)', color: settings.flowDuration === n ? '#3B82F6' : 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.88rem', textAlign: 'center',
+                          flex: 1, minWidth: '48px', padding: '0.55rem 0.4rem', borderRadius: '0.75rem', border: `2px solid ${(!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? settings.targetReps : settings.flowDuration) === n ? '#3B82F6' : 'var(--border)'}`, background: (!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? settings.targetReps : settings.flowDuration) === n ? 'rgba(59,130,246,0.12)' : 'var(--card)', color: (!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? settings.targetReps : settings.flowDuration) === n ? '#3B82F6' : 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.88rem', textAlign: 'center',
                         }}
                       >
-                        {n}??
+                        {n}{!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? '회' : '초'}
                       </button>
                     ))}
                   </div>

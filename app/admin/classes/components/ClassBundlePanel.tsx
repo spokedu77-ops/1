@@ -101,6 +101,8 @@ function toDateInputValueLocal(d: Date) {
 }
 
 /** 브라우저 언어와 상관없이 회차 날짜를 한국식으로 보여 준다. 값은 YYYY-MM-DD. */
+// Kept for the session-date UI that is being migrated incrementally.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function formatSessionDateLabel(ymd: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
   if (!match) return ymd || "날짜";

@@ -56,7 +56,7 @@ describe("MASTER representative visual finish (pre-reset snapshot; not Art Direc
     expect(preview).toContain("guideVideoState === 'locked'");
     expect(preview).toContain("활동 준비");
     expect(preview).toContain("시작 설정");
-    expect(preview).toContain("sessionHref('start')");
     expect(preview).toContain("sessionHref('settings')");
+    expect(preview).not.toContain("sessionHref('start')");
   });
 });

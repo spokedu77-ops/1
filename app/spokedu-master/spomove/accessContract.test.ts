@@ -30,7 +30,8 @@ describe('SPOMOVE access separation contract', () => {
     expect(shell).toContain('isAccessGuardPending');
     expect(shell).toContain('routeGateDenied');
     expect(shell).toContain('isAccessGuardError');
-    expect(shell).toContain('soft entitlement recheck');
+    expect(shell).toContain('routeRequirement.capability');
+    expect(shell).toContain('accessGuard.snapshot');
     expect(session).not.toContain("fetch('/api/spokedu-master/access'");
     expect(session).not.toContain('OfficialAccessState');
   });

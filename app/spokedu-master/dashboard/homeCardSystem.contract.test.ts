@@ -144,7 +144,7 @@ describe("MASTER Home content card system", () => {
       dashboard.indexOf('data-dashboard-section="spomove-extension"'),
     );
     expect(homeUiClasses).toContain(
-      "MV_HOME_FEATURE_WIDTH = 'mx-auto w-full max-w-[1184px]'",
+      "MV_HOME_FEATURE_WIDTH = 'mx-auto w-[calc(100%-2rem)] max-w-[1184px] sm:w-[calc(100%-3rem)]'",
     );
     expect(dashboard).toContain("MV_HOME_FEATURE_WIDTH");
   });

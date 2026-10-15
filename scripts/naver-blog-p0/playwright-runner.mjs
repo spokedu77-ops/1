@@ -140,7 +140,6 @@ async function applyTextEdit(page, edit) {
   const match = edit.anchorMatch === 'exact' ? 'exact' : 'includes';
   const paras = edit.blocks.flatMap((b) => b.paragraphs);
 
-  const head = paras[0]?.text?.slice(0, 16);
   const snap = await collectSnapshot(page);
   const already = paras.every((p) => {
     if (p.link) {
@@ -286,7 +285,6 @@ export async function runPost(page, post, opts = {}) {
   const baseline = post.baselineFile
     ? JSON.parse(readFileSync(join(__dirname, post.baselineFile), 'utf8'))
     : null;
-  const before = await collectSnapshot(page);
   const applied = [];
 
   for (const edit of post.edits) {

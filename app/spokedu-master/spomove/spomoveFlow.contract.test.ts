@@ -195,7 +195,7 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).not.toContain("StartBriefing");
     expect(hub).toContain("searchParams.get('preview')");
     expect(hub).toContain("router.replace(hubReturnHref, { scroll: false })");
-    expect(settingsBriefing).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
+    expect(settingsBriefing).toContain('type="range"');
     expect(settingsBriefing).toContain("onCueSecondsChange");
     expect(settingsBriefing).toContain("data-spm-execution-volume={executionVolume.label}");
     expect(settingsBriefing).toContain("SPOMAT {matCount}장");
@@ -221,7 +221,7 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(cueSpeed).toContain("if (value >= 3) return '보통'");
     expect(cueSpeed).toContain("return '어려움'");
     expect(settingsBriefing).not.toContain("난이도 {cueDifficulty}");
-    expect(settingsBriefing).toContain("sec === recommendedCueSeconds");
+    expect(settingsBriefing).toContain("추천 {recommendedCueSeconds}초");
     expect(settingsBriefing).toContain("추천");
     expect(padLayoutView).not.toContain("학생이 화면을 바라보는 기준입니다.");
     expect(padLayoutView).toContain("directionLabel");

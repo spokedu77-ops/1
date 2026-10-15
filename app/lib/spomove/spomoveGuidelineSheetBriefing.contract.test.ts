@@ -66,10 +66,11 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).toContain("label: '추천 동작'");
   });
 
-  it('keeps primary CTA and startHref contracts', () => {
+  it('keeps the primary settings CTA contract', () => {
     expect(sheet).toContain('spm-btn-primary');
     expect(sheet).toContain('publicOfficialPresetSessionHref');
-    expect(sheet).toContain('data-spm-spomove-guide-action="start-official"');
+    expect(sheet).toContain('data-spm-spomove-guide-action="settings"');
+    expect(sheet).not.toContain('data-spm-spomove-guide-action="start-official"');
     expect(sheet).toContain("contentLoadState === 'error'");
     expect(sheet).toContain('수업 시작');
   });
