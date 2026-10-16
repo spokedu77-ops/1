@@ -145,20 +145,20 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
  */
 export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return ['놀이체육 전체 이용', '수업반 · 학생 · 일정 · 출석 관리', '찾은 활동을 실제 수업에 구성', '수업 메모 · 학생 관찰 · 다음 수업 기록', '지난 기록 활용 · 수업 안내문 작성·복사'];
+    return ['놀이체육 전체 라이브러리', '수업반 · 학생 · 일정 관리', '출석 및 수업 운영', '수업 메모 · 학생 관찰 · 기록', '수업 안내문 작성·복사 · 지난 기록 활용'];
   }
   if (product.id === 'premium') {
-    return ['Lite의 모든 기능', 'SPOMOVE 공식 디지털 움직임 콘텐츠', '수업 현장에서 바로 실행하는 전체 화면 활동'];
+    return ['Lite의 모든 기능', 'SPOMOVE 공식 콘텐츠 전체 이용', '색상 · 방향 · 이미지 신호에 반응하는 움직임 활동', '수업 현장에서 실행하는 전체 화면 프로그램'];
   }
   return ['별도 문의', '직접 결제 없음'];
 }
 
 export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return '놀이체육, 반·학생·일정·출석, 기록과 안내문까지 일반 수업관리 흐름을 모두 제공합니다.';
+    return '놀이체육 콘텐츠와 기본 수업 운영을 한곳에서 관리합니다.';
   }
   if (product.id === 'premium') {
-    return 'Lite의 모든 수업관리 기능에 SPOMOVE 디지털 움직임 콘텐츠와 전체 화면 실행을 더합니다.';
+    return '수업 운영과 SPOMOVE 디지털 움직임 프로그램 전체를 이용합니다.';
   }
   return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
 }

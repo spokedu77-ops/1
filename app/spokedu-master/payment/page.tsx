@@ -105,7 +105,7 @@ function PlanCard({
 
   return (
     <section
-      className="relative flex min-w-0 flex-col overflow-hidden rounded-[16px] bg-white p-5 sm:p-6"
+      className="relative flex min-w-0 flex-col overflow-hidden rounded-[16px] bg-white p-6"
       style={{
         border: selected ? '1.5px solid var(--spm-acc-a68)' : '1px solid var(--spm-br2)',
       }}
@@ -116,11 +116,15 @@ function PlanCard({
           <h2 className="text-[20px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
             {productShortName(product)}
           </h2>
-          <p className="mt-2 text-[22px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)' }}>
+          <p className="mt-2 text-[28px] font-extrabold leading-tight tracking-[-0.03em]" style={{ color: 'var(--spm-t)' }}>
             {formatKrw(product.monthlyPriceKrw)}
           </p>
         </div>
-        {selected ? <CheckCircle2 size={22} color="var(--spm-acc)" className="shrink-0" /> : null}
+        {selected ? (
+          <span className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-extrabold" style={{ background: 'var(--spm-acc-a10)', color: 'var(--spm-acc)' }}>
+            <CheckCircle2 size={16} aria-hidden /> 선택됨
+          </span>
+        ) : null}
       </div>
 
       <p className="mt-3 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -140,6 +144,7 @@ function PlanCard({
         type="button"
         disabled={disabled || working || !planId}
         onClick={onSelect}
+        aria-pressed={selected}
         className="spm-btn-primary mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-3 text-[13px] font-extrabold focus-visible:outline-none disabled:opacity-50"
         data-plan-id={planId ?? undefined}
       >
@@ -178,6 +183,7 @@ function PaymentContent() {
   const tossClientKeyAllowed = isTossClientKeyAllowed(tossClientKey, process.env.NODE_ENV, reviewDeployment);
   const [tossSdkStatus, setTossSdkStatus] = useState<TossSdkStatus>(tossClientKeyAllowed ? 'loading' : 'missing-config');
   const directProducts = useMemo(() => getDirectPurchaseMasterProducts(), []);
+  const selectedProduct = MASTER_PRODUCT_CATALOG[selectedPlan];
   const subscriptionDisplay = getSubscriptionDisplaySummary(subscription);
   const paymentPageMode = getPaymentPageMode(subscription);
   const showPlanSelection = paymentPageMode === 'choosePlan' || paymentPageMode === 'liteUpgrade';
@@ -409,17 +415,10 @@ function PaymentContent() {
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
                   현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 놀이체육, 수업 운영, 기록과 안내문을 모두 이용할 수 있습니다. 프리미엄으로 올리면 SPOMOVE 공식 활동과 전체 화면 실행이 추가됩니다. 오늘 결제액은 라이트 잔여 기간을 반영한 차액이며, 프리미엄 정가를 새로 1개월 결제하지 않습니다.
                 </p>
-                {upgradeQuote ? (
-                  <dl className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>오늘 결제</dt><dd className="mt-1 text-[16px] font-extrabold">{upgradeQuote.amountDueNow.toLocaleString('ko-KR')}원</dd></div>
-                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제일</dt><dd className="mt-1 text-[16px] font-extrabold">{formatBillingDate(upgradeQuote.nextBillingAt)}</dd></div>
-                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제 금액</dt><dd className="mt-1 text-[16px] font-extrabold">{upgradeQuote.nextBillingAmount.toLocaleString('ko-KR')}원</dd></div>
-                  </dl>
-                ) : null}
               </section>
             ) : null}
             {paymentPageMode !== 'liteUpgrade' && tossSdkStatus !== 'ready' ? (
-              <section className="rounded-[14px] border px-4 py-3" style={{ background: tossSdkStatus === 'loading' ? 'var(--spm-acc-a10)' : 'rgba(239,68,68,0.08)', borderColor: tossSdkStatus === 'loading' ? 'var(--spm-acc-a28)' : 'rgba(239,68,68,0.22)' }}>
+              <section className="rounded-[14px] border px-4 py-3" style={{ background: tossSdkStatus === 'loading' ? 'var(--spm-acc-a10)' : 'rgba(239,68,68,0.08)', borderColor: tossSdkStatus === 'loading' ? 'var(--spm-acc-a28)' : 'rgba(239,68,68,0.22)' }} aria-live="polite">
                 <p className="text-[13px] font-bold leading-6" style={{ color: tossSdkStatus === 'loading' ? 'var(--spm-t2)' : 'var(--spm-red)' }}>
                   {tossSdkStatus === 'loading'
                     ? '안전한 결제창을 준비하고 있습니다.'
@@ -427,9 +426,14 @@ function PaymentContent() {
                       ? '결제 설정이 완료되지 않아 지금은 결제를 시작할 수 없습니다.'
                       : '결제 모듈을 불러오지 못했습니다. 네트워크 상태를 확인한 뒤 새로고침해 주세요.'}
                 </p>
+                {tossSdkStatus === 'load-error' ? (
+                  <button type="button" onClick={() => window.location.reload()} className="mt-2 min-h-11 text-[13px] font-extrabold underline underline-offset-4" style={{ color: 'var(--spm-red)' }}>
+                    결제 모듈 다시 불러오기
+                  </button>
+                ) : null}
               </section>
             ) : null}
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-5 lg:grid-cols-2">
               {directProducts.map((product) => {
                 const planId = product.serverPlanKey as PaidPlanId;
                 const planAllowedForIntent = gateContext.allowedPlans.includes(planId);
@@ -449,7 +453,9 @@ function PaymentContent() {
                     }
                     disabledHint={
                       !planAllowedForIntent
-                        ? '지금 이어가려던 작업은 프리미엄이 필요합니다.'
+                        ? gateContext.intent === 'start_spomove'
+                          ? '현재 이용하려는 SPOMOVE 기능은 프리미엄에서 사용할 수 있습니다.'
+                          : `${gateDisplay?.title ?? '현재 작업'}에 ${gateContext.minimumPlan === 'premium' ? '프리미엄' : '라이트'} 이용권이 필요합니다.`
                         : !sdkReadyForPlan
                           ? tossSdkStatus === 'loading' ? '결제창을 준비하고 있습니다.' : '결제 설정을 확인해 주세요.'
                         : paymentPageMode === 'liteUpgrade' && planId === 'lite'
@@ -462,9 +468,31 @@ function PaymentContent() {
               })}
             </div>
 
+            {error ? (
+              <p role="alert" className="rounded-[12px] p-3 text-[13px] font-bold leading-6" style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)', color: 'var(--spm-red)' }}>
+                {error}
+              </p>
+            ) : null}
+
+            <section className="rounded-[18px] p-5 sm:p-6" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>PAYMENT SUMMARY</p>
+              <h3 className="mt-2 text-[19px] font-extrabold">결제 예정 정보</h3>
+              <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>선택 상품</dt><dd className="mt-1 text-[15px] font-extrabold">{productShortName(selectedProduct)}</dd></div>
+                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{paymentPageMode === 'liteUpgrade' ? '오늘 결제하는 차액' : '오늘 결제 예정 금액'}</dt><dd className="mt-1 text-[15px] font-extrabold">{paymentPageMode === 'liteUpgrade' ? (upgradeQuote ? `${upgradeQuote.amountDueNow.toLocaleString('ko-KR')}원` : '서버 견적 확인 중') : `${selectedProduct.monthlyPriceKrw?.toLocaleString('ko-KR')}원`}</dd></div>
+                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{paymentPageMode === 'liteUpgrade' ? '다음 결제일' : '결제 방식'}</dt><dd className="mt-1 text-[15px] font-extrabold">{paymentPageMode === 'liteUpgrade' ? (upgradeQuote ? formatBillingDate(upgradeQuote.nextBillingAt) : '견적 확인 후 표시') : selectedProduct.billingCycleLabel}</dd></div>
+                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{paymentPageMode === 'liteUpgrade' ? '다음 결제 금액' : '다음 자동결제'}</dt><dd className="mt-1 text-[15px] font-extrabold">{paymentPageMode === 'liteUpgrade' ? (upgradeQuote ? `${upgradeQuote.nextBillingAmount.toLocaleString('ko-KR')}원` : '견적 확인 후 표시') : '최초 결제일 기준 매월'}</dd></div>
+              </dl>
+              <p className="mt-4 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+                {paymentPageMode === 'liteUpgrade'
+                  ? '현재 라이트의 남은 이용기간 가치를 반영한 서버 견적이며, 결제 성공 즉시 프리미엄이 적용됩니다.'
+                  : '첫 결제가 승인되면 선택한 상품이 활성화되고, 이후 매월 같은 기준일에 자동결제됩니다.'}
+              </p>
+            </section>
+
             <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
               <Shield size={18} color="var(--spm-grn)" />
-              <h3 className="mt-3 text-[15px] font-extrabold">정기결제 안내</h3>
+              <h3 className="mt-3 text-[15px] font-extrabold">정기결제 · 해지 안내</h3>
               <ul className="mt-3 space-y-2">
                 {(paymentPageMode === 'liteUpgrade' ? UPGRADE_BILLING_NOTICE : BILLING_NOTICE).map((item) => (
                   <li key={item} className="flex gap-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
@@ -477,42 +505,30 @@ function PaymentContent() {
                 <Link href="/spokedu-lab/terms" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>이용약관</Link>
                 <span className="mx-1">및</span>
                 <Link href="/spokedu-lab/privacy" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>개인정보처리방침</Link>
+                <span className="mx-1">·</span>
+                <Link href="/spokedu-lab/terms#refund" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>해지·환불정책</Link>
                 <span>을 확인해 주세요.</span>
               </p>
             </section>
 
-            <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <Mail size={18} color="var(--spm-acc)" />
-              <h3 className="mt-3 text-[15px] font-extrabold">센터·기관에서 사용하시나요?</h3>
-              <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                이용 인원과 운영 방식에 맞춰 별도로 안내합니다.
-              </p>
-              <a
-                href={MASTER_CENTER_INQUIRY_HREF}
-                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-extrabold"
-                style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
-              >
-                센터·기관 도입 문의
-              </a>
-            </section>
-
-            <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <p className="text-[13px] font-extrabold">결제 계정</p>
-              <div className="mt-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
-                <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{userEmail}</p>
-                <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-                  금액은 서버의 상품 계약으로 다시 계산하고 검증합니다.
-                </p>
-              </div>
-            </section>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                <Mail size={18} color="var(--spm-acc)" />
+                <h3 className="mt-3 text-[15px] font-extrabold">센터·기관에서 사용하시나요?</h3>
+                <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>이용 인원과 운영 방식에 맞춰 별도로 안내합니다.</p>
+                <a href={MASTER_CENTER_INQUIRY_HREF} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-extrabold" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>센터·기관 도입 문의</a>
+              </section>
+              <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                <p className="text-[13px] font-extrabold">결제 계정</p>
+                <div className="mt-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
+                  <p className="break-all text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{userEmail}</p>
+                  <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>금액은 서버의 상품 계약으로 다시 계산하고 검증합니다.</p>
+                </div>
+              </section>
+            </div>
           </>
         )}
 
-        {error ? (
-          <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)', color: 'var(--spm-red)' }}>
-            {error}
-          </p>
-        ) : null}
       </main>
     </div>
   );
