@@ -255,19 +255,15 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).not.toContain("SPOMOVE_PAD_GRID_HEX");
   });
 
-  it("applies thumbnail, content, and featured SPOMOVE packs independently", () => {
+  it("loads the shared asset packs together and applies each pack by its own id", () => {
+    expect(dashboard).toContain(".from('think_asset_packs')");
     expect(dashboard).toContain(
-      ".then((thumbnailResult: SpomoveThumbnailPackQueryResult)",
+      ".in('id', [SPOMOVE_THUMBNAIL_PACK_ID, SPOMOVE_CONTENT_PACK_ID, SPOMOVE_HOME_FEATURED_PACK_ID, HOME_MEDIA_PACK_ID])",
     );
-    expect(dashboard).toContain(
-      ".then((contentResult: SpomoveContentPackQueryResult)",
-    );
-    expect(dashboard).toContain(
-      ".then((featuredResult: SpomoveFeaturedPackQueryResult)",
-    );
-    expect(dashboard).not.toContain(
-      ".then(([thumbnailResult, contentResult, featuredResult])",
-    );
+    expect(dashboard).toContain("normalizeSpomoveThumbnailMap(thumbnailPack?.assets_json)");
+    expect(dashboard).toContain("normalizeSpomoveContentMap(packs.get(SPOMOVE_CONTENT_PACK_ID)?.assets_json)");
+    expect(dashboard).toContain("normalizeSpomoveHomeFeaturedSlots(packs.get(SPOMOVE_HOME_FEATURED_PACK_ID)?.assets_json)");
+    expect(dashboard).toContain("const homeMediaPack = packs.get(HOME_MEDIA_PACK_ID)");
   });
 
   it("keeps the Home hero replaceable without taking ownership of content thumbnails", () => {
