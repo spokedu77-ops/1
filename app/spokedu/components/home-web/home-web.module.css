@@ -348,13 +348,39 @@
   vertical-align: -1px;
 }
 
-.heroCopy .lead {
+.heroH1 {
+  font-size: clamp(30px, 3.2vw, 44px);
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  color: var(--navy);
+}
+
+.heroEnglish {
+  margin-top: 20px;
+  font-size: clamp(56px, 7.6vw, 108px);
+  line-height: 0.92;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--navy);
+}
+
+.heroLead {
   margin-top: 28px;
   max-width: 30em;
+  font-size: clamp(17px, 1.4vw, 19px);
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.heroCopy .heroLead {
   color: var(--ink);
 }
 
-.heroCopy .actions {
+.heroActions {
   margin-top: 36px;
 }
 
@@ -728,6 +754,70 @@
   }
 }
 
+/* Hero tablet — 2 columns: copy + CTA left, photo right (768–1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .heroGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    column-gap: clamp(20px, 2.8vw, 32px);
+    align-items: center;
+    padding-block: clamp(40px, 5vw, 56px);
+  }
+
+  .heroCopy {
+    grid-column: 1;
+    min-width: 0;
+    padding-right: 0;
+    max-width: none;
+  }
+
+  .heroEyebrow {
+    margin-bottom: 16px;
+    font-size: 12px;
+  }
+
+  .heroH1 {
+    font-size: clamp(30px, 3.6vw, 36px);
+    line-height: 1.14;
+  }
+
+  .heroEnglish {
+    margin-top: 14px;
+    font-size: clamp(38px, 4.6vw, 52px);
+    line-height: 0.96;
+  }
+
+  .heroLead {
+    margin-top: 18px;
+    font-size: clamp(15px, 1.7vw, 16px);
+    line-height: 1.55;
+    max-width: none;
+  }
+
+  .heroActions {
+    margin-top: 22px;
+    flex-wrap: wrap;
+  }
+
+  .heroActions .btn {
+    font-size: 14px;
+    height: 44px;
+    padding: 0 18px;
+  }
+
+  .heroVisual {
+    grid-column: 2;
+    min-width: 0;
+    margin-top: 0;
+    margin-inline: 0;
+    margin-right: 0;
+  }
+
+  .heroVisual .media {
+    aspect-ratio: 4 / 3;
+  }
+}
+
 @media (min-width: 1200px) {
   .root {
     --gutter: 48px;
@@ -743,25 +833,6 @@
 
   .headAside {
     max-width: 560px;
-  }
-
-  .heroGrid {
-    display: block;
-    padding-block: clamp(48px, 7vw, 72px) 0;
-  }
-
-  .heroCopy {
-    padding-right: 0;
-    max-width: 640px;
-  }
-
-  .heroVisual {
-    margin-top: clamp(40px, 6vw, 56px);
-    margin-inline: calc(-1 * var(--gutter));
-  }
-
-  .heroVisual .media {
-    aspect-ratio: 16 / 10;
   }
 
   .gatewayTitle,
@@ -856,28 +927,47 @@
   }
 
   .body br,
-  .lead br {
+  .lead br,
+  .heroLead br {
     display: none;
   }
 
   .heroGrid {
-    padding-top: 48px;
+    display: block;
+    padding-block: 48px 0;
+  }
+
+  .heroCopy {
+    padding-right: 0;
+    max-width: 640px;
   }
 
   .heroBrand {
     margin-bottom: 24px;
   }
 
-  .heroCopy .lead {
-    margin-top: 24px;
+  .heroH1 {
+    font-size: clamp(28px, 7.5vw, 34px);
   }
 
-  .heroCopy .actions {
+  .heroEnglish {
+    margin-top: 16px;
+    font-size: clamp(36px, 9vw, 48px);
+    line-height: 0.98;
+  }
+
+  .heroLead {
+    margin-top: 24px;
+    font-size: 17px;
+  }
+
+  .heroActions {
     margin-top: 28px;
   }
 
   .heroVisual {
     margin-top: 40px;
+    margin-inline: calc(-1 * var(--gutter));
   }
 
   /* 3:2 keeps both the jumping child and the instructor inside the frame at phone widths. */

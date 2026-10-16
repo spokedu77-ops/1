@@ -1,0 +1,83 @@
+﻿diff --git a/app/spokedu/components/home-web/home-web.module.css b/app/spokedu/components/home-web/home-web.module.css
+index 6298f815..83a67d25 100644
+--- a/app/spokedu/components/home-web/home-web.module.css
++++ b/app/spokedu/components/home-web/home-web.module.css
+@@ -1083,6 +1083,78 @@
+   }
+ }
+ 
++/* Hero tablet — 768–1023px: text+CTA left, photo right (main DOM: heroText group) */
++@media (min-width: 768px) and (max-width: 1023px) {
++  .heroGrid {
++    display: grid;
++    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
++    grid-template-areas: none;
++    column-gap: clamp(20px, 2.8vw, 32px);
++    align-items: center;
++    padding-block: clamp(40px, 5vw, 56px);
++  }
++
++  .heroText {
++    display: flex;
++    flex-direction: column;
++    gap: 22px;
++    grid-column: 1;
++    min-width: 0;
++    max-width: none;
++    padding-right: 0;
++  }
++
++  .heroCopy {
++    grid-area: auto;
++    max-width: none;
++  }
++
++  .heroActions {
++    grid-area: auto;
++    max-width: none;
++    margin-top: 0;
++  }
++
++  .heroEyebrow {
++    margin-bottom: 16px;
++    font-size: 12px;
++  }
++
++  .heroH1 {
++    font-size: clamp(30px, 3.6vw, 36px);
++    line-height: 1.14;
++    order: unset;
++  }
++
++  .heroEnglish {
++    margin-top: 14px;
++    font-size: clamp(38px, 4.6vw, 52px);
++    line-height: 0.96;
++    color: var(--blue);
++    order: unset;
++  }
++
++  .heroLead {
++    margin-top: 18px;
++    font-size: clamp(15px, 1.7vw, 16px);
++    line-height: 1.55;
++    max-width: none;
++  }
++
++  .heroVisual {
++    grid-column: 2;
++    grid-area: auto;
++    margin-top: 0;
++    margin-inline: 0;
++    margin-right: 0;
++  }
++
++  .heroVisual .media {
++    aspect-ratio: 4 / 3;
++    border-radius: 0;
++  }
++}
++
+ /* ≤767 — mobile: designed, not collapsed */
+ @media (max-width: 767px) {
+   .root {
