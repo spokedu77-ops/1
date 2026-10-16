@@ -86,6 +86,7 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
     expect(shell).toContain('buildMasterGateDisplayModel');
     expect(shell).toContain('accessGuard.snapshot?.onboardingDone');
     expect(shell).toContain('!accessGuard.snapshot.onboardingDone');
+    expect(shell).toContain('if (isLanding || isPublicDocument || isLogin) return;');
     expect(shell).not.toContain('accessGuard.snapshot?.onboardingDone ?? profile?.onboardingDone');
     expect(shell).not.toContain('isTrialExpired');
     expect(shell).not.toContain('MASTER_CENTER_INQUIRY_HREF');

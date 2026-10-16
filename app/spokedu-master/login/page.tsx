@@ -53,6 +53,8 @@ function MasterLoginContent() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
+      if (!session) return;
       const destination = await resolveMasterDestination(next);
       if (!cancelled && destination) router.replace(destination);
     })().finally(() => {
@@ -105,7 +107,10 @@ function MasterLoginContent() {
       }
       applyLoginSessionPreference(true);
       const destination = await resolveMasterDestination(next);
-      if (destination) router.replace(destination);
+      if (destination) {
+        window.location.assign(destination);
+        return;
+      }
       router.refresh();
     } catch {
       setReviewPassword('');

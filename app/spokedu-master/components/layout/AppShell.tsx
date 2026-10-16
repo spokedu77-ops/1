@@ -300,10 +300,10 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
     setGateJourneyId(`journey_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`);
   }, [gateJourneyId, routeGateDenied]);
   useEffect(() => {
-    if (isLanding || isPublicDocument) return;
+    if (isLanding || isPublicDocument || isLogin) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     void Promise.all([syncSubscription(), syncMasterProfile()]);
-  }, [accessGuard.status, accessGuard.userId, isLanding, isProtectedRoute, isPublicDocument, syncMasterProfile, syncSubscription]);
+  }, [accessGuard.status, accessGuard.userId, isLanding, isLogin, isProtectedRoute, isPublicDocument, syncMasterProfile, syncSubscription]);
 
   const canBrowseLibrary = accessGuard.snapshot?.canBrowseLibrary === true;
   const canSyncFavorites = accessGuard.snapshot?.canUseLibrary === true;
