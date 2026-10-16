@@ -92,7 +92,8 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(robots).toContain("'/spokedu-lab/terms'");
     expect(robots).toContain("'/spokedu-lab/privacy'");
     expect(robots).toContain("'/spokedu-master'");
-    expect(robots).toContain("'/spokedu-lab'");
+    expect(robots).toContain("'/spokedu-lab/'");
+    expect(robots).not.toContain("'/spokedu-lab',");
     expect(robots).not.toContain("'/spokedu-lab/dashboard'");
     expect(robots).not.toContain("'/spokedu-lab/library'");
   });

@@ -349,6 +349,54 @@ npx vitest run app/spokedu-master/lib/publicProductContract.test.ts \
 
 ---
 
+## 12. 4차 — ISSUE-02B 조사 · ISSUE-10 robots（2026-10-16）
+
+**기준 SHA:** 로컬 `HEAD` `9309e5a6`（커밋·푸시·배포 **없음**）  
+**Production robots:** 아직 prefix `Disallow: /spokedu-lab`（배포 전）
+
+### 12.1 ISSUE-02B — 코드 수정 없음
+
+| 확인 | 결과 |
+|---|---|
+| `/spomove?tab=catalog` | Production **308 → `/spomove/catalog`**（`proxy.ts` `isLegacyCatalogQuery`）. 비로그인이 **한눈에 보기 탭 HTML을 받지 못함** |
+| 탭 콘텐츠 | `spomove-catalog-tabs.tsx` `refinedCatalogSections`: 단순/선택/복합/DIVE **분류 설명**. 개별 프로그램명 목록 **없음** |
+| 구분 | **도입 검토용 소개 탭**이지 전체 카탈로그가 아님 |
+| CTA | 탭 안 「전체 프로그램 카탈로그 보기」→ `/spomove/catalog`（현재 fallback）. `?tab=catalog`로 바꾸면 proxy가 다시 `/spomove/catalog`로 보냄 |
+| 충족 여부 | **충족하지 않음.** 최소 CTA 변경만으로는 목록이 생기지 않음 |
+
+**추가 승인 필요（미구현）**
+
+- 공개 목록의 범위: 분류 소개 유지 vs 공식 preset **이름·난이도만** vs Notion 복구（env + CSP, 이번 라운드 **금지**）
+- `proxy.ts`의 `?tab=catalog` → `/spomove/catalog` 308을 유지할지
+
+LAB API·실행 권한·preset·Notion env·CSP는 **변경하지 않음**.
+
+### 12.2 ISSUE-10 — 최소 robots 수정（로컬, 미배포）
+
+**사전 확인**
+
+- `trailingSlash` 미설정（기본 false）
+- Production `/spokedu-lab` **200**, `/spokedu-lab/` **308 → `/spokedu-lab`**
+- 랜딩 canonical `/spokedu-lab`, metadata `index: true`
+- sitemap에 `/spokedu-lab` 포함
+- dashboard는 layout `noindex` + 인증（이번 수정 **없음**）
+
+**변경:** `app/robots.ts` disallow `/spokedu-lab` → `/spokedu-lab/`
+
+| 경로 | 규칙 |
+|---|---|
+| `/spokedu-lab` | disallow 불일치 → **허용** |
+| `/spokedu-lab/dashboard` 등 하위 | `Disallow: /spokedu-lab/` → **차단** |
+| `/spokedu-lab/terms`, `/privacy` | 더 긴 Allow → **허용 유지** |
+| `/spokedu-lab/shop` | 하위 Disallow → **색인 정책 유지（차단）** |
+| `/admin`, `/api`, `/teacher`, `/spokedu-master` | **유지** |
+
+계약 테스트 `navigation.contract.test.ts`가 예전 prefix 문자열 `'/spokedu-lab'`을 요구해 **단언 1곳**을 `'/spokedu-lab/'`로 맞춤. **7 tests passed.**
+
+Production `robots.txt`는 **배포 전까지 이전 규칙**.
+
+---
+
 ## 부록 — 1차 QA（Production, 변경 전）
 
 （1차 기록 유지 — Production `c9bca305` 동일 결함）
