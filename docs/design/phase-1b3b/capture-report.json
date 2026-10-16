@@ -1,0 +1,146 @@
+{
+  "BUILD_ID": "GvJA6zsUrRbbkyFABOdj2",
+  "port": "3004",
+  "cssOk": {
+    "390": {
+      "ok": true,
+      "navy": "#0b1f46"
+    },
+    "834": {
+      "ok": true,
+      "navy": "#0b1f46"
+    },
+    "941": {
+      "ok": true,
+      "navy": "#0b1f46"
+    },
+    "1024": {
+      "ok": true,
+      "navy": "#0b1f46"
+    },
+    "1440": {
+      "ok": true,
+      "navy": "#0b1f46"
+    }
+  },
+  "overflow": {
+    "390": false,
+    "834": false,
+    "941": false,
+    "1024": false,
+    "1440": false
+  },
+  "labImage": {
+    "390": {
+      "complete": true,
+      "naturalWidth": 1536,
+      "objectFit": "contain",
+      "width": "348px",
+      "left": "0px",
+      "top": "0px",
+      "frameAspect": "16 / 10"
+    },
+    "834": {
+      "complete": true,
+      "naturalWidth": 1536,
+      "objectFit": "fill",
+      "width": "1075.19px",
+      "left": "-153.594px",
+      "top": "-91.3906px",
+      "frameAspect": "16 / 9"
+    },
+    "941": {
+      "complete": true,
+      "naturalWidth": 1536,
+      "objectFit": "fill",
+      "width": "1225px",
+      "left": "-175px",
+      "top": "-104.156px",
+      "frameAspect": "16 / 9"
+    },
+    "1024": {
+      "complete": true,
+      "naturalWidth": 1536,
+      "objectFit": "fill",
+      "width": "1341.19px",
+      "left": "-191.594px",
+      "top": "-114.047px",
+      "frameAspect": "16 / 9"
+    },
+    "1440": {
+      "complete": true,
+      "naturalWidth": 1536,
+      "objectFit": "fill",
+      "width": "1778px",
+      "left": "-254px",
+      "top": "-151.25px",
+      "frameAspect": "16 / 9"
+    }
+  },
+  "heroTablet": {
+    "768": {
+      "viewport": {
+        "w": 768,
+        "h": 861
+      },
+      "heroHeight": 955.046875,
+      "ctaInFirstViewport": false,
+      "ctaTop": 964.046875,
+      "splitGrid": "704px",
+      "splitGap": "normal 24px",
+      "overflowX": false
+    },
+    "834": {
+      "viewport": {
+        "w": 834,
+        "h": 861
+      },
+      "heroHeight": 1016.171875,
+      "ctaInFirstViewport": false,
+      "ctaTop": 1025.171875,
+      "splitGrid": "770px",
+      "splitGap": "normal 24px",
+      "overflowX": false
+    },
+    "941": {
+      "viewport": {
+        "w": 941,
+        "h": 861
+      },
+      "heroHeight": 1115.140625,
+      "ctaInFirstViewport": false,
+      "ctaTop": 1124.140625,
+      "splitGrid": "877px",
+      "splitGap": "normal 24px",
+      "overflowX": false
+    },
+    "1023": {
+      "viewport": {
+        "w": 1023,
+        "h": 861
+      },
+      "heroHeight": 1190.171875,
+      "ctaInFirstViewport": false,
+      "ctaTop": 1199.171875,
+      "splitGrid": "959px",
+      "splitGap": "normal 24px",
+      "overflowX": false
+    },
+    "1024": {
+      "viewport": {
+        "w": 1024,
+        "h": 861
+      },
+      "heroHeight": 602.6875,
+      "ctaInFirstViewport": true,
+      "ctaTop": 576.5,
+      "splitGrid": "58px 58px 58px 58px 58px 58px 58px 58px 58px 58px 58px 58px",
+      "splitGap": "normal 24px",
+      "overflowX": false
+    }
+  },
+  "cta": {
+    "spomoveHref": "/spomove",
+    "labHref": "/spokedu-lab"
+  }
+}

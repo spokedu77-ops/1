@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPOKEDU — SPOMOVE &amp; LAB (Phase 1-B3A Preview)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --blue: #245dff;
+      --navy: #0b1f46;
+      --ink: #14213a;
+      --muted: #5b6578;
+      --paper: #f5f7fb;
+      --line: #dce3ee;
+      --gutter: 20px;
+      --rail-max: 1368px;
+      --section-space: clamp(72px, 8vw, 112px);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Pretendard Variable', Pretendard, sans-serif;
+      color: var(--ink);
+      background: #eef1f6;
+      word-break: keep-all;
+    }
+    .banner {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--navy);
+      color: #fff;
+      padding: 12px var(--gutter);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .banner strong { color: #9ab8ff; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px var(--gutter);
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 52px;
+      z-index: 29;
+    }
+    .toolbar button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--navy);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .toolbar button[aria-pressed="true"] {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .canvas { max-width: var(--rail-max); margin: 0 auto; padding: 24px var(--gutter) 80px; }
+    .panel { display: none; }
+    .panel.is-active { display: block; }
+    .section {
+      margin-bottom: var(--section-space);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(11, 31, 70, 0.08);
+      background: #fff;
+    }
+    .section.paper { background: var(--paper); }
+    .rail { max-width: var(--rail-max); margin: 0 auto; padding: clamp(40px, 5vw, 64px) clamp(20px, 4vw, 48px); }
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin: 0 0 12px;
+    }
+    .spomove-line {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: var(--navy);
+    }
+    h2 {
+      margin: 0;
+      font-size: clamp(28px, 3.2vw, 44px);
+      line-height: 1.12;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--navy);
+    }
+    .lead, .body {
+      margin: 20px 0 0;
+      font-size: clamp(16px, 1.15vw, 18px);
+      line-height: 1.65;
+      color: var(--muted);
+      max-width: 36em;
+    }
+    .meta {
+      margin-top: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 8px;
+      border: 1px solid var(--navy);
+      background: transparent;
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 28px;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .media {
+      overflow: hidden;
+      border-radius: 12px;
+      background: #e8edf5;
+      aspect-ratio: 4 / 3;
+    }
+    .media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .dual-visual {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 12px;
+      align-items: stretch;
+    }
+    .dual-visual .media { aspect-ratio: 4 / 3; }
+    .dual-visual .media.ui { aspect-ratio: 3 / 4; border: 1px solid var(--line); background: #fff; }
+    .dual-visual .media.ui img { object-fit: cover; object-position: 50% 0; }
+    .master-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px 32px;
+      align-items: end;
+      margin-bottom: 32px;
+    }
+    .stat {
+      text-align: left;
+    }
+    .stat-num {
+      font-size: clamp(48px, 5vw, 72px);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      color: var(--navy);
+      display: block;
+    }
+    .stat-label { font-size: 16px; font-weight: 600; color: var(--ink); }
+    .stat-note { font-size: 13px; color: var(--muted); margin-top: 6px; max-width: 12em; }
+    .product-frame {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      aspect-ratio: 16 / 9;
+    }
+    .product-frame img {
+      position: absolute;
+      width: 140%;
+      max-width: none;
+      height: auto;
+      top: -21.2%;
+      left: -20%;
+    }
+    .product-frame.mobile img {
+      top: -4.2%;
+      left: -34%;
+      width: 230%;
+    }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .pill {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(36, 93, 255, 0.08);
+      color: var(--navy);
+    }
+    @media (max-width: 900px) {
+      .split, .master-head, .dual-visual { grid-template-columns: 1fr; }
+      .stat { order: -1; }
+    }
+  </style>
+</head>
+<body>
+  <p class="banner">
+    <strong>Phase 1-B3A — 설계 시안.</strong> Production 코드 미반영. 실제 이미지·고객용 문구만 포함. 홈 순서: SPOMOVE → SPOKEDU LAB.
+  </p>
+  <div class="toolbar" role="tablist">
+    <button type="button" data-panel="current" aria-pressed="true">현재 홈 (참고)</button>
+    <button type="button" data-panel="proposed" aria-pressed="false">개선안 (B3A)</button>
+  </div>
+  <main class="canvas">
+    <div class="panel is-active" data-panel-id="current">
+      <section class="section">
+        <div class="rail split">
+          <div>
+            <p class="eyebrow">SPOMOVE</p>
+            <p class="spomove-line">SEE · DECIDE · MOVE</p>
+            <h2>보고 판단하고<br />움직입니다.</h2>
+            <p class="body">SPOMOVE는 시각적 자극에 대한 인지, 판단, 움직임을 통합적으로 경험하는 SPOKEDU의 대표적인 체육 콘텐츠입니다.</p>
+            <p class="meta">색상 인지 · 선택 반응 · 복합 인지</p>
+            <a class="btn" href="#">SPOMOVE 자세히 보기</a>
+          </div>
+          <div class="media">
+            <img src="assets/dispatch-group-class.jpg" alt="SPOMOVE 수업 현장" />
+          </div>
+        </div>
+      </section>
+      <section class="section paper">
+        <div class="rail">
+          <div class="master-head">
+            <div>
+              <p class="eyebrow">SPOKEDU LAB</p>
+              <h2>수업자료부터<br />운영과 기록까지.</h2>
+              <p class="body">현장에서 바로 활용할 수 있는 놀이체육 프로그램과 수업 가이드부터 수업반, 학생, 일정, 출석과 기록까지 SPOKEDU LAB 하나에서 관리합니다.</p>
+              <a class="btn" href="#">SPOKEDU LAB 알아보기</a>
+            </div>
+            <div class="stat">
+              <span class="stat-num">144+</span>
+              <span class="stat-label">놀이체육 프로그램</span>
+            </div>
+          </div>
+          <div class="product-frame"><img src="assets/library-program-cards-20261008-final.png" alt="LAB 라이브러리 UI" /></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="panel" data-panel-id="proposed">
+      <section class="section">
+        <div class="rail split">
+          <div>
+            <p class="eyebrow">SPOMOVE</p>
+            <p class="spomove-line">SEE · DECIDE · MOVE</p>
+            <h2>화면 신호를 보고,<br />몸으로 답합니다.</h2>
+            <p class="body">아이들은 화면의 색·위치·방향 같은 시각 정보를 확인한 뒤, SPOMAT과 수업 공간에서 실제 움직임으로 반응합니다. 영상을 보기만 하는 수업이 아닙니다.</p>
+            <div class="pill-row">
+              <span class="pill">단순 반응</span>
+              <span class="pill">선택 반응</span>
+              <span class="pill">복합 반응</span>
+            </div>
+            <a class="btn" href="#">SPOMOVE 자세히 보기</a>
+          </div>
+          <div class="dual-visual">
+            <div class="media">
+              <img src="assets/dispatch-group-class.jpg" alt="화면을 보며 매트 위에서 움직이는 SPOMOVE 수업" style="object-position:50% 55%" />
+            </div>
+            <div class="media ui">
+              <img src="assets/prepare-lesson-plan-20261008-final.png" alt="수업 가이드 화면 일부" />
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="section paper">
+        <div class="rail">
+          <div class="master-head">
+            <div>
+              <p class="eyebrow">SPOKEDU LAB</p>
+              <h2>수업자료를 찾고,<br />수업을 운영합니다.</h2>
+              <p class="body">놀이체육 프로그램과 수업 가이드를 검색·준비하고, 유료 이용권에서는 수업반·일정·출석·기록까지 이어갈 수 있는 지도자용 웹 서비스입니다.</p>
+              <div class="pill-row">
+                <span class="pill">콘텐츠 라이브러리</span>
+                <span class="pill">수업 도구</span>
+                <span class="pill">운영·기록 (Lite+)</span>
+              </div>
+              <a class="btn" href="#">SPOKEDU LAB 알아보기</a>
+            </div>
+            <div class="stat">
+              <span class="stat-label">놀이체육 프로그램 라이브러리</span>
+              <p class="stat-note">대상·공간·기능 조건으로 수업을 찾습니다.</p>
+            </div>
+          </div>
+          <div class="product-frame" id="lab-frame"><img src="assets/library-program-cards-20261008-final.png" alt="대상·공간 조건으로 프로그램을 찾는 LAB 라이브러리" /></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const buttons = [...document.querySelectorAll('[data-panel]')];
+    const panels = [...document.querySelectorAll('[data-panel-id]')];
+    function setPanel(id) {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', b.dataset.panel === id ? 'true' : 'false'));
+      panels.forEach((p) => p.classList.toggle('is-active', p.dataset.panelId === id));
+    }
+    buttons.forEach((b) => b.addEventListener('click', () => setPanel(b.dataset.panel)));
+    function syncLabCrop() {
+      const frame = document.getElementById('lab-frame');
+      if (!frame) return;
+      frame.classList.toggle('mobile', window.innerWidth <= 767);
+    }
+    syncLabCrop();
+    window.addEventListener('resize', syncLabCrop);
+  </script>
+</body>
+</html>

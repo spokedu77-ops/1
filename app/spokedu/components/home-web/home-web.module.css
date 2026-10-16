@@ -739,6 +739,21 @@
   color: var(--ink);
 }
 
+.labLibraryStat {
+  grid-area: stat;
+  display: grid;
+  row-gap: 8px;
+  justify-items: start;
+  max-width: 14em;
+}
+
+/* Section scope hooks — SPOMOVE / LAB only overrides live under these roots. */
+.spomoveStage {
+}
+
+.masterStage {
+}
+
 .productFrame {
   position: relative;
   overflow: hidden;
@@ -1200,15 +1215,21 @@
     font-size: 14px;
   }
 
-  .productFrame {
-    aspect-ratio: 4 / 5;
+  /* LAB — show full library UI structure on mobile (avoid 230% crop misread). */
+  .masterStage .productFrame {
+    aspect-ratio: 16 / 10;
   }
 
-  /* Portrait frame: zoom to the left part of the library (quick-entry card, filters, first cards). */
-  .productFrame img {
-    top: -4.2%;
-    left: -34%;
-    width: 230%;
+  .masterStage .productFrame img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: contain;
+    object-position: top center;
+    top: 0;
+    left: 0;
   }
 
   .finalLinks {
