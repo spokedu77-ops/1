@@ -105,7 +105,10 @@ function MasterLoginContent() {
       }
       applyLoginSessionPreference(true);
       const destination = await resolveMasterDestination(next);
-      if (destination) router.replace(destination);
+      if (destination) {
+        window.location.assign(destination);
+        return;
+      }
       router.refresh();
     } catch {
       setReviewPassword('');

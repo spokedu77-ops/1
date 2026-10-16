@@ -24,6 +24,7 @@ describe('Toss billing review login', () => {
     expect(login).toContain('email: reviewEmail.trim()');
     expect(login).toContain('password: reviewPassword');
     expect(login).toContain('const destination = await resolveMasterDestination(next)');
+    expect(login).toContain('window.location.assign(destination)');
     expect(login).toContain('const next = getSafeMasterLoginReturnPath');
     expect(login).toContain('MasterEmailOtpForm');
     expect(login).toContain("provider: 'kakao'");
