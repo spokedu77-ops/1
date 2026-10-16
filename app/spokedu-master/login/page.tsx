@@ -53,6 +53,8 @@ function MasterLoginContent() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      const { data: { session } } = await getSupabaseBrowserClient().auth.getSession();
+      if (!session) return;
       const destination = await resolveMasterDestination(next);
       if (!cancelled && destination) router.replace(destination);
     })().finally(() => {
