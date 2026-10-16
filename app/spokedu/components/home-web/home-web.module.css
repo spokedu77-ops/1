@@ -301,7 +301,7 @@
 
 /* 7. Sections --------------------------------------------------------- */
 
-/* Hero — Editorial Split, image bleeds to the right edge */
+/* Hero — Phase 1-B1: desktop B (EN display first), mobile A (KO H1 first) */
 .hero {
   overflow: hidden;
   background: #fff;
@@ -315,47 +315,61 @@
   padding-block: clamp(40px, 5vw, 72px);
 }
 
-.heroCopy {
+.heroText {
   grid-column: 1 / 7;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
   padding-right: 12px;
 }
 
-.heroBrand {
+.heroCopy {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
-  font-size: 13px;
-  line-height: 1.3;
+  flex-direction: column;
 }
 
-.heroBrand strong {
-  letter-spacing: 0.14em;
-  color: var(--navy);
-}
-
-.heroBrand span {
+.heroEyebrow {
+  margin-bottom: 20px;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--muted);
 }
 
-.heroBrand span::before {
-  content: '';
-  display: inline-block;
-  width: 1px;
-  height: 11px;
-  margin-right: 12px;
-  background: var(--line-strong);
-  vertical-align: -1px;
+.heroH1 {
+  font-size: clamp(36px, 2.9vw, 42px);
+  line-height: 1.18;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--navy);
+  text-wrap: balance;
 }
 
-.heroCopy .lead {
-  margin-top: 28px;
-  max-width: 30em;
+.heroEnglish {
+  margin-top: 0;
+  font-size: clamp(20px, 6.9vw, 100px);
+  line-height: 0.92;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--blue);
+  text-wrap: balance;
+}
+
+.heroLead {
+  margin-top: 24px;
+  max-width: 32em;
+  font-size: clamp(16px, 1.1vw, 17px);
+  line-height: 1.65;
+  font-weight: 400;
   color: var(--ink);
+  text-wrap: pretty;
 }
 
-.heroCopy .actions {
-  margin-top: 36px;
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .heroVisual {
@@ -363,7 +377,11 @@
   margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
 }
 
-/* Gateway — decision index, one row rule for every option */
+.heroVisual .media {
+  border-radius: 0;
+}
+
+/* Gateway — Phase 1-B1: three full-width cards, no step numbers */
 .gateway .rail {
   border-top: 1px solid var(--line);
   padding-top: var(--space-section);
@@ -373,52 +391,114 @@
   padding-top: 0;
 }
 
-.gatewayGrid {
+.gatewayHead {
+  max-width: 640px;
+  margin-bottom: clamp(32px, 4vw, 48px);
+}
+
+.gatewayHead .eyebrow {
+  margin-bottom: 16px;
+}
+
+.gatewayHeading {
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--navy);
+  text-wrap: balance;
+}
+
+.gatewayIntro {
+  margin-top: 16px;
+  font-size: clamp(15px, 1.2vw, 17px);
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.gatewayCards {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: var(--col-gap);
-  row-gap: 32px;
-  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--col-gap);
+  align-items: stretch;
 }
 
-.gatewayTitle {
-  grid-column: 1 / 6;
-}
-
-.gatewayList {
-  grid-column: 6 / 13;
-}
-
-.gatewayRow {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.25fr) 32px;
-  column-gap: var(--col-gap);
-  align-items: baseline;
-  padding: 28px 0;
-  border-top: 1px solid var(--line);
+.gatewayCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 0;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--white);
   color: inherit;
   text-decoration: none;
+  overflow: hidden;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-standard) var(--ease);
 }
 
-.gatewayRow:last-child {
-  border-bottom: 1px solid var(--line);
+.gatewayCardAccent {
+  display: block;
+  height: 4px;
+  width: 100%;
+  flex-shrink: 0;
 }
 
-.gatewayRow .heading {
-  transition: color var(--t-fast) var(--ease);
+.gatewayAccentOrange {
+  background: #fc5606;
 }
 
-.gatewayRow .body {
+.gatewayAccentTeal {
+  background: #0ca678;
+}
+
+.gatewayAccentBlue {
+  background: var(--blue);
+}
+
+.gatewayCardAudience {
+  padding: 20px 22px 0;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
-.gatewayRow i {
-  justify-self: end;
-  font-style: normal;
-  font-size: 20px;
-  line-height: 1;
+.gatewayCardTitle {
+  padding: 10px 22px 0;
+  font-size: clamp(19px, 1.55vw, 24px);
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--navy);
-  transition: transform var(--t-fast) var(--ease);
+  transition: color var(--t-fast) var(--ease);
+}
+
+.gatewayCardBody {
+  flex: 1;
+  padding: 12px 22px 0;
+  font-size: clamp(14px, 1vw, 16px);
+  line-height: 1.62;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.gatewayCardLink {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  margin-top: 20px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--navy);
 }
 
 /* Method — one repeated step structure, 01 → 02 → 03 */
@@ -449,6 +529,14 @@
 
 .step .body {
   color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* Method — product UI focal crops (mobile refinement below) */
+.methodUiContent img,
+.methodUiSystem img {
+  object-fit: cover;
 }
 
 /* Records — Evidence gallery: 1 primary + 2 supporting */
@@ -469,12 +557,41 @@
   text-decoration: none;
 }
 
-.tilePrimary {
-  grid-row: 1 / 3;
-  aspect-ratio: 4 / 3;
+.tileCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    transform var(--t-standard) var(--ease);
 }
 
-.tile img {
+.tileCard:focus-visible {
+  outline: 2px solid #9ab8ff;
+  outline-offset: 3px;
+}
+
+.tilePrimary {
+  grid-row: 1 / 3;
+}
+
+.tileMedia {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--navy-deep);
+}
+
+.tilePrimary .tileMedia {
+  aspect-ratio: auto;
+  min-height: clamp(220px, 32vw, 420px);
+}
+
+.tileMedia img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -483,26 +600,47 @@
   transition: transform var(--t-standard) var(--ease);
 }
 
-.tileCaption {
-  position: absolute;
-  inset: auto 0 0;
+.tileInfo {
   display: grid;
-  row-gap: 4px;
-  padding: 72px 24px 22px;
-  background: linear-gradient(180deg, rgba(8, 17, 38, 0) 0%, rgba(8, 17, 38, 0.82) 100%);
+  row-gap: 6px;
+  padding: 18px 20px 20px;
+  background: rgba(6, 14, 32, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.tileCaption strong {
-  font-size: 18px;
-  line-height: 1.3;
+.tileProgram {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ab8ff;
+}
+
+.tileVenue {
+  font-size: 17px;
+  line-height: 1.35;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.tileCaption span {
-  font-size: 13px;
-  line-height: 1.4;
+.tileContext {
+  font-size: 14px;
+  line-height: 1.45;
   color: rgba(255, 255, 255, 0.78);
+}
+
+.tileDescription {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tileCta {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
 }
 
 /* SPOMOVE — Editorial Split, one dominant visual */
@@ -699,16 +837,20 @@
   }
 
   .textLink:hover i,
-  .gatewayRow:hover i,
   .finalLinks a:hover i {
     transform: translateX(2px);
   }
 
-  .gatewayRow:hover .heading {
+  .gatewayCard:hover {
+    border-color: rgba(36, 93, 255, 0.35);
+    box-shadow: 0 12px 32px rgba(11, 31, 70, 0.08);
+  }
+
+  .gatewayCard:hover .gatewayCardTitle {
     color: var(--blue);
   }
 
-  .tile:hover img {
+  .tileCard:hover .tileMedia img {
     transform: scale(1.02);
   }
 }
@@ -718,6 +860,70 @@
   .root *::before,
   .root *::after {
     transition: none !important;
+  }
+}
+
+/* Hero + Gateway — desktop B hierarchy from 1024px */
+@media (min-width: 1024px) {
+  .heroGrid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-areas: none;
+  }
+
+  .heroText {
+    display: flex;
+    flex-direction: column;
+    grid-column: 1 / 7;
+    gap: 36px;
+  }
+
+  .heroCopy {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+  }
+
+  .heroEyebrow {
+    order: 1;
+    margin-bottom: 24px;
+  }
+
+  .heroEnglish {
+    order: 2;
+    margin-top: 0;
+    font-size: clamp(72px, 6.9vw, 100px);
+  }
+
+  .heroH1 {
+    order: 3;
+    margin-top: 20px;
+    font-size: 42px;
+  }
+
+  .heroLead {
+    order: 4;
+    margin-top: 24px;
+  }
+
+  .heroActions {
+    max-width: none;
+  }
+
+  .heroVisual {
+    grid-column: 7 / 13;
+    margin-top: 0;
+    margin-inline: 0;
+    margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
+  }
+
+  .heroVisual .media {
+    border-radius: 0;
+    aspect-ratio: 4 / 3;
+  }
+
+  .gatewayCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--col-gap);
   }
 }
 
@@ -746,27 +952,44 @@
   }
 
   .heroGrid {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'copy'
+      'visual'
+      'actions';
     padding-block: clamp(48px, 7vw, 72px) 0;
   }
 
+  .heroText {
+    display: contents;
+  }
+
   .heroCopy {
+    grid-area: copy;
     padding-right: 0;
     max-width: 640px;
   }
 
+  .heroActions {
+    grid-area: actions;
+    max-width: 640px;
+  }
+
   .heroVisual {
-    margin-top: clamp(40px, 6vw, 56px);
+    grid-area: visual;
+    margin-top: clamp(28px, 4vw, 40px);
     margin-inline: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--gutter));
   }
 
   .heroVisual .media {
     aspect-ratio: 16 / 10;
   }
 
-  .gatewayTitle,
-  .gatewayList {
-    grid-column: 1 / -1;
+  .gatewayCards {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .steps {
@@ -805,15 +1028,12 @@
   .gallery {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto;
+    gap: var(--col-gap);
   }
 
   .tilePrimary {
     grid-column: 1 / -1;
     grid-row: auto;
-  }
-
-  .tile:not(.tilePrimary) {
-    aspect-ratio: 4 / 3;
   }
 
   .splitCopy,
@@ -864,25 +1084,33 @@
     padding-top: 48px;
   }
 
-  .heroBrand {
-    margin-bottom: 24px;
+  .heroEyebrow {
+    margin-bottom: 16px;
   }
 
-  .heroCopy .lead {
-    margin-top: 24px;
+  .heroH1 {
+    font-size: 36px;
   }
 
-  .heroCopy .actions {
-    margin-top: 28px;
+  .heroEnglish {
+    margin-top: 16px;
+    font-size: 20px;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .heroLead {
+    margin-top: 20px;
+    font-size: 16px;
   }
 
   .heroVisual {
-    margin-top: 40px;
+    margin-top: 28px;
   }
 
-  /* 3:2 keeps both the jumping child and the instructor inside the frame at phone widths. */
   .heroVisual .media {
     aspect-ratio: 3 / 2;
+    border-radius: 16px;
   }
 
   .actions {
@@ -894,24 +1122,27 @@
     width: 100%;
   }
 
-  .gatewayRow {
-    grid-template-columns: 40px minmax(0, 1fr) 24px;
-    row-gap: 8px;
-    padding: 22px 0;
+  .heroActions {
+    flex-direction: row;
+    align-items: stretch;
+    margin-top: 20px;
   }
 
-  .gatewayRow .body {
-    grid-column: 2;
-    font-size: 15px;
+  .heroActions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    min-height: 48px;
+    padding-inline: 14px;
   }
 
-  .gatewayRow i {
-    grid-row: 1;
-    grid-column: 3;
+  .gatewayCardLink {
+    min-height: 48px;
   }
 
   .step {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
     grid-template-areas:
       'meta'
       'title'
@@ -922,19 +1153,47 @@
 
   .step .body {
     align-self: start;
+    font-size: 16px;
+  }
+
+  .methodUiContent.r43,
+  .methodUiSystem.r43 {
+    aspect-ratio: 3 / 4;
+  }
+
+  .methodUiContent img {
+    object-position: 18% 0%;
+    transform: scale(1.35);
+    transform-origin: top left;
+  }
+
+  .methodUiSystem img {
+    object-position: 12% 0%;
+    transform: scale(1.28);
+    transform-origin: top left;
   }
 
   .gallery {
     grid-template-columns: 1fr;
+    row-gap: 20px;
   }
 
-  .tilePrimary,
-  .tile:not(.tilePrimary) {
+  .tilePrimary {
+    grid-row: auto;
+  }
+
+  .tilePrimary .tileMedia,
+  .tileMedia {
     aspect-ratio: 4 / 3;
+    min-height: 0;
   }
 
-  .tileCaption {
-    padding: 56px 18px 18px;
+  .tileInfo {
+    padding: 16px 18px 18px;
+  }
+
+  .tileDescription {
+    font-size: 16px;
   }
 
   .spomoveLine {

@@ -4,29 +4,34 @@ import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_HERO_IMAGE } from './home-web-assets';
 import styles from './home-web.module.css';
 
-/** Composition A — Editorial Split. Copy on the left text axis, one image bleeding to the right edge. */
+/** Phase 1-B1 — Desktop B / Mobile A in one component (responsive order & hierarchy). */
 export function HomeHero() {
   return (
     <section className={styles.hero} aria-labelledby="home-hero-heading">
       <div className={`${styles.rail} ${styles.heroGrid}`}>
-        <div className={styles.heroCopy}>
-          <p className={styles.heroBrand}>
-            <strong>SPOKEDU</strong>
-            <span>아동 · 청소년 · 특수 체육교육</span>
-          </p>
-          <h1 id="home-hero-heading" className={styles.displayHero}>
-            MOVEMENT
-            <br />
-            BECOMES
-            <br />
-            LEARNING.
-          </h1>
-          <p className={styles.lead}>
-            학교와 기관에서 직접 수업하고{' '}
-            <br />
-            현장에서 필요한 프로그램과 시스템을 만듭니다.
-          </p>
-          <div className={styles.actions}>
+        <div className={styles.heroText}>
+          <div className={styles.heroCopy}>
+            <p className={styles.heroEyebrow}>아동 · 청소년 · 특수 체육교육</p>
+            <h1 id="home-hero-heading" className={styles.heroH1}>
+              움직임으로
+              <br />
+              아이의 성장을
+              <br />
+              설계합니다.
+            </h1>
+            <p className={styles.heroEnglish}>
+              MOVEMENT
+              <br />
+              BECOMES
+              <br />
+              LEARNING.
+            </p>
+            <p className={styles.heroLead}>
+              학교와 기관에서 직접 수업하고 아이의 움직임과 참여 수준에 맞는 프로그램과 지도자용 수업
+              시스템을 만듭니다.
+            </p>
+          </div>
+          <div className={styles.heroActions}>
             <Link href={SPOKEDU_PATHS.education} className={`${styles.btn} ${styles.btnPrimary}`}>
               수업 알아보기
             </Link>
