@@ -514,13 +514,25 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
 const FLOW_COLOR_GATE_LEVEL_ID = 2;
 const ACTION_MOVE_STAGE_SECONDS = [15, 20, 25, 30, 35] as const;
 const COLOR_GATE_REPETITION_COUNTS = [10, 15, 20, 30] as const;
+const REACT_TRAIN_REPETITION_LEVEL_IDS = new Set([3, 1, 2, 6, 10, 201]);
 const DEFAULT_ACTION_MOVE_STAGE_SEC = 20;
 
 function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
   return modeId === 'flow' && levelId === FLOW_COLOR_GATE_LEVEL_ID;
 }
 
+function isReactTrainRepetitionLevel(modeId: string, levelId: number): boolean {
+  return modeId === 'reactTrain' && REACT_TRAIN_REPETITION_LEVEL_IDS.has(levelId);
+}
+
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
+  if (isReactTrainRepetitionLevel(modeId, levelId)) {
+    return {
+      ...launch,
+      timeMode: 'reps',
+      targetReps: [10, 15, 20, 30].includes(launch.targetReps) ? launch.targetReps : 20,
+    };
+  }
   if (modeId === 'basic' && levelId === 7) {
     return {
       ...launch,
@@ -1026,8 +1038,9 @@ function SettingsScreen({
   const isSimon = modeId === 'simon';
   const isFlowOrChallenge = modeId === 'flow';
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
+  const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId, levelId);
   const compactSettingsMenu =
-    (isReactTrain && [6, 8, 10, 13].includes(reactTrainEngineLevelForUi(levelId))) ||
+    isReactTrain ||
     (modeId === 'simon' && levelId === 3) ||
     (modeId === 'flanker' && levelId === 3) ||
     (isSpatial && isInstantMemoryLevel(levelId));
@@ -1240,7 +1253,7 @@ function SettingsScreen({
                           return 8;
                         }
                         if (modeId === 'basic' && lv.id === 7) {
-                          return isModifiedQuadrantLevel(current) ? current : 7;
+                          return 7;
                         }
                         if (modeId === 'basic' && lv.id === 5) {
                           return isFront3PanelLevel(current) ? current : 5;
@@ -2691,7 +2704,9 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
+                  {isReactTrainRepetition
+                    ? '횟수'
+                    : isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
                     ? '라운드'
                     : isReactTrain || (isSpatial && isInstantMemoryLevel(levelId))
                       ? '훈련 시간'
@@ -2701,7 +2716,34 @@ function SettingsScreen({
                 </label>
               </div>
 
-              {isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
+              {isReactTrainRepetition ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[10, 15, 20, 30].map((r) => {
+                    const active = launch.targetReps === r;
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
+                        style={{
+                          flex: '1 1 90px',
+                          padding: '11px 10px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 13,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {r}회
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[7, 10, 15, 25].map((r) => {
                     const active = launch.targetReps === r;
@@ -3210,7 +3252,14 @@ function SettingsScreen({
 
           <button
             type="button"
-            onClick={() => onStart(levelId, launchSettingsForLevel(modeId, levelId, launch))}
+            onClick={() => {
+              if (document.fullscreenEnabled && !document.fullscreenElement) {
+                void document.documentElement.requestFullscreen().catch((error: Error) => {
+                  console.warn('[SPOMOVE] fullscreen request failed:', error.message);
+                });
+              }
+              onStart(levelId, launchSettingsForLevel(modeId, levelId, launch));
+            }}
             style={{
               width: '100%',
               padding: isFlowOrChallenge ? '12px 20px' : '17px 24px',
