@@ -10,11 +10,13 @@ describe('Motion Gate option image pools', () => {
     const normal = colorGatePosesForVariant('solo-normal');
     const togetherSingle = colorGatePosesForVariant('together-easy');
     const togetherCompound = colorGatePosesForVariant('together-normal');
+    const togetherFamily = colorGatePosesForVariant('together-family');
 
     expect(easy).toHaveLength(20);
     expect(normal).toHaveLength(40);
     expect(togetherSingle).toHaveLength(5);
     expect(togetherCompound).toHaveLength(14);
+    expect(togetherFamily).toHaveLength(4);
 
     expect(new Set([...normal, ...togetherCompound])).toEqual(new Set(
       COLOR_GATE_POSE_DEFINITIONS
@@ -57,13 +59,13 @@ describe('Motion Gate option image pools', () => {
       ['standing-toe-touch', '서서 발끝 터치', 'easy'],
       ['butterfly', '나비 자세', 'easy'],
       ['standing-side-stretch', '서서 옆구리 스트레칭', 'easy'],
-      ['child-pose', '어린이 자세', 'easy'],
-      ['overhead-lunge-stretch', '오버헤드 런지 스트레칭', 'easy'],
-      ['cobra', '코브라 자세', 'hard'],
-      ['downward-dog', '다운독', 'hard'],
-      ['standing-quad-stretch', '대퇴사두근 스트레칭', 'hard'],
-      ['seated-straddle', '앉아서 다리벌리기', 'hard'],
-      ['straddle-one-foot-hold', '앉아서 다리벌리고 한 발 잡기', 'hard'],
+      ['child-pose', '고양이 자세', 'easy'],
+      ['overhead-lunge-stretch', '앉아 다리벌리기', 'easy'],
+      ['cobra', '오버헤드 런지', 'hard'],
+      ['downward-dog', '코브라 자세', 'hard'],
+      ['standing-quad-stretch', '다운독', 'hard'],
+      ['seated-straddle', '뒤로 발등잡기', 'hard'],
+      ['straddle-one-foot-hold', '앉아 다리벌려 한발 잡기', 'hard'],
     ]);
 
     expect(COLOR_GATE_POSE_DEFINITIONS[28]).toMatchObject({
@@ -77,24 +79,24 @@ describe('Motion Gate option image pools', () => {
     expect(COLOR_GATE_POSE_DEFINITIONS.slice(34, 37).map(({ key, label, difficulty, image }) => [key, label, difficulty, image])).toEqual([
       ['clap-jump', '박수 점프', 'easy', '/spomove/dive/color-gate/power-jump/clap-jump.png'],
       ['frog-jump', '개구리 점프', 'hard', '/spomove/dive/color-gate/power-jump/frog-jump.png'],
-      ['rotation-jump', '한 바퀴 회전 점프', 'hard', '/spomove/dive/color-gate/power-jump/rotation-jump.png'],
+      ['rotation-jump', '회전 점프', 'hard', '/spomove/dive/color-gate/power-jump/rotation-jump.png'],
     ]);
 
     expect(COLOR_GATE_POSE_DEFINITIONS.slice(40).map(({ key, label, difficulty }) => [key, label, difficulty])).toEqual([
-      ['partner-hold', '파트너 스쿼트 홀드', 'easy'],
-      ['partner-shoulder-waist-press', '파트너 어깨 잡고 허리 눌러주기', 'easy'],
-      ['partner-high-five', '파트너 하이파이브', 'easy'],
-      ['partner-back-to-back', '파트너 백투백', 'easy'],
-      ['partner-side-lunge', '파트너 사이드 런지', 'easy'],
-      ['partner-hand-jump', '파트너 손 잡고 점프', 'easy'],
-      ['partner-leg-touch', '파트너 다리 터치', 'easy'],
-      ['partner-tunnel', '파트너 터널', 'hard'],
-      ['partner-shoulder-balance', '파트너 어깨 밸런스', 'hard'],
-      ['partner-sit-to-stand', '파트너 앉았다 일어나기', 'hard'],
-      ['partner-pull-up', '파트너 풀업', 'hard'],
-      ['partner-squat', '파트너 V밸런스', 'hard'],
-      ['partner-stacking', '파트너 스태킹', 'hard'],
-      ['partner-one-leg-high-five', '마주보고 한발 들고 하이파이브', 'hard'],
+      ['partner-hold', '스쿼트 홀드', 'easy'],
+      ['partner-shoulder-waist-press', '어깨 잡고 눌러주기', 'easy'],
+      ['partner-high-five', '하이파이브', 'easy'],
+      ['partner-back-to-back', '백투백', 'easy'],
+      ['partner-side-lunge', '사이드 런지', 'easy'],
+      ['partner-hand-jump', '손잡고 점프', 'easy'],
+      ['partner-leg-touch', '머리붙이기(마주보고)', 'easy'],
+      ['partner-tunnel', '플랭크 하이파이브', 'hard'],
+      ['partner-shoulder-balance', '어깨동무', 'hard'],
+      ['partner-sit-to-stand', '앉았다 일어나기', 'hard'],
+      ['partner-pull-up', '풀업', 'hard'],
+      ['partner-squat', 'V밸런스', 'hard'],
+      ['partner-stacking', '한발 들고 하이파이브', 'hard'],
+      ['partner-one-leg-high-five', '인간 손수레', 'hard'],
       ['family-princess-carry', '공주님 안기', 'family'],
       ['family-airplane-play', '비행기 놀이', 'family'],
       ['family-piggyback', '어부바', 'family'],

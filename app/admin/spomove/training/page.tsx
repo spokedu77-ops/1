@@ -305,7 +305,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
-type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
+type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal' | 'together-family';
 type ColorGateCategoryFilter = 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
 
 type LaunchSettings = {
@@ -2404,8 +2404,8 @@ function SettingsScreen({
                 {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
                   const isTogether = value === 'together';
                   const active = isTogether
-                    ? launch.colorGateVariant === 'together-easy' || launch.colorGateVariant === 'together-normal'
-                    : launch.colorGateCategory === value && launch.colorGateVariant !== 'together-easy' && launch.colorGateVariant !== 'together-normal';
+                    ? launch.colorGateVariant.startsWith('together-')
+                    : launch.colorGateCategory === value && !launch.colorGateVariant.startsWith('together-');
                   return (
                     <button key={value} type="button" onClick={() => setLaunch((s) => {
                       if (value === 'together') {
@@ -2414,7 +2414,7 @@ function SettingsScreen({
                       return {
                         ...s,
                         colorGateCategory: value,
-                        colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant === 'together-easy' ? 'solo-easy' : s.colorGateVariant,
+                        colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant.startsWith('together-') ? 'solo-easy' : s.colorGateVariant,
                       };
                     })}
                       style={{ minWidth: 0, minHeight: 40, padding: '7px 4px', borderRadius: 10, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontSize: 12, lineHeight: 1.2, fontWeight: 900, cursor: 'pointer', textAlign: 'center', wordBreak: 'keep-all' }}>
@@ -2424,21 +2424,24 @@ function SettingsScreen({
                 })}
               </div>
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: launch.colorGateVariant.startsWith('together-') ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))', gap: 5 }}>
                 {([
                   ['single', '단일', '기본 동작'],
                   ['compound', '복합', '전체 동작'],
+                  ...(launch.colorGateVariant.startsWith('together-') ? [['family', '패밀리', '가족 동작'] as const] : []),
                 ] as const).map(([value, label, difficulty]) => {
                   const active = value === 'single'
                     ? launch.colorGateVariant === 'solo-easy' || launch.colorGateVariant === 'together-easy'
-                    : launch.colorGateVariant === 'solo-normal' || launch.colorGateVariant === 'together-normal';
+                    : value === 'compound'
+                      ? launch.colorGateVariant === 'solo-normal' || launch.colorGateVariant === 'together-normal'
+                      : launch.colorGateVariant === 'together-family';
                   return (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setLaunch((s) => {
-                        const isTogether = s.colorGateVariant === 'together-easy' || s.colorGateVariant === 'together-normal';
-                        return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : (isTogether ? 'together-normal' : 'solo-normal') };
+                        const isTogether = s.colorGateVariant.startsWith('together-');
+                        return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : value === 'compound' ? (isTogether ? 'together-normal' : 'solo-normal') : 'together-family' };
                       })}
                       style={{
                         minWidth: 0, padding: '8px 4px', borderRadius: 10,
