@@ -4,36 +4,28 @@ import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_HERO_IMAGE } from './home-web-assets';
 import styles from './home-web.module.css';
 
-/** Composition A — Editorial Split. Copy on the left text axis, one image bleeding to the right edge. */
+/** Desktop uses the approved editorial hierarchy; mobile promotes the Korean message and field image. */
 export function HomeHero() {
   return (
     <section className={styles.hero} aria-labelledby="home-hero-heading">
       <div className={`${styles.rail} ${styles.heroGrid}`}>
         <div className={styles.heroCopy}>
-          <p className={styles.heroBrand}>
-            <strong>SPOKEDU</strong>
-            <span>아동 · 청소년 · 특수 체육교육</span>
-          </p>
-          <h1 id="home-hero-heading" className={styles.displayHero}>
+          <p className={styles.heroEyebrow}>아동 · 청소년 · 특수 체육교육</p>
+          <p className={styles.heroEnglish} aria-label="Movement becomes learning">
             MOVEMENT
             <br />
+            {' '}
             BECOMES
             <br />
+            {' '}
             LEARNING.
-          </h1>
-          <p className={styles.lead}>
-            학교와 기관에서 직접 수업하고{' '}
-            <br />
-            현장에서 필요한 프로그램과 시스템을 만듭니다.
           </p>
-          <div className={styles.actions}>
-            <Link href={SPOKEDU_PATHS.education} className={`${styles.btn} ${styles.btnPrimary}`}>
-              수업 알아보기
-            </Link>
-            <Link href={SPOKEDU_PATHS.subscription} className={`${styles.btn} ${styles.btnSecondary}`}>
-              수업자료 둘러보기
-            </Link>
-          </div>
+          <h1 id="home-hero-heading" className={styles.heroKorean}>
+            움직임으로 아이의 성장을 설계합니다.
+          </h1>
+          <p className={styles.heroLead}>
+            학교와 기관에서 직접 수업하고 아이의 움직임과 참여 수준에 맞는 프로그램과 지도자용 수업 시스템을 만듭니다.
+          </p>
         </div>
 
         <div className={styles.heroVisual}>
@@ -46,6 +38,15 @@ export function HomeHero() {
               decoding="async"
             />
           </div>
+        </div>
+
+        <div className={styles.heroActions}>
+          <Link href={SPOKEDU_PATHS.education} className={`${styles.btn} ${styles.btnPrimary}`}>
+            수업 알아보기
+          </Link>
+          <Link href={SPOKEDU_PATHS.subscription} className={`${styles.btn} ${styles.btnSecondary}`}>
+            수업자료 둘러보기
+          </Link>
         </div>
       </div>
     </section>

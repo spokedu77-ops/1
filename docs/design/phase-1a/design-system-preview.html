@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPOKEDU Unified Design System V1 — Phase 1-A</title>
+  <style>
+    :root {
+      --blue:#245DFF; --blue-hover:#174BE6; --navy:#0B1F46; --ink:#14213A;
+      --text:#536279; --white:#FFFFFF; --soft:#F5F7FB; --border:#DCE3EE;
+      --orange:#FC5606; --teal:#0B806A; --disabled:#96A2B5;
+      --max:1280px; --gutter:48px; --radius:16px;
+      --font:Pretendard,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;color:var(--ink);background:var(--white);font-family:var(--font);word-break:keep-all;overflow-wrap:break-word}
+    body.menu-open{overflow:hidden}
+    a{color:inherit}
+    button,a{font:inherit}
+    img{display:block;max-width:100%}
+    :focus-visible{outline:3px solid rgba(36,93,255,.35);outline-offset:3px}
+    .rail{width:min(100%,calc(var(--max) + var(--gutter)*2));margin-inline:auto;padding-inline:var(--gutter)}
+    .eyebrow{margin:0 0 12px;color:var(--blue);font-size:12px;font-weight:700;line-height:1.3;letter-spacing:.12em;text-transform:uppercase}
+    .section-title{margin:0;font-size:44px;font-weight:700;line-height:1.15;letter-spacing:-.035em}
+    .section-lead{max-width:720px;margin:16px 0 0;color:var(--text);font-size:17px;line-height:1.6}
+    .site-header{position:sticky;top:0;z-index:20;border-bottom:1px solid var(--border);background:rgba(255,255,255,.96);backdrop-filter:blur(12px)}
+    .header-inner{height:76px;display:grid;grid-template-columns:190px 1fr auto;align-items:center;gap:32px}
+    .brand img{width:auto;height:40px}
+    .desktop-nav{display:flex;align-items:center;justify-content:center;gap:32px;font-size:15px;font-weight:600}
+    .desktop-nav a{text-decoration:none;min-height:44px;display:inline-flex;align-items:center;position:relative}
+    .desktop-nav a.active::after{content:"";position:absolute;left:0;right:0;bottom:5px;height:2px;background:var(--blue)}
+    .mobile-trigger{display:none;width:44px;height:44px;border:1px solid var(--border);border-radius:50%;background:#fff;color:var(--navy);font-size:22px;align-items:center;justify-content:center}
+    .btn{min-height:50px;padding:0 22px;border-radius:10px;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:15px;font-weight:600;line-height:1.2;transition:background .18s,border-color .18s,color .18s}
+    .btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-hover)}
+    .btn-secondary{background:#fff;border-color:var(--border);color:var(--navy)}.btn-secondary:hover{background:var(--soft);border-color:#B9C6DA}
+    .btn-disabled{background:#E6EBF2;color:var(--disabled);cursor:not-allowed}
+    .text-link{min-height:44px;display:inline-flex;align-items:center;gap:7px;color:var(--blue);font-size:15px;font-weight:600;text-underline-offset:4px}
+    .mobile-panel,.menu-backdrop{display:none}
+
+    .hero{padding:48px 0 72px;background:#fff}
+    .hero-grid{display:grid;grid-template-columns:minmax(470px,.88fr) minmax(0,1.12fr);align-items:center;gap:56px}
+    .hero-korean{margin:0;max-width:590px;color:var(--navy);font-size:64px;font-weight:700;line-height:1.08;letter-spacing:-.045em}
+    .hero-english{margin:24px 0 0;color:var(--blue);font-size:clamp(70px,6.4vw,92px);font-weight:800;line-height:.92;letter-spacing:-.06em;opacity:.12;white-space:nowrap}
+    .hero-copy{position:relative;z-index:1}
+    .hero-copy .support{max-width:540px;margin:28px 0 0;color:var(--text);font-size:17px;line-height:1.6}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+    .hero-photo{position:relative;overflow:hidden;border-radius:16px;background:var(--soft);aspect-ratio:4/3}
+    .hero-photo img{width:100%;height:100%;object-fit:cover;object-position:57% 63%}
+    .photo-label{position:absolute;right:16px;bottom:16px;margin:0;padding:9px 12px;border-radius:10px;background:rgba(11,31,70,.9);color:#fff;font-size:12px;font-weight:600}
+
+    .audiences{padding:64px 0 96px;background:var(--soft)}
+    .audience-head{display:flex;align-items:end;justify-content:space-between;gap:32px;margin-bottom:32px}
+    .service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .service-card{min-height:260px;padding:28px;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:16px;background:#fff}
+    .service-card .for{margin:0;color:var(--text);font-size:12px;font-weight:700}
+    .service-card h3{margin:22px 0 0;font-size:22px;line-height:1.3}
+    .service-card p{margin:10px 0 0;color:var(--text);font-size:15px;line-height:1.6}
+    .service-card .text-link{margin-top:auto;align-self:flex-start}
+
+    .system{padding:96px 0}
+    .system-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;margin-top:48px}
+    .spec-block{min-width:0}
+    .spec-block h3{margin:0 0 20px;font-size:22px}
+    .swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .swatch{overflow:hidden;border:1px solid var(--border);border-radius:16px;background:#fff}
+    .swatch-color{height:82px}.swatch-copy{padding:12px}.swatch-copy strong,.swatch-copy span{display:block;font-size:12px}.swatch-copy span{margin-top:4px;color:var(--text)}
+    .type-sample{padding:24px 0;border-top:1px solid var(--border)}
+    .type-sample:last-child{border-bottom:1px solid var(--border)}
+    .type-sample span{display:block;margin-bottom:8px;color:var(--text);font-size:12px;font-weight:600}
+    .type-h1{font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-.04em}.type-h2{font-size:44px;font-weight:700;line-height:1.15}.type-h3{font-size:22px;font-weight:700}.type-body{font-size:17px;line-height:1.6;color:var(--text)}
+    .button-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+    .state-note{margin:14px 0 0;color:var(--text);font-size:14px;line-height:1.6}
+
+    .cards-section{padding:96px 0;background:var(--soft)}
+    .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+    .demo-card{overflow:hidden;border:1px solid var(--border);border-radius:16px;background:#fff}
+    .demo-card-content{padding:24px}.demo-card h3{margin:0;font-size:22px;line-height:1.3}.demo-card p{margin:10px 0 0;color:var(--text);font-size:15px;line-height:1.6}
+    .evidence-photo{aspect-ratio:16/10;overflow:hidden;background:#E7EBF1}.evidence-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 48%}
+    .info-list{margin:18px 0 0;padding:0;list-style:none;border-top:1px solid var(--border)}
+    .info-list li{padding:14px 0;border-bottom:1px solid var(--border);font-size:15px;color:var(--text)}
+
+    .examples{padding:96px 0}
+    .example-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px}
+    .mini{padding:34px;border:1px solid var(--border);border-radius:16px;background:#fff}
+    .mini.institution{border-top:4px solid var(--orange)}
+    .mini.private{border-top:4px solid var(--teal)}
+    .mini .context{margin:0 0 14px;font-size:12px;font-weight:700;letter-spacing:.1em}.institution .context{color:var(--ink)}.private .context{color:var(--teal)}
+    .mini h3{margin:0;max-width:520px;font-size:36px;line-height:1.12;letter-spacing:-.03em}
+    .mini p{margin:16px 0 0;color:var(--text);font-size:16px;line-height:1.6}
+    .mini .hero-actions{margin-top:24px}
+    .footnote{padding:24px 0 48px;color:var(--text);font-size:13px;line-height:1.6;text-align:center}
+
+    @media (max-width:980px){
+      :root{--gutter:32px}.desktop-nav{display:none}.header-inner{grid-template-columns:1fr auto auto}.mobile-trigger{display:inline-flex}.hero-grid{grid-template-columns:1fr;gap:40px}.hero-photo{max-height:620px}.system-grid{grid-template-columns:1fr}.service-grid{grid-template-columns:1fr 1fr}.card-grid{grid-template-columns:1fr 1fr}.demo-card:last-child{grid-column:1/-1}
+    }
+    @media (max-width:640px){
+      :root{--gutter:20px}.site-header{height:64px}.header-inner{height:64px;grid-template-columns:1fr auto;gap:8px}.brand img{height:31px}.header-cta{display:none}.mobile-trigger{display:inline-flex}
+      .hero{padding:36px 0 52px}.hero-grid{gap:28px}.hero-korean{font-size:36px;line-height:1.12}.hero-english{margin-top:18px;font-size:48px;line-height:.96}.hero-copy .support{margin-top:22px;font-size:16px}.hero-actions{display:grid;grid-template-columns:1fr;margin-top:24px}.btn{min-height:48px;width:100%}.hero-photo{aspect-ratio:4/3}.photo-label{right:10px;bottom:10px;font-size:11px}
+      .audiences,.system,.cards-section,.examples{padding:64px 0}.audience-head{display:block}.section-title{font-size:28px}.section-lead{font-size:16px}.service-grid,.card-grid,.example-grid{grid-template-columns:1fr}.service-card{min-height:230px;padding:24px}.demo-card:last-child{grid-column:auto}.system-grid{gap:48px;margin-top:36px}.swatches{grid-template-columns:1fr 1fr}.type-h1{font-size:36px}.type-h2{font-size:28px}.type-h3{font-size:18px}.type-body{font-size:16px}.button-row{display:grid}.text-link{width:auto}.mini{padding:26px 22px}.mini h3{font-size:28px}.mini .hero-actions{display:grid}
+      .menu-backdrop{position:fixed;inset:64px 0 0;z-index:29;background:rgba(11,31,70,.42)}
+      .mobile-panel{position:fixed;top:64px;right:0;z-index:30;width:100%;max-height:calc(100dvh - 64px);overflow:auto;background:#fff;border-top:1px solid var(--border);box-shadow:0 20px 42px rgba(11,31,70,.16)}
+      body.menu-open .menu-backdrop,body.menu-open .mobile-panel{display:block}
+      .mobile-panel-inner{padding:20px 20px 28px}.mobile-group{padding:8px 0 14px;border-bottom:1px solid var(--border)}.mobile-group-title{margin:0 0 4px;color:var(--text);font-size:12px;font-weight:700}.mobile-panel a{min-height:50px;display:flex;align-items:center;justify-content:space-between;text-decoration:none;font-size:16px;font-weight:600}.mobile-panel .btn{margin-top:18px;color:#fff;justify-content:center}
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="rail header-inner">
+      <a class="brand" href="#" aria-label="SPOKEDU 홈"><img src="../../../public/images/spokedu/brand/spokedu-logo.png" alt="SPOKEDU"></a>
+      <nav class="desktop-nav" aria-label="주요 메뉴"><a class="active" href="/education">체육수업</a><a href="/spomove">솔루션</a><a href="/records">현장 사례</a><a href="/about">소개</a></nav>
+      <a class="btn btn-primary header-cta" href="/contact">상담하기</a>
+      <button class="mobile-trigger" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="메뉴 열기">☰</button>
+    </div>
+  </header>
+  <button class="menu-backdrop" type="button" aria-label="메뉴 닫기"></button>
+  <aside class="mobile-panel" id="mobile-menu" aria-label="모바일 메뉴">
+    <div class="mobile-panel-inner">
+      <div class="mobile-group"><p class="mobile-group-title">체육수업</p><a href="/education">기관·학교 수업 <span>→</span></a><a href="/private">개인·소그룹 수업 <span>→</span></a></div>
+      <div class="mobile-group"><p class="mobile-group-title">솔루션</p><a href="/spomove">SPOMOVE <span>→</span></a><a href="/spokedu-lab">SPOKEDU LAB <span>→</span></a></div>
+      <div class="mobile-group"><a href="/records">현장 사례 <span>→</span></a><a href="/about">소개 <span>→</span></a></div>
+      <a class="btn btn-primary" href="/contact">상담하기</a>
+    </div>
+  </aside>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="rail hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">아동 · 청소년 · 특수 체육교육</p>
+          <h1 class="hero-korean" id="hero-title">움직임으로 아이의 성장을 설계합니다.</h1>
+          <p class="hero-english" aria-hidden="true">MOVEMENT<br>BECOMES<br>LEARNING.</p>
+          <p class="support">학교와 기관에서 직접 수업하고, 아이의 움직임과 참여 수준에 맞는 프로그램과 지도자용 수업 시스템을 만듭니다.</p>
+          <div class="hero-actions"><a class="btn btn-primary" href="#audiences">수업 알아보기</a><a class="btn btn-secondary" href="/spokedu-lab">수업자료 둘러보기</a></div>
+        </div>
+        <figure class="hero-photo"><img src="../../../public/images/spokedu/home/field-editorial/home-hero-field.webp" alt="서울 위례초등학교 체육관에서 진행 중인 SPOKEDU 체육수업"><figcaption class="photo-label">실제 SPOKEDU 수업 현장</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="audiences" id="audiences" aria-labelledby="audience-title">
+      <div class="rail">
+        <div class="audience-head"><div><p class="eyebrow">Choose your path</p><h2 class="section-title" id="audience-title">필요한 서비스로 바로 이동하세요.</h2><p class="section-lead">고객 유형은 분명하게 나누고, 이동 방식은 같은 규칙으로 제공합니다.</p></div></div>
+        <div class="service-grid">
+          <article class="service-card"><p class="for">기관·학교 담당자</p><h3>기관·학교 체육수업</h3><p>학교와 기관의 환경과 대상에 맞춰 수업을 설계하고 운영합니다.</p><a class="text-link" href="/education">기관 수업 안내 <span>→</span></a></article>
+          <article class="service-card"><p class="for">학부모</p><h3>개인·소그룹 수업</h3><p>아이의 움직임과 참여 수준에 맞춰 수업을 진행합니다.</p><a class="text-link" href="/private">개인 수업 안내 <span>→</span></a></article>
+          <article class="service-card"><p class="for">지도자·센터 운영자</p><h3>SPOKEDU LAB</h3><p>수업 콘텐츠부터 운영과 기록까지 연결하는 지도자용 수업 시스템입니다.</p><a class="text-link" href="/spokedu-lab">LAB 둘러보기 <span>→</span></a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="system" id="system" aria-labelledby="system-title">
+      <div class="rail"><p class="eyebrow">Design foundation</p><h2 class="section-title" id="system-title">한 브랜드로 읽히는 공통 기준</h2><p class="section-lead">색상과 동작 의미는 통일하고, 각 서비스의 목적에 맞는 구성 차이는 유지합니다.</p>
+        <div class="system-grid">
+          <div class="spec-block"><h3>Color</h3><div class="swatches">
+            <div class="swatch"><div class="swatch-color" style="background:#245DFF"></div><div class="swatch-copy"><strong>Primary</strong><span>#245DFF</span></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#0B1F46"></div><div class="swatch-copy"><strong>Navy</strong><span>#0B1F46</span></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#F5F7FB"></div><div class="swatch-copy"><strong>Soft</strong><span>#F5F7FB</span></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#FC5606"></div><div class="swatch-copy"><strong>Accent</strong><span>#FC5606</span></div></div>
+          </div></div>
+          <div class="spec-block"><h3>Typography</h3><div class="type-sample"><span>H1 · 64 / 36</span><div class="type-h1">수업을 이해하는 첫 문장</div></div><div class="type-sample"><span>H2 · 44 / 28</span><div class="type-h2">정보를 나누는 제목</div></div><div class="type-sample"><span>H3 · 22 / 18</span><div class="type-h3">카드의 핵심 제목</div></div><div class="type-sample"><span>Body · 17 / 16</span><div class="type-body">읽기 편한 크기와 1.6 줄간격으로 설명을 전달합니다.</div></div></div>
+          <div class="spec-block"><h3>Buttons & states</h3><div class="button-row"><a class="btn btn-primary" href="#">Primary</a><a class="btn btn-secondary" href="#">Secondary</a><a class="text-link" href="#">Text link →</a><button class="btn btn-disabled" disabled>Disabled</button></div><p class="state-note">Hover는 색 변화, Focus는 3px 외곽선, Disabled는 대비를 낮추고 작동하지 않음을 표현합니다.</p></div>
+          <div class="spec-block"><h3>Spacing & geometry</h3><ul class="info-list"><li>콘텐츠 최대 너비 1280px</li><li>좌우 여백 48 / 32 / 20px</li><li>간격 스케일 8 · 12 · 16 · 24 · 32 · 48 · 64 · 96px</li><li>카드 16px · 버튼 10px 반경</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cards-section" id="cards" aria-labelledby="cards-title"><div class="rail"><p class="eyebrow">Card system</p><h2 class="section-title" id="cards-title">내용의 역할에 따라 세 가지로 제한합니다.</h2>
+      <div class="card-grid">
+        <article class="demo-card"><div class="demo-card-content"><p class="eyebrow">Service card</p><h3>기관·학교 체육수업</h3><p>서비스 선택에 필요한 제목, 한 줄 설명, 명확한 이동 행동만 둡니다.</p><a class="text-link" href="/education">서비스 보기 →</a></div></article>
+        <article class="demo-card"><div class="evidence-photo"><img src="../../../public/images/spokedu/home/field-editorial/home-case-general.webp" alt="실제 SPOKEDU 현장 수업 사례"></div><div class="demo-card-content"><p class="eyebrow">Evidence card</p><h3>현장에서 확인하는 수업</h3><p>실제 사진과 운영 맥락을 함께 제시하며, 확인되지 않은 성과 수치는 만들지 않습니다.</p><a class="text-link" href="/records">사례 보기 →</a></div></article>
+        <article class="demo-card"><div class="demo-card-content"><p class="eyebrow">Information card</p><h3>상담 전 확인할 내용</h3><ul class="info-list"><li>수업 대상과 인원</li><li>공간과 일정</li><li>원하는 수업 방향</li></ul></div></article>
+      </div>
+    </div></section>
+
+    <section class="examples" id="examples" aria-labelledby="examples-title"><div class="rail"><p class="eyebrow">Consistency check</p><h2 class="section-title" id="examples-title">공통 규칙 안에서 서비스의 차이를 보존합니다.</h2><p class="section-lead">기관의 오렌지와 개인수업의 틸은 맥락 표식으로만 남고, 중요한 행동은 같은 파랑 버튼을 사용합니다.</p>
+      <div class="example-grid">
+        <article class="mini institution"><p class="context">기관·학교 담당자</p><h3>현장 조건에 맞춘 기관 체육수업</h3><p>대상, 인원, 공간, 운영 목적을 확인해 수업을 구성합니다.</p><div class="hero-actions"><a class="btn btn-primary" href="/contact?type=dispatch">기관 체육수업 상담하기</a><a class="btn btn-secondary" href="/education#cases">실제 운영 사례 보기</a></div></article>
+        <article class="mini private"><p class="context">학부모</p><h3>아이에게 맞춘 개인·소그룹 수업</h3><p>움직임 수준과 목표를 확인하고 수업 방향을 함께 정합니다.</p><div class="hero-actions"><a class="btn btn-primary" href="/private#apply">아이 조건으로 수업 방향 상담하기</a><a class="btn btn-secondary" href="/private#class-flow">실제 수업 방식 보기</a></div></article>
+      </div>
+    </div></section>
+  </main>
+  <footer class="footnote rail">Phase 1-A 독립 디자인 시안 · Production 코드와 연결되지 않음 · 승인 전 제안</footer>
+  <script>
+    const body=document.body, trigger=document.querySelector('.mobile-trigger'), backdrop=document.querySelector('.menu-backdrop');
+    function setMenu(open){body.classList.toggle('menu-open',open);trigger.setAttribute('aria-expanded',String(open));trigger.setAttribute('aria-label',open?'메뉴 닫기':'메뉴 열기');trigger.textContent=open?'×':'☰'}
+    trigger.addEventListener('click',()=>setMenu(!body.classList.contains('menu-open')));backdrop.addEventListener('click',()=>setMenu(false));
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){setMenu(false);trigger.focus()}});
+  </script>
+</body>
+</html>
