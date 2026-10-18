@@ -1,0 +1,399 @@
+﻿diff --git a/app/spokedu/components/spomove-catalog-tabs.tsx b/app/spokedu/components/spomove-catalog-tabs.tsx
+index 3c174aaa..81460482 100644
+--- a/app/spokedu/components/spomove-catalog-tabs.tsx
++++ b/app/spokedu/components/spomove-catalog-tabs.tsx
+@@ -571,7 +571,7 @@ export default function SpomoveCatalogTabs() {
+                 href={CATALOG_HREF}
+                 className={marketingButtonPrimary}
+               >
+-                전체 프로그램 카탈로그 보기
++                프로그램 구성 보기
+               </Link>
+             ) : null}
+           </div>
+diff --git a/app/spokedu/components/spomove-public-catalog.tsx b/app/spokedu/components/spomove-public-catalog.tsx
+new file mode 100644
+index 00000000..4f7383b3
+--- /dev/null
++++ b/app/spokedu/components/spomove-public-catalog.tsx
+@@ -0,0 +1,149 @@
++import Image from 'next/image';
++import Link from 'next/link';
++import { HOME_MEDIA, type HomeMediaKey } from '../data/home-media';
++import { spomovePublicCatalogPage } from '../data/spomove-public-catalog-page';
++import {
++  marketingButtonPrimary,
++  marketingCardStatic,
++  marketingHeroDisplay,
++  marketingInteractiveTransition,
++  brandFocusRing,
++} from '../lib/ui-classes';
++
++function ActivityCard({
++  title,
++  description,
++  mediaKey,
++  fit,
++}: {
++  title: string;
++  description: string;
++  mediaKey: HomeMediaKey;
++  fit: 'cover' | 'contain';
++}) {
++  const media = HOME_MEDIA[mediaKey];
++  const src = media?.src ?? media?.fallbackSrc;
++  return (
++    <article className={`${marketingCardStatic} flex h-full flex-col overflow-hidden`}>
++      {src ? (
++        <div className="relative aspect-[16/10] w-full bg-[#F7F9FD]">
++          <Image
++            src={src}
++            alt={media?.alt ?? title}
++            fill
++            className={fit === 'contain' ? 'object-contain p-2' : 'object-cover'}
++            style={media?.objectPosition ? { objectPosition: media.objectPosition } : undefined}
++            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
++          />
++        </div>
++      ) : null}
++      <div className="flex flex-1 flex-col gap-2 px-4 py-4 sm:px-5 sm:py-5">
++        <h3 className="text-base font-bold text-[#0B1F46]">{title}</h3>
++        <p className="text-sm leading-relaxed text-[#536279] [text-wrap:pretty]">{description}</p>
++        <p className="mt-auto text-xs font-semibold text-[#245DFF]">활동 예시 · SPOMOVE 수업</p>
++      </div>
++    </article>
++  );
++}
++
++export function SpomovePublicCatalog() {
++  const page = spomovePublicCatalogPage;
++
++  return (
++    <div className="site-container overflow-x-clip pb-16 pt-8 sm:pb-20 sm:pt-10">
++      <header className="max-w-3xl">
++        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">{page.kicker}</p>
++        <h1 className={`${marketingHeroDisplay} mt-2 text-[#0B1F46] !text-2xl sm:!text-3xl lg:!text-4xl`}>
++          {page.title}
++        </h1>
++        <p className="mt-3 max-w-2xl text-sm leading-[1.75] text-[#536279] sm:text-base [text-wrap:pretty]">
++          {page.subtitle}
++        </p>
++      </header>
++
++      <section className="mt-10 sm:mt-12" aria-labelledby="spomove-catalog-levels">
++        <h2 id="spomove-catalog-levels" className="text-lg font-bold text-[#0B1F46] sm:text-xl">
++          프로그램 분류
++        </h2>
++        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#536279] [text-wrap:pretty]">{page.contentLead}</p>
++        <div className="mt-6 grid gap-4 md:grid-cols-3">
++          {page.levels.map((level) => (
++            <article key={level.id} className={`${marketingCardStatic} px-4 py-5 sm:px-5 sm:py-6`}>
++              <h3 className="text-base font-bold text-[#0B1F46]">{level.title}</h3>
++              <p className="mt-2 text-sm leading-relaxed text-[#536279] [text-wrap:pretty]">{level.body}</p>
++              <ul className="mt-4 flex flex-wrap gap-2">
++                {level.tags.map((tag) => (
++                  <li
++                    key={tag}
++                    className="rounded-full border border-[#DCE3EE] bg-[#F7F9FD] px-2.5 py-0.5 text-[11px] font-semibold text-[#536279]"
++                  >
++                    {tag}
++                  </li>
++                ))}
++              </ul>
++            </article>
++          ))}
++        </div>
++      </section>
++
++      <section className="mt-10 sm:mt-12" aria-labelledby="spomove-catalog-flow">
++        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">{page.flowEyebrow}</p>
++        <h2 id="spomove-catalog-flow" className="mt-1 text-lg font-bold text-[#0B1F46] sm:text-xl">
++          SEE · DECIDE · MOVE
++        </h2>
++        <ol className="mt-4 grid gap-3 sm:grid-cols-3">
++          {page.flowSteps.map((step) => (
++            <li key={step.label} className={`${marketingCardStatic} px-4 py-4 sm:px-5`}>
++              <p className="text-xs font-bold uppercase tracking-wide text-[#245DFF]">{step.label}</p>
++              <p className="mt-1 text-sm font-semibold text-[#0B1F46]">{step.axis}</p>
++              <p className="mt-2 text-sm leading-relaxed text-[#536279]">{step.body}</p>
++            </li>
++          ))}
++        </ol>
++      </section>
++
++      <section className="mt-10 sm:mt-12" aria-labelledby="spomove-catalog-activities">
++        <h2 id="spomove-catalog-activities" className="text-lg font-bold text-[#0B1F46] sm:text-xl">
++          {page.activitySectionTitle}
++        </h2>
++        <p className="mt-2 text-sm text-[#536279]">
++          아래는 공개 SPOMOVE 랜딩과 동일한 활동 예시입니다. 개별 프로그램 ID·전체 목록 수는 표기하지 않습니다.
++        </p>
++        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
++          {page.activityCards.map((item) => (
++            <ActivityCard
++              key={item.title}
++              title={item.title}
++              description={item.description}
++              mediaKey={item.mediaKey}
++              fit={item.fit}
++            />
++          ))}
++        </div>
++      </section>
++
++      <section className="mt-12 sm:mt-14" aria-labelledby="spomove-catalog-next">
++        <h2 id="spomove-catalog-next" className="sr-only">
++          다음 행동
++        </h2>
++        <div className={`${marketingCardStatic} flex flex-col gap-4 px-5 py-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:px-7`}>
++          <Link href={page.ctas.primary.href} className={`${marketingButtonPrimary} sm:!w-auto`}>
++            {page.ctas.primary.label}
++          </Link>
++          <Link
++            href={page.ctas.secondary.href}
++            className={`inline-flex min-h-11 items-center justify-center rounded-lg border border-[#DCE3EE] bg-white px-5 text-sm font-semibold text-[#0B1F46] ${marketingInteractiveTransition} ${brandFocusRing} hover:border-[#245DFF]/40`}
++          >
++            {page.ctas.secondary.label}
++          </Link>
++          <Link
++            href={page.ctas.lab.href}
++            className="text-sm font-semibold text-[#245DFF] underline-offset-4 hover:underline"
++          >
++            {page.ctas.lab.label}
++          </Link>
++        </div>
++      </section>
++    </div>
++  );
++}
+diff --git a/app/spokedu/data/site-ia.test.ts b/app/spokedu/data/site-ia.test.ts
+index de4e1ba8..ca9d0c40 100644
+--- a/app/spokedu/data/site-ia.test.ts
++++ b/app/spokedu/data/site-ia.test.ts
+@@ -757,9 +757,10 @@ describe('spokedu Phase 3 public-copy safety', () => {
+     expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);
+     expect(spomoveLandingSource).not.toMatch(/9,900|28,900|집중력이 향상|인지능력이 개선/);
+     expect(spomovePageSource).toMatch(/SpomoveProgramLanding/);
+-    expect(catalogPageSource).toMatch(/title=\"SPOMOVE 전체 프로그램 카탈로그\"|title='SPOMOVE 전체 프로그램 카탈로그'/);
+-    expect(catalogPageSource).toMatch(/SPOMOVE 소개로 돌아가기|SPOMOVE 소개/);
+-    expect(catalogPageSource).toMatch(/구독시스템 알아보기/);
++    expect(catalogPageSource).toMatch(/SpomovePublicCatalog/);
++    expect(catalogPageSource).toMatch(/SPOMOVE 프로그램 구성/);
++    expect(catalogPageSource).not.toMatch(/iframe|SPOMOVE_NOTION_CATALOG_URL|CatalogFallback/);
++    expect(catalogPageSource).toMatch(/SPOMOVE 알아보기|기관 도입 문의/);
+   });
+ 
+   it('keeps redirect-only program routes in next.config', () => {
+diff --git a/app/spokedu/data/spomove-program-page.ts b/app/spokedu/data/spomove-program-page.ts
+index 3bc8bb65..7cd0570b 100644
+--- a/app/spokedu/data/spomove-program-page.ts
++++ b/app/spokedu/data/spomove-program-page.ts
+@@ -159,7 +159,7 @@ export const spomoveProgramPage = {
+       },
+     ] as const,
+     catalogCta: {
+-      label: '전체 프로그램 보기',
++      label: '프로그램 구성 보기',
+       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
+       trackLabel: 'spomove-content-catalog',
+     },
+@@ -170,7 +170,7 @@ export const spomoveProgramPage = {
+     eyebrow: 'EXPERIENCE',
+     titleLines: ['하나의 화면이', '여러 움직임으로 이어집니다.'] as const,
+     catalogCta: {
+-      label: '전체 프로그램 보기',
++      label: '프로그램 구성 보기',
+       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
+       trackLabel: 'spomove-experience-catalog',
+     },
+@@ -340,7 +340,7 @@ export const spomoveProgramPage = {
+     visualAlt: 'SPOKEDU LAB 실제 화면 — SPOMOVE 추천',
+     objectPosition: '50% 74%',
+     primaryCta: {
+-      label: 'SPOMOVE 프로그램 보기',
++      label: '프로그램 구성 보기',
+       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
+       trackLabel: 'spomove-master-catalog',
+     },
+@@ -401,7 +401,7 @@ export const spomoveProgramPage = {
+     titleLines: ['SPOMOVE를', '수업에 적용해보세요.'] as const,
+     title: 'SPOMOVE를 수업에 적용해보세요.',
+     catalogCta: {
+-      label: '전체 프로그램 보기',
++      label: '프로그램 구성 보기',
+       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
+       trackLabel: 'spomove-final-catalog',
+     },
+diff --git a/app/spokedu/data/spomove-public-catalog-page.ts b/app/spokedu/data/spomove-public-catalog-page.ts
+new file mode 100644
+index 00000000..c2b92e81
+--- /dev/null
++++ b/app/spokedu/data/spomove-public-catalog-page.ts
+@@ -0,0 +1,33 @@
++import { dispatchInquiryHref } from './commercial-routes';
++import { spomoveProgramPage } from './spomove-program-page';
++import { SPOKEDU_PATHS } from './site';
++
++/** `/spomove/catalog` 자체 페이지 SSOT — `spomove-program-page`에서 검증된 공개 copy만 재사용 */
++export const spomovePublicCatalogPage = {
++  kicker: 'SPOMOVE',
++  title: 'SPOMOVE 프로그램 구성',
++  subtitle: '화면의 정보를 보고 판단한 뒤 움직임으로 연결하는 프로그램을 소개합니다.',
++  contentLead: spomoveProgramPage.content.lead,
++  levels: spomoveProgramPage.content.levels,
++  flowEyebrow: spomoveProgramPage.flow.eyebrow,
++  flowSteps: spomoveProgramPage.flow.steps,
++  activitySectionTitle: spomoveProgramPage.activities.title,
++  activityCards: spomoveProgramPage.activities.items,
++  ctas: {
++    primary: {
++      label: 'SPOMOVE 알아보기',
++      href: SPOKEDU_PATHS.spomove,
++      trackLabel: 'spomove-catalog-primary-spomove',
++    },
++    secondary: {
++      label: '기관 도입 문의',
++      href: dispatchInquiryHref({ program: 'spomove' }),
++      trackLabel: 'spomove-catalog-dispatch',
++    },
++    lab: {
++      label: 'SPOKEDU LAB 알아보기',
++      href: SPOKEDU_PATHS.subscription,
++      trackLabel: 'spomove-catalog-lab',
++    },
++  },
++} as const;
+diff --git a/app/spokedu/programs/spomove/catalog/page.tsx b/app/spokedu/programs/spomove/catalog/page.tsx
+index c299c666..f4bb42af 100644
+--- a/app/spokedu/programs/spomove/catalog/page.tsx
++++ b/app/spokedu/programs/spomove/catalog/page.tsx
+@@ -1,120 +1,22 @@
+ import type { Metadata } from 'next';
+-import Link from 'next/link';
+-import { SPOKEDU_PATHS } from '../../../data/site';
+-import { dispatchInquiryHref } from '../../../data/commercial-routes';
++import { SpomovePublicCatalog } from '../../../components/spomove-public-catalog';
+ import { buildSpokeduPageMetadata } from '../../../data/seo';
+-import { marketingButtonPrimary, marketingCardStatic, marketingHeroDisplay } from '../../../lib/ui-classes';
+ 
+-const catalogMetadata: Metadata = {
+-  title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
+-  description:
+-    'SPOMOVE 프로그램 구성과 반응 시리즈를 확인하세요. 카탈로그가 준비되지 않은 경우에도 소개 랜딩과 이용 경로로 이어집니다.',
+-};
++const PAGE_TITLE = 'SPOMOVE 프로그램 구성 | SPOKEDU';
++const PAGE_DESCRIPTION =
++  'SPOMOVE 반응 유형(단순·선택·복합)과 SEE·DECIDE·MOVE 흐름, 활동 예시를 소개합니다. 기관 도입과 SPOKEDU LAB 경로를 안내합니다.';
+ 
+ export const metadata: Metadata = {
+-  ...catalogMetadata,
++  title: PAGE_TITLE,
+   ...buildSpokeduPageMetadata({
+-    title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
+-    description: 'SPOMOVE 프로그램 구성과 활동 시리즈를 확인하고 기관 도입 및 구독 서비스 경로를 안내합니다.',
++    title: PAGE_TITLE,
++    description: PAGE_DESCRIPTION,
+     canonical: '/spomove/catalog',
+-    keywords: ['SPOMOVE', '스포무브', '체육교육 프로그램', '프로그램 카탈로그'],
++    keywords: ['SPOMOVE', '스포무브', '체육교육 프로그램', '프로그램 구성'],
+     pageKey: 'programs',
+   }),
+ };
+ 
+-const SPOMOVE_HREF = SPOKEDU_PATHS.spomove;
+-const CURRICULUM_HREF = SPOKEDU_PATHS.subscription;
+-const DISPATCH_HREF = dispatchInquiryHref({ program: 'spomove' });
+-
+-function getCatalogUrl(): string | null {
+-  const value = process.env.SPOMOVE_NOTION_CATALOG_URL?.trim();
+-  if (!value) return null;
+-
+-  try {
+-    const url = new URL(value);
+-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+-    return url.toString();
+-  } catch {
+-    return null;
+-  }
+-}
+-
+-function CatalogFallback() {
+-  return (
+-    <section className="site-container overflow-x-clip pb-16 pt-8 sm:pt-10">
+-      <div className={`${marketingCardStatic} mx-auto w-full max-w-xl px-5 py-8 text-center sm:px-7 sm:py-10`}>
+-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
+-        <h1 className={`${marketingHeroDisplay} mt-3 !text-2xl !leading-tight text-[#0B1F46] sm:!text-3xl`}>
+-          전체 카탈로그를 아직 표시할 수 없습니다
+-        </h1>
+-        <p className="mt-4 text-sm leading-[1.75] text-[#536279]">
+-          프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는
+-          아래에서 계속 확인할 수 있습니다.
+-        </p>
+-        <div className="mt-7 flex flex-col gap-3 sm:items-center">
+-          <Link
+-            href={SPOMOVE_HREF}
+-            className={marketingButtonPrimary}
+-          >
+-            SPOMOVE 소개로 돌아가기
+-          </Link>
+-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm font-semibold text-[#536279]">
+-            <Link href={DISPATCH_HREF} className="underline-offset-4 hover:underline">
+-              기관 도입 문의
+-            </Link>
+-            <Link href={CURRICULUM_HREF} className="underline-offset-4 hover:underline">
+-              구독시스템 알아보기
+-            </Link>
+-          </div>
+-        </div>
+-      </div>
+-    </section>
+-  );
+-}
+-
+ export default function SpomoveCatalogPage() {
+-  const catalogUrl = getCatalogUrl();
+-
+-  if (!catalogUrl) {
+-    return <CatalogFallback />;
+-  }
+-
+-  return (
+-    <section className="relative flex w-full flex-col pb-8">
+-      <div className="flex min-h-16 items-center justify-between gap-4 border-b border-[#DCE3EE] bg-white px-5 py-3 sm:px-8">
+-        <div>
+-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
+-          <h1 className={`${marketingHeroDisplay} !text-lg !leading-tight text-[#0B1F46] sm:!text-xl`}>SPOMOVE 전체 프로그램 카탈로그</h1>
+-          <p className="mt-1 text-xs leading-relaxed text-[#536279] sm:text-sm">
+-            화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.
+-          </p>
+-        </div>
+-        <Link href={DISPATCH_HREF} className="shrink-0 text-sm font-bold text-[#245DFF] underline-offset-4 hover:underline">
+-          기관 도입 문의
+-        </Link>
+-      </div>
+-      <iframe
+-        src={catalogUrl}
+-        title="SPOMOVE 전체 프로그램 카탈로그"
+-        className="block min-h-[32rem] w-full border-0 sm:min-h-[36rem]"
+-        style={{ height: 'min(75vh, 900px)' }}
+-      />
+-      <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 sm:bottom-4 sm:left-4 sm:right-4">
+-        <Link
+-          href={SPOMOVE_HREF}
+-          className="inline-flex min-h-9 items-center justify-center bg-[#0B1F46]/85 px-3 text-xs font-bold text-white shadow-sm backdrop-blur transition hover:bg-[#0B1F46] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]"
+-        >
+-          SPOMOVE 소개
+-        </Link>
+-        <a
+-          href={catalogUrl}
+-          target="_blank"
+-          rel="noopener noreferrer"
+-          className="inline-flex min-h-9 items-center justify-center bg-[#0B1F46]/85 px-3 text-xs font-bold text-white shadow-sm backdrop-blur transition hover:bg-[#0B1F46] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]"
+-        >
+-          새 창에서 보기
+-        </a>
+-      </div>
+-    </section>
+-  );
++  return <SpomovePublicCatalog />;
+ }

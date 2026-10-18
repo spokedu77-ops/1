@@ -1,0 +1,138 @@
+﻿diff --git a/app/spokedu/components/home-web/home-web.module.css b/app/spokedu/components/home-web/home-web.module.css
+index dfbced0d..6298f815 100644
+--- a/app/spokedu/components/home-web/home-web.module.css
++++ b/app/spokedu/components/home-web/home-web.module.css
+@@ -739,6 +739,21 @@
+   color: var(--ink);
+ }
+ 
++.labLibraryStat {
++  grid-area: stat;
++  display: grid;
++  row-gap: 8px;
++  justify-items: start;
++  max-width: 14em;
++}
++
++/* Section scope hooks — SPOMOVE / LAB only overrides live under these roots. */
++.spomoveStage {
++}
++
++.masterStage {
++}
++
+ .productFrame {
+   position: relative;
+   overflow: hidden;
+@@ -1200,15 +1215,21 @@
+     font-size: 14px;
+   }
+ 
+-  .productFrame {
+-    aspect-ratio: 4 / 5;
++  /* LAB — show full library UI structure on mobile (avoid 230% crop misread). */
++  .masterStage .productFrame {
++    aspect-ratio: 16 / 10;
+   }
+ 
+-  /* Portrait frame: zoom to the left part of the library (quick-entry card, filters, first cards). */
+-  .productFrame img {
+-    top: -4.2%;
+-    left: -34%;
+-    width: 230%;
++  .masterStage .productFrame img {
++    position: absolute;
++    inset: 0;
++    width: 100%;
++    height: 100%;
++    max-width: none;
++    object-fit: contain;
++    object-position: top center;
++    top: 0;
++    left: 0;
+   }
+ 
+   .finalLinks {
+diff --git a/app/spokedu/components/home-web/master-stage.tsx b/app/spokedu/components/home-web/master-stage.tsx
+index 9d7e2c21..cbad9a0c 100644
+--- a/app/spokedu/components/home-web/master-stage.tsx
++++ b/app/spokedu/components/home-web/master-stage.tsx
+@@ -4,27 +4,29 @@ import { SPOKEDU_PATHS } from '../../data/public-routes';
+ import { HOME_MASTER_VISUAL } from './home-web-assets';
+ import styles from './home-web.module.css';
+ 
+-/** Composition C — Product Feature. Head (headline · description · 144+ · CTA) then the real product screen as the hero. */
++/** Product feature — LAB library UI + instructor-facing value (no unverified program count). */
+ export function MasterStage() {
+   return (
+-    <section className={`${styles.section} ${styles.paper}`} aria-labelledby="home-master-heading">
++    <section
++      className={`${styles.section} ${styles.paper} ${styles.masterStage}`}
++      aria-labelledby="home-master-heading"
++    >
+       <div className={styles.rail}>
+         <div className={styles.masterHead}>
+           <div className={styles.masterTitle}>
+             <p className={styles.eyebrow}>SPOKEDU LAB</p>
+             <h2 id="home-master-heading" className={styles.displaySection}>
+-              수업자료부터
++              수업 콘텐츠를 찾고
+               <br />
+-              운영과 기록까지.
++              수업을 운영합니다.
+             </h2>
+             <p className={styles.body}>
+-              현장에서 바로 활용할 수 있는 놀이체육 프로그램과 수업 가이드부터 수업반, 학생, 일정, 출석과 기록까지
+-              SPOKEDU LAB 하나에서 관리합니다.
++              놀이체육 프로그램과 수업 가이드를 살펴보고 수업반과 일정 등 운영 도구를 활용할 수 있습니다. 기능별
++              이용 범위는 요금제에 따라 다릅니다.
+             </p>
+           </div>
+-          <p className={styles.stat}>
+-            <strong className={styles.statNum}>144+</strong>
+-            <span className={styles.statLabel}>놀이체육 프로그램</span>
++          <p className={styles.labLibraryStat}>
++            <span className={styles.statLabel}>놀이체육 프로그램 라이브러리</span>
+           </p>
+           <div className={`${styles.actions} ${styles.masterActions}`}>
+             <Link href={SPOKEDU_PATHS.subscription} className={`${styles.btn} ${styles.btnSecondary}`}>
+diff --git a/app/spokedu/components/home-web/spomove-stage.tsx b/app/spokedu/components/home-web/spomove-stage.tsx
+index 28d89616..49c1b23f 100644
+--- a/app/spokedu/components/home-web/spomove-stage.tsx
++++ b/app/spokedu/components/home-web/spomove-stage.tsx
+@@ -4,25 +4,28 @@ import { SPOKEDU_PATHS } from '../../data/public-routes';
+ import { HOME_SPOMOVE_VISUAL } from './home-web-assets';
+ import styles from './home-web.module.css';
+ 
+-/** Composition A — Editorial Split. SPOMOVE → SEE · DECIDE · MOVE → headline → explanation → CTA → one visual. */
++/** Editorial split — SPOMOVE signal-to-movement program (single field proof image). */
+ export function SpomoveStage() {
+   return (
+-    <section className={styles.section} aria-labelledby="home-spomove-heading">
++    <section
++      className={`${styles.section} ${styles.spomoveStage}`}
++      aria-labelledby="home-spomove-heading"
++    >
+       <div className={styles.rail}>
+         <div className={styles.split}>
+           <div className={styles.splitCopy}>
+             <p className={styles.eyebrow}>SPOMOVE</p>
+             <p className={styles.spomoveLine}>SEE · DECIDE · MOVE</p>
+             <h2 id="home-spomove-heading" className={styles.displaySection}>
+-              보고 판단하고
++              화면 신호를 보고
+               <br />
+-              움직입니다.
++              몸으로 반응합니다.
+             </h2>
+             <p className={styles.body}>
+-              SPOMOVE는 시각적 자극에 대한 인지, 판단, 움직임을 통합적으로 경험하는 SPOKEDU의 대표적인 체육
+-              콘텐츠입니다.
++              화면에 나타나는 색·위치·방향 신호를 확인하고 선택한 뒤 스포매트 또는 수업 공간에서 움직임으로 반응하는
++              체육 프로그램입니다.
+             </p>
+-            <p className={styles.meta}>색상 인지 · 선택 반응 · 복합 인지</p>
++            <p className={styles.meta}>단순 반응 · 선택 반응 · 복합 반응</p>
+             <div className={styles.actions}>
+               <Link href={SPOKEDU_PATHS.spomove} className={`${styles.btn} ${styles.btnSecondary}`}>
+                 SPOMOVE 자세히 보기

@@ -1,0 +1,189 @@
+{
+  "port": "3016",
+  "widths": {
+    "390": {
+      "tileCount": 3,
+      "bg": "rgb(11, 31, 70)",
+      "tiles": [
+        {
+          "index": 0,
+          "href": "/records/dongjak-spomove",
+          "mediaW": 348,
+          "mediaH": 261,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 0,
+          "aspectRatio": "4 / 3",
+          "flex": "0 0 auto",
+          "infoH": 196.515625
+        },
+        {
+          "index": 1,
+          "href": "https://blog.naver.com/spokedutogether/224338186918",
+          "mediaW": 348,
+          "mediaH": 261,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 0,
+          "aspectRatio": "4 / 3",
+          "flex": "0 0 auto",
+          "infoH": 196.515625
+        },
+        {
+          "index": 2,
+          "href": "https://blog.naver.com/spokedutogether/224288711414",
+          "mediaW": 348,
+          "mediaH": 261,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 0,
+          "aspectRatio": "4 / 3",
+          "flex": "0 0 auto",
+          "infoH": 196.515625
+        }
+      ],
+      "allImages": false,
+      "allLinks": true,
+      "allInfo": true,
+      "mobileHeightsOk": true
+    },
+    "767": {
+      "tileCount": 3,
+      "bg": "rgb(11, 31, 70)",
+      "tiles": [
+        {
+          "index": 0,
+          "href": "/records/dongjak-spomove",
+          "mediaW": 725,
+          "mediaH": 543.75,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 0,
+          "aspectRatio": "4 / 3",
+          "flex": "0 0 auto",
+          "infoH": 170.921875
+        },
+        {
+          "index": 1,
+          "href": "https://blog.naver.com/spokedutogether/224338186918",
+          "mediaW": 725,
+          "mediaH": 543.75,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 0,
+          "aspectRatio": "4 / 3",
+          "flex": "0 0 auto",
+          "infoH": 170.921875
+        },
+        {
+          "index": 2,
+          "href": "https://blog.naver.com/spokedutogether/224288711414",
+          "mediaW": 725,
+          "mediaH": 543.75,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 0,
+          "aspectRatio": "4 / 3",
+          "flex": "0 0 auto",
+          "infoH": 170.921875
+        }
+      ],
+      "allImages": false,
+      "allLinks": true,
+      "allInfo": true,
+      "mobileHeightsOk": true
+    },
+    "834": {
+      "tileCount": 3,
+      "bg": "rgb(11, 31, 70)",
+      "tiles": [
+        {
+          "index": 0,
+          "href": "/records/dongjak-spomove",
+          "mediaW": 768,
+          "mediaH": 266.875,
+          "ratio": 0.3474934895833333,
+          "heightOk": true,
+          "imgNatural": 2560,
+          "aspectRatio": "auto",
+          "flex": "1 1 auto",
+          "infoH": 173.328125
+        },
+        {
+          "index": 1,
+          "href": "https://blog.naver.com/spokedutogether/224338186918",
+          "mediaW": 371,
+          "mediaH": 278.25,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 1263,
+          "aspectRatio": "4 / 3",
+          "flex": "1 1 auto",
+          "infoH": 197.328125
+        },
+        {
+          "index": 2,
+          "href": "https://blog.naver.com/spokedutogether/224288711414",
+          "mediaW": 371,
+          "mediaH": 278.25,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 807,
+          "aspectRatio": "4 / 3",
+          "flex": "1 1 auto",
+          "infoH": 197.328125
+        }
+      ],
+      "allImages": true,
+      "allLinks": true,
+      "allInfo": true,
+      "mobileHeightsOk": true
+    },
+    "1440": {
+      "tileCount": 3,
+      "bg": "rgb(11, 31, 70)",
+      "tiles": [
+        {
+          "index": 0,
+          "href": "/records/dongjak-spomove",
+          "mediaW": 830,
+          "mediaH": 868.328125,
+          "ratio": 1.0461784638554217,
+          "heightOk": true,
+          "imgNatural": 2560,
+          "aspectRatio": "auto",
+          "flex": "1 1 auto",
+          "infoH": 173.328125
+        },
+        {
+          "index": 1,
+          "href": "https://blog.naver.com/spokedutogether/224338186918",
+          "mediaW": 414,
+          "mediaH": 310.5,
+          "ratio": 0.75,
+          "heightOk": true,
+          "imgNatural": 1263,
+          "aspectRatio": "4 / 3",
+          "flex": "1 1 auto",
+          "infoH": 197.328125
+        },
+        {
+          "index": 2,
+          "href": "https://blog.naver.com/spokedutogether/224288711414",
+          "mediaW": 414,
+          "mediaH": 334.5,
+          "ratio": 0.8079710144927537,
+          "heightOk": true,
+          "imgNatural": 807,
+          "aspectRatio": "4 / 3",
+          "flex": "1 1 auto",
+          "infoH": 173.328125
+        }
+      ],
+      "allImages": true,
+      "allLinks": true,
+      "allInfo": true,
+      "mobileHeightsOk": true
+    }
+  }
+}

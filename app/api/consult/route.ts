@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import {
+  evaluatePublicLeadRateLimit,
+  isHoneypotTripped,
+  rateLimitToResponse,
+} from '@/app/lib/server/publicLeadSpamGuard';
 
 type Body = {
   parent_name?: unknown;
@@ -7,6 +12,7 @@ type Body = {
   child_age?: unknown;
   content?: unknown;
   consult_type?: unknown;
+  website?: unknown;
 };
 
 function norm(v: unknown): string {
@@ -19,6 +25,12 @@ export async function POST(req: NextRequest) {
     if (!body) {
       return NextResponse.json({ ok: false, message: '요청 본문이 올바르지 않습니다.' }, { status: 400 });
     }
+    if (isHoneypotTripped(body as Record<string, unknown>)) {
+      return NextResponse.json({ ok: true });
+    }
+    const rate = await evaluatePublicLeadRateLimit(req, 'consult');
+    const rateRes = rateLimitToResponse(rate);
+    if (rateRes) return rateRes;
 
     const parent_name = norm(body.parent_name);
     const phone = norm(body.phone);

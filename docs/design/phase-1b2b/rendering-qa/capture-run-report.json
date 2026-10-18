@@ -1,0 +1,16 @@
+{
+  "BUILD_ID": "CRXHj0T0tTWJPlpW8Zhml",
+  "port": "3002",
+  "overflow": {
+    "390": false,
+    "834": false,
+    "1024": false,
+    "1440": false
+  },
+  "styleChecks": {
+    "390": { "ok": true, "gridTemplateColumns": "350px" },
+    "834": { "ok": true, "gridTemplateColumns": "770px" },
+    "1024": { "ok": true, "gridTemplateColumns": "304px 304px 304px" },
+    "1440": { "ok": true, "gridTemplateColumns": "408px 408px 408px" }
+  }
+}

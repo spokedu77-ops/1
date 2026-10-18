@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPOKEDU Method &amp; Field Records — Phase 1-B2A Comparison</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <style>
+    :root {
+      --blue: #245dff;
+      --navy: #0b1f46;
+      --muted: #5b6578;
+      --paper: #f5f7fb;
+      --line: #dce3ee;
+      --white: #fff;
+      --gutter: 20px;
+      --rail-max: 1368px;
+      --section-space: clamp(64px, 8vw, 112px);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Pretendard Variable', Pretendard, sans-serif;
+      color: var(--navy);
+      background: #eef1f6;
+      word-break: keep-all;
+      line-break: strict;
+    }
+    .banner {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--navy);
+      color: #fff;
+      padding: 12px var(--gutter);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .banner strong { color: #9ab8ff; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 16px var(--gutter);
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 52px;
+      z-index: 19;
+    }
+    .toolbar button {
+      border: 1px solid var(--line);
+      background: var(--white);
+      color: var(--navy);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .toolbar button[aria-pressed="true"] {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .canvas { max-width: var(--rail-max); margin: 0 auto; padding: 24px var(--gutter) 80px; }
+    .variant { display: none; }
+    .variant.is-active { display: block; }
+    .section {
+      margin-bottom: var(--section-space);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(11, 31, 70, 0.08);
+    }
+    .section-head {
+      padding: clamp(40px, 5vw, 64px) clamp(20px, 4vw, 48px) 32px;
+    }
+    .paper { background: var(--paper); }
+    .dark { background: var(--navy); color: #fff; }
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin: 0 0 16px;
+    }
+    .dark .eyebrow { color: #9ab8ff; }
+    .display {
+      font-size: clamp(28px, 3.2vw, 44px);
+      line-height: 1.12;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin: 0;
+    }
+    .lead {
+      margin: 20px 0 0;
+      font-size: clamp(16px, 1.2vw, 18px);
+      line-height: 1.65;
+      color: var(--muted);
+      max-width: 36em;
+    }
+    .dark .lead { color: rgba(255,255,255,0.74); }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+      padding: 0 clamp(20px, 4vw, 48px) clamp(40px, 5vw, 64px);
+    }
+    .step {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .step-meta { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; }
+    .step h3 { margin: 0; font-size: 20px; }
+    .step p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted); }
+    .step img, .case img, .hero-case img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 12px;
+      background: #e8edf5;
+    }
+    .ui-shot img { object-position: 50% 0; border: 1px solid var(--line); }
+    .flow-note {
+      margin: 0 clamp(20px, 4vw, 48px) 32px;
+      padding: 16px 20px;
+      border-left: 4px solid var(--blue);
+      background: rgba(36, 93, 255, 0.06);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 16px;
+      padding: 0 clamp(20px, 4vw, 48px) clamp(40px, 5vw, 64px);
+    }
+    .case {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+      min-height: 200px;
+    }
+    .case.primary { grid-row: span 2; }
+    .case figcaption {
+      position: absolute;
+      inset: auto 0 0 0;
+      padding: 48px 16px 16px;
+      background: linear-gradient(transparent, rgba(8,17,38,0.88));
+      color: #fff;
+    }
+    .case figcaption strong { display: block; font-size: 18px; margin-bottom: 4px; }
+    .case figcaption span { font-size: 14px; opacity: 0.9; }
+    .case .chip {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.14);
+      font-size: 12px;
+    }
+    .case-list { padding: 0 clamp(20px, 4vw, 48px) 48px; display: grid; gap: 16px; }
+    .case-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 16px;
+      color: #fff;
+      text-decoration: none;
+    }
+    .case-row img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 12px; }
+    .case-row h3 { margin: 0 0 8px; font-size: 18px; }
+    .case-row p { margin: 0; font-size: 14px; line-height: 1.55; color: rgba(255,255,255,0.78); }
+    .link-row { margin-top: 12px; font-size: 14px; font-weight: 600; color: #9ab8ff; }
+    @media (max-width: 1023px) {
+      .grid-3, .gallery { grid-template-columns: 1fr; }
+      .case.primary { grid-row: auto; }
+      .case-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 767px) {
+      .ui-shot .mobile-hint {
+        display: block;
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+    }
+    .ui-shot .mobile-hint { display: none; }
+  </style>
+</head>
+<body>
+  <p class="banner">
+    <strong>Phase 1-B2A — 참고 재구성 시안.</strong> Production 픽셀 복제가 아닙니다. B1 Hero·Gateway 미포함. 홈 섹션 순서 변경 없음(B안은 정보 위계 비교용).
+  </p>
+  <div class="toolbar" role="tablist" aria-label="시안 선택">
+    <button type="button" data-variant="current" aria-pressed="true">현재 구조 참고</button>
+    <button type="button" data-variant="a" aria-pressed="false">A안 · 교육 방식 중심</button>
+    <button type="button" data-variant="b" aria-pressed="false">B안 · 현장 사례 중심</button>
+  </div>
+
+  <main class="canvas">
+    <!-- CURRENT -->
+    <div class="variant is-active" data-variant-panel="current">
+      <section id="method-block-current" class="section paper">
+        <div class="section-head">
+          <p class="eyebrow">SPOKEDU</p>
+          <h2 class="display">현장에서 시작해 콘텐츠와 시스템으로 확장합니다.</h2>
+          <p class="lead">SPOKEDU는 현장의 수업 경험을 바탕으로 필요한 프로그램과 시스템을 직접 만들고, 더 많은 아이들에게 좋은 체육교육이 닿을 수 있도록 확장합니다.</p>
+        </div>
+        <div class="grid-3">
+          <article class="step">
+            <p class="step-meta">01 FIELD</p>
+            <h3>현장</h3>
+            <img src="assets/yangcheon-paps.jpg" alt="지도자가 곁에서 보조하는 매트 위 균형 활동" />
+            <p>직접 수업합니다.</p>
+          </article>
+          <article class="step ui-shot">
+            <p class="step-meta">02 CONTENT</p>
+            <h3>콘텐츠</h3>
+            <img src="assets/prepare-lesson-plan-20261008-final.png" alt="SPOKEDU LAB 수업 가이드 화면" />
+            <p>현장에서 필요한 프로그램을 만듭니다.</p>
+            <span class="mobile-hint">모바일: UI 전체 축소 시 내부 글자 가독성 저하 가능</span>
+          </article>
+          <article class="step ui-shot">
+            <p class="step-meta">03 SYSTEM</p>
+            <h3>시스템</h3>
+            <img src="assets/home-master-ui.png" alt="SPOKEDU LAB 홈 화면" />
+            <p>수업을 운영하고 확장할 수 있도록 연결합니다.</p>
+          </article>
+        </div>
+      </section>
+      <section id="records-block-current" class="section dark">
+        <div class="section-head">
+          <p class="eyebrow">Field Records</p>
+          <h2 class="display">수업은 현장에서 증명됩니다.</h2>
+          <p class="lead">학교, 기관, 지역사회와 함께한 다양한 수업 사례를 통해 SPOKEDU의 가치를 확인할 수 있습니다.</p>
+        </div>
+        <div class="gallery">
+          <figure class="case primary">
+            <img src="assets/dongjak-spomove-field.jpg" alt="동작거점 SPOMOVE 수업" />
+            <figcaption><strong>SPOMOVE</strong><span>동작거점 우리동네키움센터</span></figcaption>
+          </figure>
+          <figure class="case">
+            <img src="assets/donghaeng-special-pe-field.jpg" alt="동행 체육교실" />
+            <figcaption><strong>특수체육</strong><span>서울 중구 찾아가는 동행 체육교실</span></figcaption>
+          </figure>
+          <figure class="case">
+            <img src="assets/maedong-sports-stepup.jpg" alt="매동초 스포츠 스텝업" />
+            <figcaption><strong>스포츠 스텝업</strong><span>매동초등학교 · 종로거점형키움센터</span></figcaption>
+          </figure>
+        </div>
+      </section>
+    </div>
+
+    <!-- A -->
+    <div class="variant" data-variant-panel="a">
+      <section id="method-block-a" class="section paper">
+        <div class="section-head">
+          <p class="eyebrow">HOW WE WORK</p>
+          <h2 class="display">현장 수업 → 프로그램 → 지도자용 운영</h2>
+          <p class="lead">Field·Content·System은 별도 상품이 아니라, 같은 수업 경험을 확장하기 위한 세 단계입니다.</p>
+        </div>
+        <p class="flow-note">현장에서 확인한 참여·공간·난이도 조건을 프로그램 설계에 반영하고, SPOKEDU LAB에서 준비·운영·기록까지 이어집니다.</p>
+        <div class="grid-3">
+          <article class="step">
+            <p class="step-meta">STEP 1 · FIELD</p>
+            <h3>기관·학교에서 직접 수업</h3>
+            <img src="assets/yangcheon-paps.jpg" alt="현장 수업" />
+            <p>대상·공간·난이도를 보며 수업을 설계·운영합니다. (예: PAPS 연계 정규수업 — 양천거점형키움센터, 카탈로그 verified)</p>
+          </article>
+          <article class="step ui-shot">
+            <p class="step-meta">STEP 2 · CONTENT</p>
+            <h3>현장에 맞춘 프로그램·가이드</h3>
+            <img src="assets/prepare-lesson-plan-20261008-final.png" alt="수업 가이드 UI" />
+            <p>교구 세팅·체크리스트·활동 구성을 수업자료로 정리합니다. SPOMOVE 등 IP는 기관·구독 경로에서 활용됩니다.</p>
+          </article>
+          <article class="step ui-shot">
+            <p class="step-meta">STEP 3 · SYSTEM</p>
+            <h3>수업 준비·운영·기록</h3>
+            <img src="assets/home-master-ui.png" alt="LAB UI" />
+            <p>반·학생·일정·출석·기록을 한곳에서 관리합니다. 지도자용 구독(SPOKEDU LAB)이 이 단계를 담당합니다.</p>
+          </article>
+        </div>
+      </section>
+      <section id="records-block-a" class="section dark">
+        <div class="section-head">
+          <p class="eyebrow">PROOF · 3 CASES</p>
+          <h2 class="display">같은 방법으로 운영한 현장</h2>
+          <p class="lead">아래 사례는 운영 사실·과정 기록입니다. 교육 효과 단정은 하지 않습니다.</p>
+        </div>
+        <div class="case-list">
+          <a class="case-row" href="#">
+            <img src="assets/dongjak-spomove-field.jpg" alt="" />
+            <div>
+              <h3>동작거점 SPOMOVE · 정규수업</h3>
+              <p>초등학생 · 스크린 신호 → 선택 → 움직임. 스테이션·난이도 분리(카탈로그 onsite composition, VERIFIED).</p>
+              <p class="link-row">사례 요약 → /records/dongjak-spomove</p>
+            </div>
+          </a>
+          <a class="case-row" href="#">
+            <img src="assets/donghaeng-special-pe-field.jpg" alt="" />
+            <div>
+              <h3>찾아가는 동행 체육교실 · 특수체육</h3>
+              <p>참여·수행 수준에 맞춘 활동 조정(records-landing 설명, VERIFIED).</p>
+              <p class="link-row">블로그 후기 → (네이버, PARTIAL onsite)</p>
+            </div>
+          </a>
+          <a class="case-row" href="#">
+            <img src="assets/maedong-sports-stepup.jpg" alt="" />
+            <div>
+              <h3>매동초 스포츠 스텝업 · 늘봄 연계</h3>
+              <p>6개월 종목 순환(클라이밍·피클볼 등, 카탈로그 description VERIFIED).</p>
+              <p class="link-row">블로그 후기 →</p>
+            </div>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <!-- B -->
+    <div class="variant" data-variant-panel="b">
+      <section id="records-block-b" class="section dark">
+        <div class="section-head">
+          <p class="eyebrow">FIELD FIRST</p>
+          <h2 class="display">먼저, 실제로 한 수업</h2>
+          <p class="lead">기관·학교·센터에서 운영한 사례부터 확인한 뒤, SPOKEDU가 현장에서 무엇을 설계·조정했는지 읽을 수 있습니다.</p>
+        </div>
+        <div class="case-list">
+          <a class="case-row" href="#">
+            <img src="assets/dongjak-spomove-field.jpg" alt="" />
+            <div>
+              <h3>SPOMOVE · 동작거점 우리동네키움센터</h3>
+              <p><span class="chip">정규수업</span> 초등학생 · 에듀테크</p>
+              <p>운영: 신호 리듬·스테이션 분리. 관찰: 반응 흐름 안정(카탈로그 onsite outcome — 과정 기록, VERIFIED).</p>
+            </div>
+          </a>
+          <a class="case-row" href="#">
+            <img src="assets/donghaeng-special-pe-field.jpg" alt="" />
+            <div>
+              <h3>특수체육 · 찾아가는 동행 체육교실</h3>
+              <p><span class="chip">찾아가는 수업</span> 맞춤형 활동</p>
+              <p>거리·속도·규칙·촉진 수준 조정(records-landing, VERIFIED).</p>
+            </div>
+          </a>
+          <a class="case-row" href="#">
+            <img src="assets/maedong-sports-stepup.jpg" alt="" />
+            <div>
+              <h3>스포츠 스텝업 · 매동초등학교</h3>
+              <p><span class="chip">늘봄 · 6개월</span> 종목 순환</p>
+              <p>학년·인원에 맞춘 종목 순환(records-landing + catalog, VERIFIED).</p>
+            </div>
+          </a>
+        </div>
+      </section>
+      <section id="method-block-b" class="section paper">
+        <div class="section-head">
+          <p class="eyebrow">THEN · THE LOOP</p>
+          <h2 class="display">현장 경험이 콘텐츠·시스템으로</h2>
+          <p class="lead">위 사례에서 확인한 조건이 프로그램·LAB 운영으로 이어지는 구조입니다. (홈 섹션 순서 변경 아님 — 설명 순서 비교용)</p>
+        </div>
+        <div class="grid-3">
+          <article class="step">
+            <p class="step-meta">FROM FIELD</p>
+            <h3>관찰한 조건</h3>
+            <img src="assets/yangcheon-paps.jpg" alt="" />
+            <p>참여·공간·난이도·동선 — 현장에서 확인한 운영 조건</p>
+          </article>
+          <article class="step ui-shot">
+            <p class="step-meta">INTO CONTENT</p>
+            <h3>프로그램·가이드</h3>
+            <img src="assets/prepare-lesson-plan-20261008-final.png" alt="" />
+            <p>교구·활동·체크리스트를 수업자료로 정리</p>
+          </article>
+          <article class="step ui-shot">
+            <p class="step-meta">WITH SYSTEM</p>
+            <h3>LAB 운영</h3>
+            <img src="assets/home-master-ui.png" alt="" />
+            <p>준비·진행·기록을 지도자 도구로 연결</p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const initial = params.get('variant') || 'current';
+    const buttons = [...document.querySelectorAll('[data-variant]')];
+    const panels = [...document.querySelectorAll('[data-variant-panel]')];
+    function setVariant(id) {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === id ? 'true' : 'false'));
+      panels.forEach((p) => p.classList.toggle('is-active', p.dataset.variantPanel === id));
+      history.replaceState(null, '', '?variant=' + id);
+    }
+    buttons.forEach((b) => b.addEventListener('click', () => setVariant(b.dataset.variant)));
+    setVariant(['current', 'a', 'b'].includes(initial) ? initial : 'current');
+  </script>
+</body>
+</html>

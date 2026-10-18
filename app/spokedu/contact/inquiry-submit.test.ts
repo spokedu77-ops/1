@@ -105,6 +105,6 @@ describe('submitInquiry', () => {
     );
     const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
     expect(body.lead_mode).toBe('master');
-    expect(body.cta_intent_id).toBe('master_handoff');
+    expect(body.cta_intent_id).toBe('master_org_inquiry');
   });
 });

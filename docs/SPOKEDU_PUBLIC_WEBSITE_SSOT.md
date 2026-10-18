@@ -18,9 +18,11 @@ Customer-facing definition:
 
 > 현장에서 수업하고, 그 수업에 필요한 콘텐츠와 시스템을 만듭니다.
 
+**공식 구독 브랜드:** SPOKEDU LAB (`/spokedu-lab`). `/subscription`은 레거시 리다이렉트 경로이다. 코드·결제 경로의 MASTER는 내부 호환명이며 고객 카피에 쓰지 않는다.
+
 사용자가 사이트를 보고 최종적으로 기억해야 하는 것:
 
-> SPOKEDU는 직접 체육수업을 운영하는 곳이고, 자체 콘텐츠 SPOMOVE와 지도자용 구독시스템까지 갖고 있다.
+> SPOKEDU는 직접 체육수업을 운영하는 곳이고, 자체 콘텐츠 SPOMOVE와 지도자용 **SPOKEDU LAB** 구독까지 갖고 있다.
 
 FAIL: 체육도 하고, SPOMOVE도 하고, SPOMAT도 팔고, 구독도 하고, 행사도 하는 이것저것 하는 회사.
 
@@ -31,7 +33,7 @@ FAIL: 체육도 하고, SPOMOVE도 하고, SPOMAT도 팔고, 구독도 하고, �
 ```
 SPOKEDU
 ├─ CORE BUSINESS 01  체육교육     → SPOKEDU가 직접 수업을 운영
-├─ CORE BUSINESS 02  구독시스템   → 지도자가 콘텐츠와 수업도구를 직접 사용
+├─ CORE BUSINESS 02  SPOKEDU LAB (구독) → 지도자가 콘텐츠와 수업도구를 직접 사용 (`/spokedu-lab`)
 ├─ SIGNATURE CONTENT  SPOMOVE    → 체육교육과 구독시스템 양쪽에서 활용
 └─ EXECUTION TOOL     SPOMAT     → SPOMOVE 실행 도구
 ```
@@ -47,10 +49,10 @@ SPOMAT = 독립 핵심 사업이 아니라 실행 도구.
 PUBLIC owns: 이해 → 신뢰 → 비교 → 판단 → 선택.
 MASTER owns: 로그인 → 가입 → 결제 → 권한 → 실제 콘텐츠 사용 → 수업 운영 → 기록 → 관리.
 
-`/subscription` → MASTER.
+Public LAB 랜딩 `/spokedu-lab` → (rewrite) 실행·결제·콘텐츠 사용. `/subscription`·`/curriculum`·`/spokedu/curriculum`은 **308 리다이렉트**로 `/spokedu-lab`에 합류한다.
 
 Public에 `/subscription` → `/product` → `/purchase` funnel을 만들지 않는다.
-Public은 판매를 설득하고, MASTER는 실제 거래와 실행을 담당한다.
+Public은 판매를 설득하고, 로그인·결제·실행은 LAB 앱(내부 MASTER 라우트)이 담당한다.
 
 ---
 
@@ -61,13 +63,13 @@ Public은 판매를 설득하고, MASTER는 실제 거래와 실행을 담당한
                            │
              ┌─────────────┴─────────────┐
              │                           │
-          체육교육                    구독시스템
+          체육교육                    SPOKEDU LAB
              │                           │
              ↓                           ↓
-       /education                  /subscription
+       /education                  /spokedu-lab
              │                           │
              ↓                           ↓
-기관수업 판단·상담                    MASTER
+기관수업 판단·상담 (#contact)        가입·결제·사용
              │                    가입·결제·사용
              ↓
  /contact?type=dispatch
@@ -81,7 +83,7 @@ RECORDS → record detail → 사례 맥락에 맞는 next action.
 
 ## 05. Global navigation
 
-PRIMARY HEADER: 체육교육 · 구독시스템 · SPOMOVE · 운영 사례 · `[상담하기]`
+PRIMARY HEADER: 체육교육 · SPOKEDU LAB · SPOMOVE · 운영 사례 · `[상담하기]`
 
 Header에 올리지 않는 것: About, SPOMAT, Partners, 개인·소그룹, 기타 협업 안내. Footer 또는 contextual link.
 
@@ -106,7 +108,7 @@ INPUT / QUESTION / EVIDENCE / OUTPUT / HANDOFF를 페이지 작업 전에 정의
 | `/education` | 우리 기관에서 체육수업을 맡길 수 있는가? | Structure = legacy `/info/dispatch`. Visual = Home. Program lineup = one SSOT; card + detail modal is progressive disclosure (not a third product catalog). → `/contact?type=dispatch` |
 | `/private` | 개인·소그룹에서는 어떤 방식으로 수업하는가? | Human / calm / personal → `/contact?type=private` |
 | `/spomove` | SPOMOVE는 무엇이며 어떻게 움직이는가? | SEE → RESPOND → EXPERIENCE → ADAPT → APPLY → PROVE → CONNECT → START. Catalog, 기관 → `/education?program=spomove`, 지도자 → `/subscription`, 도구 → `/spomat`, 증거 → `/records` |
-| `/subscription` | 지도자가 실제 수업에서 왜 이 시스템을 사용하는가? | Product UI. 찾기→준비→진행→기록. Handoff MASTER. No public purchase page. |
+| `/spokedu-lab` | 지도자가 실제 수업에서 왜 LAB을 사용하는가? | Product UI (`CommercialLanding`). 찾기→준비→진행→기록. Handoff 로그인·결제. `/subscription`은 레거시 redirect only. |
 | `/records` | 실제 어디에서 무엇을 운영했는가? | Editorial evidence archive. |
 | `/records/[slug]` | 이 프로젝트에서는 실제로 무엇을 했는가? | `/education` / `/subscription` / `/contact` by type |
 | `/contact` | 하려던 행동을 최소 마찰로 완료하는가? | Keep `?type=` intent. |
@@ -120,7 +122,9 @@ INPUT / QUESTION / EVIDENCE / OUTPUT / HANDOFF를 페이지 작업 전에 정의
 
 One concept = one authority.
 
-- 기관 체육교육 canonical = `/education`. Legacy URLs redirect here.
+- 기관 체육교육 canonical = `/education` (`DispatchProposalForm`, `#contact`). `/info/curriculum` → `/education?program=spomove#contact` (UTM 등 query 보존).
+- 개인·소그룹 canonical = `/private#apply`. `/info/private` → redirect (가짜 실시간 카운터 노출 금지).
+- 강동 체육관 `/info/gym` 유지; CRM SoT = `consultations` via `/api/info/gym/leads`.
 - 가격 = authoritative Product Contract only.
 - SPOMOVE definition = one public definition contract.
 - CTA destination = shared route contract.

@@ -1,0 +1,243 @@
+{
+  "viewports": {
+    "390": {
+      "overflow": false,
+      "h1Count": 1
+    },
+    "834": {
+      "overflow": false,
+      "h1Count": 1
+    },
+    "1024": {
+      "overflow": false,
+      "h1Count": 1
+    },
+    "1440": {
+      "overflow": false,
+      "h1Count": 1
+    }
+  },
+  "gatewayCapture": {
+    "gateway-1440.png": {
+      "cardLinks": 3,
+      "titles": [
+        "기관·학교 체육수업",
+        "개인·소그룹 수업",
+        "SPOKEDU LAB"
+      ],
+      "height": 588.46875,
+      "boundingHeight": 588.46875
+    },
+    "gateway-390.png": {
+      "cardLinks": 3,
+      "titles": [
+        "기관·학교 체육수업",
+        "개인·소그룹 수업",
+        "SPOKEDU LAB"
+      ],
+      "height": 899.671875,
+      "boundingHeight": 899.671875
+    }
+  },
+  "sections": {
+    "method": {
+      "exists": true,
+      "heading": "현장에서 시작해콘텐츠와 시스템으로확장합니다.",
+      "imgs": [
+        {
+          "src": "/images/spokedu/records/yangcheon-paps.jpg",
+          "complete": true,
+          "naturalWidth": 1920
+        },
+        {
+          "src": "/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png",
+          "complete": true,
+          "naturalWidth": 1150
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-master-ui.png",
+          "complete": true,
+          "naturalWidth": 1024
+        }
+      ],
+      "links": []
+    },
+    "records": {
+      "exists": true,
+      "heading": "수업은현장에서 증명됩니다.",
+      "imgs": [
+        {
+          "src": "/images/spokedu/records/dongjak-spomove-field.jpg",
+          "complete": true,
+          "naturalWidth": 2560
+        },
+        {
+          "src": "/images/spokedu/records/donghaeng-special-pe-field.jpg",
+          "complete": true,
+          "naturalWidth": 1263
+        },
+        {
+          "src": "/images/spokedu/records/maedong-sports-stepup.jpg",
+          "complete": true,
+          "naturalWidth": 807
+        }
+      ],
+      "links": [
+        {
+          "href": "/records/dongjak-spomove",
+          "text": "SPOMOVE동작거점 우리동네키움센터"
+        },
+        {
+          "href": "https://blog.naver.com/spokedutogether/224338186918",
+          "text": "특수체육서울 중구 찾아가는 동행 체육교실"
+        },
+        {
+          "href": "https://blog.naver.com/spokedutogether/224288711414",
+          "text": "스포츠 스텝업매동초등학교 · 종로거점형키움센터"
+        }
+      ]
+    },
+    "spomove": {
+      "exists": true,
+      "heading": "보고 판단하고움직입니다.",
+      "imgs": [
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "complete": true,
+          "naturalWidth": 2000
+        }
+      ],
+      "links": [
+        {
+          "href": "/spomove",
+          "text": "SPOMOVE 자세히 보기"
+        }
+      ]
+    },
+    "master": {
+      "exists": true,
+      "heading": "수업자료부터운영과 기록까지.",
+      "imgs": [
+        {
+          "src": "/images/spokedu/subscription/library-program-cards-20261008-final.png",
+          "complete": true,
+          "naturalWidth": 1536
+        }
+      ],
+      "links": [
+        {
+          "href": "/spokedu-lab",
+          "text": "SPOKEDU LAB 알아보기"
+        }
+      ]
+    },
+    "final": {
+      "exists": true,
+      "heading": "어떤 방식으로함께할까요?",
+      "imgs": [],
+      "links": [
+        {
+          "href": "/contact",
+          "text": "문의하기"
+        },
+        {
+          "href": "/education",
+          "text": "기관·학교 체육수업→"
+        },
+        {
+          "href": "/spokedu-lab",
+          "text": "SPOKEDU LAB→"
+        },
+        {
+          "href": "/contact",
+          "text": "협업·파트너십→"
+        }
+      ]
+    }
+  },
+  "mobileCtaStyles": {
+    "spomove": {
+      "actionsFlexDirection": "column",
+      "actionsAlignItems": "stretch",
+      "btnWidth": "350px",
+      "btnMinHeight": "auto",
+      "btnDisplay": "flex",
+      "href": "/spomove",
+      "label": "SPOMOVE 자세히 보기"
+    },
+    "master": {
+      "actionsFlexDirection": "column",
+      "actionsAlignItems": "stretch",
+      "btnWidth": "350px",
+      "btnMinHeight": "auto",
+      "btnDisplay": "flex",
+      "href": "/spokedu-lab",
+      "label": "SPOKEDU LAB 알아보기"
+    },
+    "final": {
+      "actionsFlexDirection": "column",
+      "actionsAlignItems": "stretch",
+      "btnWidth": "350px",
+      "btnMinHeight": "auto",
+      "btnDisplay": "flex",
+      "href": "/contact",
+      "label": "문의하기"
+    },
+    "hero": {
+      "flexDirection": "row",
+      "buttons": [
+        {
+          "width": "169px",
+          "flex": "1 1 0px",
+          "label": "수업 알아보기"
+        },
+        {
+          "width": "169px",
+          "flex": "1 1 0px",
+          "label": "수업자료 둘러보기"
+        }
+      ]
+    }
+  },
+  "keyboard": {
+    "focusChecks": [
+      {
+        "sel": "section[aria-labelledby=\"home-hero-heading\"] a >> nth=0",
+        "href": "/education",
+        "outlineWidth": "2px",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(36, 93, 255)"
+      },
+      {
+        "sel": "section[aria-labelledby=\"home-hero-heading\"] a >> nth=1",
+        "href": "/spokedu-lab",
+        "outlineWidth": "2px",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(36, 93, 255)"
+      },
+      {
+        "sel": "section[aria-labelledby=\"home-gateway-heading\"] a >> nth=0",
+        "href": "/education",
+        "outlineWidth": "2px",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(36, 93, 255)"
+      },
+      {
+        "sel": "section[aria-labelledby=\"home-gateway-heading\"] a >> nth=1",
+        "href": "/private",
+        "outlineWidth": "2px",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(36, 93, 255)"
+      },
+      {
+        "sel": "section[aria-labelledby=\"home-gateway-heading\"] a >> nth=2",
+        "href": "/spokedu-lab",
+        "outlineWidth": "2px",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(36, 93, 255)"
+      }
+    ],
+    "heroPrimaryEnterUrl": "http://127.0.0.1:3000/education"
+  },
+  "imageAudit": []
+}

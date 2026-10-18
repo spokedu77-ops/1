@@ -4,25 +4,28 @@ import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_SPOMOVE_VISUAL } from './home-web-assets';
 import styles from './home-web.module.css';
 
-/** Composition A — Editorial Split. SPOMOVE → SEE · DECIDE · MOVE → headline → explanation → CTA → one visual. */
+/** Editorial split — SPOMOVE signal-to-movement program (single field proof image). */
 export function SpomoveStage() {
   return (
-    <section className={styles.section} aria-labelledby="home-spomove-heading">
+    <section
+      className={`${styles.section} ${styles.spomoveStage}`}
+      aria-labelledby="home-spomove-heading"
+    >
       <div className={styles.rail}>
         <div className={styles.split}>
           <div className={styles.splitCopy}>
             <p className={styles.eyebrow}>SPOMOVE</p>
             <p className={styles.spomoveLine}>SEE · DECIDE · MOVE</p>
             <h2 id="home-spomove-heading" className={styles.displaySection}>
-              보고 판단하고
+              화면 신호를 보고
               <br />
-              움직입니다.
+              몸으로 반응합니다.
             </h2>
             <p className={styles.body}>
-              SPOMOVE는 시각적 자극에 대한 인지, 판단, 움직임을 통합적으로 경험하는 SPOKEDU의 대표적인 체육
-              콘텐츠입니다.
+              화면에 나타나는 색·위치·방향 신호를 확인하고 선택한 뒤 스포매트 또는 수업 공간에서 움직임으로 반응하는
+              체육 프로그램입니다.
             </p>
-            <p className={styles.meta}>색상 인지 · 선택 반응 · 복합 인지</p>
+            <p className={styles.meta}>단순 반응 · 선택 반응 · 복합 반응</p>
             <div className={styles.actions}>
               <Link href={SPOKEDU_PATHS.spomove} className={`${styles.btn} ${styles.btnSecondary}`}>
                 SPOMOVE 자세히 보기

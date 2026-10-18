@@ -1,0 +1,663 @@
+{
+  "generatedAt": "2026-10-17T19:45:02.868Z",
+  "productionBase": "https://spokedu.kr",
+  "localBase": "http://127.0.0.1:3018",
+  "BUILD_ID": "GWjWk5d5r6_P0zCpKWV_-",
+  "checks": [],
+  "pages": [
+    {
+      "env": "production",
+      "url": "https://spokedu.kr/private",
+      "viewport": "390",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 3000,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "markerHits": [],
+            "markerCount": 0,
+            "mainHeight": 401.59375,
+            "imgCount": 2,
+            "imgsLoaded": 0,
+            "hasApply": false,
+            "bodyLen": 377,
+            "ok": false
+          },
+          {
+            "elapsedMs": 3000,
+            "markerHits": [
+              "1:1과 소그룹",
+              "개인·소그룹 수업을 안내"
+            ],
+            "markerCount": 2,
+            "mainHeight": 10652.015625,
+            "imgCount": 12,
+            "imgsLoaded": 9,
+            "hasApply": true,
+            "bodyLen": 3927,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "markerHits": [
+            "1:1과 소그룹",
+            "개인·소그룹 수업을 안내"
+          ],
+          "markerCount": 2,
+          "mainHeight": 10652.015625,
+          "imgCount": 12,
+          "imgsLoaded": 9,
+          "hasApply": true,
+          "bodyLen": 3927,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/private-production-390.png",
+      "status": "PASS",
+      "check": "PRIVATE_CONTENT_VISIBLE"
+    },
+    {
+      "env": "production",
+      "url": "https://spokedu.kr/private",
+      "viewport": "941",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 3000,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "markerHits": [],
+            "markerCount": 0,
+            "mainHeight": 424.390625,
+            "imgCount": 2,
+            "imgsLoaded": 1,
+            "hasApply": false,
+            "bodyLen": 382,
+            "ok": false
+          },
+          {
+            "elapsedMs": 3000,
+            "markerHits": [
+              "1:1과 소그룹",
+              "개인·소그룹 수업을 안내"
+            ],
+            "markerCount": 2,
+            "mainHeight": 8863.203125,
+            "imgCount": 12,
+            "imgsLoaded": 11,
+            "hasApply": true,
+            "bodyLen": 3932,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "markerHits": [
+            "1:1과 소그룹",
+            "개인·소그룹 수업을 안내"
+          ],
+          "markerCount": 2,
+          "mainHeight": 8863.203125,
+          "imgCount": 12,
+          "imgsLoaded": 11,
+          "hasApply": true,
+          "bodyLen": 3932,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/private-production-941.png",
+      "status": "PASS",
+      "check": "PRIVATE_CONTENT_VISIBLE"
+    },
+    {
+      "env": "production",
+      "url": "https://spokedu.kr/private",
+      "viewport": "1440",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 3000,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "markerHits": [],
+            "markerCount": 0,
+            "mainHeight": 456,
+            "imgCount": 2,
+            "imgsLoaded": 0,
+            "hasApply": false,
+            "bodyLen": 394,
+            "ok": false
+          },
+          {
+            "elapsedMs": 3000,
+            "markerHits": [
+              "1:1과 소그룹",
+              "개인·소그룹 수업을 안내"
+            ],
+            "markerCount": 2,
+            "mainHeight": 7097.9375,
+            "imgCount": 12,
+            "imgsLoaded": 11,
+            "hasApply": true,
+            "bodyLen": 3944,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "markerHits": [
+            "1:1과 소그룹",
+            "개인·소그룹 수업을 안내"
+          ],
+          "markerCount": 2,
+          "mainHeight": 7097.9375,
+          "imgCount": 12,
+          "imgsLoaded": 11,
+          "hasApply": true,
+          "bodyLen": 3944,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/private-production-1440.png",
+      "status": "PASS",
+      "check": "PRIVATE_CONTENT_VISIBLE"
+    },
+    {
+      "env": "local",
+      "url": "http://127.0.0.1:3018/private",
+      "viewport": "390",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 3000,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "markerHits": [],
+            "markerCount": 0,
+            "mainHeight": 401.59375,
+            "imgCount": 2,
+            "imgsLoaded": 2,
+            "hasApply": false,
+            "bodyLen": 377,
+            "ok": false
+          },
+          {
+            "elapsedMs": 3000,
+            "markerHits": [
+              "1:1과 소그룹",
+              "개인·소그룹 수업을 안내"
+            ],
+            "markerCount": 2,
+            "mainHeight": 10652.015625,
+            "imgCount": 12,
+            "imgsLoaded": 9,
+            "hasApply": true,
+            "bodyLen": 3927,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "markerHits": [
+            "1:1과 소그룹",
+            "개인·소그룹 수업을 안내"
+          ],
+          "markerCount": 2,
+          "mainHeight": 10652.015625,
+          "imgCount": 12,
+          "imgsLoaded": 9,
+          "hasApply": true,
+          "bodyLen": 3927,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/private-local-390.png",
+      "status": "PASS",
+      "check": "PRIVATE_CONTENT_VISIBLE"
+    },
+    {
+      "env": "local",
+      "url": "http://127.0.0.1:3018/private",
+      "viewport": "1440",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 3000,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "markerHits": [],
+            "markerCount": 0,
+            "mainHeight": 456,
+            "imgCount": 2,
+            "imgsLoaded": 2,
+            "hasApply": false,
+            "bodyLen": 394,
+            "ok": false
+          },
+          {
+            "elapsedMs": 3000,
+            "markerHits": [
+              "1:1과 소그룹",
+              "개인·소그룹 수업을 안내"
+            ],
+            "markerCount": 2,
+            "mainHeight": 7097.9375,
+            "imgCount": 12,
+            "imgsLoaded": 11,
+            "hasApply": true,
+            "bodyLen": 3944,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "markerHits": [
+            "1:1과 소그룹",
+            "개인·소그룹 수업을 안내"
+          ],
+          "markerCount": 2,
+          "mainHeight": 7097.9375,
+          "imgCount": 12,
+          "imgsLoaded": 11,
+          "hasApply": true,
+          "bodyLen": 3944,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/private-local-1440.png",
+      "status": "PASS",
+      "check": "PRIVATE_CONTENT_VISIBLE"
+    },
+    {
+      "env": "production",
+      "url": "https://spokedu.kr/spomove/catalog",
+      "viewport": "390",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 0,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "isFallback": true,
+            "hasIframe": false,
+            "h1": "전체 카탈로그를 아직 표시할 수 없습니다",
+            "bodySnippet": "본문 바로가기\n메뉴 열기\n\nSPOMOVE CATALOG\n\n전체 카탈로그를 아직 표시할 수 없습니다\n\n프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는 아래에서 계속 확인할 수 있습니다.\n\nSPOMOVE 소개로 돌아가기\n기관 도입 문의\n구독시스템 알아보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 · 쇼츠\n\n",
+            "okCatalogList": false,
+            "okFallbackUi": true,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "isFallback": true,
+          "hasIframe": false,
+          "h1": "전체 카탈로그를 아직 표시할 수 없습니다",
+          "bodySnippet": "본문 바로가기\n메뉴 열기\n\nSPOMOVE CATALOG\n\n전체 카탈로그를 아직 표시할 수 없습니다\n\n프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는 아래에서 계속 확인할 수 있습니다.\n\nSPOMOVE 소개로 돌아가기\n기관 도입 문의\n구독시스템 알아보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 · 쇼츠\n\n",
+          "okCatalogList": false,
+          "okFallbackUi": true,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/catalog-production-390.png",
+      "status": "PASS",
+      "check": "CATALOG_CONTENT_AVAILABLE"
+    },
+    {
+      "env": "production",
+      "url": "https://spokedu.kr/spomove/catalog",
+      "viewport": "941",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 0,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "isFallback": true,
+            "hasIframe": false,
+            "h1": "전체 카탈로그를 아직 표시할 수 없습니다",
+            "bodySnippet": "본문 바로가기\n상담하기\n메뉴 열기\n\nSPOMOVE CATALOG\n\n전체 카탈로그를 아직 표시할 수 없습니다\n\n프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는 아래에서 계속 확인할 수 있습니다.\n\nSPOMOVE 소개로 돌아가기\n기관 도입 문의\n구독시스템 알아보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 ·",
+            "okCatalogList": false,
+            "okFallbackUi": true,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "isFallback": true,
+          "hasIframe": false,
+          "h1": "전체 카탈로그를 아직 표시할 수 없습니다",
+          "bodySnippet": "본문 바로가기\n상담하기\n메뉴 열기\n\nSPOMOVE CATALOG\n\n전체 카탈로그를 아직 표시할 수 없습니다\n\n프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는 아래에서 계속 확인할 수 있습니다.\n\nSPOMOVE 소개로 돌아가기\n기관 도입 문의\n구독시스템 알아보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 ·",
+          "okCatalogList": false,
+          "okFallbackUi": true,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/catalog-production-941.png",
+      "status": "PASS",
+      "check": "CATALOG_CONTENT_AVAILABLE"
+    },
+    {
+      "env": "production",
+      "url": "https://spokedu.kr/spomove/catalog",
+      "viewport": "1440",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 0,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "isFallback": true,
+            "hasIframe": false,
+            "h1": "전체 카탈로그를 아직 표시할 수 없습니다",
+            "bodySnippet": "본문 바로가기\n체육수업\n솔루션\n현장 사례\n소개\n상담하기\n\nSPOMOVE CATALOG\n\n전체 카탈로그를 아직 표시할 수 없습니다\n\n프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는 아래에서 계속 확인할 수 있습니다.\n\nSPOMOVE 소개로 돌아가기\n기관 도입 문의\n구독시스템 알아보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램",
+            "okCatalogList": false,
+            "okFallbackUi": true,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "isFallback": true,
+          "hasIframe": false,
+          "h1": "전체 카탈로그를 아직 표시할 수 없습니다",
+          "bodySnippet": "본문 바로가기\n체육수업\n솔루션\n현장 사례\n소개\n상담하기\n\nSPOMOVE CATALOG\n\n전체 카탈로그를 아직 표시할 수 없습니다\n\n프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는 아래에서 계속 확인할 수 있습니다.\n\nSPOMOVE 소개로 돌아가기\n기관 도입 문의\n구독시스템 알아보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램",
+          "okCatalogList": false,
+          "okFallbackUi": true,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/catalog-production-1440.png",
+      "status": "PASS",
+      "check": "CATALOG_CONTENT_AVAILABLE"
+    },
+    {
+      "env": "local",
+      "url": "http://127.0.0.1:3018/spomove/catalog",
+      "viewport": "390",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 0,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "isFallback": false,
+            "hasIframe": true,
+            "h1": "SPOMOVE 전체 프로그램 카탈로그",
+            "bodySnippet": "본문 바로가기\n메뉴 열기\n\nSPOMOVE CATALOG\n\nSPOMOVE 전체 프로그램 카탈로그\n\n화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.\n\n기관 도입 문의\nSPOMOVE 소개\n새 창에서 보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 · 쇼츠\n\n스포키듀 · 대표 최지훈 · 사업자등록번호 311-63-00356 · 통신판매업 신고 완료 · ",
+            "okCatalogList": true,
+            "okFallbackUi": false,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "isFallback": false,
+          "hasIframe": true,
+          "h1": "SPOMOVE 전체 프로그램 카탈로그",
+          "bodySnippet": "본문 바로가기\n메뉴 열기\n\nSPOMOVE CATALOG\n\nSPOMOVE 전체 프로그램 카탈로그\n\n화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.\n\n기관 도입 문의\nSPOMOVE 소개\n새 창에서 보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 · 쇼츠\n\n스포키듀 · 대표 최지훈 · 사업자등록번호 311-63-00356 · 통신판매업 신고 완료 · ",
+          "okCatalogList": true,
+          "okFallbackUi": false,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:3018/spomove?…",
+          "status": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshot": "captures/catalog-local-390.png",
+      "status": "PASS",
+      "check": "CATALOG_CONTENT_AVAILABLE"
+    },
+    {
+      "env": "local",
+      "url": "http://127.0.0.1:3018/spomove/catalog",
+      "viewport": "1440",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 0,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "isFallback": false,
+            "hasIframe": true,
+            "h1": "SPOMOVE 전체 프로그램 카탈로그",
+            "bodySnippet": "본문 바로가기\n체육수업\n솔루션\n현장 사례\n소개\n상담하기\n\nSPOMOVE CATALOG\n\nSPOMOVE 전체 프로그램 카탈로그\n\n화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.\n\n기관 도입 문의\nSPOMOVE 소개\n새 창에서 보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 · 쇼츠\n\n스포키듀 · 대표 최지훈 · 사업자등록번호 311-63-00356",
+            "okCatalogList": true,
+            "okFallbackUi": false,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "detail": {
+          "isFallback": false,
+          "hasIframe": true,
+          "h1": "SPOMOVE 전체 프로그램 카탈로그",
+          "bodySnippet": "본문 바로가기\n체육수업\n솔루션\n현장 사례\n소개\n상담하기\n\nSPOMOVE CATALOG\n\nSPOMOVE 전체 프로그램 카탈로그\n\n화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.\n\n기관 도입 문의\nSPOMOVE 소개\n새 창에서 보기\n\n스포키듀\n\n아동·청소년 체육교육 운영 브랜드\n\n운영지역 서울·경기 중심 상담 가능\n\n체육수업\n\n기관·학교 수업\n개인·소그룹 수업\n\n솔루션\n\nSPOMOVE\nSPOMOVE 카탈로그\nSPOMAT\nSPOKEDU LAB\n\nSPOKEDU\n\n현장 사례\n소개\n파트너·협업\n\n문의\n\n상담하기\n010-4437-9294\nspokedu77@gmail.com\n네이버 블로그\n인스타그램\n카카오채널\n유튜브 · 쇼츠\n\n스포키듀 · 대표 최지훈 · 사업자등록번호 311-63-00356",
+          "okCatalogList": true,
+          "okFallbackUi": false,
+          "ok": true
+        }
+      },
+      "console": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:3018/spokedu-lab?…",
+          "status": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:3018/spomove?…",
+          "status": "net::ERR_ABORTED"
+        }
+      ],
+      "screenshot": "captures/catalog-local-1440.png",
+      "status": "PASS",
+      "check": "CATALOG_CONTENT_AVAILABLE"
+    },
+    {
+      "env": "production",
+      "path": "/contact",
+      "viewport": "390",
+      "initialScreenshot": "captures/contact-production-390-initial.png",
+      "settledScreenshot": "captures/contact-production-390-settled.png",
+      "settledMs": 10000,
+      "contactProbe": {
+        "loadingVisible": false,
+        "hasForm": false,
+        "hasNameInput": false,
+        "hasSubmit": false,
+        "typeControlCount": 8,
+        "ok": false
+      },
+      "status": "FAIL"
+    },
+    {
+      "env": "production",
+      "path": "/contact",
+      "viewport": "1440",
+      "settledScreenshot": "captures/contact-production-1440-settled.png",
+      "contactProbe": {
+        "loadingVisible": false,
+        "hasForm": false,
+        "hasNameInput": false,
+        "hasSubmit": false,
+        "typeControlCount": 8,
+        "ok": false
+      },
+      "status": "PARTIAL"
+    },
+    {
+      "env": "local",
+      "url": "http://127.0.0.1:3018/contact",
+      "viewport": "390",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 10000,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "loadingVisible": true,
+            "hasForm": false,
+            "hasNameInput": false,
+            "hasSubmit": false,
+            "typeControlCount": 3,
+            "ok": false
+          },
+          {
+            "elapsedMs": 3000,
+            "loadingVisible": false,
+            "hasForm": false,
+            "hasNameInput": false,
+            "hasSubmit": false,
+            "typeControlCount": 8,
+            "ok": false
+          },
+          {
+            "elapsedMs": 10000,
+            "loadingVisible": false,
+            "hasForm": false,
+            "hasNameInput": false,
+            "hasSubmit": false,
+            "typeControlCount": 8,
+            "ok": false
+          }
+        ],
+        "ok": false,
+        "detail": {
+          "elapsedMs": 10000,
+          "loadingVisible": false,
+          "hasForm": false,
+          "hasNameInput": false,
+          "hasSubmit": false,
+          "typeControlCount": 8,
+          "ok": false
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/contact-local-390-settled.png",
+      "settledMs": 10000,
+      "status": "PARTIAL"
+    },
+    {
+      "env": "local",
+      "url": "http://127.0.0.1:3018/contact",
+      "viewport": "1440",
+      "httpStatus": 200,
+      "wait": {
+        "settledMs": 10000,
+        "timeline": [
+          {
+            "elapsedMs": 0,
+            "loadingVisible": true,
+            "hasForm": false,
+            "hasNameInput": false,
+            "hasSubmit": false,
+            "typeControlCount": 3,
+            "ok": false
+          },
+          {
+            "elapsedMs": 3000,
+            "loadingVisible": false,
+            "hasForm": false,
+            "hasNameInput": false,
+            "hasSubmit": false,
+            "typeControlCount": 8,
+            "ok": false
+          },
+          {
+            "elapsedMs": 10000,
+            "loadingVisible": false,
+            "hasForm": false,
+            "hasNameInput": false,
+            "hasSubmit": false,
+            "typeControlCount": 8,
+            "ok": false
+          }
+        ],
+        "ok": false,
+        "detail": {
+          "elapsedMs": 10000,
+          "loadingVisible": false,
+          "hasForm": false,
+          "hasNameInput": false,
+          "hasSubmit": false,
+          "typeControlCount": 8,
+          "ok": false
+        }
+      },
+      "console": [],
+      "failedRequests": [],
+      "screenshot": "captures/contact-local-1440-settled.png",
+      "settledMs": 10000,
+      "status": "PARTIAL"
+    }
+  ],
+  "contactInteractive": {
+    "production": {
+      "afterTypeSelect": { "hasForm": true, "hasSubmit": true },
+      "validationBlockedSubmit": { "invalid": 8, "status": "PASS" }
+    },
+    "local": {
+      "afterTypeSelect": { "hasForm": true, "hasSubmit": true },
+      "validationBlockedSubmit": { "invalid": 8, "status": "PASS" }
+    },
+    "note": "Form renders after inquiry-type button click; initial probe without interaction was false negative."
+  },
+  "journeys": {
+    "production": [
+      { "id": "J01", "status": "PASS", "url": "https://spokedu.kr/private" },
+      { "id": "J02", "status": "PASS", "url": "https://spokedu.kr/private" },
+      { "id": "J03", "status": "PASS", "url": "https://spokedu.kr/private#apply", "note": "apply anchor, not /contact" },
+      { "id": "J04", "status": "PASS", "url": "https://spokedu.kr/spomove" },
+      { "id": "J05", "status": "PARTIAL", "detail": { "fallback": true, "iframe": false } },
+      { "id": "J06", "status": "PASS", "url": "https://spokedu.kr/education?program=spomove#contact" },
+      { "id": "J07", "status": "PASS", "url": "https://spokedu.kr/contact" },
+      { "id": "J08", "status": "PASS", "url": "https://spokedu.kr/contact?type=dispatch" },
+      { "id": "J09", "status": "PASS", "note": "POST blocked; client validation only" },
+      { "id": "J10", "status": "PASS" }
+    ],
+    "local": [
+      { "id": "J01", "status": "PASS", "url": "http://127.0.0.1:3018/private" },
+      { "id": "J02", "status": "PASS", "url": "http://127.0.0.1:3018/private" },
+      { "id": "J03", "status": "PASS", "url": "http://127.0.0.1:3018/private#apply" },
+      { "id": "J04", "status": "PASS", "url": "http://127.0.0.1:3018/spomove" },
+      { "id": "J05", "status": "PASS", "detail": { "fallback": false, "iframe": true } },
+      { "id": "J06", "status": "PASS", "url": "http://127.0.0.1:3018/education?program=spomove#contact" },
+      { "id": "J07", "status": "PASS", "url": "http://127.0.0.1:3018/contact" },
+      { "id": "J08", "status": "PASS", "url": "http://127.0.0.1:3018/contact?type=dispatch" },
+      { "id": "J09", "status": "PASS", "note": "POST blocked" },
+      { "id": "J10", "status": "PASS" }
+    ],
+    "supersedes": "run-phase2a-audit.mjs journey block (hidden-nav click timeout)"
+  },
+  "environmentMatrix": {
+    "private": "BOTH_PASS",
+    "privateHydration": "ENVIRONMENT_DIFFERENCE",
+    "catalogList": "PRODUCTION_FAIL_LOCAL_PASS",
+    "catalogFallbackNav": "BOTH_PASS",
+    "contactForm": "BOTH_PASS",
+    "contactFormAfterTypeSelect": "BOTH_PASS"
+  },
+  "completionStatus": "PHASE2A_AUDIT_PARTIAL"
+}

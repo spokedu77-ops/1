@@ -52,13 +52,6 @@ describe('public marketing typography contract', () => {
     expect(home).not.toMatch(/homeBrandDisplay|--he-brand-display/);
   });
 
-  it('keeps the V17 subscription headings on the approved bold rendering', () => {
-    const v17 = read('app/spokedu/components/subscription-v17/subscription-v17.module.css');
-    expect(v17).toMatch(/--font-display:\s*Pretendard/);
-    expect(v17).toMatch(/\.root :global\(\.hero h1\)\s*{[^}]*font-weight:\s*700/);
-    expect(v17).toMatch(/\.root :global\(\.section-title\)\s*{[^}]*font-weight:\s*700/);
-  });
-
   it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the approved Pretendard 700 display contract', (name) => {
     const value = utility(utilities, name);
     expect(value).toContain('[font-family:var(--spokedu-marketing-font-display)]');

@@ -1,0 +1,20 @@
+{
+  "label": "FAULT_INJECTION_TEST",
+  "command": "npx vitest run app/api/private/leads/route.fault-injection.test.ts app/api/dispatch/leads/route.fault-injection.test.ts",
+  "exitCode": 0,
+  "tests": [
+    {
+      "id": "E08",
+      "file": "app/api/private/leads/route.fault-injection.test.ts",
+      "expect": "HTTP 500, ok:false when createConsultLead fails",
+      "mockDb": true
+    },
+    {
+      "id": "E09",
+      "file": "app/api/dispatch/leads/route.fault-injection.test.ts",
+      "expect": "HTTP 200, ok:true, detailStatus detail_failed, detailId null when dispatch_leads insert fails",
+      "mockDb": true
+    }
+  ],
+  "note": "Not production outage drill; isolated Vitest mocks only."
+}

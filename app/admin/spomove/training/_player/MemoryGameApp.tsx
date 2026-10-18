@@ -155,7 +155,7 @@ type Screen =
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
 export type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
-type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
+type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal' | 'together-family';
 
 type Settings = {
   mode: string;
@@ -2140,8 +2140,8 @@ export default function MemoryGameApp({
                       {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
                         const isTogether = value === 'together';
                         const active = isTogether
-                          ? settings.colorGateVariant === 'together-easy' || settings.colorGateVariant === 'together-normal'
-                          : settings.colorGateCategory === value && settings.colorGateVariant !== 'together-easy' && settings.colorGateVariant !== 'together-normal';
+                          ? settings.colorGateVariant.startsWith('together-')
+                          : settings.colorGateCategory === value && !settings.colorGateVariant.startsWith('together-');
                         return (
                         <button key={value} type="button" onClick={() => setSettings((s) => {
                           if (value === 'together') {
@@ -2150,7 +2150,7 @@ export default function MemoryGameApp({
                           return {
                             ...s,
                             colorGateCategory: value,
-                            colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant === 'together-easy' ? 'solo-easy' : s.colorGateVariant,
+                            colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant.startsWith('together-') ? 'solo-easy' : s.colorGateVariant,
                           };
                         })}
                           style={{ minWidth: 0, minHeight: 48, padding: '0.65rem 0.35rem', borderRadius: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', color: active ? '#38BDF8' : 'var(--text)', fontWeight: 800, fontSize: '0.8rem', lineHeight: 1.25, wordBreak: 'keep-all', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
@@ -2160,18 +2160,21 @@ export default function MemoryGameApp({
                       })}
                     </div>
                     <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>난이도</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: settings.colorGateVariant.startsWith('together-') ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))', gap: '0.5rem' }}>
                       {([
                         ['single', '단일', '기본 동작'],
                         ['compound', '복합', '전체 동작'],
+                        ...(settings.colorGateVariant.startsWith('together-') ? [['family', '패밀리', '가족 동작'] as const] : []),
                       ] as const).map(([value, label, detail]) => {
                         const active = value === 'single'
                           ? settings.colorGateVariant === 'solo-easy' || settings.colorGateVariant === 'together-easy'
-                          : settings.colorGateVariant === 'solo-normal' || settings.colorGateVariant === 'together-normal';
+                          : value === 'compound'
+                            ? settings.colorGateVariant === 'solo-normal' || settings.colorGateVariant === 'together-normal'
+                            : settings.colorGateVariant === 'together-family';
                         return (
                         <button key={value} type="button" onClick={() => setSettings((s) => {
-                          const isTogether = s.colorGateVariant === 'together-easy' || s.colorGateVariant === 'together-normal';
-                          return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : (isTogether ? 'together-normal' : 'solo-normal') };
+                          const isTogether = s.colorGateVariant.startsWith('together-');
+                          return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : value === 'compound' ? (isTogether ? 'together-normal' : 'solo-normal') : 'together-family' };
                         })}
                           style={{ padding: '0.75rem', borderRadius: '0.8rem', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text)', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
                           <strong>{label}</strong>

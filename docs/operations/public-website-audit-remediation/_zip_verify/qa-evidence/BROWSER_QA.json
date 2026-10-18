@@ -1,0 +1,43 @@
+{
+  "port": "3041",
+  "redirects": [
+    {
+      "from": "/info/curriculum?utm_source=naver&utm_campaign=%ED%95%9C%EA%B8%80",
+      "finalUrl": "http://127.0.0.1:3041/education?utm_source=naver&utm_campaign=%ED%95%9C%EA%B8%80&program=spomove#contact",
+      "status": "PASS",
+      "chainStatus": 200
+    },
+    {
+      "from": "/info/private?utm_medium=cpc",
+      "finalUrl": "http://127.0.0.1:3041/private?utm_medium=cpc#apply",
+      "status": "PASS",
+      "chainStatus": 200
+    }
+  ],
+  "pages": [
+    {
+      "viewport": "390",
+      "catalogHasProgramTitle": true,
+      "labLoaded": true,
+      "homeHasHero": true,
+      "recordsLoaded": true
+    },
+    {
+      "viewport": "941",
+      "catalogHasProgramTitle": true,
+      "labLoaded": true,
+      "homeHasHero": true,
+      "recordsLoaded": true
+    },
+    {
+      "viewport": "1440",
+      "catalogHasProgramTitle": true,
+      "labLoaded": true,
+      "homeHasHero": true,
+      "recordsLoaded": true
+    }
+  ],
+  "overall": "PASS",
+  "error": null,
+  "consultDevMessageHidden": true
+}

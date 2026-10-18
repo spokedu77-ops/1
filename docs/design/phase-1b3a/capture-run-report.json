@@ -1,0 +1,11 @@
+{
+  "BUILD_ID": "CRXHj0T0tTWJPlpW8Zhml",
+  "port": "3002",
+  "overflow": { "390": false, "834": false, "1024": false, "1440": false },
+  "cssOk": {
+    "390": { "ok": true, "navy": "#0b1f46" },
+    "834": { "ok": true, "navy": "#0b1f46" },
+    "1024": { "ok": true, "navy": "#0b1f46" },
+    "1440": { "ok": true, "navy": "#0b1f46" }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "overflow": {
+    "390": false,
+    "834": false,
+    "1024": false,
+    "1440": false
+  },
+  "sections": {
+    "methodH2": "현장의 경험을 수업 콘텐츠와 운영 도구로 연결합니다.",
+    "recordsH2": "실제로 운영한 학교·기관 체육수업",
+    "methodArticles": 3,
+    "recordCards": 0
+  },
+  "links": {
+    "recordHrefs": [
+      "http://127.0.0.1:3001/records/dongjak-spomove",
+      "https://blog.naver.com/spokedutogether/224338186918",
+      "https://blog.naver.com/spokedutogether/224288711414"
+    ]
+  },
+  "captures": [
+    "method-1440.png",
+    "records-1440.png",
+    "home-full-1440.png",
+    "method-1024.png",
+    "records-1024.png",
+    "method-834.png",
+    "records-834.png",
+    "method-390.png",
+    "records-390.png",
+    "home-full-390.png",
+    "focus-records-390.png"
+  ]
+}

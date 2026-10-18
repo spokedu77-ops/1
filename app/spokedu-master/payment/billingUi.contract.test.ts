@@ -20,6 +20,9 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(catalog).toContain("serverPlanKey: 'lite'");
     expect(catalog).toContain("serverPlanKey: 'premium'");
     expect(catalog).toContain('getMasterProductPaymentFeatureLabels');
+    expect(catalog).toContain('놀이체육 전체 라이브러리');
+    expect(catalog).toContain('Lite의 모든 기능');
+    expect(catalog).toContain('색상 · 방향 · 이미지 신호에 반응하는 움직임 활동');
     expect(payment).toContain('getDirectPurchaseMasterProducts');
     expect(payment).toContain('getMasterProductPaymentFeatureLabels(product)');
     expect(payment).toContain('MASTER_CENTER_INQUIRY_HREF');
@@ -32,6 +35,7 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(payment).toContain('isTossClientKeyAllowed(tossClientKey, process.env.NODE_ENV, reviewDeployment)');
     expect(payment).toContain("type TossSdkStatus = 'loading' | 'ready' | 'missing-config' | 'load-error'");
     expect(payment).toContain('결제 설정이 완료되지 않아 지금은 결제를 시작할 수 없습니다.');
+    expect(payment).toContain('결제 모듈 다시 불러오기');
     expect(payment).toContain("current === 'loading' ? 'load-error' : current");
     expect(payment).toContain("successUrl.searchParams.set('plan', plan)");
     expect(payment).toContain("failUrl.searchParams.set('plan', plan)");
@@ -101,6 +105,10 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(payment).toContain('getPaymentPageMode');
     expect(payment).toContain('프리미엄으로 업그레이드');
     expect(payment).toContain('UPGRADE_BILLING_NOTICE');
+    expect(payment).toContain('결제 예정 정보');
+    expect(payment).toContain('오늘 결제하는 차액');
+    expect(payment).toContain('서버 견적 확인 중');
+    expect(payment).toContain('/spokedu-lab/terms#refund');
     expect(payment).toContain('오늘 결제는 라이트 잔여 이용기간 가치를 반영한 서버 계산 차액입니다.');
     expect(payment).toContain('planId: \'premium\', customerKey:');
     expect(payment).not.toContain('blocksNewPayment');

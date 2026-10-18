@@ -5,7 +5,19 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCenterById } from '../actions/centers';
-import { updateCenter, deleteCenter, getActiveTeachers } from '../actions/centers';
+import {
+  updateCenter,
+  deleteCenter,
+  getActiveTeachers,
+  getCenterCriminalCheckPassword,
+} from '../actions/centers';
+import {
+  createCriminalCheckDownloadUrl,
+  createCriminalCheckUpload,
+  deleteCriminalCheckFile,
+  finalizeCriminalCheckUpload,
+} from '../actions/criminal-check-files';
+import { CRIMINAL_CHECK_MAX_FILE_BYTES } from '@/app/lib/centers/criminalCheckFiles';
 import {
   getCenterHistory,
   addCenterHistoryEntry,
@@ -22,7 +34,6 @@ import type {
   TeacherOption,
 } from '@/app/lib/centers/types';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { uploadToStorageSigned, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { optimizeToWebP, validateImageFormat } from '@/app/lib/admin/assets/imageOptimizer';
 import {
   ArrowLeft,
@@ -43,6 +54,9 @@ import {
   History,
   FileUp,
   FileText,
+  Eye,
+  EyeOff,
+  Copy,
 } from 'lucide-react';
 
 function formatCenterHistoryDate(iso: string): string {
@@ -148,6 +162,12 @@ export function CenterDetailClient({ id }: { id: string }) {
   const [historyUpdating, setHistoryUpdating] = useState(false);
   const [historyDeletingId, setHistoryDeletingId] = useState<string | null>(null);
   const [criminalUploading, setCriminalUploading] = useState(false);
+  const [criminalDeletingPath, setCriminalDeletingPath] = useState<string | null>(null);
+  const [revealedPassword, setRevealedPassword] = useState<string | null | undefined>(undefined);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [passwordDeleteRequested, setPasswordDeleteRequested] = useState(false);
 
   const loadCenter = useCallback(async () => {
     setLoading(true);
@@ -279,9 +299,12 @@ export function CenterDetailClient({ id }: { id: string }) {
         backup: mergedBackup,
       },
       criminal_check_facility_id: center.criminal_check_facility_id ?? '',
-      criminal_check_facility_password: center.criminal_check_facility_password ?? '',
+      criminal_check_facility_password: '',
       criminal_check_files: center.criminal_check_files ?? [],
     });
+    setShowEditPassword(false);
+    setPasswordChanged(false);
+    setPasswordDeleteRequested(false);
     setEditError('');
     setIsEditOpen(true);
   };
@@ -323,17 +346,33 @@ export function CenterDetailClient({ id }: { id: string }) {
         const uploadBlob: File = isRasterImage
           ? await optimizeToWebP(file, { maxW: 1920, maxH: 1920, quality: 0.9 })
           : file;
-        const safeName = sanitizeFileName(uploadBlob.name || file.name || 'file');
-        const path = `centers/${center.id}/criminal-check/${Date.now()}_${safeName}`;
-        const contentType = isRasterImage ? 'image/webp' : uploadBlob.type || file.type || undefined;
-        const uploadedPath = await uploadToStorageSigned(path, uploadBlob, contentType);
-        const nextFiles = [...(center.criminal_check_files ?? []), { name: safeName, path: uploadedPath }];
-        const res = await updateCenter(center.id, { criminal_check_files: nextFiles });
-        if (res.error) {
-          toast.error(res.error);
+        if (uploadBlob.size > CRIMINAL_CHECK_MAX_FILE_BYTES) {
+          toast.error(`${file.name}: 파일 크기는 25MB 이하여야 합니다.`);
           return;
         }
-        if (res.data) setCenter(res.data);
+        const safeName = sanitizeFileName(uploadBlob.name || file.name || 'file');
+        const contentType = isRasterImage ? 'image/webp' : uploadBlob.type || file.type || undefined;
+        const upload = await createCriminalCheckUpload(center.id, safeName, contentType);
+        if (!upload.data || upload.error) {
+          toast.error(upload.error ?? '업로드 URL을 만들지 못했습니다.');
+          return;
+        }
+        const put = await fetch(upload.data.signedUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': contentType ?? 'application/octet-stream' },
+          body: uploadBlob,
+        });
+        if (!put.ok) throw new Error(`Storage 업로드 실패: ${put.status} ${put.statusText}`);
+        const finalized = await finalizeCriminalCheckUpload(center.id, {
+          name: safeName,
+          path: upload.data.path,
+          bucket: upload.data.bucket,
+        });
+        if (!finalized.data || finalized.error) {
+          toast.error(finalized.error ?? '첨부파일 등록을 완료하지 못했습니다.');
+          return;
+        }
+        setCenter((current) => current ? { ...current, criminal_check_files: finalized.data ?? [] } : current);
       }
       toast.success('파일을 업로드했습니다.');
     } catch (err) {
@@ -346,14 +385,63 @@ export function CenterDetailClient({ id }: { id: string }) {
 
   const removeCriminalFile = async (idx: number) => {
     if (!center) return;
-    const nextFiles = (center.criminal_check_files ?? []).filter((_, i) => i !== idx);
-    const res = await updateCenter(center.id, { criminal_check_files: nextFiles });
-    if (res.error) {
-      toast.error(res.error);
+    const file = center.criminal_check_files?.[idx];
+    if (!file || !confirm(`${file.name} 파일을 Storage와 센터 기록에서 삭제할까요?`)) return;
+    setCriminalDeletingPath(file.path);
+    try {
+      const res = await deleteCriminalCheckFile(center.id, file);
+      if (!res.data || res.error) {
+        toast.error(res.error ?? '파일 삭제에 실패했습니다.');
+        return;
+      }
+      setCenter((current) => current ? { ...current, criminal_check_files: res.data ?? [] } : current);
+      toast.success('첨부파일을 삭제했습니다.');
+    } finally {
+      setCriminalDeletingPath(null);
+    }
+  };
+
+  const openCriminalFile = async (file: CriminalCheckFile) => {
+    if (!center) return;
+    const previewWindow = window.open('about:blank', '_blank');
+    if (previewWindow) previewWindow.opener = null;
+    const result = await createCriminalCheckDownloadUrl(center.id, file);
+    if (!result.data || result.error) {
+      previewWindow?.close();
+      toast.error(result.error ?? '파일을 열지 못했습니다.');
       return;
     }
-    if (res.data) setCenter(res.data);
-    toast.success('첨부를 제거했습니다.');
+    if (previewWindow) previewWindow.location.replace(result.data);
+    else window.location.assign(result.data);
+  };
+
+  const revealCriminalCheckPassword = async () => {
+    if (!center) return;
+    if (revealedPassword !== undefined) {
+      setRevealedPassword(undefined);
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const result = await getCenterCriminalCheckPassword(center.id);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      setRevealedPassword(result.data ?? null);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const copyCriminalCheckPassword = async () => {
+    if (!revealedPassword) return;
+    try {
+      await navigator.clipboard.writeText(revealedPassword);
+      toast.success('시설 비밀번호를 복사했습니다.');
+    } catch {
+      toast.error('클립보드 복사에 실패했습니다.');
+    }
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -368,7 +456,7 @@ export function CenterDetailClient({ id }: { id: string }) {
     try {
       const rawFee = editForm.session_fee.trim();
       const parsedFee = rawFee !== '' ? parseInt(rawFee, 10) : null;
-      const result = await updateCenter(center.id, {
+      const payload: Record<string, unknown> = {
         name: editForm.name.trim(),
         region_tag: editForm.region_tag.trim() || null,
         address: editForm.address.trim() || null,
@@ -389,14 +477,19 @@ export function CenterDetailClient({ id }: { id: string }) {
         // "보조/백업" 단일 운영: sub는 null 고정, backup 배열만 저장
         instructors_default: { ...editForm.instructors_default, sub: null },
         criminal_check_facility_id: editForm.criminal_check_facility_id.trim() || null,
-        criminal_check_facility_password: editForm.criminal_check_facility_password || null,
-        criminal_check_files: editForm.criminal_check_files ?? [],
-      });
+      };
+      if (passwordDeleteRequested) {
+        payload.criminal_check_facility_password = null;
+      } else if (passwordChanged && editForm.criminal_check_facility_password.length > 0) {
+        payload.criminal_check_facility_password = editForm.criminal_check_facility_password;
+      }
+      const result = await updateCenter(center.id, payload);
       if (result.error) {
         setEditError(result.error);
         toast.error(result.error);
       } else if (result.data) {
         setCenter(result.data);
+        setRevealedPassword(undefined);
         setIsEditOpen(false);
         toast.success('센터 정보를 저장했습니다.');
       }
@@ -637,24 +730,44 @@ export function CenterDetailClient({ id }: { id: string }) {
               </p>
               <p>
                 시설 PW:{' '}
-                <span className="font-medium break-all">
-                  {center.criminal_check_facility_password?.length
-                    ? center.criminal_check_facility_password
-                    : <span className="text-slate-400 font-normal">미설정</span>}
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="font-medium break-all">
+                    {revealedPassword === undefined
+                      ? '••••••••'
+                      : revealedPassword || <span className="text-slate-400 font-normal">미설정</span>}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={passwordLoading}
+                    onClick={() => void revealCriminalCheckPassword()}
+                    className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                    aria-label={revealedPassword === undefined ? '시설 비밀번호 조회' : '시설 비밀번호 숨기기'}
+                  >
+                    {revealedPassword === undefined ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                  </button>
+                  {revealedPassword ? (
+                    <button
+                      type="button"
+                      onClick={() => void copyCriminalCheckPassword()}
+                      className="rounded p-1 text-slate-500 hover:bg-slate-100"
+                      aria-label="시설 비밀번호 복사"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
                 </span>
               </p>
               {(center.criminal_check_files?.length ?? 0) > 0 ? (
                 <ul className="mt-2 space-y-1">
                   {(center.criminal_check_files ?? []).slice(0, 3).map((f, i) => (
                     <li key={`${f.path}-${i}`} className="text-xs text-slate-500">
-                      <a
-                        href={getPublicUrl(f.path)}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => void openCriminalFile(f)}
                         className="hover:underline"
                       >
                         {f.name}
-                      </a>
+                      </button>
                     </li>
                   ))}
                   {(center.criminal_check_files?.length ?? 0) > 3 && (
@@ -850,17 +963,16 @@ export function CenterDetailClient({ id }: { id: string }) {
             <ul className="mt-2 space-y-1">
               {(center.criminal_check_files ?? []).map((f, i) => (
                 <li key={`${f.path}-${i}`} className="flex items-center justify-between gap-2">
-                  <a
-                    href={getPublicUrl(f.path)}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => void openCriminalFile(f)}
                     className="text-sm text-indigo-600 hover:underline break-all"
                   >
                     {f.name}
-                  </a>
+                  </button>
                   <button
                     type="button"
-                    disabled={criminalUploading}
+                    disabled={criminalUploading || criminalDeletingPath === f.path}
                     onClick={() => void removeCriminalFile(i)}
                     className="rounded p-1 text-slate-500 hover:bg-white hover:text-red-600 disabled:opacity-50 cursor-pointer"
                     title="삭제"
@@ -1072,13 +1184,42 @@ export function CenterDetailClient({ id }: { id: string }) {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">시설 비밀번호</label>
-                      <input
-                        type="text"
-                        autoComplete="off"
-                        value={editForm.criminal_check_facility_password}
-                        onChange={(e) => setEditForm((f) => ({ ...f, criminal_check_facility_password: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
+                      <div className="relative">
+                        <input
+                          type={showEditPassword ? 'text' : 'password'}
+                          autoComplete="new-password"
+                          value={editForm.criminal_check_facility_password}
+                          disabled={passwordDeleteRequested}
+                          placeholder="변경할 때만 입력"
+                          onChange={(e) => {
+                            setPasswordChanged(true);
+                            setEditForm((f) => ({ ...f, criminal_check_facility_password: e.target.value }));
+                          }}
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 pr-10 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none disabled:bg-slate-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEditPassword((value) => !value)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-100"
+                          aria-label={showEditPassword ? '입력 비밀번호 숨기기' : '입력 비밀번호 보기'}
+                        >
+                          {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <label className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-slate-500">
+                        <input
+                          type="checkbox"
+                          checked={passwordDeleteRequested}
+                          onChange={(e) => {
+                            setPasswordDeleteRequested(e.target.checked);
+                            if (e.target.checked) {
+                              setPasswordChanged(false);
+                              setEditForm((f) => ({ ...f, criminal_check_facility_password: '' }));
+                            }
+                          }}
+                        />
+                        저장된 비밀번호 삭제
+                      </label>
                     </div>
                   </div>
                 </fieldset>

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Reac
 import {
   brandContactLinks,
   brandProfile,
+  getPublicFooterLegalLine,
   footerNavGroups,
   getSocialLinks,
   siteHeaderCta,
@@ -507,7 +508,7 @@ export function SiteFooter() {
 
         <div className="mt-8 space-y-3 border-t border-white/10 pt-4">
           <p className={`text-[12px] leading-[1.6] text-white/50 ${koreanText}`}>
-            {brandProfile.nameKo} · 대표 {brandProfile.representative} · 사업자등록번호 {brandProfile.businessRegistrationNumber} · 통신판매업 {brandProfile.mailOrderStatus} · {brandProfile.businessAddress}
+            {getPublicFooterLegalLine()}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
             <Link href="/spokedu-lab/terms" data-track-label="footer-master-terms" className="text-white/55 underline-offset-2 hover:text-white hover:underline">

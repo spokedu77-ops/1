@@ -68,8 +68,9 @@ describe('SPOKEDU MASTER business info contract', () => {
     expect(landing).not.toContain('신청 중');
     expect(landing).not.toContain('스포케듀');
     expect(landing).not.toContain('7층 2호');
-    expect(landing).toContain('brandProfile.mailOrderStatus');
-    expect(landing).toContain('brandProfile.representative');
+    expect(landing).toContain('getPublicFooterLegalLine');
+    expect(landing).not.toContain('mailOrderStatus');
+    expect(landing).not.toContain('FACT_REQUIRED');
     expect(landing).toContain('brandProfile.phone');
     expect(landing).toContain('brandProfile.email');
   });
@@ -79,11 +80,9 @@ describe('SPOKEDU MASTER business info contract', () => {
     const footer = read('app/spokedu/components/site-chrome.tsx');
 
     expect(page).toContain('business: MASTER_BUSINESS_INFO');
-    expect(footer).toContain('brandProfile.nameKo');
-    expect(footer).toContain('brandProfile.representative');
-    expect(footer).toContain('brandProfile.businessRegistrationNumber');
-    expect(footer).toContain('brandProfile.mailOrderStatus');
-    expect(footer).toContain('brandProfile.businessAddress');
+    expect(footer).toContain('getPublicFooterLegalLine');
+    expect(footer).not.toContain('brandProfile.businessRegistrationNumber');
+    expect(footer).not.toContain('brandProfile.businessAddress');
     expect(footer).toContain('brandProfile.phone');
     expect(footer).toContain('brandProfile.email');
   });

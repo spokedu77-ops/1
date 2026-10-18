@@ -305,7 +305,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
-type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
+type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal' | 'together-family';
 type ColorGateCategoryFilter = 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
 
 type LaunchSettings = {
@@ -514,13 +514,25 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
 const FLOW_COLOR_GATE_LEVEL_ID = 2;
 const ACTION_MOVE_STAGE_SECONDS = [15, 20, 25, 30, 35] as const;
 const COLOR_GATE_REPETITION_COUNTS = [10, 15, 20, 30] as const;
+const REACT_TRAIN_REPETITION_LEVEL_IDS = new Set([3, 1, 2, 6, 10, 201]);
 const DEFAULT_ACTION_MOVE_STAGE_SEC = 20;
 
 function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
   return modeId === 'flow' && levelId === FLOW_COLOR_GATE_LEVEL_ID;
 }
 
+function isReactTrainRepetitionLevel(modeId: string, levelId: number): boolean {
+  return modeId === 'reactTrain' && REACT_TRAIN_REPETITION_LEVEL_IDS.has(levelId);
+}
+
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
+  if (isReactTrainRepetitionLevel(modeId, levelId)) {
+    return {
+      ...launch,
+      timeMode: 'reps',
+      targetReps: [10, 15, 20, 30].includes(launch.targetReps) ? launch.targetReps : 20,
+    };
+  }
   if (modeId === 'basic' && levelId === 7) {
     return {
       ...launch,
@@ -716,11 +728,6 @@ function AppManagementTab() {
       href: '/admin/spomove/training',
       title: 'SPOMOVE',
       desc: 'SPOMOVE 트레이닝으로 바로 진입합니다.',
-    },
-    {
-      href: '/admin/camera',
-      title: '카메라 앱',
-      desc: '수업용 카메라 앱으로 바로 진입합니다.',
     },
   ];
 
@@ -1026,8 +1033,9 @@ function SettingsScreen({
   const isSimon = modeId === 'simon';
   const isFlowOrChallenge = modeId === 'flow';
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
+  const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId, levelId);
   const compactSettingsMenu =
-    (isReactTrain && [6, 8, 10, 13].includes(reactTrainEngineLevelForUi(levelId))) ||
+    isReactTrain ||
     (modeId === 'simon' && levelId === 3) ||
     (modeId === 'flanker' && levelId === 3) ||
     (isSpatial && isInstantMemoryLevel(levelId));
@@ -1240,7 +1248,7 @@ function SettingsScreen({
                           return 8;
                         }
                         if (modeId === 'basic' && lv.id === 7) {
-                          return isModifiedQuadrantLevel(current) ? current : 7;
+                          return 7;
                         }
                         if (modeId === 'basic' && lv.id === 5) {
                           return isFront3PanelLevel(current) ? current : 5;
@@ -2404,8 +2412,8 @@ function SettingsScreen({
                 {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
                   const isTogether = value === 'together';
                   const active = isTogether
-                    ? launch.colorGateVariant === 'together-easy' || launch.colorGateVariant === 'together-normal'
-                    : launch.colorGateCategory === value && launch.colorGateVariant !== 'together-easy' && launch.colorGateVariant !== 'together-normal';
+                    ? launch.colorGateVariant.startsWith('together-')
+                    : launch.colorGateCategory === value && !launch.colorGateVariant.startsWith('together-');
                   return (
                     <button key={value} type="button" onClick={() => setLaunch((s) => {
                       if (value === 'together') {
@@ -2414,7 +2422,7 @@ function SettingsScreen({
                       return {
                         ...s,
                         colorGateCategory: value,
-                        colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant === 'together-easy' ? 'solo-easy' : s.colorGateVariant,
+                        colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant.startsWith('together-') ? 'solo-easy' : s.colorGateVariant,
                       };
                     })}
                       style={{ minWidth: 0, minHeight: 40, padding: '7px 4px', borderRadius: 10, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontSize: 12, lineHeight: 1.2, fontWeight: 900, cursor: 'pointer', textAlign: 'center', wordBreak: 'keep-all' }}>
@@ -2424,21 +2432,24 @@ function SettingsScreen({
                 })}
               </div>
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: launch.colorGateVariant.startsWith('together-') ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))', gap: 5 }}>
                 {([
                   ['single', '단일', '기본 동작'],
                   ['compound', '복합', '전체 동작'],
+                  ...(launch.colorGateVariant.startsWith('together-') ? [['family', '패밀리', '가족 동작'] as const] : []),
                 ] as const).map(([value, label, difficulty]) => {
                   const active = value === 'single'
                     ? launch.colorGateVariant === 'solo-easy' || launch.colorGateVariant === 'together-easy'
-                    : launch.colorGateVariant === 'solo-normal' || launch.colorGateVariant === 'together-normal';
+                    : value === 'compound'
+                      ? launch.colorGateVariant === 'solo-normal' || launch.colorGateVariant === 'together-normal'
+                      : launch.colorGateVariant === 'together-family';
                   return (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setLaunch((s) => {
-                        const isTogether = s.colorGateVariant === 'together-easy' || s.colorGateVariant === 'together-normal';
-                        return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : (isTogether ? 'together-normal' : 'solo-normal') };
+                        const isTogether = s.colorGateVariant.startsWith('together-');
+                        return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : value === 'compound' ? (isTogether ? 'together-normal' : 'solo-normal') : 'together-family' };
                       })}
                       style={{
                         minWidth: 0, padding: '8px 4px', borderRadius: 10,
@@ -2688,7 +2699,9 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
+                  {isReactTrainRepetition
+                    ? '횟수'
+                    : isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
                     ? '라운드'
                     : isReactTrain || (isSpatial && isInstantMemoryLevel(levelId))
                       ? '훈련 시간'
@@ -2698,7 +2711,34 @@ function SettingsScreen({
                 </label>
               </div>
 
-              {isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
+              {isReactTrainRepetition ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[10, 15, 20, 30].map((r) => {
+                    const active = launch.targetReps === r;
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
+                        style={{
+                          flex: '1 1 90px',
+                          padding: '11px 10px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 13,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {r}회
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[7, 10, 15, 25].map((r) => {
                     const active = launch.targetReps === r;
@@ -3207,7 +3247,14 @@ function SettingsScreen({
 
           <button
             type="button"
-            onClick={() => onStart(levelId, launchSettingsForLevel(modeId, levelId, launch))}
+            onClick={() => {
+              if (document.fullscreenEnabled && !document.fullscreenElement) {
+                void document.documentElement.requestFullscreen().catch((error: Error) => {
+                  console.warn('[SPOMOVE] fullscreen request failed:', error.message);
+                });
+              }
+              onStart(levelId, launchSettingsForLevel(modeId, levelId, launch));
+            }}
             style={{
               width: '100%',
               padding: isFlowOrChallenge ? '12px 20px' : '17px 24px',

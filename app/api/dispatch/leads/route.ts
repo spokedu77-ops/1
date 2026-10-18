@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
+  evaluatePublicLeadRateLimit,
+  isHoneypotTripped,
+  rateLimitToResponse,
+} from '@/app/lib/server/publicLeadSpamGuard';
+import {
   buildEnvelopeOrThrow,
   createConsultLead,
   isConsultSchemaCompatibilityError,
@@ -27,6 +32,12 @@ export async function POST(req: NextRequest) {
     if (!body) {
       return NextResponse.json({ ok: false, error: '요청 본문이 올바르지 않습니다.' }, { status: 400 });
     }
+    if (isHoneypotTripped(body)) {
+      return NextResponse.json({ ok: true });
+    }
+    const rate = await evaluatePublicLeadRateLimit(req, 'dispatch-leads');
+    const rateRes = rateLimitToResponse(rate);
+    if (rateRes) return rateRes;
 
     const organization = typeof body.organization === 'string' ? body.organization.trim() : '';
     const manager = typeof body.manager === 'string' ? body.manager.trim() : '';

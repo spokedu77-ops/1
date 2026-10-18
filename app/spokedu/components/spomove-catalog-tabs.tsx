@@ -571,7 +571,7 @@ export default function SpomoveCatalogTabs() {
                 href={CATALOG_HREF}
                 className={marketingButtonPrimary}
               >
-                전체 프로그램 카탈로그 보기
+                프로그램 구성 보기
               </Link>
             ) : null}
           </div>

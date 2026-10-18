@@ -16,8 +16,11 @@ export type ContactInquiryOption = {
 
 export const CONTACT_SUCCESS_MESSAGE = '문의가 정상적으로 접수되었습니다.';
 
-export const CONTACT_API_FAILURE_MESSAGE =
-  '온라인 접수가 완료되지 않았습니다. 작성하신 내용은 현재 브라우저에 임시 보관되었습니다. 다시 시도하거나 전화·이메일·카카오채널로 문의해 주세요.';
+/** 서버 저장 실패가 확실할 때의 1차 안내 (명세 Phase 2-C) */
+export const CONTACT_SUBMIT_FAILURE_MESSAGE =
+  '문의가 접수되지 않았습니다. 작성한 내용을 확인한 뒤 다시 시도해 주세요.';
+
+export const CONTACT_API_FAILURE_MESSAGE = `${CONTACT_SUBMIT_FAILURE_MESSAGE} 온라인 접수가 완료되지 않아 작성하신 내용은 현재 브라우저에 임시 보관되었습니다. 전화·이메일·카카오채널로도 문의해 주세요.`;
 
 export const contactPageContent = {
   hero: {

@@ -8,11 +8,7 @@ import { buildGroupPlannedTotals } from '../lib/plannedRoundTotal';
 import { clampRoundIndex } from '../lib/roundFields';
 import { themeColorHexForSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { fetchAdminSessions } from '../lib/adminSessionsRequest';
-
-function assertUpdatedRow(data: { id?: string } | null, error: unknown, fallback: string) {
-  if (error) throw error;
-  if (!data?.id) throw new Error(fallback);
-}
+import { applySessionLinkedMileage } from '../lib/applySessionLinkedMileage';
 
 type SessionRow = {
   id?: string; title?: string; start_at?: string; end_at?: string; session_type?: string;
@@ -290,14 +286,18 @@ export function useClassManagement() {
   const updateMileageOnly = async (sessionId: string, mileageOption: string) => {
     if (!supabase) return false;
     try {
-      const { data, error } = await supabase
+      const { data: current, error } = await supabase
         .from('sessions')
-        .update({ mileage_option: mileageOption })
+        .select('mileage_option')
         .eq('id', sessionId)
-        .select('id')
         .maybeSingle();
-      
-      assertUpdatedRow(data, error, 'MILEAGE_SESSION_NOT_UPDATED');
+      if (error || !current) throw error ?? new Error('MILEAGE_SESSION_NOT_FOUND');
+      const result = await applySessionLinkedMileage({
+        sessionId,
+        mileage_option: current.mileage_option,
+        nextActionStr: mileageOption,
+      });
+      if (!result.ok) throw new Error(result.code ?? result.error ?? 'MILEAGE_SESSION_NOT_UPDATED');
       await fetchSessions();
       return true;
     } catch (err) {

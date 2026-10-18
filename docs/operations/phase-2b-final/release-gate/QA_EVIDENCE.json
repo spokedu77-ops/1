@@ -1,0 +1,201 @@
+{
+  "BUILD_ID": "_ES9aF7W_HG7GL-ES3qR_",
+  "HEAD": "ref: refs/heads/spokedu-security-audit-20261018",
+  "port": "3038",
+  "serverPid": 15164,
+  "checks": [
+    {
+      "label": "CATALOG_FULL_390",
+      "status": "PASS",
+      "probe": {
+        "h1Count": 1,
+        "h1": "SPOMOVE 프로그램 구성",
+        "iframe": 0,
+        "fallback": false,
+        "levels": true,
+        "seeDecideMove": true,
+        "ctaPrimary": true,
+        "ctaSecondary": true,
+        "ctaLab": true,
+        "activityCount": 6,
+        "imgCount": 8,
+        "imgsOk": true,
+        "imgStats": [
+          {
+            "alt": "SPOKEDU",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 네 방향에서 자극이 나타나는 방향 반응 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 연상 반응 — 바나나 이미지를 보고 패드 위에서 움직이는 ",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 목표 색이 순간적으로 나타나는 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE DIVE·리듬 현장 — 화면과 4색 패드를 함께 보며 움직",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 액션 반응 — 화면 속 캐릭터를 보고 전신으로 움직이는 현",
+            "ok": true
+          },
+          {
+            "alt": "SPOKEDU",
+            "ok": true
+          }
+        ],
+        "overflow": false,
+        "levelsIntro": true,
+        "activityIntro": true
+      }
+    },
+    {
+      "label": "CATALOG_FULL_941",
+      "status": "PASS",
+      "probe": {
+        "h1Count": 1,
+        "h1": "SPOMOVE 프로그램 구성",
+        "iframe": 0,
+        "fallback": false,
+        "levels": true,
+        "seeDecideMove": true,
+        "ctaPrimary": true,
+        "ctaSecondary": true,
+        "ctaLab": true,
+        "activityCount": 6,
+        "imgCount": 8,
+        "imgsOk": true,
+        "imgStats": [
+          {
+            "alt": "SPOKEDU",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 네 방향에서 자극이 나타나는 방향 반응 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 연상 반응 — 바나나 이미지를 보고 패드 위에서 움직이는 ",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 목표 색이 순간적으로 나타나는 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE DIVE·리듬 현장 — 화면과 4색 패드를 함께 보며 움직",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 액션 반응 — 화면 속 캐릭터를 보고 전신으로 움직이는 현",
+            "ok": true
+          },
+          {
+            "alt": "SPOKEDU",
+            "ok": true
+          }
+        ],
+        "overflow": false,
+        "levelsIntro": true,
+        "activityIntro": true
+      }
+    },
+    {
+      "label": "CATALOG_FULL_1440",
+      "status": "PASS",
+      "probe": {
+        "h1Count": 1,
+        "h1": "SPOMOVE 프로그램 구성",
+        "iframe": 0,
+        "fallback": false,
+        "levels": true,
+        "seeDecideMove": true,
+        "ctaPrimary": true,
+        "ctaSecondary": true,
+        "ctaLab": true,
+        "activityCount": 6,
+        "imgCount": 8,
+        "imgsOk": true,
+        "imgStats": [
+          {
+            "alt": "SPOKEDU",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 네 방향에서 자극이 나타나는 방향 반응 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 연상 반응 — 바나나 이미지를 보고 패드 위에서 움직이는 ",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 실제 화면 — 목표 색이 순간적으로 나타나는 장면",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE DIVE·리듬 현장 — 화면과 4색 패드를 함께 보며 움직",
+            "ok": true
+          },
+          {
+            "alt": "SPOMOVE 액션 반응 — 화면 속 캐릭터를 보고 전신으로 움직이는 현",
+            "ok": true
+          },
+          {
+            "alt": "SPOKEDU",
+            "ok": true
+          }
+        ],
+        "overflow": false,
+        "levelsIntro": true,
+        "activityIntro": true
+      }
+    }
+  ],
+  "journeys": [
+    {
+      "id": "A",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3038/spomove/catalog",
+      "note": "clicked visible catalog link"
+    },
+    {
+      "id": "B",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3038/spomove"
+    },
+    {
+      "id": "C",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3038/education?program=spomove#contact"
+    },
+    {
+      "id": "D",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3038/spokedu-lab"
+    }
+  ],
+  "routeSmoke": {
+    "status": "PASS",
+    "url": "http://127.0.0.1:3038/spomove/catalog"
+  },
+  "overall": "PASS"
+}

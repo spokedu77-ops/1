@@ -1,0 +1,87 @@
+﻿diff --git a/app/api/curriculum/leads/route.ts b/app/api/curriculum/leads/route.ts
+index 6a4c60ac..96573ff0 100644
+--- a/app/api/curriculum/leads/route.ts
++++ b/app/api/curriculum/leads/route.ts
+@@ -136,6 +136,37 @@ export async function POST(req: NextRequest) {
+     ].join('\n');
+ 
+     const supabase = getServiceSupabase();
++
++    {
++      const dedupeSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
++      const contentMarker = `lead_mode: ${leadMode}`;
++      const { data: recentRows } = await supabase
++        .from('consultations')
++        .select('id, content')
++        .eq('consult_type', 'center')
++        .eq('phone', phone)
++        .eq('parent_name', nameOrOrg)
++        .gte('created_at', dedupeSince)
++        .order('created_at', { ascending: false })
++        .limit(8);
++
++      const dupRow = (recentRows ?? []).find(
++        (r) =>
++          typeof r.content === 'string' &&
++          r.content.includes(contentMarker) &&
++          r.content.includes(`필요한 콘텐츠 유형: ${contentType}`) &&
++          (extra ? r.content.includes(extra.slice(0, 60)) : true),
++      );
++      if (dupRow?.id) {
++        return NextResponse.json({
++          ok: true,
++          duplicate: true,
++          lead_mode: leadMode,
++          leadId: dupRow.id,
++        });
++      }
++    }
++
+     const created = await createConsultLead(supabase, {
+       envelope,
+       parentName: nameOrOrg,
+diff --git a/app/spokedu/contact/contact-page-data.ts b/app/spokedu/contact/contact-page-data.ts
+index 4640dbad..f153732d 100644
+--- a/app/spokedu/contact/contact-page-data.ts
++++ b/app/spokedu/contact/contact-page-data.ts
+@@ -16,8 +16,11 @@ export type ContactInquiryOption = {
+ 
+ export const CONTACT_SUCCESS_MESSAGE = '문의가 정상적으로 접수되었습니다.';
+ 
+-export const CONTACT_API_FAILURE_MESSAGE =
+-  '온라인 접수가 완료되지 않았습니다. 작성하신 내용은 현재 브라우저에 임시 보관되었습니다. 다시 시도하거나 전화·이메일·카카오채널로 문의해 주세요.';
++/** 서버 저장 실패가 확실할 때의 1차 안내 (명세 Phase 2-C) */
++export const CONTACT_SUBMIT_FAILURE_MESSAGE =
++  '문의가 접수되지 않았습니다. 작성한 내용을 확인한 뒤 다시 시도해 주세요.';
++
++export const CONTACT_API_FAILURE_MESSAGE = `${CONTACT_SUBMIT_FAILURE_MESSAGE} 온라인 접수가 완료되지 않아 작성하신 내용은 현재 브라우저에 임시 보관되었습니다. 전화·이메일·카카오채널로도 문의해 주세요.`;
+ 
+ export const contactPageContent = {
+   hero: {
+diff --git a/app/spokedu/contact/inquiry-submit.test.ts b/app/spokedu/contact/inquiry-submit.test.ts
+index 256de55f..5769e846 100644
+--- a/app/spokedu/contact/inquiry-submit.test.ts
++++ b/app/spokedu/contact/inquiry-submit.test.ts
+@@ -105,6 +105,6 @@ describe('submitInquiry', () => {
+     );
+     const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+     expect(body.lead_mode).toBe('master');
+-    expect(body.cta_intent_id).toBe('master_handoff');
++    expect(body.cta_intent_id).toBe('master_org_inquiry');
+   });
+ });
+diff --git a/app/spokedu/contact/inquiry-submit.ts b/app/spokedu/contact/inquiry-submit.ts
+index 54a6a7f9..e43adc80 100644
+--- a/app/spokedu/contact/inquiry-submit.ts
++++ b/app/spokedu/contact/inquiry-submit.ts
+@@ -203,7 +203,9 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
+       partnership_type: payload.utilizationTarget || '구독·교육',
+       extra: formatCurriculumExtra(payload),
+       cta_intent_id:
+-        resolveCurriculumLeadMode(payload.inquiryPurpose) === 'master' ? 'master_handoff' : 'training_consult',
++        resolveCurriculumLeadMode(payload.inquiryPurpose) === 'master'
++          ? 'master_org_inquiry'
++          : 'training_consult',
+       acquisition: { entrySurface: 'direct' },
+     },
+   };

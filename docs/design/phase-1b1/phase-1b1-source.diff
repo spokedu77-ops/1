@@ -1,0 +1,615 @@
+﻿diff --git a/app/spokedu/components/home-web/home-hero.tsx b/app/spokedu/components/home-web/home-hero.tsx
+index 1c54130b..4253c0de 100644
+--- a/app/spokedu/components/home-web/home-hero.tsx
++++ b/app/spokedu/components/home-web/home-hero.tsx
+@@ -4,29 +4,34 @@ import { SPOKEDU_PATHS } from '../../data/public-routes';
+ import { HOME_HERO_IMAGE } from './home-web-assets';
+ import styles from './home-web.module.css';
+ 
+-/** Composition A — Editorial Split. Copy on the left text axis, one image bleeding to the right edge. */
++/** Phase 1-B1 — Desktop B / Mobile A in one component (responsive order & hierarchy). */
+ export function HomeHero() {
+   return (
+     <section className={styles.hero} aria-labelledby="home-hero-heading">
+       <div className={`${styles.rail} ${styles.heroGrid}`}>
+-        <div className={styles.heroCopy}>
+-          <p className={styles.heroBrand}>
+-            <strong>SPOKEDU</strong>
+-            <span>아동 · 청소년 · 특수 체육교육</span>
+-          </p>
+-          <h1 id="home-hero-heading" className={styles.displayHero}>
+-            MOVEMENT
+-            <br />
+-            BECOMES
+-            <br />
+-            LEARNING.
+-          </h1>
+-          <p className={styles.lead}>
+-            학교와 기관에서 직접 수업하고{' '}
+-            <br />
+-            현장에서 필요한 프로그램과 시스템을 만듭니다.
+-          </p>
+-          <div className={styles.actions}>
++        <div className={styles.heroText}>
++          <div className={styles.heroCopy}>
++            <p className={styles.heroEyebrow}>아동 · 청소년 · 특수 체육교육</p>
++            <h1 id="home-hero-heading" className={styles.heroH1}>
++              움직임으로
++              <br />
++              아이의 성장을
++              <br />
++              설계합니다.
++            </h1>
++            <p className={styles.heroEnglish}>
++              MOVEMENT
++              <br />
++              BECOMES
++              <br />
++              LEARNING.
++            </p>
++            <p className={styles.heroLead}>
++              학교와 기관에서 직접 수업하고 아이의 움직임과 참여 수준에 맞는 프로그램과 지도자용 수업
++              시스템을 만듭니다.
++            </p>
++          </div>
++          <div className={styles.heroActions}>
+             <Link href={SPOKEDU_PATHS.education} className={`${styles.btn} ${styles.btnPrimary}`}>
+               수업 알아보기
+             </Link>
+diff --git a/app/spokedu/components/home-web/home-web.module.css b/app/spokedu/components/home-web/home-web.module.css
+index ac5203d2..220c20b9 100644
+--- a/app/spokedu/components/home-web/home-web.module.css
++++ b/app/spokedu/components/home-web/home-web.module.css
+@@ -301,7 +301,7 @@
+ 
+ /* 7. Sections --------------------------------------------------------- */
+ 
+-/* Hero — Editorial Split, image bleeds to the right edge */
++/* Hero — Phase 1-B1: desktop B (EN display first), mobile A (KO H1 first) */
+ .hero {
+   overflow: hidden;
+   background: #fff;
+@@ -315,47 +315,61 @@
+   padding-block: clamp(40px, 5vw, 72px);
+ }
+ 
+-.heroCopy {
++.heroText {
+   grid-column: 1 / 7;
++  display: flex;
++  flex-direction: column;
++  gap: 36px;
+   padding-right: 12px;
+ }
+ 
+-.heroBrand {
++.heroCopy {
+   display: flex;
+-  align-items: center;
+-  gap: 12px;
+-  margin-bottom: 28px;
+-  font-size: 13px;
+-  line-height: 1.3;
++  flex-direction: column;
+ }
+ 
+-.heroBrand strong {
+-  letter-spacing: 0.14em;
+-  color: var(--navy);
++.heroEyebrow {
++  margin-bottom: 20px;
++  font-size: 12px;
++  line-height: 1.35;
++  font-weight: 600;
++  letter-spacing: 0.02em;
++  color: var(--muted);
+ }
+ 
+-.heroBrand span {
+-  color: var(--muted);
++.heroH1 {
++  font-size: clamp(36px, 2.9vw, 42px);
++  line-height: 1.18;
++  font-weight: 800;
++  letter-spacing: -0.03em;
++  color: var(--navy);
++  text-wrap: balance;
+ }
+ 
+-.heroBrand span::before {
+-  content: '';
+-  display: inline-block;
+-  width: 1px;
+-  height: 11px;
+-  margin-right: 12px;
+-  background: var(--line-strong);
+-  vertical-align: -1px;
++.heroEnglish {
++  margin-top: 0;
++  font-size: clamp(20px, 6.9vw, 100px);
++  line-height: 0.92;
++  font-weight: 800;
++  letter-spacing: -0.045em;
++  color: var(--blue);
++  text-wrap: balance;
+ }
+ 
+-.heroCopy .lead {
+-  margin-top: 28px;
+-  max-width: 30em;
++.heroLead {
++  margin-top: 24px;
++  max-width: 32em;
++  font-size: clamp(16px, 1.1vw, 17px);
++  line-height: 1.65;
++  font-weight: 400;
+   color: var(--ink);
++  text-wrap: pretty;
+ }
+ 
+-.heroCopy .actions {
+-  margin-top: 36px;
++.heroActions {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 12px;
+ }
+ 
+ .heroVisual {
+@@ -363,7 +377,11 @@
+   margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
+ }
+ 
+-/* Gateway — decision index, one row rule for every option */
++.heroVisual .media {
++  border-radius: 0;
++}
++
++/* Gateway — Phase 1-B1: three full-width cards, no step numbers */
+ .gateway .rail {
+   border-top: 1px solid var(--line);
+   padding-top: var(--space-section);
+@@ -373,52 +391,114 @@
+   padding-top: 0;
+ }
+ 
+-.gatewayGrid {
+-  display: grid;
+-  grid-template-columns: repeat(12, minmax(0, 1fr));
+-  column-gap: var(--col-gap);
+-  row-gap: 32px;
+-  align-items: start;
++.gatewayHead {
++  max-width: 640px;
++  margin-bottom: clamp(32px, 4vw, 48px);
+ }
+ 
+-.gatewayTitle {
+-  grid-column: 1 / 6;
++.gatewayHead .eyebrow {
++  margin-bottom: 16px;
+ }
+ 
+-.gatewayList {
+-  grid-column: 6 / 13;
++.gatewayHeading {
++  font-size: clamp(28px, 3.2vw, 40px);
++  line-height: 1.12;
++  font-weight: 700;
++  letter-spacing: -0.03em;
++  color: var(--navy);
++  text-wrap: balance;
++}
++
++.gatewayIntro {
++  margin-top: 16px;
++  font-size: clamp(15px, 1.2vw, 17px);
++  line-height: 1.6;
++  color: var(--muted);
++  text-wrap: pretty;
+ }
+ 
+-.gatewayRow {
++.gatewayCards {
+   display: grid;
+-  grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.25fr) 32px;
+-  column-gap: var(--col-gap);
+-  align-items: baseline;
+-  padding: 28px 0;
+-  border-top: 1px solid var(--line);
++  grid-template-columns: repeat(3, minmax(0, 1fr));
++  gap: var(--col-gap);
++  align-items: stretch;
++}
++
++.gatewayCard {
++  display: flex;
++  flex-direction: column;
++  min-height: 100%;
++  padding: 0;
++  border-radius: 16px;
++  border: 1px solid var(--line);
++  background: var(--white);
+   color: inherit;
+   text-decoration: none;
++  overflow: hidden;
++  transition:
++    border-color var(--t-fast) var(--ease),
++    box-shadow var(--t-standard) var(--ease);
++}
++
++.gatewayCardAccent {
++  display: block;
++  height: 4px;
++  width: 100%;
++  flex-shrink: 0;
++}
++
++.gatewayAccentOrange {
++  background: #fc5606;
++}
++
++.gatewayAccentTeal {
++  background: #0ca678;
+ }
+ 
+-.gatewayRow:last-child {
+-  border-bottom: 1px solid var(--line);
++.gatewayAccentBlue {
++  background: var(--blue);
++}
++
++.gatewayCardAudience {
++  padding: 20px 22px 0;
++  font-size: 12px;
++  line-height: 1.35;
++  font-weight: 700;
++  letter-spacing: 0.06em;
++  text-transform: uppercase;
++  color: var(--muted);
+ }
+ 
+-.gatewayRow .heading {
++.gatewayCardTitle {
++  padding: 10px 22px 0;
++  font-size: clamp(19px, 1.55vw, 24px);
++  line-height: 1.28;
++  font-weight: 700;
++  letter-spacing: -0.02em;
++  color: var(--navy);
+   transition: color var(--t-fast) var(--ease);
+ }
+ 
+-.gatewayRow .body {
++.gatewayCardBody {
++  flex: 1;
++  padding: 12px 22px 0;
++  font-size: clamp(14px, 1vw, 16px);
++  line-height: 1.62;
+   color: var(--muted);
++  text-wrap: pretty;
+ }
+ 
+-.gatewayRow i {
+-  justify-self: end;
+-  font-style: normal;
+-  font-size: 20px;
+-  line-height: 1;
++.gatewayCardLink {
++  display: flex;
++  align-items: center;
++  min-height: 52px;
++  margin-top: 20px;
++  padding: 14px 22px 18px;
++  border-top: 1px solid var(--line);
++  font-size: 15px;
++  font-weight: 600;
++  line-height: 1.3;
+   color: var(--navy);
+-  transition: transform var(--t-fast) var(--ease);
+ }
+ 
+ /* Method — one repeated step structure, 01 → 02 → 03 */
+@@ -699,12 +779,16 @@
+   }
+ 
+   .textLink:hover i,
+-  .gatewayRow:hover i,
+   .finalLinks a:hover i {
+     transform: translateX(2px);
+   }
+ 
+-  .gatewayRow:hover .heading {
++  .gatewayCard:hover {
++    border-color: rgba(36, 93, 255, 0.35);
++    box-shadow: 0 12px 32px rgba(11, 31, 70, 0.08);
++  }
++
++  .gatewayCard:hover .gatewayCardTitle {
+     color: var(--blue);
+   }
+ 
+@@ -721,6 +805,70 @@
+   }
+ }
+ 
++/* Hero + Gateway — desktop B hierarchy from 1024px */
++@media (min-width: 1024px) {
++  .heroGrid {
++    grid-template-columns: repeat(12, minmax(0, 1fr));
++    grid-template-areas: none;
++  }
++
++  .heroText {
++    display: flex;
++    flex-direction: column;
++    grid-column: 1 / 7;
++    gap: 36px;
++  }
++
++  .heroCopy {
++    display: flex;
++    flex-direction: column;
++    max-width: none;
++  }
++
++  .heroEyebrow {
++    order: 1;
++    margin-bottom: 24px;
++  }
++
++  .heroEnglish {
++    order: 2;
++    margin-top: 0;
++    font-size: clamp(72px, 6.9vw, 100px);
++  }
++
++  .heroH1 {
++    order: 3;
++    margin-top: 20px;
++    font-size: 42px;
++  }
++
++  .heroLead {
++    order: 4;
++    margin-top: 24px;
++  }
++
++  .heroActions {
++    max-width: none;
++  }
++
++  .heroVisual {
++    grid-column: 7 / 13;
++    margin-top: 0;
++    margin-inline: 0;
++    margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
++  }
++
++  .heroVisual .media {
++    border-radius: 0;
++    aspect-ratio: 4 / 3;
++  }
++
++  .gatewayCards {
++    grid-template-columns: repeat(3, minmax(0, 1fr));
++    gap: var(--col-gap);
++  }
++}
++
+ /* 8. Responsive ------------------------------------------------------- */
+ @media (min-width: 768px) {
+   .root {
+@@ -746,27 +894,44 @@
+   }
+ 
+   .heroGrid {
+-    display: block;
++    display: grid;
++    grid-template-columns: 1fr;
++    grid-template-areas:
++      'copy'
++      'visual'
++      'actions';
+     padding-block: clamp(48px, 7vw, 72px) 0;
+   }
+ 
++  .heroText {
++    display: contents;
++  }
++
+   .heroCopy {
++    grid-area: copy;
+     padding-right: 0;
+     max-width: 640px;
+   }
+ 
++  .heroActions {
++    grid-area: actions;
++    max-width: 640px;
++  }
++
+   .heroVisual {
+-    margin-top: clamp(40px, 6vw, 56px);
++    grid-area: visual;
++    margin-top: clamp(28px, 4vw, 40px);
+     margin-inline: calc(-1 * var(--gutter));
++    margin-right: calc(-1 * var(--gutter));
+   }
+ 
+   .heroVisual .media {
+     aspect-ratio: 16 / 10;
+   }
+ 
+-  .gatewayTitle,
+-  .gatewayList {
+-    grid-column: 1 / -1;
++  .gatewayCards {
++    grid-template-columns: 1fr;
++    gap: 12px;
+   }
+ 
+   .steps {
+@@ -864,50 +1029,51 @@
+     padding-top: 48px;
+   }
+ 
+-  .heroBrand {
+-    margin-bottom: 24px;
++  .heroEyebrow {
++    margin-bottom: 16px;
+   }
+ 
+-  .heroCopy .lead {
+-    margin-top: 24px;
++  .heroH1 {
++    font-size: 36px;
+   }
+ 
+-  .heroCopy .actions {
+-    margin-top: 28px;
++  .heroEnglish {
++    margin-top: 16px;
++    font-size: 20px;
++    line-height: 1.05;
++    letter-spacing: -0.02em;
++  }
++
++  .heroLead {
++    margin-top: 20px;
++    font-size: 16px;
+   }
+ 
+   .heroVisual {
+-    margin-top: 40px;
++    margin-top: 28px;
+   }
+ 
+-  /* 3:2 keeps both the jumping child and the instructor inside the frame at phone widths. */
+   .heroVisual .media {
+     aspect-ratio: 3 / 2;
++    border-radius: 16px;
+   }
+ 
+-  .actions {
+-    flex-direction: column;
++  .heroActions {
++    flex-direction: row;
+     align-items: stretch;
++    margin-top: 20px;
+   }
+ 
+-  .btn {
+-    width: 100%;
+-  }
+-
+-  .gatewayRow {
+-    grid-template-columns: 40px minmax(0, 1fr) 24px;
+-    row-gap: 8px;
+-    padding: 22px 0;
+-  }
+-
+-  .gatewayRow .body {
+-    grid-column: 2;
+-    font-size: 15px;
++  .heroActions .btn {
++    flex: 1 1 0;
++    min-width: 0;
++    width: auto;
++    min-height: 48px;
++    padding-inline: 14px;
+   }
+ 
+-  .gatewayRow i {
+-    grid-row: 1;
+-    grid-column: 3;
++  .gatewayCardLink {
++    min-height: 48px;
+   }
+ 
+   .step {
+diff --git a/app/spokedu/components/home-web/service-gateway.tsx b/app/spokedu/components/home-web/service-gateway.tsx
+index 9b737ce9..6b7f69ba 100644
+--- a/app/spokedu/components/home-web/service-gateway.tsx
++++ b/app/spokedu/components/home-web/service-gateway.tsx
+@@ -2,48 +2,58 @@ import Link from 'next/link';
+ import { SPOKEDU_PATHS } from '../../data/public-routes';
+ import styles from './home-web.module.css';
+ 
+-const GATEWAY_ROWS = [
++const GATEWAY_CARDS = [
+   {
+-    index: '01',
++    id: 'education',
++    accent: styles.gatewayAccentOrange,
++    audience: '기관·학교 담당자',
+     title: '기관·학교 체육수업',
+     body: '학교와 기관의 환경과 대상에 맞춰 수업을 설계하고 운영합니다.',
++    linkLabel: '기관 수업 안내 →',
+     href: SPOKEDU_PATHS.education,
+   },
+   {
+-    index: '02',
++    id: 'private',
++    accent: styles.gatewayAccentTeal,
++    audience: '학부모',
+     title: '개인·소그룹 수업',
+-    body: '아동의 특성과 목표에 맞춘 체육교육을 진행합니다.',
++    body: '아이의 움직임과 참여 수준에 맞춰 수업을 진행합니다.',
++    linkLabel: '개인 수업 안내 →',
+     href: SPOKEDU_PATHS.private,
+   },
+   {
+-    index: '03',
++    id: 'lab',
++    accent: styles.gatewayAccentBlue,
++    audience: '지도자·센터 운영자',
+     title: 'SPOKEDU LAB',
+-    body: '수업자료와 운영을 연결하는 구독 시스템입니다.',
++    body: '수업 콘텐츠부터 운영과 기록까지 연결하는 지도자용 수업 시스템입니다.',
++    linkLabel: 'LAB 둘러보기 →',
+     href: SPOKEDU_PATHS.subscription,
+   },
+ ] as const;
+ 
+-/** Decision gateway — three options, one identical row rule, no thumbnails competing with the hero. */
++/** Phase 1-B1 — three equal cards, full-card links, no decorative step numbers. */
+ export function ServiceGateway() {
+   return (
+     <section className={`${styles.section} ${styles.gateway}`} aria-labelledby="home-gateway-heading">
+       <div className={styles.rail}>
+-        <div className={styles.gatewayGrid}>
+-          <h2 id="home-gateway-heading" className={`${styles.displaySection} ${styles.gatewayTitle}`}>
+-            무엇을
+-            <br />
+-            찾고 계신가요?
++        <header className={styles.gatewayHead}>
++          <p className={styles.eyebrow}>CHOOSE YOUR PATH</p>
++          <h2 id="home-gateway-heading" className={styles.gatewayHeading}>
++            필요한 서비스로 바로 이동하세요.
+           </h2>
+-          <div className={styles.gatewayList}>
+-            {GATEWAY_ROWS.map((row) => (
+-              <Link key={row.index} href={row.href} className={styles.gatewayRow}>
+-                <span className={styles.meta}>{row.index}</span>
+-                <strong className={styles.heading}>{row.title}</strong>
+-                <p className={styles.body}>{row.body}</p>
+-                <i aria-hidden="true">→</i>
+-              </Link>
+-            ))}
+-          </div>
++          <p className={styles.gatewayIntro}>원하시는 수업이나 수업자료 서비스를 선택해 보세요.</p>
++        </header>
++        <div className={styles.gatewayCards}>
++          {GATEWAY_CARDS.map((card) => (
++            <Link key={card.id} href={card.href} className={styles.gatewayCard}>
++              <span className={`${styles.gatewayCardAccent} ${card.accent}`} aria-hidden="true" />
++              <span className={styles.gatewayCardAudience}>{card.audience}</span>
++              <strong className={styles.gatewayCardTitle}>{card.title}</strong>
++              <p className={styles.gatewayCardBody}>{card.body}</p>
++              <span className={styles.gatewayCardLink}>{card.linkLabel}</span>
++            </Link>
++          ))}
+         </div>
+       </div>
+     </section>

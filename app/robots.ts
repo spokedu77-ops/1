@@ -22,7 +22,9 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/admin',
           '/api',
-          '/spokedu-lab',
+          // Exact `/spokedu-lab` is the public landing (trailingSlash off; `/spokedu-lab/` 308s here).
+          // A prefix disallow would block that landing. Subpaths stay blocked; terms/privacy stay Allow.
+          '/spokedu-lab/',
           '/spokedu-master',
           '/login',
           '/portal',

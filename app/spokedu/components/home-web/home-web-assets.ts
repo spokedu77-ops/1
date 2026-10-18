@@ -9,6 +9,8 @@
  * Every entry carries an explicit `objectPosition` so crops are intentional, not accidental.
  */
 
+import type { FieldRecordSlug } from '../../data/field-records-catalog';
+
 export type HomeVisual = {
   readonly src: string;
   readonly alt: string;
@@ -16,11 +18,11 @@ export type HomeVisual = {
   readonly objectPosition: string;
 };
 
-/** BRAND — one dynamic, movement-first scene that leaves room for large type. */
+/** BRAND — coaching scene; directed editorial, not tied to a named field record. */
 export const HOME_HERO_IMAGE: HomeVisual = {
-  src: '/images/spokedu/home/field-editorial/home-hero-gym-motion.jpg',
-  alt: '체육관에서 허들을 뛰어넘는 아이와 곁에서 지켜보는 지도자',
-  objectPosition: '62% 50%',
+  src: '/images/spokedu/home/field-editorial/home-hero-coaching.jpg',
+  alt: '지도자와 아이가 함께 움직이는 체육 수업 장면',
+  objectPosition: '50% 50%',
 };
 
 /** 01 FIELD · 02 CONTENT · 03 SYSTEM — same 4:3 frame, same baseline. */
@@ -43,6 +45,7 @@ export const HOME_METHOD_VISUALS: readonly HomeVisual[] = [
 ];
 
 export type HomeFieldRecord = HomeVisual & {
+  readonly slug: FieldRecordSlug;
   readonly title: string;
   readonly place: string;
   readonly href: string;
@@ -51,6 +54,7 @@ export type HomeFieldRecord = HomeVisual & {
 /** PROOF — real field photography only. First entry is the primary case. */
 export const HOME_FIELD_RECORDS: readonly HomeFieldRecord[] = [
   {
+    slug: 'dongjak-spomove',
     title: 'SPOMOVE',
     place: '동작거점 우리동네키움센터',
     // Tighter real crop of the same scene: screen + children, no ceiling/projector.
@@ -60,6 +64,7 @@ export const HOME_FIELD_RECORDS: readonly HomeFieldRecord[] = [
     href: '/records/dongjak-spomove',
   },
   {
+    slug: 'donghaeng-special-pe',
     title: '특수체육',
     place: '서울 중구 찾아가는 동행 체육교실',
     src: '/images/spokedu/records/donghaeng-special-pe-field.jpg',
@@ -68,6 +73,7 @@ export const HOME_FIELD_RECORDS: readonly HomeFieldRecord[] = [
     href: 'https://blog.naver.com/spokedutogether/224338186918',
   },
   {
+    slug: 'maedong-sports-stepup',
     title: '스포츠 스텝업',
     place: '매동초등학교 · 종로거점형키움센터',
     src: '/images/spokedu/records/maedong-sports-stepup.jpg',

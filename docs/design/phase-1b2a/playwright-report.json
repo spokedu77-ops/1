@@ -1,0 +1,22 @@
+{
+  "overflow": {
+    "390": false,
+    "834": false,
+    "1024": false,
+    "1440": false
+  },
+  "contrast": {
+    "darkHeadingColor": "rgb(255, 255, 255)",
+    "navyToken": "#0b1f46"
+  },
+  "captures": [
+    "method-A-1440.png",
+    "records-A-1440.png",
+    "method-A-390.png",
+    "records-A-390.png",
+    "method-B-1440.png",
+    "records-B-1440.png",
+    "method-B-390.png",
+    "records-B-390.png"
+  ]
+}

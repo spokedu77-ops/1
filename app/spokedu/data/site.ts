@@ -1,4 +1,11 @@
-import { brandChannels, brandContactLinks, brandProfile, isChannelLive, type BrandChannel } from './brand';
+import {
+  brandChannels,
+  brandContactLinks,
+  brandProfile,
+  getPublicFooterLegalLine,
+  isChannelLive,
+  type BrandChannel,
+} from './brand';
 import { getLiveExternalChannels } from './external-channels';
 import { SPOKEDU_LEGACY_PREFIX, SPOKEDU_PATHS } from './public-routes';
 
@@ -27,7 +34,7 @@ export const siteBrand = {
   serviceArea: brandProfile.serviceArea,
 } as const;
 
-export { brandProfile, brandContactLinks, brandChannels, isChannelLive };
+export { brandProfile, brandContactLinks, brandChannels, getPublicFooterLegalLine, isChannelLive };
 export { getLiveExternalChannels };
 export type { BrandChannel };
 

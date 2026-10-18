@@ -1,0 +1,30 @@
+{
+  "BUILD_ID": "VjP2ttvpdcToEnUMrBN4y",
+  "port": "3011",
+  "mode": "before",
+  "viewports": {
+    "941": {
+      "heroHeight": 465.75,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "height": 44,
+        "pass": true
+      },
+      "secondary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "height": 44
+      },
+      "gridColumns": "459.344px 391.312px",
+      "englishFontSize": "43.286px",
+      "englishColor": "rgb(11, 31, 70)",
+      "overflowX": false
+    }
+  }
+}

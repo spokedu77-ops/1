@@ -159,7 +159,7 @@ export const spomoveProgramPage = {
       },
     ] as const,
     catalogCta: {
-      label: '전체 프로그램 보기',
+      label: '프로그램 구성 보기',
       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
       trackLabel: 'spomove-content-catalog',
     },
@@ -170,7 +170,7 @@ export const spomoveProgramPage = {
     eyebrow: 'EXPERIENCE',
     titleLines: ['하나의 화면이', '여러 움직임으로 이어집니다.'] as const,
     catalogCta: {
-      label: '전체 프로그램 보기',
+      label: '프로그램 구성 보기',
       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
       trackLabel: 'spomove-experience-catalog',
     },
@@ -340,7 +340,7 @@ export const spomoveProgramPage = {
     visualAlt: 'SPOKEDU LAB 실제 화면 — SPOMOVE 추천',
     objectPosition: '50% 74%',
     primaryCta: {
-      label: 'SPOMOVE 프로그램 보기',
+      label: '프로그램 구성 보기',
       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
       trackLabel: 'spomove-master-catalog',
     },
@@ -401,7 +401,7 @@ export const spomoveProgramPage = {
     titleLines: ['SPOMOVE를', '수업에 적용해보세요.'] as const,
     title: 'SPOMOVE를 수업에 적용해보세요.',
     catalogCta: {
-      label: '전체 프로그램 보기',
+      label: '프로그램 구성 보기',
       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
       trackLabel: 'spomove-final-catalog',
     },

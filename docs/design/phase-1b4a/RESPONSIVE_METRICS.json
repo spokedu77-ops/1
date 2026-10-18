@@ -1,0 +1,637 @@
+{
+  "BUILD_ID": "VjP2ttvpdcToEnUMrBN4y",
+  "port": "3008",
+  "viewports": {
+    "390": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 57,
+        "bottom": 816.3125,
+        "left": 0,
+        "right": 390,
+        "height": 759.3125
+      },
+      "h1": {
+        "top": 121.890625,
+        "bottom": 220.140625,
+        "left": 20,
+        "right": 370,
+        "height": 98.25
+      },
+      "english": {
+        "rect": {
+          "top": 220.140625,
+          "bottom": 325.9375,
+          "left": 20,
+          "right": 370,
+          "height": 105.796875
+        },
+        "fontSize": "36px",
+        "lineHeight": "35.28px"
+      },
+      "image": {
+        "top": 556.3125,
+        "bottom": 816.3125,
+        "left": 0,
+        "right": 390,
+        "height": 260
+      },
+      "primary": {
+        "top": 408.3125,
+        "bottom": 456.3125,
+        "left": 20,
+        "right": 370,
+        "height": 48,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 468.3125,
+        "bottom": 516.3125,
+        "left": 20,
+        "right": 370,
+        "height": 48
+      },
+      "grid": {
+        "display": "block",
+        "gridTemplateColumns": "repeat(12, minmax(0px, 1fr))",
+        "gridTemplateAreas": "none",
+        "columnGap": "24px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 390,
+        "h": 844
+      }
+    },
+    "767": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 0,
+        "bottom": 1061.921875,
+        "left": 0,
+        "right": 767,
+        "height": 1061.921875
+      },
+      "h1": {
+        "top": 64.890625,
+        "bottom": 179.125,
+        "left": 20,
+        "right": 660,
+        "height": 114.234375
+      },
+      "english": {
+        "rect": {
+          "top": 179.125,
+          "bottom": 320.21875,
+          "left": 20,
+          "right": 660,
+          "height": 141.09375
+        },
+        "fontSize": "48px",
+        "lineHeight": "47.04px"
+      },
+      "image": {
+        "top": 550.59375,
+        "bottom": 1061.921875,
+        "left": 0,
+        "right": 767,
+        "height": 511.328125
+      },
+      "primary": {
+        "top": 402.59375,
+        "bottom": 450.59375,
+        "left": 20,
+        "right": 660,
+        "height": 48,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 462.59375,
+        "bottom": 510.59375,
+        "left": 20,
+        "right": 660,
+        "height": 48
+      },
+      "grid": {
+        "display": "block",
+        "gridTemplateColumns": "repeat(12, minmax(0px, 1fr))",
+        "gridTemplateAreas": "none",
+        "columnGap": "24px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 767,
+        "h": 861
+      }
+    },
+    "768": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 57,
+        "bottom": 477.0625,
+        "left": 0,
+        "right": 768,
+        "height": 420.0625
+      },
+      "h1": {
+        "top": 112.59375,
+        "bottom": 215.15625,
+        "left": 32,
+        "right": 400.546875,
+        "height": 102.5625
+      },
+      "english": {
+        "rect": {
+          "top": 215.15625,
+          "bottom": 324.5625,
+          "left": 32,
+          "right": 400.546875,
+          "height": 109.40625
+        },
+        "fontSize": "38px",
+        "lineHeight": "36.48px"
+      },
+      "image": {
+        "top": 149.296875,
+        "bottom": 384.75,
+        "left": 422.046875,
+        "right": 736,
+        "height": 235.453125
+      },
+      "primary": {
+        "top": 393.0625,
+        "bottom": 437.0625,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 393.0625,
+        "bottom": 437.0625,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44
+      },
+      "grid": {
+        "display": "grid",
+        "gridTemplateColumns": "368.547px 313.953px",
+        "gridTemplateAreas": "none",
+        "columnGap": "21.504px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 768,
+        "h": 861
+      }
+    },
+    "834": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 57,
+        "bottom": 481.609375,
+        "left": 0,
+        "right": 834,
+        "height": 424.609375
+      },
+      "h1": {
+        "top": 114.28125,
+        "bottom": 216.984375,
+        "left": 32,
+        "right": 435.1875,
+        "height": 102.703125
+      },
+      "english": {
+        "rect": {
+          "top": 216.984375,
+          "bottom": 327.421875,
+          "left": 32,
+          "right": 435.1875,
+          "height": 110.4375
+        },
+        "fontSize": "38.364px",
+        "lineHeight": "36.8294px"
+      },
+      "image": {
+        "top": 140.5,
+        "bottom": 398.09375,
+        "left": 458.53125,
+        "right": 802,
+        "height": 257.59375
+      },
+      "primary": {
+        "top": 395.921875,
+        "bottom": 439.921875,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 395.921875,
+        "bottom": 439.921875,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44
+      },
+      "grid": {
+        "display": "grid",
+        "gridTemplateColumns": "403.188px 343.469px",
+        "gridTemplateAreas": "none",
+        "columnGap": "23.352px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 834,
+        "h": 861
+      }
+    },
+    "941": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 57,
+        "bottom": 522.75,
+        "left": 0,
+        "right": 941,
+        "height": 465.75
+      },
+      "h1": {
+        "top": 119.640625,
+        "bottom": 235.46875,
+        "left": 32,
+        "right": 491.34375,
+        "height": 115.828125
+      },
+      "english": {
+        "rect": {
+          "top": 235.46875,
+          "bottom": 360.109375,
+          "left": 32,
+          "right": 491.34375,
+          "height": 124.640625
+        },
+        "fontSize": "43.286px",
+        "lineHeight": "41.5546px"
+      },
+      "image": {
+        "top": 143.125,
+        "bottom": 436.609375,
+        "left": 517.6875,
+        "right": 909,
+        "height": 293.484375
+      },
+      "primary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44
+      },
+      "grid": {
+        "display": "grid",
+        "gridTemplateColumns": "459.344px 391.312px",
+        "gridTemplateAreas": "none",
+        "columnGap": "26.348px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 941,
+        "h": 861
+      }
+    },
+    "1023": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 57,
+        "bottom": 549.078125,
+        "left": 0,
+        "right": 1023,
+        "height": 492.078125
+      },
+      "h1": {
+        "top": 123.734375,
+        "bottom": 246.828125,
+        "left": 32,
+        "right": 534.390625,
+        "height": 123.09375
+      },
+      "english": {
+        "rect": {
+          "top": 246.828125,
+          "bottom": 382.34375,
+          "left": 32,
+          "right": 534.390625,
+          "height": 135.515625
+        },
+        "fontSize": "47.058px",
+        "lineHeight": "45.1757px"
+      },
+      "image": {
+        "top": 142.546875,
+        "bottom": 463.515625,
+        "left": 563.03125,
+        "right": 991,
+        "height": 320.96875
+      },
+      "primary": {
+        "top": 453.9375,
+        "bottom": 497.9375,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 453.9375,
+        "bottom": 497.9375,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44
+      },
+      "grid": {
+        "display": "grid",
+        "gridTemplateColumns": "502.391px 427.969px",
+        "gridTemplateAreas": "none",
+        "columnGap": "28.644px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 1023,
+        "h": 861
+      }
+    },
+    "1024": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 73,
+        "bottom": 655.484375,
+        "left": 0,
+        "right": 1024,
+        "height": 582.484375
+      },
+      "h1": {
+        "top": 141.078125,
+        "bottom": 251.140625,
+        "left": 32,
+        "right": 488,
+        "height": 110.0625
+      },
+      "english": {
+        "rect": {
+          "top": 251.140625,
+          "bottom": 465.921875,
+          "left": 32,
+          "right": 488,
+          "height": 214.78125
+        },
+        "fontSize": "77.824px",
+        "lineHeight": "71.5981px"
+      },
+      "image": {
+        "top": 176.734375,
+        "bottom": 551.734375,
+        "left": 524,
+        "right": 1024,
+        "height": 375
+      },
+      "primary": {
+        "top": 556.296875,
+        "bottom": 604.296875,
+        "left": 32,
+        "right": 159.359375,
+        "height": 48,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 556.296875,
+        "bottom": 604.296875,
+        "left": 171.359375,
+        "right": 324.640625,
+        "height": 48
+      },
+      "grid": {
+        "display": "grid",
+        "gridTemplateColumns": "58px 58px 58px 58px 58px 58px 58px 58px 58px 58px 58px 58px",
+        "gridTemplateAreas": "none",
+        "columnGap": "24px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 1024,
+        "h": 861
+      }
+    },
+    "1440": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 73,
+        "bottom": 824.546875,
+        "left": 0,
+        "right": 1440,
+        "height": 751.546875
+      },
+      "h1": {
+        "top": 161.890625,
+        "bottom": 309.6875,
+        "left": 84,
+        "right": 696,
+        "height": 147.796875
+      },
+      "english": {
+        "rect": {
+          "top": 309.6875,
+          "bottom": 607.765625,
+          "left": 84,
+          "right": 696,
+          "height": 298.078125
+        },
+        "fontSize": "108px",
+        "lineHeight": "99.36px"
+      },
+      "image": {
+        "top": 183.265625,
+        "bottom": 714.265625,
+        "left": 732,
+        "right": 1440,
+        "height": 531
+      },
+      "primary": {
+        "top": 704.546875,
+        "bottom": 752.546875,
+        "left": 84,
+        "right": 211.359375,
+        "height": 48,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 704.546875,
+        "bottom": 752.546875,
+        "left": 223.359375,
+        "right": 376.640625,
+        "height": 48
+      },
+      "grid": {
+        "display": "grid",
+        "gridTemplateColumns": "84px 84px 84px 84px 84px 84px 84px 84px 84px 84px 84px 84px",
+        "gridTemplateAreas": "none",
+        "columnGap": "24px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "941-h700": {
+      "dom": {
+        "h1Count": 1,
+        "heroImages": 1,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab"
+      },
+      "hero": {
+        "top": 57,
+        "bottom": 522.75,
+        "left": 0,
+        "right": 941,
+        "height": 465.75
+      },
+      "h1": {
+        "top": 119.640625,
+        "bottom": 235.46875,
+        "left": 32,
+        "right": 491.34375,
+        "height": 115.828125
+      },
+      "english": {
+        "rect": {
+          "top": 235.46875,
+          "bottom": 360.109375,
+          "left": 32,
+          "right": 491.34375,
+          "height": 124.640625
+        },
+        "fontSize": "43.286px",
+        "lineHeight": "41.5546px"
+      },
+      "image": {
+        "top": 143.125,
+        "bottom": 436.609375,
+        "left": 517.6875,
+        "right": 909,
+        "height": 293.484375
+      },
+      "primary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "inFirstViewport": true,
+        "fullyInFirstViewport": true
+      },
+      "secondary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44
+      },
+      "grid": {
+        "display": "grid",
+        "gridTemplateColumns": "459.344px 391.312px",
+        "gridTemplateAreas": "none",
+        "columnGap": "26.348px"
+      },
+      "heroCopy": {
+        "fontSize": "16px"
+      },
+      "overflowX": false,
+      "viewport": {
+        "w": 941,
+        "h": 700
+      }
+    }
+  },
+  "beforeAfterNote": "Side-by-side: hero-941-before-reference.png (pre-B4A git) vs hero-941.png (B4A), same 941×861 viewport"
+}

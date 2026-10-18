@@ -25,6 +25,7 @@ import {
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
 import { SESSION_TYPE_OPTIONS } from '../lib/sessionTypeCategory';
 import { resolveDefaultSessionPrice } from '../lib/bulkSessionDefaults';
+import { fetchAllClassListSessions } from './lib/fetchAllClassListSessions';
 
 const CREATE_TYPE_ICONS: Record<(typeof SESSION_TYPE_OPTIONS)[number]['value'], string> = {
   one_day_private: '🎓',
@@ -170,11 +171,8 @@ function ClassListPageContent() {
   const fetchGroups = useCallback(async () => {
     if (!supabase) return;
     try {
-      const [sessionsRes, usersRes] = await Promise.all([
-        supabase
-          .from('sessions')
-          .select('group_id, title, start_at, end_at, status, created_by, round_total, round_index')
-          .not('status', 'in', '("deleted")'),
+      const [sessionRows, usersRes] = await Promise.all([
+        fetchAllClassListSessions(supabase as never),
         supabase
           .from('users')
           .select('id, name, session_count, fee_private, fee_group, fee_center_main, fee_center_assist')
@@ -202,9 +200,8 @@ function ClassListPageContent() {
       const { map: nextTierFeeMap } = await fetchTeacherTierFeeMap(supabase);
       setTierFeeMap(nextTierFeeMap);
 
-      const { data, error } = sessionsRes;
-      if (error) throw error;
-      if (!data) {
+      const data = sessionRows;
+      if (data.length === 0) {
         setGroups([]);
         return;
       }
