@@ -24,6 +24,7 @@ import { HOME_PROGRAM_SYSTEM_HREF, MASTER_HANDOFF, REDIRECT_ONLY_PROGRAM_PATHS, 
 import { SPOKEDU_BASE_PATH, SPOKEDU_LEGACY_PREFIX, SPOKEDU_PATHS } from './public-routes';
 import { educationHubPage } from './education-hub';
 import { spomoveProgramPage } from './spomove-program-page';
+import { spomovePublicCatalogPage } from './spomove-public-catalog-page';
 
 function allowsVisualFallback(requirement: object): boolean {
   return 'allowVisualFallback' in requirement && requirement.allowVisualFallback === true;
@@ -742,10 +743,6 @@ describe('spokedu Phase 3 public-copy safety', () => {
       join(process.cwd(), 'app/spokedu/programs/spomove/page.tsx'),
       'utf8',
     );
-    const catalogPageSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/programs/spomove/catalog/page.tsx'),
-      'utf8',
-    );
     expect(homeSource).not.toMatch(/SPO-MAT/);
     expect(homeSource).not.toMatch(/15,?015|PRIVATE_COUNTER|3,?000회/);
     expect(homeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
@@ -757,9 +754,40 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);
     expect(spomoveLandingSource).not.toMatch(/9,900|28,900|집중력이 향상|인지능력이 개선/);
     expect(spomovePageSource).toMatch(/SpomoveProgramLanding/);
-    expect(catalogPageSource).toMatch(/title=\"SPOMOVE 전체 프로그램 카탈로그\"|title='SPOMOVE 전체 프로그램 카탈로그'/);
-    expect(catalogPageSource).toMatch(/SPOMOVE 소개로 돌아가기|SPOMOVE 소개/);
-    expect(catalogPageSource).toMatch(/구독시스템 알아보기/);
+  });
+
+  it('keeps self-hosted SPOMOVE catalog route, data, and landing CTA contracts', () => {
+    const catalogPageSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/programs/spomove/catalog/page.tsx'),
+      'utf8',
+    );
+    const catalogComponentSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/components/spomove-public-catalog.tsx'),
+      'utf8',
+    );
+    const catalogDataSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/data/spomove-public-catalog-page.ts'),
+      'utf8',
+    );
+
+    expect(catalogPageSource).toMatch(/SpomovePublicCatalog/);
+    expect(catalogPageSource).toMatch(/SPOMOVE 프로그램 구성/);
+    expect(catalogPageSource).not.toMatch(/iframe|SPOMOVE_NOTION_CATALOG_URL|CatalogFallback/);
+
+    expect(catalogComponentSource).toMatch(/spomovePublicCatalogPage/);
+    expect(catalogComponentSource).toMatch(/levelsIntro|activityIntro/);
+
+    expect(spomovePublicCatalogPage.title).toBe('SPOMOVE 프로그램 구성');
+    expect(spomovePublicCatalogPage.ctas.primary.label).toBe('SPOMOVE 알아보기');
+    expect(spomovePublicCatalogPage.ctas.primary.href).toBe(SPOKEDU_PATHS.spomove);
+    expect(spomovePublicCatalogPage.ctas.secondary.label).toBe('기관 도입 문의');
+    expect(spomovePublicCatalogPage.ctas.lab.href).toBe(SPOKEDU_PATHS.subscription);
+    expect(catalogDataSource).toMatch(/levelsIntro/);
+    expect(catalogDataSource).not.toMatch(/contentLead/);
+
+    expect(spomoveProgramPage.content.catalogCta.label).toBe('프로그램 구성 보기');
+    expect(spomoveProgramPage.experience.catalogCta.label).toBe('프로그램 구성 보기');
+    expect(spomoveProgramPage.content.catalogCta.href).toBe(SPOKEDU_PATHS.spomoveCatalog);
   });
 
   it('keeps redirect-only program routes in next.config', () => {

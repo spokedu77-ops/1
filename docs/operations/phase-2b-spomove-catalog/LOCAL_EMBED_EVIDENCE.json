@@ -1,0 +1,43 @@
+{
+  "BUILD_ID": "aIoHE-m720MQj-Ywu2D0m",
+  "port": "3019",
+  "configQA": { "envLocalSet": true, "host": "app.notion.com" },
+  "contentQA": {
+    "status": "FAIL",
+    "code": "EMBED_BLOCKED",
+    "note": "iframe present but CSP frame-src blocks app.notion.com; iframe area blank in captures",
+    "iframeOk": true,
+    "fallbackOn390": false,
+    "visualProgramContentInIframe": false
+  },
+  "journeyQA": {
+    "newWindowOk": true,
+    "dispatchNav": "http://127.0.0.1:3019/education?program=spomove#contact",
+    "dispatchPass": true
+  },
+  "viewports": {
+    "390": {
+      "fallback": false,
+      "hasIframe": true,
+      "iframeW": 390,
+      "iframeH": 633,
+      "h1": "SPOMOVE 전체 프로그램 카탈로그",
+      "overflowX": false,
+      "consoleErrors": [
+        "Framing 'https://app.notion.com/' violates the following Content Security Policy directive: frame-src ..."
+      ]
+    },
+    "941": {
+      "fallback": false,
+      "hasIframe": true,
+      "iframeH": 645.75,
+      "consoleErrors": ["CSP frame-src blocks app.notion.com"]
+    },
+    "1440": {
+      "fallback": false,
+      "hasIframe": true,
+      "iframeH": 675,
+      "consoleErrors": ["CSP frame-src blocks app.notion.com"]
+    }
+  }
+}

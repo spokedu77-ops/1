@@ -1,0 +1,87 @@
+{
+  "BUILD_ID": "kPtgx4KgQf5UtokqiWfZq",
+  "HEAD": "ref: refs/heads/spokedu-security-audit-20261018",
+  "port": "3020",
+  "serverPid": 37384,
+  "checks": [
+    {
+      "label": "CATALOG_390",
+      "status": "PASS",
+      "probe": {
+        "h1Count": 1,
+        "h1": "SPOMOVE 프로그램 구성",
+        "iframe": 0,
+        "fallback": false,
+        "levels": true,
+        "overflow": false,
+        "techLeak": false
+      }
+    },
+    {
+      "label": "CATALOG_834",
+      "status": "PASS",
+      "probe": {
+        "h1Count": 1,
+        "h1": "SPOMOVE 프로그램 구성",
+        "iframe": 0,
+        "fallback": false,
+        "levels": true,
+        "overflow": false,
+        "techLeak": false
+      }
+    },
+    {
+      "label": "CATALOG_941",
+      "status": "PASS",
+      "probe": {
+        "h1Count": 1,
+        "h1": "SPOMOVE 프로그램 구성",
+        "iframe": 0,
+        "fallback": false,
+        "levels": true,
+        "overflow": false,
+        "techLeak": false
+      }
+    },
+    {
+      "label": "CATALOG_1440",
+      "status": "PASS",
+      "probe": {
+        "h1Count": 1,
+        "h1": "SPOMOVE 프로그램 구성",
+        "iframe": 0,
+        "fallback": false,
+        "levels": true,
+        "overflow": false,
+        "techLeak": false
+      }
+    },
+    {
+      "label": "HOME_HERO_B5",
+      "status": "PASS"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "A",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3020/spomove/catalog"
+    },
+    {
+      "id": "B",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3020/spomove"
+    },
+    {
+      "id": "C",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3020/education?program=spomove#contact"
+    },
+    {
+      "id": "D",
+      "status": "PASS",
+      "url": "http://127.0.0.1:3020/spokedu-lab"
+    }
+  ],
+  "overall": "PASS"
+}
