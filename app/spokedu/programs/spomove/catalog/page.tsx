@@ -1,120 +1,22 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { SPOKEDU_PATHS } from '../../../data/site';
-import { dispatchInquiryHref } from '../../../data/commercial-routes';
+import { SpomovePublicCatalog } from '../../../components/spomove-public-catalog';
 import { buildSpokeduPageMetadata } from '../../../data/seo';
-import { marketingButtonPrimary, marketingCardStatic, marketingHeroDisplay } from '../../../lib/ui-classes';
 
-const catalogMetadata: Metadata = {
-  title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
-  description:
-    'SPOMOVE 프로그램 구성과 반응 시리즈를 확인하세요. 카탈로그가 준비되지 않은 경우에도 소개 랜딩과 이용 경로로 이어집니다.',
-};
+const PAGE_TITLE = 'SPOMOVE 프로그램 구성 | SPOKEDU';
+const PAGE_DESCRIPTION =
+  'SPOMOVE 반응 유형(단순·선택·복합)과 SEE·DECIDE·MOVE 흐름, 활동 예시를 소개합니다. 기관 도입과 SPOKEDU LAB 경로를 안내합니다.';
 
 export const metadata: Metadata = {
-  ...catalogMetadata,
+  title: PAGE_TITLE,
   ...buildSpokeduPageMetadata({
-    title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
-    description: 'SPOMOVE 프로그램 구성과 활동 시리즈를 확인하고 기관 도입 및 구독 서비스 경로를 안내합니다.',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
     canonical: '/spomove/catalog',
-    keywords: ['SPOMOVE', '스포무브', '체육교육 프로그램', '프로그램 카탈로그'],
+    keywords: ['SPOMOVE', '스포무브', '체육교육 프로그램', '프로그램 구성'],
     pageKey: 'programs',
   }),
 };
 
-const SPOMOVE_HREF = SPOKEDU_PATHS.spomove;
-const CURRICULUM_HREF = SPOKEDU_PATHS.subscription;
-const DISPATCH_HREF = dispatchInquiryHref({ program: 'spomove' });
-
-function getCatalogUrl(): string | null {
-  const value = process.env.SPOMOVE_NOTION_CATALOG_URL?.trim();
-  if (!value) return null;
-
-  try {
-    const url = new URL(value);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
-function CatalogFallback() {
-  return (
-    <section className="site-container overflow-x-clip pb-16 pt-8 sm:pt-10">
-      <div className={`${marketingCardStatic} mx-auto w-full max-w-xl px-5 py-8 text-center sm:px-7 sm:py-10`}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
-        <h1 className={`${marketingHeroDisplay} mt-3 !text-2xl !leading-tight text-[#0B1F46] sm:!text-3xl`}>
-          전체 카탈로그를 아직 표시할 수 없습니다
-        </h1>
-        <p className="mt-4 text-sm leading-[1.75] text-[#536279]">
-          프로그램 전체 목록을 불러오지 못했습니다. 운영팀에서 연결을 점검 중일 수 있습니다. SPOMOVE 소개와 이용 경로는
-          아래에서 계속 확인할 수 있습니다.
-        </p>
-        <div className="mt-7 flex flex-col gap-3 sm:items-center">
-          <Link
-            href={SPOMOVE_HREF}
-            className={marketingButtonPrimary}
-          >
-            SPOMOVE 소개로 돌아가기
-          </Link>
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm font-semibold text-[#536279]">
-            <Link href={DISPATCH_HREF} className="underline-offset-4 hover:underline">
-              기관 도입 문의
-            </Link>
-            <Link href={CURRICULUM_HREF} className="underline-offset-4 hover:underline">
-              구독시스템 알아보기
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function SpomoveCatalogPage() {
-  const catalogUrl = getCatalogUrl();
-
-  if (!catalogUrl) {
-    return <CatalogFallback />;
-  }
-
-  return (
-    <section className="relative flex w-full flex-col pb-8">
-      <div className="flex min-h-16 items-center justify-between gap-4 border-b border-[#DCE3EE] bg-white px-5 py-3 sm:px-8">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
-          <h1 className={`${marketingHeroDisplay} !text-lg !leading-tight text-[#0B1F46] sm:!text-xl`}>SPOMOVE 전체 프로그램 카탈로그</h1>
-          <p className="mt-1 text-xs leading-relaxed text-[#536279] sm:text-sm">
-            화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.
-          </p>
-        </div>
-        <Link href={DISPATCH_HREF} className="shrink-0 text-sm font-bold text-[#245DFF] underline-offset-4 hover:underline">
-          기관 도입 문의
-        </Link>
-      </div>
-      <iframe
-        src={catalogUrl}
-        title="SPOMOVE 전체 프로그램 카탈로그"
-        className="block min-h-[32rem] w-full border-0 sm:min-h-[36rem]"
-        style={{ height: 'min(75vh, 900px)' }}
-      />
-      <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 sm:bottom-4 sm:left-4 sm:right-4">
-        <Link
-          href={SPOMOVE_HREF}
-          className="inline-flex min-h-9 items-center justify-center bg-[#0B1F46]/85 px-3 text-xs font-bold text-white shadow-sm backdrop-blur transition hover:bg-[#0B1F46] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]"
-        >
-          SPOMOVE 소개
-        </Link>
-        <a
-          href={catalogUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-9 items-center justify-center bg-[#0B1F46]/85 px-3 text-xs font-bold text-white shadow-sm backdrop-blur transition hover:bg-[#0B1F46] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]"
-        >
-          새 창에서 보기
-        </a>
-      </div>
-    </section>
-  );
+  return <SpomovePublicCatalog />;
 }

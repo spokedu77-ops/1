@@ -203,7 +203,9 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
       partnership_type: payload.utilizationTarget || '구독·교육',
       extra: formatCurriculumExtra(payload),
       cta_intent_id:
-        resolveCurriculumLeadMode(payload.inquiryPurpose) === 'master' ? 'master_handoff' : 'training_consult',
+        resolveCurriculumLeadMode(payload.inquiryPurpose) === 'master'
+          ? 'master_org_inquiry'
+          : 'training_consult',
       acquisition: { entrySurface: 'direct' },
     },
   };

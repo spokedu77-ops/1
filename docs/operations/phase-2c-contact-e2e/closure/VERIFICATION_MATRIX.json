@@ -1,0 +1,14 @@
+{
+  "BUILD_ID": "q-moABFfGzj-BJfqFaKsY",
+  "checks": [
+    { "name": "tsc --noEmit", "exitCode": 0 },
+    { "name": "eslint closure files", "exitCode": 0 },
+    { "name": "vitest inquiry + fault", "exitCode": 0 },
+    { "name": "npm run build", "exitCode": 0 },
+    { "name": "run-contact-db-e2e.mjs", "exitCode": 0, "overall": "PASS", "safetyGate": true },
+    { "name": "run-contact-customer-qa.mjs", "exitCode": 0, "port": 3028 },
+    { "name": "run-contact-admin-qa.mjs", "exitCode": 0, "E15": "BLOCKED" },
+    { "name": "run-catalog-qa.mjs", "exitCode": 0, "port": 3031 },
+    { "name": "run-home-b5-smoke.mjs", "exitCode": 0, "port": 3032 }
+  ]
+}

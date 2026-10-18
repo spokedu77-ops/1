@@ -1,21 +1,25 @@
-# CHANGE SCOPE AUDIT
+# Phase 1-B4A Main Recovery — CHANGE_SCOPE_AUDIT
 
-## main worktree (`payment-ux`)
+## Git (작업 후)
 
-| | |
-|--|--|
-| Branch | main @ `76a71fd0` |
-| Service 변경 | **`home-web.module.css` only** |
-| `home-hero.tsx` | unchanged vs HEAD |
-| Commit/Push | none |
+| 파일 | 상태 |
+|------|------|
+| `app/spokedu/components/home-web/home-web.module.css` | M (+1 line) |
+| `docs/design/phase-1b4a-main-recovery/*` | M / ?? (보고서·QA·캡처) |
 
-## 기본 경로 `GitHub/1` (참고)
+## 서비스 코드 변경
 
-| | |
-|--|--|
-| Branch | still `toss-review` (main locked) |
-| 미커밋 | toss-review B4A JSX/CSS — **main recovery와 별개**, 사용자가 정리 필요 |
+- 허용 파일 1개만 수정: **PASS**
+- `home-hero.tsx`: **unchanged**
 
-## 문서
+## 기존 미커밋
 
-- `docs/design/phase-1b4a-main-recovery/` (기본 경로 + worktree 동기)
+- 작업 시작 시 clean; B1·B2B·B3B 별도 미커밋 묶음 **없음**
+
+## 허용 범위 밖
+
+- **0건**
+
+## Commit · Push · Deploy
+
+- **0건**

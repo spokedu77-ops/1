@@ -1,0 +1,20 @@
+{
+  "BUILD_ID": "_ES9aF7W_HG7GL-ES3qR_",
+  "port": "3039",
+  "hero390": {
+    "h1Count": 1,
+    "h1Match": true,
+    "leadMatch": true,
+    "english": false,
+    "eyebrow": false,
+    "imgCount": 1,
+    "imgOk": true,
+    "srcIncludes": true,
+    "primaryHref": "/education",
+    "secondaryHref": "/spokedu-lab",
+    "secondaryIsBtn": false,
+    "secondaryText": "수업자료 둘러보기 →",
+    "ok": true
+  },
+  "overall": "PASS"
+}

@@ -136,6 +136,41 @@ export async function POST(req: NextRequest) {
     ].join('\n');
 
     const supabase = getServiceSupabase();
+
+    {
+      const dedupeSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const contentMarker = `lead_mode: ${leadMode}`;
+      const { data: recentRows } = await supabase
+        .from('consultations')
+        .select('id, content')
+        .eq('consult_type', 'center')
+        .eq('phone', phone)
+        .eq('parent_name', nameOrOrg)
+        .gte('created_at', dedupeSince)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      const purposeMarker = `활용 목적: ${purpose}`;
+      const partnershipMarker = `제휴/구매 형태: ${partnershipType}`;
+      const dupRow = (recentRows ?? []).find(
+        (r) =>
+          typeof r.content === 'string' &&
+          r.content.includes(contentMarker) &&
+          r.content.includes(`필요한 콘텐츠 유형: ${contentType}`) &&
+          r.content.includes(purposeMarker) &&
+          r.content.includes(partnershipMarker) &&
+          (extra ? r.content.includes(extra.slice(0, 60)) : true),
+      );
+      if (dupRow?.id) {
+        return NextResponse.json({
+          ok: true,
+          duplicate: true,
+          lead_mode: leadMode,
+          leadId: dupRow.id,
+        });
+      }
+    }
+
     const created = await createConsultLead(supabase, {
       envelope,
       parentName: nameOrOrg,

@@ -18,11 +18,11 @@ export type HomeVisual = {
   readonly objectPosition: string;
 };
 
-/** BRAND — one dynamic, movement-first scene that leaves room for large type. */
+/** BRAND — coaching scene; directed editorial, not tied to a named field record. */
 export const HOME_HERO_IMAGE: HomeVisual = {
-  src: '/images/spokedu/home/field-editorial/home-hero-gym-motion.jpg',
-  alt: '체육관에서 허들을 뛰어넘는 아이와 곁에서 지켜보는 지도자',
-  objectPosition: '62% 50%',
+  src: '/images/spokedu/home/field-editorial/home-hero-coaching.jpg',
+  alt: '지도자와 아이가 함께 움직이는 체육 수업 장면',
+  objectPosition: '50% 50%',
 };
 
 /** 01 FIELD · 02 CONTENT · 03 SYSTEM — same 4:3 frame, same baseline. */

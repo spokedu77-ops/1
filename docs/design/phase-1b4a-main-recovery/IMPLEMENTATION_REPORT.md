@@ -1,33 +1,28 @@
-# IMPLEMENTATION REPORT
-
-**경로:** `.codex-worktrees/payment-ux` (branch **main**)  
-**상태:** CSS 구현 완료 · **LOCAL_QA_PASS 미선언** (Playwright 서버/클라이언트 오류)
+# Phase 1-B4A Main Recovery — IMPLEMENTATION_REPORT
 
 ## 수정 파일
 
-| 파일 | 변경 |
-|------|------|
-| `app/spokedu/components/home-web/home-web.module.css` | +72 lines, `@media (768px–1023px)` Hero only |
-| `home-hero.tsx` | **무수정** |
-
-Diff: `tablet-hero-only.diff`
+- `app/spokedu/components/home-web/home-web.module.css` (1줄)
 
 ## 적용 내용
 
-- 태블릿 2열: `heroText` | `heroVisual`
-- `display: contents` → **`display: flex`** (태블릿만)
-- CTA `heroActions`가 `heroText` 내부에 유지
-- 영문 Display: **`color: var(--blue)`** (B1 유지)
+- **768–1023px:** `.heroEnglish { color: var(--blue); }` — 태블릿 영문 Display Brand Blue
+- **768–1023px 2열 Grid:** HEAD에 이미 존재 (copy+CTA 좌 / photo 우, 4:3, bleed 제거)
 
-## Build
+## TSX
 
-- `npm run build` in worktree: **PASS**
-
-## CTA (941px)
-
-- Playwright 자동 측정 **미완** (아래 QA 참고)
-- CSS 설계상 CTA는 이미지 아래가 아닌 **왼쪽 컬럼**에 배치됨
+- `home-hero.tsx`: **무수정**
 
 ## B1·B2B·B3B
 
-- TSX·다른 섹션 CSS **미변경**
+- 다른 섹션 파일 **무수정**
+- Hero 문구·href **유지** (`/education`, `/spokedu-lab`)
+
+## CTA
+
+- 941×861: Primary·Secondary bottom ≤ viewport (`RESPONSIVE_METRICS.json` pass)
+- CTA 위치: `heroCopy` 내부 (태블릿 2열 왼쪽)
+
+## DOM 노트
+
+- `heroText` 없음 → QA `heroTextDisplay: null`, `heroCopyDisplay: block`, `twoColumnTabletLayout: true` (768–1023)

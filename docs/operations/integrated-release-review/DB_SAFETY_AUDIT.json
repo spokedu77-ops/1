@@ -1,0 +1,6 @@
+{
+  "kind": "db-safety-audit-only",
+  "writes": 0,
+  "overall": "DB_ENVIRONMENT_BLOCKED",
+  "error": "DB_ENVIRONMENT_BLOCKED: CONTACT_E2E_ALLOW_DB_WRITES=1 required"
+}

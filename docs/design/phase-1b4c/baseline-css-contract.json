@@ -1,0 +1,698 @@
+﻿{
+  "cssPath": "C:\\Users\\joker\\Documents\\GitHub\\1\\app\\spokedu\\components\\home-web\\home-web.module.css",
+  "totalRefs": 117,
+  "missingCount": 26,
+  "missing": [
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayAccentBlue"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayAccentOrange"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayAccentTeal"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCard"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardAccent"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardAudience"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardBody"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardLink"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardTitle"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCards"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayHead"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayHeading"
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayIntro"
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "methodUiContent"
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "methodUiSystem"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileCard"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileContext"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileCta"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileDescription"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileInfo"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileMedia"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileProgram"
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileVenue"
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "spomoveStage"
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "labLibraryStat"
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "masterStage"
+    }
+  ],
+  "report": [
+    {
+      "file": "home-hero.tsx",
+      "class": "btn",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "btnPrimary",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "btnSecondary",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "hero",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroActions",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroCopy",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroEnglish",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroEyebrow",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroGrid",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroH1",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroLead",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroText",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "heroVisual",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "media",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "r43",
+      "defined": true
+    },
+    {
+      "file": "home-hero.tsx",
+      "class": "rail",
+      "defined": true
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "eyebrow",
+      "defined": true
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gateway",
+      "defined": true
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayAccentBlue",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayAccentOrange",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayAccentTeal",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCard",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardAccent",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardAudience",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardBody",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardLink",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCardTitle",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayCards",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayHead",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayHeading",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "gatewayIntro",
+      "defined": false
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "rail",
+      "defined": true
+    },
+    {
+      "file": "service-gateway.tsx",
+      "class": "section",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "body",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "displaySection",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "eyebrow",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "head",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "headAside",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "headTitle",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "heading",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "lead",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "media",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "methodUiContent",
+      "defined": false
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "methodUiSystem",
+      "defined": false
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "paper",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "r43",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "rail",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "section",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "step",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "stepMeta",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "steps",
+      "defined": true
+    },
+    {
+      "file": "spokedu-method.tsx",
+      "class": "uiFrame",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "dark",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "displaySection",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "eyebrow",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "gallery",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "head",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "headAside",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "headTitle",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "lead",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "rail",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "section",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tile",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileCard",
+      "defined": false
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileContext",
+      "defined": false
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileCta",
+      "defined": false
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileDescription",
+      "defined": false
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileInfo",
+      "defined": false
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileMedia",
+      "defined": false
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tilePrimary",
+      "defined": true
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileProgram",
+      "defined": false
+    },
+    {
+      "file": "field-records.tsx",
+      "class": "tileVenue",
+      "defined": false
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "actions",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "body",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "btn",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "btnSecondary",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "displaySection",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "eyebrow",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "media",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "meta",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "r43",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "rail",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "section",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "split",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "splitCopy",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "splitVisual",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "spomoveLine",
+      "defined": true
+    },
+    {
+      "file": "spomove-stage.tsx",
+      "class": "spomoveStage",
+      "defined": false
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "actions",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "body",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "btn",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "btnSecondary",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "displaySection",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "eyebrow",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "labLibraryStat",
+      "defined": false
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "masterActions",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "masterHead",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "masterStage",
+      "defined": false
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "masterTitle",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "paper",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "productFrame",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "rail",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "section",
+      "defined": true
+    },
+    {
+      "file": "master-stage.tsx",
+      "class": "statLabel",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "actions",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "btn",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "btnPrimary",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "dark",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "displaySection",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "eyebrow",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "finalCopy",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "finalGrid",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "finalLinks",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "lead",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "rail",
+      "defined": true
+    },
+    {
+      "file": "final-cta.tsx",
+      "class": "section",
+      "defined": true
+    },
+    {
+      "file": "home-web-landing.tsx",
+      "class": "root",
+      "defined": true
+    }
+  ]
+}

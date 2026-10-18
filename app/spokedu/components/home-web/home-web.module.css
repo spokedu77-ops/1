@@ -301,7 +301,7 @@
 
 /* 7. Sections --------------------------------------------------------- */
 
-/* Hero — Editorial Split, image bleeds to the right edge */
+/* Hero — Phase 1-B5: minimal copy, single 16:9 photo, KO-first hierarchy */
 .hero {
   overflow: hidden;
   background: #fff;
@@ -315,73 +315,61 @@
   padding-block: clamp(40px, 5vw, 72px);
 }
 
-.heroCopy {
+.heroText {
   grid-column: 1 / 7;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
   padding-right: 12px;
 }
 
-.heroBrand {
+.heroCopy {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
-  font-size: 13px;
-  line-height: 1.3;
-}
-
-.heroBrand strong {
-  letter-spacing: 0.14em;
-  color: var(--navy);
-}
-
-.heroBrand span {
-  color: var(--muted);
-}
-
-.heroBrand span::before {
-  content: '';
-  display: inline-block;
-  width: 1px;
-  height: 11px;
-  margin-right: 12px;
-  background: var(--line-strong);
-  vertical-align: -1px;
+  flex-direction: column;
 }
 
 .heroH1 {
-  font-size: clamp(30px, 3.2vw, 44px);
-  line-height: 1.12;
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  text-wrap: balance;
-  color: var(--navy);
-}
-
-.heroEnglish {
-  margin-top: 20px;
-  font-size: clamp(56px, 7.6vw, 108px);
-  line-height: 0.92;
+  font-size: clamp(30px, 2.9vw, 48px);
+  line-height: 1.2;
   font-weight: 800;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.03em;
   color: var(--navy);
+  text-wrap: balance;
 }
 
 .heroLead {
-  margin-top: 28px;
-  max-width: 30em;
-  font-size: clamp(17px, 1.4vw, 19px);
+  margin-top: 20px;
+  max-width: 32em;
+  font-size: clamp(15px, 1.1vw, 18px);
   line-height: 1.6;
   font-weight: 400;
-  color: var(--muted);
+  color: var(--ink);
   text-wrap: pretty;
 }
 
-.heroCopy .heroLead {
-  color: var(--ink);
+.heroActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
 }
 
-.heroActions {
-  margin-top: 36px;
+.heroLinkSecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--navy);
+  text-decoration: none;
+}
+
+.heroLinkSecondary:hover {
+  color: var(--blue);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
 }
 
 .heroVisual {
@@ -389,7 +377,12 @@
   margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
 }
 
-/* Gateway — decision index, one row rule for every option */
+.heroVisual .media {
+  border-radius: 16px;
+  aspect-ratio: 16 / 9;
+}
+
+/* Gateway — Phase 1-B1: three full-width cards, no step numbers */
 .gateway .rail {
   border-top: 1px solid var(--line);
   padding-top: var(--space-section);
@@ -399,52 +392,114 @@
   padding-top: 0;
 }
 
-.gatewayGrid {
+.gatewayHead {
+  max-width: 640px;
+  margin-bottom: clamp(32px, 4vw, 48px);
+}
+
+.gatewayHead .eyebrow {
+  margin-bottom: 16px;
+}
+
+.gatewayHeading {
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--navy);
+  text-wrap: balance;
+}
+
+.gatewayIntro {
+  margin-top: 16px;
+  font-size: clamp(15px, 1.2vw, 17px);
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.gatewayCards {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: var(--col-gap);
-  row-gap: 32px;
-  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--col-gap);
+  align-items: stretch;
 }
 
-.gatewayTitle {
-  grid-column: 1 / 6;
-}
-
-.gatewayList {
-  grid-column: 6 / 13;
-}
-
-.gatewayRow {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.25fr) 32px;
-  column-gap: var(--col-gap);
-  align-items: baseline;
-  padding: 28px 0;
-  border-top: 1px solid var(--line);
+.gatewayCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 0;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--white);
   color: inherit;
   text-decoration: none;
+  overflow: hidden;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-standard) var(--ease);
 }
 
-.gatewayRow:last-child {
-  border-bottom: 1px solid var(--line);
+.gatewayCardAccent {
+  display: block;
+  height: 4px;
+  width: 100%;
+  flex-shrink: 0;
 }
 
-.gatewayRow .heading {
-  transition: color var(--t-fast) var(--ease);
+.gatewayAccentOrange {
+  background: #fc5606;
 }
 
-.gatewayRow .body {
+.gatewayAccentTeal {
+  background: #0ca678;
+}
+
+.gatewayAccentBlue {
+  background: var(--blue);
+}
+
+.gatewayCardAudience {
+  padding: 20px 22px 0;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
-.gatewayRow i {
-  justify-self: end;
-  font-style: normal;
-  font-size: 20px;
-  line-height: 1;
+.gatewayCardTitle {
+  padding: 10px 22px 0;
+  font-size: clamp(19px, 1.55vw, 24px);
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--navy);
-  transition: transform var(--t-fast) var(--ease);
+  transition: color var(--t-fast) var(--ease);
+}
+
+.gatewayCardBody {
+  flex: 1;
+  padding: 12px 22px 0;
+  font-size: clamp(14px, 1vw, 16px);
+  line-height: 1.62;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.gatewayCardLink {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  margin-top: 20px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--navy);
 }
 
 /* Method — one repeated step structure, 01 → 02 → 03 */
@@ -475,6 +530,14 @@
 
 .step .body {
   color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* Method — product UI focal crops (mobile refinement below) */
+.methodUiContent img,
+.methodUiSystem img {
+  object-fit: cover;
 }
 
 /* Records — Evidence gallery: 1 primary + 2 supporting */
@@ -495,12 +558,41 @@
   text-decoration: none;
 }
 
-.tilePrimary {
-  grid-row: 1 / 3;
-  aspect-ratio: 4 / 3;
+.tileCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    transform var(--t-standard) var(--ease);
 }
 
-.tile img {
+.tileCard:focus-visible {
+  outline: 2px solid #9ab8ff;
+  outline-offset: 3px;
+}
+
+.tilePrimary {
+  grid-row: 1 / 3;
+}
+
+.tileMedia {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--navy-deep);
+}
+
+.tilePrimary .tileMedia {
+  aspect-ratio: auto;
+  min-height: clamp(220px, 32vw, 420px);
+}
+
+.tileMedia img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -509,26 +601,54 @@
   transition: transform var(--t-standard) var(--ease);
 }
 
-.tileCaption {
-  position: absolute;
-  inset: auto 0 0;
+.tileInfo {
   display: grid;
-  row-gap: 4px;
-  padding: 72px 24px 22px;
-  background: linear-gradient(180deg, rgba(8, 17, 38, 0) 0%, rgba(8, 17, 38, 0.82) 100%);
+  row-gap: 6px;
+  padding: 18px 20px 20px;
+  background: rgba(6, 14, 32, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.tileCaption strong {
-  font-size: 18px;
-  line-height: 1.3;
+.tileProgram {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ab8ff;
+}
+
+.tileVenue {
+  font-size: 17px;
+  line-height: 1.35;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.tileCaption span {
-  font-size: 13px;
-  line-height: 1.4;
+.tileContext {
+  font-size: 14px;
+  line-height: 1.45;
   color: rgba(255, 255, 255, 0.78);
+}
+
+.tileDescription {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tileCta {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+}
+
+/* Section scope hooks — SPOMOVE / LAB only overrides live under these roots. */
+.spomoveStage {
+}
+
+.masterStage {
 }
 
 /* SPOMOVE — Editorial Split, one dominant visual */
@@ -625,6 +745,14 @@
   line-height: 1.4;
   font-weight: 600;
   color: var(--ink);
+}
+
+.labLibraryStat {
+  grid-area: stat;
+  display: grid;
+  row-gap: 8px;
+  justify-items: start;
+  max-width: 14em;
 }
 
 .productFrame {
@@ -725,16 +853,20 @@
   }
 
   .textLink:hover i,
-  .gatewayRow:hover i,
   .finalLinks a:hover i {
     transform: translateX(2px);
   }
 
-  .gatewayRow:hover .heading {
+  .gatewayCard:hover {
+    border-color: var(--line-strong);
+    box-shadow: 0 12px 32px rgba(11, 31, 70, 0.08);
+  }
+
+  .gatewayCard:hover .gatewayCardTitle {
     color: var(--blue);
   }
 
-  .tile:hover img {
+  .tileCard:hover .tileMedia img {
     transform: scale(1.02);
   }
 }
@@ -747,74 +879,57 @@
   }
 }
 
+/* Hero — desktop 1024px+ (Hero selectors only) */
+@media (min-width: 1024px) {
+  .heroGrid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-areas: none;
+  }
+
+  .heroText {
+    display: flex;
+    flex-direction: column;
+    grid-column: 1 / 7;
+    gap: clamp(28px, 3vw, 40px);
+  }
+
+  .heroCopy {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+  }
+
+  .heroH1 {
+    font-size: clamp(44px, 3.6vw, 56px);
+    line-height: 1.16;
+  }
+
+  .heroLead {
+    margin-top: 24px;
+    font-size: clamp(16px, 1.05vw, 18px);
+  }
+
+  .heroActions {
+    max-width: none;
+  }
+
+  .heroVisual {
+    grid-column: 7 / 13;
+    margin-top: 0;
+    margin-inline: 0;
+    margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
+  }
+
+  .heroVisual .media {
+    border-radius: 16px;
+    aspect-ratio: 16 / 9;
+  }
+}
+
 /* 8. Responsive ------------------------------------------------------- */
 @media (min-width: 768px) {
   .root {
     --gutter: 32px;
-  }
-}
-
-/* Hero tablet — 2 columns: copy + CTA left, photo right (768–1023px) */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .heroGrid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-    column-gap: clamp(20px, 2.8vw, 32px);
-    align-items: center;
-    padding-block: clamp(40px, 5vw, 56px);
-  }
-
-  .heroCopy {
-    grid-column: 1;
-    min-width: 0;
-    padding-right: 0;
-    max-width: none;
-  }
-
-  .heroEyebrow {
-    margin-bottom: 16px;
-    font-size: 12px;
-  }
-
-  .heroH1 {
-    font-size: clamp(30px, 3.6vw, 36px);
-    line-height: 1.14;
-  }
-
-  .heroEnglish {
-    margin-top: 14px;
-    font-size: clamp(38px, 4.6vw, 52px);
-    line-height: 0.96;
-  }
-
-  .heroLead {
-    margin-top: 18px;
-    font-size: clamp(15px, 1.7vw, 16px);
-    line-height: 1.55;
-    max-width: none;
-  }
-
-  .heroActions {
-    margin-top: 22px;
-    flex-wrap: wrap;
-  }
-
-  .heroActions .btn {
-    font-size: 14px;
-    height: 44px;
-    padding: 0 18px;
-  }
-
-  .heroVisual {
-    grid-column: 2;
-    min-width: 0;
-    margin-top: 0;
-    margin-inline: 0;
-    margin-right: 0;
-  }
-
-  .heroVisual .media {
-    aspect-ratio: 4 / 3;
   }
 }
 
@@ -835,9 +950,45 @@
     max-width: 560px;
   }
 
-  .gatewayTitle,
-  .gatewayList {
-    grid-column: 1 / -1;
+  .heroGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'copy'
+      'visual'
+      'actions';
+    padding-block: clamp(48px, 7vw, 72px) clamp(32px, 5vw, 48px);
+  }
+
+  .heroText {
+    display: contents;
+  }
+
+  .heroCopy {
+    grid-area: copy;
+    padding-right: 0;
+    max-width: 640px;
+  }
+
+  .heroActions {
+    grid-area: actions;
+    max-width: 640px;
+  }
+
+  .heroVisual {
+    grid-area: visual;
+    margin-top: clamp(28px, 4vw, 40px);
+    margin-inline: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--gutter));
+  }
+
+  .heroVisual .media {
+    aspect-ratio: 16 / 9;
+  }
+
+  .gatewayCards {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .steps {
@@ -883,10 +1034,6 @@
     grid-row: auto;
   }
 
-  .tile:not(.tilePrimary) {
-    aspect-ratio: 4 / 3;
-  }
-
   .splitCopy,
   .splitVisual {
     grid-column: 1 / -1;
@@ -919,6 +1066,71 @@
   }
 }
 
+/* Hero tablet — 768–1023px: text+CTA left, photo right (B4A; must follow ≤1023 hero stack) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .heroGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    grid-template-areas: none;
+    column-gap: clamp(20px, 2.8vw, 32px);
+    align-items: center;
+    padding-block: clamp(40px, 5vw, 56px);
+  }
+
+  .heroText {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    grid-column: 1;
+    min-width: 0;
+    max-width: none;
+    padding-right: 0;
+  }
+
+  .heroCopy {
+    grid-area: auto;
+    max-width: none;
+  }
+
+  .heroActions {
+    grid-area: auto;
+    max-width: none;
+    margin-top: 0;
+  }
+
+  .heroH1 {
+    font-size: clamp(30px, 3.6vw, 36px);
+    line-height: 1.14;
+  }
+
+  .heroLead {
+    margin-top: 12px;
+    font-size: clamp(15px, 1.7vw, 16px);
+    line-height: 1.5;
+    max-width: none;
+  }
+
+  .heroActions .btn {
+    font-size: 14px;
+    height: 44px;
+    padding: 0 18px;
+    width: auto;
+  }
+
+  .heroVisual {
+    grid-column: 2;
+    grid-area: auto;
+    margin-top: 0;
+    margin-inline: 0;
+    margin-right: 0;
+  }
+
+  .heroVisual .media {
+    aspect-ratio: 16 / 9;
+    border-radius: 16px;
+  }
+}
+
 /* ≤767 — mobile: designed, not collapsed */
 @media (max-width: 767px) {
   .root {
@@ -927,52 +1139,31 @@
   }
 
   .body br,
-  .lead br,
-  .heroLead br {
+  .lead br {
     display: none;
   }
 
   .heroGrid {
-    display: block;
-    padding-block: 48px 0;
-  }
-
-  .heroCopy {
-    padding-right: 0;
-    max-width: 640px;
-  }
-
-  .heroBrand {
-    margin-bottom: 24px;
+    padding-top: 48px;
   }
 
   .heroH1 {
-    font-size: clamp(28px, 7.5vw, 34px);
-  }
-
-  .heroEnglish {
-    margin-top: 16px;
-    font-size: clamp(36px, 9vw, 48px);
-    line-height: 0.98;
+    font-size: clamp(30px, 8.2vw, 34px);
   }
 
   .heroLead {
-    margin-top: 24px;
-    font-size: 17px;
-  }
-
-  .heroActions {
-    margin-top: 28px;
+    margin-top: 16px;
+    font-size: clamp(15px, 4vw, 16px);
   }
 
   .heroVisual {
-    margin-top: 40px;
-    margin-inline: calc(-1 * var(--gutter));
+    margin-top: 28px;
+    margin-inline: 0;
   }
 
-  /* 3:2 keeps both the jumping child and the instructor inside the frame at phone widths. */
   .heroVisual .media {
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 16 / 9;
+    border-radius: 16px;
   }
 
   .actions {
@@ -984,20 +1175,26 @@
     width: 100%;
   }
 
-  .gatewayRow {
-    grid-template-columns: 40px minmax(0, 1fr) 24px;
-    row-gap: 8px;
-    padding: 22px 0;
+  .heroActions {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 20px;
+    gap: 14px;
   }
 
-  .gatewayRow .body {
-    grid-column: 2;
+  .heroActions .btn {
+    width: 100%;
+    min-height: 44px;
+    padding-inline: 14px;
+  }
+
+  .heroLinkSecondary {
+    align-self: flex-start;
     font-size: 15px;
   }
 
-  .gatewayRow i {
-    grid-row: 1;
-    grid-column: 3;
+  .gatewayCardLink {
+    min-height: 48px;
   }
 
   .step {
@@ -1012,34 +1209,75 @@
 
   .step .body {
     align-self: start;
+    font-size: 16px;
+  }
+
+  .methodUiContent.r43,
+  .methodUiSystem.r43 {
+    aspect-ratio: 3 / 4;
+  }
+
+  .methodUiContent img {
+    object-position: 18% 0%;
+    transform: scale(1.35);
+    transform-origin: top left;
+  }
+
+  .methodUiSystem img {
+    object-position: 12% 0%;
+    transform: scale(1.28);
+    transform-origin: top left;
   }
 
   .gallery {
     grid-template-columns: 1fr;
+    row-gap: 20px;
   }
 
-  .tilePrimary,
-  .tile:not(.tilePrimary) {
+  .tilePrimary {
+    grid-row: auto;
+  }
+
+  .tileCard .tileMedia {
+    flex: 0 0 auto;
+    width: 100%;
     aspect-ratio: 4 / 3;
+    min-height: 0;
   }
 
-  .tileCaption {
-    padding: 56px 18px 18px;
+  .tilePrimary .tileMedia {
+    aspect-ratio: 4 / 3;
+    min-height: 0;
+  }
+
+  .tileInfo {
+    flex: 0 0 auto;
+    padding: 16px 18px 18px;
+  }
+
+  .tileDescription {
+    font-size: 16px;
   }
 
   .spomoveLine {
     font-size: 14px;
   }
 
-  .productFrame {
-    aspect-ratio: 4 / 5;
+  /* LAB — show full library UI structure on mobile (avoid 230% crop misread). */
+  .masterStage .productFrame {
+    aspect-ratio: 16 / 10;
   }
 
-  /* Portrait frame: zoom to the left part of the library (quick-entry card, filters, first cards). */
-  .productFrame img {
-    top: -4.2%;
-    left: -34%;
-    width: 230%;
+  .masterStage .productFrame img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: contain;
+    object-position: top center;
+    top: 0;
+    left: 0;
   }
 
   .finalLinks {

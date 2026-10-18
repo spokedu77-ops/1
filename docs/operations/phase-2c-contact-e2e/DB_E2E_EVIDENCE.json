@@ -1,0 +1,227 @@
+{
+  "runId": "PHASE2C-MVDD2F18",
+  "marker": "[PHASE2C-MVDD2F18]",
+  "port": "3022",
+  "base": "http://127.0.0.1:3022",
+  "safety": {
+    "allowDbWrites": true,
+    "approvedProjectRefConfigured": true,
+    "actualProjectRef": "mwgvserdyflsqyhcqecp",
+    "approvedProjectRefMatch": true,
+    "productionRefsBlocked": [],
+    "blockedHit": false,
+    "host": "mwgvserdyflsqyhcqecp.supabase.co"
+  },
+  "BUILD_ID": "q-moABFfGzj-BJfqFaKsY",
+  "schema": {
+    "consultations": {
+      "reachable": true,
+      "error": null,
+      "code": null
+    },
+    "dispatch_leads": {
+      "reachable": true,
+      "error": null,
+      "code": null
+    },
+    "consultations_structured": {
+      "ok": true,
+      "error": null
+    },
+    "dispatch_leads_structured": {
+      "ok": true,
+      "error": null
+    }
+  },
+  "cases": [
+    {
+      "id": "E06",
+      "status": "PASS",
+      "http": 400
+    },
+    {
+      "id": "C01/E01",
+      "status": "PASS",
+      "leadId": "17658529-52ac-443e-b956-7d2f58b1a98a",
+      "dbVerified": true,
+      "emailSent": false
+    },
+    {
+      "id": "E11-private-dup",
+      "status": "PASS"
+    },
+    {
+      "id": "C02/E02",
+      "status": "PASS",
+      "consultId": "edfe661b-4b4e-4c6d-8afd-ab02110ed059",
+      "detailId": "59f64be9-abd3-4dd1-ad92-123dd669ae93",
+      "detailStatus": "synced",
+      "dbVerified": true,
+      "path": "happy-path-synced"
+    },
+    {
+      "id": "C03/E03",
+      "status": "PASS",
+      "consultId": "4e5809a1-a261-490f-8992-ce6242b30d3f",
+      "dbVerified": true
+    },
+    {
+      "id": "C04/E04",
+      "status": "PASS",
+      "leadId": "4eb2d7cf-af1b-4a21-a41f-e875641d214b",
+      "dbVerified": true
+    },
+    {
+      "id": "dedupe-curriculum-repeat",
+      "status": "PASS"
+    },
+    {
+      "id": "dedupe-curriculum-different-purpose",
+      "status": "PASS",
+      "leadId2": "953fd4a2-9813-40b0-acd9-c6ac1d8b059b"
+    },
+    {
+      "id": "dedupe-curriculum-different-content",
+      "status": "PASS",
+      "leadId3": "31944e41-f662-4e01-b146-d415b4b3bcad"
+    },
+    {
+      "id": "C05/E05",
+      "status": "PASS",
+      "leadId": "ee6cb157-b64b-4eb4-bfc8-9008448cd0c6",
+      "dbVerified": true
+    },
+    {
+      "id": "E07",
+      "status": "PASS"
+    },
+    {
+      "id": "E14",
+      "status": "PASS",
+      "http": 401
+    }
+  ],
+  "admin": {},
+  "cleanup": {
+    "deletes": [
+      {
+        "table": "dispatch_leads",
+        "id": "59f64be9-abd3-4dd1-ad92-123dd669ae93",
+        "error": null
+      },
+      {
+        "table": "dispatch_leads",
+        "id": "36c5ec17-abe0-4c91-8d07-57477076929f",
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "17658529-52ac-443e-b956-7d2f58b1a98a",
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "edfe661b-4b4e-4c6d-8afd-ab02110ed059",
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "4e5809a1-a261-490f-8992-ce6242b30d3f",
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "4eb2d7cf-af1b-4a21-a41f-e875641d214b",
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "953fd4a2-9813-40b0-acd9-c6ac1d8b059b",
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "31944e41-f662-4e01-b146-d415b4b3bcad",
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "ee6cb157-b64b-4eb4-bfc8-9008448cd0c6",
+        "error": null
+      }
+    ],
+    "verify": [
+      {
+        "table": "consultations",
+        "id": "17658529-52ac-443e-b956-7d2f58b1a98a",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "edfe661b-4b4e-4c6d-8afd-ab02110ed059",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "4e5809a1-a261-490f-8992-ce6242b30d3f",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "4eb2d7cf-af1b-4a21-a41f-e875641d214b",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "953fd4a2-9813-40b0-acd9-c6ac1d8b059b",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "31944e41-f662-4e01-b146-d415b4b3bcad",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "consultations",
+        "id": "ee6cb157-b64b-4eb4-bfc8-9008448cd0c6",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "dispatch_leads",
+        "id": "59f64be9-abd3-4dd1-ad92-123dd669ae93",
+        "gone": true,
+        "error": null
+      },
+      {
+        "table": "dispatch_leads",
+        "id": "36c5ec17-abe0-4c91-8d07-57477076929f",
+        "gone": true,
+        "error": null
+      }
+    ],
+    "ok": true
+  },
+  "trackedIds": {
+    "consultIds": [
+      "17658529-52ac-443e-b956-7d2f58b1a98a",
+      "edfe661b-4b4e-4c6d-8afd-ab02110ed059",
+      "4e5809a1-a261-490f-8992-ce6242b30d3f",
+      "4eb2d7cf-af1b-4a21-a41f-e875641d214b",
+      "953fd4a2-9813-40b0-acd9-c6ac1d8b059b",
+      "31944e41-f662-4e01-b146-d415b4b3bcad",
+      "ee6cb157-b64b-4eb4-bfc8-9008448cd0c6"
+    ],
+    "dispatchIds": [
+      "59f64be9-abd3-4dd1-ad92-123dd669ae93",
+      "36c5ec17-abe0-4c91-8d07-57477076929f"
+    ]
+  },
+  "overall": "PASS"
+}

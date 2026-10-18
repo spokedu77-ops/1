@@ -1,0 +1,74 @@
+{
+  "port": "3023",
+  "BUILD_ID": "G4z318r0n1BxAVZ8LAwPz",
+  "checks": [
+    {
+      "id": "E17-E19-390",
+      "status": "PASS",
+      "probe": {
+        "h1": "문의 유형을 고르면맞는 상담으로 연결합니다",
+        "typeCards": 3,
+        "overflow": false,
+        "hasPrivacyHint": true
+      }
+    },
+    {
+      "id": "E17-E19-941",
+      "status": "PASS",
+      "probe": {
+        "h1": "문의 유형을 고르면맞는 상담으로 연결합니다",
+        "typeCards": 8,
+        "overflow": false,
+        "hasPrivacyHint": true
+      }
+    },
+    {
+      "id": "E17-E19-1440",
+      "status": "PASS",
+      "probe": {
+        "h1": "문의 유형을 고르면맞는 상담으로 연결합니다",
+        "typeCards": 8,
+        "overflow": false,
+        "hasPrivacyHint": true
+      }
+    },
+    {
+      "id": "success-message-synthetic",
+      "status": "PASS",
+      "mock": true,
+      "note": "API mocked — not DB PASS"
+    },
+    {
+      "id": "E12-failure-ui",
+      "status": "PASS",
+      "mock": true,
+      "failProbe": {
+        "failMsg": true,
+        "draftHint": true
+      }
+    },
+    {
+      "id": "admin-inquiry-synthetic",
+      "status": "NOT_VERIFIED",
+      "note": "Unauthenticated admin route — expect login/unauthorized UI only"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "E16-contact",
+      "url": "/contact",
+      "status": "PASS"
+    },
+    {
+      "id": "E16-private",
+      "url": "/private#apply",
+      "status": "PASS"
+    },
+    {
+      "id": "E16-education",
+      "url": "/education#contact",
+      "status": "PASS"
+    }
+  ],
+  "overall": "PASS"
+}
