@@ -494,7 +494,7 @@ function MyClassesContent() {
       }
 
       let publicUrl: string;
-      if (bucket === SESSION_FILES_BUCKET) {
+      if (bucket === SESSION_FILES_BUCKET || bucket === 'session-photos') {
         const response = await fetch('/api/teacher/session-file-upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -502,6 +502,7 @@ function MyClassesContent() {
             sessionId: selectedEvent.id,
             fileName: `${safeBase}${ext}`,
             fileSize: uploadFileBody.size,
+            bucket,
           }),
         });
         const payload = (await response.json().catch(() => ({}))) as {
@@ -520,12 +521,7 @@ function MyClassesContent() {
         if (error) throw error;
         publicUrl = supabase.storage.from(bucket).getPublicUrl(payload.path).data.publicUrl;
       } else {
-        const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
-        const { error } = await supabase.storage.from(bucket).upload(safeFileName, uploadFileBody, {
-          contentType: contentType ?? (uploadFileBody.type || undefined),
-        });
-        if (error) throw error;
-        publicUrl = supabase.storage.from(bucket).getPublicUrl(safeFileName).data.publicUrl;
+        throw new Error('Unsupported upload bucket.');
       }
       return { publicUrl, displayName };
     } catch (err: unknown) {
@@ -825,8 +821,16 @@ function MyClassesContent() {
                               if (supabase && url) {
                                 const path = sessionFilesObjectPathFromPublicUrl(url);
                                 if (path) {
-                                  const { error } = await supabase.storage.from(SESSION_FILES_BUCKET).remove([path]);
-                                  if (error) devLogger.warn('[my-classes] center file remove', error);
+                                  const response = await fetch('/api/teacher/session-file-upload', {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ sessionId: selectedEvent.id, bucket: SESSION_FILES_BUCKET, path }),
+                                  });
+                                  if (!response.ok) {
+                                    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+                                    toast.error(payload.error || '파일 삭제에 실패했습니다.');
+                                    return;
+                                  }
                                 }
                               }
                               setFileUrls((prev) => prev.filter((_, idx) => idx !== i));

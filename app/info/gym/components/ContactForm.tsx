@@ -51,8 +51,8 @@ export default function ContactForm() {
         freq: fd.get('freq') || '',
         msg: fd.get('msg') || '',
         consent: fd.get('consent') === 'on',
-        createdAt: new Date().toISOString(),
         center: GYM_CONFIG.center.name,
+        website: fd.get('website') || '',
       };
 
       try {
@@ -164,6 +164,7 @@ export default function ContactForm() {
               </div>
             </div>
             {/* 최상단 옵션 과다로 인한 이탈을 줄이기 위해 선택 입력 항목을 최소화합니다. */}
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" style={{ display: 'none' }} />
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, fontSize: 13, cursor: 'pointer' }}>
               <input type="checkbox" name="consent" required style={{ marginTop: 4 }} />
               <span>
@@ -174,7 +175,8 @@ export default function ContactForm() {
                 >
                   개인정보처리방침
                 </a>
-                에 동의합니다. 수집 항목: 성함·연락처·자녀 연령 / 목적: 수강 상담 / 보유 기간: 상담 종료 후 즉시 파기 <abbr title="필수">(필수)</abbr>
+                에 동의합니다. 수집 항목: 성함·연락처·자녀 연령 / 목적: 수강·체험 상담 / 보유: 상담 목적 달성 후 내부 CRM 기준에 따라 처리{' '}
+                <abbr title="필수">(필수)</abbr>
               </span>
             </label>
             <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--gym-muted2)' }}>

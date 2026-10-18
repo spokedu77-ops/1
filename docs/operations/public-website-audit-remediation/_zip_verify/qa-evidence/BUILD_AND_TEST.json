@@ -1,0 +1,39 @@
+{
+  "preflight": {
+    "branch": "spokedu-security-audit-20261018",
+    "head": "9b897cd7022aef5bbdb93853c9f708e6ab215759",
+    "originMain": "01a5ecd3ba4157f5fa2e2e939aaf4b884828b128",
+    "gateDecision": "REMEDIATION_READY_WITH_EXTERNAL_BLOCKERS",
+    "decisionDoc": "11_RELEASE_GATE_DECISION.md"
+  },
+  "typecheck": "PASS",
+  "productionBuild": "PASS",
+  "vitestScoped": {
+    "status": "PASS",
+    "files": [
+      "app/spokedu/lib/legacy-info-redirects.test.ts",
+      "app/lib/server/publicLeadSpamGuard.test.ts",
+      "app/api/info/gym/leads/route.test.ts",
+      "app/spokedu/lib/public-marketing-typography.contract.test.ts",
+      "app/spokedu-master/businessInfo.contract.test.ts"
+    ],
+    "tests": 18
+  },
+  "eslintRemediationTs": "PASS",
+  "eslintFullRepo": "NOT_RUN",
+  "playwrightBrowser": "PASS",
+  "browserEvidence": "qa-evidence/BROWSER_QA.json",
+  "captures": "qa-evidence/captures/",
+  "gymDbE2e": "BLOCKED_DB_SAFETY — CONTACT_E2E_ALLOW_DB_WRITES=1 required",
+  "rateLimitIsolatedDb": "NOT_RUN — migration packaged; staging apply required before prod",
+  "subscriptionV17Refs": "PASS — no matches under app/",
+  "zipPackage": "SPOKEDU_PUBLIC_WEBSITE_RELEASE_GATE.zip",
+  "zipVerify": "qa-evidence/ZIP_VERIFY.json",
+  "e15AdminInbox": "BLOCKED_MISSING_CREDENTIALS",
+  "externalBlockers": [
+    "mail_order_report_number_fact_pending",
+    "gym_crm_isolated_db_e2e_env",
+    "public_lead_rate_limit_migration_staging",
+    "e15_admin_credentials"
+  ]
+}

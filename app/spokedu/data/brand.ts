@@ -6,8 +6,12 @@ export const brandProfile = {
   phone: '010-4437-9294',
   email: 'spokedu77@gmail.com',
   businessRegistrationNumber: '311-63-00356',
-  mailOrderStatus: '신고 완료',
+  /** 통신판매업 신고번호 — 공식 증빙 확인 전 null (Footer 미노출) */
+  mailOrderReportNumber: null as string | null,
+  /** 사업자등록증상 사업장 (PG·세금계산서 기준) */
   businessAddress: '서울특별시 강동구 성내동 430-2, 7층 1호',
+  /** 강동 체육관 방문·수업 장소 (체육관 config와 동일 역할) */
+  gymVisitAddress: '서울시 강동구 성내동 430-2, 7층 2호',
   serviceArea: '서울·경기 중심 상담 가능',
 } as const;
 
@@ -71,4 +75,19 @@ export function isChannelLive(channel: BrandChannel): boolean {
 /** Organization JSON-LD sameAs — 공식 채널 단일 원천 */
 export function getOrganizationSameAsUrls(): readonly string[] {
   return brandChannels.filter(isChannelLive).map((channel) => channel.href);
+}
+
+/** Footer 법적 표기 — 신고번호는 증빙 확정 시에만 포함 */
+export function getPublicFooterLegalLine(): string {
+  const parts = [
+    brandProfile.nameKo,
+    `대표 ${brandProfile.representative}`,
+    `사업자등록번호 ${brandProfile.businessRegistrationNumber}`,
+  ];
+  const reportNo = brandProfile.mailOrderReportNumber?.trim();
+  if (reportNo) {
+    parts.push(`통신판매업 신고번호 ${reportNo}`);
+  }
+  parts.push(brandProfile.businessAddress);
+  return parts.join(' · ');
 }

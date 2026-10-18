@@ -14,6 +14,15 @@ describe('teacher center feedback upload contract', () => {
     expect(uploadRoute).toContain('createSignedUploadUrl');
     expect(uploadRoute).not.toContain('request.formData()');
     expect(teacherPage).toContain('uploadToSignedUrl');
+    expect(teacherPage).not.toContain(".from(bucket).upload(");
+  });
+
+  it('deletes owned session files through the authenticated server endpoint', () => {
+    expect(uploadRoute).toContain('export async function DELETE');
+    expect(uploadRoute).toContain("path.startsWith(`${sessionId}/`)");
+    expect(uploadRoute).toContain('canTeacherEditSession(user.id, row)');
+    expect(teacherPage).toContain("method: 'DELETE'");
+    expect(teacherPage).not.toContain('supabase.storage.from(SESSION_FILES_BUCKET).remove');
   });
 
   it('uses one shared main-or-assistant permission contract on both endpoints', () => {

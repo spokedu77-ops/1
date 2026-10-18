@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
+  evaluatePublicLeadRateLimit,
+  isHoneypotTripped,
+  rateLimitToResponse,
+} from '@/app/lib/server/publicLeadSpamGuard';
+import {
   buildEnvelopeOrThrow,
   createConsultLead,
   LeadEnvelopeValidationError,
@@ -30,6 +35,7 @@ type LeadBody = {
   acquisition?: unknown;
   conversion_evidence_slug?: unknown;
   cta_intent_id?: unknown;
+  website?: unknown;
 };
 
 function normalize(value: unknown): string {
@@ -107,6 +113,12 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    if (isHoneypotTripped(body as Record<string, unknown>)) {
+      return NextResponse.json({ ok: true });
+    }
+    const rate = await evaluatePublicLeadRateLimit(req, 'private-leads');
+    const rateRes = rateLimitToResponse(rate);
+    if (rateRes) return rateRes;
 
     const name = normalize(body.name);
     const phone = normalize(body.phone);

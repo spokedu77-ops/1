@@ -19,7 +19,6 @@ import { trackCommercialEvent } from '../lib/commercial-events';
 import { marketingBody, marketingCardStatic } from '../lib/ui-classes';
 import { CurriculumInquiryForm } from './curriculum-inquiry-form';
 import { LandingProcessOnePager } from './landing-process-one-pager';
-import { SubscriptionV17Page } from './subscription-v17/subscription-v17-page';
 
 const publicProduct = getPublicProductContract();
 
@@ -92,6 +91,34 @@ export default function CurriculumLanding() {
   ) : null;
 
   return (
-    <SubscriptionV17Page mode={mode} onModeChange={setMode} inquiry={inquiry} reducedMotion={reducedMotion} />
+    <div className="site-container py-10 sm:py-14">
+      <header className="max-w-3xl">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOKEDU LAB</p>
+        <h1 className="mt-2 text-2xl font-bold text-[#0B1F46] sm:text-3xl">{curriculumPage.hero.title}</h1>
+        <p className={`${marketingBody} mt-3`}>{curriculumPage.hero.lead}</p>
+        <p className={`${marketingBody} mt-4`}>
+          지도자용{' '}
+          <Link href="/spokedu-lab" className="font-semibold text-[#245DFF] underline-offset-4 hover:underline">
+            SPOKEDU LAB
+          </Link>
+          에서 수업자료·SPOMOVE·수업 도구를 이용할 수 있습니다.
+        </p>
+      </header>
+      <div className="mt-8 flex flex-wrap gap-2">
+        {(Object.keys(curriculumCommercialModes) as CurriculumCommercialMode[]).map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMode(key)}
+            className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+              mode === key ? 'border-[#245DFF] bg-[#F7F9FD] text-[#0B1F46]' : 'border-[#DCE3EE] bg-white text-[#536279]'
+            }`}
+          >
+            {curriculumCommercialModes[key].title}
+          </button>
+        ))}
+      </div>
+      {inquiry}
+    </div>
   );
 }

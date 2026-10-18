@@ -1,18 +1,19 @@
 import type { Metadata } from 'next';
-import CurriculumLandingClient from './CurriculumLandingClient';
-import './styles/curriculum-landing.css';
+import { permanentRedirect } from 'next/navigation';
+import { legacyCurriculumRedirectTarget } from '@/app/spokedu/lib/legacy-info-redirects';
 
 export const metadata: Metadata = {
-  title: 'SPOKEDU | 몰입형 인터랙티브 웜업의 표준',
-  description:
-    '아이부터 시니어, 느린 학습자까지. 모두가 자발적으로 몰입하는 프로그램으로 귀 기관의 교육 시스템을 진화시킵니다.',
-  openGraph: {
-    title: 'SPOKEDU | 몰입형 인터랙티브 웜업의 표준',
-    description:
-      '연세대 체육교육 전문가 × 3만 팔로워의 선택. 몰입형 인터랙티브 웜업, 대한민국 체육의 새 기준.',
-  },
+  title: 'SPOKEDU | 기관 체육교육 상담',
+  description: '기관 체육·SPOMOVE 도입 상담은 SPOKEDU 체육교육 페이지에서 접수합니다.',
+  robots: { index: false, follow: true },
 };
 
-export default function CurriculumSalesPage() {
-  return <CurriculumLandingClient />;
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+/** Legacy ads URL → canonical institution inquiry (inline DispatchProposalForm). */
+export default async function CurriculumLegacyRedirectPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  permanentRedirect(legacyCurriculumRedirectTarget(params));
 }
