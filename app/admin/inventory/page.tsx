@@ -48,6 +48,7 @@ export default function AdminInventoryPage() {
   const [tempQuantities, setTempQuantities] = useState<{[key: number]: string}>({});
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const assertInventoryMutation = (
     data: { id: number } | null,
     error: { message: string } | null
@@ -58,7 +59,7 @@ export default function AdminInventoryPage() {
 
   const fetchCatalog = useCallback(async () => {
     if (!supabase) return;
-    const { data, error } = await supabase.from('catalog').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('catalog').select('id, name, category, image, simple_desc, key_points, usage_examples, created_at').order('created_at', { ascending: false });
     if (error) devLogger.error('[inventory] fetchCatalog error:', error);
     if (data) setCatalog(data);
   }, [supabase]);
@@ -72,8 +73,8 @@ export default function AdminInventoryPage() {
 
   const fetchTeacherData = useCallback(async (userId: string) => {
     if (!supabase) return;
-    const { data: invData } = await supabase.from('inventory').select('*').eq('user_id', userId).order('name', { ascending: true });
-    const { data: logData } = await supabase.from('inventory_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+    const { data: invData } = await supabase.from('inventory').select('id, user_id, name, quantity, category, image, simple_desc, key_points, usage_examples, updated_at').eq('user_id', userId).order('name', { ascending: true });
+    const { data: logData } = await supabase.from('inventory_logs').select('id, user_id, content, type, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
     
     if (invData) {
       setTeacherInventory(invData);
@@ -285,12 +286,26 @@ export default function AdminInventoryPage() {
     await fetchCatalog();
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setCatalogForm({ ...catalogForm, image: reader.result as string });
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      toast.error('JPG, PNG, WEBP, GIF 형식의 10MB 이하 이미지만 업로드할 수 있습니다.');
+      return;
+    }
+    setIsImageUploading(true);
+    try {
+      const form = new FormData();
+      form.set('file', file);
+      const response = await fetch('/api/admin/inventory/images', { method: 'POST', body: form });
+      const result = await response.json().catch(() => ({})) as { publicUrl?: string; error?: string };
+      if (!response.ok || !result.publicUrl) throw new Error(result.error ?? '이미지 업로드 실패');
+      setCatalogForm((current) => ({ ...current, image: result.publicUrl! }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsImageUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -543,7 +558,7 @@ export default function AdminInventoryPage() {
                         <label className="w-full sm:flex-1 flex flex-col items-center justify-center p-6 md:p-8 bg-slate-50 border-2 border-dashed rounded-3xl cursor-pointer hover:bg-slate-100 transition-colors">
                             <ImageIcon className="text-slate-300 mb-2" size={32} />
                             <span className="text-xs font-bold text-slate-400">파일 선택</span>
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                            <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => void handleImageUpload(event)} />
                         </label>
                         <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 border border-slate-100">
                             {catalogForm.image ? <img src={catalogForm.image} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] font-bold text-slate-300">Preview</span>}
@@ -556,7 +571,7 @@ export default function AdminInventoryPage() {
                 <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">핵심 포인트</label><textarea className="w-full p-3 md:p-4 bg-slate-50 rounded-2xl font-bold h-20 md:h-24 outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none" value={catalogForm.key_points} onChange={e => setCatalogForm({...catalogForm, key_points: e.target.value})} /></div>
                 <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">활용 방법 (링크 가능)</label><textarea className="w-full p-3 md:p-4 bg-slate-50 rounded-2xl font-bold h-32 md:h-40 outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none" value={catalogForm.usage_examples} onChange={e => setCatalogForm({...catalogForm, usage_examples: e.target.value})} /></div>
                 
-                <button onClick={handleSaveCatalog} className="w-full py-4 md:py-5 bg-indigo-600 text-white rounded-[20px] md:rounded-[28px] font-black text-base md:text-lg hover:bg-indigo-700 transition-all cursor-pointer shadow-lg shadow-indigo-200">마스터 데이터 저장</button>
+                <button disabled={isImageUploading} onClick={handleSaveCatalog} className="w-full py-4 md:py-5 bg-indigo-600 text-white rounded-[20px] md:rounded-[28px] font-black text-base md:text-lg hover:bg-indigo-700 transition-all cursor-pointer shadow-lg shadow-indigo-200 disabled:cursor-not-allowed disabled:opacity-50">{isImageUploading ? '이미지 업로드 중...' : '마스터 데이터 저장'}</button>
             </div>
           </div>
         </div>

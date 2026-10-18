@@ -802,13 +802,9 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         ghost.mileage_option ?? undefined
       ).mileageAction;
       const nextActionStr = appendMileageActionLabel(prevAction, mileageLabel);
-      const result = await applySessionLinkedMileage(supabase, {
+      const result = await applySessionLinkedMileage({
         sessionId: ghost.id,
-        sessionStartAt: ghost.start_at ?? null,
-        title: ghost.title ?? null,
-        memo: ghost.memo,
         mileage_option: ghost.mileage_option,
-        created_by: ghost.created_by ?? null,
         nextActionStr,
       });
       if (!result.ok) {
@@ -2372,11 +2368,9 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         open={!!mileageModal}
         onClose={() => setMileageModal(null)}
         sessionId={mileageModal?.row.id ?? ""}
-        sessionStartAt={mileageModal?.row.start_at ?? null}
         title={mileageModal?.row.title ?? null}
         memo={mileageModal?.row.memo}
         mileage_option={mileageModal?.row.mileage_option}
-        created_by={mileageModal?.row.created_by ?? null}
         onSaved={() => {
           onChanged?.();
           void loadAll();

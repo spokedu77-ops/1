@@ -1,0 +1,38 @@
+{
+  "decision": "RELEASE_PACKAGE_READY_E15_BLOCKED",
+  "isolatedWorktree": "C:\\Users\\joker\\Documents\\GitHub\\1-release-candidate-isolated",
+  "patchVerifyWorktree": "C:\\Users\\joker\\Documents\\GitHub\\1-release-candidate-patch-verify",
+  "integrationBaseCommit": "c1a7ec52691f0f710e51a15aeb359e8eb7b55e76",
+  "integrationTargetCommit": "f02d54274b970a8bbf5a3bf7bf4c63f2e12b3d60",
+  "sourceBranchPreserved": "spokedu-security-audit-20261018",
+  "sourceHeadPreserved": "f02d54274b970a8bbf5a3bf7bf4c63f2e12b3d60",
+  "originMainSha": "01a5ecd3ba4157f5fa2e2e939aaf4b884828b128",
+  "isolatedBuildId": "HhPxjwKy-dtg0eUThobrh",
+  "npmCi": { "status": "PASS", "packages": 621 },
+  "typecheck": { "status": "PASS", "command": "npm run typecheck" },
+  "eslint": { "status": "PASS", "command": "npm run lint:ci" },
+  "vitest": {
+    "status": "PASS",
+    "command": "vitest run (4 files, 39 tests)",
+    "files": [
+      "app/spokedu/data/site-ia.test.ts",
+      "app/spokedu/contact/inquiry-submit.test.ts",
+      "app/api/dispatch/leads/route.fault-injection.test.ts",
+      "app/api/private/leads/route.fault-injection.test.ts"
+    ]
+  },
+  "productionBuild": { "status": "PASS", "command": "npm run build", "next": "16.2.11" },
+  "cssModulesIntegrity": {
+    "status": "PASS",
+    "command": "node docs/design/phase-1b4c/home-css-contract.mjs",
+    "missingCount": 0,
+    "note": "Executed on integrated blobs; isolated home-web SHAs match target f02d542"
+  },
+  "patchApply": {
+    "textPatch": "MAIN_BASE_INTEGRATION_DIFF.patch",
+    "textApplyCheck": "PASS",
+    "binaryFiles": "included-assets/public/images/spokedu/home/field-editorial/* (manual copy after text patch)",
+    "blobParityWithTarget": "PASS (18/18 files match f02d542 blobs on disk)"
+  },
+  "runtimeEnvNote": "Isolated `next start` QA used operator .env.local mirrored locally only; not part of ZIP or production config."
+}

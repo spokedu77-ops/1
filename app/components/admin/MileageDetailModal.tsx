@@ -22,6 +22,7 @@ import {
   getMileageLogPointDelta,
   resolveMileageLogDisplayText,
 } from '@/app/admin/classes-shared/lib/sessionUtils';
+import { postMileageAdjustment } from './adminMileageClient';
 
 interface Teacher {
   id: string;
@@ -335,22 +336,14 @@ export default function MileageDetailModal({
     }
 
     try {
-      const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
-      const currentPoints = user?.points ?? 0;
-      const nextPoints = currentPoints + parsedPointDelta;
-
-      const { error: uError } = await supabase.from('users').update({ points: nextPoints }).eq('id', teacher.id);
-      if (uError) throw uError;
-
-      const { error: lError } = await supabase.from('mileage_logs').insert([{
-        teacher_id: teacher.id,
-        amount: parsedPointDelta,
+      const result = await postMileageAdjustment({
+        operation: 'apply',
+        teacherId: teacher.id,
+        pointDelta: parsedPointDelta,
         reason: editReason.trim(),
-        session_title: '운영진 수동 조정',
-      }]);
-      if (lError) throw lError;
-
-      setDisplayPoints(nextPoints);
+      });
+      if (!result.ok || typeof result.points !== 'number') throw new Error(result.code ?? result.error);
+      setDisplayPoints(result.points);
       toast.success('마일리지가 반영되었습니다.');
       setPointDeltaInput('');
       setEditReason('');
@@ -391,14 +384,18 @@ export default function MileageDetailModal({
     if (!confirm(`이 기록을 삭제하고 마일리지 ${pointDelta > 0 ? '-' : '+'}${Math.abs(pointDelta).toLocaleString()}P를 복구하시겠습니까?`)) return;
 
     try {
-      const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
-      const currentPoints = user?.points ?? 0;
-      await supabase.from('users').update({ points: currentPoints - pointDelta }).eq('id', teacher.id);
-      const { error } = await supabase.from('mileage_logs').delete().eq('id', logId);
-      if (error) throw error;
+      const result = await postMileageAdjustment({
+        operation: 'reverse',
+        teacherId: teacher.id,
+        pointDelta: -pointDelta,
+        logId,
+        expectedLogAmount: logToDelete.amount,
+        expectedLogReason: logToDelete.reason,
+      });
+      if (!result.ok || typeof result.points !== 'number') throw new Error(result.code ?? result.error);
       // [취소] 로그는 남기지 않음 (운영진 조치)
       setTeacherLogs(prev => prev.filter(l => l.id !== logId));
-      setDisplayPoints(currentPoints - pointDelta);
+      setDisplayPoints(result.points);
       onSaved?.();
       toast.success('마일리지가 복구되었습니다.');
     } catch (error: unknown) {
@@ -413,17 +410,23 @@ export default function MileageDetailModal({
     if (!confirm(`${teacher.name} 강사에게 ${item.label} (+${item.value.toLocaleString()}P)를 지급하시겠습니까?`)) return;
 
     try {
-      const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
-      const currentPoints = user?.points ?? 0;
-      await supabase.from('users').update({ points: currentPoints + item.value }).eq('id', teacher.id);
-      const { data: newLog } = await supabase.from('mileage_logs').insert([{
+      const result = await postMileageAdjustment({
+        operation: 'apply',
+        teacherId: teacher.id,
+        pointDelta: item.value,
+        reason: `[추가] ${item.label}`,
+      });
+      if (!result.ok || typeof result.points !== 'number' || !result.logId) throw new Error(result.code ?? result.error);
+      const newLog: MileageLog = {
+        id: result.logId,
         teacher_id: teacher.id,
         amount: item.value,
         reason: `[추가] ${item.label}`,
-        session_title: '운영진 조치'
-      }]).select().single();
-      if (newLog) setLastAdditionalLog(newLog as MileageLog);
-      setDisplayPoints(currentPoints + item.value);
+        session_title: '운영진 조치',
+        created_at: new Date().toISOString(),
+      };
+      setLastAdditionalLog(newLog);
+      setDisplayPoints(result.points);
       toast.success('지급이 완료되었습니다.');
       onSaved?.();
       loadLogs();
@@ -437,13 +440,17 @@ export default function MileageDetailModal({
     if (!confirm(`최근 추가 항목 (${lastAdditionalLog.amount.toLocaleString()}P) 지급을 취소하시겠습니까?`)) return;
 
     try {
-      const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
-      const currentPoints = user?.points ?? 0;
-      await supabase.from('users').update({ points: currentPoints - lastAdditionalLog.amount }).eq('id', teacher.id);
-      const { error } = await supabase.from('mileage_logs').delete().eq('id', lastAdditionalLog.id);
-      if (error) throw error;
+      const result = await postMileageAdjustment({
+        operation: 'reverse',
+        teacherId: teacher.id,
+        pointDelta: -lastAdditionalLog.amount,
+        logId: lastAdditionalLog.id,
+        expectedLogAmount: lastAdditionalLog.amount,
+        expectedLogReason: lastAdditionalLog.reason,
+      });
+      if (!result.ok || typeof result.points !== 'number') throw new Error(result.code ?? result.error);
       setLastAdditionalLog(null);
-      setDisplayPoints(currentPoints - lastAdditionalLog.amount);
+      setDisplayPoints(result.points);
       toast.success('추가 지급이 취소되었습니다.');
       onSaved?.();
       loadLogs();
