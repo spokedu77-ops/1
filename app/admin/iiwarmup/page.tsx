@@ -33,16 +33,6 @@ export default function TeacherAppOverviewPage() {
           <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
         </Link>
 
-        <Link
-          href="/admin/camera"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
-        >
-          <h3 className="text-base font-extrabold">카메라 앱</h3>
-          <p className="mt-2 text-sm text-neutral-400">
-            수업용 카메라 앱으로 바로 진입합니다.
-          </p>
-          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
-        </Link>
       </section>
     </div>
   );

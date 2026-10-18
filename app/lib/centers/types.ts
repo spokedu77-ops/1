@@ -24,6 +24,8 @@ export interface InstructorsDefault {
 export interface CriminalCheckFile {
   name: string;
   path: string;
+  /** 신규 민감 파일은 전용 비공개 버킷을 명시한다. 미지정 값은 레거시 공개 버킷이다. */
+  bucket?: string;
 }
 
 /** 센터 운영/수업 히스토리 1행 */
@@ -64,7 +66,6 @@ export interface Center {
   instructors_default: InstructorsDefault;
   highlights: string | null;
   criminal_check_facility_id: string | null;
-  criminal_check_facility_password: string | null;
   criminal_check_files: CriminalCheckFile[];
   created_at: string;
   updated_at: string;
