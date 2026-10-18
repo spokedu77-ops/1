@@ -11,8 +11,8 @@ export const GYM_CONFIG = {
     webUrl: "http://pf.kakao.com/_VGWxeb/chat",
     deepLink: "",
   },
-  leadEndpoint:
-    "https://script.google.com/macros/s/AKfycbwja8ZzKpyyNuRuPoBz6Mkp_SzHf0Bh9rGraip3GnHwPicOhadsZaoTYThcnAa_5OBfnw/exec",
+  /** Browser posts to internal API; Google Sheets sync is server-only via env. */
+  leadEndpoint: '/api/info/gym/leads',
 } as const;
 
 export const TRUST_ASSET_LINES = [

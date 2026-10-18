@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
+  evaluatePublicLeadRateLimit,
+  isHoneypotTripped,
+  rateLimitToResponse,
+} from '@/app/lib/server/publicLeadSpamGuard';
+import {
   buildEnvelopeOrThrow,
   createConsultLead,
   LeadEnvelopeValidationError,
@@ -27,6 +32,7 @@ type LeadBody = {
   acquisition?: unknown;
   conversion_evidence_slug?: unknown;
   cta_intent_id?: unknown;
+  website?: unknown;
 };
 
 function normalize(value: unknown): string {
@@ -52,6 +58,12 @@ export async function POST(req: NextRequest) {
     if (!body) {
       return NextResponse.json({ ok: false, message: '요청 본문이 올바르지 않습니다.' }, { status: 400 });
     }
+    if (isHoneypotTripped(body as Record<string, unknown>)) {
+      return NextResponse.json({ ok: true });
+    }
+    const rate = await evaluatePublicLeadRateLimit(req, 'curriculum-leads');
+    const rateRes = rateLimitToResponse(rate);
+    if (rateRes) return rateRes;
 
     const nameOrOrg = normalize(body.name_or_org);
     const rawType = normalize(body.type);
