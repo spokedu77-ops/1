@@ -1,0 +1,103 @@
+{
+  "BUILD_ID": "Ao7Fb6W1fEK9bV3D6_hRH",
+  "port": "3015",
+  "base": "http://127.0.0.1:3015/spokedu/",
+  "mode": "after",
+  "checks": [
+    {
+      "label": "GATEWAY_LAYOUT_1440",
+      "status": "PASS",
+      "detail": {
+        "count": 3,
+        "rowDesktop": true,
+        "colMobile": false,
+        "borderWidth": "1px",
+        "bg": "rgb(255, 255, 255)"
+      }
+    },
+    {
+      "label": "GATEWAY_LAYOUT_390",
+      "status": "PASS",
+      "detail": {
+        "count": 3,
+        "rowDesktop": false,
+        "colMobile": true,
+        "borderWidth": "1px",
+        "bg": "rgb(255, 255, 255)"
+      }
+    },
+    {
+      "label": "RECORDS_LAYOUT_390",
+      "status": "PASS",
+      "detail": {
+        "tileCount": 3,
+        "bg": "rgb(11, 31, 70)",
+        "infoBg": "rgba(6, 14, 32, 0.96)"
+      }
+    },
+    {
+      "label": "LAB_STYLE_390",
+      "status": "PASS",
+      "detail": {
+        "has144": false,
+        "objectFit": "contain",
+        "imgNatural": 1536
+      }
+    },
+    {
+      "label": "HERO_CTA_941",
+      "status": "PASS",
+      "detail": {
+        "ctaBottom": 459.828125,
+        "secondaryBottom": 459.828125,
+        "vh": 861,
+        "pass": true
+      }
+    },
+    {
+      "label": "LAB_OBJECT_FIT_MOBILE",
+      "status": "PASS",
+      "detail": {
+        "has144": false,
+        "objectFit": "contain",
+        "imgNatural": 1536
+      }
+    },
+    {
+      "label": "RECORDS_BG_1440",
+      "status": "PASS",
+      "detail": {
+        "tileCount": 3,
+        "bg": "rgb(11, 31, 70)",
+        "infoBg": "rgba(6, 14, 32, 0.96)"
+      }
+    }
+  ],
+  "viewports": {
+    "390": {
+      "overflowX": false
+    },
+    "767": {
+      "overflowX": false
+    },
+    "768": {
+      "overflowX": false
+    },
+    "834": {
+      "overflowX": false
+    },
+    "941": {
+      "overflowX": false
+    },
+    "1023": {
+      "overflowX": false
+    },
+    "1024": {
+      "overflowX": false
+    },
+    "1440": {
+      "overflowX": false
+    }
+  },
+  "overall": "PASS"
+}

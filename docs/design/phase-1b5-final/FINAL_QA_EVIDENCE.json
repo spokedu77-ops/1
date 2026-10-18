@@ -1,0 +1,258 @@
+{
+  "BUILD_ID": "cAsP3YNDCoxDl0jtF308L",
+  "port": "3017",
+  "base": "http://127.0.0.1:3017/spokedu/",
+  "checks": [
+    {
+      "label": "VIEWPORTS_COMPLETE",
+      "status": "PASS",
+      "detail": {
+        "viewports": {
+          "360": {
+            "overflowX": false
+          },
+          "390": {
+            "overflowX": false
+          },
+          "430": {
+            "overflowX": false
+          },
+          "767": {
+            "overflowX": false
+          },
+          "768": {
+            "overflowX": false
+          },
+          "834": {
+            "overflowX": false
+          },
+          "941": {
+            "overflowX": false
+          },
+          "1023": {
+            "overflowX": false
+          },
+          "1024": {
+            "overflowX": false
+          },
+          "1440": {
+            "overflowX": false
+          }
+        }
+      }
+    },
+    {
+      "label": "OVERFLOW_X",
+      "status": "PASS",
+      "detail": {
+        "overflowFailed": false
+      }
+    },
+    {
+      "label": "GATEWAY_LAYOUT_1440",
+      "status": "PASS",
+      "detail": {
+        "count": 3,
+        "rowDesktop": true,
+        "colMobile": false,
+        "bordersOk": true,
+        "cardDetails": [
+          {
+            "borderTopWidth": 1,
+            "borderWidth": 1,
+            "bg": "rgb(255, 255, 255)",
+            "href": "/education",
+            "linkText": "기관 수업 안내 →"
+          },
+          {
+            "borderTopWidth": 1,
+            "borderWidth": 1,
+            "bg": "rgb(255, 255, 255)",
+            "href": "/private",
+            "linkText": "개인 수업 안내 →"
+          },
+          {
+            "borderTopWidth": 1,
+            "borderWidth": 1,
+            "bg": "rgb(255, 255, 255)",
+            "href": "/spokedu-lab",
+            "linkText": "LAB 둘러보기 →"
+          }
+        ]
+      }
+    },
+    {
+      "label": "RECORDS_MEDIA_HEIGHT_390",
+      "status": "PASS",
+      "detail": {
+        "tileCount": 3,
+        "bg": "rgb(11, 31, 70)",
+        "tiles": [
+          {
+            "index": 0,
+            "href": "/records/dongjak-spomove",
+            "mediaW": 348,
+            "mediaH": 261,
+            "ratio": 0.75,
+            "heightOk": true,
+            "imgNatural": 2560,
+            "aspectRatio": "4 / 3",
+            "flex": "0 0 auto",
+            "infoH": 196.515625
+          },
+          {
+            "index": 1,
+            "href": "https://blog.naver.com/spokedutogether/224338186918",
+            "mediaW": 348,
+            "mediaH": 261,
+            "ratio": 0.75,
+            "heightOk": true,
+            "imgNatural": 1263,
+            "aspectRatio": "4 / 3",
+            "flex": "0 0 auto",
+            "infoH": 196.515625
+          },
+          {
+            "index": 2,
+            "href": "https://blog.naver.com/spokedutogether/224288711414",
+            "mediaW": 348,
+            "mediaH": 261,
+            "ratio": 0.75,
+            "heightOk": true,
+            "imgNatural": 807,
+            "aspectRatio": "4 / 3",
+            "flex": "0 0 auto",
+            "infoH": 196.515625
+          }
+        ],
+        "allImages": true,
+        "allLinks": true,
+        "allInfo": true,
+        "mobileHeightsOk": true
+      }
+    },
+    {
+      "label": "LAB_STYLE_390",
+      "status": "PASS",
+      "detail": {
+        "has144": false,
+        "objectFit": "contain",
+        "imgNatural": 1536
+      }
+    },
+    {
+      "label": "HERO_B5_COPY",
+      "status": "PASS",
+      "detail": {
+        "h1Count": 1,
+        "h1Match": true,
+        "leadMatch": true,
+        "english": false,
+        "eyebrow": false,
+        "imgCount": 1,
+        "imgOk": true,
+        "srcIncludes": true,
+        "primaryHref": "/education",
+        "secondaryHref": "/spokedu-lab",
+        "secondaryIsBtn": false,
+        "secondaryText": "수업자료 둘러보기 →",
+        "ok": true
+      }
+    },
+    {
+      "label": "HERO_CTA_941",
+      "status": "PASS",
+      "detail": {
+        "ctaBottom": 273.203125,
+        "secondaryBottom": 318.203125,
+        "vh": 861,
+        "pass": true
+      }
+    },
+    {
+      "label": "HERO_ASPECT_16_9_390",
+      "status": "PASS",
+      "detail": {
+        "w": 350,
+        "h": 196.875,
+        "ratio": 1.7777777777777777,
+        "ok": true
+      }
+    },
+    {
+      "label": "HERO_NO_OVERLAP_390",
+      "status": "PASS",
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "label": "HERO_ASPECT_16_9_768",
+      "status": "PASS",
+      "detail": {
+        "w": 313.953125,
+        "h": 176.59375,
+        "ratio": 1.777826933286144,
+        "ok": true
+      }
+    },
+    {
+      "label": "HERO_NO_OVERLAP_768",
+      "status": "PASS",
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "label": "HERO_ASPECT_16_9_1440",
+      "status": "PASS",
+      "detail": {
+        "w": 708,
+        "h": 398.25,
+        "ratio": 1.7777777777777777,
+        "ok": true
+      }
+    },
+    {
+      "label": "HERO_NO_OVERLAP_1440",
+      "status": "PASS",
+      "detail": {
+        "ok": true
+      }
+    }
+  ],
+  "viewports": {
+    "360": {
+      "overflowX": false
+    },
+    "390": {
+      "overflowX": false
+    },
+    "430": {
+      "overflowX": false
+    },
+    "767": {
+      "overflowX": false
+    },
+    "768": {
+      "overflowX": false
+    },
+    "834": {
+      "overflowX": false
+    },
+    "941": {
+      "overflowX": false
+    },
+    "1023": {
+      "overflowX": false
+    },
+    "1024": {
+      "overflowX": false
+    },
+    "1440": {
+      "overflowX": false
+    }
+  },
+  "designQA": [],
+  "overall": "PASS"
+}

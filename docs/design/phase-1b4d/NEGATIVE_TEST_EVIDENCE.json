@@ -1,0 +1,102 @@
+{
+  "tests": [
+    {
+      "label": "NEGATIVE_GATEWAY_BORDER",
+      "status": "PASS",
+      "detail": {
+        "count": 3,
+        "rowDesktop": true,
+        "colMobile": false,
+        "bordersOk": false,
+        "cardDetails": [
+          {
+            "borderTopWidth": 0,
+            "borderWidth": 0,
+            "bg": "rgb(255, 255, 255)",
+            "href": "/education",
+            "linkText": "기관 수업 안내 →"
+          },
+          {
+            "borderTopWidth": 0,
+            "borderWidth": 0,
+            "bg": "rgb(255, 255, 255)",
+            "href": "/private",
+            "linkText": "개인 수업 안내 →"
+          },
+          {
+            "borderTopWidth": 0,
+            "borderWidth": 0,
+            "bg": "rgb(255, 255, 255)",
+            "href": "/spokedu-lab",
+            "linkText": "LAB 둘러보기 →"
+          }
+        ]
+      }
+    },
+    {
+      "label": "NEGATIVE_RECORDS_MEDIA_HEIGHT",
+      "status": "PASS",
+      "detail": {
+        "tileCount": 3,
+        "bg": "rgb(11, 31, 70)",
+        "tiles": [
+          {
+            "index": 0,
+            "href": "/records/dongjak-spomove",
+            "mediaW": 348,
+            "mediaH": 261,
+            "ratio": 0.75,
+            "heightOk": true,
+            "imgNatural": 2560,
+            "aspectRatio": "4 / 3",
+            "flex": "0 0 auto",
+            "infoH": 196.515625
+          },
+          {
+            "index": 1,
+            "href": "https://blog.naver.com/spokedutogether/224338186918",
+            "mediaW": 348,
+            "mediaH": 24,
+            "ratio": 0.06896551724137931,
+            "heightOk": false,
+            "imgNatural": 1263,
+            "aspectRatio": "auto",
+            "flex": "0 0 auto",
+            "infoH": 196.515625
+          },
+          {
+            "index": 2,
+            "href": "https://blog.naver.com/spokedutogether/224288711414",
+            "mediaW": 348,
+            "mediaH": 24,
+            "ratio": 0.06896551724137931,
+            "heightOk": false,
+            "imgNatural": 807,
+            "aspectRatio": "auto",
+            "flex": "0 0 auto",
+            "infoH": 196.515625
+          }
+        ],
+        "allImages": true,
+        "allLinks": true,
+        "allInfo": true,
+        "mobileHeightsOk": false
+      }
+    },
+    {
+      "label": "NEGATIVE_OVERFLOW_X",
+      "status": "PASS",
+      "detail": {
+        "overflowX": true
+      }
+    },
+    {
+      "label": "NEGATIVE_INDEPENDENT_AUDIT_LOGIC",
+      "status": "PASS",
+      "detail": {
+        "auditWouldFail": true
+      }
+    }
+  ],
+  "overall": "PASS"
+}

@@ -1,0 +1,368 @@
+{
+  "BUILD_ID": "K-6oOhNLPPniCxJn7yAaE",
+  "port": "3012",
+  "base": "http://127.0.0.1:3012/spokedu/",
+  "mode": "after",
+  "viewports": {
+    "390": {
+      "heroHeight": 759.3125,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 408.3125,
+        "bottom": 456.3125,
+        "left": 20,
+        "right": 370,
+        "height": 48,
+        "pass": true
+      },
+      "secondary": {
+        "top": 468.3125,
+        "bottom": 516.3125,
+        "left": 20,
+        "right": 370,
+        "height": 48,
+        "pass": true
+      },
+      "gridColumns": "repeat(12, minmax(0px, 1fr))",
+      "gridColumnCount": 3,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": false,
+      "englishFontSize": "36px",
+      "englishColor": "rgb(11, 31, 70)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "767": {
+      "heroHeight": 1061.921875,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 402.59375,
+        "bottom": 450.59375,
+        "left": 20,
+        "right": 660,
+        "height": 48,
+        "pass": true
+      },
+      "secondary": {
+        "top": 462.59375,
+        "bottom": 510.59375,
+        "left": 20,
+        "right": 660,
+        "height": 48,
+        "pass": true
+      },
+      "gridColumns": "repeat(12, minmax(0px, 1fr))",
+      "gridColumnCount": 3,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": false,
+      "englishFontSize": "48px",
+      "englishColor": "rgb(11, 31, 70)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "768": {
+      "heroHeight": 420.0625,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 393.0625,
+        "bottom": 437.0625,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "pass": true
+      },
+      "secondary": {
+        "top": 393.0625,
+        "bottom": 437.0625,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44,
+        "pass": true
+      },
+      "gridColumns": "368.547px 313.953px",
+      "gridColumnCount": 2,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": true,
+      "englishFontSize": "38px",
+      "englishColor": "rgb(36, 93, 255)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "834": {
+      "heroHeight": 424.609375,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 395.921875,
+        "bottom": 439.921875,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "pass": true
+      },
+      "secondary": {
+        "top": 395.921875,
+        "bottom": 439.921875,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44,
+        "pass": true
+      },
+      "gridColumns": "403.188px 343.469px",
+      "gridColumnCount": 2,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": true,
+      "englishFontSize": "38.364px",
+      "englishColor": "rgb(36, 93, 255)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "941": {
+      "heroHeight": 465.75,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "pass": true
+      },
+      "secondary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44,
+        "pass": true
+      },
+      "gridColumns": "459.344px 391.312px",
+      "gridColumnCount": 2,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": true,
+      "englishFontSize": "43.286px",
+      "englishColor": "rgb(36, 93, 255)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "1023": {
+      "heroHeight": 492.078125,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 453.9375,
+        "bottom": 497.9375,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "pass": true
+      },
+      "secondary": {
+        "top": 453.9375,
+        "bottom": 497.9375,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44,
+        "pass": true
+      },
+      "gridColumns": "502.391px 427.969px",
+      "gridColumnCount": 2,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": true,
+      "englishFontSize": "47.058px",
+      "englishColor": "rgb(36, 93, 255)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "1024": {
+      "heroHeight": 582.484375,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 556.296875,
+        "bottom": 604.296875,
+        "left": 32,
+        "right": 159.359375,
+        "height": 48,
+        "pass": true
+      },
+      "secondary": {
+        "top": 556.296875,
+        "bottom": 604.296875,
+        "left": 171.359375,
+        "right": 324.640625,
+        "height": 48,
+        "pass": true
+      },
+      "gridColumns": "58px 58px 58px 58px 58px 58px 58px 58px 58px 58px 58px 58px",
+      "gridColumnCount": 12,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": true,
+      "englishFontSize": "77.824px",
+      "englishColor": "rgb(11, 31, 70)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "1440": {
+      "heroHeight": 751.546875,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 704.546875,
+        "bottom": 752.546875,
+        "left": 84,
+        "right": 211.359375,
+        "height": 48,
+        "pass": true
+      },
+      "secondary": {
+        "top": 704.546875,
+        "bottom": 752.546875,
+        "left": 223.359375,
+        "right": 376.640625,
+        "height": 48,
+        "pass": true
+      },
+      "gridColumns": "84px 84px 84px 84px 84px 84px 84px 84px 84px 84px 84px 84px",
+      "gridColumnCount": 12,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": true,
+      "englishFontSize": "108px",
+      "englishColor": "rgb(11, 31, 70)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    },
+    "941-h700": {
+      "heroHeight": 465.75,
+      "h1Count": 1,
+      "englishCount": 1,
+      "imageCount": 1,
+      "primaryHref": "/education",
+      "secondaryHref": "/spokedu-lab",
+      "primary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 32,
+        "right": 145.9375,
+        "height": 44,
+        "pass": true
+      },
+      "secondary": {
+        "top": 431.703125,
+        "bottom": 475.703125,
+        "left": 157.9375,
+        "right": 296.078125,
+        "height": 44,
+        "pass": true
+      },
+      "gridColumns": "459.344px 391.312px",
+      "gridColumnCount": 2,
+      "heroTextDisplay": null,
+      "heroCopyDisplay": "block",
+      "twoColumnTabletLayout": true,
+      "englishFontSize": "43.286px",
+      "englishColor": "rgb(36, 93, 255)",
+      "overflowX": false,
+      "h1Text": "움직임으로아이의 성장을설계합니다.",
+      "pass": true
+    }
+  },
+  "keyboard": {
+    "tabSequenceSample": [
+      {
+        "tag": "A",
+        "href": "#main-content",
+        "outline": "2px",
+        "text": "본문 바로가기"
+      },
+      {
+        "tag": "A",
+        "href": "/",
+        "outline": "2px",
+        "text": ""
+      },
+      {
+        "tag": "A",
+        "href": "/contact",
+        "outline": "2px",
+        "text": "상담하기"
+      },
+      {
+        "tag": "BUTTON",
+        "href": null,
+        "outline": "2px",
+        "text": "메뉴 열기"
+      },
+      {
+        "tag": "A",
+        "href": "/education",
+        "outline": "2px",
+        "text": "수업 알아보기"
+      },
+      {
+        "tag": "A",
+        "href": "/spokedu-lab",
+        "outline": "2px",
+        "text": "수업자료 둘러보기"
+      },
+      {
+        "tag": "A",
+        "href": "/education",
+        "outline": "2px",
+        "text": "기관·학교 담당자기관·학교 체육수업학교와 기관의 환경과 대상에 맞춰 수업"
+      }
+    ],
+    "focusPrimary": {
+      "href": "/education",
+      "outline": "2px"
+    },
+    "focusSecondary": {
+      "href": "/spokedu-lab",
+      "outline": "2px"
+    }
+  }
+}
