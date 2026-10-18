@@ -1,10 +1,18 @@
 'use server';
 
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { createCenterSchema } from '@/app/lib/centers/schemas';
 import type { Center, TeacherOption } from '@/app/lib/centers/types';
+import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { z } from 'zod';
 
 const CENTER_NOT_FOUND_OR_FORBIDDEN = '센터를 찾을 수 없거나 권한이 없습니다.';
+const ADMIN_REQUIRED = '관리자 권한이 필요합니다.';
+const centerIdSchema = z.string().uuid();
+const getCentersFiltersSchema = z.object({
+  search: z.string().trim().max(100).optional(),
+  status: z.enum(['active', 'paused', 'ended']).optional(),
+  region_tag: z.string().trim().max(100).optional(),
+});
 
 export type GetCentersFilters = {
   search?: string;
@@ -51,7 +59,6 @@ function normalizeCenterRow(row: CenterRowWithTeacher): Center {
       (baseRow.instructors_default as Center['instructors_default']) ?? { main: null, sub: null, backup: [] },
     highlights: (baseRow.highlights as string | null) ?? null,
     criminal_check_facility_id: (baseRow.criminal_check_facility_id as string | null) ?? null,
-    criminal_check_facility_password: (baseRow.criminal_check_facility_password as string | null) ?? null,
     criminal_check_files: (baseRow.criminal_check_files as Center['criminal_check_files']) ?? [],
     created_at: (baseRow.created_at as string) ?? new Date().toISOString(),
     updated_at: (baseRow.updated_at as string) ?? new Date().toISOString(),
@@ -62,14 +69,40 @@ function normalizeCenterRow(row: CenterRowWithTeacher): Center {
 }
 
 const CENTER_SELECT_WITH_TEACHERS = `
-  *,
+  id,
+  name,
+  region_tag,
+  address,
+  access_note,
+  contact_name,
+  contact_phone,
+  contact_email,
+  contact_role,
+  status,
+  contract_start,
+  contract_end,
+  session_fee,
+  main_teacher_id,
+  main_teacher_2_id,
+  main_teacher_3_id,
+  weekly_schedule,
+  instructors_default,
+  highlights,
+  criminal_check_facility_id,
+  criminal_check_files,
+  created_at,
+  updated_at,
   main_teacher:main_teacher_id(id, name),
   mt2:main_teacher_2_id(id, name),
   mt3:main_teacher_3_id(id, name)
 `;
 
 export async function getCenters(filters: GetCentersFilters = {}): Promise<Center[]> {
-  const supabase = await createServerSupabaseClient();
+  const auth = await requireAdmin();
+  if (!auth.ok) throw new Error(ADMIN_REQUIRED);
+  const parsedFilters = getCentersFiltersSchema.safeParse(filters);
+  if (!parsedFilters.success) return [];
+  const supabase = getServiceSupabase();
   let q = supabase
     .from('centers')
     .select(
@@ -93,14 +126,15 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
     )
     .order('name');
 
-  if (filters.status) {
-    q = q.eq('status', filters.status);
+  if (parsedFilters.data.status) {
+    q = q.eq('status', parsedFilters.data.status);
   }
-  if (filters.region_tag) {
-    q = q.eq('region_tag', filters.region_tag);
+  if (parsedFilters.data.region_tag) {
+    q = q.eq('region_tag', parsedFilters.data.region_tag);
   }
-  if (filters.search?.trim()) {
-    const term = filters.search.trim();
+  if (parsedFilters.data.search) {
+    const term = parsedFilters.data.search.replace(/[,%()]/g, ' ').trim();
+    if (!term) return [];
     q = q.or(
       `name.ilike.%${term}%,address.ilike.%${term}%,contact_name.ilike.%${term}%,contact_email.ilike.%${term}%`
     );
@@ -113,11 +147,15 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
 }
 
 export async function getCenterById(id: string): Promise<Center | null> {
-  const supabase = await createServerSupabaseClient();
+  const auth = await requireAdmin();
+  if (!auth.ok) throw new Error(ADMIN_REQUIRED);
+  const parsedId = centerIdSchema.safeParse(id);
+  if (!parsedId.success) return null;
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from('centers')
     .select(CENTER_SELECT_WITH_TEACHERS)
-    .eq('id', id)
+    .eq('id', parsedId.data)
     .single();
   if (error) {
     if (error.code === 'PGRST116') return null;
@@ -128,7 +166,9 @@ export async function getCenterById(id: string): Promise<Center | null> {
 
 /** 활동 중인 강사 목록 조회 (강사 선택 select용) */
 export async function getActiveTeachers(): Promise<TeacherOption[]> {
-  const supabase = await createServerSupabaseClient();
+  const auth = await requireAdmin();
+  if (!auth.ok) throw new Error(ADMIN_REQUIRED);
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from('users')
     .select('id, name')
@@ -140,11 +180,13 @@ export async function getActiveTeachers(): Promise<TeacherOption[]> {
 }
 
 export async function createCenter(input: unknown): Promise<{ data?: Center; error?: string }> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: ADMIN_REQUIRED };
   const parsed = createCenterSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.flatten().formErrors.join(', ') };
   }
-  const supabase = await createServerSupabaseClient();
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from('centers')
     .insert({
@@ -168,7 +210,7 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
       highlights: parsed.data.highlights ?? null,
       criminal_check_facility_id: parsed.data.criminal_check_facility_id ?? null,
       criminal_check_facility_password: parsed.data.criminal_check_facility_password ?? null,
-      criminal_check_files: parsed.data.criminal_check_files ?? [],
+      criminal_check_files: [],
       next_actions: [],
     })
     .select(CENTER_SELECT_WITH_TEACHERS)
@@ -181,11 +223,15 @@ export async function updateCenter(
   id: string,
   input: unknown
 ): Promise<{ data?: Center; error?: string }> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: ADMIN_REQUIRED };
+  const parsedId = centerIdSchema.safeParse(id);
+  if (!parsedId.success) return { error: CENTER_NOT_FOUND_OR_FORBIDDEN };
   const parsed = createCenterSchema.partial().safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.flatten().formErrors.join(', ') };
   }
-  const supabase = await createServerSupabaseClient();
+  const supabase = getServiceSupabase();
   const payload: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) payload.name = parsed.data.name;
   if (parsed.data.region_tag !== undefined) payload.region_tag = parsed.data.region_tag;
@@ -211,12 +257,10 @@ export async function updateCenter(
   if (parsed.data.criminal_check_facility_password !== undefined) {
     payload.criminal_check_facility_password = parsed.data.criminal_check_facility_password;
   }
-  if (parsed.data.criminal_check_files !== undefined) payload.criminal_check_files = parsed.data.criminal_check_files;
-
   const { data, error } = await supabase
     .from('centers')
     .update(payload)
-    .eq('id', id)
+    .eq('id', parsedId.data)
     .select(CENTER_SELECT_WITH_TEACHERS)
     .maybeSingle();
   if (error) return { error: error.message };
@@ -225,8 +269,31 @@ export async function updateCenter(
 }
 
 export async function deleteCenter(id: string): Promise<{ data?: true; error?: string }> {
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from('centers').delete().eq('id', id);
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: ADMIN_REQUIRED };
+  const parsedId = centerIdSchema.safeParse(id);
+  if (!parsedId.success) return { error: CENTER_NOT_FOUND_OR_FORBIDDEN };
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase.from('centers').delete().eq('id', parsedId.data).select('id');
   if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: CENTER_NOT_FOUND_OR_FORBIDDEN };
   return { data: true };
+}
+
+export async function getCenterCriminalCheckPassword(
+  id: string
+): Promise<{ data?: string | null; error?: string }> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return { error: ADMIN_REQUIRED };
+  const parsedId = centerIdSchema.safeParse(id);
+  if (!parsedId.success) return { error: CENTER_NOT_FOUND_OR_FORBIDDEN };
+
+  const { data, error } = await getServiceSupabase()
+    .from('centers')
+    .select('criminal_check_facility_password')
+    .eq('id', parsedId.data)
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!data) return { error: CENTER_NOT_FOUND_OR_FORBIDDEN };
+  return { data: data.criminal_check_facility_password ?? null };
 }

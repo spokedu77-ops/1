@@ -729,11 +729,6 @@ function AppManagementTab() {
       title: 'SPOMOVE',
       desc: 'SPOMOVE 트레이닝으로 바로 진입합니다.',
     },
-    {
-      href: '/admin/camera',
-      title: '카메라 앱',
-      desc: '수업용 카메라 앱으로 바로 진입합니다.',
-    },
   ];
 
   return (
