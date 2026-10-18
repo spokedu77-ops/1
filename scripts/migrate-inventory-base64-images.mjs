@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync, createHash }
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import pg from 'pg';
 import {
   buildImageMigrationPlan,
   INVENTORY_IMAGE_BUCKET,
@@ -97,12 +98,39 @@ async function verifyObject(storage, item) {
   if (digest !== item.sha256 || bytes.length !== item.bytes.length) throw new Error(`Storage byte verification failed (${item.sha256.slice(0, 12)}).`);
 }
 
+async function loadImageRows(client, databaseUrl, projectRef) {
+  if (!databaseUrl) {
+    const [{ data: catalog, error: catalogError }, { data: inventory, error: inventoryError }] = await Promise.all([
+      client.from('catalog').select('id,image').order('id'),
+      client.from('inventory').select('id,image').order('id'),
+    ]);
+    if (catalogError || inventoryError) throw new Error('Image inventory query failed.');
+    return { catalog, inventory };
+  }
+
+  const parsed = new URL(databaseUrl);
+  if (!`${parsed.hostname}:${parsed.username}`.includes(projectRef)) throw new Error('Database URL project ref mismatch.');
+  const database = new pg.Client({ connectionString: databaseUrl, ssl: { rejectUnauthorized: false } });
+  await database.connect();
+  try {
+    await database.query("set statement_timeout = '10min'");
+    const [catalog, inventory] = await Promise.all([
+      database.query('select id, image from public.catalog order by id'),
+      database.query('select id, image from public.inventory order by id'),
+    ]);
+    return { catalog: catalog.rows, inventory: inventory.rows };
+  } finally {
+    await database.end();
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const apply = args.has('apply');
   if (apply && args.has('dry-run')) throw new Error('Choose --dry-run or --apply.');
   const url = process.env.INVENTORY_MIGRATION_SUPABASE_URL?.trim() || requiredEnv('API_URL');
   const serviceKey = process.env.INVENTORY_MIGRATION_SERVICE_ROLE_KEY?.trim() || requiredEnv('SERVICE_ROLE_KEY');
+  const databaseUrl = process.env.INVENTORY_MIGRATION_DATABASE_URL?.trim();
   const projectRef = projectRefFromUrl(url);
   if (String(args.get('confirm-project-ref') ?? '') !== projectRef) throw new Error('Exact --confirm-project-ref is required.');
   if (apply && projectRef === PRODUCTION_PROJECT_REF && !args.has('allow-production')) throw new Error('Production apply requires --allow-production.');
@@ -117,11 +145,7 @@ async function main() {
   if (checkpoint.projectRef && checkpoint.projectRef !== projectRef) throw new Error('Checkpoint belongs to another project.');
 
   const client = createClient(url, serviceKey, { auth: { persistSession: false } });
-  const [{ data: catalog, error: catalogError }, { data: inventory, error: inventoryError }] = await Promise.all([
-    client.from('catalog').select('id,image').order('id'),
-    client.from('inventory').select('id,image').order('id'),
-  ]);
-  if (catalogError || inventoryError) throw new Error('Image inventory query failed.');
+  const { catalog, inventory } = await loadImageRows(client, databaseUrl, projectRef);
   const currentPlan = buildImageMigrationPlan(catalog, inventory);
 
   if (!apply) {
