@@ -1,0 +1,46 @@
+{
+  "verify": {
+    "zipPath": "C:\\Users\\joker\\Documents\\GitHub\\1\\SPOKEDU_PUBLIC_WEBSITE_RELEASE_GATE.zip",
+    "zipBytes": 2411159,
+    "manifestNewFilesOk": true,
+    "sha256Match": true,
+    "fullPatchOk": true
+  },
+  "checks": [
+    {
+      "path": "app/lib/server/publicLeadSpamGuard.ts",
+      "ok": true,
+      "sha256": "aae7089998f82e61caa058819d44008242bf4009224e797a83f27608837d3143"
+    },
+    {
+      "path": "app/lib/server/publicLeadSpamGuard.test.ts",
+      "ok": true,
+      "sha256": "9ccc70ae12574d3c6556a7d69ba56f4361bb5286691c0931f28cfe3c69023927"
+    },
+    {
+      "path": "app/api/info/gym/leads/route.ts",
+      "ok": true,
+      "sha256": "6b635a0ebfff49c71d0aa8fd5a951c485041e985b63b811eb06f6144241e7d40"
+    },
+    {
+      "path": "app/api/info/gym/leads/route.test.ts",
+      "ok": true,
+      "sha256": "910950b1eb75dd28e194b022d78e2d9b1549b563156c0c998a16f06b6b8f2e99"
+    },
+    {
+      "path": "app/spokedu/lib/legacy-info-redirects.ts",
+      "ok": true,
+      "sha256": "e7274c1a06924afa9654513ed4a549b8b496aa9701b7511d55a134e9ceb3a432"
+    },
+    {
+      "path": "app/spokedu/lib/legacy-info-redirects.test.ts",
+      "ok": true,
+      "sha256": "fc0da2619eaacea9f918ea9ed9659a1f9b82d15a999dadbf23c8ce95d33f9476"
+    },
+    {
+      "path": "supabase/migrations/20261018120000_public_lead_rate_limit.sql",
+      "ok": true,
+      "sha256": "65a1a9ac668a906e40a9cd8e47d2454f932895660c3046fbc316c55d3de5793c"
+    }
+  ]
+}

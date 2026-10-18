@@ -1,0 +1,118 @@
+{
+  "baseHead": "9b897cd7022aef5bbdb93853c9f708e6ab215759",
+  "originMain": "01a5ecd3ba4157f5fa2e2e939aaf4b884828b128",
+  "newFiles": [
+    {
+      "path": "app/lib/server/publicLeadSpamGuard.ts",
+      "sha256": "aae7089998f82e61caa058819d44008242bf4009224e797a83f27608837d3143"
+    },
+    {
+      "path": "app/lib/server/publicLeadSpamGuard.test.ts",
+      "sha256": "9ccc70ae12574d3c6556a7d69ba56f4361bb5286691c0931f28cfe3c69023927"
+    },
+    {
+      "path": "app/api/info/gym/leads/route.ts",
+      "sha256": "6b635a0ebfff49c71d0aa8fd5a951c485041e985b63b811eb06f6144241e7d40"
+    },
+    {
+      "path": "app/api/info/gym/leads/route.test.ts",
+      "sha256": "910950b1eb75dd28e194b022d78e2d9b1549b563156c0c998a16f06b6b8f2e99"
+    },
+    {
+      "path": "app/spokedu/lib/legacy-info-redirects.ts",
+      "sha256": "e7274c1a06924afa9654513ed4a549b8b496aa9701b7511d55a134e9ceb3a432"
+    },
+    {
+      "path": "app/spokedu/lib/legacy-info-redirects.test.ts",
+      "sha256": "fc0da2619eaacea9f918ea9ed9659a1f9b82d15a999dadbf23c8ce95d33f9476"
+    },
+    {
+      "path": "supabase/migrations/20261018120000_public_lead_rate_limit.sql",
+      "sha256": "65a1a9ac668a906e40a9cd8e47d2454f932895660c3046fbc316c55d3de5793c"
+    }
+  ],
+  "modifiedFiles": [
+    {
+      "path": ".cursor/rules/spokedu-public-website.mdc",
+      "sha256": "c546ba3e2280443f8c497fd681126da3c419120cc380510898b265b28c584da8"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "093810df8be95e0bba7cf3493830fd58fe3f5aa34044057beab8c0ef9c51faa0"
+    },
+    {
+      "path": "docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md",
+      "sha256": "b7da37a6db07180c54101484af865ac17900e3926c7a0a2cf89e45acde2f9389"
+    },
+    {
+      "path": "app/info/curriculum/page.tsx",
+      "sha256": "ce956cab4b00825646fc63dbf3f8470fec9304d8fbd46639ba954b9c0d9ccafa"
+    },
+    {
+      "path": "app/info/private/page.tsx",
+      "sha256": "1a6e9487b00741fd1ff0d1e68585d3a7a333ea461f26450d5b33f373edbcea07"
+    },
+    {
+      "path": "app/info/gym/components/ContactForm.tsx",
+      "sha256": "b712ac8839509945ef384fa08e9594a44a1746d8c5fcff62a4923d21e55c1081"
+    },
+    {
+      "path": "app/info/gym/data/config.ts",
+      "sha256": "d5d9c006b9a6f8972923abd6df3b7ab256a42f68748585a59f21801e9c376599"
+    },
+    {
+      "path": "app/api/consult/route.ts",
+      "sha256": "754efcb683808c31d32426d1f3a2eefb67fec48da9bbf4b727105729cc42d713"
+    },
+    {
+      "path": "app/api/private/leads/route.ts",
+      "sha256": "6240afb1af170820b8a92665712ab38ac8c1ee67a8dd3686bcaeaab2802840c5"
+    },
+    {
+      "path": "app/api/dispatch/leads/route.ts",
+      "sha256": "47f4b9566b5d56d02d7feb9b0ff4641eea202b8fb1b1d9bbd8f89c2d63976195"
+    },
+    {
+      "path": "app/api/curriculum/leads/route.ts",
+      "sha256": "6780e34acce661de886b015f03ce5219876cd4fa94da017b6c7b3bcf1b72de54"
+    },
+    {
+      "path": "app/consult/page.tsx",
+      "sha256": "de45f36a6ac80ef9d75dc6ae19180ea10393f51c3c48e59c83bacee263a82f47"
+    },
+    {
+      "path": "app/spokedu/data/brand.ts",
+      "sha256": "84e88ece60dd36c3d3816b252877008663a0ae47c9379b52f9cea89a52c154d7"
+    },
+    {
+      "path": "app/spokedu/data/site.ts",
+      "sha256": "2cb4a4b1e5b5636cdb9a47b082b3fc7779934b3caa3d4661e1bd91757cc8c34e"
+    },
+    {
+      "path": "app/spokedu/components/site-chrome.tsx",
+      "sha256": "6b6b3e84ba1ee46c6bdc6ff7e3c962cab8393a55b20a8bb1260e319b2c8b49f8"
+    },
+    {
+      "path": "app/spokedu/components/curriculum-landing.tsx",
+      "sha256": "8c7768dd14b3fceb5b364a522592917695d2da22f45a2de022df01f3fa17fff6"
+    },
+    {
+      "path": "app/move-report/components/Result.tsx",
+      "sha256": "de5a5ca31e83b43530b72cdd8074f7b2aae4d22538c484bf556952a2ef07560d"
+    },
+    {
+      "path": "app/spokedu/lib/public-marketing-typography.contract.test.ts",
+      "sha256": "4af13f5f0a4104cf9755560bda0163048020edae4d118c5ec643478010eb4090"
+    },
+    {
+      "path": "app/spokedu-master/businessInfo.contract.test.ts",
+      "sha256": "02c93ca2de7f10e7fefb2bac7ae8ad9158d32811f507f27a8b146aa161479864"
+    }
+  ],
+  "deletedFiles": [
+    "app/spokedu/components/subscription-v17/subscription-v17-manifest.json",
+    "app/spokedu/components/subscription-v17/subscription-v17-page.tsx",
+    "app/spokedu/components/subscription-v17/subscription-v17-source.ts",
+    "app/spokedu/components/subscription-v17/subscription-v17.module.css"
+  ]
+}

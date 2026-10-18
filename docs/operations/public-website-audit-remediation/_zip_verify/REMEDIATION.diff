@@ -1,0 +1,492 @@
+﻿diff --git a/.cursor/rules/spokedu-public-website.mdc b/.cursor/rules/spokedu-public-website.mdc
+index 1d153599..bbf29795 100644
+--- a/.cursor/rules/spokedu-public-website.mdc
++++ b/.cursor/rules/spokedu-public-website.mdc
+@@ -1,5 +1,5 @@
+ ---
+-description: SPOKEDU public website SSOT — brand, page jobs, nav, CTA, wrap, no MASTER.
++description: SPOKEDU public website SSOT — brand, page jobs, nav, CTA, wrap, LAB (not customer MASTER label).
+ globs: app/spokedu/**,app/(spokedu-public)/**,app/info/**,app/sitemap.ts,next.config.ts
+ alwaysApply: false
+ ---
+@@ -11,18 +11,20 @@ Full contract: [docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md](docs/SPOKEDU_PUBLIC_WEBSITE
+ ## Do
+ 
+ - One brand journey, not per-page decoration.
+-- Two purchase axes only: 체육교육 (`/education`) and 구독시스템 (`/subscription` → MASTER). SPOMOVE = content/IP. SPOMAT = execution tool.
+-- Header: 체육교육 → 구독시스템 → SPOMOVE → 운영 사례 + `[상담하기]`. Do not add About / SPOMAT / Partners / 개인·소그룹.
+-- Institution canonical: `/education`. Do **not** redirect `/info/dispatch` or `/info/dispatch.html` to `/education`. Those URLs stay as the legacy dispatch page.
+-- `/subscription` sells and hands off to MASTER. No public `/product` → `/purchase` funnel.
+-- Korean display = keep-all + strict + balance. Body = keep-all + strict + pretty. Never split words to keep a grid.
++- Two purchase axes: 체육교육 (`/education`) and **SPOKEDU LAB** 구독 (`/spokedu-lab`). SPOMOVE = content/IP. SPOMAT = execution tool.
++- **공식 구독 브랜드:** `SPOKEDU LAB`. **정본 URL:** `/spokedu-lab`. `/subscription`·`/curriculum` = 레거시 리다이렉트 only.
++- MASTER는 내부 호환·결제·실행 코드명일 수 있으나 **고객-facing 카피·헤더·푸터에 MASTER 브랜드 노출 금지.**
++- Header: 체육교육 → SPOKEDU LAB → SPOMOVE → 운영 사례 + `[상담하기]`. Do not add About / SPOMAT / Partners / 개인·소그룹 as primary nav.
++- Institution canonical: `/education` (하단 `DispatchProposalForm`, `#contact`). Legacy `/info/curriculum` → `/education?program=spomove#contact` (query preserved).
++- Private canonical: `/private#apply`. Legacy `/info/private` → redirect (no fake live counters).
++- `/info/gym` 강동 랜딩 유지; leads → internal API → `consultations` (Sheets optional server sync).
++- Korean display = keep-all + strict + balance. Body = keep-all + strict + pretty.
+ - CTA grammar and motion tokens match Home. Hover only `@media (hover:hover) and (pointer:fine)`.
+-- Unverified counts, conversion rates, causal “향상/치료” claims: forbidden.
+-- Page-by-page: READ → contract check → implement → visual QA → PO review → LOCK. Then next page.
++- 운영 사례 = `FIELD_RECORD_CATALOG` SSOT. Unverified counts, 100% guarantees, causal claims: forbidden.
+ 
+ ## Do not
+ 
+-- Touch MASTER while doing public work.
+-- Redesign Education structure away from legacy `/info/dispatch` without PO.
++- Touch MASTER payment/auth runtime while doing public-only remediation (except shared business footer fields already in contract tests).
++- Redesign Education structure away from legacy `/info/dispatch` content contract without PO.
+ - Commit, push, branch, reset, restore, revert unless the user names that action.
+ - Change unrelated working-tree files.
+diff --git a/app/api/consult/route.ts b/app/api/consult/route.ts
+index 3c02c74c..887b0d9d 100644
+--- a/app/api/consult/route.ts
++++ b/app/api/consult/route.ts
+@@ -1,5 +1,9 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
++import {
++  isHoneypotTripped,
++  isPublicLeadRateLimited,
++} from '@/app/lib/server/publicLeadSpamGuard';
+ 
+ type Body = {
+   parent_name?: unknown;
+@@ -7,6 +11,7 @@ type Body = {
+   child_age?: unknown;
+   content?: unknown;
+   consult_type?: unknown;
++  website?: unknown;
+ };
+ 
+ function norm(v: unknown): string {
+@@ -19,6 +24,12 @@ export async function POST(req: NextRequest) {
+     if (!body) {
+       return NextResponse.json({ ok: false, message: '요청 본문이 올바르지 않습니다.' }, { status: 400 });
+     }
++    if (isHoneypotTripped(body as Record<string, unknown>)) {
++      return NextResponse.json({ ok: true });
++    }
++    if (await isPublicLeadRateLimited(req, 'consult')) {
++      return NextResponse.json({ ok: false, message: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' }, { status: 429 });
++    }
+ 
+     const parent_name = norm(body.parent_name);
+     const phone = norm(body.phone);
+diff --git a/app/api/curriculum/leads/route.ts b/app/api/curriculum/leads/route.ts
+index b5c7b117..1916e964 100644
+--- a/app/api/curriculum/leads/route.ts
++++ b/app/api/curriculum/leads/route.ts
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
++import { isHoneypotTripped, isPublicLeadRateLimited } from '@/app/lib/server/publicLeadSpamGuard';
+ import {
+   buildEnvelopeOrThrow,
+   createConsultLead,
+@@ -27,6 +28,7 @@ type LeadBody = {
+   acquisition?: unknown;
+   conversion_evidence_slug?: unknown;
+   cta_intent_id?: unknown;
++  website?: unknown;
+ };
+ 
+ function normalize(value: unknown): string {
+@@ -52,6 +54,12 @@ export async function POST(req: NextRequest) {
+     if (!body) {
+       return NextResponse.json({ ok: false, message: '요청 본문이 올바르지 않습니다.' }, { status: 400 });
+     }
++    if (isHoneypotTripped(body as Record<string, unknown>)) {
++      return NextResponse.json({ ok: true });
++    }
++    if (await isPublicLeadRateLimited(req, 'curriculum-leads')) {
++      return NextResponse.json({ ok: false, message: '요청이 너무 많습니다.' }, { status: 429 });
++    }
+ 
+     const nameOrOrg = normalize(body.name_or_org);
+     const rawType = normalize(body.type);
+diff --git a/app/api/dispatch/leads/route.ts b/app/api/dispatch/leads/route.ts
+index fceea64c..e48f0fc3 100644
+--- a/app/api/dispatch/leads/route.ts
++++ b/app/api/dispatch/leads/route.ts
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
++import { isHoneypotTripped, isPublicLeadRateLimited } from '@/app/lib/server/publicLeadSpamGuard';
+ import {
+   buildEnvelopeOrThrow,
+   createConsultLead,
+@@ -27,6 +28,12 @@ export async function POST(req: NextRequest) {
+     if (!body) {
+       return NextResponse.json({ ok: false, error: '요청 본문이 올바르지 않습니다.' }, { status: 400 });
+     }
++    if (isHoneypotTripped(body)) {
++      return NextResponse.json({ ok: true });
++    }
++    if (await isPublicLeadRateLimited(req, 'dispatch-leads')) {
++      return NextResponse.json({ ok: false, error: 'too_many_requests' }, { status: 429 });
++    }
+ 
+     const organization = typeof body.organization === 'string' ? body.organization.trim() : '';
+     const manager = typeof body.manager === 'string' ? body.manager.trim() : '';
+diff --git a/app/api/private/leads/route.ts b/app/api/private/leads/route.ts
+index 9a07b713..f24cdd47 100644
+--- a/app/api/private/leads/route.ts
++++ b/app/api/private/leads/route.ts
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
++import { isHoneypotTripped, isPublicLeadRateLimited } from '@/app/lib/server/publicLeadSpamGuard';
+ import {
+   buildEnvelopeOrThrow,
+   createConsultLead,
+@@ -30,6 +31,7 @@ type LeadBody = {
+   acquisition?: unknown;
+   conversion_evidence_slug?: unknown;
+   cta_intent_id?: unknown;
++  website?: unknown;
+ };
+ 
+ function normalize(value: unknown): string {
+@@ -107,6 +109,12 @@ export async function POST(req: NextRequest) {
+         { status: 400 },
+       );
+     }
++    if (isHoneypotTripped(body as Record<string, unknown>)) {
++      return NextResponse.json({ ok: true });
++    }
++    if (await isPublicLeadRateLimited(req, 'private-leads')) {
++      return NextResponse.json({ ok: false, message: '요청이 너무 많습니다.' }, { status: 429 });
++    }
+ 
+     const name = normalize(body.name);
+     const phone = normalize(body.phone);
+diff --git a/app/consult/page.tsx b/app/consult/page.tsx
+index ebdfd5c2..86ab2ffc 100644
+--- a/app/consult/page.tsx
++++ b/app/consult/page.tsx
+@@ -196,13 +196,6 @@ export default function ConsultPage() {
+             아래 내용을 남겨 주시면 담당자가 확인 후 연락드립니다. 제출 후 카카오 채널 안내를 공유할 수 있습니다.
+           </p>
+ 
+-          {!kakaoKey && (
+-            <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+-              카카오 공유를 쓰려면 환경변수 <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_KAKAO_JS_KEY</code>를
+-              설정해 주세요. 미설정 시 채널 페이지만 새 탭으로 열립니다.
+-            </p>
+-          )}
+-
+           <form onSubmit={onSubmit} className="mt-6 space-y-5 sm:mt-8">
+             <div>
+               <label className="block text-sm font-medium text-slate-700">
+diff --git a/app/info/curriculum/page.tsx b/app/info/curriculum/page.tsx
+index d96c6a8a..80f82155 100644
+--- a/app/info/curriculum/page.tsx
++++ b/app/info/curriculum/page.tsx
+@@ -1,18 +1,19 @@
+ import type { Metadata } from 'next';
+-import CurriculumLandingClient from './CurriculumLandingClient';
+-import './styles/curriculum-landing.css';
++import { permanentRedirect } from 'next/navigation';
++import { legacyCurriculumRedirectTarget } from '@/app/spokedu/lib/legacy-info-redirects';
+ 
+ export const metadata: Metadata = {
+-  title: 'SPOKEDU | 몰입형 인터랙티브 웜업의 표준',
+-  description:
+-    '아이부터 시니어, 느린 학습자까지. 모두가 자발적으로 몰입하는 프로그램으로 귀 기관의 교육 시스템을 진화시킵니다.',
+-  openGraph: {
+-    title: 'SPOKEDU | 몰입형 인터랙티브 웜업의 표준',
+-    description:
+-      '연세대 체육교육 전문가 × 3만 팔로워의 선택. 몰입형 인터랙티브 웜업, 대한민국 체육의 새 기준.',
+-  },
++  title: 'SPOKEDU | 기관 체육교육 상담',
++  description: '기관 체육·SPOMOVE 도입 상담은 SPOKEDU 체육교육 페이지에서 접수합니다.',
++  robots: { index: false, follow: true },
+ };
+ 
+-export default function CurriculumSalesPage() {
+-  return <CurriculumLandingClient />;
++type PageProps = {
++  searchParams: Promise<Record<string, string | string[] | undefined>>;
++};
++
++/** Legacy ads URL → canonical institution inquiry (inline DispatchProposalForm). */
++export default async function CurriculumLegacyRedirectPage({ searchParams }: PageProps) {
++  const params = await searchParams;
++  permanentRedirect(legacyCurriculumRedirectTarget(params));
+ }
+diff --git a/app/info/gym/components/ContactForm.tsx b/app/info/gym/components/ContactForm.tsx
+index 329b9421..7d3866ab 100644
+--- a/app/info/gym/components/ContactForm.tsx
++++ b/app/info/gym/components/ContactForm.tsx
+@@ -51,8 +51,8 @@ export default function ContactForm() {
+         freq: fd.get('freq') || '',
+         msg: fd.get('msg') || '',
+         consent: fd.get('consent') === 'on',
+-        createdAt: new Date().toISOString(),
+         center: GYM_CONFIG.center.name,
++        website: fd.get('website') || '',
+       };
+ 
+       try {
+@@ -164,6 +164,7 @@ export default function ContactForm() {
+               </div>
+             </div>
+             {/* 최상단 옵션 과다로 인한 이탈을 줄이기 위해 선택 입력 항목을 최소화합니다. */}
++            <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" style={{ display: 'none' }} />
+             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, fontSize: 13, cursor: 'pointer' }}>
+               <input type="checkbox" name="consent" required style={{ marginTop: 4 }} />
+               <span>
+@@ -174,7 +175,8 @@ export default function ContactForm() {
+                 >
+                   개인정보처리방침
+                 </a>
+-                에 동의합니다. 수집 항목: 성함·연락처·자녀 연령 / 목적: 수강 상담 / 보유 기간: 상담 종료 후 즉시 파기 <abbr title="필수">(필수)</abbr>
++                에 동의합니다. 수집 항목: 성함·연락처·자녀 연령 / 목적: 수강·체험 상담 / 보유: 상담 목적 달성 후 내부 CRM 기준에 따라 처리{' '}
++                <abbr title="필수">(필수)</abbr>
+               </span>
+             </label>
+             <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--gym-muted2)' }}>
+diff --git a/app/info/gym/data/config.ts b/app/info/gym/data/config.ts
+index 8f553a34..b15b8c84 100644
+--- a/app/info/gym/data/config.ts
++++ b/app/info/gym/data/config.ts
+@@ -11,8 +11,8 @@ export const GYM_CONFIG = {
+     webUrl: "http://pf.kakao.com/_VGWxeb/chat",
+     deepLink: "",
+   },
+-  leadEndpoint:
+-    "https://script.google.com/macros/s/AKfycbwja8ZzKpyyNuRuPoBz6Mkp_SzHf0Bh9rGraip3GnHwPicOhadsZaoTYThcnAa_5OBfnw/exec",
++  /** Browser posts to internal API; Google Sheets sync is server-only via env. */
++  leadEndpoint: '/api/info/gym/leads',
+ } as const;
+ 
+ export const TRUST_ASSET_LINES = [
+diff --git a/app/info/private/page.tsx b/app/info/private/page.tsx
+index 18f0f381..f61c7dc8 100644
+--- a/app/info/private/page.tsx
++++ b/app/info/private/page.tsx
+@@ -1,26 +1,19 @@
+ import type { Metadata } from 'next';
+-import { Suspense } from 'react';
+-import PrivateLandingClient from './components/PrivateLandingClient';
+-import './styles/private-landing.css';
++import { permanentRedirect } from 'next/navigation';
++import { legacyPrivateRedirectTarget } from '@/app/spokedu/lib/legacy-info-redirects';
+ 
+ export const metadata: Metadata = {
+-  title: 'SPOKEDU | 프리미엄 1:1 방문 체육',
+-  description:
+-    '스포키듀 프리미엄 아동 청소년 방문 체육. 즐거운 신체활동으로 평생체육의 경험을 선물합니다.',
+-  openGraph: {
+-    type: 'website',
+-    title: 'SPOKEDU | 프리미엄 1:1 방문 체육',
+-    description:
+-      '아이의 눈높이에 맞춘 1:1 방문 체육. 즐거운 신체활동으로 평생체육의 경험을 선물합니다.',
+-  },
++  title: 'SPOKEDU | 개인·소그룹 체육 상담',
++  description: '개인·소그룹 수업 상담은 SPOKEDU private 페이지에서 접수합니다.',
++  robots: { index: false, follow: true },
+ };
+ 
+-export default function PrivateInfoPage() {
+-  return (
+-    <div className="private-landing">
+-      <Suspense fallback={<div className="private-landing min-h-screen" aria-busy="true" />}>
+-        <PrivateLandingClient />
+-      </Suspense>
+-    </div>
+-  );
++type PageProps = {
++  searchParams: Promise<Record<string, string | string[] | undefined>>;
++};
++
++/** Legacy ads URL → canonical /private#apply (no fake live counters). */
++export default async function PrivateLegacyRedirectPage({ searchParams }: PageProps) {
++  const params = await searchParams;
++  permanentRedirect(legacyPrivateRedirectTarget(params));
+ }
+diff --git a/app/move-report/components/Result.tsx b/app/move-report/components/Result.tsx
+index b0adfb66..4d343ce2 100644
+--- a/app/move-report/components/Result.tsx
++++ b/app/move-report/components/Result.tsx
+@@ -80,7 +80,7 @@ export default function Result({
+       eventName: 'move_report_private_consult_clicked',
+       meta: { profileKey: key },
+     });
+-    window.location.href = '/info/private#apply';
++    window.location.href = '/private#apply';
+   }, [key, displayName, p]);
+ 
+   useEffect(() => {
+diff --git a/app/spokedu/components/curriculum-landing.tsx b/app/spokedu/components/curriculum-landing.tsx
+index b9057f64..b3185772 100644
+--- a/app/spokedu/components/curriculum-landing.tsx
++++ b/app/spokedu/components/curriculum-landing.tsx
+@@ -19,7 +19,6 @@ import { trackCommercialEvent } from '../lib/commercial-events';
+ import { marketingBody, marketingCardStatic } from '../lib/ui-classes';
+ import { CurriculumInquiryForm } from './curriculum-inquiry-form';
+ import { LandingProcessOnePager } from './landing-process-one-pager';
+-import { SubscriptionV17Page } from './subscription-v17/subscription-v17-page';
+ 
+ const publicProduct = getPublicProductContract();
+ 
+@@ -92,6 +91,34 @@ export default function CurriculumLanding() {
+   ) : null;
+ 
+   return (
+-    <SubscriptionV17Page mode={mode} onModeChange={setMode} inquiry={inquiry} reducedMotion={reducedMotion} />
++    <div className="site-container py-10 sm:py-14">
++      <header className="max-w-3xl">
++        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOKEDU LAB</p>
++        <h1 className="mt-2 text-2xl font-bold text-[#0B1F46] sm:text-3xl">{curriculumPage.hero.title}</h1>
++        <p className={`${marketingBody} mt-3`}>{curriculumPage.hero.lead}</p>
++        <p className={`${marketingBody} mt-4`}>
++          공식 구독·랜딩은{' '}
++          <Link href="/spokedu-lab" className="font-semibold text-[#245DFF] underline-offset-4 hover:underline">
++            /spokedu-lab
++          </Link>
++          입니다. 레거시 <code>/subscription</code> 경로는 동일 목적지로 리다이렉트됩니다.
++        </p>
++      </header>
++      <div className="mt-8 flex flex-wrap gap-2">
++        {(Object.keys(curriculumCommercialModes) as CurriculumCommercialMode[]).map((key) => (
++          <button
++            key={key}
++            type="button"
++            onClick={() => setMode(key)}
++            className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
++              mode === key ? 'border-[#245DFF] bg-[#F7F9FD] text-[#0B1F46]' : 'border-[#DCE3EE] bg-white text-[#536279]'
++            }`}
++          >
++            {curriculumCommercialModes[key].title}
++          </button>
++        ))}
++      </div>
++      {inquiry}
++    </div>
+   );
+ }
+diff --git a/app/spokedu/data/brand.ts b/app/spokedu/data/brand.ts
+index f8bf9144..ef5285f6 100644
+--- a/app/spokedu/data/brand.ts
++++ b/app/spokedu/data/brand.ts
+@@ -6,8 +6,13 @@ export const brandProfile = {
+   phone: '010-4437-9294',
+   email: 'spokedu77@gmail.com',
+   businessRegistrationNumber: '311-63-00356',
+-  mailOrderStatus: '신고 완료',
++  /** FACT_REQUIRED: 통신판매업 신고번호 — 공식 증빙 확인 전 임의 기입 금지 */
++  mailOrderReportNumber: null as string | null,
++  mailOrderStatus: '신고번호 확인 대기 (FACT_REQUIRED)',
++  /** 사업자등록증상 사업장 (PG·세금계산서 기준) */
+   businessAddress: '서울특별시 강동구 성내동 430-2, 7층 1호',
++  /** 강동 체육관 방문·수업 장소 (체육관 config와 동일 역할) */
++  gymVisitAddress: '서울시 강동구 성내동 430-2, 7층 2호',
+   serviceArea: '서울·경기 중심 상담 가능',
+ } as const;
+ 
+diff --git a/app/spokedu/lib/public-marketing-typography.contract.test.ts b/app/spokedu/lib/public-marketing-typography.contract.test.ts
+index 9512e824..ee3a0feb 100644
+--- a/app/spokedu/lib/public-marketing-typography.contract.test.ts
++++ b/app/spokedu/lib/public-marketing-typography.contract.test.ts
+@@ -52,13 +52,6 @@ describe('public marketing typography contract', () => {
+     expect(home).not.toMatch(/homeBrandDisplay|--he-brand-display/);
+   });
+ 
+-  it('keeps the V17 subscription headings on the approved bold rendering', () => {
+-    const v17 = read('app/spokedu/components/subscription-v17/subscription-v17.module.css');
+-    expect(v17).toMatch(/--font-display:\s*Pretendard/);
+-    expect(v17).toMatch(/\.root :global\(\.hero h1\)\s*{[^}]*font-weight:\s*700/);
+-    expect(v17).toMatch(/\.root :global\(\.section-title\)\s*{[^}]*font-weight:\s*700/);
+-  });
+-
+   it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the approved Pretendard 700 display contract', (name) => {
+     const value = utility(utilities, name);
+     expect(value).toContain('[font-family:var(--spokedu-marketing-font-display)]');
+diff --git a/docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md b/docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md
+index 97977edd..9e0e328b 100644
+--- a/docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md
++++ b/docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md
+@@ -18,9 +18,11 @@ Customer-facing definition:
+ 
+ > 현장에서 수업하고, 그 수업에 필요한 콘텐츠와 시스템을 만듭니다.
+ 
++**공식 구독 브랜드:** SPOKEDU LAB (`/spokedu-lab`). `/subscription`은 레거시 리다이렉트 경로이다. 코드·결제 경로의 MASTER는 내부 호환명이며 고객 카피에 쓰지 않는다.
++
+ 사용자가 사이트를 보고 최종적으로 기억해야 하는 것:
+ 
+-> SPOKEDU는 직접 체육수업을 운영하는 곳이고, 자체 콘텐츠 SPOMOVE와 지도자용 구독시스템까지 갖고 있다.
++> SPOKEDU는 직접 체육수업을 운영하는 곳이고, 자체 콘텐츠 SPOMOVE와 지도자용 **SPOKEDU LAB** 구독까지 갖고 있다.
+ 
+ FAIL: 체육도 하고, SPOMOVE도 하고, SPOMAT도 팔고, 구독도 하고, 행사도 하는 이것저것 하는 회사.
+ 
+@@ -31,7 +33,7 @@ FAIL: 체육도 하고, SPOMOVE도 하고, SPOMAT도 팔고, 구독도 하고, 
+ ```
+ SPOKEDU
+ ├─ CORE BUSINESS 01  체육교육     → SPOKEDU가 직접 수업을 운영
+-├─ CORE BUSINESS 02  구독시스템   → 지도자가 콘텐츠와 수업도구를 직접 사용
++├─ CORE BUSINESS 02  SPOKEDU LAB (구독) → 지도자가 콘텐츠와 수업도구를 직접 사용 (`/spokedu-lab`)
+ ├─ SIGNATURE CONTENT  SPOMOVE    → 체육교육과 구독시스템 양쪽에서 활용
+ └─ EXECUTION TOOL     SPOMAT     → SPOMOVE 실행 도구
+ ```
+@@ -47,10 +49,10 @@ SPOMAT = 독립 핵심 사업이 아니라 실행 도구.
+ PUBLIC owns: 이해 → 신뢰 → 비교 → 판단 → 선택.
+ MASTER owns: 로그인 → 가입 → 결제 → 권한 → 실제 콘텐츠 사용 → 수업 운영 → 기록 → 관리.
+ 
+-`/subscription` → MASTER.
++Public LAB 랜딩 `/spokedu-lab` → (rewrite) 실행·결제·콘텐츠 사용. `/subscription`·`/curriculum`·`/spokedu/curriculum`은 **308 리다이렉트**로 `/spokedu-lab`에 합류한다.
+ 
+ Public에 `/subscription` → `/product` → `/purchase` funnel을 만들지 않는다.
+-Public은 판매를 설득하고, MASTER는 실제 거래와 실행을 담당한다.
++Public은 판매를 설득하고, 로그인·결제·실행은 LAB 앱(내부 MASTER 라우트)이 담당한다.
+ 
+ ---
+ 
+@@ -61,13 +63,13 @@ Public은 판매를 설득하고, MASTER는 실제 거래와 실행을 담당한
+                            │
+              ┌─────────────┴─────────────┐
+              │                           │
+-          체육교육                    구독시스템
++          체육교육                    SPOKEDU LAB
+              │                           │
+              ↓                           ↓
+-       /education                  /subscription
++       /education                  /spokedu-lab
+              │                           │
+              ↓                           ↓
+-기관수업 판단·상담                    MASTER
++기관수업 판단·상담 (#contact)        가입·결제·사용
+              │                    가입·결제·사용
+              ↓
+  /contact?type=dispatch
+@@ -81,7 +83,7 @@ RECORDS → record detail → 사례 맥락에 맞는 next action.
+ 
+ ## 05. Global navigation
+ 
+-PRIMARY HEADER: 체육교육 · 구독시스템 · SPOMOVE · 운영 사례 · `[상담하기]`
++PRIMARY HEADER: 체육교육 · SPOKEDU LAB · SPOMOVE · 운영 사례 · `[상담하기]`
+ 
+ Header에 올리지 않는 것: About, SPOMAT, Partners, 개인·소그룹, 기타 협업 안내. Footer 또는 contextual link.
+ 
+@@ -106,7 +108,7 @@ INPUT / QUESTION / EVIDENCE / OUTPUT / HANDOFF를 페이지 작업 전에 정의
+ | `/education` | 우리 기관에서 체육수업을 맡길 수 있는가? | Structure = legacy `/info/dispatch`. Visual = Home. Program lineup = one SSOT; card + detail modal is progressive disclosure (not a third product catalog). → `/contact?type=dispatch` |
+ | `/private` | 개인·소그룹에서는 어떤 방식으로 수업하는가? | Human / calm / personal → `/contact?type=private` |
+ | `/spomove` | SPOMOVE는 무엇이며 어떻게 움직이는가? | SEE → RESPOND → EXPERIENCE → ADAPT → APPLY → PROVE → CONNECT → START. Catalog, 기관 → `/education?program=spomove`, 지도자 → `/subscription`, 도구 → `/spomat`, 증거 → `/records` |
+-| `/subscription` | 지도자가 실제 수업에서 왜 이 시스템을 사용하는가? | Product UI. 찾기→준비→진행→기록. Handoff MASTER. No public purchase page. |
++| `/spokedu-lab` | 지도자가 실제 수업에서 왜 LAB을 사용하는가? | Product UI (`CommercialLanding`). 찾기→준비→진행→기록. Handoff 로그인·결제. `/subscription`은 레거시 redirect only. |
+ | `/records` | 실제 어디에서 무엇을 운영했는가? | Editorial evidence archive. |
+ | `/records/[slug]` | 이 프로젝트에서는 실제로 무엇을 했는가? | `/education` / `/subscription` / `/contact` by type |
+ | `/contact` | 하려던 행동을 최소 마찰로 완료하는가? | Keep `?type=` intent. |
+@@ -120,7 +122,9 @@ INPUT / QUESTION / EVIDENCE / OUTPUT / HANDOFF를 페이지 작업 전에 정의
+ 
+ One concept = one authority.
+ 
+-- 기관 체육교육 canonical = `/education`. Legacy URLs redirect here.
++- 기관 체육교육 canonical = `/education` (`DispatchProposalForm`, `#contact`). `/info/curriculum` → `/education?program=spomove#contact` (UTM 등 query 보존).
++- 개인·소그룹 canonical = `/private#apply`. `/info/private` → redirect (가짜 실시간 카운터 노출 금지).
++- 강동 체육관 `/info/gym` 유지; CRM SoT = `consultations` via `/api/info/gym/leads`.
+ - 가격 = authoritative Product Contract only.
+ - SPOMOVE definition = one public definition contract.
+ - CTA destination = shared route contract.
