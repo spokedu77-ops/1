@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     p_expected_log_reason: reverse ? value.expectedLogReason : null,
   });
   if (error) {
-    const known = ['MILEAGE_LOG_STALE', 'MILEAGE_LINKED_LOG_REQUIRES_SESSION_FLOW', 'MILEAGE_TEACHER_NOT_FOUND', 'MILEAGE_IDEMPOTENCY_CONFLICT'];
+    const known = ['MILEAGE_LOG_STALE', 'MILEAGE_REVERSAL_AMOUNT_MISMATCH', 'MILEAGE_LINKED_LOG_REQUIRES_SESSION_FLOW', 'MILEAGE_TEACHER_NOT_FOUND', 'MILEAGE_IDEMPOTENCY_CONFLICT'];
     const code = known.find((candidate) => error.message.includes(candidate)) ?? 'MILEAGE_ADJUSTMENT_FAILED';
     devLogger.error('[admin/mileage/adjustment]', { code, dbCode: error.code });
     return NextResponse.json({ error: code, code }, { status: code === 'MILEAGE_ADJUSTMENT_FAILED' ? 500 : 409 });

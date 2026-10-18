@@ -58,6 +58,28 @@ function verifyBackup(envelope, password, expected) {
   }
 }
 
+function decryptBackup(envelope, password) {
+  const key = scryptSync(password, Buffer.from(envelope.salt, 'base64'), 32);
+  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(envelope.iv, 'base64'));
+  decipher.setAuthTag(Buffer.from(envelope.tag, 'base64'));
+  return JSON.parse(Buffer.concat([
+    decipher.update(Buffer.from(envelope.ciphertext, 'base64')),
+    decipher.final(),
+  ]).toString('utf8'));
+}
+
+async function loadEncryptedBackup(path, password) {
+  try {
+    const envelope = JSON.parse(await readFile(path, 'utf8'));
+    const backup = decryptBackup(envelope, password);
+    verifyBackup(envelope, password, backup);
+    return backup;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw new Error('Encrypted backup could not be restored.');
+  }
+}
+
 async function findObject(storage, path) {
   const slash = path.lastIndexOf('/');
   const folder = path.slice(0, slash);
@@ -89,6 +111,8 @@ async function main() {
   const expectedUnique = Number(args.get('expected-unique') ?? 47);
   const checkpointPath = resolve(String(args.get('checkpoint') ?? '.tmp/inventory-image-migration-checkpoint.json'));
   const backupPath = resolve(String(args.get('backup') ?? '.tmp/inventory-image-backup.enc.json'));
+  const stopAfterRows = Number(args.get('stop-after-rows') ?? 0);
+  if (!Number.isInteger(stopAfterRows) || stopAfterRows < 0) throw new Error('--stop-after-rows must be a non-negative integer.');
   const checkpoint = await loadCheckpoint(checkpointPath);
   if (checkpoint.projectRef && checkpoint.projectRef !== projectRef) throw new Error('Checkpoint belongs to another project.');
 
@@ -98,25 +122,39 @@ async function main() {
     client.from('inventory').select('id,image').order('id'),
   ]);
   if (catalogError || inventoryError) throw new Error('Image inventory query failed.');
-  const plan = buildImageMigrationPlan(catalog, inventory);
-  if (plan.rows.length !== expectedRows || plan.unique.length !== expectedUnique) {
-    throw new Error(`Inventory count mismatch: rows=${plan.rows.length}, unique=${plan.unique.length}.`);
-  }
+  const currentPlan = buildImageMigrationPlan(catalog, inventory);
 
-  console.log(JSON.stringify({ mode: apply ? 'apply' : 'dry-run', projectRef, rows: plan.rows.length, unique: plan.unique.length, fingerprint: plan.fingerprint }));
   if (!apply) {
+    if (currentPlan.rows.length !== expectedRows || currentPlan.unique.length !== expectedUnique) {
+      throw new Error(`Inventory count mismatch: rows=${currentPlan.rows.length}, unique=${currentPlan.unique.length}.`);
+    }
+    console.log(JSON.stringify({ mode: 'dry-run', projectRef, rows: currentPlan.rows.length, unique: currentPlan.unique.length, fingerprint: currentPlan.fingerprint }));
     checkpoint.projectRef = projectRef;
-    checkpoint.dryRun = { fingerprint: plan.fingerprint, rows: plan.rows.length, unique: plan.unique.length, completedAt: new Date().toISOString() };
+    checkpoint.dryRun = { fingerprint: currentPlan.fingerprint, rows: currentPlan.rows.length, unique: currentPlan.unique.length, completedAt: new Date().toISOString() };
     await saveJson(checkpointPath, checkpoint);
     return;
   }
-  if (checkpoint.dryRun?.fingerprint !== plan.fingerprint) throw new Error('Matching successful dry-run required.');
 
   const backupPassword = requiredEnv('INVENTORY_MIGRATION_BACKUP_KEY');
-  const backup = { projectRef, fingerprint: plan.fingerprint, catalog, inventory, createdAt: new Date().toISOString() };
-  const encrypted = encryptBackup(backup, backupPassword);
-  verifyBackup(encrypted, backupPassword, backup);
-  await saveJson(backupPath, encrypted);
+  let backup = await loadEncryptedBackup(backupPath, backupPassword);
+  if (!backup) {
+    if (currentPlan.rows.length !== expectedRows || currentPlan.unique.length !== expectedUnique) {
+      throw new Error('Initial encrypted backup is required before resuming a partial migration.');
+    }
+    backup = { projectRef, fingerprint: currentPlan.fingerprint, catalog, inventory, createdAt: new Date().toISOString() };
+    const encrypted = encryptBackup(backup, backupPassword);
+    verifyBackup(encrypted, backupPassword, backup);
+    await saveJson(backupPath, encrypted);
+  }
+  if (backup.projectRef !== projectRef) throw new Error('Encrypted backup belongs to another project.');
+  const plan = buildImageMigrationPlan(backup.catalog, backup.inventory);
+  if (plan.fingerprint !== backup.fingerprint
+    || plan.rows.length !== expectedRows
+    || plan.unique.length !== expectedUnique) {
+    throw new Error('Encrypted backup inventory does not match the approved migration scope.');
+  }
+  if (checkpoint.dryRun?.fingerprint !== plan.fingerprint) throw new Error('Matching successful dry-run required.');
+  console.log(JSON.stringify({ mode: 'apply', projectRef, rows: plan.rows.length, unique: plan.unique.length, fingerprint: plan.fingerprint }));
 
   for (const item of plan.unique) {
     let object = await findObject(client.storage, item.path);
@@ -129,10 +167,25 @@ async function main() {
     await verifyObject(client.storage, item);
   }
 
+  const currentRows = {
+    catalog: new Map((catalog ?? []).map((row) => [String(row.id), row.image])),
+    inventory: new Map((inventory ?? []).map((row) => [String(row.id), row.image])),
+  };
+  let transitionedThisRun = 0;
   for (const row of plan.rows) {
     const key = `${row.table}:${row.id}`;
-    if (checkpoint.completedRows[key]?.sha256 === row.sha256) continue;
     const publicUrl = client.storage.from(INVENTORY_IMAGE_BUCKET).getPublicUrl(row.path).data.publicUrl;
+    const currentImage = currentRows[row.table].get(String(row.id));
+    if (checkpoint.completedRows[key]?.sha256 === row.sha256) {
+      if (currentImage !== publicUrl) throw new Error(`Checkpoint/DB conflict (${key}).`);
+      continue;
+    }
+    if (currentImage === publicUrl) {
+      checkpoint.completedRows[key] = { sha256: row.sha256, path: row.path, completedAt: new Date().toISOString(), recovered: true };
+      await saveJson(checkpointPath, checkpoint);
+      continue;
+    }
+    if (currentImage !== row.source) throw new Error(`Source row changed outside migration (${key}).`);
     const { data: changed, error } = await client.rpc('admin_cas_inventory_image', {
       p_table: row.table,
       p_id: row.id,
@@ -142,6 +195,12 @@ async function main() {
     if (error || changed !== true) throw new Error(`CAS transition failed (${key}).`);
     checkpoint.completedRows[key] = { sha256: row.sha256, path: row.path, completedAt: new Date().toISOString() };
     await saveJson(checkpointPath, checkpoint);
+    currentRows[row.table].set(String(row.id), publicUrl);
+    transitionedThisRun += 1;
+    if (stopAfterRows > 0 && transitionedThisRun >= stopAfterRows) {
+      console.log(JSON.stringify({ status: 'interrupted-for-verification', transitionedThisRun, completed: Object.keys(checkpoint.completedRows).length }));
+      return;
+    }
   }
 
   const [{ count: remainingCatalog }, { count: remainingInventory }] = await Promise.all([

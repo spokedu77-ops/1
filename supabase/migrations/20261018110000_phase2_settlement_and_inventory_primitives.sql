@@ -176,10 +176,31 @@ begin
     raise exception using errcode = '23000', message = 'MILEAGE_HISTORICAL_DUPLICATE_CONFLICT';
   end if;
 
+  -- Legacy "adjustment" rows recorded a change amount rather than the settled
+  -- session total. Reversing a negative row would credit points incorrectly.
+  -- Fail closed and leave both the historical balance and log untouched.
+  if exists (
+    select 1 from public.mileage_logs
+    where session_id = p_session_id
+      and (reason like '[수업연동]%' or reason like '[수업연동/보조]%')
+      and reason like '%조정%'
+  ) then
+    raise exception using errcode = '23000', message = 'MILEAGE_HISTORICAL_ADJUSTMENT_CONFLICT';
+  end if;
+
   if cardinality(v_old_teacher_ids) = 0
     and nullif(v_current_action, '') is not null
     and private.phase2_mileage_total(v_current_action) <> 0 then
     raise exception using errcode = '23000', message = 'MILEAGE_HISTORICAL_LOG_MISSING';
+  end if;
+
+  if exists (
+    select 1 from public.mileage_logs
+    where session_id = p_session_id
+      and (reason like '[수업연동]%' or reason like '[수업연동/보조]%')
+      and amount is distinct from private.phase2_mileage_total(v_current_action)
+  ) then
+    raise exception using errcode = '23000', message = 'MILEAGE_HISTORICAL_AMOUNT_CONFLICT';
   end if;
 
   select coalesce(array_agg(distinct id order by id), array[]::uuid[])
@@ -272,6 +293,7 @@ declare
   v_log public.mileage_logs%rowtype;
   v_log_id uuid;
   v_points bigint;
+  v_effective_delta bigint;
   v_result jsonb;
 begin
   if p_teacher_id is null or p_point_delta = 0
@@ -315,15 +337,20 @@ begin
     if v_log.reason like '[수업연동]%' or v_log.reason like '[수업연동/보조]%' then
       raise exception using errcode = '42501', message = 'MILEAGE_LINKED_LOG_REQUIRES_SESSION_FLOW';
     end if;
+    v_effective_delta := -v_log.amount;
+    if p_point_delta is distinct from v_effective_delta then
+      raise exception using errcode = '40001', message = 'MILEAGE_REVERSAL_AMOUNT_MISMATCH';
+    end if;
     delete from public.mileage_logs where id = p_reverse_log_id;
     v_log_id := p_reverse_log_id;
   else
+    v_effective_delta := p_point_delta;
     insert into public.mileage_logs(teacher_id, amount, reason, session_title)
     values (p_teacher_id, p_point_delta, btrim(p_reason), '운영진 수동 조정')
     returning id into v_log_id;
   end if;
 
-  update public.users set points = coalesce(points, 0) + p_point_delta where id = p_teacher_id
+  update public.users set points = coalesce(points, 0) + v_effective_delta where id = p_teacher_id
   returning points into v_points;
 
   v_result := jsonb_build_object('ok', true, 'teacherId', p_teacher_id, 'points', v_points,
@@ -378,12 +405,12 @@ begin
   select * into v_bucket from storage.buckets where id = 'spokedu-inventory-images' for update;
   if not found then
     insert into storage.buckets(id, name, public, file_size_limit, allowed_mime_types)
-    values ('spokedu-inventory-images','spokedu-inventory-images',true,10485760,v_mimes);
+    values ('spokedu-inventory-images','spokedu-inventory-images',true,15728640,v_mimes);
     select * into strict v_bucket from storage.buckets where id = 'spokedu-inventory-images' for update;
   end if;
   if v_bucket.name is distinct from 'spokedu-inventory-images'
     or v_bucket.public is distinct from true
-    or v_bucket.file_size_limit is distinct from 10485760
+    or v_bucket.file_size_limit is distinct from 15728640
     or v_bucket.allowed_mime_types is distinct from v_mimes then
     raise exception using errcode='P0001', message='inventory image bucket settings mismatch; no changes applied';
   end if;
