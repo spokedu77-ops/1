@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Check, Star, X } from "lucide-react";
 import { toast } from "sonner";
-import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
 import { MILEAGE_ACTIONS } from "@/app/admin/classes-shared/constants/mileage";
 import { extractMileageAction } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { applySessionLinkedMileage } from "@/app/admin/classes-shared/lib/applySessionLinkedMileage";
@@ -12,11 +11,9 @@ type Props = {
   open: boolean;
   onClose: () => void;
   sessionId: string;
-  sessionStartAt: string | null;
   title: string | null;
   memo: string | null | undefined;
   mileage_option: string | null | undefined;
-  created_by: string | null;
   onSaved: () => void;
 };
 
@@ -24,11 +21,9 @@ export default function SessionMileageModal({
   open,
   onClose,
   sessionId,
-  sessionStartAt,
   title,
   memo,
   mileage_option,
-  created_by,
   onSaved,
 }: Props) {
   const [mileageAction, setMileageAction] = useState("");
@@ -55,21 +50,11 @@ export default function SessionMileageModal({
   };
 
   const handleSave = async () => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      toast.error("클라이언트를 초기화할 수 없습니다.");
-      return;
-    }
-
     setSaving(true);
     try {
-      const result = await applySessionLinkedMileage(supabase, {
+      const result = await applySessionLinkedMileage({
         sessionId,
-        sessionStartAt,
-        title,
-        memo,
         mileage_option,
-        created_by,
         nextActionStr: mileageAction,
       });
       if (!result.ok) {
