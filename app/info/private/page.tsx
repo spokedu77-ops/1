@@ -1,26 +1,19 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
-import PrivateLandingClient from './components/PrivateLandingClient';
-import './styles/private-landing.css';
+import { permanentRedirect } from 'next/navigation';
+import { legacyPrivateRedirectTarget } from '@/app/spokedu/lib/legacy-info-redirects';
 
 export const metadata: Metadata = {
-  title: 'SPOKEDU | 프리미엄 1:1 방문 체육',
-  description:
-    '스포키듀 프리미엄 아동 청소년 방문 체육. 즐거운 신체활동으로 평생체육의 경험을 선물합니다.',
-  openGraph: {
-    type: 'website',
-    title: 'SPOKEDU | 프리미엄 1:1 방문 체육',
-    description:
-      '아이의 눈높이에 맞춘 1:1 방문 체육. 즐거운 신체활동으로 평생체육의 경험을 선물합니다.',
-  },
+  title: 'SPOKEDU | 개인·소그룹 체육 상담',
+  description: '개인·소그룹 수업 상담은 SPOKEDU private 페이지에서 접수합니다.',
+  robots: { index: false, follow: true },
 };
 
-export default function PrivateInfoPage() {
-  return (
-    <div className="private-landing">
-      <Suspense fallback={<div className="private-landing min-h-screen" aria-busy="true" />}>
-        <PrivateLandingClient />
-      </Suspense>
-    </div>
-  );
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+/** Legacy ads URL → canonical /private#apply (no fake live counters). */
+export default async function PrivateLegacyRedirectPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  permanentRedirect(legacyPrivateRedirectTarget(params));
 }

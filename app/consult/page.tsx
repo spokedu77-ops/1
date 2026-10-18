@@ -196,13 +196,6 @@ export default function ConsultPage() {
             아래 내용을 남겨 주시면 담당자가 확인 후 연락드립니다. 제출 후 카카오 채널 안내를 공유할 수 있습니다.
           </p>
 
-          {!kakaoKey && (
-            <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              카카오 공유를 쓰려면 환경변수 <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_KAKAO_JS_KEY</code>를
-              설정해 주세요. 미설정 시 채널 페이지만 새 탭으로 열립니다.
-            </p>
-          )}
-
           <form onSubmit={onSubmit} className="mt-6 space-y-5 sm:mt-8">
             <div>
               <label className="block text-sm font-medium text-slate-700">

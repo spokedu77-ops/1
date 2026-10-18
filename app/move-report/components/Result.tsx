@@ -80,7 +80,7 @@ export default function Result({
       eventName: 'move_report_private_consult_clicked',
       meta: { profileKey: key },
     });
-    window.location.href = '/info/private#apply';
+    window.location.href = '/private#apply';
   }, [key, displayName, p]);
 
   useEffect(() => {
