@@ -1,0 +1,14 @@
+{
+  "port": "3035",
+  "BUILD_ID": null,
+  "outcome": "BLOCKED",
+  "E15": "BLOCKED",
+  "checks": [],
+  "cleanup": {
+    "deletes": [],
+    "verify": []
+  },
+  "seedConsultId": null,
+  "seedMarker": null,
+  "blockedReason": "CONTACT_E2E_ADMIN_EMAIL or CONTACT_E2E_ADMIN_PASSWORD not configured"
+}
