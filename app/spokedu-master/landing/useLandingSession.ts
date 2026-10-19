@@ -14,39 +14,46 @@ type InstitutionStatus = {
   loginId?: string;
 };
 
+let landingSessionRequest: Promise<LandingSessionState> | null = null;
+
+function loadLandingSession() {
+  if (landingSessionRequest) return landingSessionRequest;
+
+  landingSessionRequest = (async (): Promise<LandingSessionState> => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const session = await getSessionWithRefreshRecovery(supabase);
+      if (!session?.user) return { status: 'guest', displayName: '', institution: false };
+
+      const institutionResponse = await fetch('/api/institution/status', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const institution = institutionResponse.ok
+        ? await institutionResponse.json() as InstitutionStatus
+        : null;
+      const displayName = institution?.institution && institution.loginId
+        ? institution.loginId
+        : session.user.email ?? 'LAB 계정';
+      return { status: 'member', displayName, institution: institution?.institution === true };
+    } catch {
+      return { status: 'guest', displayName: '', institution: false };
+    }
+  })();
+
+  return landingSessionRequest;
+}
+
 export function useLandingSession(): LandingSessionState {
   const [state, setState] = useState<LandingSessionState>({ status: 'checking', displayName: '', institution: false });
 
   useEffect(() => {
     let cancelled = false;
 
-    const run = async () => {
-      try {
-        const supabase = getSupabaseBrowserClient();
-        const [session, institutionResponse] = await Promise.all([
-          getSessionWithRefreshRecovery(supabase),
-          fetch('/api/institution/status', { credentials: 'include', cache: 'no-store' }),
-        ]);
-        if (cancelled) return;
-        if (!session?.user) {
-          setState({ status: 'guest', displayName: '', institution: false });
-          return;
-        }
+    void loadLandingSession().then((nextState) => {
+      if (!cancelled) setState(nextState);
+    });
 
-        const institution = institutionResponse.ok
-          ? await institutionResponse.json() as InstitutionStatus
-          : null;
-        if (cancelled) return;
-        const displayName = institution?.institution && institution.loginId
-          ? institution.loginId
-          : session.user.email ?? 'LAB 계정';
-        setState({ status: 'member', displayName, institution: institution?.institution === true });
-      } catch {
-        if (!cancelled) setState({ status: 'guest', displayName: '', institution: false });
-      }
-    };
-
-    void run();
     return () => {
       cancelled = true;
     };

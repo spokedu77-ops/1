@@ -51,6 +51,7 @@ type OperationalDataContextValue = {
 const OperationalDataContext = createContext<OperationalDataContextValue | null>(null);
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const OPERATIONAL_SOFT_REFRESH_MIN_INTERVAL_MS = 60_000;
 
 function getProfileOwnerId(profile: ReturnType<typeof useProfile>) {
   return profile?.id && UUID_PATTERN.test(profile.id) ? profile.id : null;
@@ -117,6 +118,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
         if (mode === 'hard') setStatus('error');
         return;
       }
+      lastSoftRefreshAtRef.current = Date.now();
       setStatus('ready');
     })();
     reloadInFlightRef.current = { ownerId, promise: task };
@@ -136,7 +138,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     if (!ownerId || !canUseAttendance) return;
     const refreshOnReturn = () => {
       if (document.visibilityState !== 'visible') return;
-      if (Date.now() - lastSoftRefreshAtRef.current < 5_000) return;
+      if (Date.now() - lastSoftRefreshAtRef.current < OPERATIONAL_SOFT_REFRESH_MIN_INTERVAL_MS) return;
       lastSoftRefreshAtRef.current = Date.now();
       void reload('soft');
     };
