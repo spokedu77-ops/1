@@ -973,8 +973,67 @@
   }
 }
 
-/* ≤1199 — home Hero: single column (1024–1199 included) */
-@media (max-width: 1199px) {
+/* 1024–1199 — 2-col Hero (copy+actions | visual), no rail bleed (overflow-safe) */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .heroGrid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      'copy visual'
+      'actions visual';
+    align-items: center;
+    column-gap: clamp(20px, 2.5vw, 32px);
+    row-gap: clamp(16px, 2vw, 24px);
+    padding-block: clamp(36px, 4vw, 52px);
+  }
+
+  .heroCopy {
+    grid-area: copy;
+    min-width: 0;
+  }
+
+  .heroH1 {
+    font-size: clamp(36px, 3.4vw, 44px);
+    line-height: 1.18;
+  }
+
+  .heroLead {
+    margin-top: clamp(16px, 2vw, 20px);
+    font-size: clamp(15px, 1.4vw, 17px);
+    max-width: 32em;
+  }
+
+  .heroActions {
+    grid-area: actions;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    align-self: start;
+  }
+
+  .heroIntegrated {
+    background: linear-gradient(118deg, #fff 0%, #fff 48%, #f3f6fc 48%, #e8eef9 100%);
+  }
+
+  .heroVisual {
+    grid-area: visual;
+    margin-inline: 0;
+    margin-right: 0;
+    align-self: center;
+    min-width: 0;
+  }
+
+  .heroIntegrated .heroVisual .media,
+  .heroVisual .media {
+    aspect-ratio: 16 / 10;
+    max-height: min(400px, 52vh);
+    width: 100%;
+    border-radius: 16px;
+  }
+}
+
+/* ≤1023 — home Hero: single column */
+@media (max-width: 1023px) {
   .heroGrid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
