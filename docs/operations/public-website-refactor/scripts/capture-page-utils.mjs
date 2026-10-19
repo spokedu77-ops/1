@@ -34,6 +34,8 @@ export async function stabilizePublicPage(page, route) {
     await page.locator('main, [role="main"], body').first().waitFor({ state: 'visible', timeout: 20_000 });
   }
 
+  await waitForFirstScreenContent(page, urlPath);
+
   await progressiveScroll(page);
 
   const imageReport = await waitForVisibleImages(page, IMAGE_WAIT_MS);
@@ -48,6 +50,35 @@ export async function stabilizePublicPage(page, route) {
     ...imageReport,
     ...layoutReport,
   };
+}
+
+/** @param {import('playwright').Page} page @param {string} urlPath */
+async function waitForFirstScreenContent(page, urlPath) {
+  const pathOnly = urlPath.split('?')[0] || '/';
+  await page
+    .waitForFunction(
+      (p) => {
+        const sel =
+          p === '/about'
+            ? '#intro h1'
+            : p === '/records'
+              ? '#records-title, main h1'
+              : 'main h1, h1';
+        const el = document.querySelector(sel);
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const st = window.getComputedStyle(el);
+        return (
+          r.height > 8 &&
+          Number(st.opacity) > 0.05 &&
+          (el.textContent?.trim().length ?? 0) > 0
+        );
+      },
+      pathOnly,
+      { timeout: 30_000 },
+    )
+    .catch(() => undefined);
+  await page.waitForTimeout(150);
 }
 
 /** @param {import('playwright').Page} page */
