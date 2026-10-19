@@ -28,6 +28,24 @@ qa-screenshots/
 # Generated capture output. Not a runtime asset path.
 # Already-tracked final evidence under artifacts/ stays tracked until explicitly removed.
 /artifacts/
+/design-audit-captures/
+/repomix-output.xml
+/docs/operations/public-website-refactor/BEFORE_AFTER/
+/docs/operations/release-candidate-final/_zip_verify/
+/docs/operations/public-website-refactor/layout-foundation/po-review/
+/docs/operations/public-website-refactor/layout-foundation/WIDTH_QA.progress.jsonl
+/docs/operations/**/captures/
+/docs/operations/**/qa-evidence/
+/docs/operations/**/included-assets/
+/docs/operations/**/*.zip
+/docs/design/**/captures/
+/docs/design/**/diagnose-evidence/
+/docs/design/**/*.zip
+
+# Local rendered QA screenshots
+/admin-spomove-training-390.png
+/teacher-my-classes-390.png
+/teacher-spomove-390.png
 
 # Temporary local artifacts
 .tmp/

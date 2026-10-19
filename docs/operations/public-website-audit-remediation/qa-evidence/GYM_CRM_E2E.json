@@ -1,9 +1,0 @@
-{
-  "overall": "BLOCKED_DB_SAFETY",
-  "safety": {
-    "blocked": true,
-    "message": "DB_ENVIRONMENT_BLOCKED: CONTACT_E2E_ALLOW_DB_WRITES=1 required"
-  },
-  "cases": [],
-  "cleanup": null
-}
