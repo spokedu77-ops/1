@@ -78,7 +78,8 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
         <p className={styles.eyebrow}>유아·초등 체육 교사와 강사를 위한 수업 운영</p>
         <h1>놀이체육을 찾고,<br />수업을 구성하고,<br />현장에서 운영합니다.</h1>
         <p className={styles.heroBody}>
-          필요한 놀이체육 프로그램을 찾아 수업반과 일정에 담으세요. 수업 당일에는 출석과 활동 순서를 한 화면에서 확인하며 운영할 수 있습니다.
+          필요한 놀이체육 프로그램을 찾고 수업반과 일정을 구성하세요. 수업 당일에는 출석과 활동 순서를 한곳에서
+          관리할 수 있습니다.
         </p>
         <div className={styles.heroActions}>
           <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="hero" />

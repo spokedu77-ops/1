@@ -19,10 +19,11 @@ export type HomeVisual = {
 };
 
 /** BRAND — coaching scene; directed editorial, not tied to a named field record. */
+/** BRAND — 강동 체육관 현장 지도 장면 (직접 운영·coach–child 관계가 드러나는 컷) */
 export const HOME_HERO_IMAGE: HomeVisual = {
-  src: '/images/spokedu/home/field-editorial/home-hero-coaching.jpg',
-  alt: '지도자와 아이가 함께 움직이는 체육 수업 장면',
-  objectPosition: '50% 50%',
+  src: '/images/spokedu/home/field-editorial/home-hero-gym-motion.jpg',
+  alt: '체육관에서 지도자가 아이의 움직임을 보며 함께 수업하는 SPOKEDU 현장',
+  objectPosition: '42% 42%',
 };
 
 /** 01 FIELD · 02 CONTENT · 03 SYSTEM — same 4:3 frame, same baseline. */

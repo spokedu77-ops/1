@@ -10,6 +10,8 @@ import {
   getFieldRecordOnsitePath,
   hasFieldRecordOnsiteSummary,
   HOME_FEATURED_FIELD_RECORD_SLUGS,
+  RECORDS_LANDING_FEATURED_SLUGS,
+  assertRecordsLandingPartition,
 } from './field-records-catalog';
 
 const REMOTE_MEDIA_RE = /https?:\/\/|pstatic\.net|blog\.naver\.com|postfiles\.|blogfiles\.|blogthumb\./i;
@@ -92,6 +94,12 @@ describe('field-records-catalog', () => {
   it('keeps catalog slugs unique', () => {
     const slugs = FIELD_RECORD_CATALOG.map((r) => r.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
+  });
+
+  it('partitions records landing featured and other lists from catalog SSOT', () => {
+    assertRecordsLandingPartition();
+    expect(RECORDS_LANDING_FEATURED_SLUGS.length).toBe(3);
+    expect(FIELD_RECORD_CATALOG.length - RECORDS_LANDING_FEATURED_SLUGS.length).toBe(5);
   });
 
   it('pins local thumbnailSrc for every catalog item (no runtime Naver fetch)', () => {

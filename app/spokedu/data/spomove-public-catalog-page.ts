@@ -9,7 +9,8 @@ export const spomovePublicCatalogPage = {
   subtitle: '화면의 정보를 보고 판단한 뒤 움직임으로 연결하는 프로그램을 소개합니다.',
   levelsIntro:
     'SPOMOVE는 화면의 자극을 보고 반응하는 방식에 따라 단순·선택·복합 반응으로 구성됩니다.',
-  activityIntro: 'SPOMOVE에서 활용하는 다양한 움직임 활동을 살펴보세요.',
+  activityIntro:
+    '프로그램별 화면과 과제를 먼저 확인하세요. SEE·DECIDE·MOVE 흐름은 SPOMOVE 소개 페이지에서 자세히 설명합니다.',
   levels: spomoveProgramPage.content.levels,
   flowEyebrow: spomoveProgramPage.flow.eyebrow,
   flowSteps: spomoveProgramPage.flow.steps,

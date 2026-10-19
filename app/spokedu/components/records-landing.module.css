@@ -73,9 +73,9 @@
 }
 
 .hero .rail {
-  display: grid;
-  grid-template-columns: 7fr 5fr;
-  min-height: 500px;
+  display: block;
+  min-height: auto;
+  padding: 72px 0 48px;
 }
 
 .heroCopy {
@@ -98,6 +98,41 @@
   color: #4e4c47;
   font-size: 18px;
   line-height: 1.75;
+}
+
+.metaStrip {
+  padding: 0 0 56px;
+  background: var(--records-white);
+}
+
+.metaList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 20px 0;
+  list-style: none;
+  border-top: 1px solid var(--records-line);
+  border-bottom: 1px solid var(--records-line);
+}
+
+.metaList li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metaLabel {
+  color: var(--records-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.metaValue {
+  color: var(--records-ink);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .stats {
@@ -669,6 +704,11 @@
 @media (max-width: 767px) {
   .rail {
     width: calc(100% - 40px);
+  }
+
+  .metaList {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .hero .rail {

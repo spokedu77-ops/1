@@ -53,6 +53,10 @@ scripts/pdf-pages/page-*.png
 # production
 /build
 
+# Local release archives (never commit generated bundles)
+/SPOKEDU_RELEASE_CANDIDATE_FINAL.zip
+/SPOKEDU_PUBLIC_WEBSITE_REFACTOR.zip
+
 # Local/test Unity WebGL builds (production theme2 remains tracked)
 /public/spomove/dive/unity/player_release_test/
 /public/spomove/dive/unity/theme2_backup_*/

@@ -94,9 +94,6 @@ export function PartnersLanding() {
               {cta.secondary.label}
             </TrackedLink>
           </div>
-          <p className={`mt-4 text-xs text-stone-500 ${koreanText}`}>
-            Primary 문의는 /spokedu/contact 입니다.
-          </p>
         </div>
       </section>
     </div>

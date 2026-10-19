@@ -2,12 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  FIELD_RECORD_CATALOG,
+  RECORDS_LANDING_FEATURED_SLUGS,
+  type FieldRecordCatalogItem,
+} from "../data/field-records-catalog";
 import type { FieldRecordWithThumbnail } from "../lib/resolve-field-records";
 import styles from "./records-landing.module.css";
 
+type RecordFilter = "all" | "regular" | "event";
+
 type RecordEntry = {
-  number: string;
+  slug: string;
   venue: string;
   type: string;
   meta?: string;
@@ -18,138 +25,47 @@ type RecordEntry = {
   category?: RecordFilter;
 };
 
-type RecordFilter = "all" | "regular" | "event";
-
 const FILTERS: readonly { id: RecordFilter; label: string }[] = [
   { id: "all", label: "전체" },
   { id: "regular", label: "정규수업" },
   { id: "event", label: "원데이·행사" },
 ];
 
-const FEATURED: readonly RecordEntry[] = [
-  {
-    number: "01",
-    venue: "매동초등학교",
-    type: "학교 · 정규수업",
-    description:
-      "학년과 인원에 맞춰 종목을 순환하며 연속적인 스포츠 수업을 운영했습니다.",
-    image: "/images/spokedu/records/maedong-sports-stepup.jpg",
-    href: "https://blog.naver.com/spokedutogether/224288711414",
-    external: true,
-  },
-  {
-    number: "02",
-    venue: "서울 중구 찾아가는 동행 체육교실",
-    type: "특수·통합 · 정규수업",
-    description:
-      "참여자의 수행 수준에 따라 거리, 속도, 규칙과 촉진 수준을 조정했습니다.",
-    image: "/images/spokedu/records/donghaeng-special-pe-field.jpg",
-    href: "https://blog.naver.com/spokedutogether/224338186918",
-    external: true,
-  },
-  {
-    number: "03",
-    venue: "동작거점형 우리동네키움센터",
-    type: "키움센터 · 정규수업",
-    description:
-      "스크린 신호를 보고 판단한 뒤 움직임으로 반응하도록 구성한 정규 수업입니다.",
-    image: "/images/spokedu/records/dongjak-spomove.jpg",
-    href: "/records/dongjak-spomove",
-  },
-];
+const FEATURED_SLUGS = new Set<string>(RECORDS_LANDING_FEATURED_SLUGS);
 
-const ARCHIVE: readonly RecordEntry[] = [
-  {
-    number: "01",
-    venue: "동작거점형 우리동네키움센터",
-    type: "정규수업 · SPOMOVE",
-    meta: "초등학생 · SPOMOVE 에듀테크",
-    description: "화면 신호를 보고 판단·반응하며 움직이는 SPOMOVE 정규수업.",
-    image: "/images/spokedu/records/dongjak-spomove.jpg",
-    href: "/records/dongjak-spomove",
-    category: "regular",
-  },
-  {
-    number: "02",
-    venue: "양천거점형키움센터",
-    type: "정규수업 · PAPS",
-    meta: "초등 1~2학년 · PAPS 놀이체육",
-    description: "PAPS 체력 요소를 놀이체육으로 재구성한 저학년 정규수업.",
-    image: "/images/spokedu/records/yangcheon-paps.jpg",
-    href: "/records/yangcheon-paps",
-    category: "regular",
-  },
-  {
-    number: "03",
-    venue: "다사랑영등포지역아동센터",
-    type: "원데이·행사",
-    meta: "초등 2~6학년 · 90분 펑셔널 놀이체육",
-    description:
-      "학년 혼합 아동이 협동·기능 활동을 순환하도록 구성한 90분 원데이 수업.",
-    image: "/images/spokedu/records/dasarang-oneday-field.jpg",
-    href: "/records/dasarang-oneday",
-    category: "event",
-  },
-  {
-    number: "04",
-    venue: "서대문구 독립문공원 어린이날 축제",
-    type: "원데이·행사",
-    meta: "SPOMOVE 체험부스 · 어린이날 행사",
-    description:
-      "가족과 아동이 짧은 시간에 참여할 수 있도록 구성한 회전형 체험부스.",
-    image: "/images/spokedu/records/seodaemun-event-booth.jpg",
-    href: "/records/seodaemun-event-booth",
-    category: "event",
-  },
-  {
-    number: "05",
-    venue: "매동초등학교",
-    type: "정규수업 · 스포츠 스텝업",
-    meta: "6개월 늘봄 스포츠",
-    description:
-      "학년과 인원에 맞춰 여러 종목을 순환하며 운영한 연속 스포츠 수업.",
-    image: "/images/spokedu/records/maedong-sports-stepup.jpg",
-    href: "https://blog.naver.com/spokedutogether/224288711414",
-    external: true,
-    category: "regular",
-  },
-  {
-    number: "06",
-    venue: "찾아가는 동행 체육교실",
-    type: "정규수업 · 특수체육",
-    meta: "특수체육 · 찾아가는 동행체육",
-    description:
-      "수행 수준에 따라 거리와 속도, 규칙과 촉진 수준을 조정한 체육수업.",
-    image: "/images/spokedu/records/donghaeng-special-pe-field.jpg",
-    href: "https://blog.naver.com/spokedutogether/224338186918",
-    external: true,
-    category: "regular",
-  },
-  {
-    number: "07",
-    venue: "강동구 보건소 연계 수업",
-    type: "정규수업 · 일반체육",
-    meta: "일반체육 · 보건소 연계",
-    description:
-      "지역 보건소와 연계해 참여자의 조건과 현장 환경에 맞춰 운영한 정규수업.",
-    image: "/images/spokedu/records/gangdong-health-pe.jpg",
-    href: "https://blog.naver.com/spokedu77/224119622722",
-    external: true,
-    category: "regular",
-  },
-  {
-    number: "08",
-    venue: "신월 2동 주민센터",
-    type: "원데이·행사 · 전연령 통합체육",
-    meta: "전연령 · 통합체육 · 주민센터",
-    description:
-      "여러 연령이 한 현장에서 함께 참여할 수 있도록 구성한 통합 체육활동.",
-    image: "/images/spokedu/records/shinwol-integrated-pe.jpg",
-    href: "https://blog.naver.com/spokedu77/224104727469",
-    external: true,
-    category: "event",
-  },
-];
+function recordFilterFromCatalog(item: FieldRecordCatalogItem): RecordFilter {
+  if (item.filters.includes("oneday") || item.operationType.includes("원데이")) {
+    return "event";
+  }
+  return "regular";
+}
+
+function catalogToEntry(item: FieldRecordCatalogItem): RecordEntry {
+  const external = item.href.startsWith("http");
+  return {
+    slug: item.slug,
+    venue: item.venue,
+    type: `${item.operationType} · ${item.programLabel}`,
+    meta: item.meta,
+    description: item.description,
+    image: item.thumbnailSrc ?? `/images/spokedu/records/${item.slug}.jpg`,
+    href: item.href,
+    external,
+    category: recordFilterFromCatalog(item),
+  };
+}
+
+const ALL_RECORD_ENTRIES: readonly RecordEntry[] = FIELD_RECORD_CATALOG.map(catalogToEntry);
+
+const FEATURED: readonly RecordEntry[] = RECORDS_LANDING_FEATURED_SLUGS.map((slug) => {
+  const item = ALL_RECORD_ENTRIES.find((e) => e.slug === slug);
+  if (!item) throw new Error(`Missing featured record: ${slug}`);
+  return item;
+});
+
+const OTHER_RECORDS: readonly RecordEntry[] = ALL_RECORD_ENTRIES.filter(
+  (entry) => !FEATURED_SLUGS.has(entry.slug),
+);
 
 function RecordLink({
   entry,
@@ -186,13 +102,15 @@ export function RecordsLanding({
   fieldRecords: FieldRecordWithThumbnail[];
 }) {
   const caseCount = fieldRecords.length;
+  const otherCount = OTHER_RECORDS.length;
   const [activeFilter, setActiveFilter] = useState<RecordFilter>("all");
   const [isFiltering, setIsFiltering] = useState(false);
   const filterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const visibleRecords =
-    activeFilter === "all"
-      ? ARCHIVE
-      : ARCHIVE.filter((entry) => entry.category === activeFilter);
+
+  const visibleRecords = useMemo(() => {
+    if (activeFilter === "all") return [...OTHER_RECORDS];
+    return OTHER_RECORDS.filter((entry) => entry.category === activeFilter);
+  }, [activeFilter]);
 
   useEffect(() => {
     const readFilterFromUrl = () => {
@@ -243,20 +161,6 @@ export function RecordsLanding({
                 SPOKEDU의 실제 수업 기록입니다.
               </p>
             </div>
-            <dl className={styles.stats}>
-              <div>
-                <dt>{String(caseCount).padStart(2, "0")}</dt>
-                <dd>공개 운영 사례</dd>
-              </div>
-              <div>
-                <dt>07</dt>
-                <dd>기관 유형</dd>
-              </div>
-              <div>
-                <dt>02</dt>
-                <dd>운영 방식</dd>
-              </div>
-            </dl>
           </div>
         </section>
 
@@ -271,7 +175,7 @@ export function RecordsLanding({
             <div className={styles.featuredGrid}>
               {FEATURED.map((entry, index) => (
                 <RecordLink
-                  key={entry.number}
+                  key={entry.slug}
                   entry={entry}
                   className={
                     index === 0 ? styles.featuredLarge : styles.featuredSmall
@@ -286,9 +190,7 @@ export function RecordsLanding({
                   />
                   <span className={styles.featuredShade} aria-hidden="true" />
                   <span className={styles.featuredCaption}>
-                    <span className={styles.featuredType}>
-                      {entry.number} &nbsp; {entry.type}
-                    </span>
+                    <span className={styles.featuredType}>{entry.type}</span>
                     <strong>{entry.venue}</strong>
                     <span className={styles.featuredDescription}>
                       {entry.description}
@@ -303,11 +205,30 @@ export function RecordsLanding({
           </div>
         </section>
 
+        <section className={styles.metaStrip} aria-label="사례 안내">
+          <div className={styles.rail}>
+            <ul className={styles.metaList}>
+              <li>
+                <span className={styles.metaLabel}>공개 사례</span>
+                <span className={styles.metaValue}>{caseCount}건</span>
+              </li>
+              <li>
+                <span className={styles.metaLabel}>운영 형태</span>
+                <span className={styles.metaValue}>정규수업 · 원데이 · 행사</span>
+              </li>
+              <li>
+                <span className={styles.metaLabel}>확인 방법</span>
+                <span className={styles.metaValue}>사진 · 상세 · 후기 링크</span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <section className={styles.archive} aria-labelledby="archive-title">
           <div className={styles.rail}>
             <div className={styles.archiveIntro}>
               <div>
-                <p className={styles.eyebrow}>전체 수업사례</p>
+                <p className={styles.eyebrow}>그 외 수업사례</p>
                 <h2 id="archive-title">
                   운영 형태별로
                   <br />
@@ -315,12 +236,12 @@ export function RecordsLanding({
                 </h2>
               </div>
               <p>
-                정규수업부터 원데이·행사까지
+                주요 사례 {FEATURED.length}건을 제외한 {otherCount}건입니다.
                 <br />
-                공개된 운영 기록을 확인할 수 있습니다.
+                아래 필터는 이 목록({otherCount}건)에만 적용됩니다.
               </p>
             </div>
-            <nav className={styles.filters} aria-label="사례 필터">
+            <nav className={styles.filters} aria-label="그 외 사례 필터">
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
@@ -340,9 +261,9 @@ export function RecordsLanding({
               aria-live="polite"
               aria-busy={isFiltering}
             >
-              {visibleRecords.map((entry) => (
+              {visibleRecords.map((entry, index) => (
                 <RecordLink
-                  key={entry.number}
+                  key={entry.slug}
                   entry={entry}
                   className={styles.archiveItem}
                 >
@@ -355,7 +276,7 @@ export function RecordsLanding({
                     />
                   </div>
                   <div className={styles.archiveHeading}>
-                    <span>{entry.number}</span>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
                     <p>{entry.type}</p>
                   </div>
                   <h3>{entry.venue}</h3>

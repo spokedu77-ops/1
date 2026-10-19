@@ -24,7 +24,7 @@ export const spomatPage = {
     eyebrow: 'SPOMAT',
     title: 'SPOMAT은 SPOMOVE를 실행하는 물리적 도구입니다',
     lead:
-      '화면의 색·위치 신호가 바닥 패드의 위치로 이어지도록 돕는 실행 도구입니다. SPOMOVE 콘텐츠와 동일한 제품이 아니며, 별도 사업으로 취급하지 않습니다.',
+      'SPOMOVE 수업에서 화면의 색·위치 신호를 바닥 2×2 매트 위 움직임으로 이어 주는 실행 교구입니다. 네 칸의 색 위치가 화면 자극과 맞물립니다.',
     mediaKey: 'spomovePadSystem' as HomeMediaKey,
   },
 
@@ -79,7 +79,7 @@ export const spomatPage = {
     id: 'specs',
     eyebrow: '구성',
     title: '구성·사용 안내',
-    lead: '제품 원장에 확인된 규격만 안내합니다. 확인되지 않은 무게·인증·제조국은 표기하지 않습니다.',
+    lead: '확인된 제품 구성과 규격입니다. 무게·인증·제조국 등 미확인 항목은 표기하지 않습니다.',
     items: [
       { label: '규격', value: '60 × 60cm' },
       { label: '총 두께', value: '5.5mm' },

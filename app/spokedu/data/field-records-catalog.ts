@@ -361,6 +361,36 @@ export const HOME_FEATURED_FIELD_RECORD_SLUGS: readonly FieldRecordSlug[] = [
   'seodaemun-event-booth',
 ] as const;
 
+/** /records 상단 「주요 수업사례」 — 정본 catalog와 slug 겹침 없음 */
+export const RECORDS_LANDING_FEATURED_SLUGS: readonly FieldRecordSlug[] = [
+  'yangcheon-paps',
+  'dasarang-oneday',
+  'seodaemun-event-booth',
+] as const;
+
+export function assertRecordsLandingPartition(
+  catalog: readonly FieldRecordCatalogItem[] = FIELD_RECORD_CATALOG,
+  featuredSlugs: readonly FieldRecordSlug[] = RECORDS_LANDING_FEATURED_SLUGS,
+): void {
+  const catalogSlugs = new Set(catalog.map((r) => r.slug));
+  if (catalogSlugs.size !== catalog.length) {
+    throw new Error('FIELD_RECORD_CATALOG: duplicate slug');
+  }
+  const featured = new Set(featuredSlugs);
+  if (featured.size !== featuredSlugs.length) {
+    throw new Error('RECORDS_LANDING_FEATURED_SLUGS: duplicate slug');
+  }
+  for (const slug of featured) {
+    if (!catalogSlugs.has(slug)) {
+      throw new Error(`Featured slug missing from catalog: ${slug}`);
+    }
+  }
+  const otherCount = catalog.filter((r) => !featured.has(r.slug)).length;
+  if (featured.size + otherCount !== catalog.length) {
+    throw new Error('Records partition: featured + other must equal catalog');
+  }
+}
+
 export function getFieldRecordCatalogItem(slug: FieldRecordSlug): FieldRecordCatalogItem {
   const item = FIELD_RECORD_CATALOG.find((r) => r.slug === slug);
   if (!item) throw new Error(`Unknown field record slug: ${slug}`);

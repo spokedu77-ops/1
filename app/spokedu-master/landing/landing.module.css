@@ -217,7 +217,8 @@
 @media (max-width: 834px) {
   .hero { grid-template-columns: 1fr; gap: 50px; padding: 68px 30px 92px; }
   .heroCopy { max-width: 670px; }
-  .heroVisual { max-width: 720px; }
+  .heroVisual { max-width: 720px; margin-inline: auto; }
+  .heroVisual .productFrame.wide { aspect-ratio: 1.35; min-height: 220px; }
   .overview, .plansSection, .faqSection, .fieldProof { padding: 90px 30px; }
   .overview .sectionHeading { display: block; }
   .overview .sectionHeading > p:last-child { margin-top: 20px; }

@@ -55,7 +55,7 @@ export const partnersPage = {
   cta: {
     id: 'cta',
     title: '협업 문의는 Contact에서 이어집니다',
-    lead: '이 페이지는 안내입니다. 접수 Primary는 문의·협업 폼입니다.',
+    lead: '협업 제안은 Contact에서 유형을 선택해 남겨 주세요. 검토 후 연락드립니다.',
     primary: {
       label: '협업 문의하기',
       href: `${SPOKEDU_BASE_PATH}/contact?type=other`,

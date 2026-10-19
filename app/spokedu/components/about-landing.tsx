@@ -154,7 +154,6 @@ export function AboutLanding() {
                 </li>
               ))}
             </ul>
-            <p className={`mt-3 text-xs leading-relaxed text-stone-500 ${koreanText}`}>{team.note}</p>
           </div>
         </div>
       </section>

@@ -49,7 +49,8 @@ export const aboutPage = {
     id: 'what-we-do',
     eyebrow: '현재',
     title: '현재 하는 일',
-    lead: '세 축은 동등한 판매 실적 카드가 아니라, 서로 다른 역할의 관계입니다.',
+    lead:
+      'SPOKEDU는 현장에서 직접 운영하는 체육수업을 기반으로 프로그램과 수업 운영 시스템을 개발합니다.',
     items: [
       {
         id: 'education',
@@ -72,10 +73,10 @@ export const aboutPage = {
       {
         id: 'subscription',
         role: '지도자용 제품',
-        title: '구독시스템',
-        body: '수업을 찾고 준비하고 진행·기록하는 흐름을 돕는 지도자용 제품입니다.',
+        title: 'SPOKEDU LAB',
+        body: '수업을 찾고 준비하고 진행·기록하는 흐름을 돕는 지도자용 수업 운영 서비스입니다.',
         href: `${SPOKEDU_PATHS.subscription}`,
-        ctaLabel: '구독시스템 알아보기',
+        ctaLabel: 'SPOKEDU LAB 알아보기',
         trackLabel: 'about-what-curriculum',
       },
     ] as const,
@@ -96,7 +97,7 @@ export const aboutPage = {
       },
       {
         title: '공개 근거만',
-        body: '사례·연혁·제품 안내는 확인된 기록과 공개 계약 범위 안에서만 표기합니다.',
+        body: '사례·연혁·제품 안내는 확인된 기록과 공개 자료 범위 안에서만 표기합니다.',
       },
     ] as const,
   },
@@ -113,7 +114,7 @@ export const aboutPage = {
       { date: '2023. 10~12', text: '서초여성가족플라자 아동체육 인큐베이팅 강의' },
       { date: '2025. 02', text: '거점형 키움센터 연간 체육 프로그램 계약' },
       { date: '2025. 03', text: '이마트 문화센터 미니올림픽 특강(서울·경기·대전)' },
-      { date: '2025~', text: 'SPOMOVE 현장 적용 · 구독시스템(MASTER) 운영' },
+      { date: '2025~', text: 'SPOMOVE 현장 적용 · SPOKEDU LAB 운영' },
       { date: '2026. 05', text: '서대문구 어린이날 기념 아동청소년축제 부스 운영' },
       { date: '2026. 07. 16', text: '광주광역시 체육 지도자 교육 세미나' },
     ] as const,
@@ -129,14 +130,13 @@ export const aboutPage = {
       '연세대학교 체육교육학과 졸업',
       '현장 수업·기관 운영·지도자 교육을 함께 담당',
     ] as const,
-    note: '학력·경력은 신뢰 보조 자료이며, 페이지의 핵심 메시지는 현장 운영과 제품 관계입니다.',
   },
 
   nextPaths: {
     id: 'next',
     eyebrow: '다음 경로',
     title: '목적에 맞는 경로로 이어가세요',
-    lead: 'About은 소개 페이지입니다. 상담·도입은 각 경로에서 이어집니다.',
+    lead: '체육수업 도입, SPOMOVE·LAB, 협업 문의는 아래에서 바로 이어집니다.',
     items: [
       {
         label: '체육교육',
@@ -149,7 +149,7 @@ export const aboutPage = {
         trackLabel: 'about-next-spomove',
       },
       {
-        label: '구독시스템',
+        label: 'SPOKEDU LAB',
         href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'about-next-curriculum',
       },

@@ -61,6 +61,24 @@ export function SpomovePublicCatalog() {
         </p>
       </header>
 
+      <section className="mt-10 sm:mt-12" aria-labelledby="spomove-catalog-activities">
+        <h2 id="spomove-catalog-activities" className="text-lg font-bold text-[#0B1F46] sm:text-xl">
+          {page.activitySectionTitle}
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-[#536279] [text-wrap:pretty]">{page.activityIntro}</p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {page.activityCards.map((item) => (
+            <ActivityCard
+              key={item.title}
+              title={item.title}
+              description={item.description}
+              mediaKey={item.mediaKey}
+              fit={item.fit}
+            />
+          ))}
+        </div>
+      </section>
+
       <section className="mt-10 sm:mt-12" aria-labelledby="spomove-catalog-levels">
         <h2 id="spomove-catalog-levels" className="text-lg font-bold text-[#0B1F46] sm:text-xl">
           프로그램 분류
@@ -82,40 +100,6 @@ export function SpomovePublicCatalog() {
                 ))}
               </ul>
             </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-10 sm:mt-12" aria-labelledby="spomove-catalog-flow">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">{page.flowEyebrow}</p>
-        <h2 id="spomove-catalog-flow" className="mt-1 text-lg font-bold text-[#0B1F46] sm:text-xl">
-          SEE · DECIDE · MOVE
-        </h2>
-        <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-          {page.flowSteps.map((step) => (
-            <li key={step.label} className={`${marketingCardStatic} px-4 py-4 sm:px-5`}>
-              <p className="text-xs font-bold uppercase tracking-wide text-[#245DFF]">{step.label}</p>
-              <p className="mt-1 text-sm font-semibold text-[#0B1F46]">{step.axis}</p>
-              <p className="mt-2 text-sm leading-relaxed text-[#536279]">{step.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="mt-10 sm:mt-12" aria-labelledby="spomove-catalog-activities">
-        <h2 id="spomove-catalog-activities" className="text-lg font-bold text-[#0B1F46] sm:text-xl">
-          {page.activitySectionTitle}
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-[#536279] [text-wrap:pretty]">{page.activityIntro}</p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {page.activityCards.map((item) => (
-            <ActivityCard
-              key={item.title}
-              title={item.title}
-              description={item.description}
-              mediaKey={item.mediaKey}
-              fit={item.fit}
-            />
           ))}
         </div>
       </section>

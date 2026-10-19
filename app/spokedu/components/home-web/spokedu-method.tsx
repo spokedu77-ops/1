@@ -36,8 +36,7 @@ export function SpokeduMethod() {
             </h2>
           </div>
           <p className={`${styles.lead} ${styles.headAside}`}>
-            SPOKEDU는 학교와 기관에서 직접 체육수업을 운영합니다. 또한 현장에서 활용할 수 있는 프로그램과 지도자용
-            운영 시스템을 개발합니다.
+            현장 수업·프로그램·LAB 운영 도구가 하나의 흐름으로 연결됩니다.
           </p>
         </div>
 
