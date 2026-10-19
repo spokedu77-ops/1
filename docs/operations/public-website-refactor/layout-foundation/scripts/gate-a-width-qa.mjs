@@ -12,7 +12,7 @@ import { assessContactFlow } from './gate-a-contact-flow.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const foundation = path.join(here, '..');
 const repo = path.resolve(here, '../../../../..');
-const outJson = path.join(foundation, 'WIDTH_QA.json');
+const outJson = process.env.GATE_A_OUT_JSON ?? path.join(foundation, 'WIDTH_QA.json');
 const progressPath = path.join(foundation, 'WIDTH_QA.progress.jsonl');
 const port = process.env.GATE_A_PORT ?? '3072';
 const base = `http://127.0.0.1:${port}`;

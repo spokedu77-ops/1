@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/** PO / ZIP 산출물은 repo에 두지 않음 — 기본: %USERPROFILE%\\Downloads\\SPOKEDU_GATE_A_PO_REVIEW */
 import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -7,7 +8,10 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const foundation = path.join(here, '..');
 const repo = path.resolve(here, '../../../../..');
-const poRoot = path.join(foundation, 'po-review');
+const downloads =
+  process.env.GATE_A_OUTPUT_DIR ??
+  path.join(process.env.USERPROFILE ?? process.env.HOME ?? '', 'Downloads', 'SPOKEDU_GATE_A_PO_REVIEW');
+const poRoot = downloads;
 
 const PO_PAIRS = [
   { route: '/', viewports: [390, 1023, 1024, 1199, 1200, 1440], label: '홈' },
