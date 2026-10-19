@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
+import { resolveStorageCacheControl } from '@/app/lib/storage/cacheControl';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin();
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
       .from(BUCKET_NAME)
       .upload(normalizedPath, body, {
         contentType,
+        cacheControl: resolveStorageCacheControl(normalizedPath),
         upsert: true,
       });
 

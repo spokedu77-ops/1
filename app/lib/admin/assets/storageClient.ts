@@ -7,6 +7,7 @@
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { BUCKET_NAME } from '../constants/storage';
+import { resolveStorageCacheControl } from '@/app/lib/storage/cacheControl';
 
 /** 모듈 로드 시 서버에서 실행되지 않도록 함수 호출 시점에만 가져옴 (prerender 안전) */
 function getSupabase() {
@@ -58,6 +59,7 @@ export async function uploadToStorageDirect(
   const supabase = getSupabaseBrowserClient();
   const { error } = await supabase.storage.from(BUCKET_NAME).upload(path, file, {
     contentType: contentType ?? (file.type || 'image/jpeg'),
+    cacheControl: resolveStorageCacheControl(path),
     upsert: true,
   });
   if (error) {

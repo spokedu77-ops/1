@@ -28,14 +28,18 @@ export function prefersReducedMotion(): boolean {
 
 /**
  * Remote hosts that may use Vercel /_next/image.
- * Supabase MASTER assets are WebP at upload — serve the public URL directly.
- * Keep in sync with next.config.ts images.remotePatterns (Supabase stays for next/image src allowlist only).
+ * Public Supabase Storage images use Vercel /_next/image so each browser does
+ * not download the original directly from Storage. Signed/authenticated URLs
+ * remain direct because their tokens and authorization are request-specific.
+ * Keep in sync with next.config.ts images.remotePatterns.
  */
 export function canOptimizeRemoteImage(src: string): boolean {
   if (!/^https?:\/\//i.test(src)) return true;
   try {
     const host = new URL(src).hostname;
-    if (host === 'supabase.co' || host.endsWith('.supabase.co')) return false;
+    if (host === 'supabase.co' || host.endsWith('.supabase.co')) {
+      return new URL(src).pathname.startsWith('/storage/v1/object/public/');
+    }
     return host === 'img.youtube.com' || host === 'i.postimg.cc';
   } catch {
     return false;

@@ -7,6 +7,7 @@
  * POST : { dryRun?: boolean, limit?: number, deleteOrphans?: boolean }
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveStorageCacheControl } from '@/app/lib/storage/cacheControl';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -417,6 +418,7 @@ export async function POST(request: NextRequest) {
 
         const { error: upError } = await supabase.storage.from(BUCKET_NAME).upload(nextPath, output, {
           contentType: 'image/webp',
+          cacheControl: resolveStorageCacheControl(nextPath),
           upsert: true,
         });
         if (upError) {
