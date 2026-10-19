@@ -33,9 +33,9 @@ export function AboutLanding() {
         <div className={marketingSectionInner}>
           <motion.div
             className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center"
-            initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-            animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
+            initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.45 }}
           >
             <div className="max-w-2xl">
               <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
