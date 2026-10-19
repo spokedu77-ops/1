@@ -1,0 +1,141 @@
+﻿diff --git a/app/spokedu/components/about-landing.tsx b/app/spokedu/components/about-landing.tsx
+index ce44b038..5995fc0d 100644
+--- a/app/spokedu/components/about-landing.tsx
++++ b/app/spokedu/components/about-landing.tsx
+@@ -33,9 +33,9 @@ export function AboutLanding() {
+         <div className={marketingSectionInner}>
+           <motion.div
+             className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center"
+-            initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+-            animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+-            transition={{ duration: 0.45 }}
++            initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
++            animate={{ opacity: 1, y: 0 }}
++            transition={{ duration: reducedMotion ? 0 : 0.45 }}
+           >
+             <div className="max-w-2xl">
+               <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
+diff --git a/app/spokedu/components/home-web/home-web.module.css b/app/spokedu/components/home-web/home-web.module.css
+index 9bdb7cfe..32556c37 100644
+--- a/app/spokedu/components/home-web/home-web.module.css
++++ b/app/spokedu/components/home-web/home-web.module.css
+@@ -13,7 +13,6 @@
+ 
+ /* 1. Tokens ---------------------------------------------------------- */
+ .root {
+-  overflow-x: clip;
+   --navy: #0b1f46;
+   --navy-deep: #081126;
+   --blue: #245dff;
+@@ -388,8 +387,10 @@
+ }
+ 
+ .heroVisual {
+-  grid-column: 7 / 13;
+-  margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
++  grid-column: 1 / -1;
++  margin-inline: 0;
++  margin-right: 0;
++  min-width: 0;
+ }
+ 
+ .heroVisual .media {
+@@ -902,8 +903,8 @@
+   }
+ }
+ 
+-/* Hero — desktop 1024px+ (Hero selectors only) */
+-@media (min-width: 1024px) {
++/* Hero — desktop 1200px+ (2-col only when wide rail is stable) */
++@media (min-width: 1200px) {
+   .heroGrid {
+     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+     grid-template-areas:
+@@ -972,17 +973,8 @@
+   }
+ }
+ 
+-/* ≤1023 — tablet: stacked heads, full-width hero image, step rows */
+-@media (max-width: 1023px) {
+-  .headTitle,
+-  .headAside {
+-    grid-column: 1 / -1;
+-  }
+-
+-  .headAside {
+-    max-width: 560px;
+-  }
+-
++/* ≤1199 — home Hero: single column (1024–1199 included) */
++@media (max-width: 1199px) {
+   .heroGrid {
+     display: grid;
+     grid-template-columns: minmax(0, 1fr);
+@@ -1034,6 +1026,18 @@
+     width: 100%;
+     aspect-ratio: 16 / 10;
+   }
++}
++
++/* ≤1023 — tablet: stacked heads, step rows */
++@media (max-width: 1023px) {
++  .headTitle,
++  .headAside {
++    grid-column: 1 / -1;
++  }
++
++  .headAside {
++    max-width: 560px;
++  }
+ 
+   .gatewayCards {
+     grid-template-columns: 1fr;
+diff --git a/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs b/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs
+index 3c0982b2..29c5cb5b 100644
+--- a/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs
++++ b/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs
+@@ -34,6 +34,8 @@ export async function stabilizePublicPage(page, route) {
+     await page.locator('main, [role="main"], body').first().waitFor({ state: 'visible', timeout: 20_000 });
+   }
+ 
++  await waitForFirstScreenContent(page, urlPath);
++
+   await progressiveScroll(page);
+ 
+   const imageReport = await waitForVisibleImages(page, IMAGE_WAIT_MS);
+@@ -50,6 +52,35 @@ export async function stabilizePublicPage(page, route) {
+   };
+ }
+ 
++/** @param {import('playwright').Page} page @param {string} urlPath */
++async function waitForFirstScreenContent(page, urlPath) {
++  const pathOnly = urlPath.split('?')[0] || '/';
++  await page
++    .waitForFunction(
++      (p) => {
++        const sel =
++          p === '/about'
++            ? '#intro h1'
++            : p === '/records'
++              ? '#records-title, main h1'
++              : 'main h1, h1';
++        const el = document.querySelector(sel);
++        if (!el) return false;
++        const r = el.getBoundingClientRect();
++        const st = window.getComputedStyle(el);
++        return (
++          r.height > 8 &&
++          Number(st.opacity) > 0.05 &&
++          (el.textContent?.trim().length ?? 0) > 0
++        );
++      },
++      pathOnly,
++      { timeout: 30_000 },
++    )
++    .catch(() => undefined);
++  await page.waitForTimeout(150);
++}
++
+ /** @param {import('playwright').Page} page */
+ async function progressiveScroll(page) {
+   const metrics = await page.evaluate(() => ({

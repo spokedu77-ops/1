@@ -1,0 +1,134 @@
+{
+  "phase": "AFTER",
+  "capturedAt": "2026-10-19T13:00:55.008Z",
+  "rows": [
+    {
+      "phase": "AFTER",
+      "viewport": 1023,
+      "gridTemplateColumns": "959px",
+      "gridTemplateAreas": "\"copy\" \"visual\" \"actions\"",
+      "heroCopy": {
+        "x": 32,
+        "y": 103.03125,
+        "w": 959,
+        "h": 84
+      },
+      "heroVisual": {
+        "x": 32,
+        "y": 215.03125,
+        "w": 959,
+        "h": 599.375
+      },
+      "heroImg": {
+        "x": 32,
+        "y": 215.03125,
+        "w": 959,
+        "h": 599.375
+      },
+      "heroImgObjectPosition": "42% 42%",
+      "ctaPrimary": {
+        "x": 32,
+        "y": 842.40625,
+        "w": 157.375,
+        "h": 48
+      },
+      "h1Lines": 1
+    },
+    {
+      "phase": "AFTER",
+      "viewport": 1024,
+      "gridTemplateColumns": "960px",
+      "gridTemplateAreas": "\"copy\" \"visual\" \"actions\"",
+      "heroCopy": {
+        "x": 32,
+        "y": 119.078125,
+        "w": 960,
+        "h": 84
+      },
+      "heroVisual": {
+        "x": 32,
+        "y": 231.078125,
+        "w": 960,
+        "h": 600
+      },
+      "heroImg": {
+        "x": 32,
+        "y": 231.078125,
+        "w": 960,
+        "h": 600
+      },
+      "heroImgObjectPosition": "42% 42%",
+      "ctaPrimary": {
+        "x": 32,
+        "y": 859.078125,
+        "w": 157.375,
+        "h": 48
+      },
+      "h1Lines": 1
+    },
+    {
+      "phase": "AFTER",
+      "viewport": 1199,
+      "gridTemplateColumns": "1135px",
+      "gridTemplateAreas": "\"copy\" \"visual\" \"actions\"",
+      "heroCopy": {
+        "x": 32,
+        "y": 126.953125,
+        "w": 1135,
+        "h": 89.71875
+      },
+      "heroVisual": {
+        "x": 32,
+        "y": 244.671875,
+        "w": 1135,
+        "h": 709.375
+      },
+      "heroImg": {
+        "x": 32,
+        "y": 244.671875,
+        "w": 1135,
+        "h": 709.375
+      },
+      "heroImgObjectPosition": "42% 42%",
+      "ctaPrimary": {
+        "x": 32,
+        "y": 982.046875,
+        "w": 157.375,
+        "h": 48
+      },
+      "h1Lines": 1
+    },
+    {
+      "phase": "AFTER",
+      "viewport": 1200,
+      "gridTemplateColumns": "445px 623px",
+      "gridTemplateAreas": "\"copy visual\" \"actions visual\"",
+      "heroCopy": {
+        "x": 48,
+        "y": 174.03125,
+        "w": 445,
+        "h": 153.25
+      },
+      "heroVisual": {
+        "x": 529,
+        "y": 127,
+        "w": 671,
+        "h": 419.375
+      },
+      "heroImg": {
+        "x": 529,
+        "y": 127,
+        "w": 671,
+        "h": 419.375
+      },
+      "heroImgObjectPosition": "42% 42%",
+      "ctaPrimary": {
+        "x": 48,
+        "y": 404.3125,
+        "w": 157.375,
+        "h": 48
+      },
+      "h1Lines": 1
+    }
+  ]
+}

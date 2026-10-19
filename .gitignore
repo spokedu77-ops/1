@@ -46,6 +46,10 @@ qa-screenshots/
 # Generated PDF page renders
 scripts/pdf-pages/page-*.png
 
+# Public website layout QA working captures and review bundle
+/docs/operations/public-website-refactor/layout-foundation/BEFORE_AFTER/
+/docs/operations/public-website-refactor/layout-foundation/_review_pkg/
+
 # next.js
 /.next/
 /out/

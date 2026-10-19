@@ -1,0 +1,12 @@
+public_url,page_tsx,render_root,primary_css,outer_container,container_role,measure_selector,layout_notes
+/,app/(spokedu-public)/page.tsx → app/spokedu/page.tsx,home-landing.tsx → home-web/home-web-landing.tsx,home-web/home-web.module.css,.rail (--rail-max 1368 + --gutter),standard,"[class*=""home-web""] .rail",Hero Gate A: ≤1199 1col; ≥1200 2col; LandingPageRoot wrapper
+/education,app/(spokedu-public)/education/page.tsx,education-hub-landing.tsx,education-hub.module.css,.rail,standard,main .rail,DispatchProposalForm #contact preserved
+/private,app/(spokedu-public)/private/page.tsx,private-landing.tsx,private-landing.module.css,site-container + page sections,focused,main .site-container,Form fields unchanged
+/spomove,app/(spokedu-public)/spomove/page.tsx,spomove-program-landing.tsx + spomove-catalog-tabs.tsx,spomove-program.module.css,.rail (77.5rem text-rail),visual,main .rail,Tab UI; gutter via clamp aligned to 20/32/48
+/spomove/catalog,app/(spokedu-public)/spomove/catalog/page.tsx,spomove-public-catalog.tsx,spomove-public-catalog.module.css,site-container,standard,main .site-container,overflow-x-clip pre-existing on wrapper — not Gate A change
+/records,app/(spokedu-public)/records/page.tsx,records-landing.tsx,records-landing.module.css,.rail,visual,main .rail,Featured photos; catalog SSOT unchanged
+/spokedu-lab,app/(spokedu-public)/spokedu-lab/page.tsx → subscription/page.tsx,CommercialLanding.tsx,landing.module.css,.landingRoot / .masterLocalNavInner,visual,.masterLocalNavInner,Own nav; max-width 1120–1220 — not site-container
+/about,app/(spokedu-public)/about/page.tsx,about-landing.tsx,about-landing.module.css,marketingSectionInner (site-container),reading,main .site-container,
+/spomat,app/(spokedu-public)/spomat/page.tsx,spomat-landing.tsx,spomat-landing.module.css,marketingSectionInner,reading,main .site-container,
+/partners,app/(spokedu-public)/partners/page.tsx,partners-landing.tsx,partners-landing.module.css,marketingSectionInner,standard,main .site-container,
+/contact,app/(spokedu-public)/contact/page.tsx,contact-form-shell.tsx + modules,contact.module.css,site-container,focused,main .site-container,

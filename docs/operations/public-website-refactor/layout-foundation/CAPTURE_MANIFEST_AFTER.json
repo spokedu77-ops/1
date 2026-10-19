@@ -1,0 +1,777 @@
+{
+  "phase": "AFTER",
+  "port": "3071",
+  "base": "http://127.0.0.1:3071",
+  "entries": [
+    {
+      "phase": "AFTER",
+      "route": "/",
+      "viewport": 390,
+      "foldFile": "home-390-fold.png",
+      "foldSha256": "2f0dc6573dd198171691818e93990fe9f23f1512781dbf870077a4594b27ad5d",
+      "fullSha256": "d96119727a4dc4f9f2a990c907b3aa6a09875c53b3035e333a38e22b7246846e",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/",
+      "viewport": 941,
+      "foldFile": "home-941-fold.png",
+      "foldSha256": "c79b1b269c076d5042743fd574f0168a57b74ca5f56adea7001fffabbf4da1c5",
+      "fullSha256": "38dcab17673852d908e50161e036b937619ba01b696c884aa110c7cc32c35a07",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/",
+      "viewport": 1023,
+      "foldFile": "home-1023-fold.png",
+      "foldSha256": "ad49f1a5474e0c1b6ec0b0885b60552e3573f0e3908ba251c9312f029b78f457",
+      "fullSha256": "e43ba49dce0202dd1718ffadb5c50ceeeb5382c9b23d519846149ffe062da91e",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/",
+      "viewport": 1024,
+      "foldFile": "home-1024-fold.png",
+      "foldSha256": "a22027903562f0a174749f9645c8f8c0f7985f00a235613baff4824f9b3fbe59",
+      "fullSha256": "a19558dc05640ecef57a67f14d9e5d4a6825bcf20dd06636d6e2d16dd1f0c9bc",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/",
+      "viewport": 1199,
+      "foldFile": "home-1199-fold.png",
+      "foldSha256": "e9110cefa3815fb2e9648a6223a49f1248c15858cab7b35c3415238a0d1a4567",
+      "fullSha256": "59898b335086aae707cdd66dd179452862b585dd6729d336c9ad98882b99cb5b",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/",
+      "viewport": 1200,
+      "foldFile": "home-1200-fold.png",
+      "foldSha256": "2752d64b3344d7ba836821154f8c1e945b94eb8dfedaab6d3fa40cb6c16ca1e2",
+      "fullSha256": "ea0645b89a87e4ca9fcaacc5595f1da8933ea54cf3ce5ef27912c99db88e1c15",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/",
+      "viewport": 1440,
+      "foldFile": "home-1440-fold.png",
+      "foldSha256": "6328fd129d5513d9383c2f6f243c17cf740b934530424073dc73b132e1ad90af",
+      "fullSha256": "fbb018045476773523cfdfeae763fd0d477b2e75297c460bea24320c16c5ffc2",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/education",
+      "viewport": 390,
+      "foldFile": "education-390-fold.png",
+      "foldSha256": "a139dee33ba5e1eb95334b630f186dc41c07ff11602558340d7265b4fe11186b",
+      "fullSha256": "912b74924b611399b7e5b9e4b1e85fd26ad87923e271467814e4151b13880022",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/education",
+      "viewport": 941,
+      "foldFile": "education-941-fold.png",
+      "foldSha256": "0e6b857a2a9640768ee5ab8a6b97dba32cb413b5556b844815d33126cbb22d35",
+      "fullSha256": "4c4af64bb259b55dc94b2170aceee63be0acf0967ab8f6c53e908bb1ab24c176",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/education",
+      "viewport": 1023,
+      "foldFile": "education-1023-fold.png",
+      "foldSha256": "6d3a8ca1a238f681c454e472b65a2effd7221a8f7d162f1eca56ed08761933cd",
+      "fullSha256": "09ea786fdd2d24a2f37791b3df222de702f34ef94866e23b7fbbbaf1065a1f7a",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/education",
+      "viewport": 1024,
+      "foldFile": "education-1024-fold.png",
+      "foldSha256": "b51b33dc86cafa21ec91b8bb5f1f701d7812909131a71c894bb00c38373017bd",
+      "fullSha256": "181d6187e463061bce603d1d07938b386b0d4bf5b822679bef0bf662c05b17db",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/education",
+      "viewport": 1199,
+      "foldFile": "education-1199-fold.png",
+      "foldSha256": "fb8f8c0fd3e4ff6c6aabab1bb4591eb3bd368dc82b44098efe34b69e34cfce09",
+      "fullSha256": "2c0d2591ad00252bcc83ad8334b0c6ff31b9c9a57035d42c61c84280e43eca9d",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/education",
+      "viewport": 1200,
+      "foldFile": "education-1200-fold.png",
+      "foldSha256": "d011fbccd1361714d90aa93bf66235a7a8dda2927c04df77d367d947a632bb3a",
+      "fullSha256": "5ce12190950f05b821fe4dd8170c03534b7f4c27ed6b8b634f5e15d5f99be2f7",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/education",
+      "viewport": 1440,
+      "foldFile": "education-1440-fold.png",
+      "foldSha256": "961c6debc61bd864134a4dff17b6042e376ca8dcc4042afed505b012f0594b3c",
+      "fullSha256": "1281599d7193c5762988d5a8e556e3cf73c0b006d1635681d1ef9ae3f3cdce06",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/private",
+      "viewport": 390,
+      "foldFile": "private-390-fold.png",
+      "foldSha256": "4057dc29cd264400111ef02edae042e1cd93b08b16d9f44ecbab7f43121c77c0",
+      "fullSha256": "ad13a6c1d78a6f0118b155d2a90bf47d52def1b60917e9a93d4c082a1c918eee",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/private",
+      "viewport": 941,
+      "foldFile": "private-941-fold.png",
+      "foldSha256": "ef6fca99b6a3c3bbbbe13189cc32ed655c7594b2f074112ffcecd622370ddb81",
+      "fullSha256": "0005e51f08bc580fa9272756c76d0c925354179fd170c898fa457cb3d55c61f4",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/private",
+      "viewport": 1023,
+      "foldFile": "private-1023-fold.png",
+      "foldSha256": "280a209d4002657ad08fa2ad58e0bed0faeec6c8d5edec505ca4f902da4fe60c",
+      "fullSha256": "bb02f01484129a4d2cc54ca04911d74ab5b413d91ddc236b1132364bb073f6e7",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/private",
+      "viewport": 1024,
+      "foldFile": "private-1024-fold.png",
+      "foldSha256": "43b6a0afed94c670a4919b0b0b39bf536ff64fc1a8d16fcc91505dc5bfff4a6e",
+      "fullSha256": "2b71c293253759788c427eeda281ec5a57ac83c2a523c8a6af94fab8f3c3d86f",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/private",
+      "viewport": 1199,
+      "foldFile": "private-1199-fold.png",
+      "foldSha256": "9f97bf7e0fd28a58b1c2e2f6f7ce7300efd5b995ab4c36e4206a9ab174e26728",
+      "fullSha256": "d40ca345699d8e67903a23e7b5aedb1bf46bad64384e168d259c0362db8239c0",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/private",
+      "viewport": 1200,
+      "foldFile": "private-1200-fold.png",
+      "foldSha256": "308f6c849bd9410e59bb7c72996481bdd3d6dcad9724da3c3b623ad75049afdf",
+      "fullSha256": "b11da1146769c770ccf4c4a12ef823bfe2255bc33e2c0ac83175bb33d395f168",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/private",
+      "viewport": 1440,
+      "foldFile": "private-1440-fold.png",
+      "foldSha256": "07c4a24f48199bca48efb6170941de55a077da6bcd24b0870fffd8184b121ead",
+      "fullSha256": "423a49b9a0ff0acb53f5e78d46dd16ff996b422b5eff3fcbb225efcf68618e3b",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove",
+      "viewport": 390,
+      "foldFile": "spomove-390-fold.png",
+      "foldSha256": "d0d23c2a22a6d0571499ac2692c88138bdf6167dfb33e95416795d6f7860983d",
+      "fullSha256": "f4ce1fbe269ad15d102fd4fe305fe6e1fedae1bb4f8673c4fc34f2ebac875713",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove",
+      "viewport": 941,
+      "foldFile": "spomove-941-fold.png",
+      "foldSha256": "dc5dd0cbd85549114ac9e92712c73ed425263e3a951c81f8ad193e268c303ccf",
+      "fullSha256": "9b632a24256e5ddd1bb86df6f85c7a74daa289c33ec0429b60ce322b34c80cf5",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove",
+      "viewport": 1023,
+      "foldFile": "spomove-1023-fold.png",
+      "foldSha256": "89b92be7358d41a083c2f546d84bc6aa74dd8140c78cf9cc8ed101edf01b53ec",
+      "fullSha256": "482f7fde867b60a3de3ba0ec0244ee1c1d836dbf29c5a33a2d6c5323d719d55a",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove",
+      "viewport": 1024,
+      "foldFile": "spomove-1024-fold.png",
+      "foldSha256": "70e6845367da3b735ba0c881794123bc383aed7f9d58f034d3261e05b0ce39e8",
+      "fullSha256": "3d07176f1f4154c7dc5fcf58c691b29fb0c694e3e16518a51161c2f55e27d8f0",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove",
+      "viewport": 1199,
+      "foldFile": "spomove-1199-fold.png",
+      "foldSha256": "54f6f77891a72699a28a0f93bf28bcab89ffa242b4c8f94e9a85f1feceb8bc93",
+      "fullSha256": "cbda95f666bb8ffcca1e610dc0fead8c1e0f91eaebf54db1fa60fd0561e757b0",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove",
+      "viewport": 1200,
+      "foldFile": "spomove-1200-fold.png",
+      "foldSha256": "18d27ad2b19bb69a33bf741b08c3fab7a44c799864feedb4e1d29f41ff0995ab",
+      "fullSha256": "4656490f93f3349d4a9046eb9fe58dddee36a752d471fb3d441797c2711951f1",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove",
+      "viewport": 1440,
+      "foldFile": "spomove-1440-fold.png",
+      "foldSha256": "a892a57da91ed939346670c8fdf7ed635794cdaa2bb2988b10caa0df3c5ddb07",
+      "fullSha256": "f789bd93d3de640951e4d75fa18777e1a6a818bcd2cd064a042052cac9b8b2a0",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove/catalog",
+      "viewport": 390,
+      "foldFile": "spomove_catalog-390-fold.png",
+      "foldSha256": "90cb83271a1501b5cda20c27f8428047033eea21237f1993433a80d57530ff48",
+      "fullSha256": "d348240fcd5ce109fbcfb53e489a4fe7fbf4fd46b009a88f8c90ad3de9333b44",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove/catalog",
+      "viewport": 941,
+      "foldFile": "spomove_catalog-941-fold.png",
+      "foldSha256": "53bfd527b06746bd53c605016e437c4ab605dcbce88e07c74c57271c241a63f2",
+      "fullSha256": "34c4a407c0bdce31be3942b36630a65915a795a084f4a359a0bdff720da800ce",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove/catalog",
+      "viewport": 1023,
+      "foldFile": "spomove_catalog-1023-fold.png",
+      "foldSha256": "d199b512f9ddfa71801790585b4bcee16c63550ae7cd4661f8da5682068e5d66",
+      "fullSha256": "242acb26ee8bf1a658f2e003f07bff4c217c90bc2baee5e781934a03b555a4d3",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove/catalog",
+      "viewport": 1024,
+      "foldFile": "spomove_catalog-1024-fold.png",
+      "foldSha256": "4f77c3c8d33a50a409ccc65bca61aa7ae2884865aff58acc2971a1011c3c1214",
+      "fullSha256": "45ae126e193ecdbee8569603d9e57686ede390ea5df42a1fe986fe896a289931",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove/catalog",
+      "viewport": 1199,
+      "foldFile": "spomove_catalog-1199-fold.png",
+      "foldSha256": "1a179fa5edce3e6b833719cb605a87ab0e0ff88c6c1948fe6bb4370bff298d38",
+      "fullSha256": "8304dad23fc7109b5cb5b6d83c79ab53431d0e85d05391641caebb3fd06965c2",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove/catalog",
+      "viewport": 1200,
+      "foldFile": "spomove_catalog-1200-fold.png",
+      "foldSha256": "2b1c71185ff5b945eccbbf2a6a94973d0e99d46b19f5877e1ce5f416514ed4e8",
+      "fullSha256": "f9bc047b15fc2dd6669fcec9bb4a44767e774cf63c73ce5b7a86a88f7f25951c",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomove/catalog",
+      "viewport": 1440,
+      "foldFile": "spomove_catalog-1440-fold.png",
+      "foldSha256": "cee75a99c673cc91d8c9e5803178aca876d63948c9c003971812f24232f0f8fa",
+      "fullSha256": "8e7310be3f4a8eac120f2d81e5e610d1220e8755569f23f5c46a503cd3bf5818",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/records",
+      "viewport": 390,
+      "foldFile": "records-390-fold.png",
+      "foldSha256": "bef438aeecb164c7b3a44a69e3245f08c8a4e1e64a68fd445cc0259b394ca40f",
+      "fullSha256": "a9ce0705b2fccc6c7ef11d571586e86a95cd7f7e709754c8a052ad208f01d418",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/records",
+      "viewport": 941,
+      "foldFile": "records-941-fold.png",
+      "foldSha256": "fc5a138ce93c9e00ec69d03b56792bfcc661908d1d6174931224fe389d2f1431",
+      "fullSha256": "2681f3a37638acc8a6aa0c59a1e50bb1b800554b4ffb550761af02bf56404a27",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/records",
+      "viewport": 1023,
+      "foldFile": "records-1023-fold.png",
+      "foldSha256": "25b603faa95e897498f8f70b182ea286a687ebd693e674f8b8d1039ee6a29a62",
+      "fullSha256": "146ffd9d1f5e721d8a06af42a516e0c95c59165f9f38452532ada278d2cf4c32",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/records",
+      "viewport": 1024,
+      "foldFile": "records-1024-fold.png",
+      "foldSha256": "db206d4115bb9c7bf5d26f67427bf36e074f8a913fb912fe3d1e5c05b00d9af0",
+      "fullSha256": "114c6c1ef6aa6a501e17ba986d0b68331cc1d1ed141390d82d2394d377f5a004",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/records",
+      "viewport": 1199,
+      "foldFile": "records-1199-fold.png",
+      "foldSha256": "3d8086e5639d68739510932ab2b6eb2f0226a8180bfe2e2b6a0684d677ed6769",
+      "fullSha256": "e178f27a455a3d5c857c61bea5d29bc830f59340646f4a63719fe4618df80d09",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/records",
+      "viewport": 1200,
+      "foldFile": "records-1200-fold.png",
+      "foldSha256": "9f241b5df3cb1dd56fb56104a9818000bf7fe347ef68d38869f45476d128d470",
+      "fullSha256": "bb125d4b8df643a474db07cc4db7e63f1ab84a00274d55a144f26a8ee8ecaee2",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/records",
+      "viewport": 1440,
+      "foldFile": "records-1440-fold.png",
+      "foldSha256": "5c401bb18b394b8676822e0169df98bf756af112009732679e8ad1f22655ef78",
+      "fullSha256": "3158d40c0030803d15b333739da366532fb463cc8a83b7465705f9518c38c566",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spokedu-lab",
+      "viewport": 390,
+      "foldFile": "spokedu-lab-390-fold.png",
+      "foldSha256": "39e0b340133d72f30e7b4a58485d3a8be72ab77e8cc8466ccaf0412d8ef2d2a8",
+      "fullSha256": "814ab2f0df636dfa5f1f40b092f4853cce309b6cd00c3462726f875e9849998d",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spokedu-lab",
+      "viewport": 941,
+      "foldFile": "spokedu-lab-941-fold.png",
+      "foldSha256": "d53cd31a6685e9ac8bcb999c2ec62daaa9ead3b2ba2203e977a5dc40763c8235",
+      "fullSha256": "3515aeaa31d9e88a831f2d2da1cb9da537ea82bfb3c61ac501f1dd4947792694",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spokedu-lab",
+      "viewport": 1023,
+      "foldFile": "spokedu-lab-1023-fold.png",
+      "foldSha256": "3cc02e1bae19d8668c821b7799383c2df43a0ba9e4f4bb469f0d4bc34eb37560",
+      "fullSha256": "a137280f6cc8f2ca94827c181a7b8bc0d669aa1bc918d4e063b08d01561c0f76",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spokedu-lab",
+      "viewport": 1024,
+      "foldFile": "spokedu-lab-1024-fold.png",
+      "foldSha256": "2d4296a7bf4951c44537cc3263dddef3234107f05045dd69e5577a3d84954904",
+      "fullSha256": "c2632bac16099b222fa355e67ffa0095325864b90be8c20c63e2d2fbd386df55",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spokedu-lab",
+      "viewport": 1199,
+      "foldFile": "spokedu-lab-1199-fold.png",
+      "foldSha256": "ee899798b8e0a5166fa1e8e025da785acabfd24328899352d907e494d626b482",
+      "fullSha256": "76070a3d32cf200b039f287f6168b6158a9dcdec132cae60ff0b5993a271abb7",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spokedu-lab",
+      "viewport": 1200,
+      "foldFile": "spokedu-lab-1200-fold.png",
+      "foldSha256": "8eb661f49954f9d2a4a05a030153761d3358141160bd40405b8ddc28707e0cce",
+      "fullSha256": "a330457b79f6f3b5f00af2cbf2d3f9449fea723b18c818a3a36132727de31d92",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spokedu-lab",
+      "viewport": 1440,
+      "foldFile": "spokedu-lab-1440-fold.png",
+      "foldSha256": "6ef5ab54f640538a150943779ddde89063414e4f72f3dbe3c3dd031f8035e51f",
+      "fullSha256": "e2515410de60f61d9d3af66baf9500fcec1b60245b4f75c37fbfc01be8ed50aa",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/about",
+      "viewport": 390,
+      "foldFile": "about-390-fold.png",
+      "foldSha256": "65a63252cb630129e3c11bcdf4ad0401959958cdf633feb7edc5dddf2a3db954",
+      "fullSha256": "199a8d2a21e42d3ab83548ffcd2c2edd2075ec6c951f9e966a912cfe4c5bf7aa",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/about",
+      "viewport": 941,
+      "foldFile": "about-941-fold.png",
+      "foldSha256": "ebcede1ebba9685da2726133b1ecc886304147b93fd1fc1baa0e227ff7757f08",
+      "fullSha256": "07e21d8a5f5c561d5eda0a69dc407f509ca4eac0c6c4fe570fb22860eaed1ada",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/about",
+      "viewport": 1023,
+      "foldFile": "about-1023-fold.png",
+      "foldSha256": "8d66d75ed13d16c9a77526ec3685466ef8ab70f5e2222d38ddc19c452617fd8c",
+      "fullSha256": "812d2d6e2cd34b3fd524d5011f6055777127a81bdfaf4cf9a701df14dc54fcce",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/about",
+      "viewport": 1024,
+      "foldFile": "about-1024-fold.png",
+      "foldSha256": "0ae5025b56cca4f7bcaa3328bb66859c0e1cd84aa6b7b5f9bc5cdfe0af98b2fd",
+      "fullSha256": "8e6168ca16960e7258d67294156763ae048620660605dcb06fcde9c03df551fc",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/about",
+      "viewport": 1199,
+      "foldFile": "about-1199-fold.png",
+      "foldSha256": "9d23f961cff0400e302ce4874f8511dc4181b6d893ad5b9f2b4efb7ce4da21e9",
+      "fullSha256": "c05a08806b09f6cb98e152cf7ab99089889c494c9a07fdb3564590eaaaa335d0",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/about",
+      "viewport": 1200,
+      "foldFile": "about-1200-fold.png",
+      "foldSha256": "e86d1ddef8705210cfe7f5957ab6c3219026f3c42a2cfdc8f36b93184bbf7daf",
+      "fullSha256": "cba3483077064e5bde30dee6642bdb87bb182eba408e4f67aa1200f657860fc7",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/about",
+      "viewport": 1440,
+      "foldFile": "about-1440-fold.png",
+      "foldSha256": "7e649542d034a3b83d35e30f15331abe9ae0a114648c3fb0db53ceec351bccdf",
+      "fullSha256": "091ec3f77351085c4113b2fbc84d611f977cdd2f7fc03720a48d5be1c64d75f9",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomat",
+      "viewport": 390,
+      "foldFile": "spomat-390-fold.png",
+      "foldSha256": "53a6479ddb137acb14029db483c4e0f63c62560f9aef239e7163d03e300dcbf2",
+      "fullSha256": "ae25021ff247c8c5cacb4e5cf2d895c8c7a9eb59981fa2c8a0289892a93cf246",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomat",
+      "viewport": 941,
+      "foldFile": "spomat-941-fold.png",
+      "foldSha256": "afa78e718084336d01f2247b0367bb65abdd741170ecbc8075df1abeea6598ac",
+      "fullSha256": "cdc0a10e0a39a6a1d862b6cfb2121549855ebaf6ab5f44d5d3b36ab4a32a034f",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomat",
+      "viewport": 1023,
+      "foldFile": "spomat-1023-fold.png",
+      "foldSha256": "1ed6beb468206f1da734a81f99693201a12e1d491918a004ded85c4406730c0c",
+      "fullSha256": "5e3c1306f3df7ddb3782a6f783472292d015f48572a4802f3b1baf62953812c1",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomat",
+      "viewport": 1024,
+      "foldFile": "spomat-1024-fold.png",
+      "foldSha256": "3498c6187759d1af94e69d0c76b975bdd19b047285a5d6ae0feca4eedd45f019",
+      "fullSha256": "85a49412682a91b087e91aa529f0030097e4b3333a96773a22f8facd7b451ce5",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomat",
+      "viewport": 1199,
+      "foldFile": "spomat-1199-fold.png",
+      "foldSha256": "96c0085d24c574d1734990de3ddb6677ed152aae6b09f681b0374b0a3966b451",
+      "fullSha256": "9434d68b0fc83a65c89390734605e8f56accc4c483be46db7fdc2bedeb57fdb7",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomat",
+      "viewport": 1200,
+      "foldFile": "spomat-1200-fold.png",
+      "foldSha256": "4660cf30bb42be9058c3fd91ac7bab3b7f68b71be7d806007bbae02db831ca22",
+      "fullSha256": "e4ecd09ef4840040371d95c28dcca344501f329abd681489dd819b1c9441b776",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/spomat",
+      "viewport": 1440,
+      "foldFile": "spomat-1440-fold.png",
+      "foldSha256": "ed9b58acc674e3598e5bcbe7c8f12e775148766bcd190f0d76a57b982b522f75",
+      "fullSha256": "fb50d6c2f434dd0ddb0d102a80b8f27bedf2cd169aa00ee0c4146565dbf54810",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/partners",
+      "viewport": 390,
+      "foldFile": "partners-390-fold.png",
+      "foldSha256": "c41c66333c72e800eb5cc3c360045d5fdf1493dde25715af001d7480b15b373f",
+      "fullSha256": "38e2b33604d374196092d59de19cc134cd77d5ce3e4f9bb771f65d2f20b3dffa",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/partners",
+      "viewport": 941,
+      "foldFile": "partners-941-fold.png",
+      "foldSha256": "1e0843f9268c0c69fbccf51984aeda378af620290ad02a75b9f012d4c6fdaff4",
+      "fullSha256": "6295bc1007beb91bd6f215687ca4d8e49420b60580ff041685e9f4098f004b17",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/partners",
+      "viewport": 1023,
+      "foldFile": "partners-1023-fold.png",
+      "foldSha256": "7adead3258762639e985f5993e66dac9078c6b9e28c95a46ce59b280f2c4c3b4",
+      "fullSha256": "57973fe5cb13fac60bc9b463aa4efb8fa87789b6416a72f04dbcaf5266a45763",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/partners",
+      "viewport": 1024,
+      "foldFile": "partners-1024-fold.png",
+      "foldSha256": "6d41fd27541da46b73504ca23acae3d68538393d1718df3291348a483726b9c0",
+      "fullSha256": "0dfbb074cb3303f7dc605150cbe5a5616918b72ffa49f16eab5797327aa896e7",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/partners",
+      "viewport": 1199,
+      "foldFile": "partners-1199-fold.png",
+      "foldSha256": "1194f59def05a6ab29ff6b1a3c00af29283b96a69217967fe80a98b664e41442",
+      "fullSha256": "f803c6fae98df8f212067a54c6e3634a46585c43745b36a60e075ceb910891a5",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/partners",
+      "viewport": 1200,
+      "foldFile": "partners-1200-fold.png",
+      "foldSha256": "f995556d7fd8b21f504ee6cf4d812ab83a0b97fe62bfde058d29a9faac90da9d",
+      "fullSha256": "b26095f6b3430b2a8b88659ddefd6d2c70a89d844425dac562b97c54c0db9e8f",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/partners",
+      "viewport": 1440,
+      "foldFile": "partners-1440-fold.png",
+      "foldSha256": "22268d1138dc08981d545d96d48279bfe2cdb2e146d6f44df729ad7499acf7d5",
+      "fullSha256": "9201555130f461ad119c4cc2104f5918084a609a0b708dc06e105b3517215be0",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/contact",
+      "viewport": 390,
+      "foldFile": "contact-390-fold.png",
+      "foldSha256": "3a4cd7eaac1a6ba74f355bbf584daa8d24857c13b1b028dd1f354448abf4d4ce",
+      "fullSha256": "8809e722db43659975eb265cda0bdece3e1af985da4489788cabac072eacf030",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/contact",
+      "viewport": 941,
+      "foldFile": "contact-941-fold.png",
+      "foldSha256": "14e21c1aaedce8ba8d0c553018c628f70b91a1d38301a86f174bf844808b6ade",
+      "fullSha256": "5dd9841269623275d2d5f867e2562e375e4b472b33e6c7a74c50253e9b08488c",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/contact",
+      "viewport": 1023,
+      "foldFile": "contact-1023-fold.png",
+      "foldSha256": "c20bae8ebefa127ade31bf83913096221e888d16fd11bdc15e61cac16376e9f9",
+      "fullSha256": "0ba2a23daa59855c3a09e5806d982df59415d8280569aa93bdfc08e37c21f717",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/contact",
+      "viewport": 1024,
+      "foldFile": "contact-1024-fold.png",
+      "foldSha256": "95a4c106953e449546f0203ffd4e3449a75e6adfdfbd7d6b05bcd060bf63f751",
+      "fullSha256": "adcf40747bbd738195cac29a0f308485119142d28609632d53afd8e45b4ff779",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/contact",
+      "viewport": 1199,
+      "foldFile": "contact-1199-fold.png",
+      "foldSha256": "b2423e7d35740d6c6abf4910314d7408191c2a22855657669732d79e0a95f1f8",
+      "fullSha256": "89d08f59093eb1fbcc80c80fdac21360022ffbc9e010645762cacee69238a7af",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/contact",
+      "viewport": 1200,
+      "foldFile": "contact-1200-fold.png",
+      "foldSha256": "8fc615fa214f290567684ef4574d6dd4eb36d85b4e246309888ca16b1d494e83",
+      "fullSha256": "26ce8cdeb548b0aa678b305347d76003f319cc1f8740fa60c364a65907be2670",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    },
+    {
+      "phase": "AFTER",
+      "route": "/contact",
+      "viewport": 1440,
+      "foldFile": "contact-1440-fold.png",
+      "foldSha256": "9c948e1dc5b5428990fe5e0b82d0464a1ac3c9c407604308a723e41370a71c77",
+      "fullSha256": "5d0a9b4e77b0833a9465da250b18e389ab619d5e8a67a7c8ac01069cef596b0d",
+      "imagesReady": true,
+      "hiddenContentCount": 0
+    }
+  ]
+}
