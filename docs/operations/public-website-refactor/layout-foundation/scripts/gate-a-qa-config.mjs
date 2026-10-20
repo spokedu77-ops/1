@@ -146,8 +146,7 @@ export const ROUTE_QA = [
 export const WIDTHS = [320, 360, 390, 430, 767, 768, 941, 1023, 1024, 1199, 1200, 1280, 1440, 1920];
 
 export const SPOT_CHECKS = [
-  { route: '/contact', widths: [390, 767, 1440] },
-  { route: '/private', widths: [390, 767, 1440] },
+  { route: '/contact', widths: [390, 1440] },
   { route: '/partners', widths: [390] },
   { route: '/education', widths: [390, 1024, 1440, 1920] },
   { route: '/spomove', widths: [767, 1199, 1440] },

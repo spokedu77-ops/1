@@ -1,141 +1,193 @@
-﻿diff --git a/app/spokedu/components/about-landing.tsx b/app/spokedu/components/about-landing.tsx
-index ce44b038..5995fc0d 100644
---- a/app/spokedu/components/about-landing.tsx
-+++ b/app/spokedu/components/about-landing.tsx
-@@ -33,9 +33,9 @@ export function AboutLanding() {
-         <div className={marketingSectionInner}>
-           <motion.div
-             className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center"
--            initial={reducedMotion ? false : { opacity: 0, y: 12 }}
--            animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
--            transition={{ duration: 0.45 }}
-+            initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-+            animate={{ opacity: 1, y: 0 }}
-+            transition={{ duration: reducedMotion ? 0 : 0.45 }}
-           >
-             <div className="max-w-2xl">
-               <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
-diff --git a/app/spokedu/components/home-web/home-web.module.css b/app/spokedu/components/home-web/home-web.module.css
-index 9bdb7cfe..32556c37 100644
---- a/app/spokedu/components/home-web/home-web.module.css
-+++ b/app/spokedu/components/home-web/home-web.module.css
-@@ -13,7 +13,6 @@
+﻿diff --git a/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-measure-lib.mjs b/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-measure-lib.mjs
+index 43a9dc57..7298c393 100644
+--- a/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-measure-lib.mjs
++++ b/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-measure-lib.mjs
+@@ -2,6 +2,26 @@
  
- /* 1. Tokens ---------------------------------------------------------- */
- .root {
--  overflow-x: clip;
-   --navy: #0b1f46;
-   --navy-deep: #081126;
-   --blue: #245dff;
-@@ -388,8 +387,10 @@
- }
+ export function buildMeasurePayload() {
+   return (cfg) => {
++    const describeElement = (el, selector) => {
++      if (!el) return null;
++      const rect = el.getBoundingClientRect();
++      const style = window.getComputedStyle(el);
++      return {
++        selector,
++        tagName: el.tagName.toLowerCase(),
++        className: typeof el.className === 'string' ? el.className : null,
++        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
++        computed: {
++          paddingLeft: style.paddingLeft,
++          paddingRight: style.paddingRight,
++          marginLeft: style.marginLeft,
++          marginRight: style.marginRight,
++          maxWidth: style.maxWidth,
++          display: style.display,
++          visibility: style.visibility,
++        },
++      };
++    };
+     const pickEl = (selectors) => {
+       for (const sel of selectors) {
+         const el = document.querySelector(sel);
+@@ -130,9 +150,21 @@ export function buildMeasurePayload() {
+       if (!img.complete || img.naturalWidth <= 0) pendingImages += 1;
+     }
  
- .heroVisual {
--  grid-column: 7 / 13;
--  margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--rail-max)) / 2)));
-+  grid-column: 1 / -1;
-+  margin-inline: 0;
-+  margin-right: 0;
-+  min-width: 0;
- }
- 
- .heroVisual .media {
-@@ -902,8 +903,8 @@
-   }
- }
- 
--/* Hero — desktop 1024px+ (Hero selectors only) */
--@media (min-width: 1024px) {
-+/* Hero — desktop 1200px+ (2-col only when wide rail is stable) */
-+@media (min-width: 1200px) {
-   .heroGrid {
-     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-     grid-template-areas:
-@@ -972,17 +973,8 @@
-   }
- }
- 
--/* ≤1023 — tablet: stacked heads, full-width hero image, step rows */
--@media (max-width: 1023px) {
--  .headTitle,
--  .headAside {
--    grid-column: 1 / -1;
--  }
--
--  .headAside {
--    max-width: 560px;
--  }
--
-+/* ≤1199 — home Hero: single column (1024–1199 included) */
-+@media (max-width: 1199px) {
-   .heroGrid {
-     display: grid;
-     grid-template-columns: minmax(0, 1fr);
-@@ -1034,6 +1026,18 @@
-     width: 100%;
-     aspect-ratio: 16 / 10;
-   }
-+}
++    const textSelectorMatched = textEl
++      ? cfg.textSelectors?.find((s) => document.querySelector(s) === textEl) ?? null
++      : null;
++    const railSelectorMatched = railEl
++      ? cfg.railSelectors?.find((s) => document.querySelector(s) === railEl) ?? null
++      : null;
++    const contentAnchors = [...document.querySelectorAll('main h1, main h2, main a, main button')]
++      .filter((el) => isVisibleChain(el) && el.getBoundingClientRect().width >= 8)
++      .slice(0, 12)
++      .map((el) => describeElement(el, null));
 +
-+/* ≤1023 — tablet: stacked heads, step rows */
-+@media (max-width: 1023px) {
-+  .headTitle,
-+  .headAside {
-+    grid-column: 1 / -1;
-+  }
-+
-+  .headAside {
-+    max-width: 560px;
-+  }
- 
-   .gatewayCards {
-     grid-template-columns: 1fr;
-diff --git a/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs b/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs
-index 3c0982b2..29c5cb5b 100644
---- a/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs
-+++ b/docs/operations/public-website-refactor/scripts/capture-page-utils.mjs
-@@ -34,6 +34,8 @@ export async function stabilizePublicPage(page, route) {
-     await page.locator('main, [role="main"], body').first().waitFor({ state: 'visible', timeout: 20_000 });
-   }
- 
-+  await waitForFirstScreenContent(page, urlPath);
-+
-   await progressiveScroll(page);
- 
-   const imageReport = await waitForVisibleImages(page, IMAGE_WAIT_MS);
-@@ -50,6 +52,35 @@ export async function stabilizePublicPage(page, route) {
+     return {
+       primaryTextLeft,
+-      textSelectorMatched: textEl ? cfg.textSelectors?.find((s) => document.querySelector(s) === textEl) : null,
++      textSelectorMatched,
++      railSelectorMatched,
+       railContentLeft,
+       alignmentActual,
+       alignmentFound,
+@@ -148,6 +180,12 @@ export function buildMeasurePayload() {
+       horizontalOverflow,
+       pendingImages,
+       pageErrors: window.__gateAErrors ?? [],
++      alignmentEvidence: {
++        text: describeElement(textEl, textSelectorMatched),
++        rail: describeElement(railEl, railSelectorMatched),
++        header: describeElement(document.querySelector('header .site-container, header [class*="inner"]'), null),
++        contentAnchors,
++      },
+     };
    };
  }
+diff --git a/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-qa-config.mjs b/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-qa-config.mjs
+index ec9ffab1..b54895d5 100644
+--- a/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-qa-config.mjs
++++ b/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-qa-config.mjs
+@@ -146,8 +146,7 @@ export const ROUTE_QA = [
+ export const WIDTHS = [320, 360, 390, 430, 767, 768, 941, 1023, 1024, 1199, 1200, 1280, 1440, 1920];
  
-+/** @param {import('playwright').Page} page @param {string} urlPath */
-+async function waitForFirstScreenContent(page, urlPath) {
-+  const pathOnly = urlPath.split('?')[0] || '/';
-+  await page
-+    .waitForFunction(
-+      (p) => {
-+        const sel =
-+          p === '/about'
-+            ? '#intro h1'
-+            : p === '/records'
-+              ? '#records-title, main h1'
-+              : 'main h1, h1';
-+        const el = document.querySelector(sel);
-+        if (!el) return false;
-+        const r = el.getBoundingClientRect();
-+        const st = window.getComputedStyle(el);
-+        return (
-+          r.height > 8 &&
-+          Number(st.opacity) > 0.05 &&
-+          (el.textContent?.trim().length ?? 0) > 0
-+        );
-+      },
-+      pathOnly,
-+      { timeout: 30_000 },
-+    )
-+    .catch(() => undefined);
-+  await page.waitForTimeout(150);
+ export const SPOT_CHECKS = [
+-  { route: '/contact', widths: [390, 767, 1440] },
+-  { route: '/private', widths: [390, 767, 1440] },
++  { route: '/contact', widths: [390, 1440] },
+   { route: '/partners', widths: [390] },
+   { route: '/education', widths: [390, 1024, 1440, 1920] },
+   { route: '/spomove', widths: [767, 1199, 1440] },
+diff --git a/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-width-qa.mjs b/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-width-qa.mjs
+index 6cf493d9..00eb142e 100644
+--- a/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-width-qa.mjs
++++ b/docs/operations/public-website-refactor/layout-foundation/scripts/gate-a-width-qa.mjs
+@@ -3,6 +3,7 @@ import { appendFile, readFile, writeFile } from 'node:fs/promises';
+ import path from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import { spawn, spawnSync } from 'node:child_process';
++import net from 'node:net';
+ import { chromium } from 'playwright';
+ import { stabilizePublicPage } from '../../scripts/capture-page-utils.mjs';
+ import { ROUTE_QA, WIDTHS, SPOT_CHECKS, expectedPrimaryTextLeft } from './gate-a-qa-config.mjs';
+@@ -14,6 +15,7 @@ const foundation = path.join(here, '..');
+ const repo = path.resolve(here, '../../../../..');
+ const outJson = process.env.GATE_A_OUT_JSON ?? path.join(foundation, 'WIDTH_QA.json');
+ const progressPath = path.join(foundation, 'WIDTH_QA.progress.jsonl');
++const runMetaPath = path.join(foundation, 'WIDTH_QA_RUN.json');
+ const port = process.env.GATE_A_PORT ?? '3072';
+ const base = `http://127.0.0.1:${port}`;
+ const spotMode = process.env.GATE_A_SPOT === '1';
+@@ -44,11 +46,20 @@ async function waitServer() {
+   throw new Error('server timeout');
+ }
+ 
++async function assertPortFree() {
++  await new Promise((resolve, reject) => {
++    const probe = net.createServer();
++    probe.unref();
++    probe.once('error', (error) => reject(new Error(`port ${port} is already in use: ${error.code}`)));
++    probe.listen(Number(port), '127.0.0.1', () => probe.close(resolve));
++  });
 +}
 +
- /** @param {import('playwright').Page} page */
- async function progressiveScroll(page) {
-   const metrics = await page.evaluate(() => ({
+ function classifyFailureKind(cfg, failReasons, m) {
+-  if (failReasons.includes('cta_not_usable') && m.ctaFailureKind === 'selector_miss') return 'QA_SELECTOR_ERROR';
+-  if (failReasons.includes('alignment_delta')) return 'QA_MEASUREMENT_ERROR';
+-  if (failReasons.includes('contact_flow')) return 'REAL_INTERACTION_DEFECT';
+-  if (failReasons.some((r) => r.startsWith('contact_'))) return 'REAL_INTERACTION_DEFECT';
++  if (failReasons.includes('cta_not_usable') && m.ctaFailureKind === 'selector_miss') return 'HARNESS_ERROR';
++  if (failReasons.includes('alignment_delta')) return 'HARNESS_ERROR';
++  if (failReasons.includes('contact_flow')) return 'INTERACTION_DEFECT';
++  if (failReasons.some((r) => r.startsWith('contact_'))) return 'INTERACTION_DEFECT';
+   return 'UNRESOLVED';
+ }
+ 
+@@ -66,11 +77,15 @@ try {
+     buildId = 'unknown';
+   }
+ 
+-  if (spotMode) {
+-    await writeFile(progressPath, '');
+-  }
++  await writeFile(progressPath, '');
++  await assertPortFree();
+ 
+-  srv = spawn('npm run start', { cwd: repo, shell: true, stdio: 'pipe', env: { ...process.env, PORT: port } });
++  srv = spawn('npm run start', {
++    cwd: repo,
++    shell: true,
++    stdio: 'inherit',
++    env: { ...process.env, PORT: port },
++  });
+   serverPid = srv.pid;
+   await waitServer();
+   const browser = await chromium.launch();
+@@ -174,6 +189,7 @@ try {
+         ctaBox,
+         pendingImages: m.pendingImages,
+         pageErrors: errors,
++        alignmentEvidence: m.alignmentEvidence,
+         failReasons,
+         failureClass: pass ? null : classifyFailureKind(cfg, failReasons, { ...m, ctaFailureKind }),
+         contact: contactPayload,
+@@ -206,6 +222,7 @@ try {
+     passCount: results.filter((r) => r.pass).length,
+     failCount: results.filter((r) => !r.pass).length,
+     elapsedMs: Date.now() - runStarted,
++    exitCode: results.some((r) => !r.pass) ? 1 : 0,
+     results,
+   };
+ 
+@@ -223,10 +240,29 @@ try {
+     ),
+   );
+   if (payload.failCount) process.exitCode = 1;
++  await writeFile(
++    runMetaPath,
++    JSON.stringify(
++      {
++        capturedAt: payload.capturedAt,
++        gitHead: payload.gitHead,
++        buildId: payload.buildId,
++        port: payload.port,
++        serverPid: payload.serverPid,
++        spotMode,
++        completedChecks: payload.totalChecks,
++        passCount: payload.passCount,
++        failCount: payload.failCount,
++        exitCode: payload.exitCode,
++      },
++      null,
++      2,
++    ),
++  );
+ } finally {
+   if (srv) {
+     if (process.platform === 'win32') {
+-      spawnSync(`taskkill /PID ${srv.pid} /T /F`, { shell: true, stdio: 'ignore' });
++      spawnSync('taskkill', ['/PID', String(srv.pid), '/T', '/F'], { stdio: 'ignore', timeout: 15_000 });
+     } else {
+       srv.kill('SIGTERM');
+     }

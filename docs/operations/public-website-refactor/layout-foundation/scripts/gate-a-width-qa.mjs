@@ -3,6 +3,7 @@ import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
+import net from 'node:net';
 import { chromium } from 'playwright';
 import { stabilizePublicPage } from '../../scripts/capture-page-utils.mjs';
 import { ROUTE_QA, WIDTHS, SPOT_CHECKS, expectedPrimaryTextLeft } from './gate-a-qa-config.mjs';
@@ -14,6 +15,7 @@ const foundation = path.join(here, '..');
 const repo = path.resolve(here, '../../../../..');
 const outJson = process.env.GATE_A_OUT_JSON ?? path.join(foundation, 'WIDTH_QA.json');
 const progressPath = path.join(foundation, 'WIDTH_QA.progress.jsonl');
+const runMetaPath = path.join(foundation, 'WIDTH_QA_RUN.json');
 const port = process.env.GATE_A_PORT ?? '3072';
 const base = `http://127.0.0.1:${port}`;
 const spotMode = process.env.GATE_A_SPOT === '1';
@@ -44,11 +46,20 @@ async function waitServer() {
   throw new Error('server timeout');
 }
 
+async function assertPortFree() {
+  await new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.unref();
+    probe.once('error', (error) => reject(new Error(`port ${port} is already in use: ${error.code}`)));
+    probe.listen(Number(port), '127.0.0.1', () => probe.close(resolve));
+  });
+}
+
 function classifyFailureKind(cfg, failReasons, m) {
-  if (failReasons.includes('cta_not_usable') && m.ctaFailureKind === 'selector_miss') return 'QA_SELECTOR_ERROR';
-  if (failReasons.includes('alignment_delta')) return 'QA_MEASUREMENT_ERROR';
-  if (failReasons.includes('contact_flow')) return 'REAL_INTERACTION_DEFECT';
-  if (failReasons.some((r) => r.startsWith('contact_'))) return 'REAL_INTERACTION_DEFECT';
+  if (failReasons.includes('cta_not_usable') && m.ctaFailureKind === 'selector_miss') return 'HARNESS_ERROR';
+  if (failReasons.includes('alignment_delta')) return 'HARNESS_ERROR';
+  if (failReasons.includes('contact_flow')) return 'INTERACTION_DEFECT';
+  if (failReasons.some((r) => r.startsWith('contact_'))) return 'INTERACTION_DEFECT';
   return 'UNRESOLVED';
 }
 
@@ -66,11 +77,15 @@ try {
     buildId = 'unknown';
   }
 
-  if (spotMode) {
-    await writeFile(progressPath, '');
-  }
+  await writeFile(progressPath, '');
+  await assertPortFree();
 
-  srv = spawn('npm run start', { cwd: repo, shell: true, stdio: 'pipe', env: { ...process.env, PORT: port } });
+  srv = spawn('npm run start', {
+    cwd: repo,
+    shell: true,
+    stdio: 'inherit',
+    env: { ...process.env, PORT: port },
+  });
   serverPid = srv.pid;
   await waitServer();
   const browser = await chromium.launch();
@@ -174,6 +189,7 @@ try {
         ctaBox,
         pendingImages: m.pendingImages,
         pageErrors: errors,
+        alignmentEvidence: m.alignmentEvidence,
         failReasons,
         failureClass: pass ? null : classifyFailureKind(cfg, failReasons, { ...m, ctaFailureKind }),
         contact: contactPayload,
@@ -206,6 +222,7 @@ try {
     passCount: results.filter((r) => r.pass).length,
     failCount: results.filter((r) => !r.pass).length,
     elapsedMs: Date.now() - runStarted,
+    exitCode: results.some((r) => !r.pass) ? 1 : 0,
     results,
   };
 
@@ -223,10 +240,29 @@ try {
     ),
   );
   if (payload.failCount) process.exitCode = 1;
+  await writeFile(
+    runMetaPath,
+    JSON.stringify(
+      {
+        capturedAt: payload.capturedAt,
+        gitHead: payload.gitHead,
+        buildId: payload.buildId,
+        port: payload.port,
+        serverPid: payload.serverPid,
+        spotMode,
+        completedChecks: payload.totalChecks,
+        passCount: payload.passCount,
+        failCount: payload.failCount,
+        exitCode: payload.exitCode,
+      },
+      null,
+      2,
+    ),
+  );
 } finally {
   if (srv) {
     if (process.platform === 'win32') {
-      spawnSync(`taskkill /PID ${srv.pid} /T /F`, { shell: true, stdio: 'ignore' });
+      spawnSync('taskkill', ['/PID', String(srv.pid), '/T', '/F'], { stdio: 'ignore', timeout: 15_000 });
     } else {
       srv.kill('SIGTERM');
     }

@@ -1,43 +1,38 @@
 # Gate A — failure resolution (50 → 0)
 
-## Execution state (final)
+## Final execution state
 
 | Field | Value |
-|--------|--------|
-| Git HEAD | `7f32fc3a18925fe0e463471a494b45072f3ca753` |
-| Prior run (history) | `WIDTH_QA_HISTORY_104x50_2026-10-19.json` — **104 PASS / 50 FAIL** |
-| Final run | `WIDTH_QA.json` — **154 PASS / 0 FAIL** |
-| Build ID | see final `WIDTH_QA.json` (`buildId`) |
-| CSS product diff | `home-web.module.css` (Gate A hero), `about-landing.tsx` (capture stability only) |
-| CSS swap in runner | **disabled** — `gate-a-run-evidence.mjs` no longer mutates working tree |
+|---|---|
+| Git HEAD | `f4e468dcd8eabbc046a968913a02e24c536b7bc9` |
+| Preserved baseline | `WIDTH_QA_BASELINE_104_50.json` — 104 PASS / 50 FAIL |
+| Final run | `WIDTH_QA.json` — 154 PASS / 0 FAIL |
+| Build ID | `27mdFegm9DcU--QCsVvp9` |
+| Process result | `WIDTH_QA_RUN.json` — 154 completed, exit code `0` |
+| Working-tree CSS swap | Disabled; `gate-a-run-evidence.mjs` does not replace CSS |
 
-## Root-cause classes (prior 50)
+The preserved baseline is SHA-identical to `WIDTH_QA_HISTORY_104x50_2026-10-19.json`.
 
-| Route | Count | Class | Resolution |
-|-------|------:|-------|------------|
-| `/contact` | 14 | `QA_SELECTOR_ERROR` | Multi-step **contact flow** (type select → form → submit present/visible); no submit-on-load assumption |
-| `/partners` | 4 | `QA_SELECTOR_ERROR` | `#cta` scoped CTA + post-scroll Playwright box check; not global `a[href="/contact"]` |
-| `/education` | 14 | `QA_MEASUREMENT_ERROR` | Hero **H1 text left** vs `education-hub` breakpoints (not `.site-container` rail) |
-| `/spomove` | 8 | `QA_MEASUREMENT_ERROR` | Hero H1 vs **clamp gutter** + text-rail centering formula |
-| `/spokedu-lab` | 8 | `QA_MEASUREMENT_ERROR` | LAB nav **padding tiers** (18 / 24 / 40px) on `masterLocalNavInner` |
-| `/records` | 2 | `QA_MEASUREMENT_ERROR` | Hero title left vs records rail inset at 1024–1199 |
-| `/private` | (in full run) | `QA_MEASUREMENT_ERROR` | **Focused marketing** inset ladder (same family as contact) |
+## Root-cause disposition
 
-No additional layout CSS was changed to “force pass” beyond existing approved Gate A hero + about motion fix.
+| Route | Prior failures | Classification | Resolution |
+|---|---:|---|---|
+| `/contact` | 14 | `HARNESS_ERROR` | Test the real type-selection → form → submit-control flow; do not expect a submit button on initial render. No fields are filled and no form is submitted. |
+| `/partners` | 4 | `HARNESS_ERROR` | Scope to the visible `#cta` customer CTA and verify its post-scroll box; ignore hidden navigation links. |
+| `/education` | 14 | `HARNESS_ERROR` | Measure the Hero H1 text anchor against the page's responsive inset, not the first full-width container. |
+| `/spomove` | 8 | `HARNESS_ERROR` | Measure the Hero H1 against the page's clamp gutter and centered text rail. |
+| `/spokedu-lab` | 8 | `HARNESS_ERROR` | Validate the LAB navigation's actual 18 / 24 / 40px responsive padding tiers. |
+| `/records` | 2 | `HARNESS_ERROR` | Measure the Hero title against the 1024–1199 rail inset without double-counting parent padding. |
 
-## Contact flow fields (all widths)
+No product UI CSS was changed to force these checks to pass. Each final row records its selected DOM, class, rectangle, computed padding/margin/max-width, expected coordinate, measured coordinate, CTA target, and outcome.
 
-Recorded per result under `contact`: `typeSelectorVisible`, `typeSelectionWorked`, `formVisibleAfterSelection`, `submitControlPresent`, `submitControlVisible`, `formLayoutValid`, `failureReason`.
+## Verification
 
-## Alignment anchors
-
-See `scripts/gate-a-alignment.mjs` — modes: `standard`, `education-hero`, `spomove-hero`, `records-hero`, `lab-nav`, `contact-page`, `focused-marketing`.
-
-## Evidence unchanged
-
-- BEFORE/AFTER manifests + home 1024·1199 fold SHA diffs  
-- `HERO_BREAKPOINT_METRICS_{BEFORE,AFTER}.json`  
+- Representative matrix requested by the brief: 15/15 PASS in `WIDTH_QA_SPOT.json`.
+- Full matrix: 154/154 PASS in `WIDTH_QA.json`.
+- No horizontal overflow, missing visible H1, pending visible image, unusable required CTA, or browser page error was recorded.
+- The final full run used the same HEAD and Build ID as the representative run.
 
 ## Final verdict
 
-`LAYOUT_TECHNICAL_PASS_PO_PENDING` — technical QA 154/154; PO visual sign-off separate.
+`LAYOUT_TECHNICAL_PASS_PO_PENDING`

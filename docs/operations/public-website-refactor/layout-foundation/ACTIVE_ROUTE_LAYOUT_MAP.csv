@@ -1,5 +1,5 @@
 public_url,page_tsx,render_root,primary_css,outer_container,container_role,measure_selector,layout_notes
-/,app/(spokedu-public)/page.tsx → app/spokedu/page.tsx,home-landing.tsx → home-web/home-web-landing.tsx,home-web/home-web.module.css,.rail (--rail-max 1368 + --gutter),standard,"[class*=""home-web""] .rail",Hero Gate A: ≤1199 1col; ≥1200 2col; LandingPageRoot wrapper
+/,app/(spokedu-public)/page.tsx → app/spokedu/page.tsx,home-landing.tsx → home-web/home-web-landing.tsx,home-web/home-web.module.css,.rail (--rail-max 1368 + --gutter),standard,"[class*=""home-web""] .rail",Hero current contract: ≤1023 1col; 1024–1199 contained 2col; ≥1200 2col + bleed; LandingPageRoot wrapper
 /education,app/(spokedu-public)/education/page.tsx,education-hub-landing.tsx,education-hub.module.css,.rail,standard,main .rail,DispatchProposalForm #contact preserved
 /private,app/(spokedu-public)/private/page.tsx,private-landing.tsx,private-landing.module.css,site-container + page sections,focused,main .site-container,Form fields unchanged
 /spomove,app/(spokedu-public)/spomove/page.tsx,spomove-program-landing.tsx + spomove-catalog-tabs.tsx,spomove-program.module.css,.rail (77.5rem text-rail),visual,main .rail,Tab UI; gutter via clamp aligned to 20/32/48

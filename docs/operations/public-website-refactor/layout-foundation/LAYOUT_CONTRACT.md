@@ -42,12 +42,13 @@
 
 ## 3. Gate A 코드 교정 (홈 Hero만)
 
-**문제:** 1024–1199px에서 base `.heroVisual { grid-column: 7/13 }` + 1024px 2열 규칙 → 좁은 2열 회귀. `overflow-x: clip`으로 넘침 은폐.
+**현재 계약:** 1024–1199px에서는 copy/actions와 visual의 포함형 2열 구성을 사용하며 rail bleed 없이 overflow가 없어야 한다.
 
 **조치 (`home-web.module.css`):**
 
 1. 기본 `.heroVisual` — full-width 단일 열 (`grid-column: 1/-1`, bleed margin 제거).
-2. **`@media (max-width: 1199px)`** — Hero만 copy → visual → actions 단일 열.
+2. **`@media (max-width: 1023px)`** — Hero를 copy → visual → actions 단일 열로 전환한다.
+3. **`@media (min-width: 1024px) and (max-width: 1199px)`** — 포함형 2열을 사용하고 visual의 rail bleed를 금지한다.
 3. **`@media (min-width: 1200px)`** — 2열 + bleed margin (데스크톱만).
 4. **`overflow-x: clip` 제거** (`.root`).
 

@@ -2,6 +2,26 @@
 
 export function buildMeasurePayload() {
   return (cfg) => {
+    const describeElement = (el, selector) => {
+      if (!el) return null;
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      return {
+        selector,
+        tagName: el.tagName.toLowerCase(),
+        className: typeof el.className === 'string' ? el.className : null,
+        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        computed: {
+          paddingLeft: style.paddingLeft,
+          paddingRight: style.paddingRight,
+          marginLeft: style.marginLeft,
+          marginRight: style.marginRight,
+          maxWidth: style.maxWidth,
+          display: style.display,
+          visibility: style.visibility,
+        },
+      };
+    };
     const pickEl = (selectors) => {
       for (const sel of selectors) {
         const el = document.querySelector(sel);
@@ -130,9 +150,21 @@ export function buildMeasurePayload() {
       if (!img.complete || img.naturalWidth <= 0) pendingImages += 1;
     }
 
+    const textSelectorMatched = textEl
+      ? cfg.textSelectors?.find((s) => document.querySelector(s) === textEl) ?? null
+      : null;
+    const railSelectorMatched = railEl
+      ? cfg.railSelectors?.find((s) => document.querySelector(s) === railEl) ?? null
+      : null;
+    const contentAnchors = [...document.querySelectorAll('main h1, main h2, main a, main button')]
+      .filter((el) => isVisibleChain(el) && el.getBoundingClientRect().width >= 8)
+      .slice(0, 12)
+      .map((el) => describeElement(el, null));
+
     return {
       primaryTextLeft,
-      textSelectorMatched: textEl ? cfg.textSelectors?.find((s) => document.querySelector(s) === textEl) : null,
+      textSelectorMatched,
+      railSelectorMatched,
       railContentLeft,
       alignmentActual,
       alignmentFound,
@@ -148,6 +180,12 @@ export function buildMeasurePayload() {
       horizontalOverflow,
       pendingImages,
       pageErrors: window.__gateAErrors ?? [],
+      alignmentEvidence: {
+        text: describeElement(textEl, textSelectorMatched),
+        rail: describeElement(railEl, railSelectorMatched),
+        header: describeElement(document.querySelector('header .site-container, header [class*="inner"]'), null),
+        contentAnchors,
+      },
     };
   };
 }
