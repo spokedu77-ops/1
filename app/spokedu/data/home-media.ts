@@ -55,6 +55,13 @@ function visualMedia(item: Omit<HomeMediaItem, 'type' | 'src' | 'poster' | 'fall
 }
 
 export const HOME_MEDIA = {
+  homeHeroLabGym: fromPhoto(SPOKEDU_IMAGES.home.fieldLabGymHero, {
+    id: 'home-hero-lab-gym',
+    label: '스포키듀 랩 체육관 수업',
+    fallbackGradient: 'from-slate-500 via-slate-700 to-slate-900',
+    tone: 'slate',
+    objectPosition: '50% 58%',
+  }),
   homeHeroGymMotion: fromPhoto(SPOKEDU_IMAGES.home.fieldGymMotion, {
     id: 'home-hero-gym-motion',
     label: '체육관 허들 수업',

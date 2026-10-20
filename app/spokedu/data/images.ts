@@ -178,6 +178,13 @@ export const SPOKEDU_IMAGES = {
       '체육관 허들 수업 — 아동이 허들을 넘고 지도자가 옆에서 지도하는 장면',
       { kind: 'directed-visual', allowedPages: ['home'] },
     ),
+    fieldLabGymHero: defineImage(
+      'home',
+      'home-hero-lab-gym-sponsorship-13',
+      'field-editorial/home-hero-lab-gym-sponsorship-13.jpg',
+      '스포키듀 랩 체육관 수업 — 지도자가 여러 아동에게 교구 활동을 설명하는 현장',
+      { kind: 'field-photo', allowedPages: ['home'], verified: false },
+    ),
     serviceInstitution: defineImage(
       'home',
       'home-service-institution',

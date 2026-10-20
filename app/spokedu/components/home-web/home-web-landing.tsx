@@ -9,30 +9,33 @@ import styles from './home-canonical.module.css';
 
 const AUDIENCE_PATHS = [
   {
-    eyebrow: 'FOR FAMILIES',
+    eyebrow: '01 · PERSONAL CLASS',
     title: '개인·소그룹 수업',
-    body: '아이의 움직임과 참여 수준, 일정과 지역을 확인해 맞는 수업 방향을 안내합니다.',
+    body: '아이의 움직임 수준과 목표에 맞춰 진행하는 맞춤형 체육수업',
     href: SPOKEDU_PATHS.private,
-    cta: '수업 방식 확인하기',
-    image: '/images/spokedu/private/private-coaching.jpg',
-    position: '50% 48%',
+    cta: '개인수업 알아보기',
+    image: '/images/spokedu/home/customer-purpose/personal-mentoring.webp',
+    alt: '야외 체육수업에서 지도자가 아동의 동작을 가까이에서 안내하는 모습',
+    position: '50% 57%',
   },
   {
-    eyebrow: 'FOR SCHOOLS & ORGANIZATIONS',
+    eyebrow: '02 · SCHOOL & ORGANIZATION',
     title: '기관·학교 수업',
-    body: '대상, 인원, 공간과 운영 목적에 맞춰 정규수업부터 특강·행사까지 설계합니다.',
+    body: '학교와 기관의 환경에 맞춰 운영하는 전문 체육교육',
     href: SPOKEDU_PATHS.education,
-    cta: '기관 수업 살펴보기',
-    image: '/images/spokedu/dispatch/dispatch-institution-class.jpg',
-    position: '50% 50%',
+    cta: '기관수업 알아보기',
+    image: '/images/spokedu/home/customer-purpose/institution-group-jumprope.webp',
+    alt: '복지관 체육수업에서 지도자와 여러 아동이 함께 줄넘기 활동을 하는 모습',
+    position: '48% 50%',
   },
   {
-    eyebrow: 'FOR EDUCATORS',
+    eyebrow: '03 · FOR EDUCATORS',
     title: 'SPOKEDU LAB',
-    body: '지도자가 수업 콘텐츠를 찾고 준비하며 수업반·일정·출석·기록을 운영하는 서비스입니다.',
+    body: '체육 지도자를 위한 수업 콘텐츠와 운영 도구',
     href: SPOKEDU_PATHS.subscription,
-    cta: 'LAB 기능과 요금 보기',
+    cta: 'LAB 둘러보기',
     image: HOME_MASTER_VISUAL.src,
+    alt: HOME_MASTER_VISUAL.alt,
     position: '50% 0%',
     product: true,
   },
@@ -50,8 +53,8 @@ export function HomeWebLanding() {
         <div className={styles.heroShade} aria-hidden="true" />
         <div className={styles.heroInner}>
           <p className={styles.heroEyebrow}>CHILD &amp; YOUTH PHYSICAL EDUCATION</p>
-          <h1 id="home-heading">아이의 움직임을<br />교육의 경험으로 만듭니다.</h1>
-          <p className={styles.heroLead}>전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.</p>
+          <h1 id="home-heading"><span>아이의 움직임을</span><span>교육의 경험으로 만듭니다.</span></h1>
+          <p className={styles.heroLead}><span>전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다.</span><span>현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.</span></p>
           <div className={styles.heroActions}>
             <Link className={styles.primaryButton} href="#audience">필요한 수업 찾기</Link>
             <Link className={styles.lightButton} href={`${SPOKEDU_PATHS.contact}?type=dispatch`}>수업 상담하기</Link>
@@ -61,17 +64,17 @@ export function HomeWebLanding() {
 
       <section id="audience" className={styles.audience} aria-labelledby="audience-heading">
         <header className={styles.sectionIntro}>
-          <p className={styles.eyebrow}>CHOOSE YOUR PATH</p>
-          <h2 id="audience-heading">지금 필요한 교육 경험을 선택하세요.</h2>
+          <p className={styles.eyebrow}>02 · CHOOSE YOUR PATH</p>
+          <h2 id="audience-heading">어떤 수업을 찾고 계신가요?</h2>
         </header>
         <div className={styles.audienceGrid}>
           {AUDIENCE_PATHS.map((item, index) => (
-            <Link key={item.title} href={item.href} className={`${styles.audienceItem} ${index === 1 ? styles.audiencePrimary : ''}`}>
+            <Link key={item.title} href={item.href} className={`${styles.audienceItem} ${index === 0 ? styles.audiencePersonal : index === 1 ? styles.audienceInstitution : styles.audienceLab}`}>
               <figure className={`${styles.audienceMedia} ${'product' in item && item.product ? styles.productMedia : ''}`}>
-                <img src={item.image} alt="" style={{ objectPosition: item.position }} />
+                <img src={item.image} alt={item.alt} style={{ objectPosition: item.position }} />
               </figure>
               <div className={styles.audienceCopy}>
-                <span>{item.eyebrow}</span><h3>{item.title}</h3><p>{item.body}</p><strong>{item.cta} →</strong>
+                <span>{item.eyebrow}</span><h3>{item.title}</h3><p>{item.body}</p><strong>{item.cta}<span aria-hidden="true">→</span></strong>
               </div>
             </Link>
           ))}
