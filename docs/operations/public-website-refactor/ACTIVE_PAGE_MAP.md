@@ -13,7 +13,7 @@ Clean public URL은 `app/(spokedu-public)/**` → `app/spokedu/**` re-export. **
 
 | 공개 URL | page.tsx (canonical) | 렌더 루트 | 데이터 SSOT |
 |----------|-------------------|-----------|-------------|
-| `/` | `app/(spokedu-public)/page.tsx` → `app/spokedu/page.tsx` | `home-landing.tsx` → **`home-web/home-web-landing.tsx`** (7섹션) | `home-web-assets.ts`, `home-build.ts` · `home-page.ts`는 proofCards prop만 (현재 **void**) |
+| `/` | `app/(spokedu-public)/page.tsx` → `app/spokedu/page.tsx` | `home-landing.tsx` → **`home-web/home-web-landing.tsx`** (5개 핵심 영역 + 상담 CTA) | `home-web-assets.ts`, `private-page.ts`, `field-records-catalog.ts` |
 | `/education` | `app/(spokedu-public)/education/page.tsx` | **`education-hub-landing.tsx`** | `education-hub.ts`, `education-hub.module.css` |
 | `/private` | `app/(spokedu-public)/private/page.tsx` | **`private-landing.tsx`**, `#apply` → `private-apply-form.tsx` | `private-page.ts` |
 | `/spomove` | `app/(spokedu-public)/spomove/page.tsx` | **`spomove-program-landing.tsx`** + **`spomove-catalog-tabs.tsx`** (tab) | `spomove-program-page.ts` |

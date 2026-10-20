@@ -49,10 +49,12 @@ export function HomeStructuredData() {
         name: '스포키듀 체육수업 설계',
         provider: { '@id': `${homeUrl}#organization` },
         areaServed: '서울·경기',
-        serviceType: ['기관 체육수업', '개인 체육수업', 'SPOMOVE 도입', '체육 커리큘럼'],
+        serviceType: ['기관 체육수업', '개인·소그룹 체육수업', 'SPOMOVE', 'SPOMAT', 'SPOKEDU LAB'],
         audience: [
           { '@type': 'Audience', audienceType: '기관 담당자' },
           { '@type': 'Audience', audienceType: '학부모' },
+          { '@type': 'Audience', audienceType: '체육 지도자·센터 운영자' },
+          { '@type': 'Audience', audienceType: '교육 협력 파트너' },
         ],
         description: seoMeta.home.description,
       },

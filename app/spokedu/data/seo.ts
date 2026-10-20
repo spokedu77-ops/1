@@ -100,9 +100,9 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
 
 export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
   home: {
-    title: '스포키듀 SPOKEDU | 아동·청소년·특수체육 교육',
+    title: '스포키듀 SPOKEDU | 기관 체육수업·SPOMOVE·SPOKEDU LAB',
     description:
-      '학교·기관·키움센터 맞춤 아동·청소년·특수체육 수업, 화면과 움직임을 잇는 SPOMOVE, 현장 기록 SPOKEDU LAB, 지도자 준비·진행·기록을 돕는 구독시스템.',
+      '학교·기관과 개인·소그룹 체육수업, 화면 신호와 움직임을 연결하는 SPOMOVE·SPOMAT, 지도자의 수업 준비·운영·기록을 돕는 SPOKEDU LAB을 안내합니다.',
   },
   about: {
     title: '스포키듀 소개 | 현장 체육교육 · SPOMOVE · 구독시스템',
@@ -135,9 +135,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       'SPOMOVE, PAPS, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 맞는 프로그램을 한곳에서 확인합니다.',
   },
   records: {
-    title: '수업 사례 | 키움센터·학교·아동시설 운영 후기',
+    title: '실제 체육수업 사례 | 학교·기관·키움센터 SPOKEDU',
     description:
-      '키움센터, 학교, 아동시설, 문화공간 등 실제 운영 현장의 활동 사진과 운영 설명을 블로그 후기로 정리했습니다.',
+      '학교, 키움센터, 복지기관과 지역 현장에서 대상·공간·운영 목적에 맞춰 진행한 SPOKEDU 체육수업 사례를 확인하세요.',
   },
   cases: {
     title: '수업 운영 사례 | 기관 협업 SPOKEDU',
@@ -155,9 +155,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '현장 수업에서 관찰한 움직임·참여·반응을 바탕으로 수업 설계 기준과 체육교육 관점을 정리합니다. 학부모·기관·강사용.',
   },
   contact: {
-    title: 'SPOKEDU 상담 | 개인수업·기관 프로그램·커리큘럼',
+    title: 'SPOKEDU 문의 | 기관·개인 수업·SPOMOVE·협력 상담',
     description:
-      '개인·소그룹 수업, 기관 프로그램, SPOMOVE 도입, 커리큘럼·콘텐츠 상담을 목적에 맞게 연결해 드립니다.',
+      '기관 체육교육, 개인·소그룹 수업, SPOKEDU LAB, SPOMOVE 도입, 지도자 교육과 협력 문의를 유형별로 접수합니다.',
   },
 };
 

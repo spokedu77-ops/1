@@ -78,59 +78,36 @@ export type SiteNavEntry =
 /** 글로벌 헤더·모바일 메뉴·푸터 IA SSOT */
 export const siteNav: SiteNavEntry[] = [
   {
-    type: 'group',
+    type: 'link',
     label: '체육수업',
-    trackLabel: 'nav-education-group',
-    activePathPrefixes: ['/education', '/private'],
-    children: [
-      {
-        label: '기관·학교 수업',
-        href: SPOKEDU_PATHS.education,
-        trackLabel: 'nav-education-institution',
-        description: '학교·공공기관·복지기관 등\n현장 조건에 맞춘 체육수업',
-        matchPrefix: '/education',
-      },
-      {
-        label: '개인·소그룹 수업',
-        href: SPOKEDU_PATHS.private,
-        trackLabel: 'nav-education-private',
-        description: '개인의 수준과 목표에 맞춘\n맞춤형 체육수업',
-        matchPrefix: '/private',
-      },
-    ],
-  },
-  {
-    type: 'group',
-    label: '솔루션',
-    trackLabel: 'nav-solution-group',
-    activePathPrefixes: ['/spomove', '/spokedu-lab', '/spomat'],
-    children: [
-      {
-        label: 'SPOMOVE',
-        href: SPOKEDU_PATHS.spomove,
-        trackLabel: 'nav-spomove',
-        description: '시지각 정보를 움직임으로 연결하는\n놀이체육 프로그램',
-        matchPrefix: '/spomove',
-      },
-      {
-        label: 'SPOKEDU LAB',
-        href: SPOKEDU_PATHS.subscription,
-        trackLabel: 'nav-subscription',
-        description: '수업 콘텐츠부터 운영과 기록까지 연결하는\n체육지도자 수업 시스템',
-        matchPrefix: '/spokedu-lab',
-      },
-    ],
+    href: SPOKEDU_PATHS.education,
+    trackLabel: 'nav-education',
+    matchPrefix: '/education',
   },
   {
     type: 'link',
-    label: '현장 사례',
+    label: 'SPOMOVE',
+    href: SPOKEDU_PATHS.spomove,
+    trackLabel: 'nav-spomove',
+    matchPrefix: '/spomove',
+  },
+  {
+    type: 'link',
+    label: 'SPOKEDU LAB',
+    href: SPOKEDU_PATHS.subscription,
+    trackLabel: 'nav-subscription',
+    matchPrefix: '/spokedu-lab',
+  },
+  {
+    type: 'link',
+    label: '수업사례',
     href: SPOKEDU_PATHS.records,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
   },
   {
     type: 'link',
-    label: '소개',
+    label: 'SPOKEDU 소개',
     href: SPOKEDU_PATHS.about,
     trackLabel: 'nav-about',
     matchPrefix: '/about',
@@ -139,7 +116,7 @@ export const siteNav: SiteNavEntry[] = [
 
 export const siteHeaderCta = {
   key: 'contact',
-  label: '상담하기',
+  label: '문의하기',
   href: SPOKEDU_PATHS.contact,
   trackLabel: 'header-contact',
   matchPrefix: '/contact',
