@@ -39,6 +39,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
   const hideSidebar = publicMarketing || isFullscreenPath(pathname ?? '');
   const isAdminShell = pathname?.startsWith('/admin') ?? false;
   const isTeacherShell = pathname?.startsWith('/teacher') ?? false;
+  const isNoteV2Route = pathname?.startsWith('/admin/note-v2') ?? false;
   const homeSticky = pathname === '/' || pathname === '';
   const { isDesktopOpen, toggleDesktop } = useAppSidebar();
   const fullscreenWrapStyle = hideSidebar && !publicMarketing
@@ -86,7 +87,10 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
     <html lang="ko" className="font-sans" style={fontVariables}>
       <head>
         <meta name="theme-color" content="#185FA5" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta
+          name="viewport"
+          content={`width=device-width, initial-scale=1, viewport-fit=cover${isNoteV2Route ? ', interactive-widget=resizes-content' : ''}`}
+        />
       </head>
       <body className="bg-gray-50 font-sans text-slate-900 antialiased">
         <QueryProvider>
