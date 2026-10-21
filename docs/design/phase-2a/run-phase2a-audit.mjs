@@ -1,3 +1,4 @@
+import { assertLocalQaTarget, installLocalQaRouteGuard } from '../../../scripts/lib/qa-network-guard.mjs';
 #!/usr/bin/env node
 /**
  * Phase 2-A — Production + Local customer journey audit (read-only, no form submit on prod).
@@ -12,9 +13,11 @@ const docsDir = path.dirname(fileURLToPath(import.meta.url));
 const capDir = path.join(docsDir, 'captures');
 const repoRoot = path.resolve(docsDir, '../../..');
 
-const PROD = 'https://spokedu.kr';
+const PROD = `http://127.0.0.1:${process.env.PHASE2A_PORT ?? '3018'}`; // Remote baseline removed: local-only QA
 const LOCAL_PORT = process.env.PHASE2A_PORT ?? '3018';
 const LOCAL = `http://127.0.0.1:${LOCAL_PORT}`;
+assertLocalQaTarget(PROD);
+assertLocalQaTarget(LOCAL);
 
 const VIEWPORTS = [
   { name: '390', w: 390, h: 844 },
@@ -333,6 +336,8 @@ try {
   }
 
   const browser = await chromium.launch();
+  const originalNewPage = browser.newPage.bind(browser);
+  browser.newPage = async (...args) => { const page = await originalNewPage(...args); await installLocalQaRouteGuard(page.context()); return page; };
 
   const pageSpecs = [
     { path: '/private', prefix: 'private' },
