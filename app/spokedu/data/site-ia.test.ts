@@ -32,8 +32,14 @@ function allowsVisualFallback(requirement: object): boolean {
 
 describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
-    expect(siteNav.map((entry) => entry.label)).toEqual(['체육수업', '솔루션', '현장 사례', '소개']);
-    expect(siteNav).toHaveLength(4);
+    expect(siteNav.map((entry) => entry.label)).toEqual([
+      '체육수업',
+      'SPOMOVE',
+      'SPOKEDU LAB',
+      '수업사례',
+      'SPOKEDU 소개',
+    ]);
+    expect(siteNav).toHaveLength(5);
     expect(JSON.stringify(siteNav)).not.toMatch(/스포키듀|문의·협업/);
   });
 
@@ -41,31 +47,18 @@ describe('spokedu site IA', () => {
     const byLabel = Object.fromEntries(
       siteNav.filter((entry) => entry.type === 'link').map((entry) => [entry.label, entry.href]),
     );
-    const educationGroup = siteNav.find((entry) => entry.type === 'group' && entry.label === '체육수업');
-    const solutionGroup = siteNav.find((entry) => entry.type === 'group' && entry.label === '솔루션');
-    expect(educationGroup?.type === 'group' ? educationGroup.children.map((child) => child.href) : []).toEqual([
-      SPOKEDU_PATHS.education,
-      SPOKEDU_PATHS.private,
-    ]);
-    expect(solutionGroup?.type === 'group' ? solutionGroup.children.map((child) => child.label) : []).toEqual([
-      'SPOMOVE',
-      'SPOKEDU LAB',
-    ]);
-    expect(solutionGroup?.type === 'group' ? solutionGroup.children.map((child) => child.href) : []).toEqual([
-      SPOKEDU_PATHS.spomove,
-      SPOKEDU_PATHS.subscription,
-    ]);
-    expect(byLabel['현장 사례']).toBe(SPOKEDU_PATHS.records);
-    expect(byLabel['소개']).toBe(SPOKEDU_PATHS.about);
-    expect(byLabel['SPOKEDU LAB']).toBeUndefined();
-    expect(byLabel.SPOMOVE).toBeUndefined();
-    expect(siteHeaderCta.label).toBe('상담하기');
+    expect(byLabel['체육수업']).toBe(SPOKEDU_PATHS.education);
+    expect(byLabel.SPOMOVE).toBe(SPOKEDU_PATHS.spomove);
+    expect(byLabel['SPOKEDU LAB']).toBe(SPOKEDU_PATHS.subscription);
+    expect(byLabel['수업사례']).toBe(SPOKEDU_PATHS.records);
+    expect(byLabel['SPOKEDU 소개']).toBe(SPOKEDU_PATHS.about);
+    expect(siteHeaderCta.label).toBe('문의하기');
     expect(siteHeaderCta.href).toBe(SPOKEDU_PATHS.contact);
     expect(JSON.stringify(siteNav)).not.toMatch(/SPOMAT|"파트너/);
   });
 
   it('keeps HOME and shared chrome on one canonical public navigation model', () => {
-    expect(publicGlobalCta).toMatchObject({ label: '상담하기', href: SPOKEDU_PATHS.contact });
+    expect(publicGlobalCta).toMatchObject({ label: '문의하기', href: SPOKEDU_PATHS.contact });
     expect(publicGlobalNav.some((entry) => entry.label === 'SPOMAT')).toBe(false);
     expect(publicGlobalNav.some((entry) => entry.href.includes('/partners'))).toBe(false);
 
@@ -85,7 +78,7 @@ describe('spokedu site IA', () => {
   it('hides redirect-only programs from global nav while keeping path data', () => {
     const navBlob = JSON.stringify(siteNav);
     expect(navBlob).not.toMatch(/PAPS|캠프|원데이|월간 뉴스포츠|방학캠프/);
-    expect(siteNav.some((entry) => entry.type === 'group')).toBe(true);
+    expect(siteNav.every((entry) => entry.type === 'link')).toBe(true);
     expect([...REDIRECT_ONLY_PROGRAM_PATHS]).toEqual([
       `${SPOKEDU_LEGACY_PREFIX}/programs/paps`,
       `${SPOKEDU_LEGACY_PREFIX}/programs/camp`,

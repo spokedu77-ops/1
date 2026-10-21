@@ -1,5 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Naver Playwright dedicated profile (login session; never commit)
+scripts/naver-blog-p0/.naver-editor-profile/
+
 # dependencies
 /node_modules
 /.pnp
@@ -38,9 +41,21 @@ qa-screenshots/
 /docs/operations/**/qa-evidence/
 /docs/operations/**/included-assets/
 /docs/operations/**/*.zip
+/docs/operations/**/gate-*-captures/
 /docs/design/**/captures/
 /docs/design/**/diagnose-evidence/
 /docs/design/**/*.zip
+/docs/design/hero-photo-review-*/
+/docs/design/spokedu-home-hero-final-*/
+/docs/design/spokedu-home-section-02-review/
+
+# Local Naver editor execution evidence
+/reports/
+/scripts/naver-blog-p0/reports/
+/scripts/naver-blog-p0/NAVER_EDITOR_*.json
+/scripts/naver-blog-p0/NAVER_EDITOR_*.html
+/scripts/naver-blog-p0/NAVER_EDITOR_*_REPORT.md
+/scripts/naver-blog-p0/naver_new_editor_dom_report.json
 
 # Local rendered QA screenshots
 /admin-spomove-training-390.png

@@ -155,10 +155,10 @@ export function getMasterProductPaymentFeatureLabels(product: MasterProductCatal
 
 export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return '놀이체육 콘텐츠와 기본 수업 운영을 한곳에서 관리합니다.';
+    return '놀이체육과 반·학생·일정·출석, 기록과 안내문까지 일반 수업관리 흐름을 모두 제공합니다.';
   }
   if (product.id === 'premium') {
-    return '수업 운영과 SPOMOVE 디지털 움직임 프로그램 전체를 이용합니다.';
+    return '라이트의 모든 수업관리 기능에 SPOMOVE 디지털 움직임 콘텐츠를 더합니다.';
   }
   return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
 }

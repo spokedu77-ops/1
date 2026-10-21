@@ -39,6 +39,8 @@ Existing implementation and tests are evidence of the current state, not a veto 
 
 Do not run `npm`, `npx`, test, TypeScript, ESLint, or build verification commands unless the user explicitly requests them or an approved Sprint Brief explicitly requires them. Use file inspection, static reasoning, available diagnostics, link checks, and changed-file review by default.
 
+SPOKEDU image work and image-related visual QA must run against the local environment. Do not use Vercel Production or Preview deployments for repeated image checks, bulk screenshot capture, or any workflow that unnecessarily consumes image transformation quota. Use a deployed environment only for the minimum final production-image confirmation that cannot be completed locally.
+
 An approved implementation scope may authorize the verification it needs, including targeted unit or contract tests, TypeScript checks, lint for changed files, rendered QA, and responsive screenshot comparison. Keep verification targeted to that approval.
 
 Static verification is not a rendered visual PASS. A visual PASS requires populated desktop and mobile review and, when a Target Reference exists, side-by-side review. Rendered visual status is governed by the Visual System and Surface Matrix.

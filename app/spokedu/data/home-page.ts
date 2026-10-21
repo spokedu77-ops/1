@@ -110,7 +110,7 @@ export const homePage = {
     eyebrow: '아동 · 청소년 · 특수 체육교육',
     lines: ['MOVEMENT BECOMES', 'LEARNING.'] as const,
     support: '학교와 기관에서 직접 수업하고 현장에서 필요한 프로그램과 시스템을 만듭니다.',
-    mediaKey: 'homeHeroLabGym' as HomeMediaKey,
+    mediaKey: 'homeHeroGymMotion' as HomeMediaKey,
     primaryCta: {
       label: '수업 알아보기',
       href: '#choice',
