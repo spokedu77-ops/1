@@ -22,6 +22,8 @@ assertLocalQaTarget(baseUrl);
 const browser = await chromium.launch({ headless: true });
 const originalNewPage = browser.newPage.bind(browser);
 browser.newPage = async (...args) => { const page = await originalNewPage(...args); await installLocalQaRouteGuard(page.context()); return page; };
+const originalNewContext = browser.newContext.bind(browser);
+browser.newContext = async (...args) => { const context = await originalNewContext(...args); await installLocalQaRouteGuard(context); return context; };
 const page = await browser.newPage();
 
 for (const vp of viewports) {
