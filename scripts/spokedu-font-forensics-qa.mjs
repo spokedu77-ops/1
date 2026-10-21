@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 
 const baseUrl = process.argv[2] ?? 'http://localhost:3000';
 const outputDirectory = path.join(process.cwd(), '.qa-spokedu', 'font-forensics');
@@ -8,7 +9,14 @@ const widths = [390, 430, 480, 489, 768, 1024, 1440];
 const testText = '수업을 찾고\n진행하고\n기록합니다.';
 
 await mkdir(outputDirectory, { recursive: true });
+assertLocalQaTarget(baseUrl);
 const browser = await chromium.launch({ headless: true });
+const originalNewPage = browser.newPage.bind(browser);
+browser.newPage = async (...args) => {
+  const page = await originalNewPage(...args);
+  await installLocalQaRouteGuard(page.context());
+  return page;
+};
 const results = [];
 const fontRequests = [];
 

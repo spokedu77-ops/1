@@ -1,0 +1,42 @@
+name: QA network safety
+on:
+  pull_request:
+    paths: ['scripts/**', 'docs/design/**/*.mjs', '.github/workflows/qa-network-safety.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/**', 'docs/design/**/*.mjs', '.github/workflows/qa-network-safety.yml']
+jobs:
+  guard-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Verify local-only guard without network I/O
+        run: node --test scripts/lib/qa-network-guard.test.mjs
+      - name: Reject missing guards and dangerous defaults
+        shell: bash
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync } from 'node:fs';
+          const paths = [
+            'scripts/capture-home-editorial-prototype.mjs',
+            'scripts/spokedu-education-qa.mjs',
+            'scripts/spokedu-font-forensics-qa.mjs',
+            'scripts/spokedu-home-commercial-qa.mjs',
+            'scripts/spokedu-home-editorial-qa.mjs',
+            'scripts/spokedu-home-launch-closure.mjs',
+            'scripts/spokedu-public-shell-qa.mjs',
+            'scripts/spokedu-public-typography-qa.mjs',
+            'docs/design/phase-2a/run-phase2a-audit.mjs',
+          ];
+          for (const path of paths) {
+            const code = readFileSync(path, 'utf8');
+            if (!code.includes('assertLocalQaTarget(') || (!code.includes('installLocalQaRouteGuard(') && !code.includes('Historical production comparison audit retired'))) {
+              throw new Error(`QA guard missing from ${path}`);
+            }
+            if (/\?\?\s*['"`]https:\/\/(?:www\.)?spokedu\.kr/.test(code)) throw new Error(`Production default in ${path}`);
+          }
+          console.log('QA guard presence and defaults: PASS');
+          EOF

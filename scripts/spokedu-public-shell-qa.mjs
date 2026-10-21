@@ -6,6 +6,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 
 const ORIGIN = (process.env.SPOKEDU_QA_ORIGIN ?? 'http://127.0.0.1:3000').replace(/\/$/, '');
 /** `networkidle` hangs on GA/third-party; `load` + shell landmark is enough for P0 QA. */
@@ -245,6 +246,7 @@ async function testMaster(page) {
 }
 
 async function main() {
+  assertLocalQaTarget(ORIGIN);
   const report = {
     routeMatrix: {},
     geometry: { byRoute: {}, maxLogoDelta: null, innerX1440: [] },
@@ -255,6 +257,12 @@ async function main() {
 
   const shotDir = await mkdtemp(path.join(tmpdir(), 'spokedu-p0-qa-'));
   const browser = await chromium.launch({ headless: true });
+  const originalNewContext = browser.newContext.bind(browser);
+  browser.newContext = async (...args) => {
+    const context = await originalNewContext(...args);
+    await installLocalQaRouteGuard(context);
+    return context;
+  };
   let baselineGeo = null;
 
   try {

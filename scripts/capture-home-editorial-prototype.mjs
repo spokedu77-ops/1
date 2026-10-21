@@ -5,6 +5,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 
 const baseUrl = process.env.HOME_PROTOTYPE_URL ?? 'http://localhost:3000/';
 const outDir = join(process.cwd(), 'tmp', 'home-editorial-qa');
@@ -17,8 +18,11 @@ const viewports = [
 
 await mkdir(outDir, { recursive: true });
 
+assertLocalQaTarget(baseUrl);
 const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage();
+const context = await browser.newContext();
+await installLocalQaRouteGuard(context);
+const page = await context.newPage();
 
 for (const vp of viewports) {
   await page.setViewportSize({ width: vp.width, height: vp.height });

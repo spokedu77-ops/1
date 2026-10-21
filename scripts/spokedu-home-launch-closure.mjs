@@ -5,8 +5,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, devices } from 'playwright';
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 
-const BASE_URL = (process.argv[2] ?? process.env.SPOKEDU_QA_URL ?? 'https://spokedu.kr/').replace(/\/?$/, '/');
+const BASE_URL = (process.argv[2] ?? process.env.SPOKEDU_QA_URL ?? 'http://127.0.0.1:3000/').replace(/\/?$/, '/');
 const OUT_DIR = path.join(process.cwd(), 'qa-screenshots', 'spokedu-home-launch-closure');
 const SECTION_IDS = ['hero', 'choice', 'spomove', 'subscription', 'cases', 'contact'];
 const VIEWPORTS = [
@@ -233,10 +234,19 @@ async function captureScreenshots(browser) {
 }
 
 async function main() {
+  assertLocalQaTarget(BASE_URL);
   await mkdir(OUT_DIR, { recursive: true });
   const report = { baseUrl: BASE_URL, timestamp: new Date().toISOString() };
 
   const browser = await chromium.launch();
+  for (const method of ['newPage', 'newContext']) {
+    const original = browser[method].bind(browser);
+    browser[method] = async (...args) => {
+      const result = await original(...args);
+      await installLocalQaRouteGuard(method === 'newPage' ? result.context() : result);
+      return result;
+    };
+  }
 
   const desktopPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   report.network = await captureNetworkWaterfall(desktopPage);

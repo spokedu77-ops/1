@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Keep Next.js inside this repository even when a stray lockfile exists in
+  // a parent directory. Otherwise Turbopack may watch the wrong workspace.
+  outputFileTracingRoot: process.cwd(),
   serverExternalPackages: ["sharp"],
   experimental: {
     // lucide 배럴 + Turbopack HMR 시 "module factory is not available" 완화 및 트리쉐이킹
@@ -32,7 +35,9 @@ const nextConfig: NextConfig = {
     ],
   },
   // 빌드 시 webpack 사용 (PWA 플러그인 호환, turbopack 명시적 비활성화)
-  turbopack: {},
+  turbopack: {
+    root: process.cwd(),
+  },
   async redirects() {
     return [
       // Legacy root MASTER manifest — admin/teacher PWA 누수 방지용으로 경로 이전

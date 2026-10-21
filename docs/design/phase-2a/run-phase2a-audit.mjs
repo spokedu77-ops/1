@@ -7,14 +7,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
+import { assertLocalQaTarget } from '../../../scripts/lib/qa-network-guard.mjs';
+
+throw new Error('[QA NETWORK BLOCK] Historical production comparison audit retired. Use a localhost-only visual QA script.');
 
 const docsDir = path.dirname(fileURLToPath(import.meta.url));
 const capDir = path.join(docsDir, 'captures');
 const repoRoot = path.resolve(docsDir, '../../..');
 
-const PROD = 'https://spokedu.kr';
+const PROD = `http://127.0.0.1:${process.env.PHASE2A_PORT ?? '3018'}`;
 const LOCAL_PORT = process.env.PHASE2A_PORT ?? '3018';
 const LOCAL = `http://127.0.0.1:${LOCAL_PORT}`;
+assertLocalQaTarget(PROD);
+assertLocalQaTarget(LOCAL);
 
 const VIEWPORTS = [
   { name: '390', w: 390, h: 844 },
