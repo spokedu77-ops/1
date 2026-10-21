@@ -9,6 +9,11 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 
+// Historical production-vs-local audit: intentionally retired because it generated
+// live-site browser/image traffic and cannot provide meaningful production evidence
+// when both endpoints are local. Use scripts/spokedu-home-editorial-qa.mjs locally.
+throw new Error('[QA NETWORK BLOCK] Historical production comparison audit retired. Use localhost-only visual QA scripts.');
+
 const docsDir = path.dirname(fileURLToPath(import.meta.url));
 const capDir = path.join(docsDir, 'captures');
 const repoRoot = path.resolve(docsDir, '../../..');
