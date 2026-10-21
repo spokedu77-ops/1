@@ -1,38 +1,35 @@
-# SPOKEDU
+# SPOKEDU PAPS v12 — 두 번째 사진 1장 자동 삽입 검증
 
-Next.js App Router repository.
+**v11의 실환경 PASS**(커버 1 + 본문 3개 + 소제목 Bold)를 이어 받아 검증한다. v10/v11 파일은 덮어쓰지 않으며 새로운 실행기만 추가한다.
 
-Agent instructions: [AGENTS.md](./AGENTS.md).
+## 동작
 
-## Database (Supabase)
+새 네이버 글쓰기 탭 → PAPS FINAL 검증 → 대표 사진 1 → 첫 본문 3개(소제목 포함) → **두 번째 사진(체력 측정 카드) 1개** → 원문·서식·사진 순서 검증.
 
-New environments: apply [`supabase/migrations/`](supabase/migrations/).
+- 기존 문단에 `Enter`, `Control+A`, Range, 커서 강제 이동을 사용하지 않는다.
+- 첫 번째 Rich HTML 붙여넣기 직후 남아 있는 네이버 커서 위치를 활용해 사진 버튼을 클릭한다.
+- **두 번째 사진이 본문 뒤에 들어가지 않으면 즉시 FAIL**. 편집기를 직접 복구하거나 원문을 수정하지 않는다.
+- 네이버 사진 서버에 사진 2개가 업로드될 수 있지만, **글 저장·임시저장·발행은 하지 않는다.** 기존 열린 탭도 수정하지 않는다.
+- 아동 사진을 공개적으로 발행하기 전 별도 권한 확인이 필요하다.
 
-Legacy manual SQL (reference only): [`sql/archive/legacy/`](sql/archive/legacy/).
-Schedule table notes: [sql/README_schedules_일정테이블.md](sql/README_schedules_일정테이블.md)
+## 실행
 
-## Development
-
-```bash
-npm run dev
+```powershell
+$root = 'C:\Users\joker\Documents\GitHub\1'
+$zip = "$env:USERPROFILE\Downloads\SPOKEDU_PAPS_PHOTO_SECOND_V12.zip"
+if (!(Test-Path $zip)) { throw "다운로드 파일을 찾을 수 없습니다: $zip" }
+Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+Set-Location "$root\scripts\naver-blog-p0\rich-paste"
+node --test .\photo-second-core.test.mjs
+if ($LASTEXITCODE -ne 0) { throw '테스트 실패' }
+node .\photo-second-probe.mjs --offline --article-id=9fad3d9e6f847f36
+if ($LASTEXITCODE -ne 0) { throw '원고 또는 이미지 해시 검증 실패' }
+$env:NAVER_CDP_URL = 'http://127.0.0.1:9222'
+node .\photo-second-probe.mjs --probe-second-photo --article-id=9fad3d9e6f847f36
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Public home is `/` (`app/(spokedu-public)/page.tsx`). Legacy `/spokedu` redirects to `/`.
+## 성공 조건
 
-## Deploy
+`PAPS_SECOND_PHOTO_PROBE_PASS` + `secondPhotoVerify.images = 2` + `secondPhotoVerify.paragraphs = 3` + `secondPhotoVerify.order = photo1 → body[0..2] → photo2`.
 
-Hosted on Vercel. MASTER commercial process: [docs/spokedu-master-commercial-runbook.md](docs/spokedu-master-commercial-runbook.md).
-
-## SPOMOVE Notion Catalog
-
-Public catalog route: `/spomove/catalog`, from `SPOMOVE_NOTION_CATALOG_URL`.
-Legacy `/spokedu/programs/spomove/catalog` redirects to `/spomove/catalog`.
-
-1. Notion 페이지에서 공유 → 게시를 실행합니다.
-2. “이 페이지 임베드하기”에서 공개 주소를 확인합니다.
-3. Vercel Project Settings → Environment Variables로 이동합니다.
-4. `SPOMOVE_NOTION_CATALOG_URL`을 등록합니다.
-5. Production, Preview, Development에 필요한 범위로 적용합니다.
-6. 재배포합니다.
-
-이 값은 비밀값은 아니지만 소스코드에 URL을 직접 하드코딩하지 않습니다.
+위 테스트가 통과해야 다음 구간(본문 3~7)을 추가한다. **v11의 성공을 v12의 성공으로 간주하지 않는다.**

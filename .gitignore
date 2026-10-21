@@ -134,3 +134,13 @@ eslint-report.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Naver editor local dependencies, generated evidence, and unapproved media
+/OFFLINE_TEST_RESULTS.txt
+/scripts/naver-blog-p0/editorial/candidate-photos/
+/scripts/naver-blog-p0/editorial/photos.candidates.json
+/scripts/naver-blog-p0/rich-paste/editorial-assets/
+/scripts/naver-blog-p0/rich-paste/node_modules/
+/scripts/naver-blog-p0/*.backup
+/scripts/naver-blog-p0/rich-paste/*.backup*
+/scripts/naver-blog-p0/rich-paste/*.bak-*

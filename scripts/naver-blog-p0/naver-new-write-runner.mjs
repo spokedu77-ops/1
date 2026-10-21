@@ -179,13 +179,9 @@ export async function readTitleBodyFromDom(page) {
  * @param {import('playwright').Page} page
  */
 export async function readBodyParagraphsFromDom(page) {
-  return page.evaluate(() => {
-    const section = document.querySelector('.se-section-text');
-    if (!section) return [];
-    return [...section.querySelectorAll('.se-text-paragraph')]
-      .map((el) => (el.innerText || '').trim())
-      .filter((t) => t.length > 0);
-  });
+  const { readCanonicalEditorBodyDom } = await import('./naver-new-style-runner.mjs');
+  const dom = await readCanonicalEditorBodyDom(page);
+  return dom.logicalParagraphTexts;
 }
 
 /**

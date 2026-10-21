@@ -355,7 +355,7 @@ async function writeReport(name, payload) {
 
 /** Phase 5 — FINAL 원고 (Phase 4.6) */
 export const FINAL_EXPECTED_SHA256 =
-  '57895bcaf6f4bb412bbcf64289d9bde7bb8a34350d12fbeed8b5b2094db77849';
+  'df91e0b2df0eadabfc75ea06145c703177206139886d72a5f182e40e31d4b3a8';
 
 function normFinal(s) {
   return String(s || '')

@@ -1,0 +1,8 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {correctPaps,hasWrongTerm,digest,reconcileFinalPackage,assertFinal} from './paps-core.mjs';
+const blocks=Array.from({length:19},(_,i)=>({type:[2,7,12].includes(i)?'heading':'paragraph',text:'본문 '+i}));
+function parsed(){return {title:'목원초 PAPS 기록',bodyPlain:blocks.map(b=>b.text).join('\n\n'),blocks,paragraphsForEditor:blocks.map(b=>b.text)}}
+test('Correct POPS/팝스 to PAPS without unrelated edits',()=>{const source='목원초 POPS 안내\n스태킹 컵 팝스 놀이체육\nSPOMOVE';const corrected=correctPaps(source);assert.equal(corrected,'목원초 PAPS 안내\n스태킹 컵 PAPS 놀이체육\nSPOMOVE');assert.equal(hasWrongTerm(corrected),false)});
+test('Reconciliation preserves every paragraph and permissions',()=>{const p=parsed();const pkg={schema:'spokedu.naver.final_po_input.v1',title:'옛 제목',body:'옛 본문',source_sha256:'x',permissions:{institution_publication_approved:false},naverCopy:{title:'X',body:'Y',paragraphs:[]}};const r=reconcileFinalPackage(pkg,p,'a'.repeat(64));assert.deepEqual(assertFinal(r,p,'a'.repeat(64)),{paragraphCount:19,headingCount:3,terminology:'PAPS'});assert.equal(r.permissions.institution_publication_approved,false);assert.equal(r.naverCopy.paragraphs[18],'본문 18')});
+test('Hash changes after correcting text',()=>assert.notEqual(digest('POPS'),digest('PAPS')));
+test('Blocks out of sequence are rejected',()=>{const p=parsed();const pkg=reconcileFinalPackage({schema:'spokedu.naver.final_po_input.v1',naverCopy:{paragraphs:[]}},p,'a'.repeat(64));pkg.naverCopy.paragraphs[4]='wrong';assert.throws(()=>assertFinal(pkg,p,'a'.repeat(64)),/PARAGRAPH_4/)});

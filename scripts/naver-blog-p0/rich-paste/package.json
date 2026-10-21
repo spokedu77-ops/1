@@ -1,0 +1,15 @@
+{
+  "name": "spokedu-naver-rich-paste",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "node --check preview.mjs",
+    "offline": "node preview.mjs --article-id=9fad3d9e6f847f36 --offline",
+    "preview": "node preview.mjs"
+  },
+  "dependencies": {
+    "@jjlabsio/md-to-naver-blog": "2.0.0",
+    "playwright-core": "1.56.1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "articleId": "9fad3d9e6f847f36",
+  "photos": [],
+  "instructions": "실제 FINAL 원고와 일치하는 수업 사진이 확인된 다음에만 photos를 채웁니다. 각 사진은 slot, sourceFile, sourceName, sessionMatchEvidence, useRightsApproved=approved, portraitRightsCleared=approved, activityMatchReviewed=approved, alt, caption를 가집니다. slot은 cover, activity-one, activity-two, activity-three 중 하나입니다. 2026년 음악줄넘기 사진 등을 2025년 PAPS 수업 사진처럼 사용하지 마세요.",
+  "highlightIndices": [
+    18
+  ],
+  "relatedLinks": []
+}

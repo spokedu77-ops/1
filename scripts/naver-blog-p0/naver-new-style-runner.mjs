@@ -358,40 +358,232 @@ export async function prepareToolbarForInsertN1(page, role, paragraphIndex = 0, 
   return next;
 }
 
+/** @typedef {'VISIBLE_DOCUMENT_BLOCK'|'HIDDEN_DUPLICATE'|'OUTSIDE_EDITOR'|'UNRESOLVED'} TextLocationClass */
+
 /** @param {import('playwright').Page} page */
-export async function readDocumentLogicalStructure(page) {
+export async function readEditorFullDocumentDom(page) {
   return page.evaluate(() => {
-    const section = document.querySelector('.se-section-text');
-    if (!section) {
-      return { blocks: [], moduleCount: 0, paragraphDomCount: 0 };
-    }
-    const modules = [...section.querySelectorAll(':scope > .se-module')];
-    const blocks = modules.map((m, index) => {
+    const normLocal = (s) =>
+      String(s || '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const ancestorPath = (el, maxDepth = 8) => {
+      /** @type {string[]} */
+      const parts = [];
+      let cur = el;
+      while (cur && cur !== document.documentElement && parts.length < maxDepth) {
+        const tag = cur.tagName ? cur.tagName.toLowerCase() : '?';
+        const idPart = cur.id ? `#${String(cur.id).slice(0, 24)}` : '';
+        const clsRaw = cur.className && typeof cur.className === 'string' ? cur.className.trim() : '';
+        const clsPart = clsRaw ? `.${clsRaw.split(/\s+/).slice(0, 2).join('.')}` : '';
+        parts.push(`${tag}${idPart}${clsPart}`.slice(0, 96));
+        cur = cur.parentElement;
+      }
+      return parts;
+    };
+
+    const elementRect = (el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        x: Math.round(r.x),
+        y: Math.round(r.y),
+        width: Math.round(r.width),
+        height: Math.round(r.height),
+      };
+    };
+
+    const isUiChrome = (el) =>
+      !!el.closest(
+        '.se-toolbar, .se-property-toolbar, .se-popup, .se-layer, .se-floating-menu, .se-help-panel, [role="menu"], [role="listbox"], .se-sidebar',
+      );
+
+    const visibilityState = (el) => {
+      if (!el) return 'hidden';
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return 'hidden';
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 && rect.height <= 0) return 'hidden';
+      if (parseFloat(style.opacity || '1') === 0) return 'hidden';
+      if (el.closest('[aria-hidden="true"]')) return 'hidden';
+      if (el.getClientRects().length === 0) return 'hidden';
+      return 'visible';
+    };
+
+    const canvases = [...document.querySelectorAll('.se-canvas')];
+    const primaryCanvas =
+      canvases.find((c) => visibilityState(c) === 'visible') || canvases[0] || null;
+
+    const describeModule = (m, moduleIndexInSection, sectionMeta) => {
       const className = (m.className || '').toString();
       const isSectionTitle = /se-sectionTitle/i.test(className);
+      const isModuleText = /se-module-text/i.test(className);
       const paragraphs = [...m.querySelectorAll('.se-text-paragraph')];
-      const text = paragraphs
-        .map((p) => (p.innerText || '').trim())
-        .filter(Boolean)
-        .join(' ');
+      const paragraphTexts = paragraphs.map((p) => normLocal(p.innerText || ''));
+      const text = paragraphTexts.filter(Boolean).join(' ');
       const firstP = paragraphs[0];
       const cs = firstP ? getComputedStyle(firstP) : null;
+      const contentEditables = [...m.querySelectorAll('[contenteditable="true"]')].map((el) => ({
+        tag: el.tagName,
+        className: String(el.className || '').slice(0, 64),
+      }));
+      const inCanvas = !!(primaryCanvas && primaryCanvas.contains(m));
+      const uiChrome = isUiChrome(m);
+      const visible = visibilityState(m) === 'visible';
+      /** @type {TextLocationClass} */
+      let locationClass = 'UNRESOLVED';
+      if (uiChrome) locationClass = 'OUTSIDE_EDITOR';
+      else if (!inCanvas) locationClass = 'OUTSIDE_EDITOR';
+      else if (!visible) locationClass = 'HIDDEN_DUPLICATE';
+      else locationClass = 'VISIBLE_DOCUMENT_BLOCK';
+
       return {
-        moduleIndex: index,
-        kind: isSectionTitle ? 'sectionTitle' : 'paragraph',
+        moduleIndexInSection,
+        sectionIndex: sectionMeta.globalSectionIndex,
+        globalSectionIndex: sectionMeta.globalSectionIndex,
+        kind: isSectionTitle ? 'sectionTitle' : isModuleText ? 'paragraph' : 'other',
         moduleClass: className.slice(0, 120),
         text,
+        paragraphTexts,
         paragraphCount: paragraphs.length,
         fontSizePx: cs ? parseFloat(cs.fontSize) || null : null,
         fontWeight: cs ? cs.fontWeight : null,
+        moduleId: m.id || null,
+        inCanvas,
+        sectionInCanvas: sectionMeta.inCanvas,
+        visible,
+        locationClass,
+        ancestorPath: ancestorPath(m),
+        boundingRect: elementRect(m),
+        contentEditables,
+        iframeRelation: 'top_document_module',
+      };
+    };
+
+    const allPageSections = [...document.querySelectorAll('.se-section-text')];
+    /** @type {Array<object>} */
+    const sections = allPageSections.map((sec, globalSectionIndex) => {
+      const inCanvas = !!(primaryCanvas && primaryCanvas.contains(sec));
+      const visible = visibilityState(sec) === 'visible';
+      const modules = [...sec.querySelectorAll(':scope > .se-module')].map((m, moduleIndexInSection) =>
+        describeModule(m, moduleIndexInSection, {
+          globalSectionIndex,
+          inCanvas,
+        }),
+      );
+      return {
+        globalSectionIndex,
+        sectionIndexInCanvas: inCanvas
+          ? [...(primaryCanvas?.querySelectorAll('.se-section-text') || [])].indexOf(sec)
+          : -1,
+        inCanvas,
+        visible,
+        ancestorPath: ancestorPath(sec),
+        boundingRect: elementRect(sec),
+        moduleCount: modules.length,
+        modules,
       };
     });
+
+    /** 논리 문서: 캔버스 안·표시 중·UI chrome 밖 모듈을 DOM 순서대로 */
+    /** @type {Array<object>} */
+    const logicalModules = [];
+    let globalModuleIndex = 0;
+    for (const sec of sections) {
+      if (!sec.inCanvas || !sec.visible) continue;
+      for (const mod of sec.modules) {
+        if (mod.locationClass !== 'VISIBLE_DOCUMENT_BLOCK') continue;
+        logicalModules.push({
+          ...mod,
+          moduleIndex: globalModuleIndex,
+        });
+        globalModuleIndex += 1;
+      }
+    }
+
+    const logicalParagraphTexts = [];
+    for (const mod of logicalModules) {
+      for (const t of mod.paragraphTexts) {
+        if (t) logicalParagraphTexts.push(t);
+      }
+    }
+
+    /** @type {Array<object>} */
+    const allOccurrences = [];
+    sections.forEach((sec) => {
+      for (const mod of sec.modules) {
+        if (!normLocal(mod.text)) continue;
+        allOccurrences.push({
+          textPreview: mod.text.slice(0, 80),
+          locationClass: mod.locationClass,
+          globalSectionIndex: sec.globalSectionIndex,
+          sectionIndexInCanvas: sec.sectionIndexInCanvas,
+          moduleIndexInSection: mod.moduleIndexInSection,
+          kind: mod.kind,
+          moduleClass: mod.moduleClass,
+          visible: mod.visible,
+          inCanvas: mod.inCanvas,
+          ancestorPath: mod.ancestorPath.slice(0, 4),
+        });
+      }
+    });
+
+    const fingerprint = logicalModules.map((m) => `${m.kind}:${normLocal(m.text)}`).join('|');
+    const fullDocumentFingerprint = allOccurrences
+      .map((o) => `${o.locationClass}:${o.kind}:${normLocal(o.textPreview)}`)
+      .join('|');
+
+    const canvasSections = primaryCanvas
+      ? [...primaryCanvas.querySelectorAll('.se-section-text')]
+      : [];
+
     return {
-      blocks,
-      moduleCount: modules.length,
-      paragraphDomCount: section.querySelectorAll('.se-text-paragraph').length,
+      documentRoot: {
+        surface: 'top',
+        pagePath: location.pathname,
+        canvasId: primaryCanvas?.id || null,
+        canvasCount: canvases.length,
+        canvasRect: primaryCanvas ? elementRect(primaryCanvas) : null,
+        sectionCountPage: allPageSections.length,
+        sectionCountInCanvas: canvasSections.length,
+        logicalModuleCount: logicalModules.length,
+        iframeRelationNote:
+          'contenteditable 입력은 about:blank iframe에서 발생할 수 있으나 본문 모듈 DOM은 top document의 se-canvas 아래에 반영됨',
+      },
+      sections,
+      modules: logicalModules,
+      blocks: logicalModules,
+      logicalParagraphTexts,
+      moduleCount: logicalModules.length,
+      paragraphDomCount: logicalModules.reduce((n, m) => n + m.paragraphCount, 0),
+      sectionTitleModuleCount: logicalModules.filter((m) => m.kind === 'sectionTitle').length,
+      fingerprint,
+      fullDocumentFingerprint,
+      allOccurrences,
     };
   });
+}
+
+/** @param {import('playwright').Page} page */
+export async function readCanonicalEditorBodyDom(page) {
+  return readEditorFullDocumentDom(page);
+}
+
+/** @param {import('playwright').Page} page */
+export async function readDocumentLogicalStructure(page) {
+  const dom = await readEditorFullDocumentDom(page);
+  return {
+    blocks: dom.blocks,
+    moduleCount: dom.moduleCount,
+    paragraphDomCount: dom.paragraphDomCount,
+    documentRoot: dom.documentRoot,
+    sectionTitleModuleCount: dom.sectionTitleModuleCount,
+    fingerprint: dom.fingerprint,
+    fullDocumentFingerprint: dom.fullDocumentFingerprint,
+    sections: dom.sections,
+    allOccurrences: dom.allOccurrences,
+  };
 }
 
 /**
@@ -475,31 +667,13 @@ async function readObservationTail(root) {
  * @param {string} label
  */
 export async function captureSubtitleEditorSnapshot(page, label) {
+  const documentDom = await readEditorFullDocumentDom(page);
   const top = await page.evaluate((label) => {
-    const trunc = (s) =>
-      String(s || '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 80);
-    const section = document.querySelector('.se-section-text');
-    const modules = section
-      ? [...section.querySelectorAll(':scope > .se-module')].map((m) => ({
-          className: String(m.className || '').slice(0, 120),
-          text: trunc(m.innerText),
-          paragraphTexts: [...m.querySelectorAll('.se-text-paragraph')].map((p) => trunc(p.innerText)),
-          contentEditables: [...m.querySelectorAll('[contenteditable="true"]')].map((el) => ({
-            tag: el.tagName,
-            className: String(el.className || '').slice(0, 64),
-          })),
-        }))
-      : [];
     const ae = document.activeElement;
     return {
       surface: 'top',
       label,
       t: Date.now(),
-      moduleCount: modules.length,
-      modules,
       toolbarTextFormatLabel: document
         .querySelector('.se-text-format-toolbar-button')
         ?.textContent?.trim()
@@ -511,14 +685,60 @@ export async function captureSubtitleEditorSnapshot(page, label) {
     };
   }, label);
 
-  /** @type {Array<{ surface: string, frameUrl: string, eventTail: unknown[] }>} */
+  top.pageUrl = page.url().split('#')[0];
+  top.documentRoot = documentDom.documentRoot;
+  top.moduleCount = documentDom.moduleCount;
+  top.sectionTitleModuleCount = documentDom.sectionTitleModuleCount;
+  top.fingerprint = documentDom.fingerprint;
+  top.fullDocumentFingerprint = documentDom.fullDocumentFingerprint;
+  top.modules = documentDom.modules.map((m) => ({
+    className: m.moduleClass,
+    kind: m.kind,
+    text: m.text.slice(0, 80),
+    paragraphTexts: m.paragraphTexts.map((t) => t.slice(0, 80)),
+    locationClass: m.locationClass,
+    sectionIndex: m.sectionIndex,
+  }));
+  top.sections = documentDom.sections.map((s) => ({
+    globalSectionIndex: s.globalSectionIndex,
+    sectionIndexInCanvas: s.sectionIndexInCanvas,
+    inCanvas: s.inCanvas,
+    visible: s.visible,
+    moduleCount: s.moduleCount,
+    boundingRect: s.boundingRect,
+    modules: s.modules.map((m) => ({
+      kind: m.kind,
+      text: (m.text || '').slice(0, 80),
+      locationClass: m.locationClass,
+    })),
+  }));
+  top.allOccurrences = documentDom.allOccurrences;
+  top.document = {
+    logicalParagraphTexts: documentDom.logicalParagraphTexts.map((t) => t.slice(0, 80)),
+    fingerprint: documentDom.fingerprint,
+    fullDocumentFingerprint: documentDom.fullDocumentFingerprint,
+  };
+
+  /** @type {Array<{ surface: string, frameUrl: string, eventTail: unknown[], imeInputCount?: number }>} */
   const frames = [];
   for (const frame of page.frames()) {
     if (frame === page.mainFrame()) continue;
+    const eventTail = await readObservationTail(frame);
+    const imeInputCount = eventTail.filter(
+      (e) =>
+        e &&
+        typeof e === 'object' &&
+        (e.type === 'input' || e.type === 'beforeinput') &&
+        /insert(CompositionText|Text)/.test(String(e.detail || '')),
+    ).length;
     frames.push({
       surface: 'frame',
       frameUrl: frame.url().split('?')[0].slice(0, 100),
-      eventTail: await readObservationTail(frame),
+      eventTail,
+      imeInputCount,
+      contentEditableFocusedEvents: eventTail.filter(
+        (e) => e && typeof e === 'object' && e.contentEditableFocused === true,
+      ).length,
     });
   }
   top.frameEvents = frames;
@@ -526,33 +746,408 @@ export async function captureSubtitleEditorSnapshot(page, label) {
   return top;
 }
 
+/**
+ * @param {Awaited<ReturnType<typeof readEditorFullDocumentDom>>} doc
+ * @param {string} exactText
+ */
+export function locateTextInEditorDocument(doc, exactText) {
+  const exp = norm(exactText);
+  if (!exp) return null;
+
+  /** @type {Array<object>} */
+  const hits = [];
+  for (const sec of doc.sections || []) {
+    for (const m of sec.modules || []) {
+      const paraHit = m.paragraphTexts?.find((t) => norm(t) === exp);
+      const joinedHit = norm(m.text) === exp;
+      if (!paraHit && !joinedHit) continue;
+      hits.push({
+        moduleClass: m.moduleClass,
+        kind: m.kind,
+        text: paraHit || m.text,
+        fontSizePx: m.fontSizePx,
+        fontWeight: m.fontWeight,
+        moduleIndex: m.moduleIndex ?? m.moduleIndexInSection,
+        moduleIndexInSection: m.moduleIndexInSection,
+        sectionIndex: m.sectionIndex,
+        globalSectionIndex: m.globalSectionIndex,
+        moduleId: m.moduleId,
+        locationClass: m.locationClass,
+        visible: m.visible,
+        inCanvas: m.inCanvas,
+        ancestorPath: m.ancestorPath?.slice(0, 5),
+        boundingRect: m.boundingRect,
+      });
+    }
+  }
+  if (!hits.length) return null;
+
+  const rank = (h) => {
+    if (h.locationClass === 'VISIBLE_DOCUMENT_BLOCK') return 0;
+    if (h.locationClass === 'HIDDEN_DUPLICATE') return 1;
+    if (h.locationClass === 'OUTSIDE_EDITOR') return 2;
+    return 3;
+  };
+  hits.sort((a, b) => rank(a) - rank(b));
+  return hits[0];
+}
+
+/** @param {Awaited<ReturnType<typeof readEditorFullDocumentDom>>} doc @param {string} exactText */
+function matchExpectedInLogicalDocument(doc, exactText) {
+  const hit = locateTextInEditorDocument(doc, exactText);
+  if (!hit || hit.locationClass !== 'VISIBLE_DOCUMENT_BLOCK') return null;
+  return hit;
+}
+
 export async function findModuleForExactText(page, exactText) {
-  return page.evaluate((exp) => {
-    const norm = (s) =>
-      String(s || '')
-        .replace(/\u00a0/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    const modules = [...document.querySelectorAll('.se-section-text > .se-module')];
-    for (const m of modules) {
-      const paras = [...m.querySelectorAll('.se-text-paragraph')]
-        .map((p) => norm(p.innerText || ''))
-        .filter(Boolean);
-      const joined = norm(paras.join(' '));
-      if (joined === norm(exp) || paras.some((t) => t === norm(exp))) {
-        const firstP = m.querySelector('.se-text-paragraph');
-        const cs = firstP ? getComputedStyle(firstP) : null;
-        return {
-          moduleClass: (m.className || '').toString().slice(0, 120),
-          kind: /se-sectionTitle/i.test(m.className || '') ? 'sectionTitle' : 'paragraph',
-          text: joined || paras[0] || '',
-          fontSizePx: cs ? parseFloat(cs.fontSize) || null : null,
-          fontWeight: cs ? cs.fontWeight : null,
-        };
+  const doc = await readEditorFullDocumentDom(page);
+  return matchExpectedInLogicalDocument(doc, exactText);
+}
+
+/**
+ * Playwright page ↔ top document DOM 판독 대상 일치 (read-only).
+ * @param {import('playwright').Page} page
+ */
+export async function captureExecutionTargetAlignment(page) {
+  const playwrightUrl = page.url().split('#')[0];
+  const doc = await readEditorFullDocumentDom(page);
+  const probe = await page.evaluate(() => {
+    const canvas = document.querySelector('.se-canvas');
+    return {
+      documentHasFocus: document.hasFocus(),
+      visibilityState: document.visibilityState,
+      href: location.href.split('#')[0],
+      pageTitle: document.title,
+      canvasId: canvas?.id || null,
+      postWriteForm: /PostWriteForm\.naver/i.test(location.href),
+      activeElement: document.activeElement
+        ? `${document.activeElement.tagName}.${String(document.activeElement.className || '').slice(0, 60)}`
+        : null,
+    };
+  });
+  const frameFocus = await readEditorFocusAcrossFrames(page);
+  const urlMatch = playwrightUrl === probe.href;
+  const canvasIdMatch = (doc.documentRoot?.canvasId ?? null) === probe.canvasId;
+  const domReadAligned =
+    urlMatch && canvasIdMatch && probe.postWriteForm && !page.isClosed();
+  return {
+    aligned: domReadAligned,
+    domReadAligned,
+    playwrightPageClosed: page.isClosed(),
+    playwrightPageUrl: playwrightUrl,
+    domReadUrl: probe.href,
+    urlMatch,
+    canvasId: probe.canvasId,
+    documentRootCanvasId: doc.documentRoot?.canvasId ?? null,
+    canvasIdMatch,
+    canvasMatch: canvasIdMatch,
+    postWriteForm: probe.postWriteForm,
+    documentHasFocus: probe.documentHasFocus,
+    visibilityState: probe.visibilityState,
+    pageTitle: probe.pageTitle,
+    topActiveElement: probe.activeElement,
+    topDocument: probe,
+    documentRootFromRead: doc.documentRoot,
+    frameFocus,
+    documentRoot: doc.documentRoot,
+    sectionTitleModuleCount: doc.sectionTitleModuleCount,
+    logicalModuleCount: doc.moduleCount,
+    sectionCountPage: doc.documentRoot?.sectionCountPage,
+    sectionCountInCanvas: doc.documentRoot?.sectionCountInCanvas,
+  };
+}
+
+/**
+ * @param {Awaited<ReturnType<typeof readEditorFullDocumentDom>>} doc
+ * @param {typeof N1_PROBE_BLOCKS} [blocks]
+ */
+export function summarizeProbeTextLocations(doc, blocks = N1_PROBE_BLOCKS) {
+  return blocks.map((b, i) => {
+    const label = i === 0 ? 'A' : i === 1 ? 'B' : 'C';
+    const loc = locateTextInEditorDocument(doc, b.text);
+    return {
+      label,
+      role: b.role,
+      textPreview: b.text.slice(0, 56),
+      locationClass: loc?.locationClass ?? null,
+      inLogicalDocument: loc?.locationClass === 'VISIBLE_DOCUMENT_BLOCK',
+      kind: loc?.kind ?? null,
+      sectionIndex: loc?.sectionIndex ?? null,
+      globalSectionIndex: loc?.globalSectionIndex ?? null,
+    };
+  });
+}
+
+/**
+ * A/B/C 위치 요약 (read-only).
+ * @param {import('playwright').Page} page
+ */
+export async function probeThreeBlockTextLocations(page, blocks = N1_PROBE_BLOCKS) {
+  const doc = await readEditorFullDocumentDom(page);
+  const labels = ['A', 'B', 'C'];
+  /** @type {Record<string, unknown>} */
+  const byLabel = {};
+  blocks.forEach((b, i) => {
+    const loc = locateTextInEditorDocument(doc, b.text);
+    byLabel[labels[i]] = loc
+      ? {
+          found: true,
+          locationClass: loc.locationClass,
+          kind: loc.kind,
+          inCanvas: loc.inCanvas,
+          visible: loc.visible,
+          sectionIndex: loc.sectionIndex,
+          textPreview: String(loc.text || '').slice(0, 80),
+        }
+      : { found: false, expectedPreview: b.text.slice(0, 80) };
+  });
+  return {
+    documentRoot: doc.documentRoot,
+    sectionTitleModuleCount: doc.sectionTitleModuleCount,
+    logicalParagraphTexts: doc.logicalParagraphTexts.map((t) => t.slice(0, 80)),
+    allOccurrences: doc.allOccurrences,
+    byLabel,
+  };
+}
+
+/**
+ * @param {import('playwright').Page} page
+ */
+export async function captureRecordSessionBinding(page) {
+  const doc = await readEditorFullDocumentDom(page);
+  const frameUrls = page
+    .frames()
+    .map((f) => f.url().split('?')[0].slice(0, 120))
+    .sort();
+  return {
+    pageUrl: page.url().split('#')[0],
+    pageTitle: await page.title().catch(() => ''),
+    frameUrls,
+    frameCount: frameUrls.length,
+    documentRoot: doc.documentRoot,
+    documentFingerprint: doc.fingerprint,
+    fullDocumentFingerprint: doc.fullDocumentFingerprint,
+    capturedAt: Date.now(),
+  };
+}
+
+/**
+ * @param {import('playwright').Page} page
+ * @param {Awaited<ReturnType<typeof captureRecordSessionBinding>>} binding
+ */
+export async function verifyRecordSessionBinding(page, binding) {
+  const now = await captureRecordSessionBinding(page);
+  const drift = [];
+  if (now.pageUrl !== binding.pageUrl) {
+    drift.push({ field: 'pageUrl', before: binding.pageUrl, after: now.pageUrl });
+  }
+  if (now.documentRoot?.canvasId !== binding.documentRoot?.canvasId) {
+    drift.push({
+      field: 'canvasId',
+      before: binding.documentRoot?.canvasId,
+      after: now.documentRoot?.canvasId,
+    });
+  }
+  if (now.documentRoot?.sectionCountInCanvas !== binding.documentRoot?.sectionCountInCanvas) {
+    drift.push({
+      field: 'sectionCountInCanvas',
+      before: binding.documentRoot?.sectionCountInCanvas,
+      after: now.documentRoot?.sectionCountInCanvas,
+    });
+  }
+  const beforeFrames = new Set(binding.frameUrls || []);
+  const afterFrames = new Set(now.frameUrls || []);
+  for (const u of afterFrames) {
+    if (!beforeFrames.has(u)) drift.push({ field: 'frameAdded', url: u });
+  }
+  return {
+    stable: drift.length === 0,
+    before: binding,
+    after: now,
+    drift,
+  };
+}
+
+/**
+ * @param {object} beforeSnap
+ * @param {object} afterSnap
+ */
+function snapshotStructureFingerprint(snap) {
+  if (snap?.fullDocumentFingerprint) return snap.fullDocumentFingerprint;
+  if (snap?.document?.fullDocumentFingerprint) return snap.document.fullDocumentFingerprint;
+  if (snap?.fingerprint) return snap.fingerprint;
+  if (snap?.documentFingerprint) return snap.documentFingerprint;
+  if (snap?.document?.fingerprint) return snap.document.fingerprint;
+  const mods = snap?.modules || [];
+  return mods.map((m) => `${m.locationClass || 'VISIBLE_DOCUMENT_BLOCK'}:${m.kind || 'paragraph'}:${norm(m.text || '')}`).join('|');
+}
+
+function collectTextsFromSnapshot(snap) {
+  /** @type {string[]} */
+  const out = [];
+  if (snap?.document?.logicalParagraphTexts) {
+    out.push(...snap.document.logicalParagraphTexts.map((t) => norm(t)).filter(Boolean));
+  }
+  for (const o of snap?.allOccurrences || []) {
+    if (o?.textPreview) out.push(norm(o.textPreview));
+  }
+  for (const m of snap?.modules || []) {
+    if (m?.text) out.push(norm(m.text));
+  }
+  return [...new Set(out)];
+}
+
+/**
+ * @param {object} beforeSnap
+ * @param {object} afterSnap
+ * @param {{ expectedTexts?: string[] }} [opts]
+ */
+export function diagnoseInputVsDocumentCommit(beforeSnap, afterSnap, opts = {}) {
+  const beforeFp = snapshotStructureFingerprint(beforeSnap);
+  const afterFp = snapshotStructureFingerprint(afterSnap);
+  const logicalChanged = (beforeSnap?.fingerprint ?? '') !== (afterSnap?.fingerprint ?? '');
+  const fullDocChanged = beforeFp !== afterFp;
+
+  const beforeTexts = collectTextsFromSnapshot(beforeSnap);
+  const afterTexts = collectTextsFromSnapshot(afterSnap);
+  const expected = (opts.expectedTexts || []).map((t) => norm(t)).filter(Boolean);
+  const expectedInFullDocument = expected.filter((e) => afterTexts.includes(e));
+  const expectedMissing = expected.filter((e) => !afterTexts.includes(e));
+
+  /** @type {unknown[]} */
+  const imeEvents = [];
+  for (const fe of afterSnap?.frameEvents || []) {
+    for (const ev of fe.eventTail || []) {
+      if (!ev || typeof ev !== 'object') continue;
+      if (
+        (ev.type === 'input' || ev.type === 'beforeinput') &&
+        /insert(CompositionText|Text)/.test(String(ev.detail || ''))
+      ) {
+        imeEvents.push({ frameUrl: fe.frameUrl, ...ev });
       }
     }
-    return null;
-  }, exactText);
+  }
+
+  const afterManualStart = beforeSnap?.t ?? 0;
+  const imeAfterManual = imeEvents.filter((e) => typeof e.t === 'number' && e.t >= afterManualStart);
+
+  const inputStages = {
+    keyInputObserved: imeAfterManual.length > 0,
+    iframeInputEvents: imeAfterManual.length,
+    fullDocumentDomChanged: fullDocChanged,
+    logicalDocumentChanged: logicalChanged,
+    expectedTextsInFullDocument: expectedInFullDocument,
+    expectedTextsMissing: expectedMissing,
+  };
+
+  if (imeAfterManual.length > 0 && expectedMissing.length > 0) {
+    return {
+      code: 'INPUT_EVENT_WITHOUT_DOCUMENT_COMMIT',
+      ...inputStages,
+      imeEventCount: imeAfterManual.length,
+      beforeFingerprint: beforeFp,
+      afterFingerprint: afterFp,
+      afterAllTextsPreview: afterTexts.map((t) => t.slice(0, 48)),
+    };
+  }
+  if (imeAfterManual.length > 0 && fullDocChanged) {
+    return {
+      code: 'DOCUMENT_STRUCTURE_CHANGED',
+      ...inputStages,
+      imeEventCount: imeAfterManual.length,
+      beforeFingerprint: beforeFp,
+      afterFingerprint: afterFp,
+    };
+  }
+  return {
+    code: imeAfterManual.length > 0 ? 'INPUT_EVENTS_OBSERVED' : 'NO_INPUT_EVENTS_OBSERVED',
+    ...inputStages,
+    imeEventCount: imeAfterManual.length,
+    beforeFingerprint: beforeFp,
+    afterFingerprint: afterFp,
+  };
+}
+
+/**
+ * 저장된 record-subtitle JSON 감사 (브라우저 불필요).
+ * @param {object} report
+ */
+export function auditRecordSubtitleReport(report) {
+  const v = report?.verify || {};
+  const structureTexts = (v.structure?.blocks || []).map((b) => norm(b.text)).filter(Boolean);
+  const textLocations = v.textLocations || {};
+  const afterSnap = report?.snapshots?.after || {};
+  const afterOccurrences = afterSnap.allOccurrences || v.structure?.allOccurrences || [];
+
+  /** @type {Record<string, unknown>} */
+  const textAudit = {};
+  const labels = [
+    ['A', N1_PROBE_BLOCKS[0].text],
+    ['B', N1_PROBE_BLOCKS[1].text],
+    ['C', N1_PROBE_BLOCKS[2].text],
+  ];
+  for (const [key, expText] of labels) {
+    const exp = norm(expText);
+    const legacyBlock = v.blocks?.[key] ?? null;
+    const loc = textLocations[key] ?? null;
+    const inLogicalStructure = structureTexts.some((t) => t === exp);
+    const occurrences = afterOccurrences.filter((o) => norm(o.textPreview) === exp);
+    /** @type {TextLocationClass} */
+    let locationClass = 'UNRESOLVED';
+    if (loc?.locationClass) locationClass = loc.locationClass;
+    else if (occurrences.length === 1) locationClass = occurrences[0].locationClass || 'UNRESOLVED';
+    else if (occurrences.length > 1) {
+      const visible = occurrences.find((o) => o.locationClass === 'VISIBLE_DOCUMENT_BLOCK');
+      locationClass = visible?.locationClass || occurrences[0].locationClass || 'UNRESOLVED';
+    } else if (legacyBlock?.text && !inLogicalStructure) {
+      locationClass = 'UNRESOLVED';
+    } else if (inLogicalStructure) locationClass = 'VISIBLE_DOCUMENT_BLOCK';
+
+    textAudit[key] = {
+      inLogicalStructure,
+      legacyVerifyBlock: legacyBlock,
+      locationClass,
+      occurrenceCount: occurrences.length,
+      occurrences: occurrences.slice(0, 3),
+      verifierInconsistent:
+        !!legacyBlock?.text && !inLogicalStructure && !loc && occurrences.length === 0,
+    };
+  }
+
+  const legacyCInBlocks = !!v.blocks?.C?.text;
+  const cInStructure = structureTexts.some((t) => t === norm(N1_PROBE_BLOCKS[2].text));
+
+  return {
+    mode: report?.mode,
+    pollCount: report?.pollDuringWindow?.length ?? 0,
+    logicalStructureTextCount: structureTexts.length,
+    textAudit,
+    preservedFindings: {
+      AInLogicalStructure: textAudit.A?.inLogicalStructure === true,
+      BFound: !!v.blocks?.B || textAudit.B?.occurrenceCount > 0,
+      CLegacyBlockPresent: legacyCInBlocks,
+      CInLogicalStructure: cInStructure,
+      iframeImeEvents: (report?.snapshots?.after?.frameEvents || [])
+        .filter((f) => /about:blank/i.test(f.frameUrl || ''))
+        .flatMap((f) => f.eventTail || [])
+        .filter(
+          (e) =>
+            e &&
+            (e.type === 'input' || e.type === 'beforeinput') &&
+            /insertCompositionText|insertText/.test(String(e.detail || '')),
+        ).length,
+      legacyVerifyStructureMismatch: legacyCInBlocks && !cInStructure,
+    },
+    cLocationFromLog:
+      textAudit.C?.occurrenceCount > 0
+        ? textAudit.C.locationClass
+        : legacyCInBlocks && !cInStructure
+          ? 'UNRESOLVED'
+          : cInStructure
+            ? 'VISIBLE_DOCUMENT_BLOCK'
+            : 'UNRESOLVED',
+    documentCommit: report?.documentCommit?.code ?? null,
+  };
 }
 
 /**
@@ -595,18 +1190,50 @@ export async function readEditorFocusAcrossFrames(page) {
  * @param {typeof N1_PROBE_BLOCKS} blocks
  */
 export async function verifyN1ProbeDocument(page, blocks = N1_PROBE_BLOCKS) {
-  const structure = await readDocumentLogicalStructure(page);
-  const texts = structure.blocks.map((b) => norm(b.text)).filter(Boolean);
+  const doc = await readEditorFullDocumentDom(page);
+  const structure = {
+    blocks: doc.blocks,
+    moduleCount: doc.moduleCount,
+    paragraphDomCount: doc.paragraphDomCount,
+    documentRoot: doc.documentRoot,
+    sectionTitleModuleCount: doc.sectionTitleModuleCount,
+    fingerprint: doc.fingerprint,
+    fullDocumentFingerprint: doc.fullDocumentFingerprint,
+    sections: doc.sections.map((s) => ({
+      globalSectionIndex: s.globalSectionIndex,
+      inCanvas: s.inCanvas,
+      visible: s.visible,
+      moduleCount: s.moduleCount,
+    })),
+    allOccurrences: doc.allOccurrences,
+  };
+  const texts = doc.logicalParagraphTexts.map((t) => norm(t)).filter(Boolean);
   const expected = blocks.map((b) => norm(b.text));
   const textOrderOk = texts.length === expected.length && texts.every((t, i) => t === expected[i]);
 
-  const blockA = await findModuleForExactText(page, blocks[0].text);
-  const blockB = await findModuleForExactText(page, blocks[1].text);
-  const blockC = await findModuleForExactText(page, blocks[2].text);
+  const locA = locateTextInEditorDocument(doc, blocks[0].text);
+  const locB = locateTextInEditorDocument(doc, blocks[1].text);
+  const locC = locateTextInEditorDocument(doc, blocks[2].text);
+
+  const blockA = matchExpectedInLogicalDocument(doc, blocks[0].text);
+  const blockB = matchExpectedInLogicalDocument(doc, blocks[1].text);
+  const blockC = matchExpectedInLogicalDocument(doc, blocks[2].text);
+
+  const textLocations = {
+    A: locA,
+    B: locB,
+    C: locC,
+  };
+
+  const blocksConsistentWithStructure =
+    (!blockA || structure.blocks.some((b) => norm(b.text) === norm(blockA.text))) &&
+    (!blockB || structure.blocks.some((b) => norm(b.text) === norm(blockB.text))) &&
+    (!blockC || structure.blocks.some((b) => norm(b.text) === norm(blockC.text)));
 
   const headingModuleOk = blockB?.kind === 'sectionTitle';
   const bodyRestoreOk =
-    blockC?.kind === 'paragraph' &&
+    !!blockC &&
+    blockC.kind === 'paragraph' &&
     (blockC.fontSizePx ?? 99) <= 17 &&
     (blockA?.fontSizePx ?? 99) <= 17;
   const headingVisualOk =
@@ -630,11 +1257,25 @@ export async function verifyN1ProbeDocument(page, blocks = N1_PROBE_BLOCKS) {
       B: blockB,
       C: blockC,
     },
+    textLocations,
+    blocksConsistentWithStructure,
     focusFrames,
     failures: [
       !textOrderOk && { code: 'TEXT_ORDER', detail: { texts, expected } },
-      !headingModuleOk && { code: 'HEADING_NOT_SECTION_TITLE', detail: blockB },
-      !bodyRestoreOk && { code: 'BODY_STYLE_NOT_RESTORED', detail: { A: blockA, C: blockC } },
+      !blocksConsistentWithStructure && {
+        code: 'VERIFY_BLOCKS_STRUCTURE_MISMATCH',
+        detail: { blocks: { A: !!blockA, B: !!blockB, C: !!blockC }, textLocations },
+      },
+      locC && locC.locationClass !== 'VISIBLE_DOCUMENT_BLOCK' && {
+        code: 'TEXT_C_LOCATION',
+        detail: { locationClass: locC.locationClass, locC },
+      },
+      locB && locB.locationClass !== 'VISIBLE_DOCUMENT_BLOCK' && {
+        code: 'TEXT_B_LOCATION',
+        detail: { locationClass: locB.locationClass, locB },
+      },
+      !headingModuleOk && { code: 'HEADING_NOT_SECTION_TITLE', detail: blockB ?? locB },
+      !bodyRestoreOk && { code: 'BODY_STYLE_NOT_RESTORED', detail: { A: blockA, C: blockC ?? locC } },
       !headingVisualOk && { code: 'HEADING_VISUAL_WEAK', detail: blockB },
     ].filter(Boolean),
   };

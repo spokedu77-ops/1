@@ -24,10 +24,17 @@ import {
 import {
   N1_PROBE_BLOCKS,
   STYLE_SEL,
+  auditRecordSubtitleReport,
+  captureExecutionTargetAlignment,
+  captureRecordSessionBinding,
   captureSubtitleEditorSnapshot,
+  diagnoseInputVsDocumentCommit,
   installSubtitleObservationHooks,
   prepareToolbarForInsert,
+  readEditorFullDocumentDom,
+  summarizeProbeTextLocations,
   verifyN1ProbeDocument,
+  verifyRecordSessionBinding,
 } from './naver-new-style-runner.mjs';
 import {
   connectNaverBrowser,
@@ -260,13 +267,17 @@ async function runAuthSetup() {
   process.exitCode = pass ? 0 : 1;
 }
 
-async function warmCdpBlogSession(context) {
-  const blog = context.pages().find(
-    (p) => !p.isClosed() && /blog\.naver\.com\/spokedu77/i.test(p.url()) && !/widget/i.test(p.url()),
-  );
-  if (blog) {
-    await blog.bringToFront().catch(() => {});
-    await blog.goto(WRITE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 }).catch(() => {});
+async function waitForEnterOrMs(ms) {
+  const rl = createInterface({ input, output });
+  try {
+    await Promise.race([
+      rl.question('[record-subtitle] 수동 입력 완료 후 Enter… '),
+      new Promise((resolve) => {
+        setTimeout(() => resolve('__timeout__'), ms);
+      }),
+    ]);
+  } finally {
+    rl.close();
   }
 }
 
@@ -274,19 +285,27 @@ async function runRecordSubtitlePipeline() {
   mark('processStart');
   const conn = await connectNaverBrowser();
   mark('profileConnect');
-  if (conn.mode === 'cdp') {
-    await warmCdpBlogSession(conn.context);
-  }
 
-  const recordWaitMs = Number(process.env.NAVER_RECORD_WINDOW_MS || 180_000);
+  const recordMaxWaitMs = Number(process.env.NAVER_RECORD_MAX_WAIT_MS || 60_000);
+
   let page;
   try {
+    const tabsBefore = conn.context
+      .pages()
+      .filter((p) => !p.isClosed())
+      .map((p) => p.url().split('#')[0]);
+
     const opened = await openNewWriteEditorTab(conn.context);
     page = opened.page;
     mark('editorEntry');
 
+    await page.bringToFront();
+    const executionTargetAfterFocus = await captureExecutionTargetAlignment(page);
+
     await installSubtitleObservationHooks(page);
+    const sessionBindingStart = await captureRecordSessionBinding(page);
     const snapBlank = await captureSubtitleEditorSnapshot(page, 'blank_editor');
+    const fullDomBlank = await readEditorFullDocumentDom(page);
 
     await page.locator(STYLE_SEL.bodyParagraph).first().click({ timeout: 15000 });
     await prepareToolbarForInsert(page, 'body', 0, {});
@@ -296,53 +315,100 @@ async function runRecordSubtitlePipeline() {
     await page.waitForTimeout(200);
 
     const snapBeforeManual = await captureSubtitleEditorSnapshot(page, 'after_A_enter_before_subtitle');
+    const fullDomBeforeManual = await readEditorFullDocumentDom(page);
+    const textLocationsBeforeManual = summarizeProbeTextLocations(fullDomBeforeManual);
+
+    if (!executionTargetAfterFocus.aligned) {
+      throw new Error(
+        `EXECUTION_TARGET_MISMATCH: playwright=${executionTargetAfterFocus.playwrightPageUrl} dom=${executionTargetAfterFocus.domReadUrl}`,
+      );
+    }
+    if (!executionTargetAfterFocus.documentHasFocus) {
+      console.warn(
+        '[record-subtitle] document.hasFocus()=false — 테스트 탭을 클릭해 포커스를 맞춘 뒤 수동 입력하세요.',
+      );
+    }
+
     console.log(
       [
         '',
+        `[record-subtitle] 실행 대상: ${executionTargetAfterFocus.playwrightPageUrl}`,
+        `[record-subtitle] canvasId=${executionTargetAfterFocus.canvasId} hasFocus=${executionTargetAfterFocus.documentHasFocus}`,
         '[record-subtitle] 블록 A까지 자동 입력 완료. Enter로 빈 줄 생성됨.',
         '동일 탭에서 **수동으로만** 다음을 수행하세요 (저장·발행 금지):',
         '  1) 글 유형 → 소제목 선택',
         `  2) 소제목 B 입력: ${N1_PROBE_BLOCKS[1].text}`,
         '  3) Enter 후 글 유형 → 본문(텍스트)',
         `  4) 본문 C 입력: ${N1_PROBE_BLOCKS[2].text}`,
-        `관찰 창: ${Math.round(recordWaitMs / 1000)}초 (NAVER_RECORD_WINDOW_MS로 조절)`,
+        `완료 후 Enter → 즉시 검사·종료 (최대 ${Math.round(recordMaxWaitMs / 1000)}초, NAVER_RECORD_MAX_WAIT_MS).`,
         '',
       ].join('\n'),
     );
 
-    const pollStarted = Date.now();
-    /** @type {unknown[]} */
-    const pollSnaps = [];
-    while (Date.now() - pollStarted < recordWaitMs) {
-      await page.waitForTimeout(5000);
-      const verify = await verifyN1ProbeDocument(page);
-      pollSnaps.push({
-        t: Date.now(),
-        textOrderOk: verify.textOrderOk,
-        headingModuleOk: verify.headingModuleOk,
-        bodyRestoreOk: verify.bodyRestoreOk,
-        texts: verify.texts,
-      });
-      if (verify.pass) break;
-    }
+    await waitForEnterOrMs(recordMaxWaitMs);
 
     const snapAfter = await captureSubtitleEditorSnapshot(page, 'after_manual_window');
+    const executionTargetFinal = await captureExecutionTargetAlignment(page);
+    const fullDomAfter = await readEditorFullDocumentDom(page);
+    const textLocationsAfter = summarizeProbeTextLocations(fullDomAfter);
     const verify = await verifyN1ProbeDocument(page);
+    const sessionBindingEnd = await verifyRecordSessionBinding(page, sessionBindingStart);
+    const documentCommit = diagnoseInputVsDocumentCommit(snapBeforeManual, snapAfter, {
+      expectedTexts: N1_PROBE_BLOCKS.map((b) => b.text),
+    });
     mark('recordVerify');
     mark('total');
+
+    const tabsAfter = conn.context
+      .pages()
+      .filter((p) => !p.isClosed())
+      .map((p) => p.url().split('#')[0]);
 
     const out = {
       ok: verify.pass,
       mode: 'record-subtitle',
       manualSubtitleSuccess: verify.headingModuleOk,
+      executionTarget: {
+        afterBringToFront: executionTargetAfterFocus,
+        final: executionTargetFinal,
+        tabsBefore,
+        tabsAfter,
+        testTabUrl: page.url().split('#')[0],
+      },
+      fullDom: {
+        blank: {
+          sections: fullDomBlank.sections.length,
+          occurrences: fullDomBlank.allOccurrences.length,
+          textLocations: summarizeProbeTextLocations(fullDomBlank),
+        },
+        beforeManual: {
+          textLocations: textLocationsBeforeManual,
+          fingerprint: fullDomBeforeManual.fingerprint,
+        },
+        afterManual: {
+          textLocations: textLocationsAfter,
+          fingerprint: fullDomAfter.fingerprint,
+          sectionTitleModuleCount: fullDomAfter.sectionTitleModuleCount,
+          allOccurrences: fullDomAfter.allOccurrences,
+        },
+      },
       verify,
+      sessionBinding: {
+        start: sessionBindingStart,
+        end: sessionBindingEnd,
+      },
+      documentCommit,
+      audit: auditRecordSubtitleReport({
+        mode: 'record-subtitle',
+        verify,
+        snapshots: { after: snapAfter },
+        pollDuringWindow: [],
+      }),
       snapshots: {
         blank: snapBlank,
         beforeManual: snapBeforeManual,
         after: snapAfter,
       },
-      pollDuringWindow: pollSnaps,
-      recordWaitMs,
       timingMs: { cumulative: timingCumulative, segment: timingSegment },
       saveDraftExecuted: false,
       publishExecuted: false,
@@ -350,7 +416,9 @@ async function runRecordSubtitlePipeline() {
     const reportPath = await writeArticleEditorRunReport(out);
     console.log(JSON.stringify({ ...out, reportPath }, null, 2));
     printCompletionTable({
-      '수동 소제목(sectionTitle)': verify.headingModuleOk ? 'PASS' : 'FAIL(대기 중 미완료)',
+      '실행 대상 일치(domReadAligned)': executionTargetFinal.domReadAligned ? 'PASS' : 'FAIL',
+      'document.hasFocus(종료)': executionTargetFinal.documentHasFocus ? 'PASS' : 'WARN',
+      '수동 소제목(sectionTitle)': verify.headingModuleOk ? 'PASS' : 'FAIL',
       '3블록 텍스트': verify.textOrderOk ? 'PASS' : 'FAIL',
       '본문 C 복귀': verify.bodyRestoreOk ? 'PASS' : 'FAIL',
       '전체 PASS': verify.pass ? 'PASS' : 'FAIL',
