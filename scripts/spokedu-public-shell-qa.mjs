@@ -1,3 +1,4 @@
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 /**
  * SPOKEDU public global shell P0 QA — runtime verification
  * SPOKEDU_QA_ORIGIN=http://127.0.0.1:PORT npm run qa:public-shell
@@ -254,7 +255,10 @@ async function main() {
   };
 
   const shotDir = await mkdtemp(path.join(tmpdir(), 'spokedu-p0-qa-'));
-  const browser = await chromium.launch({ headless: true });
+  assertLocalQaTarget(ORIGIN);
+const browser = await chromium.launch({ headless: true });
+const originalNewPage = browser.newPage.bind(browser);
+browser.newPage = async (...args) => { const page = await originalNewPage(...args); await installLocalQaRouteGuard(page.context()); return page; };
   let baselineGeo = null;
 
   try {
