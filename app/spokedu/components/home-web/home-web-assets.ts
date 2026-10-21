@@ -23,7 +23,7 @@ export type HomeVisual = {
 export const HOME_HERO_IMAGE: HomeVisual = {
   src: '/images/spokedu/home/field-editorial/home-hero-lab-gym-sponsorship-13.jpg',
   alt: '스포키듀 랩 체육관에서 지도자가 여러 아동에게 교구 활동을 설명하는 수업 현장',
-  objectPosition: '50% 58%',
+  objectPosition: '50% 62%',
 };
 
 /** 01 FIELD · 02 CONTENT · 03 SYSTEM — same 4:3 frame, same baseline. */

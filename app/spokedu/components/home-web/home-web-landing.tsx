@@ -1,10 +1,10 @@
 /* eslint-disable @next/next/no-img-element -- editorial crops require explicit art direction. */
 import Link from 'next/link';
 import { contactPageContent } from '../../contact/contact-page-data';
-import { FIELD_RECORD_CATALOG } from '../../data/field-records-catalog';
-import { privatePage } from '../../data/private-page';
+import { getFieldRecordCatalogItem, type FieldRecordSlug } from '../../data/field-records-catalog';
 import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_HERO_IMAGE, HOME_MASTER_VISUAL, HOME_SPOMOVE_VISUAL } from './home-web-assets';
+import { HOME_SECTION03_EVIDENCE, HOME_SECTION03_PEOPLE } from './home-section03-people';
 import styles from './home-canonical.module.css';
 
 const AUDIENCE_PATHS = [
@@ -41,11 +41,20 @@ const AUDIENCE_PATHS = [
   },
 ] as const;
 
-const FEATURED_RECORDS = FIELD_RECORD_CATALOG.slice(0, 5);
+const HOME_SECTION04_RECORDS = [
+  { slug: 'donghaeng-special-pe', objectPosition: '58% 50%' },
+  { slug: 'maedong-sports-stepup', objectPosition: '50% 50%' },
+  { slug: 'yangcheon-paps', objectPosition: '50% 50%' },
+  { slug: 'dasarang-oneday', objectPosition: '50% 50%' },
+  { slug: 'seodaemun-event-booth', objectPosition: '50% 50%' },
+] as const satisfies readonly { slug: FieldRecordSlug; objectPosition: string }[];
+
+const FEATURED_RECORDS = HOME_SECTION04_RECORDS.map(({ slug, objectPosition }) => ({
+  ...getFieldRecordCatalogItem(slug),
+  objectPosition,
+}));
 
 export function HomeWebLanding() {
-  const instructors = privatePage.instructors.items;
-
   return (
     <main className={styles.page}>
       <section className={styles.hero} aria-labelledby="home-heading">
@@ -84,18 +93,31 @@ export function HomeWebLanding() {
       <section className={styles.expertise} aria-labelledby="expertise-heading">
         <div className={styles.expertiseInner}>
           <header className={styles.expertiseIntro}>
-            <p className={styles.eyebrow}>PEOPLE BEHIND THE CLASS</p>
+            <p className={styles.eyebrow}>PEOPLE &amp; EXPERTISE</p>
             <h2 id="expertise-heading">수업을 설계한 사람이<br />현장을 책임집니다.</h2>
-            <p>체육교육 전공 운영진이 수업 기준을 만들고, 대상과 현장 조건을 확인해 프로그램과 지도자를 연결합니다.</p>
-            <Link href={SPOKEDU_PATHS.about}>SPOKEDU 운영 기준 보기 →</Link>
+            <p>체육교육 전문가가 수업의 기준을 만들고, 학교와 기관의 실제 현장에서 프로그램을 설계하고 운영합니다.</p>
           </header>
           <div className={styles.peopleGrid}>
-            {instructors.map((person, index) => (
+            {HOME_SECTION03_PEOPLE.map((person, index) => (
               <article key={person.name} className={`${styles.person} ${index === 0 ? styles.personLead : ''}`}>
-                <img src={person.photo} alt={`${person.name} 운영진`} />
-                <div><span>{person.name}</span><strong>{person.degree}</strong><ul>{person.badges.slice(0, 2).map((badge) => <li key={badge}>{badge}</li>)}</ul></div>
+                <figure className={styles.personMedia}>
+                  <img src={person.photo} alt={`${person.role} ${person.name}`} style={{ objectPosition: person.objectPosition }} />
+                </figure>
+                <div className={styles.personCopy}>
+                  <div><span>{person.name}</span><p>{person.role}</p></div>
+                  <ul>{person.credentials.map((credential) => <li key={credential}>{credential}</li>)}</ul>
+                </div>
               </article>
             ))}
+          </div>
+          <div className={styles.expertiseProof}>
+            <p className={styles.expertiseProofTitle}>운영 전문성</p>
+            <ul>
+              {HOME_SECTION03_EVIDENCE.map((item, index) => (
+                <li key={item}><span>{String(index + 1).padStart(2, '0')}</span><strong>{item}</strong></li>
+              ))}
+            </ul>
+            <Link href={SPOKEDU_PATHS.about}>SPOKEDU 소개 <span aria-hidden="true">→</span></Link>
           </div>
         </div>
       </section>
@@ -108,7 +130,7 @@ export function HomeWebLanding() {
           </header>
           <div className={styles.recordsGrid}>
             {FEATURED_RECORDS.map((record, index) => {
-              const content = <><img src={record.thumbnailSrc ?? `/images/spokedu/records/${record.slug}.jpg`} alt={`${record.venue} ${record.programLabel} 수업 현장`} /><span className={styles.recordShade} /><span className={styles.recordCopy}><small>{record.operationType} · {record.programLabel}</small><strong>{record.venue}</strong><em>{record.meta}</em></span></>;
+              const content = <><figure className={styles.recordMedia}><img src={record.thumbnailSrc ?? `/images/spokedu/records/${record.slug}.jpg`} alt={`${record.venue} ${record.programLabel} 수업 현장`} style={{ objectPosition: record.objectPosition }} /><span className={styles.recordShade} /></figure><span className={styles.recordCopy}><small>{record.operationType} · {record.programLabel}</small><strong>{record.venue}</strong><em>{record.meta}</em></span></>;
               const className = `${styles.record} ${index === 0 ? styles.recordLead : ''}`;
               return record.href.startsWith('http') ? <a key={record.slug} href={record.href} target="_blank" rel="noreferrer" className={className}>{content}</a> : <Link key={record.slug} href={record.href} className={className}>{content}</Link>;
             })}
