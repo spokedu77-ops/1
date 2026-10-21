@@ -1,3 +1,4 @@
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 /**
  * Playwright capture for Home editorial prototype QA.
  * Usage: npx next dev (port 3000) then node scripts/capture-home-editorial-prototype.mjs
@@ -17,7 +18,10 @@ const viewports = [
 
 await mkdir(outDir, { recursive: true });
 
+assertLocalQaTarget(baseUrl);
 const browser = await chromium.launch({ headless: true });
+const originalNewPage = browser.newPage.bind(browser);
+browser.newPage = async (...args) => { const page = await originalNewPage(...args); await installLocalQaRouteGuard(page.context()); return page; };
 const page = await browser.newPage();
 
 for (const vp of viewports) {
