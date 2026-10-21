@@ -1,3 +1,4 @@
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
@@ -9,7 +10,10 @@ const smokeRoutes = ['/private', '/education', '/spomove', '/spokedu-lab'];
 const expectedSections = ['hero', 'class', 'bridge', 'spomove', 'subscription', 'cases', 'final-action'];
 
 await mkdir(outputDirectory, { recursive: true });
+assertLocalQaTarget(baseUrl);
 const browser = await chromium.launch({ headless: true });
+const originalNewPage = browser.newPage.bind(browser);
+browser.newPage = async (...args) => { const page = await originalNewPage(...args); await installLocalQaRouteGuard(page.context()); return page; };
 const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
 const home = [];
 const smoke = [];
