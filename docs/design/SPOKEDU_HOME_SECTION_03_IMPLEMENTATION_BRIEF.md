@@ -1,6 +1,6 @@
 # SPOKEDU Home Section 03 Implementation Brief
 
-**Status:** `SECTION_03_PO_REVIEW_PENDING`  
+**Status:** `SECTION_03_PO_REVIEW_PENDING`
 **Scope:** Active public homepage Section 03 only
 
 ## Approved implementation principle
