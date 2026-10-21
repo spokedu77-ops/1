@@ -10,7 +10,7 @@ export function assertLocalQaTarget(value) {
     throw new Error('[QA NETWORK BLOCK] QA target must be an absolute loopback URL, e.g. http://127.0.0.1:3117');
   }
   if (url.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) || url.username || url.password) {
-    throw new Error(`[QA NETWORK BLOCK] Remote QA target is forbidden: ${url.origin}. Run npm run build, then npm run qa:image:local.`);
+    throw new Error(`[QA NETWORK BLOCK] Remote QA target is forbidden: ${url.origin}. Run npm run build and npm run start locally, then run the visual QA script against http://127.0.0.1:3000.`);
   }
   return url;
 }
