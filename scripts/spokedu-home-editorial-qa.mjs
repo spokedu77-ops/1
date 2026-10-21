@@ -1,3 +1,4 @@
+import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 /**
  * SPOKEDU Home editorial visual QA — Playwright screenshots + layout checks
  * Usage: node scripts/spokedu-home-editorial-qa.mjs
@@ -169,7 +170,10 @@ async function evaluateLayout(page, viewportWidth) {
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
-  const browser = await chromium.launch();
+  assertLocalQaTarget(BASE_URL);
+const browser = await chromium.launch();
+const originalNewPage = browser.newPage.bind(browser);
+browser.newPage = async (...args) => { const page = await originalNewPage(...args); await installLocalQaRouteGuard(page.context()); return page; };
   const results = [];
 
   for (const vp of VIEWPORTS) {
