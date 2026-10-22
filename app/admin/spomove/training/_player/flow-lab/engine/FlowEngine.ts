@@ -15,7 +15,7 @@ import { FlowAudio } from './FlowAudio';
 import { AdaptiveQuality } from './AdaptiveQuality';
 import { ObstacleManager } from './entities/ObstacleManager';
 import { ColorGateManager, type ColorGateRuntimeInfo } from './entities/ColorGateManager';
-import type { ColorGateCategoryFilter, ColorGateVariant } from './modules/colorGateGuides';
+import type { ColorGateCategoryFilter, ColorGateDifficultySelection, ColorGateSelectableCategory, ColorGateVariant } from './modules/colorGateGuides';
 import type { FlowBridge } from './entities/ObstacleManager';
 import {
   BridgeRenderer,
@@ -140,6 +140,8 @@ export interface FlowEngineOptions {
   colorGateTargetCount?: number;
   colorGateVariant?: ColorGateVariant;
   colorGateCategory?: ColorGateCategoryFilter;
+  colorGateCategories?: readonly ColorGateSelectableCategory[];
+  colorGateDifficulties?: readonly ColorGateDifficultySelection[];
 }
 
 interface BridgeObj extends FlowBridge {
@@ -559,6 +561,8 @@ export class FlowEngine {
       this.opts.colorGateCueSeconds,
       this.opts.colorGateVariant,
       this.opts.colorGateCategory,
+      this.opts.colorGateCategories,
+      this.opts.colorGateDifficulties,
     );
     this.colorGates.setScene(this.scene);
     void preloadColorGatePoseImages().then((imagesByPose) => {

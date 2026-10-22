@@ -32,7 +32,7 @@ import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
 import { ColorGatePoseAppendix } from './components/ColorGatePoseAppendix';
 import { CSS, S } from './styles';
-import type { ColorGateCategoryFilter } from './flow-lab/engine/modules/colorGateGuides';
+import type { ColorGateCategoryFilter, ColorGateDifficultySelection, ColorGateSelectableCategory } from './flow-lab/engine/modules/colorGateGuides';
 import { buildStages } from './flow-lab/engine/modules/stageBuilder';
 import {
   DEFAULT_MEMORY_COLOR_SLOTS,
@@ -209,6 +209,8 @@ type Settings = {
   flowIncludeBonus: boolean;
   colorGateVariant: ColorGateVariant;
   colorGateCategory: ColorGateCategoryFilter;
+  colorGateCategories: ColorGateSelectableCategory[];
+  colorGateDifficulties: ColorGateDifficultySelection[];
   /** ????????????????????????1?? ??????????????????????????????????????????????*/
   reactTrainConcurrent: 1 | 2 | 3;
   /** ???????????????????????????????????????8???????? engine level 9) L1/L2/L3 */
@@ -289,6 +291,8 @@ const defaultSettings: Settings = {
   flowIncludeBonus: true,
   colorGateVariant: 'solo-easy',
   colorGateCategory: 'all',
+  colorGateCategories: ['strength', 'flexibility', 'balance', 'power-jump'],
+  colorGateDifficulties: ['single'],
   reactTrainConcurrent: 2,
   numberCartTier: 2,
   colorTrackerTier: 1,
@@ -360,6 +364,8 @@ export type MemoryGameAutoLaunch = {
   flowIncludeBonus?: boolean;
   colorGateVariant?: ColorGateVariant;
   colorGateCategory?: ColorGateCategoryFilter;
+  colorGateCategories?: ColorGateSelectableCategory[];
+  colorGateDifficulties?: ColorGateDifficultySelection[];
   /** ????????????????????????1?? ??????????????????????????????????????????????*/
   reactTrainConcurrent?: 1 | 2 | 3;
   /** ???????????????????????????????????????8???????? engine level 9) L1/L2/L3 */
@@ -447,6 +453,8 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       flowIncludeBonus: s.flowIncludeBonus,
       colorGateVariant: s.colorGateVariant,
       colorGateCategory: s.colorGateCategory,
+      colorGateCategories: s.colorGateCategories,
+      colorGateDifficulties: s.colorGateDifficulties,
       reactTrainConcurrent: s.reactTrainConcurrent,
       numberCartTier: s.numberCartTier,
       colorTrackerTier: s.colorTrackerTier,
@@ -574,12 +582,12 @@ export default function MemoryGameApp({
   const saveFlowPreset = () => {
     const name = prompt('Preset name', `Preset ${flowPresets.length + 1}`);
     if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], sportsArenaFeatures: [...settings.sportsArenaFeatures], environmentTheme: settings.diveEnvironmentTheme, duration: settings.flowDuration, includeBonus: settings.flowIncludeBonus, colorGateCategory: settings.colorGateCategory }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], sportsArenaFeatures: [...settings.sportsArenaFeatures], environmentTheme: settings.diveEnvironmentTheme, duration: settings.flowDuration, includeBonus: settings.flowIncludeBonus, colorGateCategory: settings.colorGateCategory, colorGateCategories: settings.colorGateCategories, colorGateDifficulties: settings.colorGateDifficulties }];
     setFlowPresets(next);
     saveFlowPresets(next);
   };
   const loadFlowPreset = (p: FlowPreset) => {
-    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), sportsArenaFeatures: new Set(p.sportsArenaFeatures ?? []), diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all' }));
+    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), sportsArenaFeatures: new Set(p.sportsArenaFeatures ?? []), diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all', colorGateCategories: p.colorGateCategories?.length ? p.colorGateCategories : s.colorGateCategories, colorGateDifficulties: p.colorGateDifficulties?.length ? p.colorGateDifficulties : s.colorGateDifficulties }));
   };
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
@@ -784,6 +792,8 @@ export default function MemoryGameApp({
         diveEnvironmentTheme: normalizeDiveThemeId(autoDiveTheme),
         memoryColorSlots: normalizeMemoryColorSlots(autoLaunch.memoryColorSlots),
         colorGateCategory: autoLaunch.colorGateCategory ?? 'all',
+        colorGateCategories: autoLaunch.colorGateCategories?.length ? autoLaunch.colorGateCategories : defaultSettings.colorGateCategories,
+        colorGateDifficulties: autoLaunch.colorGateDifficulties?.length ? autoLaunch.colorGateDifficulties : defaultSettings.colorGateDifficulties,
         shellTrackingDifficulty:
           autoLaunch.shellTrackingDifficulty === 'easy' || autoLaunch.shellTrackingDifficulty === 'hard'
             ? autoLaunch.shellTrackingDifficulty
@@ -2138,21 +2148,22 @@ export default function MemoryGameApp({
                     <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>유형</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem', marginBottom: '0.85rem' }}>
                       {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
-                        const isTogether = value === 'together';
-                        const active = isTogether
-                          ? settings.colorGateVariant.startsWith('together-')
-                          : settings.colorGateCategory === value && !settings.colorGateVariant.startsWith('together-');
+                        const soloCategories = ['strength', 'flexibility', 'balance', 'power-jump'] as const;
+                        const active = value === 'all'
+                          ? soloCategories.every((category) => settings.colorGateCategories.includes(category))
+                          : settings.colorGateCategories.includes(value);
                         return (
                         <button key={value} type="button" onClick={() => setSettings((s) => {
-                          if (value === 'together') {
-                            return { ...s, colorGateVariant: s.colorGateVariant === 'solo-normal' ? 'together-normal' : 'together-easy' };
-                          }
-                          return {
-                            ...s,
-                            colorGateCategory: value,
-                            colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant.startsWith('together-') ? 'solo-easy' : s.colorGateVariant,
-                          };
+                          const next = value === 'all'
+                            ? (soloCategories.every((category) => s.colorGateCategories.includes(category))
+                                ? s.colorGateCategories.filter((category) => category === 'together')
+                                : [...new Set([...s.colorGateCategories, ...soloCategories])])
+                            : s.colorGateCategories.includes(value)
+                              ? s.colorGateCategories.filter((category) => category !== value)
+                              : [...s.colorGateCategories, value];
+                          return next.length ? { ...s, colorGateCategories: next } : s;
                         })}
+                          aria-pressed={active}
                           style={{ minWidth: 0, minHeight: 48, padding: '0.65rem 0.35rem', borderRadius: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', color: active ? '#38BDF8' : 'var(--text)', fontWeight: 800, fontSize: '0.8rem', lineHeight: 1.25, wordBreak: 'keep-all', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
                           {label}
                         </button>
@@ -2160,22 +2171,21 @@ export default function MemoryGameApp({
                       })}
                     </div>
                     <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>난이도</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: settings.colorGateVariant.startsWith('together-') ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem' }}>
                       {([
                         ['single', '단일', '기본 동작'],
                         ['compound', '복합', '전체 동작'],
-                        ...(settings.colorGateVariant.startsWith('together-') ? [['family', '패밀리', '가족 동작'] as const] : []),
+                        ['family', '패밀리', '가족 동작'],
                       ] as const).map(([value, label, detail]) => {
-                        const active = value === 'single'
-                          ? settings.colorGateVariant === 'solo-easy' || settings.colorGateVariant === 'together-easy'
-                          : value === 'compound'
-                            ? settings.colorGateVariant === 'solo-normal' || settings.colorGateVariant === 'together-normal'
-                            : settings.colorGateVariant === 'together-family';
+                        const active = settings.colorGateDifficulties.includes(value);
                         return (
                         <button key={value} type="button" onClick={() => setSettings((s) => {
-                          const isTogether = s.colorGateVariant.startsWith('together-');
-                          return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : value === 'compound' ? (isTogether ? 'together-normal' : 'solo-normal') : 'together-family' };
+                          const next = s.colorGateDifficulties.includes(value)
+                            ? s.colorGateDifficulties.filter((difficulty) => difficulty !== value)
+                            : [...s.colorGateDifficulties, value];
+                          return next.length ? { ...s, colorGateDifficulties: next } : s;
                         })}
+                          aria-pressed={active}
                           style={{ padding: '0.75rem', borderRadius: '0.8rem', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text)', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
                           <strong>{label}</strong>
                           <span style={{ display: 'block', marginTop: '0.2rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>{detail}</span>
@@ -2819,6 +2829,8 @@ export default function MemoryGameApp({
         colorGateTargetCount={settings.targetReps}
         colorGateVariant={settings.colorGateVariant}
         colorGateCategory={settings.colorGateCategory}
+        colorGateCategories={settings.colorGateCategories}
+        colorGateDifficulties={settings.colorGateDifficulties}
         onComplete={handleFlowDone}
         onExit={stop}
         onEngineReady={(api) => { flowEngineApiRef.current = api; }}

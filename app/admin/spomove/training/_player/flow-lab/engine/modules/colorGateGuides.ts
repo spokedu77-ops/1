@@ -32,6 +32,8 @@ export type ColorGateCategory =
 
 export type ColorGateCategoryFilter = 'all' | Exclude<ColorGateCategory, 'partner'>;
 export type ColorGateDifficulty = 'easy' | 'hard';
+export type ColorGateSelectableCategory = Exclude<ColorGateCategory, 'partner'> | 'together';
+export type ColorGateDifficultySelection = 'single' | 'compound' | 'family';
 
 /**
  * 기존 설정값을 유지한다.
@@ -39,7 +41,7 @@ export type ColorGateDifficulty = 'easy' | 'hard';
  * - solo-normal: 쉬움 + 어려움 전체 40개 (저장 호환을 위해 legacy key 유지)
  * - together-easy: 2인 협동 단일 동작 5개
  * - together-normal: 2인 협동 복합 구성 전체 14개
- * - together-family: 가족 동작 4개
+ * - together-family: 가족 동작 9개
  */
 export type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal' | 'together-family';
 
@@ -78,9 +80,9 @@ export const COLOR_GATE_POSE_DEFINITIONS = [
   { key: 'tiptoe-stand', label: '발끝으로 서기', category: 'balance', difficulty: 'easy', image: '/spomove/dive/color-gate/balance/tiptoe-stand.png' },
   { key: 'straight-stand', label: '일자 서기', category: 'balance', difficulty: 'easy', image: '/spomove/dive/color-gate/balance/straight-stand.png' },
   // 평형성 — hard 5
-  { key: 'airplane-pose', label: '비행기 자세', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/airplane-pose.png' },
+  { key: 'airplane-pose', label: '발레 자세', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/ballet-pose.png' },
   { key: 'single-leg-floor-touch', label: '싱글 레그 데드리프트', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/single-leg-floor-touch.png' },
-  { key: 'side-leg-lift', label: '한발잡아 균형잡기', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/side-leg-lift.png' },
+  { key: 'side-leg-lift', label: '한발 들고 균형 잡기', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/side-leg-lift.png' },
   { key: 'flamingo-pose', label: '한발 발잡기', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/one-leg-foot-hold.png' },
   { key: 't-balance', label: 'T자 균형', category: 'balance', difficulty: 'hard', image: '/spomove/dive/color-gate/balance/t-balance.png' },
 
@@ -106,18 +108,23 @@ export const COLOR_GATE_POSE_DEFINITIONS = [
   { key: 'partner-hand-jump', label: '손잡고 점프', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/partner-hand-jump.png' },
   { key: 'partner-leg-touch', label: '어깨동무', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/8f61c1fa-f873-450a-9c75-1cc98283e3f9.png' },
   { key: 'partner-tunnel', label: '플랭크 하이파이브', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/4c1b42c6-6707-490d-8acf-c1a9d401055f.png' },
-  { key: 'partner-shoulder-balance', label: '머리붙이기(마주보고)', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/partner-head-touch.png' },
+  { key: 'partner-shoulder-balance', label: '머리 붙이기', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/partner-head-touch.png' },
   { key: 'partner-sit-to-stand', label: '앉았다 일어나기', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/b8357c09-081c-4ceb-a5dc-034f23d10a30.png' },
   { key: 'partner-pull-up', label: '풀업', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/528a5182-0e0b-4785-9c12-6de1fb7d300a.png' },
   { key: 'partner-squat', label: 'V밸런스', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/5a9b623d-b16f-4171-b380-945ee7f1304a.png' },
   { key: 'partner-stacking', label: '한발 들고 하이파이브', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/partner-stacking.png' },
   { key: 'partner-one-leg-high-five', label: '인간 손수레', category: 'partner', difficulty: 'hard', image: '/spomove/dive/color-gate/partner-one-leg-high-five.png' },
 
-  // 가족 4동작 — 난이도 필터와 분리
-  { key: 'family-princess-carry', label: '공주님 안기', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-princess-carry.png' },
+  // 가족 9동작 — 난이도 필터와 분리
+  { key: 'family-princess-carry', label: '자장자장', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-princess-carry.png' },
   { key: 'family-airplane-play', label: '비행기 놀이', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-airplane-play.png' },
   { key: 'family-piggyback', label: '어부바', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-piggyback.png' },
   { key: 'family-hug', label: '안아주기', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-hug.png' },
+  { key: 'family-arm-heart', label: '팔 하트', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-arm-heart.png' },
+  { key: 'family-double-tree', label: '더블 트리', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-double-tree.png' },
+  { key: 'family-big-circle', label: '큰 원 만들기', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-big-circle.png' },
+  { key: 'family-horse-riding', label: '승마 자세', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-horse-riding.png' },
+  { key: 'family-spin', label: '빙글빙글', category: 'partner', difficulty: 'family', image: '/spomove/dive/color-gate/family-spin.png' },
 ] as const;
 
 export type ColorGatePoseKey = (typeof COLOR_GATE_POSE_DEFINITIONS)[number]['key'];
@@ -192,6 +199,30 @@ export function colorGatePosesForVariant(
       .map((pose) => pose.key);
   }
   return colorGatePosesForCategory(category, 'easy');
+}
+
+export function colorGatePosesForSelection(
+  categories: readonly ColorGateSelectableCategory[],
+  difficulties: readonly ColorGateDifficultySelection[],
+): readonly ColorGatePoseKey[] {
+  const selectedCategories = new Set(categories);
+  const selectedDifficulties = new Set(difficulties);
+  const includeEasy = selectedDifficulties.has('single') || selectedDifficulties.has('compound');
+  const includeHard = selectedDifficulties.has('compound');
+
+  return COLOR_GATE_POSE_DEFINITIONS
+    .filter((pose) => {
+      if (pose.difficulty === 'family') {
+        return selectedCategories.has('together') && selectedDifficulties.has('family');
+      }
+      if (pose.category === 'partner') {
+        return selectedCategories.has('together')
+          && (pose.difficulty === 'easy' ? includeEasy : includeHard);
+      }
+      return selectedCategories.has(pose.category)
+        && (pose.difficulty === 'easy' ? includeEasy : includeHard);
+    })
+    .map((pose) => pose.key);
 }
 
 export function getColorGatePoseDefinition(pose: ColorGatePoseKey): ColorGatePoseDefinition {

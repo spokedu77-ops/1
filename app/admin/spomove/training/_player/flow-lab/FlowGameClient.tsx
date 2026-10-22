@@ -35,6 +35,8 @@ interface FlowGameClientProps {
   colorGateTargetCount?: number;
   colorGateVariant?: import('./engine/modules/colorGateGuides').ColorGateVariant;
   colorGateCategory?: import('./engine/modules/colorGateGuides').ColorGateCategoryFilter;
+  colorGateCategories?: readonly import('./engine/modules/colorGateGuides').ColorGateSelectableCategory[];
+  colorGateDifficulties?: readonly import('./engine/modules/colorGateGuides').ColorGateDifficultySelection[];
   onComplete:        (stats: FlowStats) => void;
   onExit:            () => void;
   onEngineReady?:    (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
@@ -75,6 +77,8 @@ export default function FlowGameClient({
   colorGateTargetCount = COLOR_GATE_TARGET_COUNT,
   colorGateVariant,
   colorGateCategory,
+  colorGateCategories,
+  colorGateDifficulties,
   onComplete,
   onExit,
   onEngineReady,
@@ -177,7 +181,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, motionScale, bgmPath, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory },
+        { stages, motionScale, bgmPath, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, colorGateCategories, colorGateDifficulties },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -217,7 +221,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, motionScale, bgmEnabled, sfxEnabled, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, initKey]); // bgmPath와 파노라마는 late-load로 처리한다.
+  }, [stages.length, motionScale, bgmEnabled, sfxEnabled, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, colorGateCategories, colorGateDifficulties, initKey]); // bgmPath와 파노라마는 late-load로 처리한다.
 
   useEffect(() => {
     void engineRef.current?.updatePanorama(panoramaHighUrl, panoramaLowUrl, panoramaYawDeg);

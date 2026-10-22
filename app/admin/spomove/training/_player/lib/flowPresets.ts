@@ -9,7 +9,7 @@ import {
   type DiveThemeId,
   normalizeDiveThemeId,
 } from '@/app/lib/spomove/diveThemes';
-import type { ColorGateCategoryFilter } from '../flow-lab/engine/modules/colorGateGuides';
+import type { ColorGateCategoryFilter, ColorGateDifficultySelection, ColorGateSelectableCategory } from '../flow-lab/engine/modules/colorGateGuides';
 
 export const FLOW_PRESETS_KEY = 'spomove_flow_presets_v2';
 const FLOW_PRESETS_KEY_LEGACY = 'spomove_flow_presets';
@@ -23,6 +23,8 @@ export interface FlowPreset {
   environmentTheme: DiveThemeId;
   duration: number;
   colorGateCategory?: ColorGateCategoryFilter;
+  colorGateCategories?: ColorGateSelectableCategory[];
+  colorGateDifficulties?: ColorGateDifficultySelection[];
   sportsArenaFeatures?: Array<'side' | 'jump' | 'duck'>;
   includeBonus?: boolean;
 }
@@ -61,6 +63,12 @@ function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
       || raw.colorGateCategory === 'power-jump'
         ? raw.colorGateCategory
         : 'all',
+    ...(Array.isArray(raw.colorGateCategories)
+      ? { colorGateCategories: raw.colorGateCategories.filter((value): value is ColorGateSelectableCategory => value === 'strength' || value === 'flexibility' || value === 'balance' || value === 'power-jump' || value === 'together') }
+      : {}),
+    ...(Array.isArray(raw.colorGateDifficulties)
+      ? { colorGateDifficulties: raw.colorGateDifficulties.filter((value): value is ColorGateDifficultySelection => value === 'single' || value === 'compound' || value === 'family') }
+      : {}),
   };
 }
 

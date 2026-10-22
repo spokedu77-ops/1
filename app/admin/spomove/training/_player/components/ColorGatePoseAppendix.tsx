@@ -170,7 +170,7 @@ function FullscreenCatalog({ onClose }: { onClose: () => void }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px clamp(16px, 4vw, 40px)', borderBottom: '1px solid #E2E8F0' }}>
         <div>
           <div style={{ fontSize: 'clamp(20px, 3vw, 30px)', fontWeight: 950 }}>모션 게이트 동작 종합 분류표</div>
-          <div style={{ marginTop: 3, color: '#64748B', fontSize: 13, fontWeight: 700 }}>4개 유형 × 쉬움·어려움 각 5개 · 투게더 14개 · 가족 4개</div>
+          <div style={{ marginTop: 3, color: '#64748B', fontSize: 13, fontWeight: 700 }}>4개 유형 × 쉬움·어려움 각 5개 · 투게더 14개 · 가족 9개</div>
         </div>
         <button type="button" onClick={onClose} aria-label="전체 화면 닫기" style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, border: '1px solid #CBD5E1', background: '#fff', color: '#0F172A', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}>×</button>
       </div>
@@ -196,7 +196,7 @@ export function ColorGatePoseAppendix() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 14px 12px', borderBottom: '1px solid var(--border, #E2E8F0)' }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 950, color: 'var(--text, #0F172A)', wordBreak: 'keep-all' }}>모션 게이트 동작 종합 분류표</div>
-              <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-muted, #64748B)', fontWeight: 700 }}>4개 유형 × 쉬움·어려움 각 5개 · 투게더 14개 · 가족 4개</div>
+              <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-muted, #64748B)', fontWeight: 700 }}>4개 유형 × 쉬움·어려움 각 5개 · 투게더 14개 · 가족 9개</div>
             </div>
             <button type="button" onClick={() => setFullscreen(true)} style={{ minHeight: 40, flexShrink: 0, padding: '8px 11px', borderRadius: 9, border: '1px solid #CBD5E1', background: '#fff', color: '#0F172A', fontSize: 12, fontWeight: 850, cursor: 'pointer', fontFamily: 'inherit' }}>⛶ 전체 화면</button>
           </div>

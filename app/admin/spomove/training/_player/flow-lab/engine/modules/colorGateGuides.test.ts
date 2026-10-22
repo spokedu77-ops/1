@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   COLOR_GATE_POSE_DEFINITIONS,
+  colorGatePosesForSelection,
   colorGatePosesForVariant,
 } from './colorGateGuides';
 
@@ -16,7 +17,7 @@ describe('Motion Gate option image pools', () => {
     expect(normal).toHaveLength(40);
     expect(togetherSingle).toHaveLength(5);
     expect(togetherCompound).toHaveLength(14);
-    expect(togetherFamily).toHaveLength(4);
+    expect(togetherFamily).toHaveLength(9);
 
     expect(new Set([...normal, ...togetherCompound])).toEqual(new Set(
       COLOR_GATE_POSE_DEFINITIONS
@@ -26,9 +27,9 @@ describe('Motion Gate option image pools', () => {
   });
 
   it('keeps the authored catalog order, identifiers, and metadata complete', () => {
-    expect(COLOR_GATE_POSE_DEFINITIONS).toHaveLength(58);
-    expect(new Set(COLOR_GATE_POSE_DEFINITIONS.map((pose) => pose.key))).toHaveLength(58);
-    expect(new Set(COLOR_GATE_POSE_DEFINITIONS.map((pose) => pose.image))).toHaveLength(58);
+    expect(COLOR_GATE_POSE_DEFINITIONS).toHaveLength(63);
+    expect(new Set(COLOR_GATE_POSE_DEFINITIONS.map((pose) => pose.key))).toHaveLength(63);
+    expect(new Set(COLOR_GATE_POSE_DEFINITIONS.map((pose) => pose.image))).toHaveLength(63);
 
     for (const pose of COLOR_GATE_POSE_DEFINITIONS) {
       expect(pose.label.trim()).not.toBe('');
@@ -70,7 +71,7 @@ describe('Motion Gate option image pools', () => {
 
     expect(COLOR_GATE_POSE_DEFINITIONS[28]).toMatchObject({
       key: 'flamingo-pose',
-      label: '한발 발잡기',
+      label: '한발 들고 균형 잡기',
       category: 'balance',
       difficulty: 'hard',
       image: '/spomove/dive/color-gate/balance/one-leg-foot-hold.png',
@@ -91,16 +92,26 @@ describe('Motion Gate option image pools', () => {
       ['partner-hand-jump', '손잡고 점프', 'easy'],
       ['partner-leg-touch', '어깨동무', 'easy'],
       ['partner-tunnel', '플랭크 하이파이브', 'hard'],
-      ['partner-shoulder-balance', '머리붙이기(마주보고)', 'hard'],
+      ['partner-shoulder-balance', '머리 붙이기', 'hard'],
       ['partner-sit-to-stand', '앉았다 일어나기', 'hard'],
       ['partner-pull-up', '풀업', 'hard'],
       ['partner-squat', 'V밸런스', 'hard'],
       ['partner-stacking', '한발 들고 하이파이브', 'hard'],
       ['partner-one-leg-high-five', '인간 손수레', 'hard'],
-      ['family-princess-carry', '공주님 안기', 'family'],
+      ['family-princess-carry', '자장자장', 'family'],
       ['family-airplane-play', '비행기 놀이', 'family'],
       ['family-piggyback', '어부바', 'family'],
       ['family-hug', '안아주기', 'family'],
+      ['family-arm-heart', '팔 하트', 'family'],
+      ['family-double-tree', '더블 트리', 'family'],
+      ['family-big-circle', '큰 원 만들기', 'family'],
+      ['family-horse-riding', '승마 자세', 'family'],
+      ['family-spin', '빙글빙글', 'family'],
     ]);
+  });
+
+  it('combines multiple categories and difficulty pools', () => {
+    expect(colorGatePosesForSelection(['strength', 'flexibility'], ['single'])).toHaveLength(10);
+    expect(colorGatePosesForSelection(['together'], ['compound', 'family'])).toHaveLength(23);
   });
 });

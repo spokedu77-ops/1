@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 import {
   COLOR_GATE_POSE_SEQUENCE,
+  colorGatePosesForSelection,
   colorGatePosesForVariant,
   GATE_COLORS,
   PLAYABLE_GATE_COLOR_IDS,
   buildColorGateSilhouetteCanvas,
   type ColorGateCategoryFilter,
+  type ColorGateDifficultySelection,
   type ColorGatePoseKey,
+  type ColorGateSelectableCategory,
   type ColorGateVariant,
   type GateColorId,
 } from '../modules/colorGateGuides';
@@ -82,6 +85,8 @@ export class ColorGateManager {
     private readonly cueSeconds = 4,
     private readonly variant: ColorGateVariant = 'solo-easy',
     private readonly category: ColorGateCategoryFilter = 'all',
+    private readonly categories?: readonly ColorGateSelectableCategory[],
+    private readonly difficulties?: readonly ColorGateDifficultySelection[],
   ) {
     this.lowRes = lowRes;
   }
@@ -227,7 +232,10 @@ export class ColorGateManager {
 
   private pickNextPose(): ColorGatePoseKey {
     if (this.poseBag.length === 0) {
-      this.poseBag = [...(colorGatePosesForVariant(this.variant, this.category) ?? COLOR_GATE_POSE_SEQUENCE)];
+      const selected = this.categories?.length && this.difficulties?.length
+        ? colorGatePosesForSelection(this.categories, this.difficulties)
+        : colorGatePosesForVariant(this.variant, this.category);
+      this.poseBag = [...(selected.length ? selected : COLOR_GATE_POSE_SEQUENCE)];
       for (let i = this.poseBag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const tmp = this.poseBag[i]!;

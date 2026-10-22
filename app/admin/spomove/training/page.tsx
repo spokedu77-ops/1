@@ -307,6 +307,8 @@ type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGat
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal' | 'together-family';
 type ColorGateCategoryFilter = 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
+type ColorGateSelectableCategory = Exclude<ColorGateCategoryFilter, 'all'> | 'together';
+type ColorGateDifficultySelection = 'single' | 'compound' | 'family';
 
 type LaunchSettings = {
   speed: number;
@@ -336,6 +338,8 @@ type LaunchSettings = {
   flowIncludeBonus: boolean;
   colorGateVariant: ColorGateVariant;
   colorGateCategory: ColorGateCategoryFilter;
+  colorGateCategories: ColorGateSelectableCategory[];
+  colorGateDifficulties: ColorGateDifficultySelection[];
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 숫자 연산 기차(엔진 8) 전용: L1/L2/L3 */
@@ -406,6 +410,8 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowIncludeBonus: true,
   colorGateVariant: 'solo-easy',
   colorGateCategory: 'all',
+  colorGateCategories: ['strength', 'flexibility', 'balance', 'power-jump'],
+  colorGateDifficulties: ['single'],
   reactTrainConcurrent: 2,
   numberCartTier: 2,
   colorTrackerTier: 1,
@@ -463,6 +469,8 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowIncludeBonus: auto.flowIncludeBonus ?? fallback.flowIncludeBonus,
     colorGateVariant: auto.colorGateVariant ?? fallback.colorGateVariant,
     colorGateCategory: auto.colorGateCategory ?? 'all',
+    colorGateCategories: auto.colorGateCategories?.length ? auto.colorGateCategories : fallback.colorGateCategories,
+    colorGateDifficulties: auto.colorGateDifficulties?.length ? auto.colorGateDifficulties : fallback.colorGateDifficulties,
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
     numberCartTier: (auto.numberCartTier as 1 | 2 | 3 | undefined) ?? fallback.numberCartTier,
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
@@ -669,6 +677,8 @@ function TrainingPortal({
     flowIncludeBonus: launch.flowIncludeBonus,
     colorGateVariant: launch.colorGateVariant,
     colorGateCategory: launch.colorGateCategory,
+    colorGateCategories: launch.colorGateCategories,
+    colorGateDifficulties: launch.colorGateDifficulties,
     reactTrainConcurrent: launch.reactTrainConcurrent,
     numberCartTier: launch.numberCartTier,
     colorTrackerTier: launch.colorTrackerTier,
@@ -705,7 +715,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.relativeCompassEnabled}-${launch.shapeCompletionEnabled}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.colorGateCategories.join(',')}-${launch.colorGateDifficulties.join(',')}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.relativeCompassEnabled}-${launch.shapeCompletionEnabled}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -990,13 +1000,13 @@ function SettingsScreen({
   const saveFlowPreset = () => {
     const name = window.prompt('프리셋 이름', `세팅 ${flowPresets.length + 1}`);
     if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], sportsArenaFeatures: [...launch.sportsArenaFeatures], environmentTheme: launch.diveEnvironmentTheme, duration: launch.flowDuration, includeBonus: launch.flowIncludeBonus, colorGateCategory: launch.colorGateCategory }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], sportsArenaFeatures: [...launch.sportsArenaFeatures], environmentTheme: launch.diveEnvironmentTheme, duration: launch.flowDuration, includeBonus: launch.flowIncludeBonus, colorGateCategory: launch.colorGateCategory, colorGateCategories: launch.colorGateCategories, colorGateDifficulties: launch.colorGateDifficulties }];
     const result = saveFlowPresets(next);
     if (!result.success) { setFlowPresetError(result.error); return; }
     setFlowPresets(next);
     setFlowPresetError(null);
   };
-  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], sportsArenaFeatures: [...(p.sportsArenaFeatures ?? [])], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all' }));
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], sportsArenaFeatures: [...(p.sportsArenaFeatures ?? [])], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all', colorGateCategories: p.colorGateCategories?.length ? p.colorGateCategories : s.colorGateCategories, colorGateDifficulties: p.colorGateDifficulties?.length ? p.colorGateDifficulties : s.colorGateDifficulties }));
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
     const result = saveFlowPresets(next);
@@ -2410,21 +2420,22 @@ function SettingsScreen({
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>유형</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5, marginBottom: 8 }}>
                 {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
-                  const isTogether = value === 'together';
-                  const active = isTogether
-                    ? launch.colorGateVariant.startsWith('together-')
-                    : launch.colorGateCategory === value && !launch.colorGateVariant.startsWith('together-');
+                  const soloCategories = ['strength', 'flexibility', 'balance', 'power-jump'] as const;
+                  const active = value === 'all'
+                    ? soloCategories.every((category) => launch.colorGateCategories.includes(category))
+                    : launch.colorGateCategories.includes(value);
                   return (
                     <button key={value} type="button" onClick={() => setLaunch((s) => {
-                      if (value === 'together') {
-                        return { ...s, colorGateVariant: s.colorGateVariant === 'solo-normal' ? 'together-normal' : 'together-easy' };
-                      }
-                      return {
-                        ...s,
-                        colorGateCategory: value,
-                        colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant.startsWith('together-') ? 'solo-easy' : s.colorGateVariant,
-                      };
+                      const next = value === 'all'
+                        ? (soloCategories.every((category) => s.colorGateCategories.includes(category))
+                            ? s.colorGateCategories.filter((category) => category === 'together')
+                            : [...new Set([...s.colorGateCategories, ...soloCategories])])
+                        : s.colorGateCategories.includes(value)
+                          ? s.colorGateCategories.filter((category) => category !== value)
+                          : [...s.colorGateCategories, value];
+                      return next.length ? { ...s, colorGateCategories: next } : s;
                     })}
+                      aria-pressed={active}
                       style={{ minWidth: 0, minHeight: 40, padding: '7px 4px', borderRadius: 10, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontSize: 12, lineHeight: 1.2, fontWeight: 900, cursor: 'pointer', textAlign: 'center', wordBreak: 'keep-all' }}>
                       {label}
                     </button>
@@ -2432,25 +2443,24 @@ function SettingsScreen({
                 })}
               </div>
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
-              <div style={{ display: 'grid', gridTemplateColumns: launch.colorGateVariant.startsWith('together-') ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))', gap: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5 }}>
                 {([
                   ['single', '단일', '기본 동작'],
                   ['compound', '복합', '전체 동작'],
-                  ...(launch.colorGateVariant.startsWith('together-') ? [['family', '패밀리', '가족 동작'] as const] : []),
+                  ['family', '패밀리', '가족 동작'],
                 ] as const).map(([value, label, difficulty]) => {
-                  const active = value === 'single'
-                    ? launch.colorGateVariant === 'solo-easy' || launch.colorGateVariant === 'together-easy'
-                    : value === 'compound'
-                      ? launch.colorGateVariant === 'solo-normal' || launch.colorGateVariant === 'together-normal'
-                      : launch.colorGateVariant === 'together-family';
+                  const active = launch.colorGateDifficulties.includes(value);
                   return (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setLaunch((s) => {
-                        const isTogether = s.colorGateVariant.startsWith('together-');
-                        return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : value === 'compound' ? (isTogether ? 'together-normal' : 'solo-normal') : 'together-family' };
+                        const next = s.colorGateDifficulties.includes(value)
+                          ? s.colorGateDifficulties.filter((item) => item !== value)
+                          : [...s.colorGateDifficulties, value];
+                        return next.length ? { ...s, colorGateDifficulties: next } : s;
                       })}
+                      aria-pressed={active}
                       style={{
                         minWidth: 0, padding: '8px 4px', borderRadius: 10,
                         border: `1.5px solid ${active ? '#06B6D4' : T.border}`,
