@@ -6,17 +6,14 @@ import { toast } from "sonner";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
 import { devLogger } from "@/app/lib/logging/devLogger";
 import {
-  MILEAGE_LABEL_POSTPONE,
-  MILEAGE_LABEL_POSTPONE_REQUEST,
-} from "@/app/admin/classes-shared/constants/mileage";
-import {
-  applySessionLinkedMileage,
-  appendMileageActionLabel,
-} from "@/app/admin/classes-shared/lib/applySessionLinkedMileage";
-import { postponeCascade, undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
-import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
+  assertWeekdayTemplateCloneSafe,
+  buildSeoulTwoWeekdayStartsFromDate,
+  extendClass,
+  formatWeekdayTemplateSummary,
+  resolveLatestSeoulWeekdayTemplates,
+} from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
-import { parseExtraTeachers, buildMemoWithExtras, extractMileageAction } from "@/app/admin/classes-shared/lib/sessionUtils";
+import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
 import { formatRoundDisplay } from "@/app/admin/classes-shared/lib/roundFields";
 import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
@@ -595,6 +592,15 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         for (const gid of effectiveGroupIds) {
           if (next[gid] != null) continue;
           const list = map[gid] || [];
+          try {
+            const pattern = resolveLatestSeoulWeekdayTemplates(list);
+            if (pattern.kind === "two") {
+              next[gid] = pattern.templates.map((template) => template.weekday);
+              continue;
+            }
+          } catch {
+            // 잘못된 과거 데이터는 재시작 시 명시적인 오류로 안내합니다.
+          }
           const last = list[list.length - 1];
           const base = last?.start_at ? addDays(new Date(last.start_at), 7) : new Date();
           next[gid] = [base.getDay()];
@@ -765,8 +771,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
   ) => {
     if (!supabase) return;
     if (postponingSessionId === sessionId) return;
-    const mileageLabel =
-      kind === "postpone_request" ? MILEAGE_LABEL_POSTPONE_REQUEST : MILEAGE_LABEL_POSTPONE;
     const mileageHint =
       kind === "postpone_request"
         ? "마일리지 −5,000 (수업 연기 요청)이 연기 기록에 자동 반영됩니다."
@@ -780,42 +784,36 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
 
     setPostponingSessionId(sessionId);
     try {
-      const postponedId = await postponeCascade(supabase, sessionId, {
-        onAfter: () => {
-          void loadAll();
-          onChanged?.();
-        },
+      const row = sessionsByGroupId[_gid]?.find((candidate) => candidate.id === sessionId);
+      if (!row) throw new Error("POSTPONE_SESSION_NOT_FOUND");
+      const body = JSON.stringify({
+        sessionId,
+        mode: kind,
+        expectedStartAt: row.start_at,
+        requestKey: crypto.randomUUID(),
       });
-      if (!postponedId) return;
-
-      const { data: ghost, error: ghostError } = await supabase
-        .from("sessions")
-        .select("id, start_at, title, memo, mileage_option, created_by")
-        .eq("id", postponedId)
-        .maybeSingle();
-      if (ghostError || !ghost?.id) {
-        toast.error("일정은 연기되었지만 마일리지 대상 회차를 찾지 못했습니다. 마일리지에서 직접 넣어 주세요.");
-        return;
+      let response: Response | null = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          response = await fetch("/api/admin/classes/postpone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+          });
+          break;
+        } catch (error) {
+          if (attempt === 1) throw error;
+        }
       }
-
-      const prevAction = extractMileageAction(
-        ghost.memo || "",
-        ghost.mileage_option ?? undefined
-      ).mileageAction;
-      const nextActionStr = appendMileageActionLabel(prevAction, mileageLabel);
-      const result = await applySessionLinkedMileage({
-        sessionId: ghost.id,
-        mileage_option: ghost.mileage_option,
-        nextActionStr,
-      });
-      if (!result.ok) {
-        toast.error(result.error || "일정은 연기되었지만 마일리지 반영에 실패했습니다.");
-        return;
-      }
-      if (result.warning) toast.error(`경고: ${result.warning}`);
-      else toast.success(`${mileageLabel} 마일리지가 반영되었습니다.`);
+      if (!response) throw new Error("POSTPONE_NETWORK_FAILED");
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "POSTPONE_TRANSACTION_FAILED");
+      toast.success(kind === "postpone_request" ? "연기요청과 마일리지가 반영되었습니다." : "연기와 마일리지가 반영되었습니다.");
       void loadAll();
       onChanged?.();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error(`일정 연기에 실패했습니다: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setPostponingSessionId(null);
     }
@@ -830,12 +828,33 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
 
     setUndoingPostponeSessionId(sessionId);
     try {
-      await undoPostponeCascade(supabase, sessionId, {
-        onAfter: () => {
-          void loadAll();
-          onChanged?.();
-        },
+      const row = Object.values(sessionsByGroupId).flat().find((candidate) => candidate.id === sessionId);
+      if (!row) throw new Error("POSTPONE_SESSION_NOT_FOUND");
+      const body = JSON.stringify({
+        sessionId,
+        mode: "undo",
+        expectedStartAt: row.start_at,
+        requestKey: crypto.randomUUID(),
       });
+      let response: Response | null = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          response = await fetch("/api/admin/classes/postpone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+          });
+          break;
+        } catch (error) {
+          if (attempt === 1) throw error;
+        }
+      }
+      if (!response) throw new Error("POSTPONE_NETWORK_FAILED");
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "POSTPONE_TRANSACTION_FAILED");
+      toast.success("일정과 마일리지가 함께 복구되었습니다.");
+      void loadAll();
+      onChanged?.();
     } catch (err) {
       devLogger.error(err);
       toast.error("일정 복구에 실패했습니다.");
@@ -848,6 +867,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     if (!supabase) return;
     if (addCount <= 0) return;
     await extendClass(supabase, gid, addCount, {
+      teacherNames: teacherMap,
       onAfter: () => {
         void loadAll();
         onChanged?.();
@@ -998,15 +1018,26 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
       `취소된 회차를 예정(opened)으로 복구할까요?\n\n· 메인 수업료 ${mainFee.toLocaleString("ko-KR")}원 유지\n· 회차 번호와 날짜 유지\n· 자동으로 검수 승인하지 않음${feeWarning}`
     )) return;
 
+    const restoreCutoffIso = new Date().toISOString();
+    if (new Date(String(curr.end_at)).getTime() <= Date.now()) {
+      toast.error("확인 중 회차 종료 시각이 지나 복구를 중단했습니다.");
+      return;
+    }
+
     setRestoringSessionId(sessionId);
     try {
-      // 상태 및 일정이 조회 이후 바뀌었다면 실패 처리해 동시 수정 충돌을 피합니다.
-      const { data: restored, error: restoreErr } = await supabase
+      // 상태·일정·마일리지가 조회 이후 바뀌거나 종료 시각이 지났다면 갱신하지 않습니다.
+      let restoreQuery = supabase
         .from("sessions")
         .update({ status: "opened" })
         .eq("id", sessionId)
         .eq("status", "cancelled")
         .eq("end_at", curr.end_at)
+        .gt("end_at", restoreCutoffIso);
+      restoreQuery = curr.mileage_option == null
+        ? restoreQuery.is("mileage_option", null)
+        : restoreQuery.eq("mileage_option", curr.mileage_option);
+      const { data: restored, error: restoreErr } = await restoreQuery
         .select("id")
         .maybeSingle();
       if (restoreErr) throw restoreErr;
@@ -1117,36 +1148,60 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
             ? restartDaysOfWeekByGroup[gid]!
             : [startFrom.getDay()]);
 
-    const buildDates = () => {
-      const dates: Date[] = [];
-      const cursor = new Date(startFrom);
-      while (dates.length < count) {
-        const weekStart = new Date(cursor);
-        weekStart.setDate(cursor.getDate() - cursor.getDay());
-        for (const d of selectedDays) {
-          const dayDate = new Date(weekStart);
-          dayDate.setDate(weekStart.getDate() + d);
-          dayDate.setHours(startFrom.getHours(), startFrom.getMinutes(), 0, 0);
-          if (dayDate >= startFrom && dates.length < count) dates.push(new Date(dayDate));
-        }
-        cursor.setDate(cursor.getDate() + 7);
-      }
-      return dates;
-    };
-
     const dates =
       weeklyFreq === 1
         ? Array.from({ length: count }, (_, i) => addDays(startFrom, intervalDays * i))
-        : buildDates();
+        : [];
+
+    let twoWeekdayStarts: ReturnType<typeof buildSeoulTwoWeekdayStartsFromDate> | null = null;
+    if (weeklyFreq === 2) {
+      if (selectedDays.length !== 2) {
+        return toast.error("주 2회 재시작은 정확히 두 요일을 선택해야 합니다.");
+      }
+      let pattern: ReturnType<typeof resolveLatestSeoulWeekdayTemplates>;
+      try {
+        pattern = resolveLatestSeoulWeekdayTemplates(sessions);
+      } catch (error) {
+        devLogger.error(error);
+        return toast.error("요일별 최근 유효 회차를 확인할 수 없어 재시작을 중단했습니다.");
+      }
+      if (pattern.kind !== "two") {
+        return toast.error("기존 유효 회차가 정확히 두 요일인 경우에만 주 2회 재시작할 수 있습니다.");
+      }
+      const selectedTemplates = selectedDays
+        .map((weekday) => pattern.templates.find((template) => template.weekday === weekday))
+        .filter((template): template is (typeof pattern.templates)[number] => !!template);
+      if (selectedTemplates.length !== 2) {
+        return toast.error("선택한 요일의 기존 회차 템플릿이 없어 재시작을 중단했습니다.");
+      }
+      try {
+        selectedTemplates.forEach(assertWeekdayTemplateCloneSafe);
+        twoWeekdayStarts = buildSeoulTwoWeekdayStartsFromDate(startDate, selectedTemplates, count);
+      } catch (error) {
+        devLogger.error(error);
+        return toast.error("요일별 회차 정보에 확인이 필요한 데이터가 있어 재시작을 중단했습니다.");
+      }
+    }
 
     const restartTitle = String(bundleTitle || last.title || "").trim();
     const restartTeacherId = String(last.created_by ?? "");
-    const restartStartAtList = dates.map((d) => d.toISOString());
-    const slotConflicts = await findCrossGroupSlotConflicts(supabase, {
-      teacherId: restartTeacherId,
-      title: restartTitle,
-      startAtList: restartStartAtList,
-    });
+    const restartStartAtList = twoWeekdayStarts?.map((candidate) => candidate.startAt) ?? dates.map((d) => d.toISOString());
+    const conflictChecks = twoWeekdayStarts
+      ? [...new Set(twoWeekdayStarts.map((candidate) => candidate.template.createdBy))].map((teacherId) =>
+          findCrossGroupSlotConflicts(supabase, {
+            teacherId,
+            title: restartTitle,
+            startAtList: twoWeekdayStarts!
+              .filter((candidate) => candidate.template.createdBy === teacherId)
+              .map((candidate) => candidate.startAt),
+          })
+        )
+      : [findCrossGroupSlotConflicts(supabase, {
+          teacherId: restartTeacherId,
+          title: restartTitle,
+          startAtList: restartStartAtList,
+        })];
+    const slotConflicts = (await Promise.all(conflictChecks)).flat();
     if (slotConflicts.length > 0) {
       const sample = slotConflicts
         .slice(0, 3)
@@ -1160,7 +1215,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
 
     if (
       !confirm(
-        `사이클을 재시작할까요?\n- 기존 회차는 그대로 유지\n- 새 그룹으로 ${count}회차 생성(예정)\n- 시작: ${startFrom.toLocaleString("ko-KR")}\n- 패턴: ${weeklyFreq === 1 ? `주1회(${intervalDays}일 간격)` : `주2회(요일 ${selectedDays.join(",")})`}\n`
+        `사이클을 재시작할까요?\n- 기존 회차는 그대로 유지\n- 새 그룹으로 ${count}회차 생성(예정)\n- 시작일: ${startDate}\n- 패턴: ${weeklyFreq === 1 ? `주1회(${intervalDays}일 간격)` : "주2회 요일별 계승"}\n${twoWeekdayStarts ? `\n${formatWeekdayTemplateSummary([...new Map(twoWeekdayStarts.map((candidate) => [candidate.template.weekday, candidate.template])).values()], teacherMap)}\n` : ""}`
       )
     ) {
       return;
@@ -1176,24 +1231,34 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
       void _st;
 
       const newSessions: Record<string, unknown>[] = [];
-      for (let i = 1; i <= dates.length; i++) {
-        const start = dates[i - 1]!;
-        const end = new Date(start.getTime() + baseDurationMs);
+      const restartRows = twoWeekdayStarts ?? dates.map((start) => ({
+        startAt: start.toISOString(),
+        endAt: new Date(start.getTime() + baseDurationMs).toISOString(),
+        template: null,
+      }));
+      for (let i = 1; i <= restartRows.length; i++) {
+        const candidate = restartRows[i - 1]!;
+        const template = candidate.template;
+        const templateBase = template
+          ? omitSessionIdentityForInsertClone(template.source as Record<string, unknown>)
+          : insertBase;
         newSessions.push({
-          ...insertBase,
+          ...templateBase,
           group_id: nextGroupId,
           title: bundleTitle,
           status: "opened",
-          start_at: start.toISOString(),
-          end_at: end.toISOString(),
+          start_at: candidate.startAt,
+          end_at: candidate.endAt,
           students_text: null,
           feedback_fields: {},
           photo_url: [],
           file_url: [],
+          mileage_option: null,
+          ...(template ? { created_by: template.createdBy, price: template.price } : {}),
           round_index: i,
-          round_total: dates.length,
+          round_total: restartRows.length,
           sequence_number: i,
-          round_display: `${i}/${dates.length}`,
+          round_display: `${i}/${restartRows.length}`,
         });
       }
 
@@ -2202,49 +2267,48 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                 setRestartStartDateByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
                               }
                             />
-                            <label className="text-[11px] text-slate-600">시간</label>
-                            <input
-                              type="time"
-                              lang="en-GB"
-                              aria-label="재시작 시간"
-                              className={`${SESSION_CONTROL} w-[5rem] text-sm tabular-nums`}
-                              value={restartStartTimeByGroup[gid] ?? "10:00"}
-                              onChange={(e) =>
-                                setRestartStartTimeByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
-                              }
-                            />
+                            {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 1 ? (
+                              <>
+                                <label className="text-[11px] text-slate-600">시간</label>
+                                <input
+                                  type="time"
+                                  lang="en-GB"
+                                  aria-label="재시작 시간"
+                                  className={`${SESSION_CONTROL} w-[5rem] text-sm tabular-nums`}
+                                  value={restartStartTimeByGroup[gid] ?? "10:00"}
+                                  onChange={(e) =>
+                                    setRestartStartTimeByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
+                                  }
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-[11px] text-slate-600">시간</span>
+                                <span className="text-[11px] text-slate-500">요일별 최근 회차 시간을 사용합니다.</span>
+                              </>
+                            )}
                           </div>
 
                           {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 2 && (
                             <div className="flex flex-wrap items-center gap-1.5">
                               {DAYS.map((d) => {
-                                const baseDay = new Date(
-                                  `${restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}T${
-                                    restartStartTimeByGroup[gid] ?? "10:00"
-                                  }`
-                                ).getDay();
-                                const isBase = d.value === baseDay;
-                                const selected = restartDaysOfWeekByGroup[gid] ?? [baseDay];
+                                const selected = restartDaysOfWeekByGroup[gid] ?? [];
                                 const isSelected = selected.includes(d.value);
                                 return (
                                   <button
                                     key={d.value}
                                     type="button"
-                                    disabled={isBase}
                                     onClick={() => {
-                                      if (isBase) return;
                                       setRestartDaysOfWeekByGroup((prev) => {
-                                        const cur = prev[gid] ?? [baseDay];
+                                        const cur = prev[gid] ?? [];
                                         const next = cur.includes(d.value)
                                           ? cur.filter((x) => x !== d.value)
                                           : [...cur, d.value].sort((a, b) => a - b);
-                                        return { ...prev, [gid]: next.length ? next : [baseDay] };
+                                        return { ...prev, [gid]: next };
                                       });
                                     }}
                                     className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${
-                                      isBase
-                                        ? "cursor-not-allowed border-blue-600 bg-blue-600 text-white"
-                                        : isSelected
+                                      isSelected
                                           ? "border-slate-900 bg-slate-900 text-white"
                                           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                                     }`}
