@@ -1,0 +1,11 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const dir=dirname(fileURLToPath(import.meta.url));
+const files=['run.mjs','photo-sequential-core.mjs','sequential-plan.mjs','cdp-health.mjs'];
+for(const f of files) test(`required runtime module ${f}`,async()=>assert.ok((await stat(join(dir,f))).size>0));
+const photos=['01-cover-paps.jpg','02-fitness-pair.jpg','03-movement-pair.jpg','04-jump-single.jpg'];
+for(const f of photos)test(`image asset ${f}`,async()=>{const bytes=await readFile(join(dir,'editorial-assets',f));assert.equal(bytes[0],0xff);assert.equal(bytes[1],0xd8);assert.ok(bytes.length>10000)});
