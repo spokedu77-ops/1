@@ -60,6 +60,7 @@ export function describeSessionVolume(cfg: TrainingResultConfig): string {
     return `${MEMORY_ROUNDS}라운드`;
   }
   if (cfg.mode === 'flow') {
+    if (cfg.timeMode === 'reps') return `${cfg.targetReps}회`;
     const stageSec = cfg.flowDuration ?? 25;
     return `스테이지 ${stageSec}초`;
   }

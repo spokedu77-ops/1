@@ -232,8 +232,8 @@ export class ColorGateManager {
 
   private pickNextPose(): ColorGatePoseKey {
     if (this.poseBag.length === 0) {
-      const selected = this.categories?.length && this.difficulties?.length
-        ? colorGatePosesForSelection(this.categories, this.difficulties)
+      const selected = this.categories?.length
+        ? colorGatePosesForSelection(this.categories, this.difficulties ?? [])
         : colorGatePosesForVariant(this.variant, this.category);
       this.poseBag = [...(selected.length ? selected : COLOR_GATE_POSE_SEQUENCE)];
       for (let i = this.poseBag.length - 1; i > 0; i--) {

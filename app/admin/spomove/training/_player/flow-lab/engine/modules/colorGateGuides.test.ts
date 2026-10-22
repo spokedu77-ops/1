@@ -71,7 +71,7 @@ describe('Motion Gate option image pools', () => {
 
     expect(COLOR_GATE_POSE_DEFINITIONS[28]).toMatchObject({
       key: 'flamingo-pose',
-      label: '한발 들고 균형 잡기',
+      label: '한발 발잡기',
       category: 'balance',
       difficulty: 'hard',
       image: '/spomove/dive/color-gate/balance/one-leg-foot-hold.png',
@@ -112,6 +112,8 @@ describe('Motion Gate option image pools', () => {
 
   it('combines multiple categories and difficulty pools', () => {
     expect(colorGatePosesForSelection(['strength', 'flexibility'], ['single'])).toHaveLength(10);
-    expect(colorGatePosesForSelection(['together'], ['compound', 'family'])).toHaveLength(23);
+    expect(colorGatePosesForSelection(['together'], ['compound'])).toHaveLength(14);
+    expect(colorGatePosesForSelection(['family'], [])).toHaveLength(9);
+    expect(colorGatePosesForSelection(['together', 'family'], ['compound'])).toHaveLength(23);
   });
 });

@@ -581,7 +581,11 @@ export class FlowEngine {
     this.setPhase('countdown');
     // 시작 카운트도 활동 리듬에 포함한다. 다른 SPOMOVE 실행 화면과
     // 동일하게 카운트다운이 보이는 순간부터 BGM을 재생한다.
-    void this.audio.resume().then(() => this.audio.startMusic());
+    // BGM 목록이 비동기로 도착하는 경우에는 짧은 폴백 드럼을 먼저 틀지 않는다.
+    // 실제 곡이 로드된 뒤 loadBgmLate가 한 번만 재생을 시작한다.
+    if (this.opts.bgmEnabled === false || this.opts.bgmPath) {
+      void this.audio.resume().then(() => this.audio.startMusic());
+    }
     const seconds = 3;
     const startedAt = performance.now();
     let n = seconds;

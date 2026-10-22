@@ -307,7 +307,7 @@ type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGat
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal' | 'together-family';
 type ColorGateCategoryFilter = 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
-type ColorGateSelectableCategory = Exclude<ColorGateCategoryFilter, 'all'> | 'together';
+type ColorGateSelectableCategory = Exclude<ColorGateCategoryFilter, 'all'> | 'together' | 'family';
 type ColorGateDifficultySelection = 'single' | 'compound' | 'family';
 
 type LaunchSettings = {
@@ -410,8 +410,8 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowIncludeBonus: true,
   colorGateVariant: 'solo-easy',
   colorGateCategory: 'all',
-  colorGateCategories: ['strength', 'flexibility', 'balance', 'power-jump'],
-  colorGateDifficulties: ['single'],
+  colorGateCategories: [],
+  colorGateDifficulties: [],
   reactTrainConcurrent: 2,
   numberCartTier: 2,
   colorTrackerTier: 1,
@@ -469,8 +469,8 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowIncludeBonus: auto.flowIncludeBonus ?? fallback.flowIncludeBonus,
     colorGateVariant: auto.colorGateVariant ?? fallback.colorGateVariant,
     colorGateCategory: auto.colorGateCategory ?? 'all',
-    colorGateCategories: auto.colorGateCategories?.length ? auto.colorGateCategories : fallback.colorGateCategories,
-    colorGateDifficulties: auto.colorGateDifficulties?.length ? auto.colorGateDifficulties : fallback.colorGateDifficulties,
+    colorGateCategories: auto.colorGateCategories ?? fallback.colorGateCategories,
+    colorGateDifficulties: auto.colorGateDifficulties ?? fallback.colorGateDifficulties,
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
     numberCartTier: (auto.numberCartTier as 1 | 2 | 3 | undefined) ?? fallback.numberCartTier,
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
@@ -1006,7 +1006,7 @@ function SettingsScreen({
     setFlowPresets(next);
     setFlowPresetError(null);
   };
-  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], sportsArenaFeatures: [...(p.sportsArenaFeatures ?? [])], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all', colorGateCategories: p.colorGateCategories?.length ? p.colorGateCategories : s.colorGateCategories, colorGateDifficulties: p.colorGateDifficulties?.length ? p.colorGateDifficulties : s.colorGateDifficulties }));
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], sportsArenaFeatures: [...(p.sportsArenaFeatures ?? [])], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all', colorGateCategories: p.colorGateCategories ?? s.colorGateCategories, colorGateDifficulties: p.colorGateDifficulties ?? s.colorGateDifficulties }));
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
     const result = saveFlowPresets(next);
@@ -2419,17 +2419,21 @@ function SettingsScreen({
               </div>
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>유형</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5, marginBottom: 8 }}>
-                {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
+                {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더'], ['family', '패밀리']] as const).map(([value, label]) => {
                   const soloCategories = ['strength', 'flexibility', 'balance', 'power-jump'] as const;
                   const active = value === 'all'
                     ? soloCategories.every((category) => launch.colorGateCategories.includes(category))
                     : launch.colorGateCategories.includes(value);
                   return (
                     <button key={value} type="button" onClick={() => setLaunch((s) => {
-                      const next = value === 'all'
+                      const next = value === 'family'
+                        ? (s.colorGateCategories.includes('family')
+                            ? s.colorGateCategories.filter((category) => category !== 'family')
+                            : [...s.colorGateCategories.filter((category) => category === 'together'), 'family'] as ColorGateSelectableCategory[])
+                        : value === 'all'
                         ? (soloCategories.every((category) => s.colorGateCategories.includes(category))
-                            ? s.colorGateCategories.filter((category) => category === 'together')
-                            : [...new Set([...s.colorGateCategories, ...soloCategories])])
+                            ? []
+                            : [...soloCategories])
                         : s.colorGateCategories.includes(value)
                           ? s.colorGateCategories.filter((category) => category !== value)
                           : [...s.colorGateCategories, value];
@@ -2443,17 +2447,18 @@ function SettingsScreen({
                 })}
               </div>
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 5 }}>
                 {([
                   ['single', '단일', '기본 동작'],
                   ['compound', '복합', '전체 동작'],
-                  ['family', '패밀리', '가족 동작'],
                 ] as const).map(([value, label, difficulty]) => {
-                  const active = launch.colorGateDifficulties.includes(value);
+                  const familyOnly = launch.colorGateCategories.includes('family') && !launch.colorGateCategories.includes('together');
+                  const active = familyOnly ? value === 'single' : launch.colorGateDifficulties.includes(value);
                   return (
                     <button
                       key={value}
                       type="button"
+                      disabled={familyOnly}
                       onClick={() => setLaunch((s) => {
                         const next = s.colorGateDifficulties.includes(value)
                           ? s.colorGateDifficulties.filter((item) => item !== value)
@@ -2462,7 +2467,7 @@ function SettingsScreen({
                       })}
                       aria-pressed={active}
                       style={{
-                        minWidth: 0, padding: '8px 4px', borderRadius: 10,
+                        minWidth: 0, padding: '8px 4px', borderRadius: 10, opacity: familyOnly && value !== 'single' ? 0.45 : 1,
                         border: `1.5px solid ${active ? '#06B6D4' : T.border}`,
                         background: active ? 'rgba(6,182,212,0.14)' : T.card,
                         color: active ? '#22D3EE' : T.textDim,

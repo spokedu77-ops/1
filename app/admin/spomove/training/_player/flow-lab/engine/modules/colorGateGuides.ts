@@ -32,7 +32,7 @@ export type ColorGateCategory =
 
 export type ColorGateCategoryFilter = 'all' | Exclude<ColorGateCategory, 'partner'>;
 export type ColorGateDifficulty = 'easy' | 'hard';
-export type ColorGateSelectableCategory = Exclude<ColorGateCategory, 'partner'> | 'together';
+export type ColorGateSelectableCategory = Exclude<ColorGateCategory, 'partner'> | 'together' | 'family';
 export type ColorGateDifficultySelection = 'single' | 'compound' | 'family';
 
 /**
@@ -207,14 +207,14 @@ export function colorGatePosesForSelection(
 ): readonly ColorGatePoseKey[] {
   const selectedCategories = new Set(categories);
   const selectedDifficulties = new Set(difficulties);
-  const includeEasy = selectedDifficulties.has('single') || selectedDifficulties.has('compound');
+  const includeEasy = selectedDifficulties.size === 0
+    || selectedDifficulties.has('single')
+    || selectedDifficulties.has('compound');
   const includeHard = selectedDifficulties.has('compound');
 
   return COLOR_GATE_POSE_DEFINITIONS
     .filter((pose) => {
-      if (pose.difficulty === 'family') {
-        return selectedCategories.has('together') && selectedDifficulties.has('family');
-      }
+      if (pose.difficulty === 'family') return selectedCategories.has('family');
       if (pose.category === 'partner') {
         return selectedCategories.has('together')
           && (pose.difficulty === 'easy' ? includeEasy : includeHard);

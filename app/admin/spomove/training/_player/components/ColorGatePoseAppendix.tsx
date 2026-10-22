@@ -11,6 +11,7 @@ import {
 
 type PoseGroup = 'all' | ColorGateCategory;
 type PoseFilter = 'all' | ColorGateDifficulty | 'family';
+type CatalogPose = (typeof COLOR_GATE_POSE_DEFINITIONS)[number];
 
 const GROUPS: ReadonlyArray<{ id: PoseGroup; label: string }> = [
   { id: 'all', label: '전체' },
@@ -21,9 +22,63 @@ const GROUPS: ReadonlyArray<{ id: PoseGroup; label: string }> = [
   { id: 'partner', label: '투게더' },
 ];
 
+function PoseImageViewer({
+  poses,
+  activeIndex,
+  onChange,
+  onClose,
+}: {
+  poses: ReadonlyArray<{ pose: CatalogPose; number: number }>;
+  activeIndex: number;
+  onChange: (index: number) => void;
+  onClose: () => void;
+}) {
+  const active = poses[activeIndex];
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!['Escape', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowLeft') onChange((activeIndex - 1 + poses.length) % poses.length);
+      if (event.key === 'ArrowRight') onChange((activeIndex + 1) % poses.length);
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [activeIndex, onChange, onClose, poses.length]);
+
+  if (!active) return null;
+
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label={`${active.pose.label} 이미지`} style={{ position: 'fixed', inset: 0, zIndex: 100000, display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr) auto', background: '#fff', color: '#0F172A' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '12px clamp(16px, 4vw, 40px)' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 'clamp(18px, 3vw, 28px)', fontWeight: 800, wordBreak: 'keep-all' }}>{active.pose.label}</div>
+          <div style={{ marginTop: 3, color: '#64748B', fontSize: 13, fontWeight: 700 }}>{activeIndex + 1} / {poses.length}</div>
+        </div>
+        <button type="button" onClick={onClose} aria-label="이미지 닫기" style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, border: '1px solid #CBD5E1', background: '#fff', color: '#0F172A', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}>×</button>
+      </div>
+      <div style={{ position: 'relative', minHeight: 0, margin: '0 clamp(58px, 8vw, 104px)' }}>
+        <Image src={active.pose.image} alt={`${active.pose.label} 동작`} fill unoptimized sizes="100vw" style={{ objectFit: 'contain', padding: 'clamp(8px, 2vw, 24px)' }} priority />
+        <button type="button" onClick={() => onChange((activeIndex - 1 + poses.length) % poses.length)} aria-label="이전 동작" style={{ position: 'fixed', left: 12, top: '50%', width: 48, height: 56, transform: 'translateY(-50%)', borderRadius: 12, border: '1px solid #CBD5E1', background: 'rgba(255,255,255,0.92)', color: '#0F172A', boxShadow: '0 8px 24px rgba(15,23,42,0.12)', fontSize: 30, cursor: 'pointer' }}>‹</button>
+        <button type="button" onClick={() => onChange((activeIndex + 1) % poses.length)} aria-label="다음 동작" style={{ position: 'fixed', right: 12, top: '50%', width: 48, height: 56, transform: 'translateY(-50%)', borderRadius: 12, border: '1px solid #CBD5E1', background: 'rgba(255,255,255,0.92)', color: '#0F172A', boxShadow: '0 8px 24px rgba(15,23,42,0.12)', fontSize: 30, cursor: 'pointer' }}>›</button>
+      </div>
+      <div style={{ padding: '10px 16px max(14px, env(safe-area-inset-bottom))', color: '#64748B', textAlign: 'center', fontSize: 13, fontWeight: 700 }}>← → 키로 이동 · Esc로 닫기</div>
+    </div>,
+    document.body,
+  );
+}
+
 function PoseCatalog({ fullscreen }: { fullscreen: boolean }) {
   const [activeGroup, setActiveGroup] = useState<PoseGroup>('all');
   const [activeFilter, setActiveFilter] = useState<PoseFilter>('all');
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const filters: ReadonlyArray<{ id: PoseFilter; label: string }> = [
     { id: 'all', label: '전체' },
     { id: 'easy', label: '쉬움' },
@@ -125,10 +180,10 @@ function PoseCatalog({ fullscreen }: { fullscreen: boolean }) {
       </div>
 
       <div data-color-gate-catalog style={{ minHeight: 0, flex: fullscreen ? '1 1 auto' : undefined, overflowY: 'auto', display: 'grid', gridTemplateColumns: fullscreen ? 'repeat(auto-fit, minmax(150px, 1fr))' : 'repeat(auto-fit, minmax(92px, 1fr))', gridAutoRows: 'max-content', alignItems: 'start', gap: fullscreen ? 14 : 8, padding: fullscreen ? '16px clamp(16px, 4vw, 40px) 32px' : 12 }}>
-        {poses.map(({ pose, number }) => (
-          <div key={pose.key} data-pose-number={number} style={{ overflow: 'hidden', border: '1px solid var(--border, #E2E8F0)', borderRadius: fullscreen ? 14 : 10, background: 'var(--subtle-bg, #F8FAFC)' }}>
+        {poses.map(({ pose, number }, index) => (
+          <button type="button" onClick={() => setViewerIndex(index)} key={pose.key} data-pose-number={number} aria-label={`${pose.label} 크게 보기`} style={{ overflow: 'hidden', padding: 0, border: '1px solid var(--border, #E2E8F0)', borderRadius: fullscreen ? 14 : 10, background: 'var(--subtle-bg, #F8FAFC)', color: 'inherit', cursor: 'zoom-in', fontFamily: 'inherit' }}>
             <div style={{ position: 'relative', aspectRatio: '1 / 1', background: '#fff' }}>
-              <Image src={pose.image} alt={`${pose.label} 동작`} fill sizes={fullscreen ? '(max-width: 640px) 45vw, 190px' : '(max-width: 640px) 22vw, 120px'} style={{ objectFit: 'contain', padding: fullscreen ? 9 : 5 }} />
+              <Image src={pose.image} alt={`${pose.label} 동작`} fill unoptimized sizes={fullscreen ? '(max-width: 640px) 45vw, 190px' : '(max-width: 640px) 22vw, 120px'} style={{ objectFit: 'contain', padding: fullscreen ? 9 : 5 }} />
               <span style={{ position: 'absolute', top: 7, left: 7, minWidth: fullscreen ? 28 : 20, height: fullscreen ? 28 : 20, padding: '0 5px', borderRadius: 7, background: '#0F172A', color: '#fff', display: 'grid', placeItems: 'center', fontSize: fullscreen ? 14 : 11, fontWeight: 800 }}>
                 {number}
               </span>
@@ -139,7 +194,7 @@ function PoseCatalog({ fullscreen }: { fullscreen: boolean }) {
             <div style={{ minHeight: fullscreen ? 54 : 42, padding: fullscreen ? '10px 8px' : '8px 5px', display: 'grid', placeItems: 'center', textAlign: 'center', color: 'var(--text, #0F172A)', fontSize: fullscreen ? 15 : 11, lineHeight: 1.3, fontWeight: 800 }}>
               {pose.label}
             </div>
-          </div>
+          </button>
         ))}
         {poses.length === 0 ? (
           <p role="status" style={{ gridColumn: '1 / -1', margin: 0, padding: '28px 12px', color: 'var(--text-muted, #64748B)', textAlign: 'center', fontSize: fullscreen ? 15 : 12, fontWeight: 700 }}>
@@ -147,6 +202,9 @@ function PoseCatalog({ fullscreen }: { fullscreen: boolean }) {
           </p>
         ) : null}
       </div>
+      {viewerIndex !== null ? (
+        <PoseImageViewer poses={poses} activeIndex={viewerIndex} onChange={setViewerIndex} onClose={() => setViewerIndex(null)} />
+      ) : null}
     </div>
   );
 }

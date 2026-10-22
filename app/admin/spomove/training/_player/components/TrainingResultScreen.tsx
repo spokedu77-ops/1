@@ -450,8 +450,8 @@ export function TrainingResultScreen({
                       minHeight: 0,
                     }}
                   >
-                    <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</span>
-                    <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: '0.28em', fontSize: 'var(--tr-stat)', fontWeight: 800, lineHeight: 1.15 }}>
+                    <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800, whiteSpace: 'nowrap', wordBreak: 'keep-all' }}>{stat.label}</span>
+                    <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: '0.28em', fontSize: 'var(--tr-stat)', fontWeight: 800, lineHeight: 1.15, wordBreak: 'keep-all', overflowWrap: 'normal' }}>
                       {bonusVolume ? (
                         <>
                           <span style={{ whiteSpace: 'nowrap' }}>{bonusVolume[1]}</span>

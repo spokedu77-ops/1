@@ -4,7 +4,6 @@ import { COLOR_GATE_TARGET_COUNT, GATE_COLORS, type GateColorId } from '../engin
 
 interface ColorGateHudProps {
   gateColorId: GateColorId;
-  cueWord: string;
   poseLabel: string;
   passCount?: number;
   targetCount?: number;
@@ -15,7 +14,6 @@ const HUD_SANS = 'var(--spm-font-body)';
 /** 브릿지 위 3D 문과 함께 쓰는 상단 안내 HUD (화면 전체 배경 없음) */
 export default function ColorGateHud({
   gateColorId,
-  cueWord,
   poseLabel,
   passCount,
   targetCount = COLOR_GATE_TARGET_COUNT,
@@ -52,40 +50,22 @@ export default function ColorGateHud({
       </p>
 
       <p style={{
-        fontSize: 'clamp(2.75rem, 9vw, 6.5rem)',
+        fontSize: 'clamp(3rem, 10vw, 7.5rem)',
         fontWeight: 800,
         fontFamily: HUD_SANS,
         fontStyle: 'normal',
-        fontStretch: 'normal',
         letterSpacing: 0,
-        lineHeight: 1.05,
         color: color.bg,
-        textShadow: '0 2px 12px rgba(0,0,0,0.8)',
+        textShadow: '0 3px 14px rgba(0,0,0,0.9)',
         marginBottom: 10,
         textAlign: 'center',
         wordBreak: 'keep-all',
+        overflowWrap: 'normal',
+        maxWidth: '96vw',
         whiteSpace: 'nowrap',
         transform: 'none',
       }}>
-        {cueWord}
-      </p>
-
-      <p style={{
-        fontSize: 'clamp(1.5rem, 4.5vw, 3rem)',
-        fontWeight: 800,
-        fontFamily: HUD_SANS,
-        fontStyle: 'normal',
-        letterSpacing: 0,
-        color: '#fff',
-        textShadow: '0 2px 10px rgba(0,0,0,0.75)',
-        marginBottom: 10,
-        textAlign: 'center',
-        wordBreak: 'keep-all',
-        overflowWrap: 'break-word',
-        maxWidth: 'min(94vw, 56rem)',
-        transform: 'none',
-      }}>
-        {`「${poseLabel}」`}
+        {poseLabel}
       </p>
 
       {passCount !== undefined ? (
@@ -98,7 +78,7 @@ export default function ColorGateHud({
           background: 'rgba(0,0,0,0.45)',
           color: 'rgba(255,255,255,0.75)',
         }}>
-          {Math.min(passCount, targetCount)} / {targetCount}회
+          {Math.min(passCount + 1, targetCount)} / {targetCount}회
         </span>
       ) : null}
 

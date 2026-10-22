@@ -64,7 +64,7 @@ function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
         ? raw.colorGateCategory
         : 'all',
     ...(Array.isArray(raw.colorGateCategories)
-      ? { colorGateCategories: raw.colorGateCategories.filter((value): value is ColorGateSelectableCategory => value === 'strength' || value === 'flexibility' || value === 'balance' || value === 'power-jump' || value === 'together') }
+      ? { colorGateCategories: raw.colorGateCategories.filter((value): value is ColorGateSelectableCategory => value === 'strength' || value === 'flexibility' || value === 'balance' || value === 'power-jump' || value === 'together' || value === 'family') }
       : {}),
     ...(Array.isArray(raw.colorGateDifficulties)
       ? { colorGateDifficulties: raw.colorGateDifficulties.filter((value): value is ColorGateDifficultySelection => value === 'single' || value === 'compound' || value === 'family') }
