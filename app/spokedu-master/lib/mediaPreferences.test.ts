@@ -7,7 +7,8 @@ describe('mediaPreferences', () => {
     expect(canOptimizeRemoteImage('/images/spokedu-master/hero.jpg')).toBe(true);
     expect(canOptimizeRemoteImage('https://img.youtube.com/vi/abc/hqdefault.jpg')).toBe(true);
     expect(canOptimizeRemoteImage('https://i.postimg.cc/abc.webp')).toBe(true);
-    expect(canOptimizeRemoteImage('https://xyz.supabase.co/storage/v1/object/public/iiwarmup-files/a.png')).toBe(true);
+    expect(canOptimizeRemoteImage('https://xyz.supabase.co/storage/v1/object/public/iiwarmup-files/a.png')).toBe(false);
+    expect(nextImageUnoptimized('https://xyz.supabase.co/storage/v1/object/public/iiwarmup-files/a.png')).toBe(true);
   });
 
   it('keeps signed Supabase storage URLs direct', () => {

@@ -28,9 +28,10 @@ export function prefersReducedMotion(): boolean {
 
 /**
  * Remote hosts that may use Vercel /_next/image.
- * Public Supabase Storage images use Vercel /_next/image so each browser does
- * not download the original directly from Storage. Signed/authenticated URLs
- * remain direct because their tokens and authorization are request-specific.
+ * Public Supabase Storage URLs load directly (unoptimized): Vercel Image
+ * Optimization can return 402 when quota/billing blocks transforms, which
+ * breaks every LAB thumbnail while Storage itself still serves 200.
+ * Signed/authenticated URLs stay direct because tokens are request-specific.
  * Keep in sync with next.config.ts images.remotePatterns.
  */
 export function canOptimizeRemoteImage(src: string): boolean {
@@ -38,7 +39,7 @@ export function canOptimizeRemoteImage(src: string): boolean {
   try {
     const host = new URL(src).hostname;
     if (host === 'supabase.co' || host.endsWith('.supabase.co')) {
-      return new URL(src).pathname.startsWith('/storage/v1/object/public/');
+      return false;
     }
     return host === 'img.youtube.com' || host === 'i.postimg.cc';
   } catch {
