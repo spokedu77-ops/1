@@ -334,6 +334,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
   >({});
   const [savingSessionScheduleId, setSavingSessionScheduleId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [restoringSessionId, setRestoringSessionId] = useState<string | null>(null);
   const [mileageModal, setMileageModal] = useState<{ gid: string; row: SessionRow } | null>(null);
 
   const [extendCountByGroup, setExtendCountByGroup] = useState<Record<string, number>>({});
@@ -921,18 +922,17 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         : null;
 
     const confirmMsg = roundLabel
-      ? `「${roundLabel}」 회차를 차감(취소) 처리합니다.\n\n· 해당 회차는 소진·수업료 0원입니다.\n· 이후 회차 번호·날짜는 그대로입니다. (예: 3/8 취소 → 다음 8.14 수업은 4/8)\n· 일정을 미루려면 「연기(일정 미루기)」를 사용하세요.\n\n계속할까요?`
-      : "해당 회차를 차감(취소) 처리합니다.\n\n· 해당 회차는 소진·수업료 0원입니다.\n· 이후 회차 번호·날짜는 재정렬·미루기하지 않습니다.\n· 일정을 미루려면 「연기(일정 미루기)」를 사용하세요.\n\n계속할까요?";
+      ? `「${roundLabel}」 회차를 차감(취소) 처리합니다.\n\n· 해당 회차는 소진·정산 제외됩니다. 메인 강사 수업료는 보존됩니다.\n· 이후 회차 번호·날짜는 그대로입니다. (예: 3/8 취소 → 다음 8.14 수업은 4/8)\n· 일정을 미루려면 「연기(일정 미루기)」를 사용하세요.\n\n계속할까요?`
+      : "해당 회차를 차감(취소) 처리합니다.\n\n· 해당 회차는 소진·정산 제외됩니다. 메인 강사 수업료는 보존됩니다.\n· 이후 회차 번호·날짜는 재정렬·미루기하지 않습니다.\n· 일정을 미루려면 「연기(일정 미루기)」를 사용하세요.\n\n계속할까요?";
     if (!confirm(confirmMsg)) return;
 
     setDeletingSessionId(sessionId);
     try {
-      // 취소 = price 0 + 해당 회차 슬롯 소진. round_index·round_total·날짜는 유지(재정렬·연기 금지).
+      // 취소 = 정산 제외 + 슬롯 소진. 메인 수업료와 회차·날짜는 보존.
       const cancelPatch: {
         status: string;
-        price: number;
         round_display?: string;
-      } = { status: "cancelled", price: 0 };
+      } = { status: "cancelled" };
       if (roundIndex != null && contractTotal > 0) {
         cancelPatch.round_display = formatRoundDisplay(roundIndex, contractTotal);
       }
@@ -945,6 +945,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         .maybeSingle();
       if (cancelErr) throw cancelErr;
       if (!cancelledRow?.id) throw new Error("BUNDLE_SESSION_NOT_CANCELLED");
+      setRoundView("all"); // 방금 취소한 회차가 목록에서 사라지지 않게 합니다.
       toast.success(
         roundLabel
           ? `「${roundLabel}」 회차가 차감(취소) 처리되었습니다. 이후 회차 번호·날짜는 유지됩니다.`
@@ -957,6 +958,68 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
       toast.error("회차 차감(취소) 처리에 실패했습니다.");
     } finally {
       setDeletingSessionId(null);
+    }
+  };
+
+  // P1: 과거 회차는 auto-finish가 즉시 정산 대상으로 되돌릴 수 있으므로 자동 복구하지 않습니다.
+  const handleRestoreCancelledSession = async (sessionId: string) => {
+    if (!supabase || !sessionId || restoringSessionId === sessionId) return;
+
+    const { data: curr, error: fetchErr } = await supabase
+      .from("sessions")
+      .select("id, status, price, end_at, mileage_option")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (fetchErr || !curr?.id) {
+      if (fetchErr) devLogger.error(fetchErr);
+      toast.error("복구할 회차를 조회하지 못했습니다.");
+      return;
+    }
+    if (curr.status !== "cancelled") {
+      toast.error("이미 상태가 변경된 회차입니다. 목록을 새로고침합니다.");
+      void loadAll();
+      return;
+    }
+    const endMs = new Date(String(curr.end_at)).getTime();
+    if (!Number.isFinite(endMs) || endMs <= Date.now()) {
+      toast.error("지난 회차는 자동 완료 및 정산 위험 때문에 이 화면에서 바로 복구할 수 없습니다.");
+      return;
+    }
+    if (String(curr.mileage_option ?? "").trim()) {
+      toast.error("마일리지 연결 기록이 있는 회차는 포인트 확인 후 별도로 복구해야 합니다.");
+      return;
+    }
+
+    const mainFee = Number(curr.price ?? 0);
+    const feeWarning = mainFee === 0
+      ? "\n주의: 저장된 메인 수업료가 0원입니다. 취소 이전 금액은 자동 복원되지 않습니다."
+      : "";
+    if (!confirm(
+      `취소된 회차를 예정(opened)으로 복구할까요?\n\n· 메인 수업료 ${mainFee.toLocaleString("ko-KR")}원 유지\n· 회차 번호와 날짜 유지\n· 자동으로 검수 승인하지 않음${feeWarning}`
+    )) return;
+
+    setRestoringSessionId(sessionId);
+    try {
+      // 상태 및 일정이 조회 이후 바뀌었다면 실패 처리해 동시 수정 충돌을 피합니다.
+      const { data: restored, error: restoreErr } = await supabase
+        .from("sessions")
+        .update({ status: "opened" })
+        .eq("id", sessionId)
+        .eq("status", "cancelled")
+        .eq("end_at", curr.end_at)
+        .select("id")
+        .maybeSingle();
+      if (restoreErr) throw restoreErr;
+      if (!restored?.id) throw new Error("BUNDLE_CANCEL_RESTORE_STALE");
+      setRoundView("all");
+      toast.success("회차가 복구되었습니다. 메인 수업료와 일정은 유지됩니다.");
+      await loadAll();
+      onChanged?.();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("복구에 실패했거나 다른 관리자가 회차를 변경했습니다. 새로고침 후 확인해 주세요.");
+    } finally {
+      setRestoringSessionId(null);
     }
   };
 
@@ -1380,6 +1443,14 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     : SESSION_TYPE_OPTIONS.find((o) => o.value === bundleSessionTypeDraft)?.label ??
       (bundleSessionTypeDraft || "타입");
 
+  const hiddenRoundCounts = useMemo(() => {
+    const all = effectiveGroupIds.flatMap((gid) => sessionsByGroupId[gid] || []);
+    return {
+      postponed: all.filter((r) => r.status === "postponed").length,
+      cancelled: all.filter((r) => r.status === "cancelled").length,
+    };
+  }, [effectiveGroupIds, sessionsByGroupId]);
+
   const renderCycleSection = (gid: string) => {
     const cycleNum = sortedGroupIds.indexOf(gid) + 1;
     const rows = sessionsByGroupId[gid] || [];
@@ -1690,8 +1761,20 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                       {savingSessionScheduleId === r.id ? "저장 중…" : "저장"}
                                     </button>
                                   ) : null;
+                                  const restoreEndMs = new Date(r.end_at).getTime();
+                                  const canRestoreCancelled = Number.isFinite(restoreEndMs) && restoreEndMs > Date.now();
                                   const managementBtns =
-                                    isPastCycle || r.status === "cancelled" || r.status === "deleted" ? null : (
+                                    r.status === "cancelled" ? (
+                                      <button
+                                        type="button"
+                                        className={`${SESSION_ROW_MINI_BTN} border-rose-200 bg-white text-rose-700 hover:bg-rose-50`}
+                                        disabled={restoringSessionId === r.id || !canRestoreCancelled}
+                                        title={canRestoreCancelled ? "취소된 회차 복구" : "지난 회차는 자동 완료·정산 확인 후 별도 복구 필요"}
+                                        onClick={() => void handleRestoreCancelledSession(r.id)}
+                                      >
+                                        {restoringSessionId === r.id ? "복구 중..." : canRestoreCancelled ? "취소 복구" : "복구 검토 필요"}
+                                      </button>
+                                    ) : isPastCycle || r.status === "deleted" ? null : (
                                       <div className="flex flex-wrap items-center gap-1">
                                         {r.status === "postponed" ? (
                                           <button
@@ -2303,6 +2386,17 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
 
           <div className="min-h-0 flex-1 space-y-3 overflow-auto p-4 sm:p-5">
             <div className="flex flex-wrap items-center justify-end gap-2">
+                  {hiddenRoundCounts.cancelled + hiddenRoundCounts.postponed > 0 ? (
+                    <button
+                      type="button"
+                      className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                      onClick={() => setRoundView(roundView === "all" ? "active" : "all")}
+                    >
+                      {roundView === "all"
+                        ? "진행·예정만 보기"
+                        : `연기 ${hiddenRoundCounts.postponed}건 · 취소 ${hiddenRoundCounts.cancelled}건 | 전체 보기`}
+                    </button>
+                  ) : null}
                   <select
                     className="min-w-[10rem] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700"
                     value={roundView}
