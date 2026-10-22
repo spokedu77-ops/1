@@ -22,6 +22,11 @@ export type TeacherTierFeeFetchResult = {
   source: 'db' | 'fallback';
 };
 
+type TierFeeResponse = {
+  fees?: TierFeeRow[];
+  error?: string;
+};
+
 function buildMapFromRows(rows: TierFeeRow[]): TierFeeMap {
   const map = cloneTierFeeMap(HARD_CODED_TIER_FEES);
   for (const row of rows) {
@@ -38,7 +43,8 @@ function buildMapFromRows(rows: TierFeeRow[]): TierFeeMap {
 }
 
 /**
- * `teacher_tier_fees` 조회. 실패·빈 테이블 시 하드코딩 표로 폴백하며 devLogger에 남김.
+ * 관리자 서버 API를 통해 `teacher_tier_fees`를 조회합니다.
+ * 브라우저 세션의 테이블 RLS 결과에 의존하지 않으며, 실패·빈 결과 시 하드코딩 표로 폴백합니다.
  */
 export async function fetchTeacherTierFeeMap(
   supabase: SupabaseClient | null
@@ -47,16 +53,22 @@ export async function fetchTeacherTierFeeMap(
     devLogger.warn('[teacher_tier_fees] no supabase client, using HARD_CODED fallback');
     return { map: cloneTierFeeMap(HARD_CODED_TIER_FEES), source: 'fallback' };
   }
-  const { data, error } = await supabase
-    .from('teacher_tier_fees')
-    .select('tier_id, fee_private, fee_group, fee_center_main, fee_center_assist');
-  if (error) {
-    devLogger.error('[teacher_tier_fees] query failed, using HARD_CODED fallback', error);
+  try {
+    const response = await fetch('/api/admin/teacher-tier-fees', {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    const payload = (await response.json().catch(() => ({}))) as TierFeeResponse;
+    if (!response.ok) {
+      throw new Error(payload.error || 'teacher_tier_fees_fetch_failed');
+    }
+    if (!payload.fees?.length) {
+      devLogger.warn('[teacher_tier_fees] empty API result, using HARD_CODED fallback');
+      return { map: cloneTierFeeMap(HARD_CODED_TIER_FEES), source: 'fallback' };
+    }
+    return { map: buildMapFromRows(payload.fees), source: 'db' };
+  } catch (error) {
+    devLogger.error('[teacher_tier_fees] API failed, using HARD_CODED fallback', error);
     return { map: cloneTierFeeMap(HARD_CODED_TIER_FEES), source: 'fallback' };
   }
-  if (!data?.length) {
-    devLogger.warn('[teacher_tier_fees] empty or missing rows, using HARD_CODED fallback (apply sql/65 if needed)');
-    return { map: cloneTierFeeMap(HARD_CODED_TIER_FEES), source: 'fallback' };
-  }
-  return { map: buildMapFromRows(data as TierFeeRow[]), source: 'db' };
 }
