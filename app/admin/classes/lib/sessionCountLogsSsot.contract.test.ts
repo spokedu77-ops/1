@@ -15,6 +15,13 @@ const migration = readFileSync(
   ),
   'utf8',
 );
+const finalMigration = readFileSync(
+  new URL(
+    '../../../../supabase/migrations/20261022210000_reconcile_completed_session_main_teacher_count.sql',
+    import.meta.url,
+  ),
+  'utf8',
+);
 
 describe('session_count_logs follow sessions.status', () => {
   it('does not insert logs from status-change APIs (trigger is SSOT)', () => {
@@ -26,8 +33,26 @@ describe('session_count_logs follow sessions.status', () => {
 
   it('clears logs when a session leaves finished/verified or is deleted', () => {
     expect(migration).toContain('clear_session_count_logs_for_session');
-    expect(migration).toContain("AFTER DELETE ON public.sessions");
-    expect(migration).toContain("NEW.status IN ('finished', 'verified')");
-    expect(migration).toContain('DELETE FROM public.session_count_logs');
+    expect(finalMigration).toContain("NEW.status IN ('finished', 'verified')");
+    expect(finalMigration).toContain('BEFORE DELETE ON public.sessions');
+    expect(finalMigration).not.toContain('AFTER DELETE ON public.sessions');
+    expect(finalMigration).toContain("AND reason = '트리거: sessions.status sync'");
+  });
+
+  it('fails completion atomically when automatic count synchronization is incomplete', () => {
+    expect(finalMigration).not.toContain('EXCEPTION WHEN others THEN\n    NULL');
+    expect(finalMigration).toContain("MESSAGE = 'SESSION_COUNT_MAIN_TEACHER_REQUIRED'");
+    expect(finalMigration).toContain("MESSAGE = 'SESSION_COUNT_TEACHER_NOT_FOUND'");
+    expect(finalMigration).toContain("MESSAGE = 'SESSION_COUNT_EXISTING_LOG_CONFLICT'");
+    expect(finalMigration).toContain("MESSAGE = 'SESSION_COUNT_SYNC_INCOMPLETE'");
+    expect(finalMigration).toContain('ON CONFLICT (session_id, teacher_id)');
+  });
+
+  it('preserves manual rows and reuses the single delete trigger name', () => {
+    expect(finalMigration.match(/CREATE TRIGGER trg_session_count_logs_sync_delete/g)).toHaveLength(1);
+    expect(finalMigration).toContain('DROP TRIGGER IF EXISTS trg_session_count_logs_sync_delete');
+    expect(finalMigration).toContain(
+      "WHERE session_id = p_session_id\n    AND reason = '트리거: sessions.status sync'",
+    );
   });
 });
