@@ -21,7 +21,7 @@ const finalMigration = readFileSync(
     import.meta.url,
   ),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 
 describe('session_count_logs follow sessions.status', () => {
   it('does not insert logs from status-change APIs (trigger is SSOT)', () => {
@@ -46,6 +46,7 @@ describe('session_count_logs follow sessions.status', () => {
     expect(finalMigration).toContain("MESSAGE = 'SESSION_COUNT_EXISTING_LOG_CONFLICT'");
     expect(finalMigration).toContain("MESSAGE = 'SESSION_COUNT_SYNC_INCOMPLETE'");
     expect(finalMigration).toContain('ON CONFLICT (session_id, teacher_id)');
+    expect(finalMigration).toContain('INSERT INTO public.session_count_logs (\n      teacher_id,');
   });
 
   it('preserves manual rows and reuses the single delete trigger name', () => {

@@ -169,7 +169,7 @@ begin
       v_weekdays[1] + 7 - extract(dow from (v_active[v_count].start_at at time zone 'Asia/Seoul'))::integer
     );
 
-    select template into v_template
+    select template.* into v_template
     from unnest(v_templates) template
     where extract(dow from (template.start_at at time zone 'Asia/Seoul'))::integer
       = (

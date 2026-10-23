@@ -98,6 +98,7 @@ describe('atomic class postpone contract', () => {
     expect(migrationSource).toContain('created_by = v_destination.created_by');
     expect(migrationSource).toContain('price = v_destination.price');
     expect(migrationSource).toContain('v_template.end_at - v_template.start_at');
+    expect(migrationSource).toContain('select template.* into v_template');
   });
 
   it('stores an exact reversible snapshot and fails closed after later edits', () => {

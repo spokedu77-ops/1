@@ -278,7 +278,7 @@ BEGIN
     END IF;
 
     INSERT INTO public.session_count_logs (
-    intended.teacher_id,
+      teacher_id,
       session_id,
       session_title,
       count_change,
