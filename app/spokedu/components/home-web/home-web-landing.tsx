@@ -154,7 +154,7 @@ export function HomeWebLanding() {
 
       <section className={styles.consult} aria-labelledby="consult-heading">
         <div className={styles.consultInner}>
-          <p className={styles.eyebrow}>LET&apos;S TALK</p><h2 id="consult-heading">수업에 대해 궁금하신가요?</h2><p>대상과 공간, 일정에 맞는 상담 경로를 선택해 주세요.</p>
+          <p className={styles.eyebrow}>LET&apos;S TALK</p><h2 id="consult-heading"><span>수업에 대해</span>{' '}<span>궁금하신가요?</span></h2><p>대상과 공간, 일정에 맞는 상담 경로를 선택해 주세요.</p>
           <div className={styles.consultLinks}>
             <Link href={`${SPOKEDU_PATHS.contact}?type=dispatch`}>기관 체육수업 문의</Link>
             <Link href={`${SPOKEDU_PATHS.contact}?type=private`}>개인·소그룹 수업 문의</Link>

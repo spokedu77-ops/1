@@ -432,10 +432,13 @@ export function SiteFooter() {
   const instagramLink = socialLinks.find((c) => c.key === 'instagram');
 
   const footerLinkClass =
-    `inline-flex min-h-8 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${koreanText}`;
+    `inline-flex min-h-11 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white min-[640px]:min-h-8 ${koreanText}`;
   const footerHeadingClass = `text-[13px] font-semibold tracking-[-0.01em] text-white/60 ${koreanText}`;
 
   const youtubeLink = socialLinks.find((c) => c.key === 'youtube');
+  const [legalBeforeRegistration = '', legalAfterRegistration = ''] = getPublicFooterLegalLine().split(
+    brandProfile.businessRegistrationNumber,
+  );
 
   return (
     <footer data-spokedu-global-footer="true" style={{ backgroundColor: NAVY }} className="text-white">
@@ -448,8 +451,9 @@ export function SiteFooter() {
             <p className={`text-[13px] leading-none text-white/45 ${koreanText}`}>운영지역 {brandProfile.serviceArea}</p>
           </div>
 
-          {footerNavGroups.map((group) => (
-            <div key={group.heading} className="min-w-0">
+          <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-8 min-[360px]:col-span-2 min-[360px]:grid-cols-2 min-[1024px]:contents">
+            {footerNavGroups.map((group) => (
+              <div key={group.heading} className="min-w-0">
               <p className={footerHeadingClass}>{group.heading}</p>
               <ul className="mt-3 space-y-0.5">
                 {group.links.map((link) => (
@@ -502,19 +506,20 @@ export function SiteFooter() {
                   </>
                 ) : null}
               </ul>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mt-8 space-y-3 border-t border-white/10 pt-4">
-          <p className={`text-[12px] leading-[1.6] text-white/50 ${koreanText}`}>
-            {getPublicFooterLegalLine()}
+          <p className={`text-[12px] leading-[1.7] text-white/65 min-[640px]:leading-[1.6] min-[640px]:text-white/50 ${koreanText}`}>
+            {legalBeforeRegistration}<span className="whitespace-nowrap">{brandProfile.businessRegistrationNumber}</span>{legalAfterRegistration}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
-            <Link href="/spokedu-lab/terms" data-track-label="footer-master-terms" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
+            <Link href="/spokedu-lab/terms" data-track-label="footer-master-terms" className="inline-flex min-h-11 items-center text-white/55 underline-offset-2 hover:text-white hover:underline min-[640px]:min-h-0">
               SPOKEDU LAB 이용약관
             </Link>
-            <Link href="/spokedu-lab/privacy" data-track-label="footer-master-privacy" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
+            <Link href="/spokedu-lab/privacy" data-track-label="footer-master-privacy" className="inline-flex min-h-11 items-center text-white/55 underline-offset-2 hover:text-white hover:underline min-[640px]:min-h-0">
               개인정보처리방침
             </Link>
             <p className="text-white/40">

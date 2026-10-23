@@ -1,0 +1,51 @@
+{
+  "schema": "spokedu.naver.article.preview.v1",
+  "articleKey": "cheongdam-20260305-cooperation",
+  "title": "[강남 청담] 다함께키움센터 놀이체육 수업｜협동 달리기부터 거울 술래잡기까지",
+  "source_sha256": "2e0685a1293a767142446208220472905086149f7c35290009fa9b7dd9d41bdf",
+  "blockCount": 25,
+  "headingIndexes": [
+    2,
+    6,
+    10,
+    14,
+    18
+  ],
+  "photoAfter": [
+    -1,
+    5,
+    9
+  ],
+  "photos": [
+    {
+      "name": "01-cooperation.jpg",
+      "sha256": "2f99894d0619675c7f8bfea2fb3f24add438eef5f20f2f1f49523e3391bac9e8",
+      "source": "source-000.jpg",
+      "caption": "협동 달리기 활동 현장"
+    },
+    {
+      "name": "02-spider.jpg",
+      "sha256": "57bb4e9262a41485169df68280d20e4e328d4eaab5f38f121ef4dfd0e930a672",
+      "source": "source-001.jpg",
+      "caption": "스파이더 워킹 챌린지"
+    },
+    {
+      "name": "03-play.jpg",
+      "sha256": "72ee5fb565b06bbac6532796e827f09e3b54564c1bd7d3f3ff7ea1ee8d89350a",
+      "source": "source-002.jpg",
+      "caption": "청담 다함께키움센터 수업 현장"
+    }
+  ],
+  "publicationAllowed": false,
+  "draftSaveAllowed": false,
+  "sourceDriveFileId": "17jT0GCpk5kV0v3GxOnO-kc-m6AeDARMO",
+  "contentOrigin": "assistant-edited-from-verified-2026-03-05-activity-diary",
+  "localLlmSourceUsed": false,
+  "editorialCompleteGate": [
+    "verified_session",
+    "reflective_ending",
+    "organization_enquiry",
+    "contact_url",
+    "hashtags"
+  ]
+}

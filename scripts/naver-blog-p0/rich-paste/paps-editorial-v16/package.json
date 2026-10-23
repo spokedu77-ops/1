@@ -1,0 +1,13 @@
+{
+  "name":"spokedu-paps-editorial-v16",
+  "version":"16.0.0",
+  "private":true,
+  "type":"module",
+  "scripts":{
+    "test":"node --test ./*.test.mjs",
+    "offline":"node ./run.mjs --offline",
+    "style-probe":"node ./run.mjs --probe-style",
+    "preview":"node ./run.mjs --preview-full"
+  },
+  "dependencies":{"@jjlabsio/md-to-naver-blog":"2.0.0","playwright-core":"1.56.1"}
+}

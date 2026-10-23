@@ -4,8 +4,12 @@ on:
   pull_request:
     paths:
       - 'app/admin/note/**'
+      - 'app/admin/note-v2-*/**'
       - 'app/api/admin/note/**'
+      - 'app/api/admin/note-v2/**'
       - 'app/lib/note/**'
+      - 'app/lib/note-v2/**'
+      - 'supabase/migrations/*note_v2*.sql'
       - '.github/workflows/admin-note-qa.yml'
       - 'package.json'
       - 'package-lock.json'
