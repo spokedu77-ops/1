@@ -42,7 +42,6 @@ async function mutateTree(id: string, body: Record<string, unknown>): Promise<vo
 }
 
 export default function NoteV2Workspace({ basePath }: { basePath: NoteV2BasePath }) {
-  const ROOT_URL = basePath;
   const router = useRouter();
   const [records, setRecords] = useState<NoteV2TreeRow[]>([]);
   const [document, setDocument] = useState<NoteV2Document | null>(null);
@@ -107,13 +106,13 @@ export default function NoteV2Workspace({ basePath }: { basePath: NoteV2BasePath
           expandAncestors(candidate, rows);
           window.localStorage.setItem(LAST_SELECTION_KEY, candidate);
           // URL is authoritative for refresh/back navigation; retain only one id.
-          window.history.replaceState(null, '', `${ROOT_URL}?id=${encodeURIComponent(candidate)}`);
+          window.history.replaceState(null, '', `${basePath}?id=${encodeURIComponent(candidate)}`);
         }
         setReady(true);
       } catch (e) { if (alive) { setError(e instanceof Error ? e.message : '노트 로드 실패'); setReady(true); } }
     })();
     return () => { alive = false; };
-  }, [expandAncestors]);
+  }, [basePath, expandAncestors]);
 
   useEffect(() => {
     window.localStorage.setItem(EXPANSION_KEY, JSON.stringify(Array.from(expanded)));
@@ -138,7 +137,7 @@ export default function NoteV2Workspace({ basePath }: { basePath: NoteV2BasePath
       setCurrent(next);
       expandAncestors(id, records);
       window.localStorage.setItem(LAST_SELECTION_KEY, id);
-      if (historyMode === 'push') router.push(`${ROOT_URL}?id=${encodeURIComponent(id)}`, { scroll: false });
+      if (historyMode === 'push') router.push(`${basePath}?id=${encodeURIComponent(id)}`, { scroll: false });
       setMobileOpen(false);
     } catch (e) { setError(e instanceof Error ? e.message : '페이지를 열 수 없습니다.'); }
     finally { leaveTask(); }
@@ -152,14 +151,14 @@ export default function NoteV2Workspace({ basePath }: { basePath: NoteV2BasePath
         void navigateRef.current(id).then(() => {
           // Failed navigation cannot leave URL pointing at a different editable document.
           if (documentRef.current?.id !== id && documentRef.current) {
-            window.history.replaceState(null, '', `${ROOT_URL}?id=${encodeURIComponent(documentRef.current.id)}`);
+            window.history.replaceState(null, '', `${basePath}?id=${encodeURIComponent(documentRef.current.id)}`);
           }
         });
       }
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [basePath]);
 
   const refresh = async () => {
     const latest = await getTree();
@@ -183,7 +182,7 @@ export default function NoteV2Workspace({ basePath }: { basePath: NoteV2BasePath
       if (parentId) setExpanded((previous) => new Set([...previous, parentId]));
       expandAncestors(created.id, rows);
       window.localStorage.setItem(LAST_SELECTION_KEY, created.id);
-      router.push(`${ROOT_URL}?id=${encodeURIComponent(created.id)}`, { scroll: false });
+      router.push(`${basePath}?id=${encodeURIComponent(created.id)}`, { scroll: false });
       setMobileOpen(false);
     } catch (e) { setError(e instanceof Error ? e.message : '페이지 생성 실패'); }
     finally { leaveTask(); }
@@ -226,11 +225,11 @@ export default function NoteV2Workspace({ basePath }: { basePath: NoteV2BasePath
           const next = await getDocument(nextId);
           setCurrent(next);
           window.localStorage.setItem(LAST_SELECTION_KEY, nextId);
-          router.replace(`${ROOT_URL}?id=${encodeURIComponent(nextId)}`, { scroll: false });
+          router.replace(`${basePath}?id=${encodeURIComponent(nextId)}`, { scroll: false });
         } else {
           setCurrent(null);
           window.localStorage.removeItem(LAST_SELECTION_KEY);
-          router.replace(ROOT_URL, { scroll: false });
+          router.replace(basePath, { scroll: false });
         }
       }
     } catch (e) { setError(e instanceof Error ? `휴지통 이동 실패: ${e.message}` : '휴지통 이동 실패'); }

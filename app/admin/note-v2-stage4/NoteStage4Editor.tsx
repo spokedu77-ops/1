@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Download, RefreshCcw } from 'lucide-react';
 import { type PartialBlock } from '@blocknote/core';
 import { ko } from '@blocknote/core/locales';
@@ -25,7 +25,6 @@ const LABELS: Record<AutosaveStatus, string> = {
 const NoteStage4Editor = forwardRef<Stage4EditorHandle, { initial: NoteV2Document; locked?: boolean }>(function NoteStage4Editor({ initial, locked = false }, ref) {
   const [status, setStatus] = useState<AutosaveStatus>('saved');
   const [error, setError] = useState<string | undefined>();
-  const statusRef = useRef<AutosaveStatus>('saved');
   const initialContent = initial.content as PartialBlock<
     typeof noteStage2Schema.blockSchema,
     typeof noteStage2Schema.inlineContentSchema,
@@ -46,16 +45,22 @@ const NoteStage4Editor = forwardRef<Stage4EditorHandle, { initial: NoteV2Documen
     return { ok: true, version: result.version! };
   }, [initial.id]);
 
-  const machine = useMemo(() => new NoteV2Autosave<unknown[]>({
-    initialContent: initial.content,
-    initialVersion: initial.content_version,
-    send,
-    onStatus: (nextStatus, message) => {
-      statusRef.current = nextStatus;
-      setStatus(nextStatus);
-      setError(message);
-    }, debounceMs: 800,
-  }), [initial.id, initial.content, initial.content_version, send]);
+  const autosave = useMemo(() => {
+    let currentStatus: AutosaveStatus = 'saved';
+    const machine = new NoteV2Autosave<unknown[]>({
+      initialContent: initial.content,
+      initialVersion: initial.content_version,
+      send,
+      onStatus: (nextStatus, message) => {
+        currentStatus = nextStatus;
+        setStatus(nextStatus);
+        setError(message);
+      },
+      debounceMs: 800,
+    });
+    return { machine, getStatus: () => currentStatus };
+  }, [initial.content, initial.content_version, send]);
+  const { machine } = autosave;
 
   useEffect(() => {
     machine.resume();
@@ -85,10 +90,10 @@ const NoteStage4Editor = forwardRef<Stage4EditorHandle, { initial: NoteV2Documen
   useImperativeHandle(ref, () => ({
     flushPending: async () => {
       try { await machine.flush(); } catch { return false; }
-      return !machine.hasPending && statusRef.current === 'saved';
+      return !machine.hasPending && autosave.getStatus() === 'saved';
     },
     exportDraft,
-  }), [machine, exportDraft]);
+  }), [autosave, machine, exportDraft]);
 
   return (
     <div className="note-v2-preview min-w-0 flex-1 bg-white text-neutral-800" data-testid="note-v2-stage4-editor">

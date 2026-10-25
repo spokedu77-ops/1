@@ -64,7 +64,7 @@ export default function NoteStage3Editor({ initial }: { initial: NoteV2Document 
       setError(message);
     },
     debounceMs: 800,
-  }), [initial.id, initial.content, initial.content_version, save]);
+  }), [initial.content, initial.content_version, save]);
 
   useEffect(() => {
     machine.resume();
