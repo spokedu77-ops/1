@@ -45,7 +45,7 @@ try {
     await page.locator('#home-heading').waitFor({ state: 'visible', timeout: 45_000 });
     await page.evaluate(() => document.fonts.ready);
 
-    const audit = await page.evaluate(async (headingIds) => {
+    const audit = await page.evaluate(async () => {
       const root = document.querySelector('[data-spokedu-home-build]');
       const sections = root ? [...root.querySelectorAll('section')] : [];
       const headingOrder = sections.map((section) => {
@@ -93,7 +93,7 @@ try {
         hasExpertiseCopy: Boolean(document.querySelector('#expertise-heading')),
         hasRecordsGrid: document.querySelectorAll('[class*="recordsGrid"] img, [class*="recordMedia"] img').length >= 5,
       };
-    }, EXPECTED_SECTION_HEADINGS);
+    });
 
     const hrefIncludes = (list, target) =>
       list.some((href) => href === target || (typeof href === 'string' && href.startsWith(`${target}?`)));

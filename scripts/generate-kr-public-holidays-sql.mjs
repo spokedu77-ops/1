@@ -12,7 +12,7 @@ const outPath = join(root, 'sql', 'kr-public-holidays-seed.sql');
 
 const payload = JSON.parse(readFileSync(jsonPath, 'utf8'));
 const rows = [];
-for (const [year, list] of Object.entries(payload.years)) {
+for (const list of Object.values(payload.years)) {
   for (const item of list) {
     const name = String(item.name).replace(/'/g, "''");
     rows.push(`('${item.date}'::date, '${name}', '${item.kind}')`);

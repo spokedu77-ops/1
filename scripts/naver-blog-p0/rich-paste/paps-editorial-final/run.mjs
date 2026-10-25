@@ -19,7 +19,7 @@ import { getHtmlClipboardScript } from '@jjlabsio/md-to-naver-blog';
 import { buildExplicitEditorialHtml, verifyExplicitEditorialHtml } from './editorial-html.mjs';
 import { enterTitleWithRecovery } from './title-input.mjs';
 import { ensureTitleOverlayClear } from './title-overlay-gate.mjs';
-import {applyLeftAlignIfNeeded,applyTextFormat,applyBold,applyFontSize} from '../../naver-new-style-runner.mjs';
+import {applyLeftAlignIfNeeded} from '../../naver-new-style-runner.mjs';
 import {inspectSequentialCanvas,findNativeTailAnchor,gateNextImage} from './photo-sequential-core.mjs';
 import { deriveSegments, verifyEditorialInput } from './sequential-plan.mjs';
 import { loadStyleBlockPlan } from '../../naver-new-style-runner.mjs';
@@ -119,17 +119,6 @@ async function detailedCanvasSnapshot(p) {
     });
     return {canvas:true,components,paragraphs,images,
       title:norm(document.querySelector('.se-section-documentTitle .se-text-paragraph')?.innerText)};
-  });
-}
-
-function forceLeftAlign(html){
-  return html.replace(/<(p|h[1-6])(\s[^<>]*?)?>/gi,(whole,tag,attributes='')=>{
-    if(/\bstyle\s*=\s*(["'])/i.test(attributes)){
-      const next=attributes.replace(/\bstyle\s*=\s*(["'])(.*?)\1/i,(_,quote,css)=>
-        `style=${quote}${css.replace(/(?:^|;)\s*text-align\s*:[^;]*/gi,'')};text-align:left !important;${quote}`);
-      return `<${tag}${next}>`;
-    }
-    return `<${tag}${attributes} style="text-align:left !important;">`;
   });
 }
 

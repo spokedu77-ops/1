@@ -1008,7 +1008,6 @@ export function diagnoseInputVsDocumentCommit(beforeSnap, afterSnap, opts = {}) 
   const logicalChanged = (beforeSnap?.fingerprint ?? '') !== (afterSnap?.fingerprint ?? '');
   const fullDocChanged = beforeFp !== afterFp;
 
-  const beforeTexts = collectTextsFromSnapshot(beforeSnap);
   const afterTexts = collectTextsFromSnapshot(afterSnap);
   const expected = (opts.expectedTexts || []).map((t) => norm(t)).filter(Boolean);
   const expectedInFullDocument = expected.filter((e) => afterTexts.includes(e));

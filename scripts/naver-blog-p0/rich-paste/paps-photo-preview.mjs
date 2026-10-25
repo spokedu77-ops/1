@@ -441,7 +441,9 @@ try {
   report.convertedHtmlBytes = Buffer.byteLength(clipboardBody.html, 'utf8');
   report.timing = { loadedAndConvertedMs: Math.round(now() - t0) };
   const photoAssets = await Promise.all(PHOTO_PLAN.map(verifyAssetFile));
-  report.photoPlan = photoAssets.map(({path,...item})=>item);
+  report.photoPlan = photoAssets.map(({id,after,name,sourceCount,sha256,bytes})=>({
+    id,after,name,sourceCount,sha256,bytes,
+  }));
   report.photoPublicationRights='UNVERIFIED_DO_NOT_PUBLISH';
 
   if (!WANT_LIVE) {

@@ -122,17 +122,6 @@ async function detailedCanvasSnapshot(p) {
   });
 }
 
-function forceLeftAlign(html){
-  return html.replace(/<(p|h[1-6])(\s[^<>]*?)?>/gi,(whole,tag,attributes='')=>{
-    if(/\bstyle\s*=\s*(["'])/i.test(attributes)){
-      const next=attributes.replace(/\bstyle\s*=\s*(["'])(.*?)\1/i,(_,quote,css)=>
-        `style=${quote}${css.replace(/(?:^|;)\s*text-align\s*:[^;]*/gi,'')};text-align:left !important;${quote}`);
-      return `<${tag}${next}>`;
-    }
-    return `<${tag}${attributes} style="text-align:left !important;">`;
-  });
-}
-
 async function pasteSegmentAfterLastPhoto(p,previousBlocks,segment,html,expectedTitle,imageCount){
   const pre=await detailedCanvasSnapshot(p);
   const anchor=findNativeTailAnchor(pre,expectedTitle,previousBlocks,imageCount);

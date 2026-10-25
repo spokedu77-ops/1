@@ -16,7 +16,7 @@ const cutoffs=[0,4,9,14,19];
 function fixture(imageCount, paragraphCount,{boldBlock=-1,largeBlock=-1}={}){
   const components=[],paragraphs=[],images=[];
   for(let z=0;z<imageCount;z++){
-    const photoIndex=components.push({kind:'image'})-1;
+    components.push({kind:'image'});
     images.push({loaded:true,count:1});
     const tail=Math.min(paragraphCount,cutoffs[z+1]);
     if(tail>cutoffs[z]){

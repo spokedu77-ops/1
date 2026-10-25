@@ -20,16 +20,15 @@ test('only empty placeholder title can be modified',()=>{
 });
 function fakePage({alwaysFail=false,dirty=false,partial=false}={}){
   const state={title:'제목',clicks:[],body:[],focus:'DIV',typed:0};
-  let focused=false;
   const wrapper={
     async click(args){state.clicks.push(args);
       if(!args.force||alwaysFail)throw new Error('locator.click: Timeout 1500ms exceeded');
-      focused=true;state.focus='IFRAME';
+      state.focus='IFRAME';
     }
   };
   const title={
     async innerText(){return state.title;},
-    async click(args){state.clicks.push(args);if(alwaysFail)throw new Error('timeout');focused=true;state.focus='IFRAME';}
+    async click(args){state.clicks.push(args);if(alwaysFail)throw new Error('timeout');state.focus='IFRAME';}
   };
   const page={
     locator:sel=>({first:()=>sel==='.se-title-text'?wrapper:title}),
@@ -37,7 +36,7 @@ function fakePage({alwaysFail=false,dirty=false,partial=false}={}){
       async insertText(text){state.typed++;if(partial)state.title=text.slice(0,8);else if(dirty)state.body.push(text);else state.title=text;},
       async press(){state.typed++;if(dirty)state.body.push('oops');else state.title='PAPS 제목';}
     },
-    mouse:{async click(){if(alwaysFail)throw Error('mouse failure');focused=true;state.focus='IFRAME';}},
+    mouse:{async click(){if(alwaysFail)throw Error('mouse failure');state.focus='IFRAME';}},
     async waitForTimeout(){},
     async evaluate(fn){
       const source=fn.toString();
