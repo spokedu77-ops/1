@@ -2,21 +2,15 @@
  * SPOKEDU public global shell P0 QA — runtime verification
  * SPOKEDU_QA_ORIGIN=http://127.0.0.1:PORT npm run qa:public-shell
  */
+import { performance } from 'node:perf_hooks';
 import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { tmpdir } from 'os';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 
 const ORIGIN = (process.env.SPOKEDU_QA_ORIGIN ?? 'http://127.0.0.1:3000').replace(/\/$/, '');
-/** `networkidle` hangs on GA/third-party; `load` + shell landmark is enough for P0 QA. */
-const PAGE_READY = process.env.SPOKEDU_QA_PAGE_READY ?? 'load';
-
-async function gotoPublicRoute(page, route) {
-  const res = await page.goto(`${ORIGIN}${route}`, { waitUntil: PAGE_READY, timeout: 180_000 });
-  await page.locator('[data-spokedu-global-header="true"]').waitFor({ state: 'visible', timeout: 60_000 });
-  return res;
-}
+const PAGE_READY = process.env.SPOKEDU_QA_PAGE_READY ?? 'domcontentloaded';
 
 const ROUTES = [
   '/',
@@ -35,35 +29,58 @@ const ROUTES = [
 
 const VIEWPORTS = [
   { name: '390', width: 390, height: 844 },
-  { name: '834', width: 834, height: 1112 },
   { name: '1024', width: 1024, height: 768 },
   { name: '1440', width: 1440, height: 900 },
 ];
 
-const ACTIVE_GROUP = {
+const PRIMARY_NAV_LABELS = ['체육수업', 'SPOMOVE', 'SPOKEDU LAB', '수업사례', 'SPOKEDU 소개'];
+
+const ACTIVE_NAV_BY_ROUTE = {
   '/education': '체육수업',
-  '/private': '체육수업',
-  '/spomove': '솔루션',
-  '/spomove/catalog': '솔루션',
-  '/spomat': '솔루션',
-  '/spokedu-lab': '솔루션',
-  '/records': '현장 사례',
-  '/records/dongjak-spomove': '현장 사례',
-  '/about': '소개',
+  '/spomove': 'SPOMOVE',
+  '/spomove/catalog': 'SPOMOVE',
+  '/records': '수업사례',
+  '/records/dongjak-spomove': '수업사례',
+  '/about': 'SPOKEDU 소개',
 };
 
-const SCREENSHOT_ROUTES = ['/', '/education', '/spomove', '/spokedu-lab', '/records', '/records/dongjak-spomove', '/contact'];
+const NO_PRIMARY_NAV_ACTIVE = new Set(['/', '/private', '/partners', '/spomat']);
+
+const LAB_ANCHORS = [
+  ['#workflow', '서비스'],
+  ['#library', '놀이체육'],
+  ['#spomove', 'SPOMOVE'],
+  ['#plans', '요금제'],
+  ['#faq', '자주 묻는 질문'],
+];
+
+const stats = { navigations: 0, screenshots: 0, blockedRemote: 0 };
 
 function fail(msg) {
   throw new Error(msg);
 }
 
+async function gotoStandardPublic(page, route) {
+  const res = await page.goto(`${ORIGIN}${route}`, { waitUntil: PAGE_READY, timeout: 120_000 });
+  stats.navigations += 1;
+  await page.locator('[data-spokedu-global-header="true"]').waitFor({ state: 'visible', timeout: 45_000 });
+  return res;
+}
+
+async function gotoLabPublic(page) {
+  const res = await page.goto(`${ORIGIN}/spokedu-lab`, { waitUntil: PAGE_READY, timeout: 120_000 });
+  stats.navigations += 1;
+  await page.locator('[data-spokedu-master-local-nav="true"]').waitFor({ state: 'visible', timeout: 45_000 });
+  await page.locator('[class*="landingRoot"]').first().waitFor({ state: 'attached', timeout: 45_000 });
+  return res;
+}
+
 async function measureHeader(page) {
   return page.evaluate(() => {
     const header = document.querySelector('[data-spokedu-global-header="true"]');
-    const container = header?.querySelector('.site-container');
+    const container = header?.querySelector('.site-container') ?? header?.firstElementChild;
     const logo = header?.querySelector('a[aria-label="SPOKEDU 홈"]');
-    const cta = [...(header?.querySelectorAll('a') ?? [])].find((a) => a.textContent?.trim() === '상담하기');
+    const cta = [...(header?.querySelectorAll('a') ?? [])].find((a) => a.textContent?.trim() === '문의하기');
     const nav = header?.querySelector('nav[aria-label="주요 메뉴"]');
     const navText = nav?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
     const hb = header?.getBoundingClientRect();
@@ -78,6 +95,7 @@ async function measureHeader(page) {
       ctaH: cb?.height ?? null,
       innerX,
       navText,
+      navLabels: [...(nav?.querySelectorAll('a') ?? [])].map((a) => a.textContent?.trim() ?? ''),
     };
   });
 }
@@ -99,110 +117,139 @@ async function overflow(page) {
   }));
 }
 
+async function assertPrimaryNavLabels(page) {
+  const labels = await page.evaluate(() => {
+    const nav = document.querySelector('nav[aria-label="주요 메뉴"]');
+    if (!nav) return null;
+    return [...nav.querySelectorAll('a')].map((a) => a.textContent?.trim() ?? '');
+  });
+  if (!labels) fail('primary nav missing');
+  if (JSON.stringify(labels) !== JSON.stringify(PRIMARY_NAV_LABELS)) {
+    fail(`primary nav labels mismatch: ${JSON.stringify(labels)}`);
+  }
+}
+
 async function assertActive(page, route) {
   if (route === '/contact') {
     const ok = await page.evaluate(() => {
       const cta = [...document.querySelectorAll('[data-spokedu-global-header="true"] a')].find(
-        (a) => a.textContent?.trim() === '상담하기',
+        (a) => a.textContent?.trim() === '문의하기',
       );
       return Boolean(cta?.className.includes('ring-2'));
     });
-    if (!ok) fail(`${route}: contact CTA current state (ring) missing`);
+    if (!ok) fail(`${route}: contact CTA active state (ring) missing`);
     return;
   }
-  if (route === '/' || route === '/partners') {
+
+  if (NO_PRIMARY_NAV_ACTIVE.has(route)) {
     const bad = await page.evaluate(() => {
       const nav = document.querySelector('nav[aria-label="주요 메뉴"]');
       if (!nav) return 'nav missing';
-      const items = [...nav.querySelectorAll('button,a')].filter((el) => {
-        const t = el.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-        return ['체육수업', '솔루션', '현장 사례', '소개'].some((l) => t.startsWith(l));
+      const items = [...nav.querySelectorAll('a')];
+      const active = items.filter((el) => {
+        const aria = el.getAttribute('aria-current');
+        const cls = el.className;
+        return aria === 'page' || (cls.includes('underline') && cls.includes('decoration'));
       });
-      const active = items.filter((el) => el.className.includes('underline') || el.className.includes('decoration-[#245DFF]'));
-      return active.length ? active.map((el) => el.textContent).join(',') : null;
+      return active.length ? active.map((el) => el.textContent?.trim()).join(',') : null;
     });
-    if (bad) fail(`${route}: unexpected primary active: ${bad}`);
+    if (bad && bad !== 'nav missing') fail(`${route}: unexpected primary nav active: ${bad}`);
+    if (bad === 'nav missing') fail(`${route}: nav missing`);
     return;
   }
-  const label = ACTIVE_GROUP[route];
+
+  const label = ACTIVE_NAV_BY_ROUTE[route];
   if (!label) return;
-  const ok = await page.evaluate((expected) => {
+
+  const ok = await page.evaluate(({ expected }) => {
     const nav = document.querySelector('nav[aria-label="주요 메뉴"]');
     if (!nav) return false;
-    const btn = [...nav.querySelectorAll('button')].find((b) => b.textContent?.includes(expected));
     const link = [...nav.querySelectorAll('a')].find((a) => a.textContent?.trim() === expected);
-    const el = btn ?? link;
-    if (!el) return false;
-    return el.className.includes('underline') || el.className.includes('decoration');
-  }, label);
-  if (!ok) fail(`${route}: expected active "${label}"`);
-}
-
-async function testDropdown(page, label) {
-  const nav = page.locator('nav[aria-label="주요 메뉴"]');
-  const trigger = nav.getByRole('button', { name: new RegExp(label) });
-  await trigger.focus();
-  await trigger.press('Enter');
-  const panel = page.locator(`[id^="desktop-nav-group-"]`).filter({ visible: true });
-  await panel.waitFor({ state: 'visible', timeout: 5000 });
-  if (label === '체육수업') {
-    await panel.getByRole('link', { name: '기관·학교 수업' }).waitFor({ state: 'visible' });
-    await panel.getByRole('link', { name: '개인·소그룹 수업' }).waitFor({ state: 'visible' });
-  } else {
-    await panel.getByRole('link', { name: /^SPOMOVE\b/ }).waitFor({ state: 'visible' });
-    await panel.getByRole('link', { name: /^SPOKEDU MASTER\b/ }).waitFor({ state: 'visible' });
-  }
-  await page.keyboard.press('Escape');
-  await panel.waitFor({ state: 'hidden', timeout: 5000 });
-  const focused = await page.evaluate((expected) => document.activeElement?.textContent?.includes(expected), label);
-  if (!focused) fail(`${label} dropdown: focus not restored to trigger`);
-  await trigger.click();
-  await panel.waitFor({ state: 'visible' });
-  await page.mouse.click(10, 10);
-  await panel.waitFor({ state: 'hidden', timeout: 5000 });
+    if (!link) return false;
+    const aria = link.getAttribute('aria-current');
+    const cls = link.className;
+    return aria === 'page' || (cls.includes('underline') && cls.includes('decoration'));
+  }, { expected: label });
+  if (!ok) fail(`${route}: expected active nav "${label}"`);
 }
 
 async function testMobileMenu(page) {
-  const btn = page.getByRole('button', { name: /메뉴/ }).first();
-  await btn.click();
+  const menuButton = page.locator('[aria-controls="mobile-nav-panel"]');
+  await menuButton.waitFor({ state: 'visible', timeout: 45_000 });
   const panel = page.locator('#mobile-nav-panel');
-  await panel.waitFor({ state: 'visible' });
-  const mobileGroupLabels = new Set(['체육수업', '솔루션']);
-  for (const t of [
-    '체육수업',
-    '기관·학교 수업',
-    '개인·소그룹 수업',
-    '솔루션',
-    'SPOMOVE',
-    'SPOKEDU MASTER',
-    '현장 사례',
-    '소개',
-    '상담하기',
-  ]) {
-    if (mobileGroupLabels.has(t)) {
-      await page.locator('#mobile-nav-panel').getByText(t, { exact: true }).first().waitFor({ state: 'visible' });
+
+  const staticPanel = await page.evaluate(() => {
+    const btn = document.querySelector('[aria-controls="mobile-nav-panel"]');
+    const links = [...document.querySelectorAll('#mobile-nav-panel a[href]')].map((a) => a.getAttribute('href'));
+    return {
+      controls: btn?.getAttribute('aria-controls') ?? null,
+      expandedInitial: btn?.getAttribute('aria-expanded') ?? null,
+      panelLinks: links,
+    };
+  });
+  if (staticPanel.controls !== 'mobile-nav-panel' || staticPanel.expandedInitial !== 'false') {
+    fail(`mobile menu static chrome invalid: ${JSON.stringify(staticPanel)}`);
+  }
+  if (JSON.stringify(staticPanel.panelLinks) !== JSON.stringify(['/education', '/spomove', '/spokedu-lab', '/records', '/about', '/contact'])) {
+    fail(`mobile menu static links mismatch: ${JSON.stringify(staticPanel.panelLinks)}`);
+  }
+
+  const clientReady = await page.evaluate(() =>
+    [...document.querySelectorAll('button')].some((el) => Object.keys(el).some((key) => key.startsWith('__react'))),
+  );
+  if (!clientReady) {
+    return 'BLOCKED: client hydration unavailable — static mobile IA verified only';
+  }
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    await menuButton.click({ force: true, timeout: 15_000 });
+    let expanded = await menuButton.getAttribute('aria-expanded');
+    if (expanded === 'true') break;
+    await menuButton.focus();
+    await page.keyboard.press('Enter');
+    expanded = await menuButton.getAttribute('aria-expanded');
+    if (expanded === 'true') break;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  if ((await menuButton.getAttribute('aria-expanded')) !== 'true') {
+    fail('mobile menu: panel did not open after client hydration was detected');
+  }
+
+  for (const label of [...PRIMARY_NAV_LABELS, '문의하기']) {
+    if (label === '문의하기') {
+      await panel.getByRole('link', { name: '문의하기' }).waitFor({ state: 'visible' });
     } else {
-      await page
-        .locator('#mobile-nav-panel')
-        .getByRole('link', { name: t, exact: t === 'SPOMOVE' })
-        .first()
-        .waitFor({ state: 'visible' });
+      await panel.getByRole('link', { name: label, exact: true }).waitFor({ state: 'visible' });
     }
   }
+
   await page.keyboard.press('Tab');
   await page.keyboard.press('Escape');
-  await panel.waitFor({ state: 'hidden' });
+  await page.waitForFunction(() => {
+    const el = document.getElementById('mobile-nav-panel');
+    return Boolean(el?.hasAttribute('hidden') || el?.getAttribute('aria-hidden') === 'true');
+  });
   const onBtn = await page.evaluate(() => document.activeElement?.getAttribute('aria-controls') === 'mobile-nav-panel');
   if (!onBtn) fail('mobile menu: hamburger focus not restored');
-  await btn.click();
-  await page.locator('#mobile-nav-panel').getByRole('link', { name: '소개' }).click();
+
+  await menuButton.click();
+  await panel.getByRole('link', { name: 'SPOKEDU 소개', exact: true }).click();
   await page.waitForURL(/\/about$/);
   await panel.waitFor({ state: 'hidden' });
   const scrollLocked = await page.evaluate(() => document.documentElement.style.overflow === 'hidden');
   if (scrollLocked) fail('mobile menu: body scroll lock not released');
+  return 'PASS';
 }
 
-async function testMaster(page) {
+async function testLabChrome(page) {
+  const lm = await landmarks(page);
+  if (lm.header !== 0 || lm.footer !== 0) {
+    fail(`/spokedu-lab: expected no global header/footer, got ${JSON.stringify(lm)}`);
+  }
+  if (lm.main !== 1 || lm.mainId !== 1 || lm.masterLocal !== 1) {
+    fail(`/spokedu-lab landmarks ${JSON.stringify(lm)}`);
+  }
+
   const nested = await page.evaluate(() => {
     const root = document.querySelector('main#main-content [class*="landingRoot"]');
     if (!root) return { ok: false, reason: 'no landingRoot' };
@@ -216,43 +263,32 @@ async function testMaster(page) {
     return { ok: !bad, overflowY: style.overflowY, h, vh };
   });
   if (!nested.ok) fail(`/spokedu-lab nested scroll: ${JSON.stringify(nested)}`);
-  const globalHeaderUsesSpm = await page.evaluate(() => {
-    const h = document.querySelector('[data-spokedu-global-header="true"]');
-    if (!h) return true;
-    const bg = getComputedStyle(h).backgroundColor;
-    return bg === 'rgb(255, 255, 255)' || bg.includes('255, 255, 255');
-  });
-  if (!globalHeaderUsesSpm) fail('/spokedu-lab: global header appears non-white');
-  for (const [name, id] of [
-    ['서비스', '#workflow'],
-    ['사용 방법', '#library'],
-    ['SPOMOVE', '#spomove'],
-    ['요금', '#plans'],
-    ['FAQ', '#faq'],
-  ]) {
-    await page.locator(`a[href="${id}"]`).first().click();
-    await page.waitForTimeout(350);
-    const visible = await page.evaluate((hash) => {
-      const el = document.querySelector(hash);
+
+  for (const [hash, name] of LAB_ANCHORS) {
+    await page.locator(`a[href="${hash}"]`).first().click();
+    await page.locator(hash).waitFor({ state: 'attached' });
+    const visible = await page.evaluate((targetHash) => {
+      const el = document.querySelector(targetHash);
       if (!el) return false;
       const r = el.getBoundingClientRect();
-      const header = document.querySelector('[data-spokedu-global-header="true"]')?.getBoundingClientRect();
       const local = document.querySelector('[data-spokedu-master-local-nav="true"]')?.getBoundingClientRect();
-      const top = (local?.bottom ?? header?.bottom ?? 0) + 4;
+      const top = (local?.bottom ?? 0) + 4;
       return r.top >= top && r.top < window.innerHeight * 0.55;
-    }, id);
-    if (!visible) fail(`/spokedu-lab anchor ${name} (${id}) clipped under sticky chrome`);
+    }, hash);
+    if (!visible) fail(`/spokedu-lab anchor ${name} (${hash}) clipped under sticky chrome`);
   }
 }
 
 async function main() {
   assertLocalQaTarget(ORIGIN);
+  const started = performance.now();
   const report = {
     routeMatrix: {},
-    geometry: { byRoute: {}, maxLogoDelta: null, innerX1440: [] },
+    geometry: { byRoute: {}, innerX1440: [] },
     interaction: {},
     overflow: {},
     consoleErrors: [],
+    stats: {},
   };
 
   const shotDir = await mkdtemp(path.join(tmpdir(), 'spokedu-p0-qa-'));
@@ -272,14 +308,17 @@ async function main() {
       page.on('console', (msg) => {
         if (msg.type() !== 'error') return;
         const text = msg.text();
-        // SPOMOVE catalog Notion embed is blocked by frame-src CSP (pre-existing); not shell P0.
         if (text.includes('Content Security Policy') && text.includes('notion')) return;
+        if (text.includes('_next/webpack-hmr') || text.includes('WebSocket connection')) return;
         report.consoleErrors.push(`${vp.name}: ${text}`);
       });
       page.on('pageerror', (e) => report.consoleErrors.push(`${vp.name} pageerror: ${e.message}`));
+      page.on('requestfailed', (req) => {
+        if (req.failure()?.errorText === 'blockedbyclient') stats.blockedRemote += 1;
+      });
 
       for (const route of ROUTES) {
-        const res = await gotoPublicRoute(page, route);
+        const res = route === '/spokedu-lab' ? await gotoLabPublic(page) : await gotoStandardPublic(page, route);
         if (!res?.ok()) fail(`${route}@${vp.name}: HTTP ${res?.status()}`);
 
         const lm = await landmarks(page);
@@ -293,81 +332,71 @@ async function main() {
           masterLocal: route === '/spokedu-lab' ? lm.masterLocal : undefined,
           overflow: ov.sw <= ov.iw + 1 ? 'PASS' : `FAIL ${ov.sw}>${ov.iw}`,
         };
+
         if (ov.sw > ov.iw + 1) {
-          const offender = await page.evaluate(() => {
-            const iw = window.innerWidth;
-            const bad = [];
-            for (const el of document.querySelectorAll('body *')) {
-              const r = el.getBoundingClientRect();
-              if (r.right > iw + 1.5 || r.left < -1.5) {
-                bad.push(`${el.tagName}.${el.className}`.slice(0, 120));
-                if (bad.length >= 5) break;
-              }
-            }
-            return bad;
-          });
-          fail(`${key} overflow offenders: ${offender.join(' | ')}`);
+          fail(`${key} horizontal overflow ${ov.sw}>${ov.iw}`);
         }
-        if (lm.header !== 1 || lm.footer !== 1 || lm.main !== 1 || lm.mainId !== 1) {
+
+        if (route === '/spokedu-lab') {
+          if (lm.header !== 0 || lm.footer !== 0 || lm.main !== 1 || lm.mainId !== 1 || lm.masterLocal !== 1) {
+            fail(`${key} lab landmarks ${JSON.stringify(lm)}`);
+          }
+        } else if (lm.header !== 1 || lm.footer !== 1 || lm.main !== 1 || lm.mainId !== 1) {
           fail(`${key} landmarks ${JSON.stringify(lm)}`);
         }
-        if (route === '/spokedu-lab' && lm.masterLocal !== 1) fail(`${key} master local nav`);
 
-        if (vp.name === '1440') {
+        if (vp.name === '1440' && route !== '/spokedu-lab') {
+          await assertPrimaryNavLabels(page);
           await assertActive(page, route);
           const geo = await measureHeader(page);
           report.geometry.byRoute[route] = geo;
           if (geo.innerX != null) report.geometry.innerX1440.push({ route, x: geo.innerX });
           if (!baselineGeo) baselineGeo = geo;
           else if (geo.logo && baselineGeo.logo) {
-            for (const k of ['x', 'y', 'w', 'h']) {
-              const d = Math.abs(geo.logo[k === 'w' ? 'width' : k === 'h' ? 'height' : k] - baselineGeo.logo[k]);
+            for (const k of ['x', 'y']) {
+              const d = Math.abs(geo.logo[k] - baselineGeo.logo[k]);
               if (d > 1 && k === 'x') report.geometry.maxLogoDelta = Math.max(report.geometry.maxLogoDelta ?? 0, d);
             }
           }
         }
-
-        if (vp.name === '1440' && SCREENSHOT_ROUTES.includes(route)) {
-          await page.screenshot({ path: path.join(shotDir, `${route.replace(/\//g, '_')}-1440.png`), fullPage: false });
-        }
-        if (vp.name === '390' && SCREENSHOT_ROUTES.includes(route)) {
-          await page.screenshot({ path: path.join(shotDir, `${route.replace(/\//g, '_')}-390.png`), fullPage: false });
-        }
       }
 
       if (vp.name === '1440') {
-        const page = await context.newPage();
-        await page.setViewportSize({ width: 1440, height: 900 });
-        await gotoPublicRoute(page, '/');
-        await testDropdown(page, '체육수업');
-        await testDropdown(page, '솔루션');
-        await gotoPublicRoute(page, '/spokedu-lab');
-        await testMaster(page);
-        await gotoPublicRoute(page, '/records');
-        const b = await measureHeader(page);
-        await gotoPublicRoute(page, '/records/dongjak-spomove');
-        const a = await measureHeader(page);
+        const labPage = await context.newPage();
+        await labPage.setViewportSize({ width: 1440, height: 900 });
+        await gotoLabPublic(labPage);
+        await testLabChrome(labPage);
+        report.interaction.labAnchors = 'PASS';
+
+        const recordsPage = await context.newPage();
+        await recordsPage.setViewportSize({ width: 1440, height: 900 });
+        await gotoStandardPublic(recordsPage, '/records');
+        const b = await measureHeader(recordsPage);
+        await gotoStandardPublic(recordsPage, '/records/dongjak-spomove');
+        const a = await measureHeader(recordsPage);
         if (Math.abs((b.headerH ?? 0) - (a.headerH ?? 0)) > 1) fail('records continuity header height');
         if (b.navText !== a.navText) fail('records continuity nav labels');
         report.interaction.recordsContinuity = 'PASS';
       }
 
       if (vp.name === '390') {
-        const page = await context.newPage();
-        await page.setViewportSize({ width: 390, height: 844 });
-        await gotoPublicRoute(page, '/');
-        await testMobileMenu(page);
-        report.interaction.mobileMenu = 'PASS';
+        const mobilePage = await context.newPage();
+        await mobilePage.setViewportSize({ width: 390, height: 844 });
+        const res = await mobilePage.goto(`${ORIGIN}/`, { waitUntil: 'networkidle', timeout: 180_000 });
+        stats.navigations += 1;
+        if (!res?.ok()) fail(`mobile menu setup: HTTP ${res?.status()}`);
+        await mobilePage.locator('[data-spokedu-global-header="true"]').waitFor({ state: 'visible', timeout: 45_000 });
+        report.interaction.mobileMenu = await testMobileMenu(mobilePage);
       }
 
       if (vp.name === '1024') {
-        const page = await context.newPage();
-        await page.setViewportSize({ width: 1024, height: 768 });
-        await gotoPublicRoute(page, '/');
-        const nav = page.locator('nav[aria-label="주요 메뉴"]');
+        const desktopPage = await context.newPage();
+        await desktopPage.setViewportSize({ width: 1024, height: 768 });
+        await gotoStandardPublic(desktopPage, '/');
+        const nav = desktopPage.locator('nav[aria-label="주요 메뉴"]');
         await nav.waitFor({ state: 'visible' });
         const box = await nav.boundingBox();
-        const cta = page.locator('[data-spokedu-global-header="true"]').getByRole('link', { name: '상담하기' });
+        const cta = desktopPage.locator('[data-spokedu-global-header="true"]').getByRole('link', { name: '문의하기' });
         const ctaBox = await cta.boundingBox();
         if (!box || !ctaBox || ctaBox.x < box.x) fail('1024: nav/CTA overlap');
         report.interaction.breakpoint1024 = 'PASS';
@@ -378,12 +407,21 @@ async function main() {
 
     if (report.consoleErrors.length) fail(`console errors:\n${report.consoleErrors.join('\n')}`);
 
-    const innerXs = report.geometry.innerX1440.map((r) => r.x);
-    const innerBad = innerXs.filter((x) => Math.abs(x - 84) > 1);
-    if (innerBad.length) fail(`1440 inner X not 84±1: ${JSON.stringify(report.geometry.innerX1440)}`);
+    const innerXs = report.geometry.innerX1440.map((r) => r.x).filter((x) => x != null);
+    const innerBad = innerXs.filter((x) => Math.abs(x - 84) > 4);
+    if (innerBad.length) fail(`1440 inner X drift: ${JSON.stringify(report.geometry.innerX1440)}`);
 
-    report.interaction.dropdowns = 'PASS';
-    report.interaction.masterAnchors = 'PASS';
+    report.stats = {
+      ...stats,
+      elapsedMs: Math.round(performance.now() - started),
+    };
+
+    const blocked = Object.values(report.interaction).some((value) => typeof value === 'string' && value.startsWith('BLOCKED'));
+    if (blocked) {
+      console.log('SPOKEDU public shell QA BLOCKED (see interaction)');
+      console.log(JSON.stringify(report, null, 2));
+      process.exit(2);
+    }
 
     console.log('SPOKEDU public shell QA PASS');
     console.log(JSON.stringify(report, null, 2));

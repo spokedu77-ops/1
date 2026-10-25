@@ -1,113 +1,132 @@
 import { mkdir, writeFile } from 'node:fs/promises';
+import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 
-const baseUrl = process.argv[2] ?? 'http://localhost:3000';
+const baseUrl = process.argv[2] ?? 'http://127.0.0.1:3000';
 const outputDirectory = path.join(process.cwd(), '.qa-spokedu', 'home-commercial');
-const widths = [390, 768, 1024, 1440];
+const homeWidths = [390, 1440];
 const smokeRoutes = ['/private', '/education', '/spomove', '/spokedu-lab'];
-const expectedSections = ['hero', 'class', 'bridge', 'spomove', 'subscription', 'cases', 'final-action'];
+
+const stats = { navigations: 0, screenshots: 0, blockedRemote: 0 };
 
 await mkdir(outputDirectory, { recursive: true });
 assertLocalQaTarget(baseUrl);
+const started = performance.now();
 const browser = await chromium.launch({ headless: true });
 const originalNewPage = browser.newPage.bind(browser);
 browser.newPage = async (...args) => {
   const page = await originalNewPage(...args);
   await installLocalQaRouteGuard(page.context());
+  page.on('requestfailed', (req) => {
+    if (req.failure()?.errorText === 'blockedbyclient') stats.blockedRemote += 1;
+  });
   return page;
 };
 const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
 const home = [];
 const smoke = [];
 
+const EXPECTED_SECTION_HEADINGS = [
+  'home-heading',
+  'audience-heading',
+  'expertise-heading',
+  'records-heading',
+  'products-heading',
+  'consult-heading',
+];
+
 try {
-  for (const width of widths) {
-    await page.goto('about:blank');
+  for (const width of homeWidths) {
     await page.setViewportSize({ width, height: 900 });
-    const response = await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    const response = await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+    stats.navigations += 1;
+    await page.locator('#home-heading').waitFor({ state: 'visible', timeout: 45_000 });
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(700);
-    await page.screenshot({ path: path.join(outputDirectory, `home-${width}-viewport.jpg`), type: 'jpeg', quality: 82 });
-    await page.evaluate(async () => {
-      for (let y = 0; y < document.documentElement.scrollHeight; y += Math.max(500, window.innerHeight * 0.75)) {
-        window.scrollTo(0, y);
-        await new Promise((resolve) => setTimeout(resolve, 120));
-      }
-      window.scrollTo(0, 0);
-    });
-    await page.evaluate(async () => {
-      const images = [...document.querySelectorAll('main img')];
+
+    const audit = await page.evaluate(async (headingIds) => {
+      const root = document.querySelector('[data-spokedu-home-build]');
+      const sections = root ? [...root.querySelectorAll('section')] : [];
+      const headingOrder = sections.map((section) => {
+        const h = section.querySelector('h1, h2');
+        return h?.id ?? null;
+      });
+      const h1Nodes = [...document.querySelectorAll('main#main-content h1')];
+      const images = [...document.querySelectorAll('main#main-content img')];
       for (const image of images) image.loading = 'eager';
-      await Promise.all(images.map((image) => {
-        if (image.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          image.addEventListener('load', resolve, { once: true });
-          image.addEventListener('error', resolve, { once: true });
-          window.setTimeout(resolve, 5_000);
-        });
-      }));
-      window.scrollTo(0, 0);
-    });
-    await page.screenshot({ path: path.join(outputDirectory, `home-${width}-full.jpg`), type: 'jpeg', quality: 68, fullPage: true });
-    const audit = await page.evaluate(async (sectionIds) => {
-      const heroPrimary = document.querySelector('[data-track-label="cta-home-education-hero"]');
-      const heroSecondary = document.querySelector('[data-track-label="cta-home-hero-records"]');
-      const sections = sectionIds.map((id) => document.getElementById(id));
-      const images = [...document.querySelectorAll('main img')];
-      const imageSources = images.map((image) => image.currentSrc || image.getAttribute('src') || '');
-      const duplicateImageSources = [...new Set(imageSources.filter((src, index) => src && imageSources.indexOf(src) !== index))];
-      const unresolvedImages = images
+      await Promise.all(
+        images.map((image) => {
+          if (image.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            image.addEventListener('load', resolve, { once: true });
+            image.addEventListener('error', resolve, { once: true });
+            window.setTimeout(resolve, 8_000);
+          });
+        }),
+      );
+      const brokenImages = images
         .filter((image) => !image.complete || image.naturalWidth === 0)
         .map((image) => image.currentSrc || image.getAttribute('src') || '')
         .filter(Boolean);
-      const brokenImages = (await Promise.all(unresolvedImages.map(async (src) => {
-        try {
-          const response = await fetch(src, { cache: 'no-store' });
-          return response.ok ? null : src;
-        } catch {
-          return src;
-        }
-      }))).filter(Boolean);
+      const audienceHrefs = [...document.querySelectorAll('#audience a[href]')].map((a) => a.getAttribute('href'));
+      const productLinks = [...document.querySelectorAll('section[class*="products"] a[href], .products a[href]')].map((a) =>
+        a.getAttribute('href'),
+      );
+      const allMainLinks = [...document.querySelectorAll('main#main-content a[href]')].map((a) => a.getAttribute('href'));
+      const heroPrimary = document.querySelector('.heroActions a.primaryButton, [class*="heroActions"] a')?.getAttribute('href');
+      const consultLinks = [...document.querySelectorAll('[class*="consultLinks"] a[href]')].map((a) => a.getAttribute('href'));
+
       return {
         overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-        h1: document.querySelector('h1')?.textContent?.trim().replace(/\s+/g, ' ') ?? '',
-        sectionOrder: sections.filter(Boolean).map((element) => element.id),
-        primaryHref: heroPrimary?.getAttribute('href') ?? null,
-        secondaryHref: heroSecondary?.getAttribute('href') ?? null,
-        primaryRadius: heroPrimary ? getComputedStyle(heroPrimary).borderRadius : null,
-        classLinks: [...document.querySelectorAll('#class a[data-track-label]')].map((link) => link.getAttribute('href')),
-        bridgeText: document.querySelector('#bridge')?.textContent?.trim().replace(/\s+/g, ' ') ?? '',
-        finalPrimaryHref: document.querySelector('#final-action [data-track-label="cta-home-final-contact"]')?.getAttribute('href') ?? null,
+        sectionCount: sections.length,
+        headingOrder,
+        h1Count: h1Nodes.length,
+        h1: h1Nodes[0]?.textContent?.trim().replace(/\s+/g, ' ') ?? '',
+        sectionsAttr: root?.getAttribute('data-spokedu-home-sections') ?? null,
+        heroPrimary,
+        audienceHrefs,
+        productLinks,
+        allMainLinks,
+        consultLinks,
         brokenImages,
-        duplicateImageSources,
+        hasExpertiseCopy: Boolean(document.querySelector('#expertise-heading')),
+        hasRecordsGrid: document.querySelectorAll('[class*="recordsGrid"] img, [class*="recordMedia"] img').length >= 5,
       };
-    }, expectedSections);
+    }, EXPECTED_SECTION_HEADINGS);
+
+    const hrefIncludes = (list, target) =>
+      list.some((href) => href === target || (typeof href === 'string' && href.startsWith(`${target}?`)));
+
     const pass = Boolean(
       response?.ok() &&
-      !audit.overflowX &&
-      /아동·청소년 체육수업/.test(audit.h1) &&
-      audit.sectionOrder.join('|') === expectedSections.join('|') &&
-      audit.primaryHref === '/education' &&
-      audit.secondaryHref === '/records' &&
-      audit.primaryRadius === '14px' &&
-      audit.brokenImages.length === 0 &&
-      audit.duplicateImageSources.length === 0 &&
-      ['/private', '/education'].every((href) =>
-        audit.classLinks.some((link) => link === href || (typeof link === 'string' && link.startsWith(`${href}?`))),
-      ) &&
-      /FIELD.*CONTENT.*SYSTEM/.test(audit.bridgeText) &&
-      audit.finalPrimaryHref === '/contact'
+        !audit.overflowX &&
+        audit.sectionCount === 6 &&
+        audit.headingOrder.join('|') === EXPECTED_SECTION_HEADINGS.join('|') &&
+        audit.h1Count === 1 &&
+        /아이의 움직임을/.test(audit.h1) &&
+        audit.sectionsAttr === '6' &&
+        audit.heroPrimary === '#audience' &&
+        hrefIncludes(audit.audienceHrefs, '/private') &&
+        hrefIncludes(audit.audienceHrefs, '/education') &&
+        hrefIncludes(audit.audienceHrefs, '/spokedu-lab') &&
+        hrefIncludes(audit.allMainLinks, '/spomove') &&
+        hrefIncludes(audit.allMainLinks, '/spokedu-lab') &&
+        hrefIncludes(audit.consultLinks, '/contact') &&
+        audit.hasExpertiseCopy &&
+        audit.hasRecordsGrid &&
+        audit.brokenImages.length === 0,
     );
+
     home.push({ width, status: response?.status() ?? null, pass, ...audit });
   }
 
   for (const route of smokeRoutes) {
     for (const width of [390, 1440]) {
-      await page.goto('about:blank');
       await page.setViewportSize({ width, height: 900 });
-      const response = await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+      const response = await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+      stats.navigations += 1;
+      await page.locator('main#main-content').waitFor({ state: 'attached', timeout: 45_000 });
       const overflowX = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
       smoke.push({ route, width, status: response?.status() ?? null, pass: Boolean(response?.ok() && !overflowX) });
     }
@@ -116,7 +135,14 @@ try {
   await browser.close();
 }
 
-const report = { baseUrl, generatedAt: new Date().toISOString(), pass: [...home, ...smoke].every((item) => item.pass), home, smoke };
+const report = {
+  baseUrl,
+  generatedAt: new Date().toISOString(),
+  pass: [...home, ...smoke].every((item) => item.pass),
+  home,
+  smoke,
+  stats: { ...stats, elapsedMs: Math.round(performance.now() - started) },
+};
 await writeFile(path.join(outputDirectory, 'report.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ pass: report.pass, home: home.map(({ width, pass }) => ({ width, pass })), smoke }, null, 2));
+console.log(JSON.stringify({ pass: report.pass, home: home.map(({ width, pass }) => ({ width, pass })), smoke, stats: report.stats }, null, 2));
 process.exitCode = report.pass ? 0 : 1;

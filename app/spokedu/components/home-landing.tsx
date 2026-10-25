@@ -12,7 +12,7 @@ type SpokeduHomeLandingProps = {
 export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingProps) {
   void proofCards;
   return (
-    <div data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID} data-spokedu-home-sections="7">
+    <div data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID} data-spokedu-home-sections="6">
       <HomeWebLanding />
     </div>
   );

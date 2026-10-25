@@ -246,51 +246,58 @@ describe('spokedu site IA', () => {
     expect(homePage.cases.cards.every((card) => !('ctaLabel' in card))).toBe(true);
   });
 
-  it('keeps Home constitution P0 information relationships', () => {
+  it('keeps HomeWebLanding P0 information relationships', () => {
     const landingSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/home/home-editorial-landing.tsx'),
+      join(process.cwd(), 'app/spokedu/components/home-web/home-web-landing.tsx'),
       'utf8',
     );
-    const cssSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/home/home-editorial.module.css'),
+    const wrapperSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/components/home-landing.tsx'),
       'utf8',
     );
     const homePageSource = readFileSync(join(process.cwd(), 'app/spokedu/data/home-page.ts'), 'utf8');
 
-    expect(landingSource).toMatch(/type FieldTab = 'field' \| 'content' \| 'system'/);
-    expect(landingSource).toMatch(/label: 'FIELD'[\s\S]*label: 'CONTENT'[\s\S]*label: 'SYSTEM'/);
-    expect(landingSource).toMatch(/role="tablist" aria-label="현장 기반 서비스 구조"/);
-    expect(landingSource).toMatch(/role="tabpanel"/);
-    expect(landingSource).toMatch(/activeFieldTab === 'field'[\s\S]*<FieldPanel/);
-    expect(landingSource).toMatch(/activeFieldTab === 'content'[\s\S]*<ContentPanel/);
-    expect(landingSource).toMatch(/activeFieldTab === 'system'[\s\S]*<SystemPanel/);
+    expect(wrapperSource).toMatch(/data-spokedu-home-sections="6"/);
+    expect(landingSource).not.toMatch(/<main[\s>]/);
+    expect(landingSource).toMatch(/<div className=\{styles\.page\}>/);
+    expect(landingSource.match(/<section/g)?.length).toBe(6);
+    expect(landingSource).toMatch(/aria-labelledby="home-heading"/);
+    expect(landingSource).toMatch(/id="audience"/);
+    expect(landingSource).toMatch(/aria-labelledby="expertise-heading"/);
+    expect(landingSource).toMatch(/aria-labelledby="records-heading"/);
+    expect(landingSource).toMatch(/aria-labelledby="products-heading"/);
+    expect(landingSource).toMatch(/aria-labelledby="consult-heading"/);
 
-    expect(landingSource).toMatch(/function ContentPanel/);
-    expect(landingSource).toMatch(/href=\{homePage\.spomove\.primaryCta\.href\}/);
-    expect(landingSource).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠|스트룹/);
-    expect('flow' in homePage.spomove).toBe(false);
+    expect(landingSource).toMatch(/SPOKEDU_PATHS\.private/);
+    expect(landingSource).toMatch(/SPOKEDU_PATHS\.education/);
+    expect(landingSource).toMatch(/SPOKEDU_PATHS\.subscription/);
+    expect(landingSource).toMatch(/SPOKEDU_PATHS\.spomove/);
+    expect(landingSource).toMatch(/SPOKEDU_PATHS\.records/);
+    expect(landingSource).toMatch(/href=\{item\.href\}/);
+    expect(landingSource).toMatch(/href=\{`\$\{SPOKEDU_PATHS\.contact\}\?type=dispatch`\}/);
+    expect(landingSource).toMatch(/href=\{`\$\{SPOKEDU_PATHS\.contact\}\?type=private`\}/);
 
-    expect(landingSource).toMatch(/function SystemPanel/);
-    expect(landingSource).toMatch(/homePage\.subscription\.visual\.src/);
-    expect(landingSource).toMatch(/href=\{homePage\.subscription\.primaryCta\.href\}/);
-    expect(landingSource).not.toMatch(/productStageFooter|productProofCopy|prepare-dishcone-bingo/);
-    expect(cssSource).not.toMatch(/productStageFooter|spomoveFooter|spomoveMicro|productProof|casesGrid|caseRow|spomoveSpread/);
+    expect(landingSource).toMatch(/HOME_SECTION04_RECORDS/);
+    expect(landingSource).toMatch(/FEATURED_RECORDS\.map/);
+    const featuredSlugs = [
+      'donghaeng-special-pe',
+      'maedong-sports-stepup',
+      'yangcheon-paps',
+      'dasarang-oneday',
+      'seodaemun-event-booth',
+    ];
+    for (const slug of featuredSlugs) {
+      expect(landingSource).toContain(slug);
+    }
+    expect(featuredSlugs).toHaveLength(5);
 
     expect(homePage.cases.cards).toHaveLength(6);
-    expect(landingSource).toMatch(/caseCards\.map\(\(card, index\)/);
-    expect(landingSource).toMatch(/homePage\.cases\.recordsCta\.href/);
-    expect(landingSource).toMatch(/styles\.recordRail/);
-    expect(landingSource).toMatch(/aria-label="이전 운영 사례"[\s\S]*aria-label="다음 운영 사례"/);
-    expect(landingSource).toMatch(/disabled=\{recordPosition\.atStart\}[\s\S]*disabled=\{recordPosition\.atEnd\}/);
-    expect(landingSource).not.toMatch(/CASE_FILTERS|activeFilter|caseFeatured|caseSupporting/);
-    expect(cssSource).toMatch(/scroll-snap-type:\s*x mandatory/);
-    expect(cssSource).toMatch(/\.recordRail\s*{[^}]*scrollbar-width:\s*none/);
-    expect(cssSource).toMatch(/\.recordRail::-webkit-scrollbar\s*{[^}]*display:\s*none/);
-    expect(cssSource).not.toMatch(/caseItem:first-child/);
+    expect(homePage.cases.cards.some((card) => card.slug === 'dongjak-spomove')).toBe(true);
+    expect(landingSource).not.toContain('dongjak-spomove');
+
     expect(homePageSource).not.toMatch(/HOME_FEATURED_CASE_SLUG/);
     expect(JSON.stringify(homePage.spomove)).not.toMatch(/향상|개선|치료|인지|주의력|반응속도|스트룹/);
-    expect(landingSource).not.toMatch(/heroCaption/);
-    expect(cssSource).not.toMatch(/productFeature:nth-child\(even\)|productFeature:last-child/);
+    expect(landingSource).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠|스트룹/);
   });
 
   it('keeps Home media roles distinct and backed by approved assets', () => {

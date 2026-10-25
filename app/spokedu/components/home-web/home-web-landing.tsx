@@ -56,7 +56,7 @@ const FEATURED_RECORDS = HOME_SECTION04_RECORDS.map(({ slug, objectPosition }) =
 
 export function HomeWebLanding() {
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <section className={styles.hero} aria-labelledby="home-heading">
         <img className={styles.heroImage} src={HOME_HERO_IMAGE.src} alt={HOME_HERO_IMAGE.alt} style={{ objectPosition: HOME_HERO_IMAGE.objectPosition }} />
         <div className={styles.heroShade} aria-hidden="true" />
@@ -162,6 +162,6 @@ export function HomeWebLanding() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

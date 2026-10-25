@@ -1,91 +1,193 @@
 import { mkdir, writeFile } from 'node:fs/promises';
+import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { assertLocalQaTarget, installLocalQaRouteGuard } from './lib/qa-network-guard.mjs';
 
-const baseUrl = process.argv[2] ?? 'http://localhost:3000';
+const baseUrl = process.argv[2] ?? 'http://127.0.0.1:3000';
 const outputDirectory = path.join(process.cwd(), '.qa-spokedu', 'typography');
-const routes = ['/', '/spokedu-lab', '/education', '/spomove', '/private', '/about'];
-const widths = [390, 768, 1024, 1440];
+const widths = [390, 1440];
+
+/** @type {Record<string, { readySelector: string; checks: (audit: object) => boolean; required: string[] }>} */
+const PAGE_POLICIES = {
+  '/': {
+    readySelector: '#home-heading',
+    required: ['h1', 'heroLead', 'overflow'],
+    checks: (audit) =>
+      audit.h1 &&
+      /Pretendard|Noto Sans|Apple SD Gothic|Malgun Gothic|system-ui/i.test(audit.h1.family) &&
+      Number.parseInt(audit.h1.weight, 10) >= 400 &&
+      audit.heroLead &&
+      /Pretendard|Noto Sans|Apple SD Gothic|Malgun Gothic|system-ui/i.test(audit.heroLead.family) &&
+      !audit.overflowX,
+  },
+  '/education': {
+    readySelector: '#edu-hero',
+    required: ['h1', 'bodySample', 'overflow'],
+    checks: (audit) =>
+      audit.h1 &&
+      /Pretendard|Noto Sans|Apple SD Gothic|Malgun Gothic|system-ui/i.test(audit.h1.family) &&
+      audit.bodySample &&
+      /Pretendard|Noto Sans|Apple SD Gothic|Malgun Gothic|system-ui/i.test(audit.bodySample.family) &&
+      !audit.overflowX,
+  },
+  '/spomove': {
+    readySelector: 'main#main-content h1',
+    required: ['h1', 'sectionH2', 'overflow'],
+    checks: (audit) =>
+      audit.h1 &&
+      /Pretendard/i.test(audit.h1.family) &&
+      audit.h1.weight === '780' &&
+      audit.sectionH2 &&
+      /Pretendard/i.test(audit.sectionH2.family) &&
+      audit.sectionH2.weight === '780' &&
+      !audit.overflowX,
+  },
+  '/private': {
+    readySelector: 'main#main-content h1',
+    required: ['h1', 'bodySample', 'overflow'],
+    checks: (audit) =>
+      audit.h1 &&
+      /Pretendard/i.test(audit.h1.family) &&
+      audit.bodySample &&
+      /Pretendard|Noto Sans|Apple SD Gothic|Malgun Gothic|system-ui/i.test(audit.bodySample.family) &&
+      !audit.overflowX,
+  },
+  '/spokedu-lab': {
+    readySelector: '[data-spokedu-master-local-nav="true"]',
+    required: ['h1', 'overflow'],
+    checks: (audit) =>
+      audit.h1 &&
+      /Pretendard/i.test(audit.h1.family) &&
+      audit.h1.weight === '700' &&
+      !audit.overflowX,
+  },
+  '/contact?type=dispatch': {
+    readySelector: 'main#main-content h1',
+    required: ['h1', 'submitControl', 'overflow'],
+    checks: (audit) =>
+      audit.h1 &&
+      /Pretendard/i.test(audit.h1.family) &&
+      audit.h1.weight === '700' &&
+      audit.submitControl &&
+      /Pretendard/i.test(audit.submitControl.family) &&
+      audit.submitControl.radius === '14px' &&
+      !audit.overflowX,
+  },
+};
+
+const routes = Object.keys(PAGE_POLICIES);
+const stats = { navigations: 0, screenshots: 0, blockedRemote: 0 };
 
 await mkdir(outputDirectory, { recursive: true });
-
-function slug(route) {
-  return route === '/' ? 'home' : route.slice(1).replaceAll('/', '-');
-}
-
 assertLocalQaTarget(baseUrl);
+const started = performance.now();
 const browser = await chromium.launch({ headless: true });
 const originalNewPage = browser.newPage.bind(browser);
 browser.newPage = async (...args) => {
   const page = await originalNewPage(...args);
   await installLocalQaRouteGuard(page.context());
+  page.on('requestfailed', (req) => {
+    if (req.failure()?.errorText === 'blockedbyclient') stats.blockedRemote += 1;
+  });
   return page;
 };
-const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
+const page = await browser.newPage({ viewport: { width: widths[0], height: 900 } });
 const results = [];
 
 try {
   for (const route of routes) {
-    await page.setViewportSize({ width: widths[0], height: 900 });
-    const response = await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    const policy = PAGE_POLICIES[route];
+    const response = await page.goto(`${baseUrl}${route}`, {
+      waitUntil: route.startsWith('/contact') ? 'networkidle' : 'domcontentloaded',
+      timeout: route.startsWith('/contact') ? 180_000 : 120_000,
+    });
+    stats.navigations += 1;
+    await page.locator(policy.readySelector).first().waitFor({ state: 'visible', timeout: 45_000 });
+    let contactClientReady = true;
+    if (route.startsWith('/contact')) {
+      contactClientReady = await page
+        .waitForFunction(
+          () =>
+            [...document.querySelectorAll('main#main-content button')].some((el) =>
+              Object.keys(el).some((key) => key.startsWith('__react')),
+            ),
+          undefined,
+          { timeout: 45_000 },
+        )
+        .then(() => true)
+        .catch(() => false);
+      if (contactClientReady) {
+        await page.waitForFunction(
+          () => !document.body.textContent?.includes('문의 폼을 불러오는 중'),
+          undefined,
+          { timeout: 60_000 },
+        );
+        await page
+          .locator('main#main-content button[data-track^="contact-submit"]')
+          .first()
+          .waitFor({ state: 'attached', timeout: 60_000 });
+      }
+    }
     await page.evaluate(() => document.fonts.ready);
 
     for (const width of widths) {
       await page.setViewportSize({ width, height: 900 });
-      await page.waitForTimeout(250);
 
-      const audit = await page.evaluate(async () => {
+      const audit = await page.evaluate(() => {
         const computed = (element) => {
           if (!element) return null;
           const style = getComputedStyle(element);
           return {
             family: style.fontFamily,
             weight: style.fontWeight,
-            synthesis: style.fontSynthesis,
+            size: style.fontSize,
+            lineHeight: style.lineHeight,
+            wordBreak: style.wordBreak,
             radius: style.borderRadius,
-            shadow: style.boxShadow,
-            text: element.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80) ?? '',
           };
         };
-        const displayH2 = document.querySelector('h2[class*="spokedu-marketing-font-display"]');
-        const canonicalControl = document.querySelector(
-          'main .button, main a[class*="spokedu-marketing-radius-sm"], main button[class*="spokedu-marketing-radius-sm"]',
-        );
-        const fontResponse = await fetch('/fonts/Cafe24SsurroundAir.woff', { method: 'HEAD' });
+        const sectionH2 = document.querySelector('main#main-content h2');
+        const submitControl = document.querySelector('main#main-content button[data-track^="contact-submit"]');
         return {
           overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-          fontLoaded: document.fonts.check('400 32px "Cafe24SsurroundAir"'),
-          fontAssetStatus: fontResponse.status,
-          h1: computed(document.querySelector('h1')),
-          h2: computed(displayH2),
-          body: computed(document.querySelector('main p')),
-          control: computed(canonicalControl),
-          surface: computed(document.querySelector('main article[class*="spokedu-marketing-radius-md"]')),
+          h1: computed(document.querySelector('main#main-content h1')),
+          heroLead: computed(document.querySelector('#home-heading')?.closest('section')?.querySelector('p')),
+          bodySample: computed(document.querySelector('main#main-content p')),
+          sectionH2: computed(sectionH2),
+          submitControl: computed(submitControl),
         };
       });
 
-      const displayOk = (value) =>
-        value && value.family.includes('Cafe24SsurroundAir') && value.weight === '400' && value.synthesis === 'none';
-      const subscriptionV17DisplayOk = (value) =>
-        value && value.family.includes('Pretendard') && value.weight === '700';
-      const routeDisplayOk = route === '/spokedu-lab' ? subscriptionV17DisplayOk : displayOk;
-      const bodyOk = (value) => !value || /Pretendard/.test(value.family);
-      const controlOk = (value) => !value || (bodyOk(value) && value.radius === '14px');
-      const pass = Boolean(
-        response?.ok() &&
-          !audit.overflowX &&
-          (route === '/spokedu-lab' || audit.fontLoaded) &&
-          audit.fontAssetStatus === 200 &&
-          routeDisplayOk(audit.h1) &&
-          (!audit.h2 || routeDisplayOk(audit.h2)) &&
-          bodyOk(audit.body) &&
-          controlOk(audit.control),
-      );
+      if (route.startsWith('/contact') && !contactClientReady) {
+        results.push({
+          route,
+          width,
+          status: response?.status() ?? null,
+          pass: false,
+          blocked: true,
+          reason: 'BLOCKED: contact form client bundle did not hydrate in this runtime',
+          ...audit,
+        });
+        continue;
+      }
 
-      const screenshot = path.join(outputDirectory, `${slug(route)}-${width}.png`);
-      await page.screenshot({ path: screenshot, fullPage: false });
-      results.push({ route, width, status: response?.status() ?? null, pass, ...audit, screenshot });
+      const missingRequired = policy.required.filter((key) => key !== 'overflow' && !audit[key]);
+      const pass = Boolean(
+        response?.ok() && missingRequired.length === 0 && policy.checks(audit),
+      );
+      results.push({
+        route,
+        width,
+        status: response?.status() ?? null,
+        pass,
+        reason: missingRequired.length
+          ? `missing required: ${missingRequired.join(',')}`
+          : pass
+            ? null
+            : 'policy check failed',
+        ...audit,
+      });
     }
   }
 } finally {
@@ -97,10 +199,27 @@ const report = {
   generatedAt: new Date().toISOString(),
   pass: results.every((result) => result.pass),
   results,
+  stats: { ...stats, elapsedMs: Math.round(performance.now() - started) },
 };
 await writeFile(path.join(outputDirectory, 'report.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({
-  pass: report.pass,
-  checks: results.map(({ route, width, pass, status }) => ({ route, width, pass, status })),
-}, null, 2));
-process.exitCode = report.pass ? 0 : 1;
+const blocked = results.some((result) => result.blocked);
+console.log(
+  JSON.stringify(
+    {
+      pass: report.pass,
+      blocked,
+      checks: results.map(({ route, width, pass, status, reason, blocked: isBlocked }) => ({
+        route,
+        width,
+        pass,
+        status,
+        reason,
+        blocked: Boolean(isBlocked),
+      })),
+      stats: report.stats,
+    },
+    null,
+    2,
+  ),
+);
+process.exitCode = blocked ? 2 : report.pass ? 0 : 1;

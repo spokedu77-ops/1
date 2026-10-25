@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Playwright·loopback QA uses 127.0.0.1; without this, Next dev blocks HMR/dev
+  // chunks cross-host and client components never hydrate (localhost-only works).
+  allowedDevOrigins: ["127.0.0.1"],
   // Keep Next.js inside this repository even when a stray lockfile exists in
   // a parent directory. Otherwise Turbopack may watch the wrong workspace.
   outputFileTracingRoot: process.cwd(),

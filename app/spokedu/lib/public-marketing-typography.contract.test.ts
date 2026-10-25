@@ -44,12 +44,10 @@ describe('public marketing typography contract', () => {
     expect(utility(utilities, 'marketingHeroDisplay')).toContain('max-[480px]:text-[38px]');
     expect(utility(utilities, 'marketingSectionDisplay')).toContain('text-[clamp(34px,5vw,58px)]');
 
-    const home = read('app/spokedu/components/home/home-editorial.module.css');
-    expect(home).not.toMatch(/\.heroTitle\s*{/);
-    expect(home).not.toMatch(/\.sectionTitle\s*{/);
-    expect(home).not.toMatch(/\.bridgeTitle\s*{/);
-    expect(home).not.toMatch(/font-size:\s*clamp\(/);
-    expect(home).not.toMatch(/homeBrandDisplay|--he-brand-display/);
+    const homeWebCss = read('app/spokedu/components/home-web/home-canonical.module.css');
+    expect(homeWebCss).toMatch(/\.hero h1/);
+    expect(homeWebCss).toMatch(/font-size:\s*clamp\(/);
+    expect(homeWebCss).not.toMatch(/homeBrandDisplay|--he-brand-display/);
   });
 
   it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the approved Pretendard 700 display contract', (name) => {
@@ -61,11 +59,13 @@ describe('public marketing typography contract', () => {
     expect(value).not.toContain('[font-synthesis:none]');
   });
 
-  it('keeps Home heading CSS limited to layout composition only', () => {
-    const home = read('app/spokedu/components/home/home-editorial.module.css');
-    expect(home).not.toMatch(/font-family:\s*"Cafe24SsurroundAir"/);
-    expect(home).not.toMatch(/font-weight:\s*400/);
-    expect(home).not.toMatch(/\.(?:heroTitle|sectionTitle|compactTitle|bridgeTitle)\s*{/);
+  it('keeps HomeWebLanding heading CSS on the canonical home module without legacy editorial titles', () => {
+    const homeWebCss = read('app/spokedu/components/home-web/home-canonical.module.css');
+    const homeWeb = read('app/spokedu/components/home-web/home-web-landing.tsx');
+    expect(homeWebCss).not.toMatch(/font-family:\s*"Cafe24SsurroundAir"/);
+    expect(homeWeb).not.toMatch(/marketingHeroDisplay|homeQuietDisplay|home-editorial/);
+    expect(homeWeb).toMatch(/<div className=\{styles\.page\}>/);
+    expect(homeWeb).not.toMatch(/<main[\s>]/);
   });
 
   it.each(['marketingCompactDisplay', 'marketingMetricDisplay'])('%s keeps its explicit lightweight display role', (name) => {
@@ -84,8 +84,9 @@ describe('public marketing typography contract', () => {
   });
 
   it('keeps key public page titles and section titles on canonical utilities', () => {
-    expect(read('app/spokedu/components/home/home-editorial-landing.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
-    expect(read('app/spokedu/components/home/home-editorial-landing.tsx')).toMatch(/<h2[\s\S]*homeQuietDisplay/);
+    const homeWeb = read('app/spokedu/components/home-web/home-web-landing.tsx');
+    expect(homeWeb).toMatch(/<h1 id="home-heading"/);
+    expect(homeWeb).toMatch(/<h2 id="audience-heading"/);
     expect(read('app/spokedu/components/landing-hero.tsx')).toMatch(/<motion\.h1[\s\S]*marketingHeroDisplay/);
     const education = read('app/spokedu/components/education-hub-landing.tsx');
     const educationStyles = read('app/spokedu/components/education-hub.module.css');
@@ -99,6 +100,6 @@ describe('public marketing typography contract', () => {
 
   it('does not hide migration behind broad heading overrides', () => {
     expect(globals).not.toMatch(/\.spokedu-marketing\s+(?:h1|h2)/);
-    expect(read('app/spokedu/components/home/home-editorial.module.css')).not.toMatch(/:is\(h1,\s*h2\)/);
+    expect(read('app/spokedu/components/home-web/home-canonical.module.css')).not.toMatch(/:is\(h1,\s*h2\)/);
   });
 });
