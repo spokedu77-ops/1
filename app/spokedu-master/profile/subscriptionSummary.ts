@@ -21,6 +21,10 @@ export type SubscriptionSummaryData = {
   canCancelAutoBilling: boolean;
   /** 최근 자동결제 갱신이 실패했고, 이후 성공 결제가 없을 때 */
   billingRenewalFailed?: boolean;
+  automaticBillingStopped?: boolean;
+  billingPlan?: 'lite' | 'premium' | null;
+  billingStatus?: SubscriptionSummaryStatus;
+  billingPeriodEnd?: string | null;
   entitlementSource?: 'none' | 'billing' | 'promotion' | 'admin';
   promotionalPlan?: 'lite' | 'premium' | null;
   promotionalEndsAt?: string | null;
@@ -122,6 +126,10 @@ export function normalizeSubscriptionSummary(value: unknown): SubscriptionSummar
     isAdmin: input.isAdmin === true,
     canCancelAutoBilling: input.canCancelAutoBilling === true,
     billingRenewalFailed: input.billingRenewalFailed === true,
+    automaticBillingStopped: input.automaticBillingStopped === true,
+    billingPlan: input.billingPlan === 'lite' || input.billingPlan === 'premium' ? input.billingPlan : null,
+    billingStatus: typeof input.billingStatus === 'string' ? input.billingStatus : 'none',
+    billingPeriodEnd: typeof input.billingPeriodEnd === 'string' ? input.billingPeriodEnd : null,
     entitlementSource:
       input.entitlementSource === 'billing' || input.entitlementSource === 'promotion' || input.entitlementSource === 'admin'
         ? input.entitlementSource
@@ -202,7 +210,9 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
   }
 
   const planLabel = getSubscriptionPlanLabel(summary);
-  const renewalWarning = summary.billingRenewalFailed
+  const renewalWarning = summary.automaticBillingStopped
+    ? '자동결제 재시도가 중지되었습니다. 유료 이용 종료 전에 결제수단을 확인해 주세요.'
+    : summary.billingRenewalFailed
     ? '최근 자동결제가 실패했습니다. 이용 종료일 전에 결제수단을 확인해 주세요.'
     : null;
 
@@ -227,6 +237,11 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
 
   if (summary.entitlementSource === 'promotion' && summary.status === 'active') {
     const promotionPlan = summary.promotionalPlan ?? (summary.plan === 'lite' ? 'lite' : 'premium');
+    const billingPlan = summary.billingPlan;
+    const hasManagedBilling = Boolean(
+      (billingPlan === 'lite' || billingPlan === 'premium')
+      && summary.billingStatus === 'active',
+    );
     return {
       state: 'active',
       planLabel: `이벤트 ${promotionPlan === 'premium' ? 'Premium' : 'Lite'} 이용권`,
@@ -235,12 +250,14 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       primaryHref: '/spokedu-lab/subscription',
       dateLabel: '이용 종료일',
       dateText: formatSubscriptionEndDate(summary.promotionalEndsAt ?? null),
-      amountText: null,
-      description: '결제 없이 제공된 프로모션 이용권입니다. 종료 후에는 기존 유료 이용권 또는 Free 권한으로 돌아갑니다.',
+      amountText: billingPlan ? getAmountText(billingPlan) : null,
+      description: hasManagedBilling
+        ? '프로모션 이용권과 기존 유료 구독은 독립적으로 관리됩니다. 프로모션 종료 후 기존 유료 이용권으로 돌아갑니다.'
+        : '결제 없이 제공된 프로모션 이용권입니다. 종료 후에는 기존 유료 이용권 또는 Free 권한으로 돌아갑니다.',
       valueWorkflow: getMasterPlanValueWorkflowLines(promotionPlan),
-      warningText: null,
-      isDirectBillingPlan: false,
-      canCancel: false,
+      warningText: renewalWarning,
+      isDirectBillingPlan: hasManagedBilling,
+      canCancel: summary.canCancelAutoBilling,
       ...inactiveUpgradeFields(),
     };
   }

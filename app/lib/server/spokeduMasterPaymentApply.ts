@@ -28,6 +28,7 @@ export type ApplySpokeduMasterPaymentInput = {
   providerCustomerKey?: string | null;
   providerBillingKeySecretId?: string | null;
   billingCycleKey?: string | null;
+  billingAnchorDay?: number | null;
   periodOverride?: { periodStart: string; periodEnd: string; nextBillingAt: string };
 };
 
@@ -79,9 +80,39 @@ export function addOneBillingMonth(date: Date): Date {
   ));
 }
 
-export function calculateSpokeduMasterPaymentPeriod(approvedAt?: string | null) {
+const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+export function deriveSeoulBillingAnchor(date: Date): { day: number; isEom: boolean } {
+  const seoul = new Date(date.getTime() + SEOUL_OFFSET_MS);
+  const day = seoul.getUTCDate();
+  return { day, isEom: day === daysInUtcMonth(seoul.getUTCFullYear(), seoul.getUTCMonth()) };
+}
+
+export function addOneBillingMonthFromAnchor(date: Date, anchorDay: number): Date {
+  if (!Number.isInteger(anchorDay) || anchorDay < 1 || anchorDay > 31) {
+    throw new Error('invalid_billing_anchor_day');
+  }
+  const seoul = new Date(date.getTime() + SEOUL_OFFSET_MS);
+  const targetMonth = seoul.getUTCMonth() + 1;
+  const targetYear = seoul.getUTCFullYear() + Math.floor(targetMonth / 12);
+  const normalizedTargetMonth = targetMonth % 12;
+  const day = Math.min(anchorDay, daysInUtcMonth(targetYear, normalizedTargetMonth));
+  return new Date(Date.UTC(
+    targetYear,
+    normalizedTargetMonth,
+    day,
+    seoul.getUTCHours(),
+    seoul.getUTCMinutes(),
+    seoul.getUTCSeconds(),
+    seoul.getUTCMilliseconds(),
+  ) - SEOUL_OFFSET_MS);
+}
+
+export function calculateSpokeduMasterPaymentPeriod(approvedAt?: string | null, billingAnchorDay?: number | null) {
   const periodStart = parsePeriodStart(approvedAt);
-  const periodEnd = addOneBillingMonth(periodStart);
+  const periodEnd = billingAnchorDay == null
+    ? addOneBillingMonth(periodStart)
+    : addOneBillingMonthFromAnchor(periodStart, billingAnchorDay);
   return {
     periodStart: periodStart.toISOString(),
     periodEnd: periodEnd.toISOString(),
@@ -127,7 +158,7 @@ export async function applySpokeduMasterPayment(
   if (validation) return validation;
 
   const { periodStart, periodEnd, nextBillingAt } = input.periodOverride
-    ?? calculateSpokeduMasterPaymentPeriod(input.approvedAt);
+    ?? calculateSpokeduMasterPaymentPeriod(input.approvedAt, input.billingAnchorDay);
   const service = getServiceSupabase();
 
   const { data, error } = await service.rpc('spokedu_master_apply_payment', {

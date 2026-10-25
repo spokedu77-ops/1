@@ -7,7 +7,7 @@ const applyPayment = readFileSync(join(process.cwd(), 'supabase/migrations/20260
 
 describe('subscription renewal state contract', () => {
   it('uses subscription retry state instead of one payment error code', () => {
-    expect(route).toContain('hasSpokeduMasterBillingRenewalFailure(row, promotionActive)');
+    expect(route).toContain('hasSpokeduMasterBillingRenewalFailure(row)');
     expect(route).not.toContain("last_error_code', 'renewal_payment_failed'");
   });
 

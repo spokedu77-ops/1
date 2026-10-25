@@ -53,6 +53,32 @@ describe('subscriptionSummary', () => {
     });
   });
 
+  it('keeps the underlying paid subscription manageable during a promotion', () => {
+    const display = getSubscriptionDisplaySummary(summary({
+      plan: 'premium',
+      status: 'active',
+      entitlementSource: 'promotion',
+      promotionalPlan: 'premium',
+      promotionalEndsAt: future,
+      billingPlan: 'lite',
+      billingStatus: 'active',
+      billingPeriodEnd: future,
+      nextBillingAt: future,
+      canCancelAutoBilling: true,
+      billingRenewalFailed: true,
+      automaticBillingStopped: true,
+    }));
+
+    expect(display).toMatchObject({
+      state: 'active',
+      planLabel: '이벤트 Premium 이용권',
+      amountText: '월 9,900원',
+      canCancel: true,
+      isDirectBillingPlan: true,
+      warningText: '자동결제 재시도가 중지되었습니다. 유료 이용 종료 전에 결제수단을 확인해 주세요.',
+    });
+  });
+
   it('maps active Premium billing subscriptions for display', () => {
     const value = summary({
       plan: 'premium',
@@ -256,6 +282,10 @@ describe('subscriptionSummary', () => {
       isAdmin: false,
       canCancelAutoBilling: false,
       billingRenewalFailed: false,
+      automaticBillingStopped: false,
+      billingPlan: null,
+      billingStatus: 'none',
+      billingPeriodEnd: null,
       entitlementSource: 'none',
       promotionalPlan: null,
       promotionalEndsAt: null,

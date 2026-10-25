@@ -16,8 +16,10 @@ vi.mock('@/app/lib/monitoring/errorReporter', () => ({
 
 import {
   addOneBillingMonth,
+  addOneBillingMonthFromAnchor,
   applySpokeduMasterPayment,
   calculateSpokeduMasterPaymentPeriod,
+  deriveSeoulBillingAnchor,
 } from './spokeduMasterPaymentApply';
 
 const input = {
@@ -51,6 +53,36 @@ describe('applySpokeduMasterPayment', () => {
     });
     expect(addOneBillingMonth(new Date('2026-01-31T00:00:00.000Z')).toISOString())
       .toBe('2026-02-28T00:00:00.000Z');
+  });
+
+  it.each([29, 30, 31])('preserves a KST day-%i anchor for 12 months and only clamps missing dates', (day) => {
+    for (const year of [2027, 2028]) {
+      let cursor = new Date(`${year}-01-${String(day).padStart(2, '0')}T03:30:00.000Z`);
+      for (let month = 1; month <= 12; month += 1) {
+        const next = addOneBillingMonthFromAnchor(cursor, day);
+        const kst = new Date(next.getTime() + 9 * 60 * 60 * 1000);
+        const expectedMonth = month === 12 ? 0 : month;
+        const expectedYear = month === 12 ? year + 1 : year;
+        const lastDay = new Date(Date.UTC(expectedYear, expectedMonth + 1, 0)).getUTCDate();
+        expect(kst.getUTCFullYear()).toBe(expectedYear);
+        expect(kst.getUTCMonth()).toBe(expectedMonth);
+        expect(kst.getUTCDate()).toBe(Math.min(day, lastDay));
+        cursor = next;
+      }
+    }
+  });
+
+  it('returns to the original day after a short month instead of drifting', () => {
+    const february = addOneBillingMonthFromAnchor(new Date('2027-01-31T03:30:00.000Z'), 31);
+    const march = addOneBillingMonthFromAnchor(february, 31);
+    expect(february.toISOString()).toBe('2027-02-28T03:30:00.000Z');
+    expect(march.toISOString()).toBe('2027-03-31T03:30:00.000Z');
+  });
+
+  it('derives the anchor from the KST calendar day at UTC boundaries', () => {
+    expect(deriveSeoulBillingAnchor(new Date('2026-01-30T15:00:00.000Z'))).toEqual({ day: 31, isEom: true });
+    expect(deriveSeoulBillingAnchor(new Date('2026-01-31T14:59:59.999Z'))).toEqual({ day: 31, isEom: true });
+    expect(deriveSeoulBillingAnchor(new Date('2026-01-31T15:00:00.000Z'))).toEqual({ day: 1, isEom: false });
   });
 
   it('applies the first successful billing payment through the RPC', async () => {

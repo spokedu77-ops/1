@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'url';
-import { createClient } from '@supabase/supabase-js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -57,6 +56,10 @@ SELECT vault.create_secret(
 }
 
 async function probeRenew(baseUrl, cronSecret) {
+  const parsed = new URL(baseUrl);
+  if (!['localhost', '127.0.0.1', '::1'].includes(parsed.hostname)) {
+    fail('renew probe is restricted to a local isolated environment');
+  }
   const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/spokedu-master/payment/billing/renew`, {
     method: 'POST',
     headers: {
@@ -71,8 +74,6 @@ async function probeRenew(baseUrl, cronSecret) {
 async function main() {
   loadEnvFile(join(ROOT, '.env.local'));
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? '';
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'http://localhost:3000';
   const localBase = process.argv.find((arg) => /^https?:\/\//.test(arg)) || 'http://localhost:3000';
   const cronSecret = process.env.CRON_SECRET?.trim() ?? '';
@@ -94,16 +95,8 @@ async function main() {
     next: [],
   };
 
-  if (supabaseUrl && serviceRole) {
-    const supabase = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
-    const { error } = await supabase.rpc('spokedu_master_run_billing_renewal_cron');
-    if (!error) {
-      report.vaultCronCallable = true;
-    } else {
-      report.vaultCronCallable = false;
-      report.vaultCronError = error.message;
-    }
-  }
+  report.vaultCronCallable = 'not_executed';
+  report.productionRpcExecution = 'forbidden';
 
   if (report.localProbeStatus === 200 || report.localProbeStatus === 503) {
     report.localCronAuth = 'ok';

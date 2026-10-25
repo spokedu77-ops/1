@@ -95,6 +95,7 @@ export async function paySpokeduMasterBillingKey(input: {
     headers: {
       Authorization: tossAuthorization(secretKey),
       'Content-Type': 'application/json',
+      'Idempotency-Key': orderId,
     },
     body: JSON.stringify({
       customerKey: input.customerKey,
@@ -108,13 +109,18 @@ export async function paySpokeduMasterBillingKey(input: {
     signal: AbortSignal.timeout(TOSS_BILLING_APPROVAL_TIMEOUT_MS),
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    if (response.status === 400 || response.status === 422) return null;
+    throw new Error(`toss_billing_approval_indeterminate:${response.status}`);
+  }
   const json = readRecord(await response.json());
   const paymentKey = readString(json.paymentKey);
   const returnedOrderId = readString(json.orderId);
   const totalAmount = readNumber(json.totalAmount);
   const approvedAt = readString(json.approvedAt);
-  if (!paymentKey || returnedOrderId !== orderId || totalAmount !== input.amount) return null;
+  if (!paymentKey || returnedOrderId !== orderId || totalAmount !== input.amount) {
+    throw new Error('toss_billing_approval_mismatch');
+  }
   return {
     paymentKey,
     orderId,
@@ -143,14 +149,22 @@ export async function findSpokeduMasterPaymentByOrderId(input: {
     },
   );
 
-  if (!response.ok) return null;
+  // A provider 404 is the only authoritative "not charged" result. Auth,
+  // rate-limit, timeout, and provider failures are indeterminate and must not
+  // be collapsed into null, because callers may otherwise charge again.
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`toss_order_lookup_indeterminate:${response.status}`);
+  }
   const json = readRecord(await response.json());
   const paymentKey = readString(json.paymentKey);
   const returnedOrderId = readString(json.orderId);
   const totalAmount = readNumber(json.totalAmount);
   const approvedAt = readString(json.approvedAt);
   const status = readString(json.status);
-  if (!paymentKey || returnedOrderId !== input.orderId || totalAmount !== input.amount) return null;
+  if (!paymentKey || returnedOrderId !== input.orderId || totalAmount !== input.amount) {
+    throw new Error('toss_order_lookup_mismatch');
+  }
   if (status !== 'DONE') return null;
   return {
     paymentKey,

@@ -76,7 +76,8 @@ describe('spokeduMasterBillingProvider', () => {
     const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
 
     await issueSpokeduMasterBillingKey({ authKey: 'a', customerKey: 'c' });
-    await findSpokeduMasterPaymentByOrderId({ orderId: 'order-1', amount: 9900 });
+    await expect(findSpokeduMasterPaymentByOrderId({ orderId: 'order-1', amount: 9900 }))
+      .rejects.toThrow('toss_order_lookup_indeterminate:500');
 
     expect(timeoutSpy).toHaveBeenNthCalledWith(1, TOSS_FETCH_TIMEOUT_MS);
     expect(timeoutSpy).toHaveBeenNthCalledWith(2, TOSS_FETCH_TIMEOUT_MS);
@@ -84,10 +85,11 @@ describe('spokeduMasterBillingProvider', () => {
 
   it('allows at least 60 seconds for automatic billing approval', async () => {
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('no', { status: 500 })));
+    const fetchMock = vi.fn(async () => new Response('no', { status: 500 }));
+    vi.stubGlobal('fetch', fetchMock);
     const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
 
-    await paySpokeduMasterBillingKey({
+    await expect(paySpokeduMasterBillingKey({
       billingKey: 'bill_1',
       customerKey: 'cust_1',
       plan: 'lite',
@@ -95,15 +97,21 @@ describe('spokeduMasterBillingProvider', () => {
       orderId: 'order-lite-1',
       orderName: 'SPOKEDU MASTER Lite',
       customerEmail: 'qa@example.com',
-    });
+    })).rejects.toThrow('toss_billing_approval_indeterminate:500');
 
     expect(TOSS_BILLING_APPROVAL_TIMEOUT_MS).toBe(70_000);
     expect(TOSS_BILLING_APPROVAL_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000);
     expect(timeoutSpy).toHaveBeenCalledWith(TOSS_BILLING_APPROVAL_TIMEOUT_MS);
     expect(timeoutSpy.mock.calls.filter(([timeout]) => timeout === TOSS_BILLING_APPROVAL_TIMEOUT_MS)).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'Idempotency-Key': 'order-lite-1' }),
+      }),
+    );
   });
 
-  it('rejects pay responses with amount/order mismatch', async () => {
+  it('treats pay response mismatches as indeterminate rather than a safe decline', async () => {
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       paymentKey: 'pay_1',
@@ -112,7 +120,7 @@ describe('spokeduMasterBillingProvider', () => {
       approvedAt: '2099-01-01T00:00:00.000Z',
     }), { status: 200 })));
 
-    expect(await paySpokeduMasterBillingKey({
+    await expect(paySpokeduMasterBillingKey({
       billingKey: 'bill_1',
       customerKey: 'cust_1',
       plan: 'lite',
@@ -120,7 +128,25 @@ describe('spokeduMasterBillingProvider', () => {
       orderId: 'order-lite-1',
       orderName: 'SPOKEDU MASTER Lite',
       customerEmail: 'qa@example.com',
-    })).toBeNull();
+    })).rejects.toThrow('toss_billing_approval_mismatch');
+  });
+
+  it('distinguishes confirmed approval rejection from indeterminate provider failures', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    for (const status of [400, 422]) {
+      vi.stubGlobal('fetch', vi.fn(async () => new Response('rejected', { status })));
+      await expect(paySpokeduMasterBillingKey({
+        billingKey: 'bill_1', customerKey: 'cust_1', plan: 'lite', amount: 9900,
+        orderId: `order-${status}`, orderName: 'SPOKEDU MASTER Lite', customerEmail: '',
+      })).resolves.toBeNull();
+    }
+    for (const status of [401, 403, 429, 500]) {
+      vi.stubGlobal('fetch', vi.fn(async () => new Response('unknown', { status })));
+      await expect(paySpokeduMasterBillingKey({
+        billingKey: 'bill_1', customerKey: 'cust_1', plan: 'lite', amount: 9900,
+        orderId: `order-${status}`, orderName: 'SPOKEDU MASTER Lite', customerEmail: '',
+      })).rejects.toThrow(`toss_billing_approval_indeterminate:${status}`);
+    }
   });
 
   it('looks up DONE payments by order id and rejects non-DONE', async () => {

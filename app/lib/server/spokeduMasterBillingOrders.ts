@@ -48,7 +48,23 @@ export async function claimSpokeduMasterBillingOrder(input: {
     .maybeSingle();
 
   if (staleError) return { claimed: false, error: staleError };
-  return { claimed: Boolean(staleClaimed), error: null };
+  if (staleClaimed) return { claimed: true, error: null };
+
+  // A provider-confirmed key may have been stored before the apply RPC failed.
+  // Atomically reopen only the inconsistent active-without-applied_at shape;
+  // a normally applied active order is never claimable here.
+  const { data: unappliedClaimed, error: unappliedError } = await input.service
+    .from('spokedu_master_payment_orders')
+    .update({ status: 'processing', last_error_code: null })
+    .eq('order_id', input.orderId)
+    .eq('status', 'active')
+    .not('payment_key', 'is', null)
+    .is('applied_at', null)
+    .select('order_id')
+    .maybeSingle();
+
+  if (unappliedError) return { claimed: false, error: unappliedError };
+  return { claimed: Boolean(unappliedClaimed), error: null };
 }
 
 export async function markSpokeduMasterBillingOrderFailed(input: {
@@ -57,12 +73,17 @@ export async function markSpokeduMasterBillingOrderFailed(input: {
   lastErrorCode: string;
   paymentKey?: string | null;
   recoverable?: boolean;
+  operatorReview?: boolean;
 }): Promise<void> {
   const patch: Record<string, unknown> = {
     status: input.recoverable ? 'recoverable_failed' : 'failed',
     last_error_code: input.lastErrorCode,
   };
   if (input.paymentKey) patch.payment_key = input.paymentKey;
+  if (input.operatorReview) {
+    patch.operator_review_required = true;
+    patch.charge_state = 'review_required';
+  }
 
   await input.service
     .from('spokedu_master_payment_orders')

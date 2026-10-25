@@ -41,7 +41,10 @@ function mockSubscriptionRow(row: {
   next_billing_at?: string | null;
   current_period_end?: string | null;
   provider_billing_key_secret_id?: string | null;
-} | null, lookupError: unknown = null) {
+  renewal_retry_count?: number | null;
+  last_billing_error?: string | null;
+  next_retry_at?: string | null;
+} | null, lookupError: unknown = null, grant: Record<string, unknown> | null = null) {
   let stored = row
     ? {
         trial_started_at: null,
@@ -97,7 +100,7 @@ function mockSubscriptionRow(row: {
     gt: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
-    maybeSingle: vi.fn(async () => ({ data: null, error: null })),
+    maybeSingle: vi.fn(async () => ({ data: grant, error: null })),
   };
   entitlementGrantsChain.select.mockReturnValue(entitlementGrantsChain);
   entitlementGrantsChain.eq.mockReturnValue(entitlementGrantsChain);
@@ -205,6 +208,43 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
       plan: 'premium',
       status: 'active',
       canCancelAutoBilling: true,
+    });
+  });
+
+  it('keeps paid billing management and failure state visible while promotion access is effective', async () => {
+    mockAuthUser(user);
+    mockSubscriptionRow({
+      plan: 'lite',
+      status: 'active',
+      period_end: '2099-06-30T00:00:00.000Z',
+      next_billing_at: '2099-07-01T00:00:00.000Z',
+      current_period_end: '2099-06-30T00:00:00.000Z',
+      provider_billing_key_secret_id: '22222222-2222-4222-8222-222222222222',
+      renewal_retry_count: 5,
+      last_billing_error: 'recoverable_failed',
+      next_retry_at: null,
+    }, null, {
+      plan: 'premium',
+      starts_at: '2020-01-01T00:00:00.000Z',
+      ends_at: '2099-12-31T00:00:00.000Z',
+      campaign_id: 'campaign-1',
+    });
+
+    const response = await GET();
+
+    await expect(response.json()).resolves.toMatchObject({
+      plan: 'premium',
+      status: 'active',
+      entitlementSource: 'promotion',
+      promotionalPlan: 'premium',
+      billingPlan: 'lite',
+      billingStatus: 'active',
+      billingRenewalFailed: true,
+      automaticBillingStopped: true,
+      canCancelAutoBilling: true,
+      nextBillingAt: '2099-07-01T00:00:00.000Z',
+      currentPeriodEnd: '2099-12-31T00:00:00.000Z',
+      billingPeriodEnd: '2099-06-30T00:00:00.000Z',
     });
   });
 

@@ -16,6 +16,10 @@ const cancelRoute = readFileSync(
   join(process.cwd(), 'app/api/spokedu-master/payment/billing/cancel/route.ts'),
   'utf8',
 );
+const providerHealthRoute = readFileSync(
+  join(process.cwd(), 'app/api/spokedu-master/payment/billing/health/route.ts'),
+  'utf8',
+);
 const provider = readFileSync(
   join(process.cwd(), 'app/lib/server/spokeduMasterBillingProvider.ts'),
   'utf8',
@@ -30,6 +34,10 @@ const vercelConfig = JSON.parse(readFileSync(
 )) as { crons?: Array<{ path?: string; schedule?: string }> };
 const supabaseCronSql = readFileSync(
   join(process.cwd(), 'supabase/migrations/20260822191000_spokedu_master_billing_cron_observability.sql'),
+  'utf8',
+);
+const supabaseCronCostControlSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20261024120000_harden_spokedu_master_billing_cron_cost_controls.sql'),
   'utf8',
 );
 const envExample = readFileSync(
@@ -78,7 +86,9 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     expect(renewRoute).toContain(".eq('cancel_at_period_end', false)");
     expect(renewRoute).toContain(".or('plan.in.(lite,premium),plan_id.in.(lite,premium)')");
     expect(renewRoute).toContain(".lte('next_billing_at', now)");
-    expect(renewRoute).toContain('.limit(20)');
+    expect(renewRoute).toContain('.limit(SPOKEDU_MASTER_RENEWAL_BATCH_LIMIT)');
+    expect(renewRoute).toContain(".lt('renewal_retry_count', SPOKEDU_MASTER_RENEWAL_MAX_ATTEMPTS)");
+    expect(renewRoute).toContain('SPOKEDU_MASTER_RENEWAL_RUN_BUDGET_MS');
     expect(renewRoute).toContain('renewal_payment_failed');
   });
 
@@ -153,9 +163,60 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     expect(supabaseCronSql).toContain("error_code = 'cron_secret_missing'");
   });
 
+  it('keeps one hourly job while suppressing overlapping HTTP dispatches', () => {
+    expect(supabaseCronCostControlSql).toContain("pg_try_advisory_xact_lock(hashtextextended('spokedu-master-billing-renew-hourly', 0))");
+    expect(supabaseCronCostControlSql).toContain("status = 'dispatched' AND started_at >= now() - interval '15 minutes'");
+    expect(supabaseCronCostControlSql).toContain("cron.unschedule(v_job.jobid)");
+    expect(supabaseCronCostControlSql).toContain("cron.schedule('spokedu-master-billing-renew-hourly','0 * * * *'");
+    expect(supabaseCronCostControlSql.match(/net\.http_post/g)).toHaveLength(1);
+  });
+
+  it('skips idle hours before creating an audit row or invoking Vercel', () => {
+    const workProbe = supabaseCronCostControlSql.indexOf('SELECT EXISTS (');
+    const idleReturn = supabaseCronCostControlSql.indexOf('IF NOT v_has_due_work AND NOT v_has_recovery_work THEN');
+    const runInsert = supabaseCronCostControlSql.indexOf('INSERT INTO public.spokedu_master_billing_runs');
+    const httpRequest = supabaseCronCostControlSql.indexOf('SELECT net.http_post');
+
+    expect(workProbe).toBeGreaterThan(-1);
+    expect(idleReturn).toBeGreaterThan(workProbe);
+    expect(runInsert).toBeGreaterThan(idleReturn);
+    expect(httpRequest).toBeGreaterThan(runInsert);
+  });
+
+  it('keeps the Supabase preflight predicate aligned with renewal eligibility', () => {
+    expect(supabaseCronCostControlSql).toContain("subscription.status = 'active'");
+    expect(supabaseCronCostControlSql).toContain('subscription.cancel_at_period_end = false');
+    expect(supabaseCronCostControlSql).toContain("COALESCE(subscription.plan_id, subscription.plan) IN ('lite', 'premium')");
+    expect(supabaseCronCostControlSql).toContain('subscription.next_billing_at <= now()');
+    expect(supabaseCronCostControlSql).toContain('subscription.next_retry_at IS NULL');
+    expect(supabaseCronCostControlSql).toContain('subscription.next_retry_at <= now()');
+    expect(supabaseCronCostControlSql).toContain('subscription.renewal_retry_count < 5');
+    expect(supabaseCronCostControlSql).toContain("payment_order.status IN ('pending', 'recoverable_failed', 'failed')");
+    expect(supabaseCronCostControlSql).toContain("payment_order.updated_at < now() - interval '15 minutes'");
+    expect(supabaseCronCostControlSql).toContain("payment_order.status = 'active'");
+    expect(supabaseCronCostControlSql).toContain('payment_order.applied_at IS NULL');
+    expect(supabaseCronCostControlSql).toContain("payment_order.last_error_code IS DISTINCT FROM 'partial_cancel_review_required'");
+  });
+
+  it('blocks deployment-wide provider configuration failures until a non-charging health recheck', () => {
+    const idleGuard = supabaseCronCostControlSql.indexOf('IF NOT v_has_due_work AND NOT v_has_recovery_work THEN');
+    const providerCircuit = supabaseCronCostControlSql.indexOf("status = 'misconfigured'");
+    const runInsert = supabaseCronCostControlSql.indexOf('INSERT INTO public.spokedu_master_billing_runs');
+
+    expect(providerCircuit).toBeGreaterThan(idleGuard);
+    expect(runInsert).toBeGreaterThan(providerCircuit);
+    expect(supabaseCronCostControlSql).toContain('spokedu_master_billing_provider_state');
+    expect(supabaseCronCostControlSql).not.toContain("interval '6 hours'");
+    expect(providerHealthRoute).toContain('isSpokeduMasterBillingProviderConfigured');
+    expect(providerHealthRoute).toContain("status: configured ? 'configured' : 'misconfigured'");
+    expect(providerHealthRoute).not.toContain('paySpokeduMasterBillingKey');
+    expect(providerHealthRoute).not.toContain('findSpokeduMasterPaymentByOrderId');
+  });
+
   it('returns only sanitized renewal counters', () => {
     const responseSection = renewRoute.slice(renewRoute.lastIndexOf('return NextResponse.json'));
-    expect(renewRoute).toContain('checked: due.length');
+    expect(renewRoute).toContain('summary.checked += due.length');
+    expect(renewRoute).toContain('summary.checked += candidates.length');
     expect(renewRoute).toContain('attempted');
     expect(renewRoute).toContain('succeeded');
     expect(renewRoute).toContain('failed');
@@ -171,6 +232,16 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     expect(envExample).not.toContain('SPOKEDU_MASTER_BILLING_CRON_SECRET=');
     expect(envExample).not.toMatch(/test_[A-Za-z0-9]{8,}/);
     expect(envExample).not.toMatch(/live_[A-Za-z0-9]{8,}/);
+  });
+
+  it('keeps the cron configuration helper from invoking production billing RPCs', () => {
+    const helper = readFileSync(
+      join(process.cwd(), 'scripts/spokedu-master-configure-billing-cron.mjs'),
+      'utf8',
+    );
+    expect(helper).not.toContain(".rpc('spokedu_master_run_billing_renewal_cron'");
+    expect(helper).toContain('renew probe is restricted to a local isolated environment');
+    expect(helper).toContain("productionRpcExecution = 'forbidden'");
   });
 
   it('rejects scheduler requests without the configured bearer secret', async () => {

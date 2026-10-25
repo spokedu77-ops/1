@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { hasSpokeduMasterBillingRenewalFailure } from './spokeduMasterRenewalState';
+import {
+  hasSpokeduMasterBillingRenewalFailure,
+  isSpokeduMasterAutomaticRenewalStopped,
+} from './spokeduMasterRenewalState';
 
 describe('hasSpokeduMasterBillingRenewalFailure', () => {
   it.each([
@@ -12,10 +15,31 @@ describe('hasSpokeduMasterBillingRenewalFailure', () => {
     'recoverable_failed',
     'apply_failed',
   ])('shows every stored renewal failure code: %s', (last_billing_error) => {
-    expect(hasSpokeduMasterBillingRenewalFailure({ plan: 'premium', status: 'active', last_billing_error }, false)).toBe(true);
+    expect(hasSpokeduMasterBillingRenewalFailure({ plan: 'premium', status: 'active', last_billing_error })).toBe(true);
   });
 
-  it('does not render billing failure state for promotion-only access', () => {
-    expect(hasSpokeduMasterBillingRenewalFailure({ plan: 'premium', status: 'active', last_billing_error: 'billing_key_unavailable' }, true)).toBe(false);
+  it('does not hide a paid billing failure merely because promotion access is effective', () => {
+    expect(hasSpokeduMasterBillingRenewalFailure({ plan: 'premium', status: 'active', last_billing_error: 'billing_key_unavailable' })).toBe(true);
+  });
+
+  it('separates exhausted automatic billing from the active paid-access status', () => {
+    const row = {
+      plan: 'premium',
+      status: 'active',
+      last_billing_error: 'recoverable_failed',
+      renewal_retry_count: 5,
+    };
+    expect(hasSpokeduMasterBillingRenewalFailure(row)).toBe(true);
+    expect(isSpokeduMasterAutomaticRenewalStopped(row)).toBe(true);
+    expect(row.status).toBe('active');
+  });
+
+  it('does not mark automatic billing stopped before the fifth failure', () => {
+    expect(isSpokeduMasterAutomaticRenewalStopped({
+      plan: 'lite',
+      status: 'active',
+      last_billing_error: 'recoverable_failed',
+      renewal_retry_count: 4,
+    })).toBe(false);
   });
 });

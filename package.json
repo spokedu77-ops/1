@@ -123,6 +123,7 @@
     "happy-dom": "^20.10.6",
     "pg": "^8.22.0",
     "playwright": "^1.61.1",
+    "supabase": "2.122.0",
     "tailwindcss": "^4",
     "tsx": "^4.19.4",
     "typescript": "^5",

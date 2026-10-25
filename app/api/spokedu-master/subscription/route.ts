@@ -7,7 +7,10 @@ import {
   evaluateSpokeduMasterEffectiveEntitlement,
   getActiveSpokeduMasterEntitlementGrant,
 } from '@/app/lib/server/spokeduMasterAccess';
-import { hasSpokeduMasterBillingRenewalFailure } from '@/app/lib/server/spokeduMasterRenewalState';
+import {
+  hasSpokeduMasterBillingRenewalFailure,
+  isSpokeduMasterAutomaticRenewalStopped,
+} from '@/app/lib/server/spokeduMasterRenewalState';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -93,15 +96,18 @@ export async function GET() {
 
   const entitlement = evaluateSpokeduMasterEffectiveEntitlement(row, grant);
   const promotionActive = entitlement.source === 'promotion';
-  const canCancelAutoBilling = Boolean(
-    !promotionActive &&
+  const billingPlan = row?.plan === 'pro' ? 'premium' : row?.plan;
+  const hasPaidBillingSubscription = Boolean(
     row?.status === 'active' &&
-    (row.plan === 'lite' || row.plan === 'premium' || row.plan === 'pro') &&
-    row.cancel_at_period_end !== true &&
+    (billingPlan === 'lite' || billingPlan === 'premium') &&
     row.provider_billing_key_secret_id,
   );
+  const canCancelAutoBilling = Boolean(
+    hasPaidBillingSubscription &&
+    row?.cancel_at_period_end !== true
+  );
 
-  const billingRenewalFailed = hasSpokeduMasterBillingRenewalFailure(row, promotionActive);
+  const billingRenewalFailed = hasSpokeduMasterBillingRenewalFailure(row);
 
   const common = {
     isAdmin: false,
@@ -111,10 +117,14 @@ export async function GET() {
     trialEndsAt: row?.trial_ends_at ?? null,
     periodEnd: row?.period_end ?? null,
     cancelAtPeriodEnd: row?.cancel_at_period_end ?? false,
-    nextBillingAt: promotionActive ? null : row?.next_billing_at ?? null,
+    nextBillingAt: row?.next_billing_at ?? null,
     currentPeriodEnd: promotionActive ? grant?.ends_at ?? null : row?.current_period_end ?? null,
     canCancelAutoBilling,
     billingRenewalFailed,
+    automaticBillingStopped: isSpokeduMasterAutomaticRenewalStopped(row),
+    billingPlan: billingPlan === 'lite' || billingPlan === 'premium' ? billingPlan : null,
+    billingStatus: row?.status ?? 'none',
+    billingPeriodEnd: row?.current_period_end ?? row?.period_end ?? null,
     renewalRetryCount: row?.renewal_retry_count ?? 0,
     lastBillingError: row?.last_billing_error ?? null,
     nextRetryAt: row?.next_retry_at ?? null,
