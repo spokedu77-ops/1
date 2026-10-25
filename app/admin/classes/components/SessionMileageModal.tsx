@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { Check, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { MILEAGE_ACTIONS } from "@/app/admin/classes-shared/constants/mileage";
+import {
+  blocksPostponeCredit,
+  krPublicHolidayPosture,
+  mileageActionDisplayPoints,
+  sumMileageActionPoints,
+} from "@/app/admin/classes-shared/lib/mileageHolidayCredit";
 import { extractMileageAction } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { applySessionLinkedMileage } from "@/app/admin/classes-shared/lib/applySessionLinkedMileage";
 
@@ -11,6 +17,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   sessionId: string;
+  sessionStartAt: string | null | undefined;
   title: string | null;
   memo: string | null | undefined;
   mileage_option: string | null | undefined;
@@ -21,6 +28,7 @@ export default function SessionMileageModal({
   open,
   onClose,
   sessionId,
+  sessionStartAt,
   title,
   memo,
   mileage_option,
@@ -40,6 +48,9 @@ export default function SessionMileageModal({
   const selectedActions = mileageAction
     ? mileageAction.split(",").map((s) => s.trim()).filter(Boolean)
     : [];
+  const previewTotal = sumMileageActionPoints(mileageAction, sessionStartAt ?? null, MILEAGE_ACTIONS);
+  const holidayPosture = krPublicHolidayPosture(sessionStartAt ?? null);
+  const holidayBlocked = blocksPostponeCredit(sessionStartAt ?? null);
 
   const toggleMileageAction = (label: string) => {
     const isSelected = selectedActions.includes(label);
@@ -155,8 +166,10 @@ export default function SessionMileageModal({
                               : "text-rose-500"
                         }`}
                       >
-                        {act.val > 0 ? "+" : ""}
-                        {act.val.toLocaleString()}P
+                        {(() => {
+                          const display = mileageActionDisplayPoints(act.label, act.val, sessionStartAt ?? null);
+                          return `${display > 0 ? "+" : ""}${display.toLocaleString()}P`;
+                        })()}
                       </span>
                     </button>
                   </li>
@@ -168,11 +181,19 @@ export default function SessionMileageModal({
 
         <div className="shrink-0 border-t border-slate-100 bg-slate-50/90 px-5 py-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0 text-sm text-slate-600">
+            <div className="min-w-0 text-sm text-slate-600 space-y-0.5">
               {selectedActions.length > 0 ? (
-                <span className="font-semibold text-slate-800">
-                  선택 {selectedActions.length}개
-                </span>
+                <>
+                  <span className="font-semibold text-slate-800 block">
+                    선택 {selectedActions.length}개 · 예상 합계 {previewTotal > 0 ? "+" : ""}
+                    {previewTotal.toLocaleString()}P
+                  </span>
+                  {holidayBlocked && (
+                    <span className="text-[11px] font-bold text-amber-700 block">
+                      공휴일·미확인 연도: 수업/당일 연기 가산 0P ({holidayPosture})
+                    </span>
+                  )}
+                </>
               ) : (
                 <span className="text-slate-500">선택된 항목 없음</span>
               )}

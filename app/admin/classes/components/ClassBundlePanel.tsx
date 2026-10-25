@@ -37,6 +37,8 @@ import { cloneTierFeeMap, HARD_CODED_TIER_FEES, type TierFeeMap } from "@/app/li
 import { fetchTeacherTierFeeMap } from "@/app/lib/teacherTierFeesStore";
 import { fetchTeacherLogCounts } from "@/app/admin/users/fetchTeacherLogCounts";
 import SessionMileageModal from "./SessionMileageModal";
+import { blocksPostponeCredit, sumMileageActionPoints } from "@/app/admin/classes-shared/lib/mileageHolidayCredit";
+import { MILEAGE_LABEL_POSTPONE, MILEAGE_LABEL_POSTPONE_REQUEST } from "@/app/admin/classes-shared/constants/mileage";
 import type { TeacherInput } from "@/app/admin/classes-shared/types";
 
 type RoundView = "active" | "all" | "completed";
@@ -771,10 +773,20 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
   ) => {
     if (!supabase) return;
     if (postponingSessionId === sessionId) return;
+    const row = sessionsByGroupId[_gid]?.find((candidate) => candidate.id === sessionId);
+    const postponePoints = row
+      ? sumMileageActionPoints(
+          kind === "postpone_request" ? MILEAGE_LABEL_POSTPONE_REQUEST : MILEAGE_LABEL_POSTPONE,
+          row.start_at,
+          [{ label: MILEAGE_LABEL_POSTPONE, val: 2500 }, { label: MILEAGE_LABEL_POSTPONE_REQUEST, val: -5000 }],
+        )
+      : kind === "postpone_request" ? -5000 : 2500;
     const mileageHint =
       kind === "postpone_request"
-        ? "마일리지 −5,000 (수업 연기 요청)이 연기 기록에 자동 반영됩니다."
-        : "마일리지 +2,500 (수업 연기)이 연기 기록에 자동 반영됩니다.";
+        ? `마일리지 ${postponePoints.toLocaleString()}P (수업 연기 요청)이 연기 기록에 자동 반영됩니다.`
+        : blocksPostponeCredit(row?.start_at)
+          ? "공휴일(또는 미확인 연도): 수업 연기 가산 0P, 일정만 연기됩니다."
+          : `마일리지 +${postponePoints.toLocaleString()}P (수업 연기)이 연기 기록에 자동 반영됩니다.`;
     if (
       !confirm(
         `「${kind === "postpone_request" ? "연기요청" : "연기"}(일정 미루기)」: 현재 회차부터 이후 회차 날짜를 한 칸씩 미룹니다.\n${mileageHint}\n회차 차감·수업료 0원 처리가 목적이면 「회차 취소(차감)」를 사용하세요.\n\n계속할까요?`
@@ -784,7 +796,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
 
     setPostponingSessionId(sessionId);
     try {
-      const row = sessionsByGroupId[_gid]?.find((candidate) => candidate.id === sessionId);
       if (!row) throw new Error("POSTPONE_SESSION_NOT_FOUND");
       const body = JSON.stringify({
         sessionId,
@@ -2526,6 +2537,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         open={!!mileageModal}
         onClose={() => setMileageModal(null)}
         sessionId={mileageModal?.row.id ?? ""}
+        sessionStartAt={mileageModal?.row.start_at ?? null}
         title={mileageModal?.row.title ?? null}
         memo={mileageModal?.row.memo}
         mileage_option={mileageModal?.row.mileage_option}

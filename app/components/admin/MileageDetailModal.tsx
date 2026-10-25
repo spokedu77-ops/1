@@ -22,7 +22,12 @@ import {
   getMileageLogPointDelta,
   resolveMileageLogDisplayText,
 } from '@/app/admin/classes-shared/lib/sessionUtils';
-import { postMileageAdjustment } from './adminMileageClient';
+import {
+  isSessionLinkedMileageReason,
+  postMileageAdjustment,
+  postMileageCancelSessionSettlement,
+  postMileageCancelSingle,
+} from './adminMileageClient';
 
 interface Teacher {
   id: string;
@@ -191,6 +196,7 @@ export default function MileageDetailModal({
   const [modalTab, setModalTab] = useState<'mileage' | 'sessions'>('mileage');
   const [teacherLogs, setTeacherLogs] = useState<MileageLog[]>([]);
   const [mileageSessionStartById, setMileageSessionStartById] = useState<Record<string, string>>({});
+  const [mileageOptionBySessionId, setMileageOptionBySessionId] = useState<Record<string, string>>({});
   const [countSessionStartById, setCountSessionStartById] = useState<Record<string, string>>({});
   const [teacherCountLogs, setTeacherCountLogs] = useState<SessionCountLog[]>([]);
   const [pointDeltaInput, setPointDeltaInput] = useState('');
@@ -260,15 +266,19 @@ export default function MileageDetailModal({
       if (ids.length > 0) {
         const { data: sessions } = await supabase
           .from('sessions')
-          .select('id, start_at')
+          .select('id, start_at, mileage_option')
           .in('id', ids);
         const map: Record<string, string> = {};
+        const optionMap: Record<string, string> = {};
         (sessions || []).forEach((s) => {
           if (s.id && s.start_at) map[s.id] = s.start_at;
+          if (s.id) optionMap[s.id] = s.mileage_option ?? '';
         });
         setMileageSessionStartById(map);
+        setMileageOptionBySessionId(optionMap);
       } else {
         setMileageSessionStartById({});
+        setMileageOptionBySessionId({});
       }
     }
 
@@ -311,6 +321,7 @@ export default function MileageDetailModal({
     setEditReason('');
     setTeacherLogs([]);
     setMileageSessionStartById({});
+    setMileageOptionBySessionId({});
     setCountSessionStartById({});
     setTeacherCountLogs([]);
     setLastAdditionalLog(null);
@@ -376,25 +387,87 @@ export default function MileageDetailModal({
     }
   };
 
+  const handleCancelSessionSettlement = async (log: MileageLog) => {
+    if (!supabase || !teacher || !log.session_id) return;
+    const sessionId = log.session_id;
+    const expectedOption = mileageOptionBySessionId[sessionId] ?? '';
+    const { data: linkedRows } = await supabase
+      .from('mileage_logs')
+      .select('id, teacher_id, amount, reason, users(name)')
+      .eq('session_id', sessionId);
+    const linkedOnSession = (linkedRows ?? []).filter((row) =>
+      isSessionLinkedMileageReason(row.reason),
+    );
+    if (linkedOnSession.length === 0) return;
+
+    const lines = linkedOnSession
+      .map((row) => {
+        const name = (row.users as { name?: string } | null)?.name ?? row.teacher_id;
+        return `- ${name}: ${Number(row.amount).toLocaleString()}P (${row.reason})`;
+      })
+      .join('\n');
+    if (
+      !confirm(
+        `수업 연동 정산 전체 취소\n세션: ${sessionId}\n정산 옵션: ${expectedOption || '(없음)'}\n\n대상 ${linkedOnSession.length}건:\n${lines}\n\n모든 강사 포인트를 위 금액만큼 되돌립니다. 계속할까요?`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const result = await postMileageCancelSessionSettlement({
+        sessionId,
+        expectedMileageOption: expectedOption,
+      });
+      if (!result.ok) throw new Error(result.code ?? result.error);
+      setTeacherLogs((prev) =>
+        prev.filter(
+          (row) => row.session_id !== sessionId || !isSessionLinkedMileageReason(row.reason),
+        ),
+      );
+      onSaved?.();
+      loadLogs();
+      toast.success('수업 연동 정산이 전체 취소되었습니다.');
+    } catch (error: unknown) {
+      toast.error('정산 취소 실패: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
   const handleDeleteLog = async (logId: string) => {
     if (!supabase || !teacher) return;
     const logToDelete = teacherLogs.find(l => l.id === logId);
     if (!logToDelete) return;
     const pointDelta = getMileageLogPointDelta(logToDelete, MILEAGE_ACTIONS);
-    if (!confirm(`이 기록을 삭제하고 마일리지 ${pointDelta > 0 ? '-' : '+'}${Math.abs(pointDelta).toLocaleString()}P를 복구하시겠습니까?`)) return;
+    const linked = isSessionLinkedMileageReason(logToDelete.reason);
+    const reverseDelta = linked ? Number(logToDelete.amount) : pointDelta;
+    if (
+      !confirm(
+        linked
+          ? `이 강사의 수업 연동 기록 1건만 취소합니다 (다른 강사 로그는 유지).\n${Math.abs(reverseDelta).toLocaleString()}P를 ${reverseDelta > 0 ? '차감' : '복구'}합니다. 계속할까요?`
+          : `이 기록을 삭제하고 마일리지 ${pointDelta > 0 ? '-' : '+'}${Math.abs(pointDelta).toLocaleString()}P를 복구하시겠습니까?`,
+      )
+    ) {
+      return;
+    }
 
     try {
-      const result = await postMileageAdjustment({
-        operation: 'reverse',
-        teacherId: teacher.id,
-        pointDelta: -pointDelta,
-        logId,
-        expectedLogAmount: logToDelete.amount,
-        expectedLogReason: logToDelete.reason,
-      });
+      const result = linked
+        ? await postMileageCancelSingle({
+            teacherId: teacher.id,
+            logId,
+            expectedLogAmount: logToDelete.amount,
+            expectedLogReason: logToDelete.reason,
+          })
+        : await postMileageAdjustment({
+            operation: 'reverse',
+            teacherId: teacher.id,
+            pointDelta: -pointDelta,
+            logId,
+            expectedLogAmount: logToDelete.amount,
+            expectedLogReason: logToDelete.reason,
+          });
       if (!result.ok || typeof result.points !== 'number') throw new Error(result.code ?? result.error);
-      // [취소] 로그는 남기지 않음 (운영진 조치)
-      setTeacherLogs(prev => prev.filter(l => l.id !== logId));
+      setTeacherLogs((prev) => prev.filter((l) => l.id !== logId));
       setDisplayPoints(result.points);
       onSaved?.();
       toast.success('마일리지가 복구되었습니다.');
@@ -649,9 +722,19 @@ export default function MileageDetailModal({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <span className="text-[9px] font-bold text-slate-300 tabular-nums whitespace-nowrap">{new Date(log.created_at).toLocaleDateString()}</span>
-                      <button onClick={() => handleDeleteLog(log.id)} className="text-slate-200 hover:text-red-500 transition-colors p-1 cursor-pointer">
+                      {log.session_id && isSessionLinkedMileageReason(log.reason) && (
+                        <button
+                          type="button"
+                          onClick={() => void handleCancelSessionSettlement(log)}
+                          className="text-[9px] font-black text-amber-600 hover:text-amber-800 px-1.5 py-0.5 rounded border border-amber-200"
+                          title="이 수업의 연동 정산 전체 취소"
+                        >
+                          정산 전체
+                        </button>
+                      )}
+                      <button onClick={() => void handleDeleteLog(log.id)} className="text-slate-200 hover:text-red-500 transition-colors p-1 cursor-pointer" title="이 강사 로그 1건만 취소">
                         <Trash2 size={14}/>
                       </button>
                     </div>

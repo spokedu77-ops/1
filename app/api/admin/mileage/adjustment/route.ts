@@ -30,6 +30,34 @@ export async function POST(request: NextRequest) {
 
   const value = parsed.data;
   const reverse = value.operation === 'reverse';
+  const linkedReverse =
+    reverse
+    && (value.expectedLogReason.startsWith('[수업연동]')
+      || value.expectedLogReason.startsWith('[수업연동/보조]'));
+
+  if (linkedReverse) {
+    const { data, error } = await getServiceSupabase().rpc('admin_cancel_mileage_log', {
+      p_teacher_id: value.teacherId,
+      p_log_id: value.logId,
+      p_expected_log_amount: value.expectedLogAmount,
+      p_expected_log_reason: value.expectedLogReason,
+      p_request_key: value.requestKey,
+    });
+    if (error) {
+      const known = [
+        'MILEAGE_LOG_STALE',
+        'MILEAGE_TEACHER_NOT_FOUND',
+        'MILEAGE_ALREADY_CANCELLED',
+        'MILEAGE_IDEMPOTENCY_CONFLICT',
+        'MILEAGE_CANCEL_INVALID',
+      ];
+      const code = known.find((candidate) => error.message.includes(candidate)) ?? 'MILEAGE_CANCEL_FAILED';
+      devLogger.error('[admin/mileage/adjustment]', { code, dbCode: error.code, delegated: true });
+      return NextResponse.json({ error: code, code }, { status: code === 'MILEAGE_CANCEL_FAILED' ? 500 : 409 });
+    }
+    return NextResponse.json({ ...data, ok: true, reversed: true });
+  }
+
   const { data, error } = await getServiceSupabase().rpc('admin_apply_mileage_adjustment', {
     p_teacher_id: value.teacherId,
     p_point_delta: value.pointDelta,
