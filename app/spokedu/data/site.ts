@@ -79,10 +79,24 @@ export type SiteNavEntry =
 export const siteNav: SiteNavEntry[] = [
   {
     type: 'link',
-    label: '체육수업',
+    label: '스포키듀 소개',
+    href: SPOKEDU_PATHS.about,
+    trackLabel: 'nav-about',
+    matchPrefix: '/about',
+  },
+  {
+    type: 'link',
+    label: '기관수업',
     href: SPOKEDU_PATHS.education,
     trackLabel: 'nav-education',
     matchPrefix: '/education',
+  },
+  {
+    type: 'link',
+    label: '개인·소그룹',
+    href: SPOKEDU_PATHS.private,
+    trackLabel: 'nav-private',
+    matchPrefix: '/private',
   },
   {
     type: 'link',
@@ -104,13 +118,6 @@ export const siteNav: SiteNavEntry[] = [
     href: SPOKEDU_PATHS.records,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
-  },
-  {
-    type: 'link',
-    label: 'SPOKEDU 소개',
-    href: SPOKEDU_PATHS.about,
-    trackLabel: 'nav-about',
-    matchPrefix: '/about',
   },
 ];
 
@@ -155,12 +162,12 @@ export const footerNavGroups: FooterNavGroup[] = [
     heading: '체육수업',
     links: [
       {
-        label: '기관·학교 수업',
+        label: '기관수업',
         href: SPOKEDU_PATHS.education,
         trackLabel: 'footer-education-institution',
       },
       {
-        label: '개인·소그룹 수업',
+        label: '개인·소그룹',
         href: SPOKEDU_PATHS.private,
         trackLabel: 'footer-education-private',
       },
@@ -195,12 +202,12 @@ export const footerNavGroups: FooterNavGroup[] = [
     heading: 'SPOKEDU',
     links: [
       {
-        label: '현장 사례',
+        label: '수업사례',
         href: SPOKEDU_PATHS.records,
         trackLabel: 'footer-records',
       },
       {
-        label: '소개',
+        label: '스포키듀 소개',
         href: SPOKEDU_PATHS.about,
         trackLabel: 'footer-about',
       },
@@ -215,7 +222,7 @@ export const footerNavGroups: FooterNavGroup[] = [
     heading: '문의',
     links: [
       {
-        label: '상담하기',
+        label: '문의하기',
         href: SPOKEDU_PATHS.contact,
         trackLabel: 'footer-contact',
       },

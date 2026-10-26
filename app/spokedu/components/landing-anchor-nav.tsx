@@ -1,6 +1,7 @@
 'use client';
 
 import { marketingButtonPrimary } from '../lib/ui-classes';
+import shared from './about-landing.module.css';
 
 export type LandingAnchorNavItem = {
   href: string;
@@ -22,15 +23,15 @@ export function LandingAnchorNav({
   return (
     <nav
       aria-label={ariaLabel}
-      className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur-md sm:top-[calc(4.25rem+env(safe-area-inset-top,0px))]"
+      className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 border-b border-[var(--spokedu-marketing-color-border,#dce3ee)] bg-white/95 backdrop-blur-md sm:top-[calc(4.25rem+env(safe-area-inset-top,0px))]"
     >
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-2 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
+      <div className={`${shared.rail} flex w-full items-center gap-2 overflow-x-auto py-2.5`}>
         <ul className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
           {items.map((item) => (
             <li key={item.href} className="shrink-0">
               <a
                 href={item.href}
-                className="inline-flex min-h-9 items-center rounded-full px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                className="inline-flex min-h-9 items-center rounded-full px-3 text-sm font-semibold text-[var(--spokedu-marketing-color-body,#536279)] transition hover:bg-[var(--spokedu-marketing-color-blue-soft,#eaf1ff)] hover:text-[var(--spokedu-marketing-color-blue,#245dff)]"
               >
                 {item.label}
               </a>

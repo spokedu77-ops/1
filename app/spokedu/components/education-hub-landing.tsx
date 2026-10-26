@@ -1,471 +1,576 @@
-"use client";
-/* eslint-disable @next/next/no-img-element -- Editorial field photos intentionally retain native intrinsic sizing and crop behavior. */
+'use client';
 
-import Link from "next/link";
-import { Suspense, useState } from "react";
-import { DispatchProposalForm } from "./dispatch-proposal-form";
-import styles from "./education-hub.module.css";
+import Link from 'next/link';
+import { Suspense } from 'react';
+import { educationHubPage } from '../data/education-hub';
+import { HOME_MEDIA, type HomeMediaKey } from '../data/home-media';
+import { SPOKEDU_PATHS } from '../data/site';
+import { inferTrackFromHref } from '../lib/tracking';
+import {
+  brandFocusRing,
+  homeSectionScrollMt,
+  koreanLineBreak,
+  marketingBandSoft,
+  marketingBandWhite,
+  fineHover,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+} from '../lib/ui-classes';
+import shared from './about-landing.module.css';
+import styles from './education-hub.module.css';
+import { DispatchProposalForm } from './dispatch-proposal-form';
+import { LandingAnchorNav } from './landing-anchor-nav';
+import { LandingFaqList } from './landing-faq-list';
+import { TrackedLink } from './home/tracked-link';
+import { SpokeduSectionHeading } from './section-heading';
+import { MediaPanel } from './visual';
+import homeStyles from './home-web/home-canonical.module.css';
 
-const CONDITIONS = [
-  [
-    "01",
-    "공간",
-    "교실, 활동실, 강당, 체육관 등 사용 가능한 공간에 맞춰 이동 동선과 교구 구성을 조정합니다.",
-  ],
-  [
-    "02",
-    "인원",
-    "소그룹부터 반 단위, 다인원 활동까지 인원에 맞춰 대기와 참여 구조를 설계합니다.",
-  ],
-  [
-    "03",
-    "연령",
-    "유아, 초등, 청소년과 특수·통합 환경까지 수행 수준과 이해 속도에 맞게 규칙을 조정합니다.",
-  ],
-  [
-    "04",
-    "운영",
-    "정규수업, 방학특강, 원데이, 행사 등 회기와 목적에 맞춰 프로그램을 구성합니다.",
-  ],
+const page = educationHubPage;
+
+const anchorItems = [
+  { href: '#fit', label: '조건' },
+  { href: '#operating', label: '운영' },
+  { href: '#comparison', label: '비교' },
+  { href: '#cases', label: '사례' },
+  { href: '#process', label: '도입' },
+  { href: '#contact', label: '문의' },
 ] as const;
 
-const FLOW = [
-  [
-    "01",
-    "이동운동기술",
-    "기본 움직임과 신체조절을 바탕으로 안정적인 움직임을 준비합니다.",
-    "/images/spokedu/records/gangdong-health-pe.jpg",
-  ],
-  [
-    "02",
-    "스포무브: 시지각 움직임 놀이체육",
-    "화면의 정보를 보고 판단한 뒤 움직임으로 반응합니다.",
-    "/images/spokedu/programs/program-spomove.jpg",
-  ],
-  [
-    "03",
-    "조작운동기술",
-    "던지기, 받기, 차기, 타격 등 다양한 교구를 활용해 움직임 기술을 확장합니다.",
-    "/images/spokedu/private/private-tool-activity.jpg",
-  ],
-  [
-    "04",
-    "팀 활동",
-    "협동과 규칙 이해를 바탕으로 팀 게임과 스포츠 활동으로 연결합니다.",
-    "/images/spokedu/records/maedong-sports-stepup.jpg",
-  ],
+const CLASS_FLOW = [
+  {
+    n: '01',
+    title: '이동운동기술',
+    body: '기본 움직임과 신체조절을 바탕으로 안정적인 움직임을 준비합니다.',
+    mediaKey: 'homeHeroMovement' as HomeMediaKey,
+  },
+  {
+    n: '02',
+    title: 'SPOMOVE · 시지각 움직임',
+    body: '화면의 정보를 보고 판단한 뒤 움직임으로 반응합니다.',
+    mediaKey: 'homeCaseSpomove' as HomeMediaKey,
+  },
+  {
+    n: '03',
+    title: '조작운동기술',
+    body: '던지기·받기 등 교구 활동으로 움직임 기술을 확장합니다.',
+    mediaKey: 'homeCaseGeneral' as HomeMediaKey,
+  },
+  {
+    n: '04',
+    title: '팀 활동',
+    body: '협동과 규칙 이해를 바탕으로 팀 게임과 스포츠로 연결합니다.',
+    mediaKey: 'homeCaseAdapted' as HomeMediaKey,
+  },
 ] as const;
 
-const FORMATS = [
-  [
-    "01",
-    "정기수업",
-    "주 1회 또는 정해진 회기에 맞춰 연속적인 커리큘럼으로 운영합니다.",
-  ],
-  [
-    "02",
-    "방학·특강",
-    "방학 또는 특정 기간에 맞춰 스포츠와 놀이체육을 집중적으로 구성합니다.",
-  ],
-  [
-    "03",
-    "원데이·행사",
-    "가족체육, 미니운동회, 체험 프로그램 등 짧은 시간 안에 참여도가 높은 프로그램을 운영합니다.",
-  ],
-  [
-    "04",
-    "특수·포용 체육",
-    "참여자의 수행 수준과 특성에 맞춰 속도, 규칙, 거리, 교구와 촉진 수준을 조정합니다.",
-  ],
-] as const;
+const PROGRAM_MEDIA: Record<string, HomeMediaKey> = {
+  'functional-move': 'homeHeroMovement',
+  teambuilding: 'homeCaseAdapted',
+  spomove: 'homeCaseSpomove',
+  'monthly-sports': 'homeCaseGeneral',
+  'mini-olympics': 'homeCaseGeneral',
+  'custom-booth': 'homeCaseGeneral',
+};
 
-const CONTENT = [
-  [
-    "01",
-    "FUNCTIONAL MOVE",
-    "기초 움직임과 신체조절",
-    "/images/spokedu/programs/program-paps-running.jpg",
-  ],
-  [
-    "02",
-    "TEAM BUILDING",
-    "협동과 규칙 이해",
-    "/images/spokedu/records/maedong-sports-stepup.jpg",
-  ],
-  [
-    "03",
-    "SPOMOVE",
-    "시지각과 움직임 반응",
-    "/images/spokedu/records/dongjak-spomove.jpg",
-  ],
-  [
-    "04",
-    "MONTHLY SPORTS",
-    "종목별 스포츠 경험",
-    "/images/spokedu/private/curriculum-basketball.jpg",
-  ],
-  [
-    "05",
-    "MINI OLYMPICS",
-    "팀 경기와 이벤트",
-    "/images/spokedu/dispatch/dispatch-oneday-event.jpg",
-  ],
-  [
-    "06",
-    "CUSTOM",
-    "기관 목적에 맞춘 프로그램",
-    "/images/spokedu/dispatch/dispatch-institution-class.jpg",
-  ],
-] as const;
-
-const CASES = [
-  [
-    "매동초등학교",
-    "학교 · 정기수업",
-    "학년과 인원에 맞춰 종목을 순환하며 연속적인 스포츠 수업을 운영했습니다.",
-    "/images/spokedu/records/maedong-sports-stepup.jpg",
-    "https://blog.naver.com/spokedutogether/224288711414",
-  ],
-  [
-    "서울 중구 찾아가는 동행 체육교실",
-    "특수·통합 · 정기수업",
-    "참여자의 수행 수준에 따라 거리, 속도, 규칙과 촉진 수준을 조정했습니다.",
-    "/images/spokedu/records/donghaeng-special-pe-field.jpg",
-    "https://blog.naver.com/spokedutogether/224338186918",
-  ],
-  [
-    "동작거점형 우리동네키움센터",
-    "기관 · SPOMOVE",
-    "화면 자극과 실제 움직임을 연결해 인지와 움직임을 함께 경험하도록 구성했습니다.",
-    "/images/spokedu/records/dongjak-spomove.jpg",
-    "/records/dongjak-spomove",
-  ],
-] as const;
-
-const FAQ = [
-  [
-    "수업 비용은 어떻게 정해지나요?",
-    "대상, 인원, 회기, 수업시간, 지역과 필요한 교구에 따라 달라집니다. 조건을 확인한 뒤 운영안과 함께 안내드립니다.",
-  ],
-  [
-    "최소 몇 회부터 가능한가요?",
-    "원데이부터 정기수업까지 운영 가능하며 목적에 따라 적합한 회기 구성을 제안합니다.",
-  ],
-  [
-    "기관에서 교구를 준비해야 하나요?",
-    "프로그램에 필요한 교구는 운영 방식에 따라 협의하며 SPOKEDU가 준비해 진행할 수 있습니다.",
-  ],
-  [
-    "특수·통합 환경에서도 가능한가요?",
-    "가능합니다. 참여자의 수행 수준과 특성에 맞춰 규칙, 거리, 속도와 촉진 수준을 조정합니다.",
-  ],
-  [
-    "어느 지역까지 운영하나요?",
-    "수업 지역과 일정에 따라 운영 가능 여부가 달라질 수 있으므로 문의 시 기관 위치를 함께 알려주세요.",
-  ],
-] as const;
-
-export function EducationHubLanding() {
-  const [activeContent, setActiveContent] = useState(0);
-  const [openFaqs, setOpenFaqs] = useState<boolean[]>(() =>
-    FAQ.map(() => false),
+function HubSectionHead({
+  eyebrow,
+  title,
+  lead,
+}: {
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+}) {
+  return (
+    <div className={shared.sectionHead}>
+      <SpokeduSectionHeading eyebrow={eyebrow} title={title} lead={lead} />
+    </div>
   );
-  const selectedContent = CONTENT[activeContent];
+}
 
-  const toggleFaq = (index: number) => {
-    setOpenFaqs((current) =>
-      current.map((isOpen, itemIndex) =>
-        itemIndex === index ? !isOpen : isOpen,
-      ),
-    );
-  };
+function MarketingCheckIcon() {
+  return (
+    <svg
+      className="mt-0.5 h-4 w-4 shrink-0 text-[var(--spokedu-marketing-color-blue,#245dff)]"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path
+        fillRule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
 
+function HubSectionHeadDark({
+  eyebrow,
+  title,
+  lead,
+}: {
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+}) {
+  return (
+    <header className={styles.navySectionHead}>
+      <div className={styles.darkAccent} aria-hidden />
+      {eyebrow ? <p className={styles.darkEyebrow}>{eyebrow}</p> : null}
+      <h2 id="edu-formats-title" className={styles.darkTitle}>
+        {title}
+      </h2>
+      {lead ? <p className={`${styles.darkLead} ${koreanLineBreak}`}>{lead}</p> : null}
+    </header>
+  );
+}
+
+function EducationComparisonBlock() {
+  const { comparison } = page;
   return (
     <>
-    <div className={styles.page} data-education-p0="desktop-static">
-      <div>
-        <section className={styles.hero} aria-labelledby="edu-hero">
-          <div className={styles.heroInner}>
-            <div className={styles.heroCopy}>
-              <p className={styles.label}>기관 · 학교 체육수업</p>
-              <h1 id="edu-hero">
-                <span>기관의 환경에 맞춰</span>
-                <span>체육수업을 설계합니다.</span>
-              </h1>
-              <p className={styles.lead}>
-                학교와 기관의 대상, 인원, 공간과 일정에 맞춰
-                <br />
-                SPOKEDU가 직접 수업을 설계하고 운영합니다.
-              </p>
-              <div className={styles.actions}>
-                <Link className={styles.primary} href="#contact">
-                  수업 문의하기
-                </Link>
-                <Link className={styles.secondary} href="/records">
-                  운영 사례 보기
-                </Link>
-              </div>
+      <HubSectionHead eyebrow={comparison.badge} title={comparison.title} lead={comparison.lead} />
+      <div className="space-y-2.5 lg:hidden">
+        {comparison.rows.map((row) => (
+          <article key={row.label} className={`${shared.aboutSurface} overflow-hidden`}>
+            <div className="border-b border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-paper)] px-4 py-2.5">
+              <h3 className="text-sm font-bold text-[var(--spokedu-marketing-color-ink)]">{row.label}</h3>
             </div>
-            <div className={styles.heroImage}>
-              <img
-                src="/images/spokedu/dispatch/dispatch-institution-class.jpg"
-                alt="지도자와 여러 아동이 스포츠 교구를 활용해 움직이는 기관 체육수업"
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.conditions} aria-labelledby="edu-conditions">
-          <div className={styles.grid}>
-            <header>
-              <h2 id="edu-conditions">
-                조건이 달라지면
-                <br />
-                수업도 달라집니다.
-              </h2>
-              <p>
-                같은 프로그램을 모든 현장에 반복하지 않습니다.
-                <br />
-                공간과 인원, 연령과 운영 목적에 맞춰
-                <br />
-                수업의 구성과 진행 방식을 조정합니다.
-              </p>
-            </header>
-            <div className={styles.rows}>
-              {CONDITIONS.map(([n, title, body]) => (
-                <article key={n}>
-                  <span>{n}</span>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.flow} aria-labelledby="edu-flow">
-          <div className={styles.rail}>
-            <header className={styles.sectionHead}>
-              <h2 id="edu-flow">
-                하나의 활동이 아니라
-                <br />
-                수업의 흐름을 설계합니다.
-              </h2>
-              <p>
-                수업 목적과 대상에 따라 구성은 달라지지만 기본적인 움직임에서
-                인지·반응, 조작기술과 협동 활동까지 자연스럽게 이어지도록 수업을
-                설계합니다.
-              </p>
-            </header>
-            <div className={styles.flowGrid}>
-              {FLOW.map(([n, title, body, src]) => (
-                <article key={n}>
-                  <div>
-                    <span>{n}</span>
-                    <h3>{title}</h3>
-                    <p>{body}</p>
-                  </div>
-                  <img src={src} alt={`${title} 실제 수업 장면`} />
-                </article>
-              ))}
-            </div>
-            <p className={styles.note}>
-              ※ 대상과 목적에 따라 활동의 순서와 구성은 달라질 수 있으며
-              SPOMOVE는 모든 수업에 필수로 포함되는 프로그램이 아닙니다.
-            </p>
-          </div>
-        </section>
-
-        <section className={styles.formats} aria-labelledby="edu-format">
-          <div className={styles.grid}>
-            <h2 id="edu-format">
-              목적에 맞는 방식으로
-              <br />
-              운영합니다.
-            </h2>
-            <div className={styles.darkRows}>
-              {FORMATS.map(([n, title, body]) => (
-                <article key={n}>
-                  <span>{n}</span>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.content} aria-labelledby="edu-content">
-          <div className={styles.rail}>
-            <header className={styles.sectionHead}>
-              <h2 id="edu-content">
-                수업 목적에 맞춰
-                <br />
-                활동을 조합합니다.
-              </h2>
-              <p>
-                한 가지 프로그램을 반복하기보다 목적과 대상에 맞는 활동을
-                선택하고 조합합니다.
-              </p>
-            </header>
-            <div className={styles.contentGrid}>
-              <div className={styles.contentList}>
-                {CONTENT.map(([n, title, body], index) => (
-                  <button
-                    key={n}
-                    type={"button"}
-                    className={
-                      index === activeContent ? styles.contentActive : undefined
-                    }
-                    aria-pressed={index === activeContent}
-                    onMouseEnter={() => setActiveContent(index)}
-                    onFocus={() => setActiveContent(index)}
-                    onClick={() => setActiveContent(index)}
-                  >
-                    <span>{n}</span>
-                    <strong>{title}</strong>
-                    <p>{body}</p>
-                  </button>
-                ))}
-              </div>
-              <figure className={styles.contentVisual}>
-                <img
-                  key={selectedContent[3]}
-                  src={selectedContent[3]}
-                  alt={selectedContent[1] + " 실제 체육수업"}
-                />
-                <figcaption>
-                  <strong>{selectedContent[1]}</strong>
-                  <span>{selectedContent[2]}</span>
-                </figcaption>
-              </figure>
-              <img
-                src="/images/spokedu/programs/program-paps-running.jpg"
-                alt="달리기와 이동운동으로 기초 움직임과 신체조절을 경험하는 실제 체육수업"
-              />
-            </div>
-            <Link className={styles.textLink} href="/spomove">
-              SPOMOVE 자세히 보기 →
-            </Link>
-          </div>
-        </section>
-
-        <section className={styles.proof} aria-labelledby="edu-proof">
-          <div className={styles.rail}>
-            <p className={styles.orangeLabel}>FIELD RECORDS</p>
-            <header className={styles.sectionHead}>
-              <h2 id="edu-proof">
-                같은 수업을
-                <br />
-                어디에나 반복하지 않습니다.
-              </h2>
-              <p>
-                현장마다 공간과 인원, 참여자의 특성이 다르기 때문에 수업의
-                동선과 규칙, 교구와 진행 속도를 함께 조정합니다.
-              </p>
-            </header>
-            <div className={styles.caseLayout}>
-              {CASES.map(([title, type, body, src, href], i) => (
-                <Link
-                  key={title}
-                  href={href}
-                  className={i === 0 ? styles.caseLarge : styles.caseSmall}
-                >
-                  <img src={src} alt={`${title} 실제 수업 현장`} />
-                  <div>
-                    <span>{type}</span>
-                    <h3>{title}</h3>
-                    <p>{body}</p>
-                    <b aria-hidden="true">↗</b>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <Link className={styles.textLink} href="/records">
-              전체 수업사례 보기 →
-            </Link>
-          </div>
-        </section>
-
-        <section className={styles.process} aria-labelledby="edu-process">
-          <div className={styles.rail}>
-            <div className={styles.processTop}>
-              <div>
-                <h2 id="edu-process">
-                  조건이 아직 정리되지 않아도
-                  <br />
-                  괜찮습니다.
-                </h2>
-                <p>
-                  기관명과 예상 인원, 희망 일정 정도만 알려주셔도
-                  <br />
-                  가능한 운영 방식부터 함께 확인합니다.
+            <div className="flex gap-3 bg-[var(--spokedu-marketing-color-blue-soft)]/50 px-4 py-3">
+              <MarketingCheckIcon />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--spokedu-marketing-color-blue)]">
+                  {comparison.ours}
+                </p>
+                <p className={`mt-1 text-sm leading-relaxed text-[var(--spokedu-marketing-color-body)] ${koreanLineBreak}`}>
+                  {row.spokedu}
                 </p>
               </div>
-              <div className={styles.processRows}>
-                {[
-                  ["01", "조건 확인", "대상 · 인원 · 공간 · 일정"],
-                  ["02", "운영안 구성", "프로그램 · 회기 · 강사 · 교구"],
-                  ["03", "현장 운영", "수업 진행 · 현장 조정 · 운영 공유"],
-                ].map(([n, t, b]) => (
-                  <div key={n}>
-                    <span>{n}</span>
-                    <strong>{t}</strong>
-                    <p>{b}</p>
-                  </div>
-                ))}
-              </div>
-              <aside>
-                <Link href="#contact">기관 체육수업 문의하기 →</Link>
-                <a href="https://pf.kakao.com/_VGWxeb/chat">
-                  카카오채널 문의 가능
-                </a>
-              </aside>
             </div>
-            <div className={styles.faq}>
-              <h3>자주 묻는 질문</h3>
-              {FAQ.map(([q, a], index) => {
-                const panelId = "education-faq-panel-" + index;
-                const isOpen = openFaqs[index];
-                return (
-                  <div className={styles.faqItem} key={q}>
-                    <button
-                      type={"button"}
-                      aria-expanded={isOpen}
-                      aria-controls={panelId}
-                      onClick={() => toggleFaq(index)}
-                    >
-                      {q}
-                      <span aria-hidden="true">＋</span>
-                    </button>
-                    <div
-                      id={panelId}
-                      className={styles.faqPanel}
-                      data-open={isOpen ? "true" : "false"}
-                      role={"region"}
-                      aria-label={q}
-                    >
-                      <div>
-                        <p>{a}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--spokedu-marketing-color-muted)]">
+                {comparison.theirs}
+              </p>
+              <p className={`mt-1 text-sm leading-relaxed text-[var(--spokedu-marketing-color-body)] ${koreanLineBreak}`}>
+                {row.other}
+              </p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className={`${shared.aboutSurface} hidden overflow-hidden lg:block`}>
+        <div className="grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-b border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-paper)]">
+          <div className="px-5 py-3 text-xs font-bold uppercase tracking-wide text-[var(--spokedu-marketing-color-muted)]">
+            {comparison.axisLabel}
+          </div>
+          <div className="border-l border-[var(--spokedu-marketing-color-border)] px-5 py-3">
+            <span className="text-xs font-bold text-[var(--spokedu-marketing-color-blue)]">{comparison.ours}</span>
+            <span className="ml-2 rounded-full bg-[var(--spokedu-marketing-color-blue-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--spokedu-marketing-color-blue)]">
+              FIELD
+            </span>
+          </div>
+          <div className="border-l border-[var(--spokedu-marketing-color-border)] px-5 py-3 text-xs font-bold text-[var(--spokedu-marketing-color-muted)]">
+            {comparison.theirs}
+          </div>
+        </div>
+        {comparison.rows.map((row, index) => (
+          <div
+            key={row.label}
+            className={`grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-t border-[var(--spokedu-marketing-color-border)] ${
+              index % 2 === 1 ? 'bg-[var(--spokedu-marketing-color-paper)]/50' : 'bg-white'
+            }`}
+          >
+            <div className="px-5 py-3.5 text-sm font-bold text-[var(--spokedu-marketing-color-ink)]">{row.label}</div>
+            <div className="flex gap-2.5 border-l border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-blue-soft)]/35 px-5 py-3.5">
+              <MarketingCheckIcon />
+              <p className={`text-sm leading-relaxed text-[var(--spokedu-marketing-color-body)] ${koreanLineBreak}`}>{row.spokedu}</p>
+            </div>
+            <div className="border-l border-[var(--spokedu-marketing-color-border)] px-5 py-3.5">
+              <p className={`text-sm leading-relaxed text-[var(--spokedu-marketing-color-body)] ${koreanLineBreak}`}>{row.other}</p>
             </div>
           </div>
-        </section>
+        ))}
       </div>
-    </div>
+    </>
+  );
+}
 
-      {/* 기관 문의 — DispatchProposalForm이 <section id="contact">를 소유한다. 중복 id 금지. */}
-      <div className={styles.inquiry}>
-        <div className={styles.rail}>
+export function EducationHubLanding() {
+  const { hero, fit, operating, adjustment, cases, proof, reviews, process, faq, contact } = page;
+  const [caseHero, ...caseSides] = cases.cards;
+  const heroMedia = HOME_MEDIA[hero.mediaKey];
+
+  return (
+    <div className={`${styles.educationHub} ${homeStyles.page} w-full overflow-x-clip`}>
+      <section id={hero.id} className={`${homeStyles.hero} ${homeSectionScrollMt}`} aria-labelledby="edu-hero-heading">
+        <div className={homeStyles.heroGrid}>
+          <div className={homeStyles.heroCopyCol}>
+            <div className={homeStyles.heroInner}>
+              <p className={homeStyles.heroEyebrow}>{hero.eyebrow}</p>
+              <h1 id="edu-hero-heading">
+                {hero.lines.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </h1>
+              <p className={homeStyles.heroLead}>
+                <span>{hero.lead}</span>
+                <span>공간·인원·일정을 확인하고, 목적에 맞는 프로그램을 설계해 현장에서 직접 운영합니다.</span>
+              </p>
+              <div className={homeStyles.heroActions}>
+                <TrackedLink
+                  href={hero.primaryCta.href}
+                  trackLabel={hero.primaryCta.trackLabel}
+                  className={`${homeStyles.primaryButton} ${brandFocusRing}`}
+                >
+                  {hero.primaryCta.label}
+                </TrackedLink>
+                <Link href={hero.secondaryCta.href} className={`${homeStyles.lightButton} ${brandFocusRing}`}>
+                  {hero.secondaryCta.label}
+                </Link>
+              </div>
+            </div>
+          </div>
+          {heroMedia.src ? (
+            <figure className={homeStyles.heroFigure}>
+              <img
+                className={homeStyles.heroImage}
+                src={heroMedia.src}
+                alt={heroMedia.alt}
+                style={{ objectPosition: heroMedia.objectPosition }}
+              />
+            </figure>
+          ) : null}
+        </div>
+      </section>
+
+      <LandingAnchorNav items={anchorItems} cta={{ href: '#contact', label: '기관 수업 상담' }} ariaLabel="기관 수업 바로가기" />
+
+      <section id={fit.id} className={`${homeStyles.audience} scroll-mt-24 sm:scroll-mt-28`}>
+        <div className={homeStyles.audienceInner}>
+          <header className={homeStyles.audienceIntro}>
+            <p className={homeStyles.eyebrow}>INSTITUTION FIT</p>
+            <h2 id="edu-fit-heading">{fit.title}</h2>
+            <p className={`${homeStyles.heroLead} mt-4 max-w-[42rem]`}>
+              <span>{fit.lead}</span>
+              <span>{fit.statement}</span>
+            </p>
+          </header>
+          <ul className={styles.fitGrid}>
+            {fit.items.map((item) => (
+              <li key={item.label}>
+                <article className={styles.fitCard}>
+                  <p className={styles.fitCardLabel}>{item.label}</p>
+                  <h3 className={styles.fitCardTitle}>{item.response}</h3>
+                  <div className={`${styles.adjustKeys} mt-3`}>
+                    {item.condition.map((tag) => (
+                      <span key={tag} className={styles.adjustKey}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <p className={`mt-3 text-sm leading-relaxed text-[var(--spokedu-marketing-color-body)] ${koreanLineBreak}`}>
+                    {item.note}
+                  </p>
+                </article>
+              </li>
+            ))}
+          </ul>
+          <div className={styles.fitMeta}>
+            <p className={`text-sm leading-relaxed text-[var(--spokedu-marketing-color-body)] ${koreanLineBreak}`}>{fit.smallSpace}</p>
+            <div className={styles.institutionCloud}>
+              {fit.institutions.map((name) => (
+                <span key={name} className={styles.institutionPill}>
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id={operating.id} className="scroll-mt-24">
+      <section className={`${shared.sectionBand} ${marketingBandWhite}`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <HubSectionHead title={operating.title} lead={operating.lead} />
+          <div className={styles.fieldDuet}>
+            {operating.fieldMedia.map((shot) => (
+              <figure key={shot.mediaKey} className={styles.fieldShot}>
+                <MediaPanel media={HOME_MEDIA[shot.mediaKey]} className="absolute inset-0 h-full w-full border-0 rounded-none" sizes="card2" />
+                <figcaption>{shot.caption}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.navyBand} aria-labelledby="edu-formats-title">
+        <div className={`${shared.rail} relative z-[1] ${shared.aboutSectionInner}`}>
+          <HubSectionHeadDark
+            eyebrow="OPERATING FORMATS"
+            title="목적에 맞는 방식으로 운영합니다"
+            lead="정기수업부터 원데이·특수·포용까지 — 기관 일정과 참여 대상에 맞춰 형태를 고릅니다."
+          />
+          <div className={styles.formatGrid}>
+            {operating.formats.map((format, index) => (
+              <article key={format.id} className={styles.formatTile}>
+                <span className={styles.formatTileIndex}>{String(index + 1).padStart(2, '0')}</span>
+                <h3 className={styles.formatTileTitle}>{format.title}</h3>
+                <p className={styles.formatTileBody}>{format.body}</p>
+                <p className={styles.formatTileExample}>{format.example}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`${shared.sectionBand} ${marketingBandSoft}`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <HubSectionHead title={operating.lineupTitle} lead={operating.lineupLead} />
+          <div className={styles.programMosaic}>
+            {operating.lineup.map((item, index) => {
+              const mediaKey = PROGRAM_MEDIA[item.id] ?? 'homeCaseGeneral';
+              return (
+                <article key={item.id} className={styles.programTile}>
+                  <div className={styles.programTileMedia} aria-hidden>
+                    <MediaPanel media={HOME_MEDIA[mediaKey]} className="absolute inset-0 h-full w-full border-0 rounded-none" sizes="card2" />
+                  </div>
+                  <div className={styles.programTileScrim} aria-hidden />
+                  <div className={styles.programTileCopy}>
+                    <span className={styles.programTileIndex}>{String(index + 1).padStart(2, '0')}</span>
+                    <h3 className={styles.programTileName}>{item.name}</h3>
+                    <p className={styles.programTileDesc}>{item.description}</p>
+                    <div className={styles.programTileTags}>
+                      {item.use.map((tag) => (
+                        <span key={tag} className={styles.programTileTag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <HubSectionHead title="하나의 활동이 아니라 수업의 흐름을 설계합니다" lead="기본 움직임에서 인지·반응, 조작, 협동까지 이어지도록 구성합니다. 대상과 목적에 따라 순서는 달라질 수 있습니다." />
+          <div className={styles.flowStrip}>
+            {CLASS_FLOW.map((step) => (
+              <article key={step.n} className={styles.flowCard}>
+                <div className={styles.flowCardCopy}>
+                  <span className={styles.flowCardIndex}>{step.n}</span>
+                  <h3 className={styles.flowCardTitle}>{step.title}</h3>
+                  <p className={`${styles.flowCardBody} ${koreanLineBreak}`}>{step.body}</p>
+                </div>
+                <div className={styles.flowCardPhoto}>
+                  <MediaPanel media={HOME_MEDIA[step.mediaKey]} className="absolute inset-0 h-full w-full border-0 rounded-none" sizes="card2" />
+                </div>
+              </article>
+            ))}
+          </div>
+          <p className="text-xs leading-relaxed text-[var(--spokedu-marketing-color-muted)]">{operating.spomove.note}</p>
+
+          <div className={styles.spomoveSpotlight}>
+            <div className={styles.spomoveSpotlightMedia} aria-hidden>
+              <MediaPanel
+                media={HOME_MEDIA[operating.spomove.mediaKey]}
+                className="absolute inset-0 h-full w-full border-0 rounded-none"
+                sizes="hero"
+              />
+            </div>
+            <div className={styles.spomoveSpotlightScrim} aria-hidden />
+            <div className={styles.spomoveSpotlightCopy}>
+              <p className={styles.darkEyebrow}>{operating.spomove.eyebrow}</p>
+              <h3 className={`mt-2 text-xl font-bold sm:text-2xl ${koreanLineBreak}`}>{operating.spomove.title}</h3>
+              <p className={`mt-3 text-sm leading-relaxed text-[#cfdaea] ${koreanLineBreak}`}>{operating.spomove.body}</p>
+              <Link
+                href="/spomove"
+                data-track={inferTrackFromHref('/spomove')}
+                data-track-label="education-spomove-link"
+                className={`mt-5 inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[var(--spokedu-marketing-color-navy)] ${brandFocusRing}`}
+              >
+                SPOMOVE 자세히 →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+      </div>
+
+      <section id={page.comparison.id} className={`${shared.sectionBand} ${marketingBandWhite} scroll-mt-24`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <EducationComparisonBlock />
+        </div>
+      </section>
+
+      <section id={adjustment.id} className={`${shared.sectionBand} ${marketingBandSoft} scroll-mt-24`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <HubSectionHead title={adjustment.title} lead={adjustment.lead} />
+          <div className={styles.adjustGrid}>
+            {adjustment.items.map((item) => (
+              <article key={item.n} className={styles.adjustCard}>
+                <span className={styles.adjustCardIndex}>{item.n}</span>
+                <h3 className={styles.adjustCardTitle}>{item.label}</h3>
+                <p className={`${styles.adjustCardBody} ${koreanLineBreak}`}>{item.body}</p>
+                <div className={styles.adjustKeys}>
+                  {item.keys.map((key) => (
+                    <span key={key} className={styles.adjustKey}>
+                      {key}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id={cases.id} className={`${shared.sectionBand} ${marketingBandWhite} scroll-mt-24`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <HubSectionHead eyebrow="FIELD RECORDS" title={cases.title} lead={cases.lead} />
+          <div className={styles.caseBento}>
+            <TrackedLink href={caseHero.href} trackLabel={caseHero.trackLabel} className={`${styles.caseBentoHero} ${brandFocusRing} group`}>
+              <div className={`${styles.educationCasePhoto} relative aspect-[16/10] overflow-hidden bg-[#e9eef7] lg:aspect-auto lg:min-h-[18rem]`}>
+                <img
+                  src={caseHero.thumbnailSrc}
+                  alt=""
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                  style={{ objectPosition: caseHero.objectPosition }}
+                />
+              </div>
+              <div className={styles.caseCopy}>
+                <p className={styles.caseEyebrow}>{caseHero.context}</p>
+                <h3 className={styles.caseTitle}>{caseHero.venue}</h3>
+                <p className={`${styles.caseBody} ${koreanLineBreak}`}>{caseHero.description}</p>
+                <span className={styles.caseArrow}>사례 보기 ↗</span>
+              </div>
+            </TrackedLink>
+            {caseSides.map((card) => (
+              <TrackedLink key={card.slug} href={card.href} trackLabel={card.trackLabel} className={`${styles.caseBentoSide} ${brandFocusRing} group`}>
+                <div className={`${styles.educationCasePhoto} relative min-h-[10rem] overflow-hidden bg-[#e9eef7]`}>
+                  <img
+                    src={card.thumbnailSrc}
+                    alt=""
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                    style={{ objectPosition: card.objectPosition }}
+                  />
+                </div>
+                <div className={styles.caseCopy}>
+                  <p className={styles.caseEyebrow}>{card.context}</p>
+                  <h3 className={styles.caseTitle}>{card.venue}</h3>
+                  <p className={`${styles.caseBody} ${koreanLineBreak}`}>{card.description}</p>
+                </div>
+              </TrackedLink>
+            ))}
+          </div>
+          <div className={styles.caseFooter}>
+            <p className="text-sm text-[var(--spokedu-marketing-color-muted)]">더 많은 기관·학교 현장이 기록되어 있습니다.</p>
+            <Link
+              href={SPOKEDU_PATHS.records}
+              data-track={inferTrackFromHref(SPOKEDU_PATHS.records)}
+              data-track-label="education-all-records"
+              className={`text-sm font-semibold text-[var(--spokedu-marketing-color-blue)] ${fineHover}hover:underline ${brandFocusRing}`}
+            >
+              전체 수업 사례 보기 →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section id={reviews.id} className={`${shared.sectionBand} ${marketingBandSoft}`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <HubSectionHead eyebrow={reviews.badge} title={reviews.title} lead={reviews.lead} />
+          <div className={styles.proofBanner}>
+            {proof.items.map((item) => (
+              <div key={item.label}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--spokedu-marketing-color-blue)]">
+                  {proof.regionLabel}
+                </p>
+                <h3 className={`${styles.proofItemTitle} mt-1`}>{item.label}</h3>
+                <p className={`${styles.proofItemBody} ${koreanLineBreak}`}>{item.body}</p>
+              </div>
+            ))}
+          </div>
+          <ul className="grid list-none gap-4 p-0 m-0 lg:grid-cols-3">
+            {reviews.items.map((item) => (
+              <li key={item.headline} className={styles.reviewCard}>
+                <h3 className={`${styles.reviewHeadline} ${koreanLineBreak}`}>{item.headline}</h3>
+                <p className={`${styles.reviewQuote} mt-3 ${koreanLineBreak}`}>“{item.quote}”</p>
+                <p className={styles.reviewMeta}>
+                  {item.name} · {item.org}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section id={process.id} className={`${shared.sectionBand} ${marketingBandWhite} scroll-mt-24`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <HubSectionHead title={process.title} lead={process.lead} />
+          <div className={`${shared.aboutSurface} overflow-hidden lg:border-0 lg:bg-transparent lg:shadow-none`}>
+          <div className={`${styles.processStepper} lg:rounded-none lg:border-0`}>
+            {process.steps.map((step) => (
+              <article key={step.n} className={styles.processStep}>
+                <span className={styles.processStepNum}>{step.n}</span>
+                <h3 className={styles.processStepTitle}>{step.title}</h3>
+                <p className={`${styles.processStepBody} ${koreanLineBreak}`}>{step.body}</p>
+                <div className={styles.processStepKeys}>
+                  {step.keys.map((key) => (
+                    <span key={key} className={styles.adjustKey}>
+                      {key}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <TrackedLink
+              href={contact.primaryCta.href}
+              trackLabel={contact.primaryCta.trackLabel}
+              className={`${marketingButtonPrimary} inline-flex w-full justify-center sm:w-auto sm:min-w-[12rem] ${brandFocusRing}`}
+            >
+              {contact.primaryCta.label}
+            </TrackedLink>
+            <Link
+              href="#faq"
+              className={`${marketingButtonSecondary} inline-flex w-full justify-center sm:w-auto ${brandFocusRing}`}
+            >
+              FAQ 먼저 보기
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section id={faq.id} className={`${shared.sectionBand} ${marketingBandSoft} scroll-mt-24`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <HubSectionHead title={faq.title} />
+          <LandingFaqList items={faq.items} accent="sky" />
+        </div>
+      </section>
+
+      <section className={`${shared.sectionBand} ${marketingBandWhite} scroll-mt-24`}>
+        <div className={`${shared.rail} ${shared.aboutSectionInner}`}>
+          <div className={`${shared.aboutSurface} ${styles.contactPanel}`}>
+            <div className={shared.sectionHead}>
+              <SpokeduSectionHeading titleLines={contact.titleLines} lead={contact.lead} />
+            </div>
+            <TrackedLink
+              href={contact.primaryCta.href}
+              trackLabel={contact.primaryCta.trackLabel}
+              className={`${marketingButtonPrimary} inline-flex w-full justify-center sm:w-auto sm:min-w-[12rem] ${brandFocusRing}`}
+            >
+              {contact.primaryCta.label}
+            </TrackedLink>
+          </div>
           <Suspense fallback={<div className="min-h-[40vh]" aria-hidden />}>
             <DispatchProposalForm />
           </Suspense>
         </div>
-      </div>
-    </>
+      </section>
+    </div>
   );
 }

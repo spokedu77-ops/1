@@ -190,7 +190,7 @@ export function SiteHeader() {
   }, [openDesktopGroup]);
 
   const linkClass = (active: boolean) =>
-    `inline-flex h-10 items-center text-[15px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+    `inline-flex h-10 shrink-0 items-center whitespace-nowrap text-[15px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
       onHero
         ? active
           ? 'text-white underline decoration-white/80 underline-offset-[6px]'
@@ -337,10 +337,15 @@ export function SiteHeader() {
             : 'border-b border-[#DCE3EE]/90 bg-white shadow-[0_1px_0_rgba(15,33,70,0.04)]'
         }`}
       >
-        <div className={`${marketingSectionInner} flex h-[var(--spokedu-public-header-height)] items-center justify-between gap-4`}>
+        <div
+          className={`${marketingSectionInner} grid h-[var(--spokedu-public-header-height)] grid-cols-[auto_1fr_auto] items-center gap-3 xl:gap-4`}
+        >
           <BrandLogo onDark={onHero} scrollHomeOnClick size="lg" />
 
-          <nav className="hidden h-10 items-center gap-6 lg:flex xl:gap-8" aria-label="주요 메뉴">
+          <nav
+            className="hidden h-10 min-w-0 items-center justify-center gap-3 text-[14px] xl:flex xl:gap-4 xl:text-[15px] 2xl:gap-6"
+            aria-label="주요 메뉴"
+          >
             {siteNav.map(renderDesktopEntry)}
           </nav>
 
@@ -365,7 +370,7 @@ export function SiteHeader() {
             <button
               ref={menuButtonRef}
               type="button"
-              className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
+              className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 xl:hidden ${
                 onHero
                   ? 'border-white/35 text-white focus-visible:outline-white'
                   : 'border-slate-300 text-[#0B1F46] focus-visible:outline-[#245DFF]'
@@ -396,7 +401,7 @@ export function SiteHeader() {
       <div
         id="mobile-nav-panel"
         ref={mobilePanelRef}
-        className={`fixed inset-x-0 bottom-0 top-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px))] z-50 lg:hidden ${
+        className={`fixed inset-x-0 bottom-0 top-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px))] z-50 xl:hidden ${
           menuOpen ? '' : 'pointer-events-none invisible'
         }`}
         style={{ backgroundColor: NAVY }}
@@ -436,9 +441,6 @@ export function SiteFooter() {
   const footerHeadingClass = `text-[13px] font-semibold tracking-[-0.01em] text-white/60 ${koreanText}`;
 
   const youtubeLink = socialLinks.find((c) => c.key === 'youtube');
-  const [legalBeforeRegistration = '', legalAfterRegistration = ''] = getPublicFooterLegalLine().split(
-    brandProfile.businessRegistrationNumber,
-  );
 
   return (
     <footer data-spokedu-global-footer="true" style={{ backgroundColor: NAVY }} className="text-white">
@@ -513,7 +515,7 @@ export function SiteFooter() {
 
         <div className="mt-8 space-y-3 border-t border-white/10 pt-4">
           <p className={`text-[12px] leading-[1.7] text-white/65 min-[640px]:leading-[1.6] min-[640px]:text-white/50 ${koreanText}`}>
-            {legalBeforeRegistration}<span className="whitespace-nowrap">{brandProfile.businessRegistrationNumber}</span>{legalAfterRegistration}
+            {getPublicFooterLegalLine()}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
             <Link href="/spokedu-lab/terms" data-track-label="footer-master-terms" className="inline-flex min-h-11 items-center text-white/55 underline-offset-2 hover:text-white hover:underline min-[640px]:min-h-0">

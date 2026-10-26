@@ -608,8 +608,12 @@ body {
   --spokedu-marketing-color-soft: var(--spokedu-marketing-color-blue-soft);
   --spokedu-public-header-height: 3.5rem;
   --spokedu-marketing-content-max: 85.5rem;
+  /** 와이드 히어로·홈 등 — STEP 3에서 home-canonical과 alias 연결 */
+  --spokedu-marketing-content-wide: 80rem;
   --spokedu-marketing-gutter-mobile: 1.25rem;
   --spokedu-marketing-gutter-wide: 3rem;
+  --spokedu-marketing-section-gap-y: 3.5rem;
+  --spokedu-marketing-grid-gap: 2rem;
   --spokedu-marketing-radius-small: 0.875rem;
   --spokedu-marketing-radius-medium: 1.375rem;
   --spokedu-marketing-radius-large: 2rem;
@@ -621,6 +625,13 @@ body {
   --spokedu-marketing-shadow-interactive: 0 18px 48px rgba(15, 33, 70, 0.11);
   --spokedu-marketing-shadow-media: 0 24px 64px rgba(15, 33, 70, 0.14);
   font-family: var(--spokedu-marketing-font-body);
+  font-synthesis: none;
+  color: var(--spokedu-marketing-color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.spokedu-marketing main {
+  color: var(--spokedu-marketing-color-ink);
 }
 
 @media (min-width: 1024px) {
@@ -646,6 +657,27 @@ body {
 
 @media (min-width: 1200px) {
   .site-container {
+    padding-inline: 48px;
+  }
+}
+
+/** 마케팅 와이드 inner (1280px) — 일반 `.site-container`(1368px)와 분리 */
+.site-container-wide {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--spokedu-marketing-content-wide, 80rem);
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+@media (min-width: 768px) {
+  .site-container-wide {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .site-container-wide {
     padding-inline: 48px;
   }
 }

@@ -89,11 +89,10 @@ describe('public marketing typography contract', () => {
     expect(homeWeb).toMatch(/<h2 id="audience-heading"/);
     expect(read('app/spokedu/components/landing-hero.tsx')).toMatch(/<motion\.h1[\s\S]*marketingHeroDisplay/);
     const education = read('app/spokedu/components/education-hub-landing.tsx');
-    const educationStyles = read('app/spokedu/components/education-hub.module.css');
-    expect(education).toMatch(/<h1 id=.edu-hero./);
-    expect(education).toMatch(/<h2 id=.edu-/);
-    expect(educationStyles).toContain('.hero h1');
-    expect(educationStyles).toContain('.page h2');
+    expect(education).toMatch(/<h1 id="edu-hero-heading"/);
+    expect(education).toMatch(/home-canonical\.module\.css/);
+    expect(education).toMatch(/SpokeduSectionHeading/);
+    expect(read('app/spokedu/components/section-heading.tsx')).toMatch(/<h2[\s\S]*marketingTypeSectionTitle/);
     expect(read('app/spokedu/components/spomove-program-landing.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
     expect(read('app/spokedu/components/spomove-program-landing.tsx')).toMatch(/<h2[\s\S]*marketingSectionDisplay/);
   });

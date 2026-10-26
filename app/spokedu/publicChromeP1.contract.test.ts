@@ -7,8 +7,8 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('public chrome P1 closure', () => {
   it('keeps Education generic image sizing inside main content', () => {
     const css = read('app/spokedu/components/education-hub.module.css');
-    expect(css).toMatch(/\.page main img\s*\{/);
-    expect(css).not.toMatch(/\.page img\s*\{/);
+    expect(css).toMatch(/\.educationHub[\s\S]*img\s*\{/);
+    expect(css).not.toMatch(/\.educationHub img\s*\{/);
   });
 
   it('does not generate the legacy MASTER landing from runtime consumers', () => {

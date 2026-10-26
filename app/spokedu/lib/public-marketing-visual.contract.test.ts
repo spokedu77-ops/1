@@ -65,6 +65,22 @@ describe('public marketing visual foundation contract', () => {
     expect(publicSource).not.toMatch(/\b(?:premiumPanel|premiumPanelDark|whoCardShell|reviewCardShell|pointCardShell|elementCardShell|activityCardShell|blockCardShell)\b/);
   });
 
+  it('publishes role-based typography aliases for shared components', () => {
+    for (const role of [
+      'marketingTypeHeroTitle',
+      'marketingTypeSectionTitle',
+      'marketingTypeSectionLead',
+      'marketingTypeCardTitle',
+      'marketingTypeBody',
+      'marketingTypeCaption',
+      'marketingTypeButtonLabel',
+    ]) {
+      expect(utilities).toMatch(new RegExp(`export const ${role}\\b`));
+    }
+    expect(read('app/spokedu/components/section-heading.tsx')).toMatch(/marketingTypeSectionTitle/);
+    expect(read('app/spokedu/components/landing-hero.tsx')).toMatch(/marketingTypeHeroTitle/);
+  });
+
   it('publishes the canonical surface family', () => {
     for (const primitive of [
       'marketingSurface',
@@ -87,9 +103,9 @@ describe('public marketing visual foundation contract', () => {
 
   it('uses H1 role independently from its scale on Education and SPOMOVE', () => {
     const education = read('app/spokedu/components/education-hub-landing.tsx');
-    const educationStyles = read('app/spokedu/components/education-hub.module.css');
-    expect(education).toMatch(/<h1 id=.edu-hero./);
-    expect(educationStyles).toContain('.hero h1');
+    expect(education).toMatch(/home-canonical\.module\.css/);
+    expect(education).toMatch(/<h1 id="edu-hero-heading"/);
+    expect(read('app/spokedu/components/home-web/home-canonical.module.css')).toMatch(/\.hero h1/);
 
     const spomove = read('app/spokedu/components/spomove-program-landing.tsx');
     expect(spomove).toMatch(/<h1[\s\S]*marketingHeroDisplay/);

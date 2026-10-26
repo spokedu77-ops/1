@@ -36,7 +36,7 @@ function caseCard(
 export const educationHubPage = {
   sectionOrder: ['hero', 'fit', 'operating', 'comparison', 'adjustment', 'cases', 'proof', 'reviews', 'process', 'faq', 'contact'] as const,
   hero: {
-    id: 'hero',
+    id: 'edu-hero',
     eyebrow: '체육교육 · 기관수업',
     lines: ['움직이게 하는 수업이 아니라,', '움직이고 싶게 만드는 수업입니다.'] as const,
     lead: '학교·키움센터·복지관 등 기관의 대상, 인원, 공간에 맞춰 지도자가 현장에서 직접 체육수업을 운영합니다.',

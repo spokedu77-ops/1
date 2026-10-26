@@ -20,7 +20,6 @@ function SkipToContent() {
 
 export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isLabLanding = pathname === '/spokedu-lab';
 
   useEffect(() => {
     captureAcquisitionFromLocation();
@@ -34,11 +33,11 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   return (
     <>
       <SkipToContent />
-      {isLabLanding ? null : <SiteHeader />}
+      <SiteHeader />
       <main id="main-content" className="w-full min-w-0">
         {children}
       </main>
-      {isLabLanding ? null : <SiteFooter />}
+      <SiteFooter />
     </>
   );
 }

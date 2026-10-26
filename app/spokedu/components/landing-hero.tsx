@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useMarketingMotionReady } from '../lib/use-marketing-motion-ready';
 import type { ReactNode } from 'react';
 import type { HomeMediaItem } from '../data/home-media';
 import { trackCommercialEvent } from '../lib/commercial-events';
@@ -9,9 +10,8 @@ import {
   marketingButtonPrimary,
   marketingButtonSecondary,
   brandFocusRing,
-  marketingHeroDisplay,
-  marketingHeroDisplaySplitScale,
   marketingHeroDisplayLine,
+  marketingTypeHeroTitle,
   koreanLineBreak,
   landingHeroCopy,
   landingHeroGrid,
@@ -40,6 +40,8 @@ type LandingHeroProps = {
   priority?: boolean;
   primaryCta?: LandingHeroCta;
   secondaryCta?: LandingHeroCta;
+  /** 기본 `landingHeroShell` — education 등 flat hero용 override */
+  shellClassName?: string;
 };
 
 function inferCommercialRoute(href: string): 'private' | 'curriculum' | 'dispatch' | null {
@@ -71,11 +73,12 @@ export function LandingHero({
   priority = false,
   primaryCta,
   secondaryCta,
+  shellClassName,
 }: LandingHeroProps) {
-  const reducedMotion = useReducedMotion();
+  const { motionEnabled } = useMarketingMotionReady();
 
   return (
-    <section className={landingHeroShell}>
+    <section className={shellClassName ?? landingHeroShell}>
       <div className={landingHeroGrid}>
         <div className={landingHeroCopy}>
           {kicker ? (
@@ -83,17 +86,21 @@ export function LandingHero({
           ) : null}
           {leading ? <div className={kicker ? 'mt-4' : ''}>{leading}</div> : null}
           <motion.h1
-            className={`${marketingHeroDisplay} ${marketingHeroDisplaySplitScale} text-[#14213A] ${kicker || leading ? 'mt-4 sm:mt-5' : 'mt-2 sm:mt-2.5'}`}
-            initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-            animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
+            className={`${marketingTypeHeroTitle} [color:var(--spokedu-marketing-color-ink)] ${kicker || leading ? 'mt-4 sm:mt-5' : 'mt-2 sm:mt-2.5'}`}
+            initial={motionEnabled ? { opacity: 0, y: 20 } : false}
+            animate={motionEnabled ? { opacity: 1, y: 0 } : undefined}
+            transition={motionEnabled ? { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] } : undefined}
           >
             {lines.map((line, index) => (
               <motion.span
                 key={line}
-                initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-                animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.06 * index }}
+                initial={motionEnabled ? { opacity: 0, y: 20 } : false}
+                animate={motionEnabled ? { opacity: 1, y: 0 } : undefined}
+                transition={
+                  motionEnabled
+                    ? { duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.06 * index }
+                    : undefined
+                }
                 className={marketingHeroDisplayLine}
               >
                 {line}

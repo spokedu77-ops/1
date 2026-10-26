@@ -33,25 +33,27 @@ function allowsVisualFallback(requirement: object): boolean {
 describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
     expect(siteNav.map((entry) => entry.label)).toEqual([
-      '체육수업',
+      '스포키듀 소개',
+      '기관수업',
+      '개인·소그룹',
       'SPOMOVE',
       'SPOKEDU LAB',
       '수업사례',
-      'SPOKEDU 소개',
     ]);
-    expect(siteNav).toHaveLength(5);
-    expect(JSON.stringify(siteNav)).not.toMatch(/스포키듀|문의·협업/);
+    expect(siteNav).toHaveLength(6);
+    expect(JSON.stringify(siteNav)).not.toMatch(/문의·협업/);
   });
 
   it('maps primary nav labels to locked destinations', () => {
     const byLabel = Object.fromEntries(
       siteNav.filter((entry) => entry.type === 'link').map((entry) => [entry.label, entry.href]),
     );
-    expect(byLabel['체육수업']).toBe(SPOKEDU_PATHS.education);
+    expect(byLabel['스포키듀 소개']).toBe(SPOKEDU_PATHS.about);
+    expect(byLabel['기관수업']).toBe(SPOKEDU_PATHS.education);
+    expect(byLabel['개인·소그룹']).toBe(SPOKEDU_PATHS.private);
     expect(byLabel.SPOMOVE).toBe(SPOKEDU_PATHS.spomove);
     expect(byLabel['SPOKEDU LAB']).toBe(SPOKEDU_PATHS.subscription);
     expect(byLabel['수업사례']).toBe(SPOKEDU_PATHS.records);
-    expect(byLabel['SPOKEDU 소개']).toBe(SPOKEDU_PATHS.about);
     expect(siteHeaderCta.label).toBe('문의하기');
     expect(siteHeaderCta.href).toBe(SPOKEDU_PATHS.contact);
     expect(JSON.stringify(siteNav)).not.toMatch(/SPOMAT|"파트너/);
@@ -91,16 +93,16 @@ describe('spokedu site IA', () => {
     expect(footerNavGroups.map((group) => group.heading)).toEqual(['체육수업', '솔루션', 'SPOKEDU', '문의']);
     const footerLabels = footerNavLinks.map((link) => link.label);
     expect(footerLabels).toEqual([
-      '기관·학교 수업',
-      '개인·소그룹 수업',
+      '기관수업',
+      '개인·소그룹',
       'SPOMOVE',
       'SPOMOVE 카탈로그',
       'SPOMAT',
       'SPOKEDU LAB',
-      '현장 사례',
-      '소개',
+      '수업사례',
+      '스포키듀 소개',
       '파트너·협업',
-      '상담하기',
+      '문의하기',
     ]);
     expect(footerNavLinks.map((link) => link.href)).not.toEqual(
       siteNav.filter((entry) => entry.type === 'link').map((entry) => entry.href),

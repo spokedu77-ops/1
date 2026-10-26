@@ -2,174 +2,192 @@ import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 /**
- * About 허브 — 영업 랜딩이 아니라 조직·관계·경로 설명.
- * 최대 6섹션. 미검증 수치·가격표 금지.
+ * About — BRAND · WHAT WE DO · APPROACH · PEOPLE · HISTORY · CLOSING (6 sections).
+ * 미검증 수치·가격표 금지. 연혁은 공식 주요연혁·기존 확인 기록 기준.
  */
 export const aboutPage = {
-  sectionOrder: [
-    'intro',
-    'origin',
-    'whatWeDo',
-    'principles',
-    'history',
-    'nextPaths',
-  ] as const,
+  sectionOrder: ['intro', 'whatWeDo', 'approach', 'team', 'history', 'closing'] as const,
 
   intro: {
     id: 'intro',
-    eyebrow: 'SPOKEDU',
-    title: '현장 체육교육에서 시작해 콘텐츠와 시스템으로 확장하는 SPOKEDU',
-    lead:
-      '스포키듀는 아동·청소년 체육교육을 직접 설계·운영하는 브랜드입니다. 현장 수업을 바탕으로 SPOMOVE 콘텐츠와 지도자용 구독시스템을 확장합니다.',
-    mediaKey: 'homeHero' as HomeMediaKey,
-  },
-
-  origin: {
-    id: 'origin',
-    eyebrow: '시작',
-    title: '현장에서 시작한 구조',
-    lead: '개인·기관 수업을 운영하며 정리한 활동 기준이 프로그램·콘텐츠·도구로 이어졌습니다.',
-    steps: [
-      {
-        title: '현장 수업',
-        body: '학교·키움·복지·개인 수업에서 대상과 공간에 맞춰 활동을 설계·진행합니다.',
-      },
-      {
-        title: '콘텐츠화',
-        body: '반복되는 수업 흐름을 SPOMOVE 등 콘텐츠와 수업 자료로 정리합니다.',
-      },
-      {
-        title: '시스템',
-        body: '지도자가 찾고·준비하고·진행·기록하는 흐름을 구독시스템으로 연결합니다.',
-      },
-    ] as const,
+    eyebrow: 'ABOUT SPOKEDU',
+    titleLines: ['움직임으로', '아이의 성장을 설계합니다.'] as const,
+    lead: '스포키듀는 아동·청소년 전문 체육교육 브랜드입니다.',
+    body:
+      '아이들의 발달 수준과 특성을 고려한 체육수업을 운영하며, 현장의 경험을 교육 콘텐츠와 기술로 확장합니다.',
+    mediaKey: 'homeHeroField' as HomeMediaKey,
   },
 
   whatWeDo: {
     id: 'what-we-do',
-    eyebrow: '현재',
-    title: '현재 하는 일',
-    lead:
-      'SPOKEDU는 현장에서 직접 운영하는 체육수업을 기반으로 프로그램과 수업 운영 시스템을 개발합니다.',
-    items: [
+    eyebrow: 'WHAT WE DO',
+    title: '현장에서 시작해 교육의 가능성을 넓힙니다.',
+    branches: [
       {
-        id: 'education',
-        role: '직접 운영',
+        id: 'physical-education',
         title: '체육교육',
-        body: '기관수업과 개인·소그룹을 스포키듀가 직접 설계·운영합니다.',
-        href: `${SPOKEDU_BASE_PATH}/education`,
-        ctaLabel: '체육교육 알아보기',
-        trackLabel: 'about-what-education',
+        body: '학교·기관·개인 맞춤형 체육수업을 운영합니다.',
+        links: [
+          {
+            label: '기관·학교 수업',
+            href: `${SPOKEDU_BASE_PATH}/education`,
+            trackLabel: 'about-what-education',
+          },
+          {
+            label: '개인·소그룹 수업',
+            href: `${SPOKEDU_PATHS.private}`,
+            trackLabel: 'about-what-private',
+          },
+        ],
       },
       {
         id: 'spomove',
-        role: '콘텐츠',
         title: 'SPOMOVE',
-        body: '체육교육 현장과 구독시스템 양쪽에서 활용하는 화면 신호 기반 활동 콘텐츠입니다.',
+        body: '시각정보와 신체 움직임을 연결하는 스크린 기반 체육 프로그램입니다.',
         href: `${SPOKEDU_PATHS.spomove}`,
-        ctaLabel: 'SPOMOVE 알아보기',
         trackLabel: 'about-what-spomove',
       },
       {
         id: 'subscription',
-        role: '지도자용 제품',
         title: 'SPOKEDU LAB',
-        body: '수업을 찾고 준비하고 진행·기록하는 흐름을 돕는 지도자용 수업 운영 서비스입니다.',
+        body: '체육 지도자를 위한 수업 콘텐츠와 운영 플랫폼입니다.',
         href: `${SPOKEDU_PATHS.subscription}`,
-        ctaLabel: 'SPOKEDU LAB 알아보기',
         trackLabel: 'about-what-curriculum',
       },
     ] as const,
   },
 
-  principles: {
-    id: 'principles',
-    eyebrow: '원칙',
-    title: '운영 원칙',
-    items: [
+  approach: {
+    id: 'approach',
+    eyebrow: 'OUR APPROACH',
+    title: '아이마다 다른 출발점. 성장의 방향도 다르게.',
+    principles: [
       {
-        title: '현장 조건 우선',
-        body: '공간·인원·연령·일정에 맞춰 난이도와 동선을 조정합니다.',
+        title: '이해합니다.',
+        body: '아이의 특성과 움직임 수준을 살핍니다.',
       },
       {
-        title: '과정 중심 설명',
-        body: '효과·발달을 보장하지 않고, 제시·판단·수행·조절의 과정을 설명합니다.',
+        title: '설계합니다.',
+        body: '발달 수준과 교육 목적에 맞게 활동을 구성합니다.',
       },
       {
-        title: '공개 근거만',
-        body: '사례·연혁·제품 안내는 확인된 기록과 공개 자료 범위 안에서만 표기합니다.',
+        title: '관찰합니다.',
+        body: '참여 과정과 움직임의 변화를 살피며 수업을 발전시킵니다.',
       },
-    ] as const,
-  },
-
-  /** 압축 연혁 — about-history 핵심만. SNS 팔로워·미검증 누적 수치 제외 */
-  history: {
-    id: 'history',
-    eyebrow: '연혁',
-    title: '주요 연혁',
-    lead: '설립부터 현재까지, 공개 가능한 핵심 사건만 압축했습니다.',
-    milestones: [
-      { date: '2020. 06', text: '스포키듀 설립 및 출강 시작' },
-      { date: '2023. 02', text: 'KBS 「슈퍼맨이 돌아왔다」 체력 측정 자문 출연' },
-      { date: '2023. 10~12', text: '서초여성가족플라자 아동체육 인큐베이팅 강의' },
-      { date: '2025. 02', text: '거점형 키움센터 연간 체육 프로그램 계약' },
-      { date: '2025. 03', text: '이마트 문화센터 미니올림픽 특강(서울·경기·대전)' },
-      { date: '2025~', text: 'SPOMOVE 현장 적용 · SPOKEDU LAB 운영' },
-      { date: '2026. 05', text: '서대문구 어린이날 기념 아동청소년축제 부스 운영' },
-      { date: '2026. 07. 16', text: '광주광역시 체육 지도자 교육 세미나' },
     ] as const,
   },
 
   team: {
     id: 'team',
-    eyebrow: '운영',
-    title: '운영 대표',
-    name: '최지훈',
-    role: '스포키듀 운영 대표',
-    notes: [
-      '연세대학교 체육교육학과 졸업',
-      '현장 수업·기관 운영·지도자 교육을 함께 담당',
+    eyebrow: 'OUR PEOPLE',
+    title: '교육을 설계하고 현장을 움직이는 사람들',
+    members: [
+      {
+        id: 'choi',
+        name: '최지훈',
+        role: '대표',
+        photo: '/images/spokedu/home/people/choi-temp-crop.jpg',
+        photoObjectPosition: '50% 38%',
+        credentials: ['연세대학교 체육교육학과'],
+      },
+      {
+        id: 'kim-yunki',
+        name: '김윤기',
+        role: '운영총괄',
+        photo: '/images/spokedu/home/people/kim-yunki-temp.jpg',
+        photoObjectPosition: '50% 38%',
+        credentials: ['연세대학교 체육교육학과', '중등학교 정교사 2급'],
+      },
+      {
+        id: 'kim-gumin',
+        name: '김구민',
+        role: '팀장',
+        photo: '/images/spokedu/home/people/kim-gumin-temp.jpg',
+        photoObjectPosition: '50% 20%',
+        credentials: ['강원대학교 레저스포츠 전공', '생활스포츠지도사 2급'],
+      },
     ] as const,
   },
 
-  nextPaths: {
-    id: 'next',
-    eyebrow: '다음 경로',
-    title: '목적에 맞는 경로로 이어가세요',
-    lead: '체육수업 도입, SPOMOVE·LAB, 협업 문의는 아래에서 바로 이어집니다.',
-    items: [
+  history: {
+    id: 'history',
+    eyebrow: 'OUR HISTORY',
+    title: '현장에서 쌓아온 경험이 스포키듀의 전문성이 됩니다.',
+    yearGroups: [
       {
-        label: '체육교육',
-        href: `${SPOKEDU_BASE_PATH}/education`,
-        trackLabel: 'about-next-education',
+        year: '2026',
+        theme: '전문 체육교육과 기술 기반 콘텐츠 확장',
+        items: [
+          '서울시·중구 찾아가는 동행 체육교실 7개 기관·100차시 규모 사업',
+          '광주광역시 체육 지도자 대상 교육 세미나',
+          '서대문구 어린이날 기념 아동청소년축제 부스 운영',
+        ],
       },
       {
-        label: 'SPOMOVE',
-        href: `${SPOKEDU_PATHS.spomove}`,
-        trackLabel: 'about-next-spomove',
+        year: '2025',
+        theme: '공공 체육교육 사업 확대',
+        items: [
+          '강동구청 찾아가는 스포츠교실 5개교·20회기 운영',
+          '강동구보건소 건강캠프 및 건강한 돌봄놀이터 운영',
+          '부천 상록학교 특수체육 프로그램 운영',
+          '거점형 키움센터 연간 체육 프로그램 계약',
+          '이마트 문화센터 미니올림픽 특강(서울·경기·대전)',
+          'SPOMOVE 현장 적용 · SPOKEDU LAB 운영',
+        ],
       },
       {
-        label: 'SPOKEDU LAB',
-        href: `${SPOKEDU_PATHS.subscription}`,
-        trackLabel: 'about-next-curriculum',
+        year: '2024',
+        theme: '맞춤형 체육교육 영역 확대',
+        items: [
+          '서대문농아인복지관 아동·가족 체육교육 운영',
+          '강동구 가족센터 체육 특강 및 가족 체육대회',
+          '양천거점형 우리동네키움센터 체육교육 운영 시작',
+        ],
       },
       {
-        label: '문의·협업',
-        href: `${SPOKEDU_BASE_PATH}/contact`,
-        trackLabel: 'about-next-contact',
-      },
-    ] as const,
-    secondary: [
-      {
-        label: 'SPOMAT 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/spomat`,
-        trackLabel: 'about-next-spomat',
+        year: '2023',
+        theme: '교육 프로그램 및 지도자 교육 확대',
+        items: [
+          'KBS 「슈퍼맨이 돌아왔다」 체력측정 자문 출연',
+          '동작거점형 우리동네키움센터 체육교육 운영 시작',
+          '서초여성가족플라자 파트너 강사 인큐베이팅 교육 참여',
+        ],
       },
       {
-        label: '파트너·협업 안내',
-        href: `${SPOKEDU_BASE_PATH}/partners`,
-        trackLabel: 'about-next-partners',
+        year: '2021',
+        theme: '지역사회 체육교육 기반 구축',
+        items: [
+          '종로거점형 우리동네키움센터 체육교육 운영 시작',
+          '성북거점형 우리동네키움센터 체육교육 운영 시작',
+        ],
+      },
+      {
+        year: '2020',
+        theme: 'SPOKEDU 설립',
+        items: ['2020년 6월 아동·청소년 체육교육 전문 브랜드 출범'],
       },
     ] as const,
   },
+
+  closing: {
+    id: 'closing',
+    /** 한 줄 의미 · 화면은 2줄 리듬 */
+    tagline: '움직임의 경험이 성장의 기회가 되도록.',
+    taglineLines: ['움직임의 경험이', '성장의 기회가 되도록.'] as const,
+    brandSign: 'SPOKEDU',
+    cta: {
+      label: '문의·상담하기',
+      href: `${SPOKEDU_BASE_PATH}/contact`,
+      trackLabel: 'about-closing-contact',
+    },
+  },
 } as const;
+
+export type AboutHubBranch = (typeof aboutPage.whatWeDo.branches)[number];
+type AboutHubBranchWithLinks = Extract<AboutHubBranch, { readonly links: readonly unknown[] }>;
+
+export function isAboutHubBranchWithLinks(
+  branch: AboutHubBranch,
+): branch is AboutHubBranchWithLinks {
+  return 'links' in branch && Array.isArray((branch as { links?: unknown }).links);
+}

@@ -1,192 +1,218 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
-import { aboutPage } from '../data/about-page';
+import { aboutPage, isAboutHubBranchWithLinks } from '../data/about-page';
 import { HOME_MEDIA } from '../data/home-media';
 import {
-  brandBlue,
-  brandInk,
-  homeBandSoftBlue,
-  homeBandWhite,
-  homeBodyLead,
   brandFocusRing,
-  homeSectionEyebrow,
-  marketingSectionDisplay,
-  marketingSectionPadCompact,
-  koreanText,
+  homeHeroBrand,
+  homeSectionScrollMt,
+  marketingBandSoft,
+  marketingBandWhite,
+  marketingHeroDisplayLine,
   marketingButtonPrimary,
-  marketingButtonSecondary,
-  marketingSectionInner,
+  marketingTypeHeroTitle,
 } from '../lib/ui-classes';
-import { MediaPanel } from './visual';
 import { TrackedLink } from './home/tracked-link';
-import { HomeChevron } from './home/home-chevron';
+import { SpokeduSectionHeading } from './section-heading';
+import { MediaPanel } from './visual';
+import styles from './about-landing.module.css';
 
-/** About — 6섹션 조직 소개 (영업 랜딩 아님) */
+function AboutSectionHead({
+  eyebrow,
+  title,
+  lead,
+}: {
+  eyebrow: string;
+  title: string;
+  lead?: string;
+}) {
+  return (
+    <div className={styles.sectionHead}>
+      <SpokeduSectionHeading eyebrow={eyebrow} title={title} lead={lead} />
+    </div>
+  );
+}
+
+/** About — BRAND · WHAT WE DO · APPROACH · PEOPLE · HISTORY · CLOSING */
 export function AboutLanding() {
-  const reducedMotion = useReducedMotion();
-  const { intro, origin, whatWeDo, principles, history, team, nextPaths } = aboutPage;
+  const { intro, whatWeDo, approach, history, team, closing } = aboutPage;
+  const heroMedia = HOME_MEDIA[intro.mediaKey];
 
   return (
-    <div className="w-full overflow-x-clip" data-spokedu-about-sections={aboutPage.sectionOrder.length}>
-      <section id={intro.id} className={`${marketingSectionPadCompact} bg-white`}>
-        <div className={marketingSectionInner}>
-          <motion.div
-            className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center"
-            initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 0.45 }}
-          >
-            <div className="max-w-2xl">
-              <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
-              <h1 className={`${marketingSectionDisplay} mt-3`}>{intro.title}</h1>
-              <p className={`${homeBodyLead} mt-4`}>{intro.lead}</p>
-            </div>
-            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-stone-200/80">
-              <MediaPanel
-                media={HOME_MEDIA[intro.mediaKey]}
-                className="absolute inset-0 h-full w-full border-0 rounded-none"
-                sizes="hero"
-                photoPriority
-                objectFit="cover"
-              />
-            </div>
-          </motion.div>
+    <div className="w-full overflow-x-clip bg-[var(--spokedu-marketing-color-white)]" data-spokedu-about-sections={aboutPage.sectionOrder.length}>
+      <section id={intro.id} className={`${styles.hero} ${homeSectionScrollMt}`} aria-labelledby="about-hero-title">
+        <div className={styles.heroMobilePhoto}>
+          <MediaPanel
+            media={heroMedia}
+            className="absolute inset-0 h-full w-full border-0 rounded-none"
+            sizes="hero"
+            photoPriority
+            priority
+            objectFit="cover"
+          />
         </div>
-      </section>
-
-      <section id={origin.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{origin.eyebrow}</p>
-          <h2 className={`${marketingSectionDisplay} mt-3`}>{origin.title}</h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{origin.lead}</p>
-          <ol className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {origin.steps.map((step, index) => (
-              <li key={step.title} className="rounded-2xl border border-[#D6E3FF] bg-white px-5 py-5">
-                <p className="text-[11px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
-                  {index + 1}
-                </p>
-                <h3 className={`mt-2 text-base font-bold ${koreanText}`} style={{ color: brandInk }}>
-                  {step.title}
-                </h3>
-                <p className={`mt-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{step.body}</p>
-              </li>
+        <div className={styles.heroMedia}>
+          <MediaPanel
+            media={heroMedia}
+            className="absolute inset-0 h-full w-full border-0 rounded-none"
+            sizes="hero"
+            photoPriority
+            priority
+            objectFit="cover"
+          />
+        </div>
+        <div className={styles.heroScrim} aria-hidden />
+        <div className={`${styles.rail} ${styles.heroCopy}`}>
+          <p className={homeHeroBrand}>{intro.eyebrow}</p>
+          <h1 id="about-hero-title" className={`${marketingTypeHeroTitle} mt-3 text-white`}>
+            {intro.titleLines.map((line) => (
+              <span key={line} className={marketingHeroDisplayLine}>
+                {line}
+              </span>
             ))}
-          </ol>
+          </h1>
+          <p className={styles.heroLead}>{intro.lead}</p>
+          <p className={styles.heroBody}>{intro.body}</p>
         </div>
       </section>
 
-      <section id={whatWeDo.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{whatWeDo.eyebrow}</p>
-          <h2 className={`${marketingSectionDisplay} mt-3`}>{whatWeDo.title}</h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{whatWeDo.lead}</p>
-          <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {whatWeDo.items.map((item) => (
-              <li key={item.id} className="flex h-full flex-col rounded-2xl border border-stone-200/80 bg-stone-50/70 px-5 py-5">
-                <p className="text-[11px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
-                  {item.role}
-                </p>
-                <h3 className={`mt-2 text-lg font-bold ${koreanText}`} style={{ color: brandInk }}>
-                  {item.title}
-                </h3>
-                <p className={`mt-2 flex-1 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{item.body}</p>
+      <section id={whatWeDo.id} className={`${styles.sectionBand} ${homeSectionScrollMt} ${marketingBandWhite}`}>
+        <div className={`${styles.rail} ${styles.aboutSectionInner}`}>
+          <AboutSectionHead eyebrow={whatWeDo.eyebrow} title={whatWeDo.title} />
+          <div className={`${styles.aboutSurface} ${styles.featureStack}`}>
+            {whatWeDo.branches.map((branch, index) =>
+              isAboutHubBranchWithLinks(branch) ? (
+                <article key={branch.id} className={styles.featureRow}>
+                  <span className={styles.aboutIndex}>{String(index + 1).padStart(2, '0')}</span>
+                  <div className={styles.featureMain}>
+                    <h3 className={styles.featureTitle}>{branch.title}</h3>
+                    <p className={styles.featureBody}>{branch.body}</p>
+                    <div className={styles.featureLinks}>
+                      {branch.links.map((link) => (
+                        <TrackedLink
+                          key={link.href}
+                          href={link.href}
+                          trackLabel={link.trackLabel}
+                          className={`${styles.featureLink} ${brandFocusRing}`}
+                        >
+                          {link.label} →
+                        </TrackedLink>
+                      ))}
+                    </div>
+                  </div>
+                </article>
+              ) : (
                 <TrackedLink
-                  href={item.href}
-                  trackLabel={item.trackLabel}
-                  className={`${marketingButtonSecondary} mt-5 h-11 ${brandFocusRing}`}
+                  key={branch.id}
+                  href={branch.href}
+                  trackLabel={branch.trackLabel}
+                  className={`${styles.featureRow} ${styles.featureRowLink} ${brandFocusRing}`}
                 >
-                  {item.ctaLabel}
-                  <HomeChevron />
+                  <span className={styles.aboutIndex}>{String(index + 1).padStart(2, '0')}</span>
+                  <div className={styles.featureMain}>
+                    <h3 className={styles.featureTitle}>{branch.title}</h3>
+                    <p className={styles.featureBody}>{branch.body}</p>
+                    <span className={styles.featureLink} aria-hidden>
+                      자세히 →
+                    </span>
+                  </div>
                 </TrackedLink>
+              ),
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section id={approach.id} className={`${styles.sectionBand} ${homeSectionScrollMt} ${marketingBandSoft}`}>
+        <div className={`${styles.rail} ${styles.aboutSectionInner}`}>
+          <AboutSectionHead eyebrow={approach.eyebrow} title={approach.title} />
+          <ul className={styles.principleGrid}>
+            {approach.principles.map((item, index) => (
+              <li key={item.title} className={`${styles.aboutSurface} ${styles.principleCard}`}>
+                <span className={styles.aboutIndex}>{String(index + 1).padStart(2, '0')}</span>
+                <h3 className={styles.aboutItemTitle}>{item.title}</h3>
+                <p className={styles.aboutItemBody}>{item.body}</p>
               </li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section id={principles.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{principles.eyebrow}</p>
-          <h2 className={`${marketingSectionDisplay} mt-3`}>{principles.title}</h2>
-          <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {principles.items.map((item) => (
-              <li key={item.title} className="rounded-2xl border border-[#D6E3FF] bg-white px-5 py-5">
-                <h3 className={`text-base font-bold ${koreanText}`} style={{ color: brandInk }}>
-                  {item.title}
-                </h3>
-                <p className={`mt-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{item.body}</p>
+      <section id={team.id} className={`${styles.sectionBand} ${homeSectionScrollMt} ${marketingBandWhite}`}>
+        <div className={`${styles.rail} ${styles.aboutSectionInner}`}>
+          <AboutSectionHead eyebrow={team.eyebrow} title={team.title} />
+          <ul className={styles.teamGrid}>
+            {team.members.map((member) => (
+              <li key={member.id} className={`${styles.aboutSurface} ${styles.teamCard}`}>
+                <figure className={styles.teamPhoto}>
+                  <img src={member.photo} alt={`${member.role} ${member.name}`} style={{ objectPosition: member.photoObjectPosition }} />
+                </figure>
+                <div className={styles.teamCardCopy}>
+                  <p className={styles.teamName}>
+                    {member.name}
+                    <span className={styles.teamNameSep} aria-hidden>
+                      {' '}
+                      |{' '}
+                    </span>
+                    <span className={styles.teamRoleInline}>{member.role}</span>
+                  </p>
+                  <ul className={styles.teamNotes}>
+                    {member.credentials.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
               </li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section id={history.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{history.eyebrow}</p>
-          <h2 className={`${marketingSectionDisplay} mt-3`}>{history.title}</h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{history.lead}</p>
-          <ol className="mt-8 space-y-3">
-            {history.milestones.map((item) => (
-              <li
-                key={`${item.date}-${item.text}`}
-                className="grid gap-1 rounded-xl border border-stone-200/80 bg-white px-4 py-3 sm:grid-cols-[7rem_1fr] sm:gap-4"
-              >
-                <p className="text-xs font-bold text-[#245DFF] sm:pt-0.5">{item.date}</p>
-                <p className={`text-sm leading-relaxed text-slate-700 ${koreanText}`}>{item.text}</p>
+      <section id={history.id} className={`${styles.sectionBand} ${homeSectionScrollMt} ${marketingBandSoft}`}>
+        <div className={`${styles.rail} ${styles.aboutSectionInner}`}>
+          <AboutSectionHead eyebrow={history.eyebrow} title={history.title} />
+          <div className={`${styles.aboutSurface} ${styles.historyPanel}`}>
+          <ol className={styles.historyFeed}>
+            {history.yearGroups.map((group) => (
+              <li key={group.year} className={styles.historyEntry}>
+                <span className={styles.historyEntryYear}>{group.year}</span>
+                <article className={styles.historyEntryBody}>
+                  <h3 className={styles.historyEntryTheme}>{group.theme}</h3>
+                  <ul className={styles.historyEntryItems}>
+                    {group.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
               </li>
             ))}
           </ol>
-
-          <div id={team.id} className="mt-10 rounded-2xl border border-stone-200 bg-stone-50/80 px-5 py-5">
-            <p className="text-[11px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
-              {team.eyebrow}
-            </p>
-            <h3 className={`mt-2 text-lg font-bold ${koreanText}`} style={{ color: brandInk }}>
-              {team.title}: {team.name}
-            </h3>
-            <p className={`mt-1 text-sm text-[#536279] ${koreanText}`}>{team.role}</p>
-            <ul className="mt-3 space-y-1">
-              {team.notes.map((note) => (
-                <li key={note} className={`text-sm text-[#536279] ${koreanText}`}>
-                  · {note}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       </section>
 
-      <section id={nextPaths.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{nextPaths.eyebrow}</p>
-          <h2 className={`${marketingSectionDisplay} mt-3`}>{nextPaths.title}</h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{nextPaths.lead}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            {nextPaths.items.map((item, index) => (
-              <TrackedLink
-                key={item.href}
-                href={item.href}
-                trackLabel={item.trackLabel}
-                className={`${index === 0 ? marketingButtonPrimary : marketingButtonSecondary} h-12 px-6 ${brandFocusRing}`}
-              >
-                {item.label}
-              </TrackedLink>
+      <section
+        id={closing.id}
+        className={`${styles.sectionBand} ${styles.closingBand} ${homeSectionScrollMt} ${marketingBandWhite}`}
+        aria-labelledby="about-closing-title"
+      >
+        <div className={`${styles.rail} ${styles.closingInner}`}>
+          <div className={styles.closingAccent} aria-hidden />
+          <h2 id="about-closing-title" className={styles.closingTagline}>
+            {closing.taglineLines.map((line) => (
+              <span key={line} className={marketingHeroDisplayLine}>
+                {line}
+              </span>
             ))}
-          </div>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {nextPaths.secondary.map((item) => (
-              <TrackedLink
-                key={item.href}
-                href={item.href}
-                trackLabel={item.trackLabel}
-                className={`text-sm font-semibold text-[#245DFF] underline-offset-2 hover:underline ${brandFocusRing}`}
-              >
-                {item.label}
-              </TrackedLink>
-            ))}
-          </div>
+          </h2>
+          <p className={styles.closingBrand}>{closing.brandSign}</p>
+          <TrackedLink
+            href={closing.cta.href}
+            trackLabel={closing.cta.trackLabel}
+            className={`${marketingButtonPrimary} ${styles.closingButton} ${brandFocusRing}`}
+          >
+            {closing.cta.label}
+          </TrackedLink>
         </div>
       </section>
     </div>

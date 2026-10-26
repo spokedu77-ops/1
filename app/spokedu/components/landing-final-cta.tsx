@@ -5,14 +5,14 @@ import type { HomeMediaItem } from '../data/home-media';
 import { trackCommercialEvent } from '../lib/commercial-events';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
-  homeBandSoftBlue,
   brandFocusRing,
   homePhotoGrade,
-  marketingSectionDisplay,
-  koreanText,
   marketingButtonPrimary,
   marketingButtonSecondary,
   marketingSectionInner,
+  marketingTypeEyebrow,
+  marketingTypeSectionLead,
+  marketingTypeSectionTitle,
 } from '../lib/ui-classes';
 import { MediaRenderer } from './visual';
 
@@ -20,7 +20,7 @@ export type LandingFinalCtaLink = {
   label: string;
   href: string;
   trackLabel: string;
-  /** @deprecated 시각 톤은 컴포넌트가 soft-blue 카드로 통일 — 호환용으로만 유지 */
+  /** @deprecated 시각 톤은 단일 패널로 통일 — 호환용으로만 유지 */
   variant?: 'primary' | 'on-dark-primary' | 'on-dark-secondary' | 'on-light-outline';
 };
 
@@ -28,7 +28,7 @@ type LandingFinalCtaProps = {
   title: string;
   description: string;
   links: readonly LandingFinalCtaLink[];
-  /** @deprecated soft-blue 카드 톤으로 통일. 호출부 호환용 */
+  /** @deprecated 호출부 호환용 */
   tone?: 'dark' | 'light';
   backgroundMedia?: HomeMediaItem;
   eyebrow?: string;
@@ -39,7 +39,9 @@ function resolveLinkClass(link: LandingFinalCtaLink, index: number) {
     link.variant === 'primary' ||
     link.variant === 'on-dark-primary' ||
     (!link.variant && index === 0);
-  return isPrimary ? `${marketingButtonPrimary} w-full` : `${marketingButtonSecondary} w-full`;
+  return isPrimary
+    ? `${marketingButtonPrimary} inline-flex w-full justify-center sm:w-auto sm:min-w-[11rem]`
+    : `${marketingButtonSecondary} inline-flex w-full justify-center sm:w-auto sm:min-w-[11rem]`;
 }
 
 function inferCommercialRoute(href: string): 'private' | 'curriculum' | 'dispatch' | null {
@@ -50,10 +52,7 @@ function inferCommercialRoute(href: string): 'private' | 'curriculum' | 'dispatc
 }
 
 /**
- * 서브 랜딩 하단 CTA
- * - 남색 풀밴드 대신 soft-blue 밴드 + 화이트 카드
- * - 사진은 배경 고스트가 아니라 카드 안 미디어 패널
- * - 카피 | 버튼 2열
+ * 서브 랜딩 하단 CTA — rail 안 단일 패널, 카피 → (선택 미디어) → 버튼 세로 흐름
  */
 export function LandingFinalCta({
   title,
@@ -64,58 +63,61 @@ export function LandingFinalCta({
 }: LandingFinalCtaProps) {
   return (
     <section
-      className={`relative w-full overflow-hidden ${homeBandSoftBlue} py-10 sm:py-12 lg:py-14`}
+      className="w-full border-t border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-white)] py-10 sm:py-12 lg:py-14"
       aria-labelledby="landing-final-cta-title"
     >
       <div className={marketingSectionInner}>
-        <div className="relative overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white shadow-[0_18px_50px_rgba(15,33,70,0.07)]">
-          <div className="h-1.5 w-full bg-[#0B1F46]" aria-hidden />
+        <div className="overflow-hidden rounded-xl border border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-white)] p-6 sm:p-8 lg:p-10">
+          <div
+            className="mb-5 h-[3px] w-10 rounded-full bg-[var(--spokedu-marketing-color-blue)]"
+            aria-hidden
+          />
 
-          <div className="grid gap-8 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(220px,280px)] lg:items-stretch lg:gap-10 lg:px-10 lg:py-11">
-            <div className="min-w-0 text-left">
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">{eyebrow}</p>
-              <h2 id="landing-final-cta-title" className={`${marketingSectionDisplay} mt-3 text-[#0B1F46]`}>
-                {title}
-              </h2>
-              <p className={`mt-4 max-w-xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-                {description}
-              </p>
-            </div>
+          <div className="max-w-2xl text-left">
+            <p className={marketingTypeEyebrow}>{eyebrow}</p>
+            <h2
+              id="landing-final-cta-title"
+              className={`${marketingTypeSectionTitle} mt-3 max-w-xl [color:var(--spokedu-marketing-color-navy)] [text-wrap:balance] [word-break:keep-all]`}
+            >
+              {title}
+            </h2>
+            <p className={`${marketingTypeSectionLead} mt-4 max-w-xl`}>{description}</p>
+          </div>
 
-            <div className="flex w-full min-w-0 flex-col gap-3">
-              {backgroundMedia ? (
-                <div className="relative mb-1 hidden aspect-[16/10] overflow-hidden rounded-[1.15rem] ring-1 ring-[#DCE3EE] lg:block">
-                  <MediaRenderer
-                    media={backgroundMedia}
-                    intensity="photo"
-                    sizes="card2"
-                    className={`absolute inset-0 h-full w-full ${homePhotoGrade}`}
-                  />
-                </div>
-              ) : null}
-              {links.map((link, index) => {
-                const route = inferCommercialRoute(link.href);
-                return (
-                  <Link
-                    key={`${link.href}-${link.trackLabel}`}
-                    href={link.href}
-                    data-track={inferTrackFromHref(link.href)}
-                    data-track-label={link.trackLabel}
-                    className={`${resolveLinkClass(link, index)} ${brandFocusRing}`}
-                    onClick={() => {
-                      if (!route) return;
-                      trackCommercialEvent({
-                        name: 'primary_cta_clicked',
-                        route,
-                        ctaIntentId: link.trackLabel,
-                      });
-                    }}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
+          {backgroundMedia ? (
+            <div className="relative mt-8 aspect-[16/10] max-w-2xl overflow-hidden rounded-xl ring-1 ring-[var(--spokedu-marketing-color-border)]">
+              <MediaRenderer
+                media={backgroundMedia}
+                intensity="photo"
+                sizes="card2"
+                className={`absolute inset-0 h-full w-full ${homePhotoGrade}`}
+              />
             </div>
+          ) : null}
+
+          <div className="mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row sm:flex-wrap">
+            {links.map((link, index) => {
+              const route = inferCommercialRoute(link.href);
+              return (
+                <Link
+                  key={`${link.href}-${link.trackLabel}`}
+                  href={link.href}
+                  data-track={inferTrackFromHref(link.href)}
+                  data-track-label={link.trackLabel}
+                  className={`${resolveLinkClass(link, index)} ${brandFocusRing}`}
+                  onClick={() => {
+                    if (!route) return;
+                    trackCommercialEvent({
+                      name: 'primary_cta_clicked',
+                      route,
+                      ctaIntentId: link.trackLabel,
+                    });
+                  }}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

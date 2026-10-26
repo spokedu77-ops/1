@@ -58,37 +58,60 @@ export function HomeWebLanding() {
   return (
     <div className={styles.page}>
       <section className={styles.hero} aria-labelledby="home-heading">
-        <img className={styles.heroImage} src={HOME_HERO_IMAGE.src} alt={HOME_HERO_IMAGE.alt} style={{ objectPosition: HOME_HERO_IMAGE.objectPosition }} />
-        <div className={styles.heroShade} aria-hidden="true" />
-        <div className={styles.heroInner}>
-          <p className={styles.heroEyebrow}>CHILD &amp; YOUTH PHYSICAL EDUCATION</p>
-          <h1 id="home-heading"><span>아이의 움직임을</span><span>교육의 경험으로 만듭니다.</span></h1>
-          <p className={styles.heroLead}><span>전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다.</span><span>현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.</span></p>
-          <div className={styles.heroActions}>
-            <Link className={styles.primaryButton} href="#audience">필요한 수업 찾기</Link>
-            <Link className={styles.lightButton} href={`${SPOKEDU_PATHS.contact}?type=dispatch`}>수업 상담하기</Link>
+        <div className={styles.heroGrid}>
+          <div className={styles.heroCopyCol}>
+            <div className={styles.heroInner}>
+              <p className={styles.heroEyebrow}>CHILD &amp; YOUTH PHYSICAL EDUCATION</p>
+              <h1 id="home-heading">
+                <span>움직임으로</span>
+                <span>아이의 성장을 설계합니다.</span>
+              </h1>
+              <p className={styles.heroLead}>
+                <span>전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다.</span>
+                <span>현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.</span>
+              </p>
+              <div className={styles.heroActions}>
+                <Link className={styles.primaryButton} href="#audience">
+                  필요한 수업 찾기
+                </Link>
+                <Link className={styles.lightButton} href={`${SPOKEDU_PATHS.contact}?type=dispatch`}>
+                  수업 상담하기
+                </Link>
+              </div>
+            </div>
           </div>
+          <figure className={styles.heroFigure}>
+            <img
+              className={styles.heroImage}
+              src={HOME_HERO_IMAGE.src}
+              alt={HOME_HERO_IMAGE.alt}
+              style={{ objectPosition: HOME_HERO_IMAGE.objectPosition }}
+            />
+          </figure>
         </div>
       </section>
 
       <section id="audience" className={styles.audience} aria-labelledby="audience-heading">
-        <header className={styles.sectionIntro}>
-          <p className={styles.eyebrow}>02 · CHOOSE YOUR PATH</p>
-          <h2 id="audience-heading">어떤 수업을 찾고 계신가요?</h2>
-        </header>
-        <div className={styles.audienceGrid}>
-          {AUDIENCE_PATHS.map((item, index) => (
-            <Link key={item.title} href={item.href} className={`${styles.audienceItem} ${index === 0 ? styles.audiencePersonal : index === 1 ? styles.audienceInstitution : styles.audienceLab}`}>
-              <figure className={`${styles.audienceMedia} ${'product' in item && item.product ? styles.productMedia : ''}`}>
-                <img src={item.image} alt={item.alt} style={{ objectPosition: item.position }} />
-              </figure>
-              <div className={styles.audienceCopy}>
-                <span>{item.eyebrow}</span><h3>{item.title}</h3><p>{item.body}</p><strong>{item.cta}<span aria-hidden="true">→</span></strong>
-              </div>
-            </Link>
-          ))}
+        <div className={styles.audienceInner}>
+          <header className={styles.audienceIntro}>
+            <p className={styles.eyebrow}>CHOOSE YOUR PATH</p>
+            <h2 id="audience-heading">어떤 수업을 찾고 계신가요?</h2>
+          </header>
+          <div className={styles.audienceGrid}>
+            {AUDIENCE_PATHS.map((item, index) => (
+              <Link key={item.title} href={item.href} className={`${styles.audienceItem} ${index === 0 ? styles.audiencePersonal : index === 1 ? styles.audienceInstitution : styles.audienceLab}`}>
+                <figure className={`${styles.audienceMedia} ${'product' in item && item.product ? styles.productMedia : ''}`}>
+                  <img src={item.image} alt={item.alt} style={{ objectPosition: item.position }} />
+                </figure>
+                <div className={styles.audienceCopy}>
+                  <span>{item.eyebrow}</span><h3>{item.title}</h3><p>{item.body}</p><strong>{item.cta}<span aria-hidden="true">→</span></strong>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
+
 
       <section className={styles.expertise} aria-labelledby="expertise-heading">
         <div className={styles.expertiseInner}>
@@ -125,8 +148,17 @@ export function HomeWebLanding() {
       <section className={styles.records} aria-labelledby="records-heading">
         <div className={styles.recordsInner}>
           <header className={styles.recordsHead}>
-            <div><p className={styles.eyebrow}>FIELD RECORDS</p><h2 id="records-heading">서로 다른 현장에<br />서로 다른 수업을 설계합니다.</h2></div>
-            <Link href={SPOKEDU_PATHS.records}>전체 수업사례 보기 →</Link>
+            <div className={styles.recordsIntro}>
+              <p className={styles.eyebrow}>FIELD RECORDS</p>
+              <h2 id="records-heading">
+                서로 다른 현장에
+                <br />
+                서로 다른 수업을 설계합니다.
+              </h2>
+            </div>
+            <Link className={styles.recordsHeadLink} href={SPOKEDU_PATHS.records}>
+              전체 수업사례 보기 →
+            </Link>
           </header>
           <div className={styles.recordsGrid}>
             {FEATURED_RECORDS.map((record, index) => {
@@ -153,6 +185,8 @@ export function HomeWebLanding() {
       </section>
 
       <section className={styles.consult} aria-labelledby="consult-heading">
+        <div className={styles.consultRail}>
+        <div className={styles.consultPanel}>
         <div className={styles.consultInner}>
           <p className={styles.eyebrow}>LET&apos;S TALK</p><h2 id="consult-heading"><span>수업에 대해</span>{' '}<span>궁금하신가요?</span></h2><p>대상과 공간, 일정에 맞는 상담 경로를 선택해 주세요.</p>
           <div className={styles.consultLinks}>
@@ -160,6 +194,8 @@ export function HomeWebLanding() {
             <Link href={`${SPOKEDU_PATHS.contact}?type=private`}>개인·소그룹 수업 문의</Link>
             <a href={contactPageContent.kakaoChannelHref} target="_blank" rel="noreferrer">카카오톡 간편 문의 ↗</a>
           </div>
+        </div>
+        </div>
         </div>
       </section>
     </div>

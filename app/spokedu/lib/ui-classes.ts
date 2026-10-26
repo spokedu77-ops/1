@@ -6,7 +6,7 @@ export const linkMuted =
 
 /** 섹션 제목 아래 한 줄 안내 */
 export const landingSectionLead =
-  'mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px]';
+  'mt-2 max-w-2xl text-sm leading-relaxed [color:var(--spokedu-marketing-color-body)] sm:text-[15px] sm:leading-relaxed';
 
 /** Hero 서브·3축 문구 위계 */
 export const landingHeroSubtitle =
@@ -245,13 +245,28 @@ export const marketingBody =
 export const marketingCaption =
   '[font-family:var(--spokedu-marketing-font-body)] text-[13px] font-medium leading-[1.5] [color:var(--spokedu-marketing-color-muted)] sm:text-sm';
 
+/** STEP 2-B — 역할별 typography (전역 h2 강제 없음) */
+export const marketingTypeHeroTitle = `${marketingHeroDisplay} ${marketingHeroDisplaySplitScale}`;
+export const marketingTypeSectionTitle = marketingSectionDisplay;
+export const marketingTypeSectionLead = `${marketingSectionLead} ${koreanBody}`;
+export const marketingTypeCardTitle = homeCardTitle;
+export const marketingTypeBody = marketingBody;
+export const marketingTypeCaption = marketingCaption;
+export const marketingTypeEyebrow = `${marketingEyebrow} ${marketingEyebrowUppercase}`;
+
 export const marketingSectionPad =
   'py-14 sm:py-[4.5rem] md:py-[5.5rem] lg:py-24 xl:py-[7.5rem]';
 export const marketingSectionPadCompact =
   'py-9 sm:py-12 lg:py-14 xl:py-16';
 export const marketingSectionInner = 'site-container';
+export const marketingSectionInnerWide = 'site-container-wide';
 export const marketingCardPadding = 'p-5 sm:px-5 sm:py-5 lg:p-6';
 export const marketingMajorGridGap = 'gap-8 lg:gap-12';
+
+/** 섹션 래퍼 — padding band + site-container + 내부 stack */
+export const marketingSectionFrame = `${marketingSectionPad} w-full`;
+export const marketingSectionFrameCompact = `${marketingSectionPadCompact} w-full`;
+export const marketingSectionContentStack = landingSectionInner;
 
 export const marketingBandWhite = 'bg-[var(--spokedu-marketing-color-white)]';
 export const marketingBandSoft = 'bg-[var(--spokedu-marketing-color-paper)]';
@@ -280,7 +295,8 @@ export const marketingPanelEmphasized =
   `${marketingRadiusLarge} overflow-hidden bg-[var(--spokedu-marketing-color-soft)]`;
 
 const marketingButtonBase =
-  `[font-family:var(--spokedu-marketing-font-body)] inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 ${marketingRadiusSmall} px-6 py-3 text-[15px] font-semibold leading-snug transition duration-200 active:scale-[0.98] sm:w-auto sm:text-base`;
+  `[font-family:var(--spokedu-marketing-font-body)] inline-flex min-h-12 w-full items-center justify-center gap-2 ${marketingRadiusSmall} px-5 py-3 text-[15px] font-semibold leading-snug transition duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-55 sm:w-auto`;
+export const marketingTypeButtonLabel = 'text-[15px] font-semibold leading-snug';
 export const marketingButtonPrimary =
   `${marketingButtonBase} bg-[var(--spokedu-marketing-color-blue)] text-white shadow-[var(--spokedu-marketing-shadow-subtle)] ${fineHover}hover:bg-[var(--spokedu-marketing-color-blue-hover)] ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:shadow-[var(--spokedu-marketing-shadow-interactive)] ${brandFocusRing}`;
 export const marketingButtonSecondary =
