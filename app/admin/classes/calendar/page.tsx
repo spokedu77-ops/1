@@ -365,6 +365,14 @@ export default function ClassManagementCalendar() {
         visible={bundleOpen}
         bundleTitle={bundleTitle}
         groupIds={bundleGroupIds}
+        calendarEvents={allEvents}
+        calendarDataStatus={
+          sessionsFetchNotice
+            ? "incomplete"
+            : allEvents.length > 0
+              ? "range-limited"
+              : "unavailable"
+        }
         onClose={() => setBundleOpen(false)}
         onChanged={() => void fetchSessions()}
       />

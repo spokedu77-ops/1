@@ -39,7 +39,8 @@ import { fetchTeacherLogCounts } from "@/app/admin/users/fetchTeacherLogCounts";
 import SessionMileageModal from "./SessionMileageModal";
 import { blocksPostponeCredit, sumMileageActionPoints } from "@/app/admin/classes-shared/lib/mileageHolidayCredit";
 import { MILEAGE_LABEL_POSTPONE, MILEAGE_LABEL_POSTPONE_REQUEST } from "@/app/admin/classes-shared/constants/mileage";
-import type { TeacherInput } from "@/app/admin/classes-shared/types";
+import type { SessionEvent, TeacherInput } from "@/app/admin/classes-shared/types";
+import TeacherOperationsSummary from "./TeacherOperationsSummary";
 
 type RoundView = "active" | "all" | "completed";
 
@@ -71,6 +72,8 @@ type Props = {
   groupIds: string[];
   onClose: () => void;
   onChanged?: () => void;
+  calendarEvents?: SessionEvent[];
+  calendarDataStatus?: "range-limited" | "incomplete" | "unavailable";
 };
 
 type DayOption = { label: string; value: number };
@@ -303,7 +306,15 @@ function isArchivedPastCycleGroup(
   return isPastCycleGroup(list);
 }
 
-export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClose, onChanged }: Props) {
+export default function ClassBundlePanel({
+  visible,
+  bundleTitle,
+  groupIds,
+  onClose,
+  onChanged,
+  calendarEvents,
+  calendarDataStatus,
+}: Props) {
   const [supabase] = useState(() =>
     typeof window !== "undefined" ? getSupabaseBrowserClient() : null
   );
@@ -2502,6 +2513,13 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
               </div>
             ) : (
               <div className="space-y-3">
+                <TeacherOperationsSummary
+                  sessionsByGroupId={sessionsByGroupId}
+                  teachers={teachers}
+                  tierFeeMap={tierFeeMap}
+                  calendarEvents={calendarEvents}
+                  calendarDataStatus={calendarDataStatus}
+                />
                 {currentGroupIds.map((gid) => renderCycleSection(gid))}
                 {pastGroupIds.length > 0 && (
                   <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
