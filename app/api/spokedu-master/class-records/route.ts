@@ -10,6 +10,7 @@ import {
   toClassRecordDto,
   type MasterClassRecordRow,
 } from '../operational-data';
+import { readAllRecordPages } from './recordPagination';
 
 const RECORD_SELECT = `
   id,
@@ -55,25 +56,29 @@ export async function GET() {
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
-    .from('spokedu_master_class_records')
-    .select(RECORD_SELECT)
-    .eq('owner_id', access.userId)
-    .is('deleted_at', null)
-    .order('class_date', { ascending: false })
-    .order('created_at', { ascending: false });
+  try {
+    const rows = await readAllRecordPages<MasterClassRecordRow>(async (from, to) => {
+      const { data, count, error } = await supabase
+        .from('spokedu_master_class_records')
+        .select(RECORD_SELECT, { count: 'exact' })
+        .eq('owner_id', access.userId)
+        .is('deleted_at', null)
+        .order('class_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to);
 
-  if (error) {
+      return { data: (data ?? []) as MasterClassRecordRow[], count, error };
+    });
+
+    return privateNoStoreJson({ data: rows.map(toClassRecordDto) });
+  } catch (error) {
     await reportError(error, {
       context: 'spokedu_master.operational.class_records',
-      tags: { method: 'GET', stage: 'select', status: 500 },
+      tags: { method: 'GET', stage: 'paginated_select', status: 500 },
     });
     return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
   }
-
-  return privateNoStoreJson({
-    data: ((data ?? []) as MasterClassRecordRow[]).map(toClassRecordDto),
-  });
 }
 
 type ClassRecordCreateRpcRow = {
