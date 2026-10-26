@@ -52,11 +52,9 @@ const skeleton = readFileSync(
 
 describe("MASTER Home content card system", () => {
   it("keeps Home weekly as four editorial cards, not Library catalog grammar", () => {
-    expect(commercialAccess).toContain(
-      "WEEKLY_PROGRAM_IDS = ['68', '201', '204', '61']",
-    );
+    expect(commercialAccess).toContain("WEEKLY_RECOMMENDATION_SLOT_COUNT = 4");
     expect(dashboard).toContain("WeeklyEditorialCard");
-    expect(dashboard).toContain("selectWeeklyProgramsById(programs)");
+    expect(dashboard).toContain("selectWeeklyPrograms(programs)");
     expect(dashboard).not.toContain('variant="home"');
     expect(weeklyCard).toContain("InstructionalThumb");
     expect(weeklyCard).toContain(
@@ -238,7 +236,7 @@ describe("MASTER Home content card system", () => {
   });
 
   it("reports recoverable Weekly slot diagnostics as warnings instead of runtime errors", () => {
-    expect(commercialAccess).toContain("selectWeeklyProgramsById");
+    expect(commercialAccess).toContain("selectWeeklyPrograms");
     expect(commercialAccess).not.toContain("console.error");
   });
 

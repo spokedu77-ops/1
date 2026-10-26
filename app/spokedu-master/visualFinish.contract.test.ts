@@ -12,7 +12,7 @@ describe("MASTER representative visual finish (pre-reset snapshot; not Art Direc
       "{'움직임이 배움이 되는\\n오늘의 수업을 준비하세요'}",
     );
     expect(read("lib/commercialProgramAccess.ts")).toContain(
-      "WEEKLY_PROGRAM_IDS",
+      "selectWeeklyPrograms",
     );
     expect(home).toContain("featuredSpomove.slice(0, 4)");
     expect(home).toContain('data-dashboard-grid="weekly"');

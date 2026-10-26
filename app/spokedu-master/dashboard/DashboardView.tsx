@@ -66,7 +66,7 @@ import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming
 import { canReproduceSpomoveSameSettings, recentSpomoveSessionOptions } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
 import { buildProgramLessonGateHref, buildSpomoveActivityGateHref } from '../lib/masterGateIntent';
-import { FREE_PREVIEW_PROGRAM_ID, getProgramAccessBadge, isProgramLessonLocked, selectWeeklyProgramsById } from '../lib/commercialProgramAccess';
+import { getFreePreviewProgramId, getProgramAccessBadge, isProgramLessonLocked, selectWeeklyPrograms } from '../lib/commercialProgramAccess';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
@@ -142,10 +142,10 @@ let homeAssetPackCache: HomeAssetPackState | null = null;
  * 진입 데이터가 이 시간 안에 안정되지 않으면 현재 상태 그대로 그린다.
  * 네트워크 장애 시 스켈레톤에 영원히 갇히지 않도록 하는 안전장치.
  */
-function getFirstStartPaths(canUseAttendance: boolean) {
+function getFirstStartPaths(canUseAttendance: boolean, freePreviewProgramId: string | null) {
   if (!canUseAttendance) {
     return [
-      { title: '무료 수업 미리보기', description: '지정된 놀이체육 1개의 핵심 준비와 진행 요약을 확인하세요.', href: `/spokedu-lab/library/${FREE_PREVIEW_PROGRAM_ID}` },
+      { title: '무료 수업 미리보기', description: '지정된 놀이체육 1개의 핵심 준비와 진행 요약을 확인하세요.', href: freePreviewProgramId ? `/spokedu-lab/library/${freePreviewProgramId}` : '/spokedu-lab/library' },
       { title: '수업 도구 열기', description: '스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.', href: '/spokedu-lab/class-tools' },
     ] as const;
   }
@@ -314,8 +314,8 @@ function WeeklyProgramCard({
   );
 }
 
-function FirstStartGuide({ canUseAttendance, onFreePreview }: { canUseAttendance: boolean; onFreePreview: () => void }) {
-  const firstStartPaths = getFirstStartPaths(canUseAttendance);
+function FirstStartGuide({ canUseAttendance, freePreviewProgramId, onFreePreview }: { canUseAttendance: boolean; freePreviewProgramId: string | null; onFreePreview: () => void }) {
+  const firstStartPaths = getFirstStartPaths(canUseAttendance, freePreviewProgramId);
   return (
     <section
       data-dashboard-section="first-start"
@@ -331,7 +331,7 @@ function FirstStartGuide({ canUseAttendance, onFreePreview }: { canUseAttendance
       </p>
       <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
         {firstStartPaths.map(({ title, description, href }) => {
-          const isFreePreview = !canUseAttendance && href.endsWith(`/library/${FREE_PREVIEW_PROGRAM_ID}`);
+          const isFreePreview = !canUseAttendance && freePreviewProgramId != null && href.endsWith(`/library/${freePreviewProgramId}`);
           const content = <>
             <span className={`${MV_CONTENT_TITLE} block`}>{title}</span>
             <span className={`${MV_META} mt-1.5 block`}>{description}</span>
@@ -659,8 +659,6 @@ function EntitledDashboardView() {
   const profile = useProfile();
   const favoritesOwnerId = getFavoritesOwnerId(profile);
   const isPremium = useIsPremium();
-  const isProgramLocked = (program: Program) =>
-    isProgramLessonLocked({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary });
   const favoriteEnabled = favoritesOwnerId != null && accessSnapshot.canUseLibrary;
   const favoriteHint = accessSnapshot.canUseLibrary
     ? '로그인 후 즐겨찾기할 수 있습니다'
@@ -782,8 +780,15 @@ function EntitledDashboardView() {
   const homeEntryReady = programsLoaded;
 
   const programPool = programs;
-  const weeklyPrograms = useMemo(() => selectWeeklyProgramsById(programs), [programs]);
-  const freePreviewProgram = weeklyPrograms.find((program) => program.id === FREE_PREVIEW_PROGRAM_ID) ?? null;
+  const weeklyPrograms = useMemo(() => selectWeeklyPrograms(programs), [programs]);
+  const freePreviewProgramId = getFreePreviewProgramId(weeklyPrograms);
+  const freePreviewProgram = weeklyPrograms.find((program) => program.id === freePreviewProgramId) ?? null;
+  const isProgramLocked = (program: Program) =>
+    isProgramLessonLocked({
+      programId: program.id,
+      canUseLibrary: accessSnapshot.canUseLibrary,
+      freePreviewProgramId,
+    });
   const featuredSpomove = useMemo(() => {
     const authoritativeSlots = accessSnapshot.plan === 'lite' && accessSnapshot.spomoveTrialPresetId
       ? [accessSnapshot.spomoveTrialPresetId, ...featuredSpomoveSlotIds.slice(1)]
@@ -924,7 +929,7 @@ function EntitledDashboardView() {
       {isFirstUser ? (
         <div data-dashboard-chapter="first-start" className="px-4 pb-0 pt-6 min-[768px]:px-6 min-[768px]:pt-8">
           <div className={MV_EDITORIAL_WIDTH}>
-            <FirstStartGuide canUseAttendance={accessSnapshot.canUseAttendance} onFreePreview={() => { if (freePreviewProgram) openPreview(freePreviewProgram); }} />
+            <FirstStartGuide canUseAttendance={accessSnapshot.canUseAttendance} freePreviewProgramId={freePreviewProgramId} onFreePreview={() => { if (freePreviewProgram) openPreview(freePreviewProgram); }} />
           </div>
         </div>
       ) : null}
@@ -1030,7 +1035,7 @@ function EntitledDashboardView() {
                       favoriteEnabled={favoriteEnabled}
                       favoriteHint={favoriteHint}
                       onFavorite={() => toggleFavoriteProgram(favoritesOwnerId, program.id)}
-                      accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary })}
+                      accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary, freePreviewProgramId })}
                       priority={index < 2}
                     />
                   </div>

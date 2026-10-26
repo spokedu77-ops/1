@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import {
   canAccessProgramFullDetail,
   canAccessProgramLessonContent,
-  FREE_PREVIEW_PROGRAM_ID,
-  WEEKLY_PROGRAM_IDS,
+  getFreePreviewProgramId,
+  selectWeeklyPrograms,
 } from './lib/commercialProgramAccess';
 
 function read(path: string) {
@@ -26,15 +26,19 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
   });
 
   it('locks program lesson content by Free preview ID and Lite library access', () => {
-    expect(WEEKLY_PROGRAM_IDS).toHaveLength(4);
-    expect(FREE_PREVIEW_PROGRAM_ID).toBe(WEEKLY_PROGRAM_IDS[0]);
-    expect(canAccessProgramLessonContent({ programId: FREE_PREVIEW_PROGRAM_ID, canUseLibrary: false })).toBe(true);
-    expect(canAccessProgramLessonContent({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: false })).toBe(false);
-    expect(canAccessProgramLessonContent({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: true })).toBe(true);
+    const programs = [
+      { id: '2', isHot: true, homeSortOrder: 2 },
+      { id: '1', isHot: true, homeSortOrder: 1 },
+    ];
+    const freePreviewProgramId = getFreePreviewProgramId(programs);
+    expect(selectWeeklyPrograms(programs).map((program) => program.id)).toEqual(['1', '2']);
+    expect(canAccessProgramLessonContent({ programId: '1', canUseLibrary: false, freePreviewProgramId })).toBe(true);
+    expect(canAccessProgramLessonContent({ programId: '2', canUseLibrary: false, freePreviewProgramId })).toBe(false);
+    expect(canAccessProgramLessonContent({ programId: '2', canUseLibrary: true, freePreviewProgramId })).toBe(true);
   });
 
   it('blocks every full-detail route for Free while retaining one quick preview', () => {
-    expect(canAccessProgramLessonContent({ programId: FREE_PREVIEW_PROGRAM_ID, canUseLibrary: false })).toBe(true);
+    expect(canAccessProgramLessonContent({ programId: '1', canUseLibrary: false, freePreviewProgramId: '1' })).toBe(true);
     expect(canAccessProgramFullDetail({ canUseLibrary: false })).toBe(false);
     const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
     expect(detail).toContain('isProgramFullDetailLocked');

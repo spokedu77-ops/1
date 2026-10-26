@@ -30,7 +30,7 @@ import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { buildMasterLoginHref } from '../lib/masterLoginReturn';
-import { getProgramAccessBadge, isProgramLessonLocked } from '../lib/commercialProgramAccess';
+import { getFreePreviewProgramId, getProgramAccessBadge, isProgramLessonLocked } from '../lib/commercialProgramAccess';
 import { buildProgramLessonGateHref } from '../lib/masterGateIntent';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
@@ -338,6 +338,7 @@ function RecommendationShelf({
   favoriteHint,
   onFavorite,
   canUseLibrary,
+  freePreviewProgramId,
   priority = false,
 }: {
   title: string;
@@ -349,6 +350,7 @@ function RecommendationShelf({
   favoriteHint: string;
   onFavorite: (programId: string) => void;
   canUseLibrary: boolean;
+  freePreviewProgramId: string | null;
   priority?: boolean;
 }) {
   return (
@@ -363,7 +365,7 @@ function RecommendationShelf({
       <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
         <div className="flex w-max snap-x snap-mandatory items-start gap-4 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-5 lg:snap-none">
           {programs.map((program, index) => {
-            const locked = isProgramLessonLocked({ programId: program.id, canUseLibrary });
+            const locked = isProgramLessonLocked({ programId: program.id, canUseLibrary, freePreviewProgramId });
             return (
               <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
                 <RecommendationProgramCard
@@ -374,7 +376,7 @@ function RecommendationShelf({
                   favoriteEnabled={favoriteEnabled}
                   favoriteHint={favoriteHint}
                   onFavorite={() => onFavorite(program.id)}
-                  accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary })}
+                  accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary, freePreviewProgramId })}
                   priority={priority && index < 2}
                 />
               </div>
@@ -404,8 +406,9 @@ export default function LibraryView() {
   const contentMode = resolveMasterContentMode({ requestedSessionId: sessionId, hasExactScheduledSession: Boolean(sessionContext) });
   const primaryActionLabel = getMasterContentPrimaryAction(contentMode);
   const accessSnapshot = useMasterAccessSnapshot();
+  const freePreviewProgramId = useMemo(() => getFreePreviewProgramId(programs), [programs]);
   const isProgramLocked = (program: Program) =>
-    isProgramLessonLocked({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary });
+    isProgramLessonLocked({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary, freePreviewProgramId });
   const favoriteEnabled = ownerId != null && accessSnapshot.canUseLibrary;
   const favoriteHint = accessSnapshot.canUseLibrary
     ? '로그인 후 즐겨찾기할 수 있습니다'
@@ -750,6 +753,7 @@ export default function LibraryView() {
             favoriteEnabled={favoriteEnabled}
             favoriteHint={favoriteHint}
             canUseLibrary={accessSnapshot.canUseLibrary}
+            freePreviewProgramId={freePreviewProgramId}
             onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
           />
             <RecommendationShelf
@@ -761,6 +765,7 @@ export default function LibraryView() {
             favoriteEnabled={favoriteEnabled}
             favoriteHint={favoriteHint}
             canUseLibrary={accessSnapshot.canUseLibrary}
+            freePreviewProgramId={freePreviewProgramId}
             onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
             />
           </> : null}
