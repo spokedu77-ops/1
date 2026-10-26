@@ -836,7 +836,44 @@ function getMovementGuideCompletion(
 type ThinkAssetPackSaveResponse = {
   error?: string;
   issues?: SpomovePublishedGuideSaveIssue[];
+  updated_at?: string;
+  conflict?: boolean;
+  assets_json?: unknown;
 };
+
+class ThinkAssetPackConflictError extends Error {
+  readonly body: ThinkAssetPackSaveResponse;
+
+  constructor(message: string, body: ThinkAssetPackSaveResponse) {
+    super(message);
+    this.name = 'ThinkAssetPackConflictError';
+    this.body = body;
+  }
+}
+
+async function saveThinkAssetPack(payload: {
+  id: string;
+  name: string;
+  theme?: string | null;
+  assets_json: unknown;
+  expected_updated_at?: string | null;
+}): Promise<ThinkAssetPackSaveResponse> {
+  const res = await fetch('/api/admin/think-asset-pack', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify(payload),
+  });
+  const body = (await res.json().catch(() => ({}))) as ThinkAssetPackSaveResponse;
+  if (res.status === 409) {
+    throw new ThinkAssetPackConflictError(body.error ?? '다른 관리자가 먼저 저장했습니다.', body);
+  }
+  if (!res.ok) {
+    const issues = normalizeSpomoveGuideSaveIssues(body.issues);
+    throw new SpomoveContentSaveError(body.error ?? 'think_asset_packs 저장에 실패했습니다.', issues);
+  }
+  return body;
+}
 
 type SpomoveContentWorkFilter =
   | 'all'
@@ -1321,6 +1358,7 @@ function useSpomoveContentData() {
   const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const contentRef = useRef(contentMap);
   contentRef.current = contentMap;
+  const packUpdatedAtRef = useRef<string | null>(null);
   const [draftMap, setDraftMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const [loading, setLoading] = useState(true);
   const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
@@ -1335,11 +1373,12 @@ function useSpomoveContentData() {
       const supabase = getSupabaseBrowserClient();
       const { data, error: loadError } = await supabase
         .from('think_asset_packs')
-        .select('assets_json')
+        .select('assets_json, updated_at')
         .eq('id', SPOMOVE_CONTENT_PACK_ID)
         .maybeSingle();
       if (loadError && loadError.code !== 'PGRST116') throw loadError;
       const next = normalizeSpomoveContentMap(data?.assets_json);
+      packUpdatedAtRef.current = (data?.updated_at as string | undefined) ?? null;
       setContentMap(next);
       contentRef.current = next;
       setDraftMap(next);
@@ -1353,26 +1392,28 @@ function useSpomoveContentData() {
   useEffect(() => { void load(); }, [load]);
 
   const persist = useCallback(async (next: Record<string, SpomovePresetContentOverride>) => {
-    const res = await fetch('/api/admin/think-asset-pack', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
+    try {
+      const body = await saveThinkAssetPack({
         id: SPOMOVE_CONTENT_PACK_ID,
         name: SPOMOVE_CONTENT_PACK_NAME,
         theme: 'spomove',
         assets_json: { schemaVersion: 2, content: next } satisfies SpomoveContentAssetsJson,
-      }),
-    });
-    const body = (await res.json().catch(() => ({}))) as ThinkAssetPackSaveResponse;
-    if (!res.ok) {
-      const issues = normalizeSpomoveGuideSaveIssues(body.issues);
-      throw new SpomoveContentSaveError(body.error ?? 'SPOMOVE 설명 저장에 실패했습니다.', issues);
+        expected_updated_at: packUpdatedAtRef.current,
+      });
+      packUpdatedAtRef.current = body.updated_at ?? packUpdatedAtRef.current;
+      setContentMap(next);
+      contentRef.current = next;
+      setDraftMap(next);
+      setSaveIssues([]);
+    } catch (saveError) {
+      if (saveError instanceof ThinkAssetPackConflictError) {
+        const serverMap = normalizeSpomoveContentMap(saveError.body.assets_json);
+        setContentMap(serverMap);
+        contentRef.current = serverMap;
+        packUpdatedAtRef.current = saveError.body.updated_at ?? packUpdatedAtRef.current;
+      }
+      throw saveError;
     }
-    setContentMap(next);
-    contentRef.current = next;
-    setDraftMap(next);
-    setSaveIssues([]);
   }, []);
 
   const updateDraft = useCallback((presetId: string, patch: Partial<SpomovePresetContentOverride>) => {
@@ -1572,6 +1613,7 @@ export function SpomoveContentManager() {
   const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const contentRef = useRef(contentMap);
   contentRef.current = contentMap;
+  const packUpdatedAtRef = useRef<string | null>(null);
   const [draftMap, setDraftMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const [loading, setLoading] = useState(true);
   const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
@@ -1591,13 +1633,14 @@ export function SpomoveContentManager() {
       const supabase = getSupabaseBrowserClient();
       const { data, error: loadError } = await supabase
         .from('think_asset_packs')
-        .select('assets_json')
+        .select('assets_json, updated_at')
         .eq('id', SPOMOVE_CONTENT_PACK_ID)
         .maybeSingle();
 
       if (loadError && loadError.code !== 'PGRST116') throw loadError;
 
       const next = normalizeSpomoveContentMap(data?.assets_json);
+      packUpdatedAtRef.current = (data?.updated_at as string | undefined) ?? null;
       setContentMap(next);
       contentRef.current = next;
       setDraftMap(next);
@@ -1613,26 +1656,28 @@ export function SpomoveContentManager() {
   }, [load]);
 
   const persist = useCallback(async (next: Record<string, SpomovePresetContentOverride>) => {
-    const res = await fetch('/api/admin/think-asset-pack', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
+    try {
+      const body = await saveThinkAssetPack({
         id: SPOMOVE_CONTENT_PACK_ID,
         name: SPOMOVE_CONTENT_PACK_NAME,
         theme: 'spomove',
         assets_json: { schemaVersion: 2, content: next } satisfies SpomoveContentAssetsJson,
-      }),
-    });
-    const body = (await res.json().catch(() => ({}))) as ThinkAssetPackSaveResponse;
-    if (!res.ok) {
-      const issues = normalizeSpomoveGuideSaveIssues(body.issues);
-      throw new SpomoveContentSaveError(body.error ?? 'SPOMOVE 설명 저장에 실패했습니다.', issues);
+        expected_updated_at: packUpdatedAtRef.current,
+      });
+      packUpdatedAtRef.current = body.updated_at ?? packUpdatedAtRef.current;
+      setContentMap(next);
+      contentRef.current = next;
+      setDraftMap(next);
+      setSaveIssues([]);
+    } catch (saveError) {
+      if (saveError instanceof ThinkAssetPackConflictError) {
+        const serverMap = normalizeSpomoveContentMap(saveError.body.assets_json);
+        setContentMap(serverMap);
+        contentRef.current = serverMap;
+        packUpdatedAtRef.current = saveError.body.updated_at ?? packUpdatedAtRef.current;
+      }
+      throw saveError;
     }
-    setContentMap(next);
-    contentRef.current = next;
-    setDraftMap(next);
-    setSaveIssues([]);
   }, []);
 
   const updateDraft = (presetId: string, patch: Partial<SpomovePresetContentOverride>) => {
@@ -2213,6 +2258,7 @@ function SpomoveThumbnailManager() {
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const pathsRef = useRef(thumbnailPaths);
   pathsRef.current = thumbnailPaths;
+  const packUpdatedAtRef = useRef<string | null>(null);
   const [cacheBust, setCacheBust] = useState<number | undefined>();
   const [loading, setLoading] = useState(true);
   const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
@@ -2235,6 +2281,7 @@ function SpomoveThumbnailManager() {
       }
 
       const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+      packUpdatedAtRef.current = (data?.updated_at as string | undefined) ?? null;
       setThumbnailPaths(next);
       pathsRef.current = next;
       setCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
@@ -2250,22 +2297,28 @@ function SpomoveThumbnailManager() {
   }, [load]);
 
   const persist = useCallback(async (next: Record<string, string>) => {
-    const res = await fetch('/api/admin/think-asset-pack', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
+    try {
+      const body = await saveThinkAssetPack({
         id: SPOMOVE_THUMBNAIL_PACK_ID,
         name: SPOMOVE_THUMBNAIL_PACK_NAME,
         theme: 'spomove',
         assets_json: { thumbnails: next } satisfies SpomoveThumbnailAssetsJson,
-      }),
-    });
-    const body = (await res.json().catch(() => ({}))) as { error?: string; updated_at?: string };
-    if (!res.ok) throw new Error(body.error ?? 'SPOMOVE 썸네일 저장에 실패했습니다.');
-    setThumbnailPaths(next);
-    pathsRef.current = next;
-    setCacheBust(resolveSpomovePackCacheBust(body.updated_at, Object.values(next)) ?? Date.now());
+        expected_updated_at: packUpdatedAtRef.current,
+      });
+      packUpdatedAtRef.current = body.updated_at ?? packUpdatedAtRef.current;
+      setThumbnailPaths(next);
+      pathsRef.current = next;
+      setCacheBust(resolveSpomovePackCacheBust(body.updated_at, Object.values(next)) ?? Date.now());
+    } catch (saveError) {
+      if (saveError instanceof ThinkAssetPackConflictError) {
+        const serverMap = normalizeSpomoveThumbnailMap(saveError.body.assets_json);
+        setThumbnailPaths(serverMap);
+        pathsRef.current = serverMap;
+        packUpdatedAtRef.current = saveError.body.updated_at ?? packUpdatedAtRef.current;
+        setCacheBust(resolveSpomovePackCacheBust(saveError.body.updated_at, Object.values(serverMap)) ?? Date.now());
+      }
+      throw saveError;
+    }
   }, []);
 
   const uploadThumbnail = useCallback(async (presetId: string, file: File) => {
@@ -2479,6 +2532,7 @@ function SpomoveGuideVideoManager() {
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const urlsRef = useRef(guideVideoUrls);
   urlsRef.current = guideVideoUrls;
+  const packUpdatedAtRef = useRef<string | null>(null);
   const [draftUrls, setDraftUrls] = useState<SpomoveGuideVideoDraft>({});
   const [loading, setLoading] = useState(true);
   const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
@@ -2492,7 +2546,7 @@ function SpomoveGuideVideoManager() {
       const supabase = getSupabaseBrowserClient();
       const { data, error: loadError } = await supabase
         .from('think_asset_packs')
-        .select('assets_json')
+        .select('assets_json, updated_at')
         .eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID)
         .maybeSingle();
 
@@ -2501,6 +2555,7 @@ function SpomoveGuideVideoManager() {
       }
 
       const next = normalizeSpomoveGuideVideoMap(data?.assets_json);
+      packUpdatedAtRef.current = (data?.updated_at as string | undefined) ?? null;
       setGuideVideoUrls(next);
       urlsRef.current = next;
       setDraftUrls(next);
@@ -2516,22 +2571,27 @@ function SpomoveGuideVideoManager() {
   }, [load]);
 
   const persist = useCallback(async (next: Record<string, string>) => {
-    const res = await fetch('/api/admin/think-asset-pack', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
+    try {
+      const body = await saveThinkAssetPack({
         id: SPOMOVE_GUIDE_VIDEO_PACK_ID,
         name: SPOMOVE_GUIDE_VIDEO_PACK_NAME,
         theme: 'spomove',
         assets_json: { guideVideos: next } satisfies SpomoveGuideVideoAssetsJson,
-      }),
-    });
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    if (!res.ok) throw new Error(body.error ?? 'SPOMOVE 가이드 영상 저장에 실패했습니다.');
-    setGuideVideoUrls(next);
-    urlsRef.current = next;
-    setDraftUrls(next);
+        expected_updated_at: packUpdatedAtRef.current,
+      });
+      packUpdatedAtRef.current = body.updated_at ?? packUpdatedAtRef.current;
+      setGuideVideoUrls(next);
+      urlsRef.current = next;
+      setDraftUrls(next);
+    } catch (saveError) {
+      if (saveError instanceof ThinkAssetPackConflictError) {
+        const serverMap = normalizeSpomoveGuideVideoMap(saveError.body.assets_json);
+        setGuideVideoUrls(serverMap);
+        urlsRef.current = serverMap;
+        packUpdatedAtRef.current = saveError.body.updated_at ?? packUpdatedAtRef.current;
+      }
+      throw saveError;
+    }
   }, []);
 
   const saveGuideVideo = useCallback(async (presetId: string) => {
