@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { isStage2WriteGateError, stage2WriteGateResponse } from '@/app/lib/server/spokeduMasterStage2WriteGate';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import type {
   MasterClassDto,
@@ -15,12 +16,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const SESSION_SELECT_CORE = `
-  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, parent_notice, completed_at, schedule_rule_id, created_at, updated_at,
+  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, memo_version, attendance_version, parent_notice, completed_at, schedule_rule_id, created_at, updated_at,
   spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
   spokedu_master_session_attendance(id, student_id, student_name_snapshot, status)
 `;
 const SESSION_SELECT = `
-  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, parent_notice, completed_at, schedule_rule_id, created_at, updated_at, roster_locked_at,
+  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, memo_version, attendance_version, parent_notice, completed_at, schedule_rule_id, created_at, updated_at, roster_locked_at,
   spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
   spokedu_master_session_attendance(id, student_id, student_name_snapshot, status)
 `;
@@ -38,6 +39,8 @@ type SessionRow = {
   end_at: string;
   status: MasterSessionStatus;
   memo: string | null;
+  memo_version: number;
+  attendance_version: number;
   parent_notice: string | null;
   completed_at: string | null;
   schedule_rule_id: string | null;
@@ -64,6 +67,8 @@ function toSessionDto(row: SessionRow): MasterSessionDto {
     endAt: row.end_at,
     status: row.status,
     memo: row.memo,
+    memoVersion: row.memo_version ?? 1,
+    attendanceVersion: row.attendance_version ?? 1,
     parentNotice: row.parent_notice,
     completedAt: row.completed_at,
     scheduleRuleId: row.schedule_rule_id,
@@ -112,6 +117,7 @@ function normalizeInput(value: unknown): SaveSessionInput {
     endAt: endAt.toISOString(),
     status,
     memo: typeof value.memo === 'string' && value.memo.trim() ? value.memo.trim() : null,
+    expectedMemoVersion: Number.isInteger(value.expectedMemoVersion) && Number(value.expectedMemoVersion) >= 1 ? Number(value.expectedMemoVersion) : undefined,
     programs: Array.isArray(value.programs) ? value.programs.map((item) => {
       if (!isObject(item) || (item.sourceType !== 'program' && item.sourceType !== 'spomove')) throw new Error('Invalid activity');
       if (item.sourceType === 'program') {
@@ -221,10 +227,10 @@ async function save(request: Request, sessionId: string | null) {
       return { ...item, programTitle: preset.title };
     });
     result = sessionId
-      ? await supabase.rpc('spokedu_master_save_session', {
+      ? await supabase.rpc('spokedu_master_save_session_v2', {
           p_owner_id: access.userId, p_session_id: sessionId, p_class_id: input.classId,
           p_start_at: input.startAt, p_end_at: input.endAt, p_status: input.status,
-          p_memo: input.memo, p_programs: [], p_attendance: [],
+          p_memo: input.memo, p_expected_memo_version: input.expectedMemoVersion,
         })
       : await supabase.rpc('spokedu_master_create_session_with_activities', {
           p_owner_id: access.userId, p_class_id: input.classId, p_start_at: input.startAt,
@@ -235,6 +241,8 @@ async function save(request: Request, sessionId: string | null) {
   }
   const { data: savedId, error } = result;
   if (error || typeof savedId !== 'string') {
+    if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
+    if (error?.code === '40001') return privateNoStoreJson({ error: 'Session changed elsewhere' }, { status: 409 });
     if (error?.code === '22023' || error?.code === '23505') {
       return privateNoStoreJson({
         error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : 'Invalid session data',
@@ -262,8 +270,12 @@ export async function PUT(request: Request) {
     id?: unknown;
     session?: unknown;
     attendance?: unknown;
+    expectedMemoVersion?: unknown;
+    expectedAttendanceVersion?: unknown;
   } | null;
-  if (typeof body?.id !== 'string' || !Array.isArray(body.attendance)) {
+  if (typeof body?.id !== 'string' || !Array.isArray(body.attendance)
+    || !Number.isInteger(body.expectedMemoVersion) || Number(body.expectedMemoVersion) < 1
+    || !Number.isInteger(body.expectedAttendanceVersion) || Number(body.expectedAttendanceVersion) < 1) {
     return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
   }
   let input: ReturnType<typeof normalizeInput>;
@@ -319,7 +331,7 @@ export async function PUT(request: Request) {
         : '출석 명단이 수업반 명단과 일치하지 않습니다.';
     return privateNoStoreJson({ error }, { status: 400 });
   }
-  const { data: savedId, error } = await supabase.rpc('spokedu_master_complete_session', {
+  const { data: savedId, error } = await supabase.rpc('spokedu_master_complete_session_v2', {
     p_owner_id: access.userId,
     p_session_id: body.id,
     p_class_id: input.classId,
@@ -327,8 +339,12 @@ export async function PUT(request: Request) {
     p_end_at: input.endAt,
     p_memo: input.memo,
     p_attendance: attendanceValidation.attendance,
+    p_expected_memo_version: Number(body.expectedMemoVersion),
+    p_expected_attendance_version: Number(body.expectedAttendanceVersion),
   });
   if (error || !savedId) {
+    if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
+    if (error?.code === '40001') return privateNoStoreJson({ error: 'Session changed elsewhere' }, { status: 409 });
     if (error?.code === '23505') return privateNoStoreJson({ error: CLASS_TIME_COLLISION_MESSAGE }, { status: 400 });
     if (error?.code === '22023') {
       const message = error && 'message' in error && typeof error.message === 'string' ? error.message : '';
@@ -362,6 +378,7 @@ export async function DELETE(request: Request) {
     .is('deleted_at', null)
     .select('id')
     .maybeSingle();
+  if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
   if (error) return privateNoStoreJson({ error: '수업을 삭제하지 못했습니다.' }, { status: 500 });
   if (!data) return privateNoStoreJson({ error: '삭제할 수 있는 취소 수업을 찾지 못했습니다.' }, { status: 404 });
   return privateNoStoreJson({ ok: true });

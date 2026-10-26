@@ -2,6 +2,7 @@ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { isStage2WriteGateError, stage2WriteGateResponse } from '@/app/lib/server/spokeduMasterStage2WriteGate';
 import { CLASS_TIME_COLLISION_MESSAGE } from '@/app/spokedu-master/lib/sessionIntegrity';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import type { MasterSessionDto, MasterSessionStatus } from '@/app/spokedu-master/types/operational';
@@ -63,6 +64,7 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
     ? await supabase.rpc('spokedu_master_create_next_session_v2', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_source_session_program_ids: ids })
     : await supabase.rpc('spokedu_master_create_next_session', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_copy_programs: false });
   if (error || typeof nextId !== 'string') {
+    if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
     if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : '완료된 수업과 선택한 활동을 확인해 주세요.' }, { status: 400 });
     await reportError(error ?? new Error('Next Session RPC returned no id'), { context: 'spokedu_master.sessions.next' });
     return privateNoStoreJson({ error: '다음 수업을 만들지 못했습니다.' }, { status: 500 });

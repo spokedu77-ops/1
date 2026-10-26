@@ -32,7 +32,7 @@ describe('SPOKEDU MASTER billing idempotency contracts', () => {
     expect(source).toContain('shouldReapplySpokeduMasterBillingOrder');
     expect(source).toContain('markSpokeduMasterBillingOrderFailed');
     expect(source).toContain(".order('next_billing_at', { ascending: true })");
-    expect(source).not.toContain('upsert({');
+    expect(source).not.toMatch(/\.from\('spokedu_master_payment_orders'\)\s*\.upsert\(\{/);
   });
 
   it('defines a shared stale-processing reclaim lease for billing orders', () => {

@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { isStage2WriteGateError, stage2WriteGateResponse } from '@/app/lib/server/spokeduMasterStage2WriteGate';
 import { toClassRecordDto, type MasterClassRecordRow } from '../operational-data';
 
 const CHILD_SELECT = `id,owner_id,record_id,student_id,student_legacy_id,student_name_snapshot,attendance,focused,skills,memo,observation_score,created_at,updated_at`;
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
     p_next_session_note: nextSessionNote, p_observation_changes: changes,
   });
   if (error) {
+    if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
     const status = error.code === 'P0002' ? 404 : error.code === '40001' ? 409 : error.code === '22023' ? 400 : 500;
     if (status === 409) return privateNoStoreJson({ error: 'Session capture changed elsewhere' }, { status });
     return privateNoStoreJson({ error: status === 404 ? 'Session not found' : status === 400 ? error.message : '수업 기록을 저장하지 못했습니다.' }, { status });

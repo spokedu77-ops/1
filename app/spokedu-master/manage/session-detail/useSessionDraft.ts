@@ -55,6 +55,7 @@ export function useSessionDraft({
     endAt: seoulDateTimeInputToIso(endAt),
     status: nextStatus,
     memo: canUseRecords ? memo.trim() || null : null,
+    expectedMemoVersion: activeSession?.memoVersion,
     programs: activeSession ? undefined : programs.map((item) => ({ sourceType: item.sourceType, programId: item.programId, spomovePresetId: item.spomovePresetId })),
   });
 

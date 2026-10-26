@@ -61,13 +61,16 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
     }
     draft.setSaving(true); draft.setError(null);
     try {
-      const saved = nextStatus === 'completed' && draft.activeSession
-        ? await completeSessionWithCapture({
+      let saved: MasterSessionDto;
+      if (nextStatus === 'completed' && draft.activeSession) {
+        saved = await completeSessionWithCapture({
           saveCapture: captureRef.current ? () => captureRef.current!.save() : undefined,
-          completeSession: () => data.completeSession(draft.activeSession!.id, draft.input(activities.programs, 'completed'), attendance.attendanceInput()),
-        })
-        : await data.saveSession(draft.input(activities.programs, nextStatus), draft.activeSession?.id);
-      if (draft.activeSession && nextStatus === 'scheduled') await data.saveSessionAttendance(saved.id, attendance.attendancePersistenceInput());
+          completeSession: async () => data.completeSession(draft.activeSession!.id, draft.input(activities.programs, 'completed'), attendance.attendanceInput(), await attendance.flushAttendance()),
+        });
+      } else {
+        await attendance.flushAttendance();
+        saved = await data.saveSession(draft.input(activities.programs, nextStatus), draft.activeSession?.id);
+      }
       draft.setActiveSession(saved); draft.setStatus(saved.status);
       draft.setDirty(false);
       if (nextStatus === 'completed' || !draft.activeSession) onClose();
@@ -92,8 +95,8 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
       await executeSessionStartSequence({
         dirty: draft.dirty,
         save: async () => {
+          await attendance.flushAttendance();
           const saved = await data.saveSession(draft.input(activities.programs, 'scheduled'), draft.activeSession!.id);
-          await data.saveSessionAttendance(saved.id, attendance.attendancePersistenceInput());
           draft.setActiveSession(saved);
           draft.setStatus(saved.status);
           draft.setDirty(false);

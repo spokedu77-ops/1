@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { isStage2WriteGateError, stage2WriteGateResponse } from '@/app/lib/server/spokeduMasterStage2WriteGate';
 
 type StartableSessionRow = {
   id: string;
@@ -42,6 +43,7 @@ export async function POST(_request: Request, context: { params: Promise<{ sessi
     .is('deleted_at', null)
     .select('id,started_at')
     .maybeSingle();
+  if (isStage2WriteGateError(updateError)) return stage2WriteGateResponse();
   if (updateError) return privateNoStoreJson({ error: 'Session could not be started' }, { status: 500 });
   if (updated?.started_at) {
     return privateNoStoreJson({ data: { sessionId: updated.id, startedAt: updated.started_at } });
@@ -67,6 +69,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ ses
     p_session_id: sessionId,
   });
   if (error) {
+    if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
     if (error.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
     if (error.code === '55000') {
       return privateNoStoreJson({ error: error.message === 'session has run evidence'

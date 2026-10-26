@@ -101,13 +101,9 @@ export function resolveClassRosterCandidates(students: MasterStudentDto[], curre
 }
 
 export function parseRosterPaste(value: string) {
-  const seen = new Set<string>();
   return value.split(/\r?\n/).flatMap((line) => {
     const name = line.split('\t').map((cell) => cell.trim()).find(Boolean) ?? '';
-    const key = name.toLocaleLowerCase('ko');
-    if (!name || seen.has(key)) return [];
-    seen.add(key);
-    return [name];
+    return name ? [name] : [];
   });
 }
 

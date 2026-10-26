@@ -24,7 +24,7 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
   const [meta, setMeta] = useState('');
   const [bulkText, setBulkText] = useState('');
   const [bulkNames, setBulkNames] = useState<string[] | null>(null);
-  const [bulkChoices, setBulkChoices] = useState<Record<string, BulkChoice>>({});
+  const [bulkChoices, setBulkChoices] = useState<Record<number, BulkChoice>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -88,17 +88,17 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
 
   const submitBulk = async () => {
     if (!bulkNames?.length || saving) return;
-    const unresolved = bulkNames.filter((bulkName) => {
+    const unresolved = bulkNames.filter((bulkName, index) => {
       const matches = data.students.filter((student) => student.name.trim() === bulkName);
-      return matches.length > 0 && !bulkChoices[bulkName];
+      return matches.length > 0 && !bulkChoices[index];
     });
     if (unresolved.length) { setError('기존 학생과 이름이 같은 항목의 등록 방법을 선택해 주세요.'); return; }
     setSaving(true); resetFeedback();
     const failed: string[] = [];
     let completed = 0;
-    for (const bulkName of bulkNames) {
+    for (const [index, bulkName] of bulkNames.entries()) {
       try {
-        const choice = bulkChoices[bulkName];
+        const choice = bulkChoices[index];
         if (choice?.startsWith('existing:')) await data.addClassStudent(classId, choice.slice('existing:'.length));
         else await data.createStudent({ legacyId: crypto.randomUUID(), name: bulkName, meta: '', guidanceNote: null, classIds: [classId] });
         completed += 1;
@@ -144,7 +144,7 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
 
       {mode === 'bulk' ? <>
         <button type="button" onClick={() => { if (bulkNames) setBulkNames(null); else setMode('search'); }} className="inline-flex min-h-11 items-center gap-1 text-sm font-extrabold text-slate-500"><ArrowLeft size={16} />뒤로</button>
-        {!bulkNames ? <><div><h3 className="text-base font-extrabold text-slate-900">여러 명 빠르게 등록</h3><p className="mt-1 text-xs font-semibold leading-5 text-slate-500">학생 이름을 한 줄에 한 명씩 입력하거나 Excel·한글 명단에서 붙여넣으세요. 탭이 섞이면 첫 번째 값만 이름으로 사용합니다.</p></div><textarea autoFocus value={bulkText} onChange={(event) => setBulkText(event.target.value)} placeholder={'김민수\n이지우\n박준서\n최하늘'} className="min-h-48 w-full rounded-xl border border-slate-200 p-3 text-sm font-bold leading-7 outline-none focus:border-slate-400" /><button type="button" disabled={!bulkText.trim()} onClick={previewBulk} className={SPM_PRIMARY_BTN_FULL}>명단 확인</button></> : <><div><h3 className="text-base font-extrabold text-slate-900">{bulkNames.length}명 인식</h3><p className="mt-1 text-xs font-semibold text-slate-500">빈 줄과 중복 입력은 제거했습니다.</p></div><div className="max-h-80 space-y-2 overflow-y-auto">{bulkNames.map((bulkName) => { const matches = data.students.filter((student) => student.name.trim() === bulkName); return <div key={bulkName} className="rounded-xl border border-slate-200 p-3"><p className="text-sm font-extrabold text-slate-800">{bulkName}</p>{matches.length ? <div className="mt-2 space-y-1"><p className="text-xs font-bold text-amber-700">기존 학생이 있습니다. 자동으로 합치지 않습니다.</p>{matches.map((student) => <label key={student.id} className="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-600"><input type="radio" name={`bulk-${bulkName}`} checked={bulkChoices[bulkName] === `existing:${student.id}`} onChange={() => setBulkChoices((current) => ({ ...current, [bulkName]: `existing:${student.id}` }))} />기존 {student.name} · {studentMetaToDisplay(student.meta) || '정보 없음'} 사용</label>)}<label className="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-600"><input type="radio" name={`bulk-${bulkName}`} checked={bulkChoices[bulkName] === 'new'} onChange={() => setBulkChoices((current) => ({ ...current, [bulkName]: 'new' }))} />새 학생으로 등록</label></div> : <p className="mt-1 text-xs font-semibold text-slate-400">새 학생으로 등록</p>}</div>; })}</div><button type="button" disabled={saving} onClick={() => void submitBulk()} className={SPM_PRIMARY_BTN_FULL}>{bulkNames.length}명 등록</button></>}
+        {!bulkNames ? <><div><h3 className="text-base font-extrabold text-slate-900">여러 명 빠르게 등록</h3><p className="mt-1 text-xs font-semibold leading-5 text-slate-500">학생 이름을 한 줄에 한 명씩 입력하거나 Excel·한글 명단에서 붙여넣으세요. 탭이 섞이면 첫 번째 값만 이름으로 사용합니다.</p></div><textarea autoFocus value={bulkText} onChange={(event) => setBulkText(event.target.value)} placeholder={'김민수\n이지우\n박준서\n최하늘'} className="min-h-48 w-full rounded-xl border border-slate-200 p-3 text-sm font-bold leading-7 outline-none focus:border-slate-400" /><button type="button" disabled={!bulkText.trim()} onClick={previewBulk} className={SPM_PRIMARY_BTN_FULL}>명단 확인</button></> : <><div><h3 className="text-base font-extrabold text-slate-900">{bulkNames.length}명 인식</h3><p className="mt-1 text-xs font-semibold text-slate-500">빈 줄만 제거하며 같은 이름은 별도 학생으로 유지합니다.</p></div><div className="max-h-80 space-y-2 overflow-y-auto">{bulkNames.map((bulkName, index) => { const matches = data.students.filter((student) => student.name.trim() === bulkName); return <div key={`${index}-${bulkName}`} className="rounded-xl border border-slate-200 p-3"><p className="text-sm font-extrabold text-slate-800">{bulkName}</p>{matches.length ? <div className="mt-2 space-y-1"><p className="text-xs font-bold text-amber-700">기존 학생이 있습니다. 자동으로 합치지 않습니다.</p>{matches.map((student) => <label key={student.id} className="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-600"><input type="radio" name={`bulk-${index}`} checked={bulkChoices[index] === `existing:${student.id}`} onChange={() => setBulkChoices((current) => ({ ...current, [index]: `existing:${student.id}` }))} />기존 {student.name} · {studentMetaToDisplay(student.meta) || '정보 없음'} 사용</label>)}<label className="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-600"><input type="radio" name={`bulk-${index}`} checked={bulkChoices[index] === 'new'} onChange={() => setBulkChoices((current) => ({ ...current, [index]: 'new' }))} />새 학생으로 등록</label></div> : <p className="mt-1 text-xs font-semibold text-slate-400">새 학생으로 등록</p>}</div>; })}</div><button type="button" disabled={saving} onClick={() => void submitBulk()} className={SPM_PRIMARY_BTN_FULL}>{bulkNames.length}명 등록</button></>}
       </> : null}
 
       {message ? <p className="rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">{message}</p> : null}

@@ -86,8 +86,8 @@ describe('MASTER Class management model', () => {
     expect(shiftAttendanceMonth('2026-12', 1)).toBe('2027-01');
   });
 
-  it('normalizes pasted roster names without blank or duplicate rows', () => {
-    expect(parseRosterPaste(' 김민수 \n\n이지우\t초2\n김민수\n 박준서\t3학년 ')).toEqual(['김민수', '이지우', '박준서']);
+  it('removes blank rows without silently dropping students who share a name', () => {
+    expect(parseRosterPaste(' 김민준 \n\n이서연\t초2\n김민준\n 박지호\t3학년 ')).toEqual(['김민준', '이서연', '김민준', '박지호']);
   });
 
   it('searches only non-members and keeps multi-Class membership candidates available', () => {

@@ -23,7 +23,10 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
     expect(nextConfig).toContain('{ source: "/subscription", destination: "/spokedu-lab", permanent: true }');
     expect(commercialPage).toContain('<MasterLocalNav');
     expect(commercialPage).toContain('<LandingFooter');
-    expect(publicShell).toContain("pathname === '/spokedu-lab'");
+    expect(commercialPage).toContain('usePublicSiteChrome');
+    expect(canonicalPage).toContain('usePublicSiteChrome');
+    expect(publicShell).toContain('<SiteHeader />');
+    expect(publicShell).not.toContain("pathname === '/spokedu-lab'");
   });
 
   it('derives plans, comparison and handoffs from the public contract', () => {

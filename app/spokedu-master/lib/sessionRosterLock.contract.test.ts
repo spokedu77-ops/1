@@ -54,7 +54,8 @@ describe('SPOKEDU MASTER session roster lock', () => {
     expect(nextRoute).toContain('roster_locked_at');
     expect(nextRoute).not.toContain('spokedu_master_session_participants');
     expect(attendanceRoute).toContain('LOCKED_ROSTER_MESSAGE');
-    expect(attendanceRoute).toContain('lockedRosterStudentIdsEqual');
+    expect(attendanceRoute).toContain("changes.some((item: { status: unknown }) => item.status === null)");
+    expect(attendanceRoute).toContain('submittedIds.some((id: string) => !lockedIds.includes(id))');
     expect(sheet).toContain('resolveSessionAttendanceRoster(activeSession ?? session, selectedClass, students)');
     expect(sheet).toContain('isSessionRosterLocked');
     expect(sheet).toContain('sessionRoster={attendance.roster}');

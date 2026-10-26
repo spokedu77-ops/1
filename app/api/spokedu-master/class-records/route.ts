@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { isStage2WriteGateError, stage2WriteGateResponse } from '@/app/lib/server/spokeduMasterStage2WriteGate';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   classRecordCreateRpcPayload,
@@ -113,6 +114,7 @@ export async function POST(request: Request) {
   const createdRecord = firstCreateRpcRow(createData);
 
   if (createError || !createdRecord?.record_id) {
+    if (isStage2WriteGateError(createError)) return stage2WriteGateResponse();
     if (isExpectedClassRecordInputError(createError?.code)) {
       return privateNoStoreJson(
         { error: createError?.code === '23514' ? 'Invalid class record payload' : 'studentId is not available for this owner' },
@@ -173,6 +175,7 @@ export async function PATCH(request: Request) {
   );
 
   if (replaceError) {
+    if (isStage2WriteGateError(replaceError)) return stage2WriteGateResponse();
     if (replaceError.code === 'P0002') {
       return privateNoStoreJson({ error: 'Record not found' }, { status: 404 });
     }

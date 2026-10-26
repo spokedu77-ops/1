@@ -22,7 +22,7 @@ describe('SPOKEDU MASTER Session workflow', () => {
     const api = read('app/api/spokedu-master/sessions/route.ts');
     const calendar = readSessionDetailSource();
     expect(api).toContain("p_session_id: sessionId");
-    expect(api).toContain("'spokedu_master_save_session'");
+    expect(api).toContain("'spokedu_master_save_session_v2'");
     expect(calendar).toContain('status: nextStatus');
     expect(calendar).toContain("draft.input(activities.programs, 'completed')");
     expect(calendar).toContain('data.updateSessionProgram');

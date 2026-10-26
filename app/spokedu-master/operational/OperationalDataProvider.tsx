@@ -30,7 +30,7 @@ type OperationalDataContextValue = {
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
   startSession: (sessionId: string) => Promise<MasterSessionDto>;
   undoSessionStart: (sessionId: string) => Promise<MasterSessionDto>;
-  completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
+  completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>, expectedAttendanceVersion: number) => Promise<MasterSessionDto>;
   saveParentNotice: (sessionId: string, parentNotice: string) => Promise<void>;
   deleteCancelledSession: (sessionId: string) => Promise<void>;
   createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => Promise<MasterSessionDto>;
@@ -40,7 +40,7 @@ type OperationalDataContextValue = {
   removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
   updateSessionProgram: (sessionId: string, sessionProgramId: string, isCompleted: boolean) => Promise<void>;
   reorderSessionPrograms: (sessionId: string, sessionProgramIds: string[]) => Promise<MasterSessionDto['programs']>;
-  saveSessionAttendance: (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus | 'pending' }>) => Promise<void>;
+  saveSessionAttendance: (sessionId: string, changes: Array<{ studentId: string; status: MasterSessionAttendanceStatus | 'pending' | null }>, expectedVersion: number) => Promise<number>;
   addClassStudent: (classId: string, studentId: string) => Promise<void>;
   removeClassStudent: (classId: string, studentId: string) => Promise<void>;
   status: OperationalDataStatus;
@@ -197,9 +197,9 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
-  const completeSession = useCallback(async (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => {
+  const completeSession = useCallback(async (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>, expectedAttendanceVersion: number) => {
     const json = await masterFetchJson<{ data: MasterSessionDto }>('/api/spokedu-master/sessions', {
-      body: JSON.stringify({ id: sessionId, session: { ...input, status: 'completed' }, attendance }),
+      body: JSON.stringify({ id: sessionId, session: { ...input, status: 'completed' }, attendance, expectedMemoVersion: input.expectedMemoVersion, expectedAttendanceVersion }),
       method: 'PUT',
     });
     setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
@@ -310,15 +310,25 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
-  const saveSessionAttendance = useCallback(async (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus | 'pending' }>) => {
-    await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance }) });
-    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.filter((entry): entry is typeof entry & { status: MasterSessionAttendanceStatus } => entry.status !== 'pending').map((entry) => ({
-      id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId,
-      studentName: item.attendance.find((old) => old.studentId === entry.studentId)?.studentName
-        ?? students.find((student) => student.id === entry.studentId)?.name ?? '이름 미확인 학생',
-      ...entry,
-    })) } : item));
+  const saveSessionAttendance = useCallback(async (sessionId: string, changes: Array<{ studentId: string; status: MasterSessionAttendanceStatus | 'pending' | null }>, expectedVersion: number) => {
+    const json = await masterFetchJson<{ attendanceVersion: number }>(`/api/spokedu-master/sessions/${sessionId}/attendance`, { method: 'PUT', body: JSON.stringify({ changes, expectedVersion }) });
+    setSessions((current) => current.map((item) => item.id === sessionId ? {
+      ...item,
+      attendanceVersion: json.attendanceVersion,
+      attendance: changes.reduce((rows, entry) => {
+        const without = rows.filter((old) => old.studentId !== entry.studentId);
+        if (entry.status === null || entry.status === 'pending') return without;
+        return [...without, {
+          id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId,
+          studentName: item.attendance.find((old) => old.studentId === entry.studentId)?.studentName
+            ?? students.find((student) => student.id === entry.studentId)?.name ?? '이름 미확인 학생',
+          studentId: entry.studentId,
+          status: entry.status,
+        }];
+      }, item.attendance),
+    } : item));
     invalidateMasterValueSummary();
+    return json.attendanceVersion;
   }, [students]);
 
   const addClassStudent = useCallback(async (classId: string, studentId: string) => {

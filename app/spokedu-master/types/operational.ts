@@ -39,6 +39,8 @@ export type MasterSessionDto = {
   endAt: string;
   status: MasterSessionStatus;
   memo: string | null;
+  memoVersion?: number;
+  attendanceVersion?: number;
   parentNotice?: string | null;
   completedAt: string | null;
   programs: MasterSessionProgramDto[];
@@ -56,6 +58,7 @@ export type SaveSessionInput = {
   endAt: string;
   status: MasterSessionStatus;
   memo: string | null;
+  expectedMemoVersion?: number;
   programs?: Array<{
     sourceType: 'program' | 'spomove';
     programId: number | null;

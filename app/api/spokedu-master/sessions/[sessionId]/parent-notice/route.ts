@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { isStage2WriteGateError, stage2WriteGateResponse } from '@/app/lib/server/spokeduMasterStage2WriteGate';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,6 +28,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ sessi
     .select('parent_notice')
     .maybeSingle();
 
+  if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
   if (error) return privateNoStoreJson({ error: '안내문을 저장하지 못했습니다.' }, { status: 500 });
   if (!data) return privateNoStoreJson({ error: '수정할 수 있는 완료 수업을 찾지 못했습니다.' }, { status: 404 });
   return privateNoStoreJson({ data: { parentNotice: data.parent_notice as string | null } });

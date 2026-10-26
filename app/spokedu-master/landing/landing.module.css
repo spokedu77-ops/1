@@ -1,4 +1,5 @@
 .landingRoot { overflow-x: clip; background: var(--spm-bg); color: var(--spm-t); font-family: var(--spm-font-body); }
+.landingRootWithPublicChrome .hero { min-height: min(720px, calc(100svh - var(--spokedu-public-header-height, 3.5rem) - 48px)); padding-top: 40px; padding-bottom: 88px; }
 .landingContent { width: 100%; min-width: 0; }
 .masterLocalNav { position: sticky; top: 0; z-index: 60; height: 72px; border-bottom: 1px solid var(--spm-br2); background: color-mix(in srgb, var(--spm-bg) 96%, transparent); backdrop-filter: blur(12px); }
 .masterLocalNavInner { display: grid; width: min(100%, 1120px); height: 100%; grid-template-columns: auto 1fr auto; gap: clamp(20px, 3vw, 42px); align-items: center; margin: 0 auto; padding: 0 40px; }

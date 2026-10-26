@@ -23,7 +23,12 @@ import {
 import { getLandingProductModel } from './models/landingProduct';
 import styles from './landing.module.css';
 
-export function CommercialLanding() {
+type CommercialLandingProps = {
+  /** 공개 마케팅 SiteHeader/Footer 사용 시 LAB 전용 nav·footer 중복 마운트 방지 */
+  usePublicSiteChrome?: boolean;
+};
+
+export function CommercialLanding({ usePublicSiteChrome = false }: CommercialLandingProps) {
   const publicProduct = getLandingProductModel();
   const product = {
     ...publicProduct,
@@ -35,8 +40,8 @@ export function CommercialLanding() {
   };
 
   return (
-    <div className={styles.landingRoot}>
-      <MasterLocalNav product={product} />
+    <div className={`${styles.landingRoot} ${usePublicSiteChrome ? styles.landingRootWithPublicChrome : ''}`}>
+      {usePublicSiteChrome ? null : <MasterLocalNav product={product} />}
       <LandingLoggedInBanner />
       <div className={styles.landingContent}>
         <LandingHero product={product} />
@@ -52,7 +57,7 @@ export function CommercialLanding() {
         <SubscriptionInquirySection />
         <FaqAndFinalCta product={product} />
       </div>
-      <LandingFooter product={product} />
+      {usePublicSiteChrome ? null : <LandingFooter product={product} />}
     </div>
   );
 }
