@@ -72,7 +72,7 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('const locked = isProgramLocked(program)');
     expect(source).toContain('if (isProgramLocked(program)) return;');
     expect(source).toContain('onPreview={locked ? undefined');
-    expect(source).toContain('isProgramLessonLocked({ programId: program.id, canUseLibrary })');
+    expect(source).toContain('isProgramLessonLocked({ programId: program.id, canUseLibrary, freePreviewProgramId })');
     expect(catalogCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');
     expect(catalogCard).toContain('data-preview-disabled=""');
     expect(catalogCard).toContain('href={lockHref}');

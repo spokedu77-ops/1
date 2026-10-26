@@ -5,7 +5,6 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
 import { isMasterPremiumAssignedEmail } from '@/app/lib/auth/platformAdminIdentity';
-import { FREE_PREVIEW_PROGRAM_IDS } from '@/app/spokedu-master/lib/commercialProgramAccess';
 import { normalizeSpomoveHomeFeaturedSlots, SPOMOVE_HOME_FEATURED_PACK_ID } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { resolveLiteSpomoveTrialPresetId } from '@/app/spokedu-master/lib/spomoveTrialAccess';
 
@@ -183,11 +182,11 @@ export function evaluateSpokeduMasterEffectiveEntitlement(
   return { allowed: true, plan: grant!.plan, status: 'active', source: 'promotion' };
 }
 
-function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: SpokeduMasterAccessSnapshot['subscriptionStatus'], isAdmin: boolean) {
+function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: SpokeduMasterAccessSnapshot['subscriptionStatus'], isAdmin: boolean, freePreviewProgramIds: readonly string[]) {
   const freeFallback = {
     canBrowseLibrary: true,
     canUseLibrary: false,
-    freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
+    freePreviewProgramIds,
     canUseClassTools: true,
     canUseAttendance: false,
     canUseRecords: false,
@@ -198,7 +197,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     return {
       canBrowseLibrary: true,
       canUseLibrary: true,
-      freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
+      freePreviewProgramIds,
       canUseClassTools: true,
       canUseAttendance: true,
       canUseRecords: true,
@@ -212,7 +211,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     return {
       canBrowseLibrary: true,
       canUseLibrary: true,
-      freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
+      freePreviewProgramIds,
       canUseClassTools: true,
       canUseAttendance: true,
       canUseRecords: true,
@@ -224,7 +223,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     return {
       canBrowseLibrary: true,
       canUseLibrary: true,
-      freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
+      freePreviewProgramIds,
       canUseClassTools: true,
       canUseAttendance: true,
       canUseRecords: true,
@@ -241,6 +240,7 @@ export function buildSpokeduMasterAccessSnapshot(input: {
   isAdmin: boolean;
   onboardingDone?: boolean;
   spomoveTrialPresetId?: string | null;
+  freePreviewProgramIds?: readonly string[];
 }): SpokeduMasterAccessSnapshot {
   if (input.isAdmin) {
     return {
@@ -256,7 +256,7 @@ export function buildSpokeduMasterAccessSnapshot(input: {
       promotionalPlan: null,
       promotionalEndsAt: null,
       spomoveTrialPresetId: null,
-      ...buildCapabilities('team', 'active', true),
+      ...buildCapabilities('team', 'active', true, input.freePreviewProgramIds ?? []),
     };
   }
 
@@ -284,7 +284,7 @@ export function buildSpokeduMasterAccessSnapshot(input: {
     spomoveTrialPresetId: plan === 'lite' && subscriptionStatus === 'active'
       ? input.spomoveTrialPresetId ?? null
       : null,
-    ...buildCapabilities(plan, subscriptionStatus, false),
+    ...buildCapabilities(plan, subscriptionStatus, false, input.freePreviewProgramIds ?? []),
   };
 }
 
@@ -305,7 +305,7 @@ export function applyMasterPremiumEntitlement(
     promotionalPlan: null,
     promotionalEndsAt: null,
     spomoveTrialPresetId: null,
-    ...buildCapabilities('premium', 'active', false),
+    ...buildCapabilities('premium', 'active', false, snapshot.freePreviewProgramIds),
   };
 }
 
@@ -481,6 +481,22 @@ export async function requireSpokeduMasterSession(): Promise<MasterSessionResult
   }
 }
 
+async function getConfiguredFreePreviewProgramIds() {
+  const { data, error } = await getServiceSupabase()
+    .from('spokedu_master_program_meta')
+    .select('curriculum_id')
+    .eq('sm_is_hot', true)
+    .eq('sm_display_order', 1)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    devLogger.error('[getSpokeduMasterAccessSnapshot] free preview lookup failed', error);
+    return [] as string[];
+  }
+  return data?.curriculum_id == null ? [] : [String(data.curriculum_id)];
+}
+
 export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnapshotResult> {
   try {
     const serverSupabase = await createServerSupabaseClient();
@@ -495,12 +511,14 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       };
     }
 
+    const freePreviewProgramIds = await getConfiguredFreePreviewProgramIds();
+
     if (isMasterPremiumAssignedEmail(user.email)) {
       return {
         ok: true,
         userId: user.id,
         snapshot: applyMasterPremiumEntitlement(
-          buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: false, onboardingDone: true }),
+          buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: false, onboardingDone: true, freePreviewProgramIds }),
         ),
       };
     }
@@ -510,7 +528,7 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       return {
         ok: true,
         userId: user.id,
-        snapshot: buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: true }),
+        snapshot: buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: true, freePreviewProgramIds }),
       };
     }
 
@@ -550,6 +568,7 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
         isAdmin: false,
         onboardingDone,
         spomoveTrialPresetId: trial.error ? null : trial.presetId,
+        freePreviewProgramIds,
       }),
     };
   } catch (err) {

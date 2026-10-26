@@ -12,7 +12,7 @@ import {
 import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import { canAccessProgramLessonContent, selectWeeklyProgramsById } from '@/app/spokedu-master/lib/commercialProgramAccess';
+import { canAccessProgramLessonContent, getFreePreviewProgramId, selectWeeklyPrograms } from '@/app/spokedu-master/lib/commercialProgramAccess';
 import { isLessonCatalogNew } from '@/app/spokedu-master/lib/lessonCatalogNew';
 import { selectCanonicalPublishedProgramOverlays } from './selectCanonicalOverlay';
 
@@ -154,11 +154,16 @@ function normalizeProgramForMaster(program: Program): Program {
   };
 }
 
-function canAccessProgramDetails(access: MasterAccessResult, program: Program): boolean {
+function canAccessProgramDetails(
+  access: MasterAccessResult,
+  program: Program,
+  freePreviewProgramId: string | null,
+): boolean {
   if (!access.ok) return false;
   return canAccessProgramLessonContent({
     programId: program.id,
     canUseLibrary: Boolean(access.canUseLibrary || access.isAdmin),
+    freePreviewProgramId,
   });
 }
 
@@ -387,7 +392,7 @@ async function reportInvalidMasterPrograms(invalid: Array<{ curriculumId: number
 }
 
 function selectHomePrograms(programs: Program[]) {
-  return selectWeeklyProgramsById(programs);
+  return selectWeeklyPrograms(programs);
 }
 
 export async function GET(request?: Request) {
@@ -463,8 +468,9 @@ export async function GET(request?: Request) {
     return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
   }
 
+  const freePreviewProgramId = getFreePreviewProgramId(programs);
   const visiblePrograms = programs.map((program) =>
-    redactProgramForAccess(program, canAccessProgramDetails(access, program)),
+    redactProgramForAccess(program, canAccessProgramDetails(access, program, freePreviewProgramId)),
   );
   const responsePrograms = request && new URL(request.url).searchParams.get('surface') === 'home'
     ? selectHomePrograms(visiblePrograms)

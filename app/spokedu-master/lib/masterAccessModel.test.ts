@@ -97,7 +97,7 @@ describe('commercial launch architecture contracts', () => {
     const appShell = read('app/spokedu-master/components/layout/AppShell.tsx');
 
     expect(provider).toContain('MasterAccessProvider');
-    expect(dashboard).toContain('selectWeeklyProgramsById(programs)');
+    expect(dashboard).toContain('selectWeeklyPrograms(programs)');
     expect(dashboard).toContain('EntitledDashboardView');
     expect(preview).toContain('이번 주 첫 무료 수업 1개, 스탑워치·타이머·점수판은 계속 사용할 수 있습니다');
     expect(appShell).toContain('MasterAccessProvider');

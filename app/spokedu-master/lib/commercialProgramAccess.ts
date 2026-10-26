@@ -1,27 +1,45 @@
 /**
- * Commercial catalog contract. The order is product truth and must not be
- * derived from DB display order, creation time, popularity, or user profile.
- *
- * Quick-preview content access is plan + FREE_PREVIEW_PROGRAM_ID only.
- * Full lesson-detail routes require Library access for every program.
- * `program.isPro` / `sm_is_pro` must not be used for runtime entitlement.
+ * The admin-authored recommendation slots are the runtime product truth.
+ * Slot 1 is also the single Free quick-preview; slots 2-4 require Lite.
  */
-export const WEEKLY_PROGRAM_IDS = ['68', '201', '204', '61'] as const;
+export const WEEKLY_RECOMMENDATION_SLOT_COUNT = 4;
 
-export const FREE_PREVIEW_PROGRAM_ID = WEEKLY_PROGRAM_IDS[0];
+type WeeklyProgram = {
+  id: string;
+  isHot?: boolean;
+  homeSortOrder?: number;
+};
 
-export const FREE_PREVIEW_PROGRAM_IDS = [FREE_PREVIEW_PROGRAM_ID] as const;
+export function selectWeeklyPrograms<T extends WeeklyProgram>(programs: T[]): T[] {
+  return programs
+    .filter((program) => (
+      program.isHot === true
+      && Number.isInteger(program.homeSortOrder)
+      && Number(program.homeSortOrder) >= 1
+      && Number(program.homeSortOrder) <= WEEKLY_RECOMMENDATION_SLOT_COUNT
+    ))
+    .sort((a, b) => Number(a.homeSortOrder) - Number(b.homeSortOrder))
+    .slice(0, WEEKLY_RECOMMENDATION_SLOT_COUNT);
+}
 
-export function isFreePreviewProgramId(value: string | number | null | undefined) {
-  return String(value ?? '') === FREE_PREVIEW_PROGRAM_ID;
+export function getFreePreviewProgramId<T extends WeeklyProgram>(programs: T[]) {
+  return programs.find((program) => program.isHot === true && program.homeSortOrder === 1)?.id ?? null;
+}
+
+export function isFreePreviewProgramId(
+  value: string | number | null | undefined,
+  freePreviewProgramId: string | number | null | undefined,
+) {
+  return freePreviewProgramId != null && String(value ?? '') === String(freePreviewProgramId);
 }
 
 export function canAccessProgramLessonContent(args: {
   programId: string | number | null | undefined;
   canUseLibrary: boolean;
+  freePreviewProgramId: string | number | null | undefined;
 }) {
   if (args.canUseLibrary) return true;
-  return isFreePreviewProgramId(args.programId);
+  return isFreePreviewProgramId(args.programId, args.freePreviewProgramId);
 }
 
 export function canAccessProgramFullDetail(args: { canUseLibrary: boolean }) {
@@ -35,6 +53,7 @@ export function isProgramFullDetailLocked(args: { canUseLibrary: boolean }) {
 export function isProgramLessonLocked(args: {
   programId: string | number | null | undefined;
   canUseLibrary: boolean;
+  freePreviewProgramId: string | number | null | undefined;
 }) {
   return !canAccessProgramLessonContent(args);
 }
@@ -42,14 +61,8 @@ export function isProgramLessonLocked(args: {
 export function getProgramAccessBadge(args: {
   programId: string | number | null | undefined;
   canUseLibrary: boolean;
+  freePreviewProgramId: string | number | null | undefined;
 }): 'Free' | 'Lite' | null {
   if (args.canUseLibrary) return null;
-  return isFreePreviewProgramId(args.programId) ? 'Free' : 'Lite';
-}
-
-export function selectWeeklyProgramsById<T extends { id: string }>(programs: T[]): T[] {
-  const byId = new Map(programs.map((program) => [program.id, program]));
-  return WEEKLY_PROGRAM_IDS
-    .map((id) => byId.get(id))
-    .filter((program): program is T => Boolean(program));
+  return isFreePreviewProgramId(args.programId, args.freePreviewProgramId) ? 'Free' : 'Lite';
 }

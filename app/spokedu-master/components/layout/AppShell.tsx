@@ -221,7 +221,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   const setOnline = useMasterStore((state) => state.setOnline);
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
-  const loadHomePrograms = useMasterStore((state) => state.loadHomePrograms);
+  const reloadHomePrograms = useMasterStore((state) => state.reloadHomePrograms);
   const syncFavoriteProgramsFromServer = useMasterStore((state) => state.syncFavoriteProgramsFromServer);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
@@ -312,18 +312,19 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
     if (isLanding || isPublicDocument) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     if (!canBrowseLibrary) return;
-    if (pathname === `${activeBasePath}/dashboard`) void loadHomePrograms();
+    if (pathname === `${activeBasePath}/dashboard`) void reloadHomePrograms();
     else if (needsProgramCatalog) void loadPrograms();
     if (canSyncFavorites && needsFavoriteSync) void syncFavoriteProgramsFromServer();
-  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, needsFavoriteSync, needsProgramCatalog, pathname, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadPrograms, needsFavoriteSync, needsProgramCatalog, pathname, reloadHomePrograms, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
       if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
       if (isProtectedRoute && accessGuard.status !== 'allowed') return;
       if (!canBrowseLibrary) return;
-      if (pathname === `${activeBasePath}/dashboard` || !needsProgramCatalog) return;
-      void reloadPrograms();
+      if (pathname === `${activeBasePath}/dashboard`) void reloadHomePrograms();
+      else if (needsProgramCatalog) void reloadPrograms();
+      else return;
       if (canSyncFavorites && needsFavoriteSync) void syncFavoriteProgramsFromServer();
     };
     window.addEventListener('focus', refreshProgramsOnFocus);
@@ -332,7 +333,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, needsFavoriteSync, needsProgramCatalog, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, needsFavoriteSync, needsProgramCatalog, pathname, reloadHomePrograms, reloadPrograms, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
