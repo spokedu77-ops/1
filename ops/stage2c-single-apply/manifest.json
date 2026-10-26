@@ -1,0 +1,8 @@
+{
+  "projectRef": "mwgvserdyflsqyhcqecp",
+  "version": "20261026171825",
+  "name": "stage2c_teacher_schedule_conflict_guard",
+  "migration": "../../supabase/migrations/20261026171825_stage2c_teacher_schedule_conflict_guard.sql",
+  "sha256": "579b0c6d8cd712391c07446c093eb77326685b15c67661dc138d079d87b137c4",
+  "requiresVersion": "20261026163542"
+}

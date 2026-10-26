@@ -22,6 +22,13 @@ const finalMigration = readFileSync(
   ),
   'utf8',
 ).replace(/\r\n/g, '\n');
+const assistantMigration = readFileSync(
+  new URL(
+    '../../../../supabase/migrations/20261026163542_stage2a_sync_assistant_teacher_counts.sql',
+    import.meta.url,
+  ),
+  'utf8',
+).replace(/\r\n/g, '\n');
 
 describe('session_count_logs follow sessions.status', () => {
   it('does not insert logs from status-change APIs (trigger is SSOT)', () => {
@@ -55,5 +62,24 @@ describe('session_count_logs follow sessions.status', () => {
     expect(finalMigration).toContain(
       "WHERE session_id = p_session_id\n    AND reason = '트리거: sessions.status sync'",
     );
+  });
+
+  it('reconciles only changed completed-session assignments and preserves the intersection', () => {
+    expect(assistantMigration).toContain('UPDATE OF status, created_by, memo ON public.sessions');
+    expect(assistantMigration).toContain("OLD.status IN ('finished', 'verified')");
+    expect(assistantMigration).toContain("NEW.status IN ('finished', 'verified')");
+    expect(assistantMigration).toContain('v_old_teacher_ids IS DISTINCT FROM v_new_teacher_ids');
+    expect(assistantMigration).toContain('v_removed_teacher_ids');
+    expect(assistantMigration).toContain('v_added_teacher_ids');
+    expect(assistantMigration).toContain('teacher_id = ANY(v_removed_teacher_ids)');
+    expect(assistantMigration).toContain('FROM unnest(v_added_teacher_ids) added_teacher_id');
+    expect(assistantMigration).toContain("MESSAGE = 'SESSION_COUNT_SOURCE_AUTO_LOG_AMBIGUOUS'");
+    expect(assistantMigration).toContain("MESSAGE = 'SESSION_COUNT_TARGET_LOG_AMBIGUOUS'");
+    expect(
+      assistantMigration.match(/PERFORM public\.clear_session_count_logs_for_session\(NEW\.id\)/g),
+    ).toHaveLength(1);
+    expect(assistantMigration).toContain('PERFORM public.sync_session_count_logs_for_session(NEW.id)');
+    expect(assistantMigration).toContain('SELECT p_created_by AS teacher_id\n    UNION');
+    expect(assistantMigration).not.toContain('students_text');
   });
 });

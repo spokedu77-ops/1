@@ -1,0 +1,12 @@
+{
+  "projectRef": "mwgvserdyflsqyhcqecp",
+  "version": "20261026163542",
+  "name": "stage2a_sync_assistant_teacher_counts",
+  "migration": "../../supabase/migrations/20261026163542_stage2a_sync_assistant_teacher_counts.sql",
+  "sha256": "6c78464825c2ba038a960cdda663428011ede592a552eb983e904fe9c6fd5f1d",
+  "expectedFunctionMd5": {
+    "public.clear_session_count_logs_for_session(uuid)": "bdf00fa20fa1b402c0467f85ca08bdb2",
+    "public.sync_session_count_logs_for_session(uuid)": "f40c581d701913b8aea6725983d9d43f",
+    "public.trg_session_count_logs_sync()": "20e13ce02f7ca3972051087e3c8a7802"
+  }
+}

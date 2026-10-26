@@ -699,6 +699,16 @@ export default function ClassBundlePanel({
     }
   };
 
+  const applyBulkSessionChanges = async (changes: Array<Record<string, unknown>>) => {
+    const response = await fetch("/api/admin/classes/sessions/bulk-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ changes }),
+    });
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) throw new Error(payload.error || "SESSION_BULK_UPDATE_FAILED");
+  };
+
   const saveSessionSchedule = async (gid: string, r: SessionRow) => {
     const savedDateStr = toDateInputValueLocal(new Date(r.start_at));
     const savedTimeStr = new Date(r.start_at).toTimeString().slice(0, 5);
@@ -1391,6 +1401,7 @@ export default function ClassBundlePanel({
 
     setBulkTeacherApplyingGid(gid);
     try {
+      const changes: Array<Record<string, unknown>> = [];
       for (const s of rows) {
         const patch: Record<string, unknown> = {};
         if (nextTeacherId) {
@@ -1418,9 +1429,9 @@ export default function ClassBundlePanel({
         if (wantsPrice) {
           patch.price = priceNum;
         }
-        const { error } = await supabase.from("sessions").update(patch).eq("id", s.id);
-        if (error) throw error;
+        changes.push({ id: s.id, ...patch });
       }
+      await applyBulkSessionChanges(changes);
       toast.success(`일괄 적용 완료: ${rows.length}건`);
       onChanged?.();
       void loadAll();
@@ -1466,7 +1477,7 @@ export default function ClassBundlePanel({
 
     setBulkAssistApplyingGid(gid);
     try {
-      let applied = 0;
+      const changes: Array<Record<string, unknown>> = [];
       for (const s of rows) {
         const mainId = String(s.created_by || "").trim();
         if (assistId === mainId) continue;
@@ -1482,10 +1493,10 @@ export default function ClassBundlePanel({
         ].slice(0, 2);
 
         const memo = persistMemoExtras(s.memo, nextExtras);
-        const { error } = await supabase.from("sessions").update({ memo }).eq("id", s.id);
-        if (error) throw error;
-        applied += 1;
+        changes.push({ id: s.id, memo });
       }
+      if (changes.length > 0) await applyBulkSessionChanges(changes);
+      const applied = changes.length;
       toast.success(`보조 일괄 적용 완료: ${applied}건`);
       onChanged?.();
       void loadAll();
