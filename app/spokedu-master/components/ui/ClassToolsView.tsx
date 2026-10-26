@@ -15,6 +15,15 @@ import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
 import { createTournamentBracket, getTournamentRoundLabel, selectTournamentWinner, type TournamentParticipant } from './tournamentModel';
+import {
+  buildTournamentRosterKey,
+  clearStoredTournamentState,
+  participantsFromRosterKey,
+  readStoredTournamentState,
+  tournamentStateMatchesRoster,
+  tournamentStorageScopeKey,
+  writeStoredTournamentState,
+} from './tournamentPersistence';
 import { useSessionAttendance } from '../../manage/session-detail/useSessionAttendance';
 import type { MasterSessionDto } from '../../types/operational';
 
@@ -1091,17 +1100,44 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
   );
 }
 
-function TournamentTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
-  const rosterKey = students.map((student) => `${student.id}:${student.name}`).join('|');
+function TournamentTab({
+  students,
+  usingSample,
+  storageScopeKey,
+}: {
+  students: StudentProfile[];
+  usingSample: boolean;
+  storageScopeKey: string;
+}) {
+  const rosterKey = buildTournamentRosterKey(students.map((student) => ({ id: student.id, name: student.name })));
   const [participants, setParticipants] = useState<TournamentParticipant[]>(() => students.map((student) => ({ id: student.id, name: student.name })));
   const [bracket, setBracket] = useState(() => createTournamentBracket([]));
   const customIdRef = useRef(1);
   const started = bracket.rounds.length > 0;
 
   useEffect(() => {
-    if (started) return;
-    setParticipants(students.map((student) => ({ id: student.id, name: student.name })));
-  }, [rosterKey, started, students]);
+    const stored = readStoredTournamentState(storageScopeKey);
+    if (stored && tournamentStateMatchesRoster(stored, rosterKey) && stored.bracket.rounds.length > 0) {
+      setParticipants(stored.participants);
+      setBracket(stored.bracket);
+      customIdRef.current = stored.nextCustomId;
+      return;
+    }
+    setParticipants(participantsFromRosterKey(rosterKey));
+    setBracket(createTournamentBracket([]));
+    customIdRef.current = 1;
+  }, [rosterKey, storageScopeKey]);
+
+  useEffect(() => {
+    if (!started) return;
+    writeStoredTournamentState(storageScopeKey, {
+      schemaVersion: 1,
+      rosterKey,
+      participants,
+      bracket,
+      nextCustomId: customIdRef.current,
+    });
+  }, [bracket, participants, rosterKey, started, storageScopeKey]);
 
   const startTournament = () => {
     const usable = participants.filter((participant) => participant.name.trim()).map((participant) => ({ ...participant, name: participant.name.trim() }));
@@ -1109,7 +1145,10 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
     setBracket(createTournamentBracket(usable));
   };
 
-  const resetTournament = () => setBracket(createTournamentBracket([]));
+  const resetTournament = () => {
+    setBracket(createTournamentBracket([]));
+    clearStoredTournamentState(storageScopeKey);
+  };
   const championId = bracket.rounds.at(-1)?.[0]?.winnerId ?? null;
   const { width, height } = useToolViewport();
   const participantColumns = fittedColumnCount(participants.length, width, height, { minCellWidth: 240, minCellHeight: 48, chrome: 196, maxColumns: 2 });
@@ -1406,7 +1445,14 @@ export default function ClassToolsView() {
       {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
       {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
       {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
-      {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
+      {tab === 'tournament' && (
+        <TournamentTab
+          key={`tournament-${effectiveClassKey}-${effectiveSessionId}`}
+          students={selectedStudents}
+          usingSample={usingSample}
+          storageScopeKey={tournamentStorageScopeKey(effectiveClassKey, effectiveSessionId)}
+        />
+      )}
       {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
     </>
   );

@@ -122,13 +122,24 @@ describe('SPOKEDU MASTER class tools placement', () => {
   it('provides class-scoped tournament and ladder tools', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
     const catalog = read('app/spokedu-master/lib/classTools.ts');
+    const persistence = read('app/spokedu-master/components/ui/tournamentPersistence.ts');
 
     expect(catalog).toContain("{ id: 'tournament', label: '토너먼트'");
     expect(catalog).toContain("{ id: 'ladder', label: '사다리타기'");
+    expect(catalog).toContain("ROSTER_CLASS_TOOL_IDS = ['picker', 'teams', 'order', 'tournament', 'ladder']");
     expect(tools).toContain('function TournamentTab');
     expect(tools).toContain('function LadderTab');
-    expect(tools).toContain("tab === 'tournament' && <TournamentTab");
-    expect(tools).toContain("tab === 'ladder' && <LadderTab");
-    expect(catalog).toContain("ROSTER_CLASS_TOOL_IDS = ['picker', 'teams', 'order', 'tournament', 'ladder']");
+    expect(tools).toContain("tab === 'tournament'");
+    expect(tools).toContain('<TournamentTab');
+    expect(tools).toContain('storageScopeKey={tournamentStorageScopeKey(effectiveClassKey, effectiveSessionId)}');
+    expect(tools).toContain("key={`tournament-${effectiveClassKey}-${effectiveSessionId}`}");
+    expect(tools).toContain('readStoredTournamentState');
+    expect(tools).toContain('writeStoredTournamentState');
+    expect(tools).toContain('tournamentStateMatchesRoster');
+    expect(tools).toContain("tab === 'ladder'");
+    expect(tools).toContain('<LadderTab');
+    expect(tools).toContain("key={`ladder-${effectiveClassKey}-${effectiveSessionId}`}");
+    expect(persistence).toContain('tournamentStorageScopeKey(classKey: string, sessionId: string)');
+    expect(persistence).toContain('spokedu-lab:class-tool:tournament:v1:');
   });
 });
