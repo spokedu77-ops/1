@@ -1,0 +1,102 @@
+{
+  "capturedAt": "2026-10-23T16:24:14.518Z",
+  "outcomes": [
+    {
+      "logId": "584f0e25-1677-497d-b600-5b140075b762",
+      "name": "성채민",
+      "ok": true,
+      "pointsBefore": "31000",
+      "amount": "2500",
+      "pointsAfter": "28500",
+      "rpc": {
+        "ok": true,
+        "logId": "584f0e25-1677-497d-b600-5b140075b762",
+        "scope": "single",
+        "points": 28500,
+        "replayed": false,
+        "teacherId": "a36a5ecb-606b-426d-b718-3454bbf89247"
+      }
+    },
+    {
+      "logId": "3835feb5-f5f8-49cc-817d-345517969dd3",
+      "name": "하유선",
+      "ok": true,
+      "pointsBefore": "4500",
+      "amount": "2500",
+      "pointsAfter": "2000",
+      "rpc": {
+        "ok": true,
+        "logId": "3835feb5-f5f8-49cc-817d-345517969dd3",
+        "scope": "single",
+        "points": 2000,
+        "replayed": false,
+        "teacherId": "5cceb253-c267-46a2-bac5-da185ef012f0"
+      }
+    },
+    {
+      "logId": "b8461249-7c89-4180-9e30-fbfc06bc0252",
+      "name": "김세중",
+      "ok": true,
+      "pointsBefore": "-7500",
+      "amount": "2500",
+      "pointsAfter": "-10000",
+      "rpc": {
+        "ok": true,
+        "logId": "b8461249-7c89-4180-9e30-fbfc06bc0252",
+        "scope": "single",
+        "points": -10000,
+        "replayed": false,
+        "teacherId": "7540fa19-c724-4a95-927f-57312b3b38f1"
+      }
+    },
+    {
+      "logId": "a84785bd-c62c-4633-b70d-0fdb6025d23b",
+      "name": "윤도현",
+      "ok": true,
+      "pointsBefore": "6000",
+      "amount": "2500",
+      "pointsAfter": "3500",
+      "rpc": {
+        "ok": true,
+        "logId": "a84785bd-c62c-4633-b70d-0fdb6025d23b",
+        "scope": "single",
+        "points": 3500,
+        "replayed": false,
+        "teacherId": "f8099803-3bd6-4649-8a87-909dfb8e0511"
+      }
+    }
+  ],
+  "yoonKeepStillExists": true,
+  "audits": [
+    {
+      "original_log_id": "584f0e25-1677-497d-b600-5b140075b762",
+      "teacher_id": "a36a5ecb-606b-426d-b718-3454bbf89247",
+      "amount": "2500",
+      "cancel_scope": "single",
+      "cancelled_at": "2026-10-23T16:24:12.261Z"
+    },
+    {
+      "original_log_id": "3835feb5-f5f8-49cc-817d-345517969dd3",
+      "teacher_id": "5cceb253-c267-46a2-bac5-da185ef012f0",
+      "amount": "2500",
+      "cancel_scope": "single",
+      "cancelled_at": "2026-10-23T16:24:12.312Z"
+    },
+    {
+      "original_log_id": "b8461249-7c89-4180-9e30-fbfc06bc0252",
+      "teacher_id": "7540fa19-c724-4a95-927f-57312b3b38f1",
+      "amount": "2500",
+      "cancel_scope": "single",
+      "cancelled_at": "2026-10-23T16:24:12.335Z"
+    },
+    {
+      "original_log_id": "a84785bd-c62c-4633-b70d-0fdb6025d23b",
+      "teacher_id": "f8099803-3bd6-4649-8a87-909dfb8e0511",
+      "amount": "2500",
+      "cancel_scope": "single",
+      "cancelled_at": "2026-10-23T16:24:12.359Z"
+    }
+  ],
+  "sessionCountLogsBefore": 2312,
+  "sessionCountLogsAfter": 2312
+}

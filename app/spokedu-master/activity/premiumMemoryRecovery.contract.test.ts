@@ -100,4 +100,13 @@ describe('session capture draft recovery', () => {
     expect(capture).toContain('shouldApplyServerSessionCapture');
     expect(capture).toContain('dirtyRef.current = true');
   });
+
+  it('loads the exact Session and preserves dirty input during cross-tab changes', () => {
+    expect(capture).toContain('`session=${encodeURIComponent(requestedSessionId)}`');
+    expect(capture).not.toContain('limit=40');
+    expect(capture).toContain('subscribeSessionCaptureChanges');
+    expect(capture).toContain('if (dirtyRef.current)');
+    expect(capture).toContain('expectedVersion: captureVersionRef.current');
+    expect(capture).toContain('observationChanges:');
+  });
 });

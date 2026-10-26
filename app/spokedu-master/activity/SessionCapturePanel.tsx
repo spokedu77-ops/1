@@ -17,6 +17,8 @@ import { SPM_JOURNEY_FIELD, SPM_JOURNEY_META } from '../lib/masterUiClasses';
 import {
   fetchSessionCaptures,
   saveSessionCapture,
+  SessionCaptureConflictError,
+  subscribeSessionCaptureChanges,
 } from '../lib/sessionCaptureClient';
 import { shouldApplyServerSessionCapture } from './sessionCaptureDraft';
 import type { SessionCaptureSurfaceMode } from './masterSessionWorkspaceModel';
@@ -61,8 +63,11 @@ export const SessionCapturePanel = forwardRef<
   const [dirty, setDirty] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [remoteChange, setRemoteChange] = useState(false);
   const dirtyRef = useRef(false);
   const activeSessionIdRef = useRef(session.id);
+  const captureVersionRef = useRef<number | null>(null);
+  const loadedObservationsRef = useRef<Record<string, string>>({});
   const markDirty = () => {
     dirtyRef.current = true;
     setDirty(true);
@@ -73,6 +78,9 @@ export const SessionCapturePanel = forwardRef<
     setDirty(false);
     setNextNote('');
     setObservations({});
+    loadedObservationsRef.current = {};
+    captureVersionRef.current = null;
+    setRemoteChange(false);
     setSaveError(false);
   }, [session.id]);
   const roster = useMemo(
@@ -99,7 +107,7 @@ export const SessionCapturePanel = forwardRef<
     const requestedSessionId = session.id;
     let cancelled = false;
     void fetchSessionCaptures(
-      `class=${encodeURIComponent(session.classId)}&limit=40`,
+      `session=${encodeURIComponent(requestedSessionId)}`,
     ).then((result) => {
       if (cancelled) return;
       if (result.status === 'error') {
@@ -119,19 +127,47 @@ export const SessionCapturePanel = forwardRef<
       const current = result.data.find(
         (item) => item.sessionId === requestedSessionId,
       );
+      captureVersionRef.current = current?.captureVersion ?? null;
       setNextNote(current?.applicationIdea ?? '');
-      setObservations(
-        Object.fromEntries(
+      const loadedObservations = Object.fromEntries(
           current?.students
             .map((student) => [student.studentId, student.memo ?? ''])
             .filter(([id]) => id) ?? [],
-        ),
       );
+      loadedObservationsRef.current = loadedObservations;
+      setObservations(loadedObservations);
+      setRemoteChange(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [needsCaptureData, captureMode, session.classId, session.id]);
+  }, [needsCaptureData, captureMode, session.id]);
+
+  useEffect(() => subscribeSessionCaptureChanges(session.id, () => {
+    if (dirtyRef.current) {
+      setRemoteChange(true);
+      return;
+    }
+    void fetchSessionCaptures(`session=${encodeURIComponent(session.id)}`).then((result) => {
+      if (activeSessionIdRef.current !== session.id) return;
+      if (result.status === 'error') {
+        setLoadError(true);
+        setRemoteChange(true);
+        return;
+      }
+      setLoadError(false);
+      const current = result.data.find((item) => item.sessionId === session.id);
+      const loadedObservations = Object.fromEntries(
+        current?.students.map((student) => [student.studentId, student.memo ?? '']).filter(([id]) => id) ?? [],
+      );
+      captureVersionRef.current = current?.captureVersion ?? null;
+      loadedObservationsRef.current = loadedObservations;
+      setCaptures(result.data);
+      setNextNote(current?.applicationIdea ?? '');
+      setObservations(loadedObservations);
+      setRemoteChange(false);
+    });
+  }), [session.id]);
 
   useEffect(() => {
     if (captureMode === 'emphasized') {
@@ -144,25 +180,39 @@ export const SessionCapturePanel = forwardRef<
 
   async function save() {
     if (!dirty) return true;
+    if (loadError || remoteChange) {
+      setSaveError(true);
+      return false;
+    }
     setSaving(true);
     setSaveError(false);
     try {
       const saved = await saveSessionCapture({
         sessionId: session.id,
+        expectedVersion: captureVersionRef.current,
         nextSessionNote: nextNote,
-        observations: Object.entries(observations)
-          .filter(([, memo]) => memo.trim())
-          .map(([studentId, memo]) => ({ studentId, memo })),
+        observationChanges: Array.from(new Set([
+          ...Object.keys(loadedObservationsRef.current),
+          ...Object.keys(observations),
+        ]))
+          .filter((studentId) => (loadedObservationsRef.current[studentId] ?? '').trim() !== (observations[studentId] ?? '').trim())
+          .map((studentId) => ({ studentId, memo: observations[studentId]?.trim() || null })),
       });
       setCaptures((items) => [
         ...items.filter((item) => item.sessionId !== session.id),
         saved,
       ]);
+      captureVersionRef.current = saved.captureVersion ?? captureVersionRef.current;
+      loadedObservationsRef.current = Object.fromEntries(
+        saved.students.map((student) => [student.studentId, student.memo ?? '']).filter(([id]) => id),
+      );
       dirtyRef.current = false;
       setDirty(false);
+      setRemoteChange(false);
       setSaving(false);
       return true;
-    } catch {
+    } catch (caught) {
+      if (caught instanceof SessionCaptureConflictError) setRemoteChange(true);
       setSaveError(true);
       setSaving(false);
       return false;
@@ -301,6 +351,11 @@ export const SessionCapturePanel = forwardRef<
             기록을 저장하지 못했습니다. 입력 내용은 유지됩니다.
           </p>
         ) : null}
+        {remoteChange ? (
+          <p role="alert" className="py-3 text-xs font-bold text-amber-700">
+            다른 탭에서 이 수업 기록이 변경되었습니다. 현재 입력은 유지되며, 최신 기록을 확인한 뒤 다시 저장해 주세요.
+          </p>
+        ) : null}
         {saving ? (
           <p className="py-3 text-center text-xs font-medium text-slate-400">
             기록 저장 중…
@@ -426,9 +481,14 @@ export const SessionCapturePanel = forwardRef<
               기록을 저장하지 못했습니다. 작성한 내용은 그대로 유지됩니다.
             </p>
           ) : null}
+          {remoteChange ? (
+            <p role="alert" className="rounded-lg bg-amber-50 p-2 text-xs font-bold text-amber-700">
+              다른 탭에서 이 수업 기록이 변경되었습니다. 현재 입력은 유지되며, 최신 기록을 확인한 뒤 다시 저장해 주세요.
+            </p>
+          ) : null}
           <button
             type="button"
-            disabled={!dirty || saving}
+            disabled={!dirty || saving || loadError || remoteChange}
             onClick={() => void save()}
             className={SPM_PRIMARY_BTN}
           >

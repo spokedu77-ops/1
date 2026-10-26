@@ -9,7 +9,7 @@
  * Writes no drafts, never publishes, and never closes the browser or existing tabs.
  * The image IS uploaded to Naver if the filechooser succeeds.
  */
-import { readFile, mkdir, writeFile, open } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, open, stat } from 'node:fs/promises';
 import { mkdirSync, appendFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +21,7 @@ import { enterTitleWithRecovery } from './title-input.mjs';
 import { ensureTitleOverlayClear } from './title-overlay-gate.mjs';
 import { openEditorInNewTab } from './editor-entry-recovery.mjs';
 import {inspectSequentialCanvas,findNativeTailAnchor,gateNextImage} from './photo-sequential-core.mjs';
-import { validateArticle } from './sequential-plan.mjs';
+import { deriveSegments, validateArticle } from './sequential-plan.mjs';
 import { parseArticleForNaver, sha256Text } from '../../naver-article-pipeline.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +37,8 @@ for(let i=0;i<argv.length;i++){
 const modes=argv.filter(x=>['--check','--preview','--smoke'].includes(x));
 if(modes.length!==1)throw new Error('ONE_MODE_REQUIRED: --check | --preview | --smoke');
 const MODE=modes[0].slice(2);
+const RUN_ID=/^[0-9A-Za-z._-]{4,80}$/.test(process.env.SPOKEDU_NAVER_RUN_ID || '')
+  ? process.env.SPOKEDU_NAVER_RUN_ID : null;
 if(!argv.includes('--article')&&!argv.includes('--example'))throw new Error('ARTICLE_NOT_SELECTED: pass --article DIR or --example');
 if(argv.includes('--article')&&argv.includes('--example'))throw new Error('ARTICLE_SELECTION_CONFLICT');
 const ARTICLE_DIR=argv.includes('--article')?resolve(argv[argv.indexOf('--article')+1]):resolve(DIR,'example-article');
@@ -47,7 +49,7 @@ const time0 = performance.now();
 const norm = s => String(s??'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim();
 const token = new Date().toISOString().replace(/[:.]/g,'-');
 const stageJournal = join(REPORT_DIR, `stage-events-${token}.jsonl`);
-const report = { schema:'spokedu.photo-sequential.unified.v1', mode: MODE, articleKey:null,
+const report = { schema:'spokedu.photo-sequential.unified.v1', mode: MODE, runId:RUN_ID, articleKey:null,
   saveDraftExecuted:false, publishExecuted:false, existingTabModified:false,
   photoUploadAttempted:false, outcome:'INIT', stages:[], sourceValidated:false };
 let stage='INIT', page, browser;
@@ -56,7 +58,7 @@ function checkpoint(event, payload={}) {
   // Synchronous, durable checkpoint even while browser automation awaits.
   // The journal is not proof of successful content insertion or publication.
   mkdirSync(REPORT_DIR,{recursive:true});
-  appendFileSync(stageJournal, JSON.stringify({at:new Date().toISOString(),mode:MODE,
+  appendFileSync(stageJournal, JSON.stringify({at:new Date().toISOString(),mode:MODE,runId:RUN_ID,
     articleKey:report.articleKey,event,stage,ms:Math.round(performance.now()-time0),
     contentStarted:report.contentStarted===true,photoUploadAttempted:report.photoUploadAttempted===true,
     ...payload})+'\n','utf8');
@@ -139,6 +141,17 @@ async function detailedCanvasSnapshot(p) {
     });
     return {canvas:true,components,paragraphs,images,
       title:norm(document.querySelector('.se-section-documentTitle .se-text-paragraph')?.innerText)};
+  });
+}
+
+function forceLeftAlign(html){
+  return html.replace(/<(p|h[1-6])(\s[^<>]*?)?>/gi,(whole,tag,attributes='')=>{
+    if(/\bstyle\s*=\s*(["'])/i.test(attributes)){
+      const next=attributes.replace(/\bstyle\s*=\s*(["'])(.*?)\1/i,(_,quote,css)=>
+        `style=${quote}${css.replace(/(?:^|;)\s*text-align\s*:[^;]*/gi,'')};text-align:left !important;${quote}`);
+      return `<${tag}${next}>`;
+    }
+    return `<${tag}${attributes} style="text-align:left !important;">`;
   });
 }
 
@@ -473,7 +486,7 @@ try {
   await mkdir(REPORT_DIR,{recursive:true});
   await writeFile(path,JSON.stringify(report,null,2)+'\n','utf8');
   checkpoint('FINAL_REPORT_WRITTEN',{outcome:report.outcome,failedStage:report.failedStage||null});
-  console.log(JSON.stringify({outcome:report.outcome,reportPath:path,
+  console.log(JSON.stringify({outcome:report.outcome,reportPath:path,runId:RUN_ID,
     failedStage:report.failedStage??null,code:report.code??null,error:report.error??null,
     titleOverlay:lastOverlaySummary(report),
     factualReviewApproved:report.factualReviewApproved??false,localLlmSourceUsed:report.localLlmSourceUsed??false,visualReviewRequired:report.visualReviewRequired??true,

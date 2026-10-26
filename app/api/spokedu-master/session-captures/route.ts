@@ -4,7 +4,7 @@ import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAc
 import { toClassRecordDto, type MasterClassRecordRow } from '../operational-data';
 
 const CHILD_SELECT = `id,owner_id,record_id,student_id,student_legacy_id,student_name_snapshot,attendance,focused,skills,memo,observation_score,created_at,updated_at`;
-const parentSelect = (studentFilter: boolean) => `id,session_id,legacy_id,class_date,lesson_title,class_id,program_id,program_title,record_type,memo,application_idea,parent_note_snapshot,created_at,updated_at,deleted_at,spokedu_master_class_record_students${studentFilter ? '!inner' : ''}(${CHILD_SELECT})`;
+const parentSelect = (studentFilter: boolean) => `id,session_id,capture_version,legacy_id,class_date,lesson_title,class_id,program_id,program_title,record_type,memo,application_idea,parent_note_snapshot,created_at,updated_at,deleted_at,spokedu_master_class_record_students${studentFilter ? '!inner' : ''}(${CHILD_SELECT})`;
 const SELECT = parentSelect(false);
 
 export const dynamic = 'force-dynamic';
@@ -33,23 +33,26 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const access = await requireSpokeduMasterCapability('records');
   if (!access.ok) return withPrivateNoStore(access.response);
-  const body = await request.json().catch(() => null) as { sessionId?: unknown; nextSessionNote?: unknown; observations?: unknown } | null;
+  const body = await request.json().catch(() => null) as { sessionId?: unknown; expectedVersion?: unknown; nextSessionNote?: unknown; observationChanges?: unknown } | null;
   const sessionId = typeof body?.sessionId === 'string' ? body.sessionId.trim() : '';
   const nextSessionNote = typeof body?.nextSessionNote === 'string' ? body.nextSessionNote.trim() : '';
-  const observations = Array.isArray(body?.observations) ? body.observations : [];
-  if (!sessionId || nextSessionNote.length > 500 || observations.some((item) => !item || typeof item !== 'object'
+  const expectedVersion = body?.expectedVersion === null ? null : Number(body?.expectedVersion);
+  const observationChanges = Array.isArray(body?.observationChanges) ? body.observationChanges : [];
+  if (!sessionId || (expectedVersion !== null && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) || nextSessionNote.length > 500 || observationChanges.some((item) => !item || typeof item !== 'object'
     || typeof (item as { studentId?: unknown }).studentId !== 'string'
-    || typeof (item as { memo?: unknown }).memo !== 'string'
-    || (item as { memo: string }).memo.trim().length > 1000)) {
+    || (typeof (item as { memo?: unknown }).memo !== 'string' && (item as { memo?: unknown }).memo !== null)
+    || String((item as { memo?: unknown }).memo ?? '').trim().length > 1000)) {
     return privateNoStoreJson({ error: 'Invalid Session Capture payload' }, { status: 400 });
   }
-  const students = observations.map((item) => ({ student_id: (item as { studentId: string }).studentId.trim(), memo: (item as { memo: string }).memo.trim() }));
+  const changes = observationChanges.map((item) => ({ student_id: (item as { studentId: string }).studentId.trim(), memo: (item as { memo: string | null }).memo?.trim() || null }));
   const supabase = getServiceSupabase();
-  const { data: recordId, error } = await supabase.rpc('spokedu_master_save_session_capture', {
-    p_owner_id: access.userId, p_session_id: sessionId, p_next_session_note: nextSessionNote, p_students: students,
+  const { data: recordId, error } = await supabase.rpc('spokedu_master_save_session_capture_v2', {
+    p_owner_id: access.userId, p_session_id: sessionId, p_expected_version: expectedVersion,
+    p_next_session_note: nextSessionNote, p_observation_changes: changes,
   });
   if (error) {
-    const status = error.code === 'P0002' ? 404 : error.code === '22023' ? 400 : 500;
+    const status = error.code === 'P0002' ? 404 : error.code === '40001' ? 409 : error.code === '22023' ? 400 : 500;
+    if (status === 409) return privateNoStoreJson({ error: 'Session capture changed elsewhere' }, { status });
     return privateNoStoreJson({ error: status === 404 ? 'Session not found' : status === 400 ? error.message : '수업 기록을 저장하지 못했습니다.' }, { status });
   }
   const { data, error: reloadError } = await supabase.from('spokedu_master_class_records').select(SELECT)

@@ -1,0 +1,65 @@
+{
+  "schema": "spokedu.naver.article.preview.v1",
+  "articleKey": "cheongdam-20260305-cooperation",
+  "title": "[강남 청담 다함께키움센터] 아이들이 함께 움직이는 법｜협동 달리기·거울 술래잡기 수업",
+  "source_sha256": "b2cda75073fee2eecc48a9383c0efb5a0f6c282a6fbeb791c3763c23bd835723",
+  "blockCount": 22,
+  "headingIndexes": [
+    2,
+    7,
+    11,
+    17
+  ],
+  "photoAfter": [
+    -1,
+    6,
+    10,
+    16
+  ],
+  "photos": [
+    {
+      "name": "01-cooperation.jpg",
+      "sha256": "2f99894d0619675c7f8bfea2fb3f24add438eef5f20f2f1f49523e3391bac9e8",
+      "source": "source-000.jpg",
+      "caption": "협동 달리기 활동 현장"
+    },
+    {
+      "name": "02-spider.jpg",
+      "sha256": "57bb4e9262a41485169df68280d20e4e328d4eaab5f38f121ef4dfd0e930a672",
+      "source": "source-001.jpg",
+      "caption": "스파이더 워킹 챌린지"
+    },
+    {
+      "name": "03-play.jpg",
+      "sha256": "72ee5fb565b06bbac6532796e827f09e3b54564c1bd7d3f3ff7ea1ee8d89350a",
+      "source": "source-002.jpg",
+      "caption": "청담 다함께키움센터 수업 현장"
+    },
+    {
+      "name": "04-contact.jpg",
+      "sha256": "9e68a996f013355392e4609e68f1d66d7724471ae399a7c5c7eb12af8ee336a7",
+      "source": "SPOKEDU brand typographic asset",
+      "caption": "SPOKEDU 기관수업 상담 안내"
+    }
+  ],
+  "publicationAllowed": false,
+  "draftSaveAllowed": false,
+  "sourceDriveFileId": "17jT0GCpk5kV0v3GxOnO-kc-m6AeDARMO",
+  "contentOrigin": "assistant-editorial-rewrite-grounded-in-2026-03-05-diary",
+  "localLlmSourceUsed": false,
+  "editorialCompleteGate": [
+    "verified_session",
+    "reflective_ending",
+    "organization_enquiry",
+    "contact_url",
+    "hashtags"
+  ],
+  "editorialVersion": "rc5-reference-led-smarteditor-native",
+  "editorialReview": "HUMAN_PREVIEW_REQUIRED",
+  "photoNote": "photo4 is graphic CTA, other three are sourced from 2026-03-05 diary PDF",
+  "editorialHighlights": [
+    "협동 달리기에서 아이들이 서로 더 빠르게 돌아올 방법을 의논했습니다.",
+    "같은 수업에서도 새로운 동작을 수행하는 난도와 놀이에 몰입하는 정도는 다를 수 있습니다.",
+    "움직임으로 아이의 성장을 설계한다는 것은 모든 수업을 성공담으로 꾸미는 일이 아닙니다."
+  ]
+}
