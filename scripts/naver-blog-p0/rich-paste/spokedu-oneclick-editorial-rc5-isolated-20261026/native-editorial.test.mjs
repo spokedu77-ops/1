@@ -9,7 +9,7 @@ test('native audit cannot call skipped a pass',()=>{const p=buildNativeEditorial
 test('native audit only passes all expected native elements',()=>{const p=buildNativeEditorialPlan(sample,sampleManifest);const r=judgeNativeEditorial(p,{headings:[{code:'HEADING_NATIVE_APPLIED'}],captions:[{code:'CAPTION_ALREADY_PRESENT'}]});assert.equal(r.nativeEditorialComplete,true)});
 test('heading requires unambiguous exact DOM target',async()=>{const page={evaluate:async()=>({code:'HEADING_AMBIGUOUS',count:2})};const r=await enhanceNativeHeadings(page,['Chapter 01'],{verify:()=>{},applyTextFormat:()=>{throw Error('SHOULD_NOT_RUN')}});assert.equal(r[0].code,'HEADING_AMBIGUOUS')});
 test('caption can skip unsafe native edit with no text injection',async()=>{
- const photo={innerText:async()=>'',locator:sel=>({first:()=>({click:async()=>{}}),count:async()=>0}),getByText:()=>({count:async()=>0})};
+ const photo={innerText:async()=>'',locator:()=>({first:()=>({click:async()=>{}}),count:async()=>0}),getByText:()=>({count:async()=>0})};
  const page={locator:sel=>sel.includes('se-component-image')?{count:async()=>1,nth:()=>photo}:null};
  const result=await enhanceNativeCaptions(page,[{index:0,caption:'사진',isGraphic:false}],{verify:async()=>{throw Error('DO NOT CALL')}});
  assert.equal(result[0].code,'CAPTION_NATIVE_EDITOR_NOT_FOUND');

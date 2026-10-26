@@ -5,7 +5,6 @@ import {dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {deriveSegments,validateArticle} from './sequential-plan.mjs';
-import {inspectSequentialCanvas,gateNextImage} from './photo-sequential-core.mjs';
 import {buildExplicitEditorialHtml,verifyExplicitEditorialHtml} from './editorial-html.mjs';
 import {classifyEditorEntry} from './editor-entry-recovery.mjs';
 const D=dirname(fileURLToPath(import.meta.url));

@@ -234,6 +234,8 @@ export function EducationHubLanding() {
           </div>
           {heroMedia.src ? (
             <figure className={homeStyles.heroFigure}>
+              {/* Direct delivery preserves the authored marketing asset without transformation quota. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 className={homeStyles.heroImage}
                 src={heroMedia.src}
@@ -432,6 +434,8 @@ export function EducationHubLanding() {
           <div className={styles.caseBento}>
             <TrackedLink href={caseHero.href} trackLabel={caseHero.trackLabel} className={`${styles.caseBentoHero} ${brandFocusRing} group`}>
               <div className={`${styles.educationCasePhoto} relative aspect-[16/10] overflow-hidden bg-[#e9eef7] lg:aspect-auto lg:min-h-[18rem]`}>
+                {/* Direct delivery preserves the authored marketing asset without transformation quota. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={caseHero.thumbnailSrc}
                   alt=""
@@ -449,6 +453,8 @@ export function EducationHubLanding() {
             {caseSides.map((card) => (
               <TrackedLink key={card.slug} href={card.href} trackLabel={card.trackLabel} className={`${styles.caseBentoSide} ${brandFocusRing} group`}>
                 <div className={`${styles.educationCasePhoto} relative min-h-[10rem] overflow-hidden bg-[#e9eef7]`}>
+                  {/* Direct delivery preserves the authored marketing asset without transformation quota. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={card.thumbnailSrc}
                     alt=""

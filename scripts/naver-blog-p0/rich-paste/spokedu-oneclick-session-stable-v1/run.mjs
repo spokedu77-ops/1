@@ -9,7 +9,7 @@
  * Writes no drafts, never publishes, and never closes the browser or existing tabs.
  * The image IS uploaded to Naver if the filechooser succeeds.
  */
-import { readFile, mkdir, writeFile, open, stat } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, open } from 'node:fs/promises';
 import { mkdirSync, appendFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +21,7 @@ import { enterTitleWithRecovery } from './title-input.mjs';
 import { ensureTitleOverlayClear } from './title-overlay-gate.mjs';
 import { openEditorInNewTab } from './editor-entry-recovery.mjs';
 import {inspectSequentialCanvas,findNativeTailAnchor,gateNextImage} from './photo-sequential-core.mjs';
-import { deriveSegments, validateArticle } from './sequential-plan.mjs';
+import { validateArticle } from './sequential-plan.mjs';
 import { parseArticleForNaver, sha256Text } from '../../naver-article-pipeline.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -141,17 +141,6 @@ async function detailedCanvasSnapshot(p) {
     });
     return {canvas:true,components,paragraphs,images,
       title:norm(document.querySelector('.se-section-documentTitle .se-text-paragraph')?.innerText)};
-  });
-}
-
-function forceLeftAlign(html){
-  return html.replace(/<(p|h[1-6])(\s[^<>]*?)?>/gi,(whole,tag,attributes='')=>{
-    if(/\bstyle\s*=\s*(["'])/i.test(attributes)){
-      const next=attributes.replace(/\bstyle\s*=\s*(["'])(.*?)\1/i,(_,quote,css)=>
-        `style=${quote}${css.replace(/(?:^|;)\s*text-align\s*:[^;]*/gi,'')};text-align:left !important;${quote}`);
-      return `<${tag}${next}>`;
-    }
-    return `<${tag}${attributes} style="text-align:left !important;">`;
   });
 }
 

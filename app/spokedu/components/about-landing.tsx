@@ -145,6 +145,8 @@ export function AboutLanding() {
             {team.members.map((member) => (
               <li key={member.id} className={`${styles.aboutSurface} ${styles.teamCard}`}>
                 <figure className={styles.teamPhoto}>
+                  {/* Direct delivery is intentional for these authored marketing portraits. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={member.photo} alt={`${member.role} ${member.name}`} style={{ objectPosition: member.photoObjectPosition }} />
                 </figure>
                 <div className={styles.teamCardCopy}>

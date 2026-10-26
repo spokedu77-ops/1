@@ -68,7 +68,7 @@ test('real native DOM and caption proof required, not successful UI events',()=>
  const plan=buildNativeEditorialPlan({blocks},manifest);
  const events=judgeNativeEditorial(plan,{headings:plan.headings.map(()=>({code:'HEADING_NATIVE_APPLIED'})),captions:plan.captions.filter(c=>!c.isGraphic).map(()=>({code:'CAPTION_NATIVE_APPLIED'}))});
  assert.equal(events.nativeEditorialComplete,true);
- const fake={ready:true,images:manifest.photos.map((p)=>({caption:''})),text:blocks.map(b=>({text:b.text,kind:'body'}))};
+ const fake={ready:true,images:manifest.photos.map(()=>({caption:''})),text:blocks.map(b=>({text:b.text,kind:'body'}))};
  const result=auditNativeRenderedOutput(plan,fake);
  assert.equal(result.complete,false);
  assert.equal(result.headingsNativeComplete,false);
