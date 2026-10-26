@@ -52,3 +52,13 @@ Static verification is not a rendered visual PASS. A visual PASS requires popula
 - After making code changes, stop with the changes uncommitted and report verification results unless the user explicitly instructs otherwise.
 - Before any authorized commit, show and verify the exact file scope. Never include unrelated user changes.
 - Before any authorized push, verify the target remote and branch and report local CI results.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
