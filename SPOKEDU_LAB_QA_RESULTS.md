@@ -2,6 +2,15 @@
 
 > Stage 2 추가 증빙: `STAGE2_P0_POSTGRESQL_QA.md`. 실제 PostgreSQL 9/9, 관련 Vitest 142/142, typecheck, 변경 파일 ESLint, production build가 통과했다. 이는 수업 출석·메모·완료 범위에 한정되며 기존 22항목의 미실행 테스트를 대체하지 않는다.
 
+## 2026-10-27 Lab P1 수정 검증 (로컬)
+
+- 대상 Vitest: `recordPagination`, `tournamentPersistence`, `tournamentModel`, `thinkAssetPackConcurrency` — 4 files, 17 tests PASS.
+- TypeScript: PASS (`npm run typecheck`).
+- 변경 파일 ESLint: PASS (6 files).
+- Production build: PASS (`npm run build`).
+- `git diff --check`: PASS (CRLF 경고만).
+- BLOCKED: Supabase 로컬/원격 DB로 0·500·1,001·2,500건 기록·owner 격리·student child 누락 실측, 2관리자 SPOMOVE 동시 저장, 토너먼트 브라우저 새로고침 E2E, Toss PG 취소.
+
 ## 실행 결과
 
 - 기준선: `main`, `9d7ab5dddde64c37f00f6081e065d6e46add95b0`, 시작 시 clean.

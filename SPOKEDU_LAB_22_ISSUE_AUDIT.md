@@ -10,16 +10,16 @@
 | OLD-02 | 학생 보관이 과거 기록을 삭제 | CONDITIONAL | No | BLOCKED(DB) | 멤버십은 삭제되나 출석/관찰 snapshot은 유지; 복원 UI 없음 |
 | OLD-03 | 동명이인 붙여넣기 자동 제거 | CONFIRMED | Yes | PASS | 서버 통합 DB 검증은 BLOCKED |
 | OLD-04 | 학생 중복 제출 | NOT_REPRODUCED | No | PASS(코드) | 서로 다른 임의 키를 쓰는 두 탭은 별도 학생으로 의도상 구분됨 |
-| OLD-05 | 환불 운영 기능 부재 | CONFIRMED | No | PASS(증거 확인) | P0 출시 차단 후보 |
+| OLD-05 | 환불 운영 기능 부재 | CONFIRMED | Yes | PASS(계약·단위) / BLOCKED(DB) | 내부 접수·검토·승인 API/UI·migration 준비. Toss PG·entitlement 변경은 미연결 |
 | OLD-06 | 회원 목록 캐시가 강제 갱신을 막음 | CONFIRMED | Yes | PASS(정적/타입 대상) | 브라우저 E2E 미실행 |
-| OLD-07 | 전체 수업 기록이 1,000행 이후 누락 | CONDITIONAL | No | BLOCKED(DB) | 명시적 range/cursor가 없어 Supabase 행 제한 의존 |
+| OLD-07 | 전체 수업 기록이 1,000행 이후 누락 | CONFIRMED | Yes | PASS(단위) / BLOCKED(DB) | `readAllRecordPages`로 exact count·range 페이지 조회; 조회 중 count/중복/빈 페이지는 fail-closed 500. owner별 2,500건 DB 실측은 BLOCKED |
 | OLD-08 | 학생 대량 등록이 순차 호출 | CONFIRMED | No | BLOCKED(성능 DB) | 50명은 50회 요청; 부분성공 표시는 존재 |
-| OLD-09 | SPOMOVE JSONB 동시 저장 유실 | CONDITIONAL | No | BLOCKED(DB) | 관리자 전체 pack upsert 경로에 버전 충돌 계약 없음 |
+| OLD-09 | SPOMOVE JSONB 동시 저장 유실 | CONFIRMED | Yes | PASS(계약) / BLOCKED(DB) | `expected_updated_at` + HTTP 409; programs 관리자 pack 저장은 충돌 시 draft 유지·서버 map 갱신. 2관리자 DB E2E는 BLOCKED |
 | OLD-10 | 관리자 콘텐츠 상태 로직 중복 | DESIGN_DEBT | No | PASS(정적) | draft 공유를 피하려고 광범위 공통화 보류 |
 | OLD-11 | 관리자/구독자 미리보기 불일치 | CONDITIONAL | No | BLOCKED(렌더) | 서로 다른 렌더 컴포넌트; 동일 fixture 시각 비교 필요 |
 | OLD-12 | 즐겨찾기 에셋 팩 중복 조회 | CONDITIONAL | No | BLOCKED(네트워크 계측) | 화면 진입마다 직접 조회 경로 존재 |
 | NEW-01 | 정적 프리셋 번들이 초기 번들 비대화 | CONDITIONAL | No | BLOCKED(번들 분석) | `officialSpomovePresets.ts` 82,611 bytes이며 여러 client surface가 정적 import |
-| NEW-02 | 토너먼트 새로고침 시 진행 유실 | CONFIRMED | No | PASS(코드 재현) | 로컬/서버 복원 없음 |
+| NEW-02 | 토너먼트 새로고침 시 진행 유실 | CONFIRMED | Yes | PASS(단위) / BLOCKED(브라우저) | 반·회기 scope localStorage v1; rosterKey 불일치·손상 payload는 안전 무시. 기기 간 동기화 없음 |
 | NEW-03 | 타이머가 실제 시간/오디오 차단에 취약 | NOT_REPRODUCED | No | PASS(코드) | iOS/Android 실제 기기 오디오는 BLOCKED |
 | NEW-04 | 사다리 모바일 사용 불가 | NOT_REPRODUCED | No | BLOCKED(렌더) | 56px/인원 min-width와 가로 스크롤 존재; 실제 기기 QA 필요 |
 | NEW-05 | 팀 분배가 불균등 | FALSE_POSITIVE | No | PASS | 2~4팀으로 정규화하는 제품 제한은 유지 |
@@ -36,7 +36,7 @@
 - OLD-03: `parseRosterPaste`의 이름 기반 `Set`이 두 번째 김민준을 제거했고, UI choice 역시 이름을 key로 사용했다. 두 곳 모두 행 단위로 수정했다.
 - OLD-04: 생성 UI는 draft별 UUID를 `legacyId`로 재사용하고 API는 `(owner_id, legacy_id)`로 조회하며 DB unique index가 최종 방어한다. 이름 unique는 없다.
 - OLD-05: `BillingOperationsPanel`은 `RefundRequestPanel availability="schema_pending"`와 빈 rows를 고정 전달한다. SQL draft와 review helper는 있으나 적용 migration, 접수/승인 API, Toss cancel 실행 경로가 없다.
-- OLD-07: GET은 owner filter와 안정적 날짜 정렬은 있으나 `.range()`/cursor/limit이 없다. Supabase 프로젝트의 서버 최대행 설정을 넘는 완전성을 코드가 보장하지 않는다.
+- OLD-07: GET은 `class_date`, `created_at`, `id` 정렬 후 500행 range 페이지를 모아 `{ data: [...] }`를 반환한다. count 불일치·중복 ID·빈 중간 페이지는 500으로 fail-closed. offset 방식이라 조회 중 삽입/삭제로 누락 가능성은 남으며 커서/스냅샷 전환은 별도 결정.
 - NEW-03: 종료시각 `Date.now()` 차이를 100ms마다 계산하고 시작/재개 사용자 동작에서 AudioContext를 resume한다. 오디오 실패와 무관하게 상태 전이는 시간 계산으로 완료된다.
 - NEW-05: Fisher-Yates 후 `index % normalizedTeamCount`로 정확히 한 번 배정되며 팀 크기 차이는 최대 1이다. 비정상 팀 수는 2~4로 정규화된다.
 - NEW-07: 20260902 단계 migration은 nullable 추가→backfill→NOT NULL hardening 순서다. 운영 적용 상태를 모르는 API의 schema fallback은 현재 제거할 수 없다.
@@ -46,5 +46,5 @@
 - 학생/반: UI draft → OperationalDataProvider → capability API → service-role RPC → owner-scoped tables → DTO → provider state. 이름은 표시값이고 UUID가 식별자다.
 - 수업 캡처: local draft/dirty → session-captures API → owner capability → optimistic-version RPC → parent/child tables → 새 version → draft clean. 409는 remote change로 노출된다.
 - 환불: 현재는 결제/구독/incident 조회까지만 연결된다. 환불 request/event SQL은 draft이며 런타임 흐름이 끊겨 있다.
-- SPOMOVE 콘텐츠: 관리자 local state → `think_asset_packs` upsert → subscriber별 pack query → preset merge/render. pack 단위 동시성 token이 확인되지 않았다.
-- 현장 도구: Provider roster/session attendance → component-local state. 타이머는 end timestamp 기반이고 토너먼트는 component state만 사용한다.
+- SPOMOVE 콘텐츠: 관리자 local state → `/api/admin/think-asset-pack` (`expected_updated_at`, 409) → subscriber pack query → preset merge/render. Storage 업로드 실패와 JSONB 충돌은 분리된다.
+- 현장 도구: Provider roster/session attendance → component-local state. 타이머는 end timestamp 기반이고 토너먼트는 반·회기 scoped localStorage를 사용한다.
