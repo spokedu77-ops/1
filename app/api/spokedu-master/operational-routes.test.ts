@@ -181,10 +181,17 @@ function createSupabaseMock(options: {
           if (state.orderCount >= 2 && table === 'spokedu_master_students') {
             return Promise.resolve({ data: options.studentsGetData ?? [], error: null });
           }
-          if (state.orderCount >= 2 && table === 'spokedu_master_class_records') {
-            return Promise.resolve({ data: options.recordsGetData ?? [], error: null });
-          }
           return builder;
+        }),
+        range: vi.fn((from: number, to: number) => {
+          calls.push({ table, action: 'range', args: [from, to] });
+          if (table === 'spokedu_master_class_records' && state.mode === 'select') {
+            const all = options.recordsGetData ?? [];
+            const count = all.length;
+            const data = all.slice(from, to + 1);
+            return Promise.resolve({ data, count, error: null });
+          }
+          return Promise.resolve({ data: [], count: 0, error: null });
         }),
         in: vi.fn((...args: unknown[]) => {
           calls.push({ table, action: 'in', args });

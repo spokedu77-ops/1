@@ -8,17 +8,18 @@ const row: RefundRequestRow = { id:'refund-1', requestedAt:'2026-10-10T00:00:00.
 describe('RefundRequestPanel', () => {
   it('renders the schema-pending state without financial action controls', () => {
     const markup=renderToStaticMarkup(createElement(RefundRequestPanel,{availability:'schema_pending',rows:[],total:0,page:1,pageSize:20,onSelectMember:()=>undefined}));
-    expect(markup).toContain('집계 준비 중');
+    expect(markup).toContain('DB 마이그레이션 대기');
     expect(markup).not.toMatch(/환불 실행|승인 실행|PG 취소/);
   });
-  it('renders mock request evidence and server-pagination controls without secrets', () => {
-    const markup=renderToStaticMarkup(createElement(RefundRequestPanel,{availability:'available',rows:[row],total:21,page:1,pageSize:20,onSelectMember:()=>undefined,query:'refund',status:'under_review',onQueryChange:()=>undefined,onStatusChange:()=>undefined,onPageChange:()=>undefined}));
+  it('renders operational controls without PG execution or secrets', () => {
+    const markup=renderToStaticMarkup(createElement(RefundRequestPanel,{availability:'available',rows:[row],total:21,page:1,pageSize:20,onSelectMember:()=>undefined,query:'refund',status:'under_review',onQueryChange:()=>undefined,onStatusChange:()=>undefined,onPageChange:()=>undefined,onCreateRequest:async()=>({ok:true}),onTransition:async()=>({ok:true})}));
     expect(markup).toContain('refund@example.test');
     expect(markup).toContain('order-1');
     expect(markup).toContain('10,000원');
     expect(markup).toContain('총 21건');
     expect(markup).toContain('다음');
-    expect(markup).not.toMatch(/payment_key|billing_key|service_role|secret/i);
+    expect(markup).toContain('업무 처리');
+    expect(markup).not.toMatch(/payment_key|billing_key|service_role|secret|PG 취소/i);
   });
   it('distinguishes an actual empty result from a query failure', () => {
     const empty=renderToStaticMarkup(createElement(RefundRequestPanel,{availability:'available',rows:[],total:0,page:1,pageSize:20,onSelectMember:()=>undefined}));

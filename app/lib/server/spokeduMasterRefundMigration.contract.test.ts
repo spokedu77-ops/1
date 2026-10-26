@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const migration = readFileSync(
-  fileURLToPath(new URL('../../../docs/sql-drafts/spokedu-master-refund-request-workflow.sql', import.meta.url)),
+  fileURLToPath(new URL('../../../supabase/migrations/20261026163452_spokedu_master_refund_request_workflow.sql', import.meta.url)),
   'utf8',
 );
 
@@ -35,6 +35,12 @@ describe('refund request workflow migration draft', () => {
     expect(migration).toContain('security invoker');
     expect(migration).toContain('before update or delete');
     expect(migration).toContain("raise exception 'refund request events are append-only'");
+  });
+
+  it('defines service-role RPCs for create and transition without mutating orders', () => {
+    expect(migration).toContain('spokedu_master_create_refund_request_v1');
+    expect(migration).toContain('spokedu_master_transition_refund_request_v1');
+    expect(migration).toContain("grant execute on function public.spokedu_master_create_refund_request_v1");
   });
 
   it('does not install payment, cancellation, or entitlement mutation logic', () => {
