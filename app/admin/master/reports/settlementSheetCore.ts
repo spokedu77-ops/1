@@ -67,7 +67,7 @@ export function calculateRow(row: SettlementRow, settings: SettlementSettings) {
   const total = explicitTotal ?? ((fee || 0) * (Number(row.sessions) || 0));
   const cost = evaluateExpression(row.cost, row.sessions) || 0;
   const vat = row.vatMode === 'none' ? 0 : row.vatMode === 'manual' ? Number(row.vatManual) || 0
-    : settings.vatMethod === 'div11' ? Math.round(total / 11) : total * (1 - 0.9091);
+    : settings.vatMethod === 'div11' ? Math.round(total / 11) : Math.round(total * (1 - 0.9091));
   const withholding = row.whRate > 0 ? Math.round((total - vat) * row.whRate / 100) : 0;
   const received = row.rcpt ? total : Math.min(Number(row.rcptAmt) || 0, total);
   const ratio = total > 0 ? received / total : 0;
@@ -83,12 +83,14 @@ export function summarize(rows: SettlementRow[], settings: SettlementSettings) {
     if (!value.total && !value.cost) return sum;
     sum.total += value.total; sum.vat += value.vat; sum.cost += value.cost; sum.wh += value.withholding;
     sum.net += value.net; sum.netAfterWh += value.netAfterWh; sum.received += value.received;
-    sum.receivedNet += value.netReceived; sum.receivedNetAfterWh += value.netAfterWhReceived; sum.count += 1;
+    sum.receivedNet += value.netReceived; sum.receivedNetAfterWh += value.netAfterWhReceived;
+    sum.outstandingNetAfterWh += value.netAfterWh - value.netAfterWhReceived; sum.count += 1;
     if (value.outstanding > 0) { sum.unpaid += 1; sum.unpaidAmount += value.outstanding; }
     if (!row.inv && row.vatMode !== 'none' && value.total > 0) sum.noInvoice += 1;
     return sum;
   }, { total: 0, vat: 0, cost: 0, wh: 0, net: 0, netAfterWh: 0, received: 0,
-    receivedNet: 0, receivedNetAfterWh: 0, count: 0, unpaid: 0, unpaidAmount: 0, noInvoice: 0 });
+    receivedNet: 0, receivedNetAfterWh: 0, outstandingNetAfterWh: 0,
+    count: 0, unpaid: 0, unpaidAmount: 0, noInvoice: 0 });
 }
 
 export function centerFee(center: SettlementCenter) {

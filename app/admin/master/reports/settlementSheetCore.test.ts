@@ -46,4 +46,23 @@ describe('settlement sheet calculation contract', () => {
     const value = { ...emptyRow(), total: 110000, vatMode: 'auto' as const };
     expect(summarize([section, value], settings).total).toBe(110000);
   });
+
+  it('deducts manual VAT from net and reports the outstanding share as expected net profit', () => {
+    const row = { ...emptyRow(), total: 1463000, vatMode: 'manual' as const, vatManual: 146300,
+      rcptAmt: 0, cost: 0, adj: 0 };
+    const result = summarize([row], settings);
+    expect(result.netAfterWh).toBe(1316700);
+    expect(result.outstandingNetAfterWh).toBe(1316700);
+  });
+
+  it('sums the same rounded VAT and net amounts shown in each row', () => {
+    const sheetSettings = { vatMethod: 'sheet' as const, year: 2026 };
+    const rows = [
+      { ...emptyRow(), total: 680000, vatMode: 'auto' as const },
+      { ...emptyRow(), total: 780000, vatMode: 'auto' as const },
+    ];
+    const result = summarize(rows, sheetSettings);
+    expect(result.vat).toBe(rows.reduce((sum, row) => sum + calculateRow(row, sheetSettings).vat, 0));
+    expect(result.net).toBe(result.total - result.vat - result.cost);
+  });
 });
