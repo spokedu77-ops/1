@@ -15,8 +15,10 @@ import { ClassOpsTierFeeTable } from "./components/ClassOpsTierFeeTable";
 import { useClassOpsReferenceData } from "./hooks/useClassOpsReferenceData";
 import { MobileThreeDayView } from "./MobileThreeDayView";
 import { MonthExcelGrid } from "./MonthExcelGrid";
+import { DaySchedulePanel } from "./DaySchedulePanel";
 import { addLocalDays, chunkWeeks, getMonthGrid, startOfLocalDay } from "./lib/dateGrid";
 import { buildEventsByDayMap } from "./lib/eventsByDay";
+import { computeTier, effectiveFees, tierLabelKo, totalLessonsFromCounts } from "@/app/lib/teacherTierSchedule";
 
 function alignRowWithScrollContainerTop(scrollParent: HTMLElement, row: HTMLElement) {
   const parentRect = scrollParent.getBoundingClientRect();
@@ -51,6 +53,7 @@ export default function ClassManagementCalendar() {
   const [bundleOpen, setBundleOpen] = useState(false);
   const [bundleTitle, setBundleTitle] = useState("");
   const [bundleGroupIds, setBundleGroupIds] = useState<string[]>([]);
+  const [selectedDay, setSelectedDay] = useState<{ day: Date; events: SessionEvent[] } | null>(null);
 
   useLayoutEffect(() => {
     const now = new Date();
@@ -87,10 +90,13 @@ export default function ClassManagementCalendar() {
   }, [mobileThreeDays]);
   const monthWeekRows = useMemo(() => chunkWeeks(monthInfo.cells), [monthInfo.cells]);
   const selectedTeacher = reference.teachers.find((teacher) => teacher.id === filterTeacher) ?? null;
+  const selectedTeacherCount = selectedTeacher ? totalLessonsFromCounts(selectedTeacher.session_count, selectedTeacher.log_count) : 0;
+  const selectedTeacherTier = selectedTeacher ? computeTier(selectedTeacherCount) : null;
+  const selectedTeacherFees = selectedTeacher && selectedTeacherTier ? effectiveFees(selectedTeacherTier, selectedTeacher, reference.tierFeeMap) : null;
   const filterOptions = reference.teachers.length > 0 ? reference.teachers : teacherList.map((teacher) => ({ ...teacher, is_active: true }));
 
   const scrollDesktopToTodayWeek = useCallback(() => {
-    if (typeof window !== "undefined" && window.matchMedia && !window.matchMedia("(min-width: 801px)").matches) return;
+    if (typeof window !== "undefined" && window.matchMedia && !window.matchMedia("(min-width: 1024px)").matches) return;
     const row = todayWeekRowRef.current;
     if (!row) return;
     const today = startOfLocalDay(new Date());
@@ -136,15 +142,16 @@ export default function ClassManagementCalendar() {
 
         <section aria-labelledby="class-ops-calendar" className="mt-10">
           <div className="flex items-end justify-between gap-4 border-b border-slate-200 pb-3"><div><p className="text-xs font-extrabold text-blue-600">01</p><h2 id="class-ops-calendar" className="mt-1 text-[22px] font-bold tracking-tight text-slate-950">수업 캘린더</h2></div><div className="hidden items-center gap-3 text-[11px] text-slate-500 sm:flex"><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-600" />예정</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-600" />완료</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-violet-600" />연기</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-600" />취소</span></div></div>
-          <nav ref={pageToolbarRef} className="mt-4 flex flex-col gap-3 min-[801px]:flex-row min-[801px]:items-center min-[801px]:justify-between" aria-label="캘린더 도구">
-            <div className="flex w-full items-center gap-2 min-[801px]:w-auto"><button type="button" aria-label="이전 기간" onClick={() => { if (window.matchMedia("(min-width: 801px)").matches) setMonthAnchor((previous) => new Date(previous.getFullYear(), previous.getMonth() - 1, 1)); else setThreeDayCenter((previous) => addLocalDays(previous, -1)); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><ChevronLeft size={17} /></button><button type="button" onClick={goToday} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold">오늘</button><strong className="min-w-0 flex-1 text-center text-base font-extrabold tabular-nums min-[801px]:min-w-32 min-[801px]:flex-none">{monthInfo.monthLabel}<span className="ml-2 text-xs font-semibold text-slate-500 min-[801px]:hidden">{mobileRangeLabel}</span></strong><button type="button" aria-label="다음 기간" onClick={() => { if (window.matchMedia("(min-width: 801px)").matches) setMonthAnchor((previous) => new Date(previous.getFullYear(), previous.getMonth() + 1, 1)); else setThreeDayCenter((previous) => addLocalDays(previous, 1)); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><ChevronRight size={17} /></button></div>
-            <div className="grid grid-cols-2 gap-2 min-[801px]:flex"><label className="sr-only" htmlFor="class-ops-calendar-teacher">강사 필터</label><select id="class-ops-calendar-teacher" value={filterTeacher} onChange={(event) => setFilterTeacher(event.target.value)} className="h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 min-[801px]:w-44"><option value="ALL">전체 강사</option>{filterOptions.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select><Link href="/admin/classes/list?create=1" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700"><CalendarDays className="mr-1.5 h-4 w-4" />신규 수업</Link></div>
+          <nav ref={pageToolbarRef} className="mt-4 flex flex-col gap-3 min-[1024px]:flex-row min-[1024px]:items-center min-[1024px]:justify-between" aria-label="캘린더 도구">
+            <div className="flex w-full items-center gap-2 min-[1024px]:w-auto"><button type="button" aria-label="이전 기간" onClick={() => { if (window.matchMedia("(min-width: 1024px)").matches) setMonthAnchor((previous) => new Date(previous.getFullYear(), previous.getMonth() - 1, 1)); else setThreeDayCenter((previous) => addLocalDays(previous, -1)); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><ChevronLeft size={17} /></button><button type="button" onClick={goToday} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold">오늘</button><strong className="min-w-0 flex-1 text-center text-base font-extrabold tabular-nums min-[1024px]:min-w-32 min-[1024px]:flex-none">{monthInfo.monthLabel}<span className="ml-2 text-xs font-semibold text-slate-500 min-[1024px]:hidden">{mobileRangeLabel}</span></strong><button type="button" aria-label="다음 기간" onClick={() => { if (window.matchMedia("(min-width: 1024px)").matches) setMonthAnchor((previous) => new Date(previous.getFullYear(), previous.getMonth() + 1, 1)); else setThreeDayCenter((previous) => addLocalDays(previous, 1)); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><ChevronRight size={17} /></button></div>
+            <div className="grid grid-cols-2 gap-2 min-[1024px]:flex"><label className="sr-only" htmlFor="class-ops-calendar-teacher">강사 필터</label><select id="class-ops-calendar-teacher" value={filterTeacher} onChange={(event) => setFilterTeacher(event.target.value)} className="h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 min-[1024px]:w-44"><option value="ALL">전체 강사</option>{filterOptions.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select><Link href="/admin/classes/list?create=1" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700"><CalendarDays className="mr-1.5 h-4 w-4" />신규 수업</Link></div>
           </nav>
+          {selectedTeacher && selectedTeacherTier && selectedTeacherFees ? <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm"><strong className="text-slate-950">{selectedTeacher.name}</strong><span className="text-slate-600">{selectedTeacher.is_active ? "활동 중" : "비활성"}</span><span className="font-bold text-blue-800">인정 {selectedTeacherCount.toLocaleString("ko-KR")}회 · {tierLabelKo(selectedTeacherTier)}</span><span className="text-xs font-semibold text-slate-600">개인 {selectedTeacherFees.fee_private.toLocaleString("ko-KR")} · 그룹 {selectedTeacherFees.fee_group.toLocaleString("ko-KR")} · 센터 메인 {selectedTeacherFees.fee_center_main.toLocaleString("ko-KR")} · 보조 {selectedTeacherFees.fee_center_assist.toLocaleString("ko-KR")}원</span></div> : null}
 
           {sessionsFetchNotice ? <div role={sessionsFetchNotice.type === "error" ? "alert" : "status"} className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 ${sessionsFetchNotice.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-amber-200 bg-amber-50 text-amber-950"}`}><p className="text-xs font-bold">{sessionsFetchNotice.type === "error" ? "수업 일정을 불러오지 못했습니다. 빈 일정이 아니라 조회 실패 상태입니다." : "일부 일정만 불러왔습니다. 뒤쪽 일정이 빠져 있을 수 있습니다."}</p><button type="button" onClick={() => void fetchSessions()} className="min-h-11 rounded-lg border border-current bg-white px-3 text-xs font-bold">다시 불러오기</button></div> : null}
           <div ref={calendarScrollAreaRef} className="mt-3 min-w-0">
             <MobileThreeDayView days={mobileThreeDays} eventsByDay={eventsByDay} onOpen={openBundleForEvent} />
-            <MonthExcelGrid weekRows={monthWeekRows} eventsByDay={eventsByDay} todayWeekRowRef={todayWeekRowRef} onOpen={openBundleForEvent} />
+            <MonthExcelGrid weekRows={monthWeekRows} eventsByDay={eventsByDay} todayWeekRowRef={todayWeekRowRef} onOpen={openBundleForEvent} onOpenDay={(day, events) => setSelectedDay({ day, events })} />
           </div>
           {localToday ? <p className="mt-2 text-[11px] text-slate-500">오늘 {localToday.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" })} · 수업을 선택하면 기존 상세 관리 패널이 열립니다.</p> : null}
         </section>
@@ -153,6 +160,7 @@ export default function ClassManagementCalendar() {
         <div className="mt-10 grid gap-10 min-[1100px]:grid-cols-[1fr_1.18fr] min-[1100px]:gap-6"><ClassOpsPolicyReference /><ClassOpsTierFeeTable teacher={selectedTeacher} tierFeeMap={reference.tierFeeMap} feeSource={reference.feeSource} /></div>
       </main>
       <ClassBundlePanel visible={bundleOpen} bundleTitle={bundleTitle} groupIds={bundleGroupIds} calendarEvents={allEvents} calendarDataStatus={sessionsFetchNotice ? "incomplete" : allEvents.length > 0 ? "range-limited" : "unavailable"} onClose={() => setBundleOpen(false)} onChanged={() => void fetchSessions()} />
+      <DaySchedulePanel day={selectedDay?.day ?? null} events={selectedDay?.events ?? []} onClose={() => setSelectedDay(null)} onOpen={(event) => { setSelectedDay(null); void openBundleForEvent(event); }} />
     </div>
   );
 }

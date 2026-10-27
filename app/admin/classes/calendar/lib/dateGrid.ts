@@ -9,7 +9,7 @@ export function getMonthGrid(anchor: Date) {
   const m = anchor.getMonth();
   const first = new Date(y, m, 1);
   const lastDay = new Date(y, m + 1, 0).getDate();
-  const pad = (first.getDay() + 6) % 7;
+  const pad = first.getDay();
   const cells: (Date | null)[] = [];
   for (let i = 0; i < pad; i++) cells.push(null);
   for (let d = 1; d <= lastDay; d++) cells.push(new Date(y, m, d));

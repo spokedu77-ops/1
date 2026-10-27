@@ -13,10 +13,12 @@ describe("Class Ops integrated calendar contract", () => {
     expect(page).toContain("ClassOpsTeacherDirectory");
   });
 
-  it("uses the approved 801px desktop boundary so 768px renders three days", () => {
-    expect(desktop).toContain("min-[801px]:block");
-    expect(mobile).toContain("min-[801px]:hidden");
-    expect(page).toContain('(min-width: 801px)');
+  it("uses the V2 1024px monthly boundary so 801-1023px renders three days", () => {
+    expect(desktop).toContain("min-[1024px]:block");
+    expect(mobile).toContain("min-[1024px]:hidden");
+    expect(page).toContain('(min-width: 1024px)');
+    expect(desktop).toContain("MAX_VISIBLE_EVENTS = 4");
+    expect(desktop).toContain("onOpenDay");
   });
 
   it("renders policy values from the mileage SSOT", () => {

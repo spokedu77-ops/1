@@ -48,10 +48,10 @@ const RESTART_CYCLE_ROUNDS = 8;
 
 /** 데스크톱 회차 행: DOM 순서 = 열 순서(회차·일정·강사·수업료·상태·관리·마일). */
 const SESSION_DESKTOP_ROW_GRID =
-  "grid w-full min-w-0 grid-cols-[2.5rem_8.25rem_7.5rem_3.75rem_4.25rem_minmax(10.5rem,max-content)_2.75rem] items-start gap-x-2";
+  "grid w-full min-w-[58rem] grid-cols-[3.25rem_10rem_9rem_5rem_6rem_minmax(13rem,1fr)_4rem] items-start gap-x-3";
 
 const SESSION_CONTROL =
-  "box-border h-8 w-full min-w-0 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-800";
+  "box-border h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100";
 
 /** 일정 열: 날짜·시간 세로 배치(가로 2분할 시 date input 이 0px 로 붕괴됨). */
 const SESSION_SCHEDULE_DATE_CONTROL = `${SESSION_CONTROL} min-w-[7.75rem]`;
@@ -61,10 +61,10 @@ const SESSION_PRICE_CONTROL =
   `${SESSION_CONTROL} [appearance:textfield] text-right tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`;
 
 const SESSION_ROW_MINI_BTN =
-  "inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-md border px-2 text-[11px] font-semibold leading-none disabled:opacity-50";
+  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 text-xs font-bold leading-none disabled:opacity-50";
 
 const SESSION_STATUS_BADGE =
-  "inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center whitespace-nowrap rounded-md border px-2 text-[11px] font-semibold leading-none";
+  "inline-flex h-10 min-w-[3.75rem] shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 text-xs font-bold leading-none";
 
 type Props = {
   visible: boolean;
@@ -1549,6 +1549,25 @@ export default function ClassBundlePanel({
     };
   }, [effectiveGroupIds, sessionsByGroupId]);
 
+  const bundleSummary = useMemo(() => {
+    const rows = effectiveGroupIds.flatMap((gid) => sessionsByGroupId[gid] || []);
+    const activeRows = rows.filter((row) => row.status !== "deleted" && row.status !== "cancelled");
+    const completedRows = activeRows.filter((row) => getTimeStatusLabel(row).isCompletedByTime);
+    const upcomingRows = activeRows
+      .filter((row) => new Date(row.start_at).getTime() >= Date.now() && row.status !== "postponed")
+      .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+    const mainTeachers = new Set(activeRows.map((row) => teacherMap[String(row.created_by || "")]).filter(Boolean));
+    const assistantCount = new Set(activeRows.flatMap((row) => extraTeachersFromMemo(row.memo).map((teacher) => teacher.id)).filter(Boolean)).size;
+    return {
+      total: activeRows.length,
+      completed: completedRows.length,
+      inProgress: Math.max(0, activeRows.length - completedRows.length),
+      next: upcomingRows[0] ?? null,
+      mainTeacherLabel: mainTeachers.size === 0 ? "미정" : mainTeachers.size === 1 ? [...mainTeachers][0] : `${mainTeachers.size}명`,
+      assistantCount,
+    };
+  }, [effectiveGroupIds, sessionsByGroupId, teacherMap]);
+
   const renderCycleSection = (gid: string) => {
     const cycleNum = sortedGroupIds.indexOf(gid) + 1;
     const rows = sessionsByGroupId[gid] || [];
@@ -2380,17 +2399,18 @@ export default function ClassBundlePanel({
         onClick={onClose}
       />
       <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-5xl bg-white shadow-2xl border-l border-slate-100 flex flex-col transition-transform ${
+        aria-label="수업 상세 관리"
+        className={`absolute right-0 top-0 flex h-full w-full flex-col border-l border-slate-200 bg-slate-50 shadow-2xl transition-transform min-[1100px]:max-w-[1280px] ${
           visible ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
+        <header className="sticky top-0 z-20 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-white/95 py-4 pl-14 pr-4 backdrop-blur sm:px-6">
           <div className="min-w-0 flex-1 space-y-2">
             {!editingTitle ? (
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-base font-semibold text-slate-900">{displayTitle}</h2>
-                  <span className="text-xs text-slate-400">{groupIds.length}사이클</span>
+                  <h2 className="truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{displayTitle}</h2>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{effectiveGroupIds.length}사이클</span>
                   <button
                     type="button"
                     onClick={() => setEditingTitle(true)}
@@ -2475,13 +2495,23 @@ export default function ClassBundlePanel({
               </div>
             )}
           </div>
-          <button type="button" onClick={onClose} className="shrink-0 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <X className="h-5 w-5" />
+          <button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="수업 상세 닫기">
+            <X className="h-6 w-6" />
           </button>
         </header>
 
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-auto p-4 sm:p-5">
+          <div className="min-h-0 flex-1 space-y-4 overflow-auto p-3 sm:p-5">
+            <section aria-label="수업 운영 요약" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-extrabold text-blue-600">운영 요약</p><h3 className="mt-1 text-base font-black text-slate-950">현재 수업 진행 현황</h3></div><span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-extrabold text-blue-700">{displayTypeLabel}</span></div>
+              <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-4">
+                <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">전체 회차</dt><dd className="mt-1 text-xl font-black text-slate-950">{bundleSummary.total}</dd></div>
+                <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">진행·예정</dt><dd className="mt-1 text-xl font-black text-blue-700">{bundleSummary.inProgress}</dd></div>
+                <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">완료</dt><dd className="mt-1 text-xl font-black text-emerald-700">{bundleSummary.completed}</dd></div>
+                <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">담당 강사</dt><dd className="mt-1 truncate text-sm font-black text-slate-950">메인 {bundleSummary.mainTeacherLabel} · 보조 {bundleSummary.assistantCount}명</dd></div>
+              </dl>
+              <p className="mt-3 text-sm font-semibold text-slate-600">다음 수업: {bundleSummary.next ? new Date(bundleSummary.next.start_at).toLocaleString("ko-KR", { month: "long", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" }) : "예정된 수업 없음"}</p>
+            </section>
             <div className="flex flex-wrap items-center justify-end gap-2">
                   {hiddenRoundCounts.cancelled + hiddenRoundCounts.postponed > 0 ? (
                     <button
@@ -2531,7 +2561,20 @@ export default function ClassBundlePanel({
                   calendarEvents={calendarEvents}
                   calendarDataStatus={calendarDataStatus}
                 />
-                {currentGroupIds.map((gid) => renderCycleSection(gid))}
+                <div className="grid items-start gap-4 min-[1100px]:grid-cols-[15rem_minmax(0,1fr)]">
+                  <nav aria-label="사이클 선택" className="sticky top-0 z-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 min-[1100px]:top-2 min-[1100px]:overflow-visible">
+                    <p className="px-2 pb-2 text-xs font-extrabold text-slate-500">사이클 선택</p>
+                    <div className="flex gap-2 min-[1100px]:flex-col">
+                      {currentGroupIds.map((gid) => {
+                        const rows = sessionsByGroupId[gid] || [];
+                        const cycleNumber = sortedGroupIds.indexOf(gid) + 1;
+                        return <button key={gid} type="button" onClick={() => setOpenGroupIds((previous) => ({ ...previous, [gid]: true }))} className={`min-w-48 rounded-xl border px-3 py-3 text-left min-[1100px]:min-w-0 ${openGroupIds[gid] ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}><span className="block text-sm font-black text-slate-900">{cycleNumber}사이클</span><span className="mt-1 block text-xs text-slate-500">{formatDateRange(rows)} · {plannedTotalOfGroup(rows)}회</span></button>;
+                      })}
+                    </div>
+                    {pastGroupIds.length > 0 ? <button type="button" onClick={() => setPastArchiveOpen((open) => !open)} className="mt-2 min-h-10 w-full rounded-xl bg-slate-100 px-3 text-left text-xs font-bold text-slate-700">지난 사이클 {pastGroupIds.length}개</button> : null}
+                  </nav>
+                  <div className="min-w-0 space-y-3">
+                    {currentGroupIds.map((gid) => renderCycleSection(gid))}
                 {pastGroupIds.length > 0 && (
                   <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                     <button
@@ -2557,6 +2600,8 @@ export default function ClassBundlePanel({
                     )}
                   </section>
                 )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

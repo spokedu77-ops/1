@@ -68,7 +68,7 @@ export function MonthExcelEventRow({
   const r = roundLabel(ev);
   const fin = showFinBadge(ev);
   const struck = ev.status === "cancelled" || ev.status === "deleted";
-  const strikeTitle = struck || isPastDay;
+  const strikeTitle = struck;
   const teacherShort = ev.teacher ? String(ev.teacher).trim() : "";
   const institutionShort = ev.studentsText ? String(ev.studentsText).trim() : "";
   const assignmentLabel = [institutionShort, teacherShort].filter(Boolean).join(" · ");
@@ -77,14 +77,14 @@ export function MonthExcelEventRow({
     <button
       type="button"
       onClick={() => onOpen(ev)}
-      className={`mx-1 mb-1 flex min-h-12 w-[calc(100%-0.5rem)] min-w-0 flex-col gap-0.5 rounded-lg border-l-[3px] px-2 py-1.5 text-left min-[801px]:min-h-0 ${monthRowTone(ev)} hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+      className={`mx-1.5 mb-1.5 flex min-h-[74px] w-[calc(100%-0.75rem)] min-w-0 flex-col gap-1 rounded-xl border-l-4 px-2.5 py-2 text-left ${monthRowTone(ev)} ${isPastDay && !struck ? "opacity-80" : ""} hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
     >
       <div className="flex items-start gap-1 min-w-0">
-        <span className="w-9 shrink-0 text-[10px] font-extrabold tabular-nums text-slate-700">
+        <span className="w-10 shrink-0 text-xs font-black tabular-nums text-slate-800">
           {formatTimeShort(start)}
         </span>
         <span
-          className={`min-w-0 flex-1 truncate text-[11px] font-bold leading-snug text-slate-900 ${
+          className={`min-w-0 flex-1 line-clamp-2 text-[13px] font-extrabold leading-[1.3] text-slate-950 ${
             strikeTitle ? "line-through text-slate-500" : ""
           }`}
         >
@@ -93,7 +93,7 @@ export function MonthExcelEventRow({
         <span className="shrink-0 flex flex-col items-end gap-0.5">
           {r ? (
             <span
-              className={`whitespace-nowrap text-[9px] font-bold tabular-nums ${
+              className={`whitespace-nowrap text-[11px] font-bold tabular-nums ${
                 strikeTitle ? "line-through text-slate-500" : "text-slate-600"
               }`}
             >
@@ -104,12 +104,12 @@ export function MonthExcelEventRow({
       </div>
       {assignmentLabel || fin ? (
         <div
-          className={`pl-9 flex min-w-0 items-center justify-between gap-1 ${
+          className={`pl-10 flex min-w-0 items-center justify-between gap-1.5 ${
             strikeTitle ? "line-through text-slate-400" : "text-slate-500"
           }`}
         >
-          <span className="min-w-0 flex-1 truncate text-[9px] font-medium">{assignmentLabel || "\u00A0"}</span>
-          <span className="shrink-0 text-[9px] font-bold">{statusLabel(ev.status)}</span>
+          <span className="min-w-0 flex-1 truncate text-[11px] font-semibold">{assignmentLabel || "\u00A0"}</span>
+          <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-extrabold">{statusLabel(ev.status)}</span>
           {fin ? <span className={FIN_BADGE_CLASS}>FIN</span> : null}
         </div>
       ) : null}
