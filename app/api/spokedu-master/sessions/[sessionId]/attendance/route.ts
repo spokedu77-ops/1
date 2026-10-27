@@ -46,7 +46,7 @@ export async function PUT(request: Request, context: { params: Promise<{ session
     if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
     const message = String(error.message ?? '');
     const locked = error.code === '22023' && message.includes('locked roster');
-    if (error.code === '40001') return privateNoStoreJson({ error: 'Attendance changed elsewhere' }, { status: 409 });
+    if (error.code === 'PT409') return privateNoStoreJson({ error: 'Attendance changed elsewhere' }, { status: 409 });
     return privateNoStoreJson({
       error: locked ? LOCKED_ROSTER_MESSAGE : error.code === '22023' ? 'Attendance cannot be changed' : 'Attendance could not be saved',
     }, { status: error.code === '22023' ? 400 : 500 });

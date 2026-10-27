@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   });
   if (error) {
     if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
-    const status = error.code === 'P0002' ? 404 : error.code === '40001' ? 409 : error.code === '22023' ? 400 : 500;
+    const status = error.code === 'P0002' ? 404 : error.code === 'PT409' ? 409 : error.code === '22023' ? 400 : 500;
     if (status === 409) return privateNoStoreJson({ error: 'Session capture changed elsewhere' }, { status });
     return privateNoStoreJson({ error: status === 404 ? 'Session not found' : status === 400 ? error.message : '수업 기록을 저장하지 못했습니다.' }, { status });
   }

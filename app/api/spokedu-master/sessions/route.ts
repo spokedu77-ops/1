@@ -242,7 +242,7 @@ async function save(request: Request, sessionId: string | null) {
   const { data: savedId, error } = result;
   if (error || typeof savedId !== 'string') {
     if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
-    if (error?.code === '40001') return privateNoStoreJson({ error: 'Session changed elsewhere' }, { status: 409 });
+    if (error?.code === 'PT409') return privateNoStoreJson({ error: 'Session changed elsewhere' }, { status: 409 });
     if (error?.code === '22023' || error?.code === '23505') {
       return privateNoStoreJson({
         error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : 'Invalid session data',
@@ -344,7 +344,7 @@ export async function PUT(request: Request) {
   });
   if (error || !savedId) {
     if (isStage2WriteGateError(error)) return stage2WriteGateResponse();
-    if (error?.code === '40001') return privateNoStoreJson({ error: 'Session changed elsewhere' }, { status: 409 });
+    if (error?.code === 'PT409') return privateNoStoreJson({ error: 'Session changed elsewhere' }, { status: 409 });
     if (error?.code === '23505') return privateNoStoreJson({ error: CLASS_TIME_COLLISION_MESSAGE }, { status: 400 });
     if (error?.code === '22023') {
       const message = error && 'message' in error && typeof error.message === 'string' ? error.message : '';

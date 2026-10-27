@@ -16,7 +16,7 @@ const record = (name, pass, evidence) => results.push({ name, pass, evidence });
 
 async function expectConflict(client, sql, params) {
   try { await client.query(sql, params); return false; }
-  catch (error) { return error?.code === '40001'; }
+  catch (error) { return error?.code === 'PT409'; }
 }
 
 await admin.connect();
@@ -79,8 +79,10 @@ try {
       grant execute on function public.spokedu_master_save_session_capture(uuid,uuid,text,jsonb) to service_role;
     `);
     const migration = await readFile(new URL('../supabase/migrations/20261026115102_stage2_session_writes_expand.sql', import.meta.url), 'utf8');
+    const hotfix = await readFile(new URL('../supabase/migrations/20261027160642_stage2_p0_conflict_http_409.sql', import.meta.url), 'utf8');
     const contract = await readFile(new URL('../supabase/contract-migrations/20261026115108_stage2_session_writes_contract.sql', import.meta.url), 'utf8');
     await setup.query(migration);
+    await setup.query(hotfix);
     await setup.query(`insert into public.spokedu_master_classes values ($1,$2,'QA Class',null)`, [classA, ownerA]);
     await setup.query(`insert into public.spokedu_master_students values ($1,$3,'Student A',null),($2,$3,'Student B',null)`, [studentA, studentB, ownerA]);
     await setup.query(`insert into public.spokedu_master_class_students values ($1,$2,$3),($1,$2,$4)`, [ownerA, classA, studentA, studentB]);
@@ -100,7 +102,7 @@ try {
         a.query(`select public.spokedu_master_update_session_attendance_v2($1,$2,3,$3::jsonb)`, [ownerA, sessionA, JSON.stringify([{ studentId: studentA, status: 'absent' }])]),
         b.query(`select public.spokedu_master_update_session_attendance_v2($1,$2,3,$3::jsonb)`, [ownerA, sessionA, JSON.stringify([{ studentId: studentA, status: 'present' }])]),
       ]);
-      record('same-student concurrent edit', sameStudent.filter((item) => item.status === 'fulfilled').length === 1 && sameStudent.some((item) => item.status === 'rejected' && item.reason?.code === '40001'), sameStudent.map((item) => item.status));
+      record('same-student concurrent edit', sameStudent.filter((item) => item.status === 'fulfilled').length === 1 && sameStudent.some((item) => item.status === 'rejected' && item.reason?.code === 'PT409'), sameStudent.map((item) => item.status));
 
       const beforeInvalid = await setup.query(`select attendance_version from public.spokedu_master_sessions where id=$1`, [sessionA]);
       let invalidRolledBack = false;
@@ -121,7 +123,7 @@ try {
         a.query(`select public.spokedu_master_complete_session_v2($1,$2,$3,$4,$5,now(),now()+interval '1 hour','complete-memo',$6::jsonb)`, [ownerA, sessionA, versionsBeforeComplete.rows[0].memo_version, versionsBeforeComplete.rows[0].attendance_version, classA, JSON.stringify([{ studentId: studentA, status: 'present' }, { studentId: studentB, status: 'absent' }])]),
         b.query(`select public.spokedu_master_update_session_attendance_v2($1,$2,$3,$4::jsonb)`, [ownerA, sessionA, versionsBeforeComplete.rows[0].attendance_version, JSON.stringify([{ studentId: studentB, status: 'present' }])]),
       ]);
-      record('completion versus attendance', completionRace.filter((item) => item.status === 'fulfilled').length === 1 && completionRace.some((item) => item.status === 'rejected' && item.reason?.code === '40001'), completionRace.map((item) => item.status));
+      record('completion versus attendance', completionRace.filter((item) => item.status === 'fulfilled').length === 1 && completionRace.some((item) => item.status === 'rejected' && item.reason?.code === 'PT409'), completionRace.map((item) => item.status));
 
       const retryVersion = await setup.query(`select attendance_version from public.spokedu_master_sessions where id=$1`, [sessionA]);
       await a.query(`select public.spokedu_master_update_session_attendance_v2($1,$2,$3,$4::jsonb)`, [ownerA, sessionA, retryVersion.rows[0].attendance_version, JSON.stringify([{ studentId: studentA, status: 'present' }])]);
