@@ -58,11 +58,13 @@ export function computeTier(totalLessons: number): TeacherTierId {
 
 export function getTierDefaultFees(tier: TeacherTierId, feeMap?: Partial<TierFeeMap>): TierDefaultFees {
   const src = feeMap?.[tier] ?? HARD_CODED_TIER_FEES[tier];
+  const feeOrFallback = (value: number | null | undefined, fallback: number) =>
+    value == null || !Number.isFinite(Number(value)) ? fallback : Number(value);
   return {
-    fee_private: Number(src?.fee_private) || HARD_CODED_TIER_FEES[tier].fee_private,
-    fee_group: Number(src?.fee_group) || HARD_CODED_TIER_FEES[tier].fee_group,
-    fee_center_main: Number(src?.fee_center_main) || HARD_CODED_TIER_FEES[tier].fee_center_main,
-    fee_center_assist: Number(src?.fee_center_assist) || HARD_CODED_TIER_FEES[tier].fee_center_assist,
+    fee_private: feeOrFallback(src?.fee_private, HARD_CODED_TIER_FEES[tier].fee_private),
+    fee_group: feeOrFallback(src?.fee_group, HARD_CODED_TIER_FEES[tier].fee_group),
+    fee_center_main: feeOrFallback(src?.fee_center_main, HARD_CODED_TIER_FEES[tier].fee_center_main),
+    fee_center_assist: feeOrFallback(src?.fee_center_assist, HARD_CODED_TIER_FEES[tier].fee_center_assist),
   };
 }
 

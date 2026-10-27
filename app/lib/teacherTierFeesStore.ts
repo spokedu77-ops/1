@@ -29,14 +29,16 @@ type TierFeeResponse = {
 
 function buildMapFromRows(rows: TierFeeRow[]): TierFeeMap {
   const map = cloneTierFeeMap(HARD_CODED_TIER_FEES);
+  const feeOrFallback = (value: number | null, fallback: number) =>
+    value == null || !Number.isFinite(Number(value)) ? fallback : Number(value);
   for (const row of rows) {
     const tier = row.tier_id;
     if (!TEACHER_TIER_IDS.includes(tier)) continue;
     map[tier] = {
-      fee_private: Number(row.fee_private) || HARD_CODED_TIER_FEES[tier].fee_private,
-      fee_group: Number(row.fee_group) || HARD_CODED_TIER_FEES[tier].fee_group,
-      fee_center_main: Number(row.fee_center_main) || HARD_CODED_TIER_FEES[tier].fee_center_main,
-      fee_center_assist: Number(row.fee_center_assist) || HARD_CODED_TIER_FEES[tier].fee_center_assist,
+      fee_private: feeOrFallback(row.fee_private, HARD_CODED_TIER_FEES[tier].fee_private),
+      fee_group: feeOrFallback(row.fee_group, HARD_CODED_TIER_FEES[tier].fee_group),
+      fee_center_main: feeOrFallback(row.fee_center_main, HARD_CODED_TIER_FEES[tier].fee_center_main),
+      fee_center_assist: feeOrFallback(row.fee_center_assist, HARD_CODED_TIER_FEES[tier].fee_center_assist),
     };
   }
   return map;

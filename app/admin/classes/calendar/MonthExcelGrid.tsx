@@ -15,12 +15,12 @@ type Props = {
 /** 데스크톱: 월간 엑셀형 그리드 */
 export function MonthExcelGrid({ weekRows, eventsByDay, todayWeekRowRef, onOpen }: Props) {
   return (
-    <div className="hidden md:block rounded-2xl border border-slate-300 bg-slate-200 overflow-hidden shadow-sm">
+    <div data-class-ops-view="month" className="hidden min-[801px]:block overflow-hidden rounded-2xl border border-slate-200 bg-slate-200">
       <div className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300">
         {["월", "화", "수", "목", "금", "토", "일"].map((w) => (
           <div
             key={w}
-            className="bg-slate-100 px-2 py-2 text-center text-[11px] font-black text-slate-600"
+            className="bg-slate-100 px-2 py-2 text-center text-[11px] font-bold text-slate-600"
           >
             {w}
           </div>
@@ -41,7 +41,7 @@ export function MonthExcelGrid({ weekRows, eventsByDay, todayWeekRowRef, onOpen 
                 return (
                   <div
                     key={`pad-${wIdx}-${dIdx}`}
-                    className="bg-slate-100/80 min-h-[100px] min-w-0"
+                    className="min-h-[112px] min-w-0 bg-slate-50"
                   />
                 );
               }
@@ -58,23 +58,21 @@ export function MonthExcelGrid({ weekRows, eventsByDay, todayWeekRowRef, onOpen 
               return (
                 <div
                   key={key}
-                  className={`flex flex-col min-w-0 min-h-0 border border-slate-200/80 ${
+                  className={`flex min-h-[112px] min-w-0 flex-col ${
                     isToday
-                      ? "z-[1] bg-blue-50/60 shadow-md ring-[3px] ring-blue-600 ring-inset"
+                      ? "z-[1] bg-blue-50/60 ring-2 ring-blue-600 ring-inset"
                       : "bg-white"
                   }`}
                 >
                   <div
-                    className={`shrink-0 flex items-center justify-center gap-1 flex-wrap py-1.5 px-1 text-[10px] font-black text-white ${
-                      isToday ? "bg-blue-800" : "bg-blue-600"
-                    }`}
+                    className="flex shrink-0 items-center justify-between gap-1 px-2 py-2 text-[11px] font-bold text-slate-600"
                   >
+                    <span>{headerLabel}</span>
                     {isToday ? (
-                      <span className="rounded px-1 py-px text-[8px] font-black uppercase tracking-wide bg-white/25 text-white">
+                      <span className="text-[10px] font-bold text-blue-700">
                         오늘
                       </span>
                     ) : null}
-                    <span>{headerLabel}</span>
                   </div>
                   <div className="flex flex-col flex-1 min-h-0 min-w-0 p-0">
                     {dayEvents.length === 0 ? (

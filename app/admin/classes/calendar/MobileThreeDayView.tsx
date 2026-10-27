@@ -13,7 +13,7 @@ type Props = {
 /** 모바일: 가운데 날짜 기준 전날·당일·다음날 */
 export function MobileThreeDayView({ days, eventsByDay, onOpen }: Props) {
   return (
-    <div className="md:hidden space-y-3">
+    <div data-class-ops-view="three-day" className="space-y-3 min-[801px]:hidden">
       {days.map((cell) => {
         const key = dayMapKey(cell);
         const dayEvents = eventsByDay.get(key) || [];
@@ -28,19 +28,19 @@ export function MobileThreeDayView({ days, eventsByDay, onOpen }: Props) {
         return (
           <div
             key={key}
-            className={`rounded-2xl border overflow-hidden shadow-sm ${
+            className={`overflow-hidden rounded-2xl border ${
               isToday
-                ? "border-blue-600 ring-2 ring-blue-500/40 bg-blue-50/40"
-                : "border-slate-300 bg-slate-200"
+                ? "border-blue-700 bg-blue-50/40 ring-1 ring-blue-700"
+                : "border-slate-200 bg-slate-100"
             }`}
           >
             <div
-              className={`shrink-0 flex items-center justify-center gap-2 py-2 px-3 text-xs font-black text-white ${
-                isToday ? "bg-blue-800" : "bg-blue-600"
+              className={`flex shrink-0 items-center justify-between gap-2 px-3 py-2.5 text-xs font-bold ${
+                isToday ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-800"
               }`}
             >
               {isToday ? (
-                <span className="rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide bg-white/25 text-white">
+                  <span className="rounded px-1.5 py-0.5 text-[10px] font-bold text-white">
                   오늘
                 </span>
               ) : null}
@@ -53,7 +53,7 @@ export function MobileThreeDayView({ days, eventsByDay, onOpen }: Props) {
                     isToday ? "bg-blue-50/30" : ""
                   }`}
                 >
-                  일정 없음
+                  등록된 수업이 없습니다.
                 </div>
               ) : (
                 dayEvents.map((ev) => (

@@ -24,6 +24,13 @@ function sessionTypeOf(ev: SessionEvent): string {
   return String(ev.type ?? ev.session_type ?? "").trim();
 }
 
+function statusLabel(status: string | null | undefined): string {
+  if (status === "postponed") return "연기";
+  if (status === "cancelled" || status === "deleted") return "취소";
+  if (status === "finished" || status === "verified" || status === "completed") return "완료";
+  return "예정";
+}
+
 function monthRowTone(ev: SessionEvent): string {
   if (ev.status === "cancelled" || ev.status === "deleted")
     return "bg-rose-200 border-2 border-rose-600 shadow-sm";
@@ -63,19 +70,21 @@ export function MonthExcelEventRow({
   const struck = ev.status === "cancelled" || ev.status === "deleted";
   const strikeTitle = struck || isPastDay;
   const teacherShort = ev.teacher ? String(ev.teacher).trim() : "";
+  const institutionShort = ev.studentsText ? String(ev.studentsText).trim() : "";
+  const assignmentLabel = [institutionShort, teacherShort].filter(Boolean).join(" · ");
 
   return (
     <button
       type="button"
       onClick={() => onOpen(ev)}
-      className={`flex min-h-[44px] w-full min-w-0 flex-col gap-0.5 border-b border-slate-200/80 px-1 py-1 text-left last:border-b-0 md:min-h-0 md:px-0.5 ${monthRowTone(ev)} hover:brightness-[0.97]`}
+      className={`mx-1 mb-1 flex min-h-12 w-[calc(100%-0.5rem)] min-w-0 flex-col gap-0.5 rounded-lg border-l-[3px] px-2 py-1.5 text-left min-[801px]:min-h-0 ${monthRowTone(ev)} hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
     >
       <div className="flex items-start gap-1 min-w-0">
-        <span className="shrink-0 text-[9px] font-black text-slate-600 tabular-nums w-9">
+        <span className="w-9 shrink-0 text-[10px] font-extrabold tabular-nums text-slate-700">
           {formatTimeShort(start)}
         </span>
         <span
-          className={`min-w-0 flex-1 text-[10px] font-bold text-slate-900 leading-snug line-clamp-2 break-words ${
+          className={`min-w-0 flex-1 truncate text-[11px] font-bold leading-snug text-slate-900 ${
             strikeTitle ? "line-through text-slate-500" : ""
           }`}
         >
@@ -84,7 +93,7 @@ export function MonthExcelEventRow({
         <span className="shrink-0 flex flex-col items-end gap-0.5">
           {r ? (
             <span
-              className={`text-[9px] font-black tabular-nums whitespace-nowrap ${
+              className={`whitespace-nowrap text-[9px] font-bold tabular-nums ${
                 strikeTitle ? "line-through text-slate-500" : "text-slate-600"
               }`}
             >
@@ -93,13 +102,14 @@ export function MonthExcelEventRow({
           ) : null}
         </span>
       </div>
-      {teacherShort || fin ? (
+      {assignmentLabel || fin ? (
         <div
           className={`pl-9 flex min-w-0 items-center justify-between gap-1 ${
             strikeTitle ? "line-through text-slate-400" : "text-slate-500"
           }`}
         >
-          <span className="min-w-0 flex-1 truncate text-[8px] font-bold">{teacherShort || "\u00A0"}</span>
+          <span className="min-w-0 flex-1 truncate text-[9px] font-medium">{assignmentLabel || "\u00A0"}</span>
+          <span className="shrink-0 text-[9px] font-bold">{statusLabel(ev.status)}</span>
           {fin ? <span className={FIN_BADGE_CLASS}>FIN</span> : null}
         </div>
       ) : null}
