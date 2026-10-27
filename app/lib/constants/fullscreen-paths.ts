@@ -10,6 +10,7 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/program',
   '/info',
   '/admin/spomove/training/_player',
+  '/admin/master/reports',
   '/pro',
   '/spokedu-lab',
   '/spokedu-master',

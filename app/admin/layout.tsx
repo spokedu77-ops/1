@@ -24,6 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [scopeChecked, setScopeChecked] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
   const isNoteRoute = pathname != null && pathname.startsWith('/admin/note');
+  const isReportRoute = pathname != null && pathname.startsWith('/admin/master/reports');
   const isFullscreenRoute =
     pathname != null && (
       pathname === '/admin/spokedu-master'
@@ -118,7 +119,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <main
       className={
-        isFullscreenRoute
+        isReportRoute
+          ? 'flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-[#f7f8f5] text-gray-900'
+          : isFullscreenRoute
           ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900 relative'
           : isGameRoute
             ? 'flex-1 flex flex-col min-h-0 overflow-hidden text-gray-900'
