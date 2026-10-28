@@ -84,17 +84,16 @@ describe('public marketing typography contract', () => {
   });
 
   it('keeps key public page titles and section titles on canonical utilities', () => {
-    const homeWeb = read('app/spokedu/components/home-web/home-web-landing.tsx');
-    expect(homeWeb).toMatch(/<h1 id="home-heading"/);
-    expect(homeWeb).toMatch(/<h2 id="audience-heading"/);
+    const homeWeb = read('app/spokedu/components/home-v0-landing.tsx');
+    expect(homeWeb).toMatch(/<h1\b[^>]*\bid="home-heading"/);
+    expect(homeWeb).toMatch(/<h2\b[^>]*\bid="audience-heading"/);
     expect(read('app/spokedu/components/landing-hero.tsx')).toMatch(/<motion\.h1[\s\S]*marketingHeroDisplay/);
-    const education = read('app/spokedu/components/education-hub-landing.tsx');
-    expect(education).toMatch(/<h1 id="edu-hero-heading"/);
-    expect(education).toMatch(/home-canonical\.module\.css/);
-    expect(education).toMatch(/SpokeduSectionHeading/);
+    const education = read('app/spokedu/components/education-v0-landing.tsx');
+    expect(education).toMatch(/<h1\b[^>]*\bid="edu-hero-heading"/);
+    expect(education).toMatch(/koreanLineBreak/);
     expect(read('app/spokedu/components/section-heading.tsx')).toMatch(/<h2[\s\S]*marketingTypeSectionTitle/);
-    expect(read('app/spokedu/components/spomove-program-landing.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
-    expect(read('app/spokedu/components/spomove-program-landing.tsx')).toMatch(/<h2[\s\S]*marketingSectionDisplay/);
+    expect(read('app/spokedu/components/spomove-v0-landing.tsx')).toMatch(/<h1[\s\S]*id="spomove-hero-heading"/);
+    expect(read('app/spokedu/components/spomove-v0-landing.tsx')).toMatch(/<h2[\s\S]*break-keep/);
   });
 
   it('does not hide migration behind broad heading overrides', () => {

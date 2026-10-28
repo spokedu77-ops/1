@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Mail, MapPin, Phone } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
@@ -435,99 +436,144 @@ export function SiteFooter() {
   const blogLink = socialLinks.find((c) => c.key === 'naver-blog');
   const kakaoLink = socialLinks.find((c) => c.key === 'kakao-channel');
   const instagramLink = socialLinks.find((c) => c.key === 'instagram');
-
-  const footerLinkClass =
-    `inline-flex min-h-11 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white min-[640px]:min-h-8 ${koreanText}`;
-  const footerHeadingClass = `text-[13px] font-semibold tracking-[-0.01em] text-white/60 ${koreanText}`;
-
   const youtubeLink = socialLinks.find((c) => c.key === 'youtube');
 
+  const footerLinkClass = `block py-1 text-sm text-slate-400 transition hover:text-white ${koreanText}`;
+  const footerHeadingClass = `mb-5 text-sm font-bold text-white ${koreanText}`;
+
+  const navGroups = footerNavGroups.filter((group) => group.heading !== '문의');
+
   return (
-    <footer data-spokedu-global-footer="true" style={{ backgroundColor: NAVY }} className="text-white">
-      <div className={`${marketingSectionInner} py-9 sm:py-11`}>
-        <div className="grid grid-cols-1 gap-8 min-[640px]:grid-cols-2 min-[1024px]:grid-cols-6 min-[1024px]:items-start min-[1024px]:gap-8">
-          <div className="min-w-0 space-y-2.5 min-[640px]:col-span-2 min-[1024px]:col-span-2">
-            <BrandLogo onDark scrollHomeOnClick size="md" />
-            <p className={`text-[14px] font-semibold leading-none text-white ${koreanText}`}>{brandProfile.nameKo}</p>
-            <p className={`max-w-sm text-[14px] leading-[1.55] text-white/65 ${koreanText}`}>{brandProfile.tagline}</p>
-            <p className={`text-[13px] leading-none text-white/45 ${koreanText}`}>운영지역 {brandProfile.serviceArea}</p>
+    <footer data-spokedu-global-footer="true" className="bg-slate-950 py-16 text-slate-400">
+      <div className={`${marketingSectionInner} mx-auto max-w-7xl px-6`}>
+        <div className="grid gap-12 md:grid-cols-2">
+          <div>
+            <p className={`text-2xl font-black tracking-[-0.08em] text-white ${koreanText}`}>
+              SPOKEDU<span className="text-blue-500">.</span>
+            </p>
+            <p className={`mt-5 max-w-xs text-sm leading-7 ${koreanText}`}>
+              아이의 움직임을 성장의 경험으로 설계하는
+              <br />
+              아동·청소년 체육교육 브랜드
+            </p>
+            <div className="mt-7 flex flex-col gap-3 text-sm">
+              <a
+                id="footer-phone-link"
+                href={brandContactLinks.phone}
+                data-track="cta-phone"
+                data-track-label="footer-phone"
+                className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+              >
+                <Phone className="size-4 shrink-0" aria-hidden />
+                {brandProfile.phone}
+              </a>
+              <a
+                id="footer-email-link"
+                href={brandContactLinks.email}
+                data-track="cta-email"
+                data-track-label="footer-email"
+                className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+              >
+                <Mail className="size-4 shrink-0" aria-hidden />
+                {brandProfile.email}
+              </a>
+              {kakaoLink ? (
+                <a
+                  href={kakaoLink.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-track="external-kakao-channel"
+                  data-track-label="footer-kakao-channel"
+                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                >
+                  {kakaoLink.label}
+                </a>
+              ) : null}
+              {blogLink ? (
+                <a
+                  href={blogLink.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-track="external-naver-blog"
+                  data-track-label="footer-naver-blog"
+                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                >
+                  {blogLink.label}
+                </a>
+              ) : null}
+              {instagramLink ? (
+                <a
+                  href={instagramLink.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-track="external-instagram"
+                  data-track-label="footer-instagram"
+                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                >
+                  {instagramLink.label}
+                </a>
+              ) : null}
+              {youtubeLink ? (
+                <a
+                  href={youtubeLink.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-track="external-youtube"
+                  data-track-label="footer-youtube"
+                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                >
+                  {youtubeLink.label}
+                </a>
+              ) : null}
+            </div>
           </div>
 
-          <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-8 min-[360px]:col-span-2 min-[360px]:grid-cols-2 min-[1024px]:contents">
-            {footerNavGroups.map((group) => (
-              <div key={group.heading} className="min-w-0">
-              <p className={footerHeadingClass}>{group.heading}</p>
-              <ul className="mt-3 space-y-0.5">
-                {group.links.map((link) => (
-                  <li key={`${group.heading}-${link.href}`} className="flex">
-                    <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-                {group.heading === '문의' ? (
-                  <>
-                    <li className="flex">
-                      <a id="footer-phone-link" href={brandContactLinks.phone} data-track="cta-phone" data-track-label="footer-phone" className={footerLinkClass}>
-                        {brandProfile.phone}
-                      </a>
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3">
+            {navGroups.map((group) => (
+              <div key={group.heading}>
+                <p className={footerHeadingClass}>{group.heading}</p>
+                <ul className="space-y-0.5">
+                  {group.links.map((link) => (
+                    <li key={`${group.heading}-${link.href}`}>
+                      <Link
+                        href={link.href}
+                        data-track={inferTrackFromHref(link.href)}
+                        data-track-label={link.trackLabel}
+                        className={footerLinkClass}
+                      >
+                        {link.label}
+                      </Link>
                     </li>
-                    <li className="flex">
-                      <a id="footer-email-link" href={brandContactLinks.email} data-track="cta-email" data-track-label="footer-email" className={`${footerLinkClass} break-all`}>
-                        {brandProfile.email}
-                      </a>
-                    </li>
-                    {blogLink ? (
-                      <li className="flex">
-                        <a href={blogLink.href} target="_blank" rel="noreferrer" data-track="external-naver-blog" data-track-label="footer-naver-blog" className={footerLinkClass}>
-                          {blogLink.label}
-                        </a>
-                      </li>
-                    ) : null}
-                    {instagramLink ? (
-                      <li className="flex">
-                        <a href={instagramLink.href} target="_blank" rel="noreferrer" data-track="external-instagram" data-track-label="footer-instagram" className={footerLinkClass}>
-                          {instagramLink.label}
-                        </a>
-                      </li>
-                    ) : null}
-                    {kakaoLink ? (
-                      <li className="flex">
-                        <a href={kakaoLink.href} target="_blank" rel="noreferrer" data-track="external-kakao-channel" data-track-label="footer-kakao-channel" className={footerLinkClass}>
-                          {kakaoLink.label}
-                        </a>
-                      </li>
-                    ) : null}
-                    {youtubeLink ? (
-                      <li className="flex">
-                        <a href={youtubeLink.href} target="_blank" rel="noreferrer" data-track="external-youtube" data-track-label="footer-youtube" className={footerLinkClass}>
-                          {youtubeLink.label}
-                        </a>
-                      </li>
-                    ) : null}
-                  </>
-                ) : null}
-              </ul>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="mt-8 space-y-3 border-t border-white/10 pt-4">
-          <p className={`text-[12px] leading-[1.7] text-white/65 min-[640px]:leading-[1.6] min-[640px]:text-white/50 ${koreanText}`}>
-            {getPublicFooterLegalLine()}
+        <div className="mt-16 flex items-start gap-2 border-t border-slate-800 pt-7 text-xs leading-6">
+          <MapPin className="mt-1 size-4 shrink-0" aria-hidden />
+          <p className={koreanText}>{getPublicFooterLegalLine()}</p>
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+          <Link
+            href="/spokedu-lab/terms"
+            data-track-label="footer-master-terms"
+            className="text-slate-500 underline-offset-2 hover:text-white hover:underline"
+          >
+            SPOKEDU LAB 이용약관
+          </Link>
+          <Link
+            href="/spokedu-lab/privacy"
+            data-track-label="footer-master-privacy"
+            className="text-slate-500 underline-offset-2 hover:text-white hover:underline"
+          >
+            개인정보처리방침
+          </Link>
+          <p className="text-slate-600">
+            © {new Date().getFullYear()} {brandProfile.nameEn}. All rights reserved.
           </p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
-            <Link href="/spokedu-lab/terms" data-track-label="footer-master-terms" className="inline-flex min-h-11 items-center text-white/55 underline-offset-2 hover:text-white hover:underline min-[640px]:min-h-0">
-              SPOKEDU LAB 이용약관
-            </Link>
-            <Link href="/spokedu-lab/privacy" data-track-label="footer-master-privacy" className="inline-flex min-h-11 items-center text-white/55 underline-offset-2 hover:text-white hover:underline min-[640px]:min-h-0">
-              개인정보처리방침
-            </Link>
-            <p className="text-white/40">
-              © {new Date().getFullYear()} {brandProfile.nameEn}. All rights reserved.
-            </p>
-          </div>
         </div>
       </div>
     </footer>

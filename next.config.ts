@@ -93,6 +93,7 @@ const nextConfig: NextConfig = {
       { source: "/spokedu/insights", destination: "/about", permanent: true },
       { source: "/insights", destination: "/about", permanent: true },
       { source: "/parents", destination: "/private", permanent: true },
+      { source: "/personal", destination: "/private", permanent: true },
       { source: "/institutions", destination: "/education", permanent: true },
       { source: "/dispatch", destination: "/education", permanent: true },
       { source: "/audience", destination: "/", permanent: true },

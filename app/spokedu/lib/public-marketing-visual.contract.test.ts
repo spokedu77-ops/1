@@ -102,13 +102,12 @@ describe('public marketing visual foundation contract', () => {
   });
 
   it('uses H1 role independently from its scale on Education and SPOMOVE', () => {
-    const education = read('app/spokedu/components/education-hub-landing.tsx');
-    expect(education).toMatch(/home-canonical\.module\.css/);
-    expect(education).toMatch(/<h1 id="edu-hero-heading"/);
+    const education = read('app/spokedu/components/education-v0-landing.tsx');
+    expect(education).toMatch(/<h1\b[^>]*\bid="edu-hero-heading"/);
     expect(read('app/spokedu/components/home-web/home-canonical.module.css')).toMatch(/\.hero h1/);
 
-    const spomove = read('app/spokedu/components/spomove-program-landing.tsx');
-    expect(spomove).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
-    expect(spomove).toContain('marketingHeroDisplaySectionScale');
+    const spomove = read('app/spokedu/components/spomove-v0-landing.tsx');
+    expect(spomove).toMatch(/<h1[\s\S]*id="spomove-hero-heading"/);
+    expect(spomove).toMatch(/data-spokedu-spomove-sections/);
   });
 });

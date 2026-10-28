@@ -2,7 +2,7 @@
 
 import { SPOKEDU_HOME_BUILD_ID } from '../data/home-build';
 import type { HomeFieldRecordCardWithThumbnail } from '../lib/resolve-field-records';
-import { HomeWebLanding } from './home-web/home-web-landing';
+import { HomeV0Landing } from './home-v0-landing';
 
 type SpokeduHomeLandingProps = {
   proofCards: HomeFieldRecordCardWithThumbnail[];
@@ -13,7 +13,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
   void proofCards;
   return (
     <div data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID} data-spokedu-home-sections="6">
-      <HomeWebLanding />
+      <HomeV0Landing />
     </div>
   );
 }

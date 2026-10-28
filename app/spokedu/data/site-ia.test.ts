@@ -738,7 +738,7 @@ describe('spokedu Phase 3 public-copy safety', () => {
       'utf8',
     );
     const spomoveLandingSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/spomove-program-landing.tsx'),
+      join(process.cwd(), 'app/spokedu/components/spomove-v0-landing.tsx'),
       'utf8',
     );
     const spomovePageSource = readFileSync(
@@ -749,10 +749,12 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeSource).not.toMatch(/15,?015|PRIVATE_COUNTER|3,?000회/);
     expect(homeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
     expect(homeLandingSource).not.toMatch(/HomePartnerReviews|HomeMediaRail/);
-    expect(homeLandingSource).toMatch(/HomeWebLanding/);
+    expect(homeLandingSource).toMatch(/HomeV0Landing/);
+    expect(readFileSync(join(process.cwd(), 'app/spokedu/components/home-v0-landing.tsx'), 'utf8')).toMatch(/id="services"/);
     expect(homeLandingSource).not.toMatch(/HomeClassSection|HomeFieldBridge|HomeCommercialChoice|home-canonical/);
     expect(homeLandingSource).not.toMatch(/HomeAudienceGates/);
-    expect(spomoveLandingSource).toMatch(/SpomoveProgramLanding|data-spokedu-spomove-sections/);
+    expect(spomoveLandingSource).toMatch(/SpomoveV0Landing|data-spokedu-spomove-sections/);
+    expect(spomoveLandingSource).toMatch(/spomoveCatalog|SPOMOVE 카탈로그/);
     expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);
     expect(spomoveLandingSource).not.toMatch(/9,900|28,900|집중력이 향상|인지능력이 개선/);
     expect(spomovePageSource).toMatch(/SpomoveProgramLanding/);
