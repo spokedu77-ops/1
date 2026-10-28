@@ -17,6 +17,7 @@ import {
   type StoredInquiryDraft,
 } from './inquiry-draft';
 import { submitInquiry } from './inquiry-submit';
+import { parseSpomoveOperationLabel } from '../data/commercial-routes';
 import { resolveContactInquiryType } from './resolve-contact-inquiry-type';
 import { createFormStartedTracker, trackCommercialEvent } from '../lib/commercial-events';
 import { externalLinkProps } from '../lib/external-link';
@@ -328,6 +329,7 @@ function InstitutionFields({
               <option value="원데이">원데이</option>
               <option value="방학캠프">방학캠프</option>
               <option value="SPOMOVE 도입">SPOMOVE 도입</option>
+              <option value="SPOMOVE/교구 도입">SPOMOVE/교구 도입</option>
               <option value="제안 요청">제안 요청</option>
             </select>
           </Field>
@@ -475,6 +477,19 @@ export default function SpokeduContactForm() {
         ...prev,
         inquiryPurpose: prev.inquiryPurpose || '라이선싱',
         utilizationTarget: prev.utilizationTarget || '협업 검토',
+      }));
+    }
+
+    const spomoveOperation = parseSpomoveOperationLabel(searchParams.get('operation'));
+    if (resolvedType === 'spomove' && spomoveOperation) {
+      setSpomoveForm((prev) => ({
+        ...prev,
+        preferredOperation: prev.preferredOperation || spomoveOperation,
+        message:
+          prev.message.trim() ||
+          (spomoveOperation === 'SPOMOVE/교구 도입'
+            ? '스포매트(SPOMAT) 구매·견적 상담을 요청합니다.'
+            : 'SPOMOVE 도입·운영 상담을 요청합니다.'),
       }));
     }
   }, [searchParams]);

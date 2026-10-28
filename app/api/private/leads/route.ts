@@ -24,6 +24,9 @@ import {
 type LeadBody = {
   type?: unknown;
   name?: unknown;
+  parent_name?: unknown;
+  child_age?: unknown;
+  memo?: unknown;
   phone?: unknown;
   content?: unknown;
   start_direction?: unknown;
@@ -120,7 +123,14 @@ export async function POST(req: NextRequest) {
     const rateRes = rateLimitToResponse(rate);
     if (rateRes) return rateRes;
 
-    const name = normalize(body.name);
+    const parentName = normalize(body.parent_name);
+    const childAge = normalize(body.child_age);
+    const memo = normalize(body.memo);
+    let name = normalize(body.name);
+    if (!name) {
+      name =
+        [childAge ? `아이 ${childAge}` : '', parentName].filter(Boolean).join(' · ') || parentName;
+    }
     const phone = normalize(body.phone);
     const rawType = normalize(body.type);
     if (rawType && rawType !== 'private') {
@@ -129,7 +139,10 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const content = normalize(body.content);
+    let content = normalize(body.content);
+    if (!content && memo) {
+      content = memo;
+    }
     const startDirectionRaw = normalize(body.start_direction);
     const preferredFormatRaw = normalize(body.preferred_format);
     const sport = normalize(body.sport);
@@ -197,6 +210,8 @@ export async function POST(req: NextRequest) {
       `[문의 type]`,
       'private',
       `[lead_route] private`,
+      parentName ? `[parent_name] ${parentName}` : null,
+      childAge ? `[child_age] ${childAge}` : null,
       startDirection
         ? `[start_direction] ${startDirection} · ${privateStartDirectionLabel(startDirection)}`
         : `[start_direction] unspecified · 레거시/미선택`,
@@ -238,10 +253,11 @@ export async function POST(req: NextRequest) {
 
     const created = await createConsultLead(supabase, {
       envelope,
-      parentName: name,
+      parentName: parentName || name,
       phone,
       content: storedContent,
       consultType: 'tutoring',
+      childAge: childAge || null,
       tableName,
     });
 

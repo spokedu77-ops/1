@@ -38,9 +38,13 @@ export function parseDispatchProgramLabel(raw: string | null | undefined): strin
   if (!raw) return null;
   const trimmed = raw.trim();
   if (!trimmed) return null;
-  if (isDispatchProgramQueryId(trimmed)) return DISPATCH_PROGRAM_QUERY_MAP[trimmed];
+  const queryKey = trimmed.toLowerCase();
+  if (isDispatchProgramQueryId(queryKey)) return DISPATCH_PROGRAM_QUERY_MAP[queryKey];
   if ((DISPATCH_PROGRAM_OPTIONS as readonly string[]).includes(trimmed)) return trimmed;
-  return null;
+  const byValue = (Object.values(DISPATCH_PROGRAM_QUERY_MAP) as readonly string[]).find(
+    (label) => label.toLowerCase() === trimmed.toLowerCase(),
+  );
+  return byValue ?? null;
 }
 
 export function isFieldRecordSlug(value: string): value is FieldRecordSlug {
@@ -74,6 +78,35 @@ export function privateInquiryHref(args: {
   if (args.conversionEvidence) params.set('conversionEvidence', args.conversionEvidence);
   const qs = params.toString();
   return `${SPOKEDU_BASE_PATH}/private${qs ? `?${qs}` : ''}#apply`;
+}
+
+/** SPOMOVE·교구 문의 — `/contact?type=spomove` + 희망 운영 형태 */
+export const SPOMOVE_OPERATION_QUERY_MAP = {
+  adoption: 'SPOMOVE 도입',
+  equipment: 'SPOMOVE/교구 도입',
+} as const;
+
+export type SpomoveOperationQueryId = keyof typeof SPOMOVE_OPERATION_QUERY_MAP;
+
+export function parseSpomoveOperationLabel(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (Object.prototype.hasOwnProperty.call(SPOMOVE_OPERATION_QUERY_MAP, trimmed)) {
+    return SPOMOVE_OPERATION_QUERY_MAP[trimmed as SpomoveOperationQueryId];
+  }
+  if ((Object.values(SPOMOVE_OPERATION_QUERY_MAP) as readonly string[]).includes(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
+export function spomoveInquiryHref(args?: { operation?: SpomoveOperationQueryId }): string {
+  const params = new URLSearchParams();
+  params.set('type', 'spomove');
+  if (args?.operation) params.set('operation', args.operation);
+  const qs = params.toString();
+  return `${SPOKEDU_PATHS.contact}?${qs}#contact-type-select`;
 }
 
 export function curriculumInquiryHref(args: {

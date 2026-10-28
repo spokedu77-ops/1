@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
@@ -18,12 +19,20 @@ import {
   type PrivatePreferredFormat,
   type PrivateStartDirection,
 } from '../data/private-page';
+import {
+  mapPrivateV0ClassType,
+  PRIVATE_V0_CLASS_TYPE_CHIPS,
+  type PrivateV0ClassType,
+} from '../data/private-v0-media';
 import { getAcquisitionContext, captureAcquisitionFromLocation } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
 
 const inputClass =
   'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
 const labelClass = 'text-sm font-semibold text-slate-800';
+
+const v0InputClass =
+  'mt-2 w-full rounded-xl bg-slate-50 px-4 py-3.5 text-sm font-normal text-slate-900 outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-[#246bce]';
 
 function safeVal(v: string): string {
   return v.trim() ? v.trim() : '[정보 미기재]';
@@ -70,7 +79,7 @@ function ChipGroup<T extends string>({
 }
 
 /** 개인수업 상담 폼 — 온페이지 문의 전환 */
-export function PrivateApplyForm() {
+export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' | 'privateV0' }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -89,6 +98,11 @@ export function PrivateApplyForm() {
   const [submitted, setSubmitted] = useState(false);
   const submittingRef = useRef(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
+
+  const [v0ParentName, setV0ParentName] = useState('');
+  const [v0ChildAge, setV0ChildAge] = useState('');
+  const [v0ClassType, setV0ClassType] = useState<PrivateV0ClassType>('1:1 개인수업');
+  const [v0Memo, setV0Memo] = useState('');
 
   useEffect(() => {
     try {
@@ -235,6 +249,7 @@ export function PrivateApplyForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'private',
           name: learnerLines.join('\n'),
           phone: phone.trim(),
           content: previewText,
@@ -292,6 +307,207 @@ export function PrivateApplyForm() {
     submitted,
     conversionEvidenceSlug,
   ]);
+
+  const handleV0Submit = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      if (submittingRef.current || submitted) return;
+
+      if (!v0ParentName.trim() || !phone.trim()) {
+        setStatus({
+          tone: 'error',
+          message: '학부모 성함과 연락처를 입력해 주세요.',
+        });
+        return;
+      }
+
+      const mapped = mapPrivateV0ClassType(v0ClassType);
+      const content = [
+        `[학부모] ${safeVal(v0ParentName)}`,
+        `[아이 연령/학년] ${safeVal(v0ChildAge)}`,
+        `[희망 수업 형태] ${v0ClassType}`,
+        '',
+        '--- 성향·고민 ---',
+        v0Memo.trim() || '[정보 미기재]',
+      ].join('\n');
+
+      submittingRef.current = true;
+      setSubmitting(true);
+      try {
+        const response = await fetch('/api/private/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'private',
+            parent_name: v0ParentName.trim(),
+            child_age: v0ChildAge.trim() || undefined,
+            phone: phone.trim(),
+            name: v0ChildAge.trim() ? `아이 ${v0ChildAge.trim()}` : v0ParentName.trim(),
+            memo: v0Memo.trim() || undefined,
+            content,
+            start_direction: mapped.startDirection,
+            preferred_format: mapped.preferredFormat,
+            sport: mapped.sport,
+            region: '[상담 후 확인]',
+            schedule: '[상담 후 확인]',
+            acquisition: getAcquisitionContext({
+              submitPath:
+                typeof window !== 'undefined'
+                  ? `${window.location.pathname}${window.location.search || ''}`
+                  : '/private',
+            }),
+            cta_intent_id: 'private_fit_consult',
+            conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
+          }),
+        });
+        const result = (await response.json().catch(() => null)) as
+          | { ok?: boolean; message?: string; leadId?: string }
+          | null;
+        if (!response.ok || !result?.ok) {
+          setStatus({
+            tone: 'error',
+            message: result?.message || '접수 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+          });
+          return;
+        }
+        if (result.leadId) {
+          trackCommercialEvent({
+            name: 'form_submitted',
+            route: 'private',
+            leadId: result.leadId,
+            selectionId: mapped.startDirection,
+            ctaIntentId: 'private_fit_consult',
+          });
+        }
+        setV0ParentName('');
+        setV0ChildAge('');
+        setV0Memo('');
+        setPhone('');
+        setV0ClassType('1:1 개인수업');
+        setStatus({
+          tone: 'ok',
+          message: '접수가 완료되었습니다. 담당자가 확인 후 연락드립니다.',
+        });
+      } catch {
+        setStatus({ tone: 'error', message: '네트워크 오류로 접수에 실패했습니다.' });
+      } finally {
+        submittingRef.current = false;
+        setSubmitting(false);
+      }
+    },
+    [submitted, v0ParentName, v0ChildAge, v0ClassType, v0Memo, phone, conversionEvidenceSlug],
+  );
+
+  if (variant === 'privateV0') {
+    return (
+      <form
+        onSubmit={handleV0Submit}
+        className={`rounded-3xl bg-white p-6 text-[#0f172a] sm:p-7 md:p-9 ${koreanLineBreak}`}
+        noValidate
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-sm font-bold break-keep">
+            학부모님 성함
+            <input
+              required
+              name="parent_name"
+              className={v0InputClass}
+              placeholder="성함을 입력해 주세요"
+              value={v0ParentName}
+              onChange={(e) => setV0ParentName(e.target.value)}
+              autoComplete="name"
+            />
+          </label>
+          <label className="text-sm font-bold break-keep">
+            연락처
+            <input
+              required
+              name="phone"
+              type="tel"
+              className={v0InputClass}
+              placeholder="010-0000-0000"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              autoComplete="tel"
+            />
+          </label>
+          <label className="text-sm font-bold break-keep">
+            아이 연령/학년
+            <input
+              name="child_age"
+              className={v0InputClass}
+              placeholder="예: 8세 / 초등학교 1학년"
+              value={v0ChildAge}
+              onChange={(e) => setV0ChildAge(e.target.value)}
+            />
+          </label>
+          <div className="text-sm font-bold break-keep">
+            희망 수업 형태
+            <div className="mt-2 flex flex-wrap gap-2">
+              {PRIVATE_V0_CLASS_TYPE_CHIPS.map((type) => (
+                <button
+                  type="button"
+                  key={type}
+                  onClick={() => setV0ClassType(type)}
+                  className={`rounded-full px-3 py-2 text-xs font-bold transition break-keep ${
+                    v0ClassType === type
+                      ? 'bg-[#246bce] text-white'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {v0ClassType === type ? <Check className="mr-1 inline size-3" aria-hidden /> : null}
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <label className="mt-5 block text-sm font-bold break-keep">
+          우리 아이 성향 및 고민사항
+          <textarea
+            name="memo"
+            rows={4}
+            className={`${v0InputClass} resize-none`}
+            placeholder="아이의 현재 모습이나 상담받고 싶은 내용을 자유롭게 적어주세요."
+            value={v0Memo}
+            onChange={(e) => setV0Memo(e.target.value)}
+          />
+        </label>
+        {status.message ? (
+          <p
+            className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
+              status.tone === 'ok'
+                ? 'bg-[#e8f1ff] text-[#0f172a]'
+                : status.tone === 'error'
+                  ? 'bg-rose-50 text-rose-800'
+                  : 'bg-slate-50 text-slate-700'
+            }`}
+            role="status"
+          >
+            {status.message}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={submitting}
+          aria-busy={submitting}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#246bce] px-6 py-4 text-sm font-bold text-white transition hover:bg-[#1559b6] disabled:opacity-60"
+        >
+          {submitting ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              접수 중…
+            </>
+          ) : (
+            <>
+              맞춤 수업 상담 신청하기
+              <ArrowRight className="size-4" aria-hidden />
+            </>
+          )}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <section id="apply" className="scroll-mt-24 space-y-6 sm:space-y-7">

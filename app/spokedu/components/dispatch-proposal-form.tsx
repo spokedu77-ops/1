@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import {
@@ -19,13 +20,29 @@ const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상
 
 const inputClass =
   'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
+const v0InputClass =
+  'mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
 const labelClass = 'text-sm font-semibold text-slate-800';
 const hintClass = 'mt-1 text-xs leading-relaxed text-stone-500';
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
-export function DispatchProposalForm() {
+const V0_PROGRAM_CHIPS = [
+  { label: '정기수업', value: '월간 뉴스포츠' },
+  { label: 'SPOMOVE', value: 'SPOMOVE' },
+  { label: '특수·포용체육', value: '특수체육' },
+  { label: '미니올림픽', value: '미니 올림픽' },
+  { label: '스포츠부스', value: '스포츠 부스·원데이' },
+  { label: '방학캠프·PAPS', value: 'PAPS 놀이체육' },
+  { label: '맞춤상담', value: '맞춤 스포츠 특강' },
+] as const;
+
+export type DispatchProposalFormProps = {
+  /** v0 /education 문의 섹션 — 흰 카드 폼만 렌더 */
+  variant?: 'default' | 'educationV0';
+};
+
+export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFormProps) {
   const searchParams = useSearchParams();
-  const didApplyQueryDefaults = useRef(false);
   const [organization, setOrganization] = useState('');
   const [manager, setManager] = useState('');
   const [phone, setPhone] = useState('');
@@ -40,6 +57,7 @@ export function DispatchProposalForm() {
   const [specialNeeds, setSpecialNeeds] = useState('');
   const [inquiry, setInquiry] = useState('');
   const [conversionEvidenceSlug, setConversionEvidenceSlug] = useState<FieldRecordSlug | null>(null);
+  const [v0ContactLine, setV0ContactLine] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
 
@@ -65,15 +83,13 @@ export function DispatchProposalForm() {
     setHeadcount('');
     setSpecialNeeds('');
     setInquiry('');
+    setV0ContactLine('');
   }, []);
 
   useEffect(() => {
-    if (didApplyQueryDefaults.current) return;
-    didApplyQueryDefaults.current = true;
-
     const programLabel = parseDispatchProgramLabel(searchParams.get('program'));
     if (programLabel) {
-      setPrograms((prev) => (prev.includes(programLabel) ? prev : [programLabel, ...prev]));
+      setPrograms((prev) => (prev.includes(programLabel) ? prev : [...prev, programLabel]));
     }
     const evidence = parseConversionEvidenceSlug(searchParams.get('conversionEvidence'));
     if (evidence) setConversionEvidenceSlug(evidence);
@@ -94,7 +110,20 @@ export function DispatchProposalForm() {
         setStatus({ tone: 'error', message: '기관명과 담당자 정보는 필수입니다.' });
         return;
       }
-      if (!phone.trim() && !email.trim()) {
+      const resolvedPhone =
+        variant === 'educationV0'
+          ? v0ContactLine.includes('@')
+            ? ''
+            : v0ContactLine.trim()
+          : phone.trim();
+      const resolvedEmail =
+        variant === 'educationV0'
+          ? v0ContactLine.includes('@')
+            ? v0ContactLine.trim()
+            : ''
+          : email.trim();
+
+      if (!resolvedPhone && !resolvedEmail) {
         setStatus({ tone: 'error', message: '전화번호 또는 이메일 중 하나는 필수입니다.' });
         return;
       }
@@ -109,8 +138,8 @@ export function DispatchProposalForm() {
             type: 'dispatch',
             organization: organization.trim(),
             manager: manager.trim(),
-            phone: phone.trim(),
-            email: email.trim(),
+            phone: resolvedPhone,
+            email: resolvedEmail,
             location: location.trim(),
             startDate,
             endDate,
@@ -119,7 +148,7 @@ export function DispatchProposalForm() {
             headcount,
             specialNeeds,
             inquiry: inquiry.trim(),
-            source: 'spokedu-dispatch-proposal',
+            source: variant === 'educationV0' ? 'spokedu-education-v0' : 'spokedu-dispatch-proposal',
             acquisition: getAcquisitionContext({
               submitPath:
                 typeof window !== 'undefined'
@@ -168,6 +197,8 @@ export function DispatchProposalForm() {
       manager,
       phone,
       email,
+      v0ContactLine,
+      variant,
       location,
       startDate,
       endDate,
@@ -180,6 +211,116 @@ export function DispatchProposalForm() {
       reset,
     ],
   );
+
+  if (variant === 'educationV0') {
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-3xl bg-white p-7 text-slate-900 shadow-2xl md:p-10"
+        noValidate
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className={`text-sm font-bold ${koreanLineBreak}`}>
+            기관/학교명
+            <input
+              required
+              name="organization"
+              className={v0InputClass}
+              placeholder="예: 매동초등학교"
+              value={organization}
+              onChange={(e) => setOrganization(e.target.value)}
+            />
+          </label>
+          <label className={`text-sm font-bold ${koreanLineBreak}`}>
+            담당자 성함
+            <input
+              required
+              name="name"
+              className={v0InputClass}
+              placeholder="홍길동"
+              value={manager}
+              onChange={(e) => setManager(e.target.value)}
+            />
+          </label>
+        </div>
+        <label className={`mt-5 block text-sm font-bold ${koreanLineBreak}`}>
+          연락처 또는 이메일
+          <input
+            required
+            name="contact"
+            className={v0InputClass}
+            placeholder="010-0000-0000 또는 이메일"
+            value={v0ContactLine}
+            onChange={(e) => setV0ContactLine(e.target.value)}
+          />
+        </label>
+        <fieldset className="mt-5">
+          <legend className="text-sm font-bold">희망 프로그램 선택</legend>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {V0_PROGRAM_CHIPS.map(({ label, value }) => (
+              <label key={label} className="cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="program"
+                  value={value}
+                  className="peer sr-only"
+                  checked={programs.includes(value)}
+                  onChange={() => toggleProgram(value)}
+                />
+                <span className="inline-flex rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">
+                  {label}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <label className={`mt-5 block text-sm font-bold ${koreanLineBreak}`}>
+          예상 인원 및 간단 문의사항
+          <textarea
+            required
+            name="message"
+            rows={4}
+            className={`${v0InputClass} resize-none`}
+            placeholder="예상 인원, 희망 일정, 궁금한 점을 남겨주세요."
+            value={inquiry}
+            onChange={(e) => setInquiry(e.target.value)}
+          />
+        </label>
+        {status.message ? (
+          <p
+            className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
+              status.tone === 'ok'
+                ? 'bg-blue-50 text-blue-900'
+                : status.tone === 'error'
+                  ? 'bg-rose-50 text-rose-800'
+                  : 'bg-slate-50 text-slate-700'
+            }`}
+            role="status"
+          >
+            {status.message}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={submitting}
+          aria-busy={submitting}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:opacity-60"
+        >
+          {submitting ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+              접수 중…
+            </>
+          ) : (
+            <>
+              기관 조건으로 맞춤 운영안 받기
+              <ArrowRight className="size-4" aria-hidden />
+            </>
+          )}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <section id="contact" className="scroll-mt-36 space-y-5 sm:space-y-6">
