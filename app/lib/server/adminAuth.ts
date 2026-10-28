@@ -146,6 +146,10 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
     // getUser: Auth 서버에 검증 요청 (getSession은 쿠키만 읽어 신뢰할 수 없음)
     const { data: { user }, error: userError } = await serverSupabase.auth.getUser();
     if (!user) {
+      // Network failures are not evidence that the browser session has expired.
+      if (userError && (userError.name === 'AuthRetryableFetchError' || Number(userError.status) >= 500)) {
+        return { ok: false, response: NextResponse.json({ error: 'Auth service unavailable' }, { status: 503 }) };
+      }
       return {
         ok: false,
         response: await unauthorizedResponse(isInvalidRefreshTokenError(userError)),

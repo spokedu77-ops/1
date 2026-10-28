@@ -27,6 +27,7 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const type = params.get('type') || 'teacher';
   const nextSafe = parseSafeNextRedirect(params.get('next'));
+  const reauth = params.get('reauth') === '1';
 
   useEffect(() => { setKeepLoggedIn(readKeepLoggedInPreference()); }, []);
 
@@ -39,6 +40,13 @@ function LoginContent() {
     void (async () => {
       try {
         const supabase = getSupabaseBrowserClient();
+        // The admin server rejected this session. Show the form instead of
+        // reusing the browser session and redirecting straight back to admin.
+        if (reauth) {
+          await supabase.auth.signOut({ scope: 'local' });
+          if (!cancelled) setSessionChecked(true);
+          return;
+        }
         await enforceSessionOnlyPolicy(() => supabase.auth.signOut({ scope: 'local' }));
         const session = await getSessionWithRefreshRecovery(supabase);
         if (session?.user) {
@@ -58,7 +66,7 @@ function LoginContent() {
       if (!cancelled) setSessionChecked(true);
     })();
     return () => { cancelled = true; };
-  }, [nextSafe, router, type]);
+  }, [nextSafe, router, type, reauth]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();

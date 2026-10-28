@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         res = await fetch('/api/auth/check-admin', { credentials: 'include' });
         json = (await res.json()) as AdminCheckResponse;
       } catch {
-        router.replace('/login');
+        setCheckSlow(true);
         return;
       }
 
@@ -96,7 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       clearAdminCheckCache();
 
       if (json.reason === 'no-session') {
-        router.replace('/login');
+        router.replace(`/login?type=admin&reauth=1&next=${encodeURIComponent(pathname || '/admin')}`);
       } else {
         router.replace('/teacher/my-classes');
       }
