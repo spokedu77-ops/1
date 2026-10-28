@@ -23,6 +23,7 @@ blob-report/
 .cache/
 
 # SPOKEDU QA artifacts
+/.tmp-spokedu*/
 qa-artifacts/
 qa-screenshots/
 .qa-screenshots/
