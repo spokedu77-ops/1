@@ -1,3 +1,4 @@
+import { HOME_SECTION03_PEOPLE } from '../components/home-web/home-section03-people';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
@@ -84,27 +85,27 @@ export const aboutPage = {
     members: [
       {
         id: 'choi',
-        name: '최지훈',
+        name: HOME_SECTION03_PEOPLE[0]!.name,
         role: '대표',
-        photo: '/images/spokedu/home/people/choi-temp-crop.jpg',
-        photoObjectPosition: '50% 38%',
-        credentials: ['연세대학교 체육교육학과'],
+        photo: HOME_SECTION03_PEOPLE[0]!.photo,
+        photoObjectPosition: '50% top',
+        credentials: [...HOME_SECTION03_PEOPLE[0]!.credentials],
       },
       {
         id: 'kim-yunki',
-        name: '김윤기',
+        name: HOME_SECTION03_PEOPLE[1]!.name,
         role: '운영총괄',
-        photo: '/images/spokedu/home/people/kim-yunki-temp.jpg',
-        photoObjectPosition: '50% 38%',
-        credentials: ['연세대학교 체육교육학과', '중등학교 정교사 2급'],
+        photo: HOME_SECTION03_PEOPLE[1]!.photo,
+        photoObjectPosition: '50% top',
+        credentials: [...HOME_SECTION03_PEOPLE[1]!.credentials],
       },
       {
         id: 'kim-gumin',
-        name: '김구민',
+        name: HOME_SECTION03_PEOPLE[2]!.name,
         role: '팀장',
-        photo: '/images/spokedu/home/people/kim-gumin-temp.jpg',
-        photoObjectPosition: '50% 20%',
-        credentials: ['강원대학교 레저스포츠 전공', '생활스포츠지도사 2급'],
+        photo: HOME_SECTION03_PEOPLE[2]!.photo,
+        photoObjectPosition: '50% top',
+        credentials: [...HOME_SECTION03_PEOPLE[2]!.credentials],
       },
     ] as const,
   },

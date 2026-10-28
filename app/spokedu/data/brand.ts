@@ -9,7 +9,7 @@ export const brandProfile = {
   /** 통신판매업 신고번호 — 공식 증빙 확인 전 null (Footer 미노출) */
   mailOrderReportNumber: null as string | null,
   /** 사업자등록증상 사업장 (PG·세금계산서 기준) */
-  businessAddress: '서울특별시 강동구 성내동 430-2, 7층 1호',
+  businessAddress: '서울특별시 강동구 성내동 430-2, 7층 2호',
   /** 강동 체육관 방문·수업 장소 (체육관 config와 동일 역할) */
   gymVisitAddress: '서울시 강동구 성내동 430-2, 7층 2호',
   serviceArea: '서울·경기 중심 상담 가능',
@@ -88,6 +88,6 @@ export function getPublicFooterLegalLine(): string {
   if (reportNo) {
     parts.push(`통신판매업 신고번호 ${reportNo}`);
   }
-  parts.push(brandProfile.businessAddress);
+  parts.push(`${brandProfile.businessAddress} 스포키듀LAB`);
   return parts.join(' · ');
 }

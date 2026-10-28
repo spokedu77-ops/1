@@ -53,8 +53,10 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
     height: 1080,
   },
   about: {
-    url: SPOKEDU_IMAGES.programs.spomove.src,
-    alt: SPOKEDU_IMAGES.programs.spomove.alt,
+    url: SPOKEDU_IMAGES.home.fieldEditorialHero.src,
+    alt: '스포키듀 SPOKEDU — 아동·청소년 체육교육 현장',
+    width: 1200,
+    height: 630,
   },
   education: {
     url: SPOKEDU_IMAGES.dispatch.groupClass.src,
