@@ -13,27 +13,30 @@ import {
   HOME_V0_SERVICES,
   HOME_V0_TEAM,
 } from '../data/home-v0-media';
-import { koreanLineBreak } from '../lib/ui-classes';
+import {
+  koreanLineBreak,
+  v0BentoCard,
+  v0CardImageHover,
+  v0CardTitle,
+  v0CardTitleCompact,
+  v0CtaTitleOnDark,
+  v0GradientText,
+  v0HeroTitle,
+  v0Lead,
+  v0SectionBand,
+  v0SectionTitle,
+} from '../lib/ui-classes';
+import { V0Eyebrow } from './v0-ui';
 
 type HomeService = (typeof HOME_V0_SERVICES)[number];
-
-function Eyebrow({ children, dark = false }: { children: string; dark?: boolean }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-4 py-2 text-[11px] font-bold tracking-[0.16em] ${
-        dark ? 'bg-blue-500/15 text-blue-300' : 'bg-blue-50 text-blue-700'
-      }`}
-    >
-      {children}
-    </span>
-  );
-}
 
 function ServiceCard({ service }: { service: HomeService }) {
   return (
     <article
-      className={`group overflow-hidden rounded-3xl bg-white ${
-        service.featured ? 'border-2 border-blue-600 shadow-xl shadow-blue-100/60' : 'shadow-sm ring-1 ring-slate-100'
+      className={`${v0BentoCard} overflow-hidden rounded-3xl bg-white ${
+        service.featured
+          ? 'border-2 border-blue-600 shadow-xl shadow-blue-100/60'
+          : 'border-transparent shadow-sm ring-1 ring-slate-100'
       }`}
     >
       <div className="h-56 overflow-hidden">
@@ -41,13 +44,13 @@ function ServiceCard({ service }: { service: HomeService }) {
         <img
           src={service.image}
           alt={service.imageAlt}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          className={`h-full w-full ${v0CardImageHover}`}
           style={{ objectPosition: service.imagePosition }}
         />
       </div>
       <div className="flex min-h-[340px] flex-col p-7 md:p-8">
         <p className="text-[11px] font-bold tracking-[0.12em] text-blue-600">{service.number}</p>
-        <h3 className="mt-4 text-2xl font-bold tracking-tight text-slate-950">{service.title}</h3>
+        <h3 className={`mt-4 ${v0CardTitle} text-slate-950`}>{service.title}</h3>
         <p className={`mt-4 text-sm leading-7 text-slate-500 ${koreanLineBreak}`}>{service.description}</p>
         <p className="mt-auto pt-7 text-xs font-medium leading-6 text-slate-400">{service.tags}</p>
         <Link
@@ -71,14 +74,14 @@ export function HomeV0Landing() {
     <main className={`overflow-hidden bg-white pb-8 text-slate-950 ${koreanLineBreak}`}>
       <section id="top" className="mx-auto grid max-w-7xl items-center gap-14 px-6 pb-24 pt-10 lg:grid-cols-2 lg:gap-20 lg:pb-32 lg:pt-16">
         <div>
-          <Eyebrow>CHILD &amp; YOUTH PHYSICAL EDUCATION</Eyebrow>
+          <V0Eyebrow>CHILD &amp; YOUTH PHYSICAL EDUCATION</V0Eyebrow>
           <h1
             id="home-heading"
-            className="mt-7 text-balance text-[clamp(2.35rem,7.5vw,5.6rem)] font-black leading-[1.08] tracking-[-0.07em]"
+            className={`mt-7 ${v0HeroTitle}`}
           >
             아이의 움직임을
             <br />
-            <span className="text-blue-600">성장의 경험</span>으로
+            <span className={v0GradientText}>성장의 경험</span>으로
             <br />
             설계합니다.
           </h1>
@@ -95,7 +98,7 @@ export function HomeV0Landing() {
             </a>
             <Link
               href={HOME_V0_CONTACT.contactHref}
-              className="rounded-full border border-slate-200 px-6 py-4 text-sm font-bold text-slate-700 transition hover:border-blue-600 hover:text-blue-600"
+              className="inline-flex items-center rounded-full border-2 border-slate-200 bg-white px-6 py-4 text-sm font-bold text-slate-800 transition hover:bg-slate-50 hover:border-slate-300"
             >
               수업 상담하기
             </Link>
@@ -112,9 +115,7 @@ export function HomeV0Landing() {
             />
           </div>
           <div className="absolute -bottom-6 -left-5 rounded-2xl bg-white/85 p-5 shadow-xl shadow-slate-900/10 backdrop-blur-md">
-            <p className="text-3xl font-black tracking-tight text-blue-600">
-              500<span className="text-slate-900">+</span>
-            </p>
+            <p className={`text-3xl font-black tracking-tight ${v0GradientText}`}>500+</p>
             <p className="mt-1 text-xs font-bold text-slate-500">누적 출강 기관</p>
           </div>
           <div className="absolute -right-5 top-8 rounded-2xl bg-slate-950/85 p-5 text-white shadow-xl backdrop-blur-md">
@@ -128,11 +129,11 @@ export function HomeV0Landing() {
         </div>
       </section>
 
-      <section id="services" className="scroll-mt-28 bg-slate-50 py-24 md:py-32">
+      <section id="services" className={`scroll-mt-28 bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <Eyebrow>CHOOSE YOUR PATH</Eyebrow>
-            <h2 id="audience-heading" className="mt-6 text-3xl font-black tracking-[-0.05em] md:text-5xl">
+            <V0Eyebrow>CHOOSE YOUR PATH</V0Eyebrow>
+            <h2 id="audience-heading" className={`mt-6 ${v0SectionTitle}`}>
               어떤 체육 교육이 필요하신가요?
             </h2>
             <p className="mt-5 text-slate-500">대상의 목적과 환경에 맞는 최적의 솔루션을 선택해 보세요.</p>
@@ -145,20 +146,22 @@ export function HomeV0Landing() {
         </div>
       </section>
 
-      <section id="solutions" className="scroll-mt-28 bg-[#0f172a] py-24 text-white md:py-32">
+      <section id="solutions" className={`scroll-mt-28 bg-[#0f172a] text-white ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-3xl">
-            <Eyebrow dark>FROM FIELD TO PRODUCT</Eyebrow>
-            <h2 className="mt-6 text-3xl font-black tracking-[-0.05em] md:text-5xl">
+            <V0Eyebrow dark>FROM FIELD TO PRODUCT</V0Eyebrow>
+            <h2 className={`mt-6 ${v0SectionTitle}`}>
               현장의 수업 경험을
               <br className="hidden md:block" /> 기술과 도구로 확장합니다
             </h2>
           </div>
           <div className="mt-14 grid gap-6 lg:grid-cols-12 lg:items-stretch">
-            <div className="flex h-full min-h-full flex-col justify-between rounded-3xl bg-slate-800/70 p-8 ring-1 ring-slate-700 lg:col-span-7">
+            <div
+              className={`${v0BentoCard} flex h-full min-h-full flex-col justify-between rounded-3xl border-slate-700/50 bg-slate-800/70 p-8 ring-1 ring-slate-700 lg:col-span-7`}
+            >
               <div>
-                <Eyebrow dark>EDUTECH SOLUTION</Eyebrow>
-                <h3 className="mt-6 text-2xl font-bold">
+                <V0Eyebrow dark>EDUTECH SOLUTION</V0Eyebrow>
+                <h3 className={`mt-6 ${v0CardTitle} text-white`}>
                   SPOMOVE : 보고, 판단하고,
                   <br /> 몸으로 반응하는 시지각 체육
                 </h3>
@@ -187,10 +190,12 @@ export function HomeV0Landing() {
                 SPOMOVE &amp; 스포매트 알아보기 <ArrowRight className="ml-2 size-4" aria-hidden />
               </Link>
             </div>
-            <div className="flex h-full min-h-full flex-col justify-between rounded-3xl bg-slate-800/70 p-8 ring-1 ring-slate-700 lg:col-span-5">
+            <div
+              className={`${v0BentoCard} flex h-full min-h-full flex-col justify-between rounded-3xl border-slate-700/50 bg-slate-800/70 p-8 ring-1 ring-slate-700 lg:col-span-5`}
+            >
               <div className="flex min-h-0 flex-1 flex-col">
-                <Eyebrow dark>SAAS FOR TEACHERS</Eyebrow>
-                <h3 className="mt-6 text-2xl font-bold">
+                <V0Eyebrow dark>SAAS FOR TEACHERS</V0Eyebrow>
+                <h3 className={`mt-6 ${v0CardTitle} text-white`}>
                   SPOKEDU LAB :<br /> 수업을 찾고 현장을 운영합니다
                 </h3>
                 <p className="mt-4 text-sm leading-7 text-slate-400">
@@ -218,15 +223,15 @@ export function HomeV0Landing() {
         </div>
       </section>
 
-      <section id="about" className="scroll-mt-28 bg-white py-24 md:py-32">
+      <section id="about" className={`scroll-mt-28 bg-white ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="max-w-3xl">
-            <Eyebrow>PEOPLE &amp; EXPERTISE</Eyebrow>
-            <h2 className="mt-6 text-3xl font-black tracking-[-0.05em] md:text-5xl">
+            <V0Eyebrow>PEOPLE &amp; EXPERTISE</V0Eyebrow>
+            <h2 className={`mt-6 ${v0SectionTitle}`}>
               수업을 설계한 전문가들이
               <br /> 현장을 끝까지 책임집니다
             </h2>
-            <p className="mt-5 leading-7 text-slate-500">
+            <p className={`mt-5 ${v0Lead}`}>
               연세대학교 체육교육과 출신 리더십이 수업의 기준을 만들고 현장의 품질을 직접 관리합니다.
             </p>
           </div>
@@ -241,14 +246,14 @@ export function HomeV0Landing() {
             </div>
             <div className="grid gap-5 sm:grid-cols-3 lg:col-span-3">
               {HOME_V0_TEAM.map((person) => (
-                <div key={person.name} className="rounded-3xl bg-slate-50 p-6">
-                  <div className="size-16 overflow-hidden rounded-2xl bg-slate-200">
+                <div key={person.name} className={`${v0BentoCard} rounded-3xl bg-slate-50 p-6`}>
+                  <div className="mx-auto size-24 overflow-hidden rounded-2xl bg-slate-200 sm:mx-0 sm:size-28">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={person.photo}
                       alt={`${person.role} ${person.name}`}
-                      className="size-full object-cover"
-                      style={{ objectPosition: person.photoObjectPosition }}
+                      className={`size-full object-cover object-top ${v0CardImageHover}`}
+                      style={{ objectPosition: person.photoObjectPosition ?? '50% 12%' }}
                     />
                   </div>
                   <h3 className="mt-6 font-bold">{person.name}</h3>
@@ -261,10 +266,10 @@ export function HomeV0Landing() {
         </div>
       </section>
 
-      <section id="cases" className="scroll-mt-28 bg-slate-50 py-24 md:py-32">
+      <section id="cases" className={`scroll-mt-28 bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-wrap items-end justify-between gap-5">
-            <h2 className="text-3xl font-black tracking-[-0.05em] md:text-4xl">
+            <h2 className={v0SectionTitle}>
               서로 다른 현장에
               <br className="md:hidden" /> 서로 다른 수업을 설계합니다
             </h2>
@@ -274,13 +279,17 @@ export function HomeV0Landing() {
           </div>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {HOME_V0_FIELD_CASES.map((item) => (
-              <Link key={item.title} href={item.href} className="group overflow-hidden rounded-3xl bg-white shadow-sm">
+              <Link
+                key={item.title}
+                href={item.href}
+                className={`${v0BentoCard} overflow-hidden rounded-3xl border-transparent bg-white shadow-sm`}
+              >
                 <div className="h-52 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.image}
                     alt={item.alt}
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                    className={`h-full w-full object-cover ${v0CardImageHover}`}
                     style={{ objectPosition: item.objectPosition }}
                   />
                 </div>
@@ -288,7 +297,7 @@ export function HomeV0Landing() {
                   <span className="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-700">
                     {item.category}
                   </span>
-                  <h3 className="mt-5 font-bold leading-6">{item.title}</h3>
+                  <h3 className={`mt-5 ${v0CardTitleCompact} leading-6`}>{item.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-500">{item.summary}</p>
                 </div>
               </Link>
@@ -302,7 +311,7 @@ export function HomeV0Landing() {
           <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-bold tracking-wide text-blue-100">LET&apos;S TALK</p>
-              <h2 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-[-0.05em] md:text-5xl">
+              <h2 className={`mt-4 max-w-2xl ${v0CtaTitleOnDark}`}>
                 우리 아이, 우리 기관에 딱 맞는
                 <br className="hidden md:block" /> 체육 수업을 찾고 계신가요?
               </h2>

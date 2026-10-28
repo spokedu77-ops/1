@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { trackMasterFunnelEvent } from '../../lib/funnelEvents';
+import { useProfile } from '../../store';
 
 const CORE_PREFIXES = [
   '/spokedu-lab/dashboard',
@@ -17,6 +18,7 @@ const CORE_PREFIXES = [
 
 export function MasterFunnelTracker() {
   const pathname = usePathname();
+  const profile = useProfile();
 
   useEffect(() => {
     const canonicalPathname = pathname.replace(/^\/spokedu-master(?=\/|$)/, '/spokedu-lab');
@@ -29,9 +31,13 @@ export function MasterFunnelTracker() {
       return;
     }
     if (CORE_PREFIXES.some((prefix) => canonicalPathname.startsWith(prefix))) {
-      trackMasterFunnelEvent('core_use_daily', { surface: canonicalPathname.split('/')[2] || 'lab' });
+      trackMasterFunnelEvent(
+        'core_use_daily',
+        { surface: canonicalPathname.split('/')[2] || 'lab' },
+        { userId: profile?.id ?? null },
+      );
     }
-  }, [pathname]);
+  }, [pathname, profile?.id]);
 
   return null;
 }

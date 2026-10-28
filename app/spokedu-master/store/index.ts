@@ -4,6 +4,7 @@ import { create, type StateCreator } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
+import { clearSpomoveOfficialAssetPackCache } from '@/app/lib/spomove/loadSpomoveOfficialAssetPacks';
 import { useHasPremiumEntitlement } from '../access/MasterAccessProvider';
 import {
   classifyLegacyFavoriteIds,
@@ -609,7 +610,8 @@ export const useMasterStore = create<MasterState>()(
             pendingLegacyFavoriteIds: [],
           };
         }),
-      resetProfile: () =>
+      resetProfile: () => {
+        clearSpomoveOfficialAssetPackCache();
         set((state) => ({
           ...clearedLocalWorkspace(state),
           localWorkspaceOwnerId: null,
@@ -623,7 +625,8 @@ export const useMasterStore = create<MasterState>()(
           lastClassToolByOwner: {},
           pendingLegacyFavoriteIdsByOwner: {},
           pendingLegacyFavoriteIds: [],
-        })),
+        }));
+      },
       syncSubscription: async () => {
         try {
           const res = await fetch('/api/spokedu-master/subscription');

@@ -1,4 +1,5 @@
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { wrapSpokeduMasterProgramSourceLoader, invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability, type MasterAccessResult } from '@/app/lib/server/spokeduMasterAccess';
@@ -395,11 +396,25 @@ function selectHomePrograms(programs: Program[]) {
   return selectWeeklyPrograms(programs);
 }
 
-export async function GET(request?: Request) {
-  const access = await requireSpokeduMasterCapability('libraryBrowse');
-  if (!access.ok) return withPrivateNoStore(access.response);
+export class MasterProgramSourceLoadError extends Error {
+  constructor(
+    readonly source: string,
+    readonly cause: unknown,
+  ) {
+    super('PROGRAM_SOURCE_FAILED');
+    this.name = 'MasterProgramSourceLoadError';
+  }
+}
 
-  const supabase = getServiceSupabase();
+export type LoadedMasterProgramCatalog = {
+  programs: Program[];
+  invalidPrograms: Array<{ curriculumId: number | null; issues: ProgramValidationIssue[] }>;
+  publishedOverlayCount: number;
+};
+
+export async function loadPublishedMasterProgramsFromDb(
+  supabase: ReturnType<typeof getServiceSupabase>,
+): Promise<LoadedMasterProgramCatalog> {
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')
     .select('id,display_order,created_at')
@@ -408,8 +423,7 @@ export async function GET(request?: Request) {
     .order('id', { ascending: false });
 
   if (currErr || !curriculumRows) {
-    await reportProgramSourceFailure(currErr, 'curriculum');
-    return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+    throw new MasterProgramSourceLoadError('curriculum', currErr);
   }
 
   const curriculumIds = (curriculumRows as CurrRow[]).map((row) => row.id);
@@ -431,16 +445,14 @@ export async function GET(request?: Request) {
     ]);
 
     if (metaResult.error || !metaResult.data) {
-      await reportProgramSourceFailure(metaResult.error, 'spokedu_master_program_meta');
-      return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+      throw new MasterProgramSourceLoadError('spokedu_master_program_meta', metaResult.error);
     }
     for (const meta of metaResult.data as MetaRow[]) {
       metaByCurriculumId.set(meta.curriculum_id, meta);
     }
 
     if (overlayResult.error || !overlayResult.data) {
-      await reportProgramSourceFailure(overlayResult.error, 'spokedu_pro_programs');
-      return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+      throw new MasterProgramSourceLoadError('spokedu_pro_programs', overlayResult.error);
     }
     overlayByCurriculumId = selectCanonicalPublishedProgramOverlays(
       overlayResult.data as OverlayRow[],
@@ -462,10 +474,35 @@ export async function GET(request?: Request) {
     }
   }
 
-  await reportInvalidMasterPrograms(invalidPrograms);
+  return {
+    programs,
+    invalidPrograms,
+    publishedOverlayCount: overlayByCurriculumId.size,
+  };
+}
 
-  if (overlayByCurriculumId.size > 0 && programs.length === 0) {
-    return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+const loadCachedPublishedMasterPrograms = wrapSpokeduMasterProgramSourceLoader(async () => {
+  const loaded = await loadPublishedMasterProgramsFromDb(getServiceSupabase());
+  await reportInvalidMasterPrograms(loaded.invalidPrograms);
+  if (loaded.publishedOverlayCount > 0 && loaded.programs.length === 0) {
+    throw new MasterProgramSourceLoadError('validation', new Error('all published overlays invalid'));
+  }
+  return loaded.programs;
+});
+
+export async function GET(request?: Request) {
+  const access = await requireSpokeduMasterCapability('libraryBrowse');
+  if (!access.ok) return withPrivateNoStore(access.response);
+
+  let programs: Program[];
+  try {
+    programs = await loadCachedPublishedMasterPrograms();
+  } catch (error) {
+    if (error instanceof MasterProgramSourceLoadError) {
+      await reportProgramSourceFailure(error.cause, error.source);
+      return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+    }
+    throw error;
   }
 
   const freePreviewProgramId = getFreePreviewProgramId(programs);
@@ -523,5 +560,6 @@ export async function PATCH(request: Request) {
       { status: 500 },
     );
   }
+  invalidateSpokeduMasterProgramSourceCache();
   return privateNoStoreJson({ data });
 }

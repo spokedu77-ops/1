@@ -22,6 +22,12 @@ vi.mock("@/app/lib/server/spokeduMasterAccess", () => ({
   requireSpokeduMasterCapability,
 }));
 
+vi.mock("@/app/lib/server/spokeduMasterProgramSourceCache", () => ({
+  wrapSpokeduMasterProgramSourceLoader: (loader: () => Promise<unknown>) => loader,
+  invalidateSpokeduMasterProgramSourceCache: vi.fn(),
+  SPOKEDU_MASTER_PROGRAMS_CACHE_TAG: "spokedu-master-programs",
+}));
+
 type QueryResult = {
   data: unknown;
   error: unknown;

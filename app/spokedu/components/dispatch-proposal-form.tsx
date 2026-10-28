@@ -13,7 +13,15 @@ import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
 import { getAcquisitionContext } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary, marketingCardStatic } from '../lib/ui-classes';
+import {
+  koreanLineBreak,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  marketingCardStatic,
+  v0FilterChipActive,
+  v0FilterChipBase,
+  v0FilterChipIdle,
+} from '../lib/ui-classes';
 
 const AGE_OPTIONS = ['유아', '초등 저학년', '초등 고학년', '중등', '혼합 연령'] as const;
 const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상'] as const;
@@ -267,7 +275,11 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
                   checked={programs.includes(value)}
                   onChange={() => toggleProgram(value)}
                 />
-                <span className="inline-flex rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">
+                <span
+                  className={`inline-flex ${v0FilterChipBase} ${
+                    programs.includes(value) ? v0FilterChipActive : v0FilterChipIdle
+                  }`}
+                >
                   {label}
                 </span>
               </label>

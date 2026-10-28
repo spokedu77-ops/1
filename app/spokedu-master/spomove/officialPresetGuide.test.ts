@@ -71,7 +71,7 @@ describe('official SPOMOVE preset guide contract', () => {
     const session = read('app/spokedu-master/spomove/session/page.tsx');
     const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
 
-    expect(hub).toContain('SPOMOVE_THUMBNAIL_PACK_ID');
+    expect(hub).toContain('loadSpomoveHubFeaturedAssetPacks');
     expect(hub).toContain('useSpomoveGuideVideo');
     expect(hub).toContain('thumbnailUrl');
     expect(hub).toContain('onImageError={() => setImageFailed(true)}');

@@ -1,13 +1,16 @@
 import { getFieldRecordCatalogItem } from './field-records-catalog';
 import { SPOKEDU_IMAGES } from './images';
 
-/** `public/info/dispatch.html` 프로그램 라인업과 동일 CDN (로컬 레지스트리와 병행) */
-export const EDUCATION_V0_DISPATCH_POSTIMG = {
-  spomove: 'https://i.postimg.cc/8CCvkfs1/seupomubeu.jpg',
-  monthlyNewsports: 'https://i.postimg.cc/VvXrZjZF/wolganseupocheu.jpg',
-  slowSports: 'https://i.postimg.cc/X73p7BD2/Kakao-Talk-20260407-164353816.jpg',
-  miniOlympics: 'https://i.postimg.cc/J0pswpW4/20260417-115503.png',
-  sportsBooth: 'https://i.postimg.cc/ZKk6Pqs3/IMG-7940.jpg',
+const FIELD = '/images/spokedu';
+
+/** 6대 프로그램 — 로컬·카탈로그 실사만 사용 (외부 postimg 제거) */
+export const EDUCATION_V0_PROGRAM_IMAGES = {
+  spomove: '/spokedu/programs/spomove/assets/edu/edu-03.webp',
+  monthlyNewsports: `${FIELD}/records/maedong-sports-stepup.jpg`,
+  slowSports: `${FIELD}/records/donghaeng-special-pe.jpg`,
+  miniOlympics: `${FIELD}/dispatch/dispatch-group-class.jpg`,
+  sportsBooth: `${FIELD}/records/seodaemun-event-booth.jpg`,
+  custom: `${FIELD}/records/yangcheon-paps.jpg`,
 } as const;
 
 const maedong = getFieldRecordCatalogItem('maedong-sports-stepup');
@@ -24,7 +27,7 @@ export const EDUCATION_V0_PROGRAMS = [
     target: '방과후 · 키움센터',
     description: '보고, 판단하고, 움직이는 과정을 하나의 놀이로 연결합니다.',
     tags: ['두뇌체육', '시지각', '놀이 중심'],
-    image: EDUCATION_V0_DISPATCH_POSTIMG.spomove,
+    image: EDUCATION_V0_PROGRAM_IMAGES.spomove,
   },
   {
     number: '02',
@@ -33,7 +36,7 @@ export const EDUCATION_V0_PROGRAMS = [
     target: '초·중·고 · 지역아동센터',
     description: '매월 새로운 종목을 만나며 운동의 즐거움과 자신감을 키웁니다.',
     tags: ['월간 운영', '종목 체험', '신체활동'],
-    image: EDUCATION_V0_DISPATCH_POSTIMG.monthlyNewsports,
+    image: EDUCATION_V0_PROGRAM_IMAGES.monthlyNewsports,
   },
   {
     number: '03',
@@ -42,7 +45,7 @@ export const EDUCATION_V0_PROGRAMS = [
     target: '복지관 · 발달센터 · 특수학급',
     description: '아이마다 다른 속도와 감각을 존중하는 포용형 수업입니다.',
     tags: ['개별 맞춤', '포용 체육', '느린 학습자'],
-    image: EDUCATION_V0_DISPATCH_POSTIMG.slowSports,
+    image: EDUCATION_V0_PROGRAM_IMAGES.slowSports,
   },
   {
     number: '04',
@@ -51,7 +54,7 @@ export const EDUCATION_V0_PROGRAMS = [
     target: '유치원 · 학교 · 가족행사',
     description: '경쟁보다 함께하는 과정에 집중하는 기억에 남는 하루를 만듭니다.',
     tags: ['스페셜 데이', '협동', '이벤트'],
-    image: EDUCATION_V0_DISPATCH_POSTIMG.miniOlympics,
+    image: EDUCATION_V0_PROGRAM_IMAGES.miniOlympics,
   },
   {
     number: '05',
@@ -60,7 +63,7 @@ export const EDUCATION_V0_PROGRAMS = [
     target: '학교축제 · 박람회 · 기관행사',
     description: '많은 인원이 짧은 시간에도 몰입할 수 있는 순환형 체험존입니다.',
     tags: ['부스 운영', '순환 동선', '대규모'],
-    image: EDUCATION_V0_DISPATCH_POSTIMG.sportsBooth,
+    image: EDUCATION_V0_PROGRAM_IMAGES.sportsBooth,
   },
   {
     number: '06',
@@ -69,7 +72,7 @@ export const EDUCATION_V0_PROGRAMS = [
     target: '전 기관 맞춤 설계',
     description: '기관의 목표와 일정에 맞춰 가장 필요한 형태로 새롭게 설계합니다.',
     tags: ['PAPS', '방학 캠프', '테마 특강'],
-    image: SPOKEDU_IMAGES.programs.camp.src,
+    image: EDUCATION_V0_PROGRAM_IMAGES.custom,
   },
 ] as const;
 

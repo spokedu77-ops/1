@@ -4,7 +4,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState, type ReactNode } from 'react';
 import { ArrowRight, MessageCircle } from 'lucide-react';
-import { brandProfile } from '../data/brand';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import {
   getRecordsV0CardTheme,
@@ -16,7 +15,24 @@ import {
 import { recordsPage } from '../data/records-page';
 import { SPOKEDU_PATHS } from '../data/public-routes';
 import type { FieldRecordWithThumbnail } from '../lib/resolve-field-records';
-import { koreanLineBreak } from '../lib/ui-classes';
+import {
+  koreanLineBreak,
+  v0BentoCard,
+  v0CardImageHover,
+  v0FilterChipActive,
+  v0FilterChipBase,
+  v0FilterChipIdle,
+  v0CardTitle,
+  v0CardTitleCompact,
+  v0CtaTitleOnDark,
+  v0GradientText,
+  v0HeroTitle,
+  v0Lead,
+  v0SectionBand,
+  v0SectionKicker,
+  v0SectionTitle,
+} from '../lib/ui-classes';
+import { V0Eyebrow, V0SectionHeader } from './v0-ui';
 
 const principles = [
   ['공간에 맞춘 동선 재설계', '교실·활동실·강당·운동장'],
@@ -25,8 +41,10 @@ const principles = [
 ] as const;
 
 const heroStats = [
-  ...recordsPage.hero.stats,
-  { value: '전국', label: brandProfile.serviceArea },
+  { value: '500+', label: '누적 출강 학교·기관' },
+  { value: '2,500+', label: '누적 운영 클래스' },
+  { value: '98%', label: '기관 재계약률' },
+  { value: '전국', label: '서울·경기 중심 맞춤 파견' },
 ] as const;
 
 function RecordCardLink({
@@ -86,18 +104,16 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
 
   return (
     <main className={`break-keep bg-white text-slate-950 ${koreanLineBreak}`}>
-      <section className="px-6 py-20 sm:px-8 lg:px-12">
+      <section className={`px-6 sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-5xl text-center">
-          <span className="inline-flex rounded-full bg-blue-50 px-4 py-2 text-xs font-bold tracking-[0.18em] text-blue-600">
-            FIELD RECORDS ARCHIVE
-          </span>
+          <V0Eyebrow>FIELD RECORDS ARCHIVE</V0Eyebrow>
           <h1
             id="records-title"
-            className="mt-7 text-balance text-4xl font-black leading-[1.14] tracking-[-0.05em] sm:text-5xl md:text-6xl lg:text-7xl"
+            className={`mt-7 ${v0HeroTitle}`}
           >
             서로 다른 현장에
             <br />
-            <span className="text-blue-600">서로 다른 수업</span>을 설계합니다.
+            <span className={v0GradientText}>서로 다른 수업</span>을 설계합니다.
           </h1>
           <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
             {recordsPage.hero.subtitle}
@@ -108,7 +124,13 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                 key={label}
                 className="flex flex-col gap-1 border-slate-200/70 px-3 py-4 sm:border-r last:border-0"
               >
-                <strong className="text-xl font-black tracking-tight sm:text-2xl">{value}</strong>
+                <strong
+                  className={`text-xl font-black tracking-tight sm:text-2xl ${
+                    value === '전국' || value.includes('+') || value.includes('%') ? v0GradientText : ''
+                  }`}
+                >
+                  {value}
+                </strong>
                 <span className="text-xs font-medium text-slate-500 sm:text-sm">{label}</span>
               </div>
             ))}
@@ -116,21 +138,19 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
         </div>
       </section>
 
-      <section className="bg-slate-50 px-6 py-20 sm:px-8 lg:px-12">
+      <section className={`bg-slate-50 px-6 sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 flex flex-col items-center gap-5 text-center">
-            <p className="text-sm font-bold text-blue-600">SPOKEDU CASE FILES</p>
-            <h2 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">현장마다 다른 답을 만들었습니다.</h2>
+            <p className={v0SectionKicker}>SPOKEDU CASE FILES</p>
+            <h2 className={v0SectionTitle}>현장마다 다른 답을 만들었습니다.</h2>
             <div className="flex w-full gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center sm:overflow-visible">
               {RECORDS_V0_FILTERS.map((filter) => (
                 <button
                   key={filter}
                   type="button"
                   onClick={() => setActiveFilter(filter)}
-                  className={`shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition break-keep ${
-                    activeFilter === filter
-                      ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-600'
+                  className={`${v0FilterChipBase} ${
+                    activeFilter === filter ? v0FilterChipActive : v0FilterChipIdle
                   }`}
                   aria-pressed={activeFilter === filter}
                 >
@@ -145,7 +165,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                 key={item.slug}
                 href={item.href}
                 external={item.external}
-                className="group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                className={`${v0BentoCard} flex h-full flex-col justify-between overflow-hidden rounded-3xl border-slate-200/80 bg-white shadow-sm`}
               >
                 <div>
                   <div className="relative aspect-[16/9] overflow-hidden">
@@ -153,7 +173,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                       src={item.image}
                       alt={`${item.venue} 수업 현장`}
                       fill
-                      className="object-cover transition duration-500 group-hover:scale-105"
+                      className={`object-cover ${v0CardImageHover}`}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <span className="absolute left-4 top-4 max-w-[calc(100%-2rem)] rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm break-keep">
@@ -161,38 +181,58 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                     </span>
                   </div>
                   <div className="flex flex-col gap-2 p-6">
-                    <h3 className="text-lg font-extrabold leading-snug tracking-tight break-keep">{item.venue}</h3>
+                    <h3 className={`${v0CardTitleCompact} break-keep`}>{item.venue}</h3>
                     <p className="text-sm font-bold text-blue-600 break-keep">{item.theme}</p>
                     <p className="text-sm leading-6 text-slate-500 break-keep">{item.description}</p>
                   </div>
                 </div>
-                <div className="border-t border-slate-100 bg-slate-50 px-6 py-4">
-                  <p className="text-xs font-semibold leading-5 text-slate-500 break-keep">{item.meta}</p>
-                  <p className="mt-2 text-xs font-bold text-blue-600">
-                    {item.external ? '현장 후기 보기 ↗' : '사례 보기 →'}
+                <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+                  <p className="min-w-0 flex-1 text-xs font-semibold leading-5 text-slate-500 break-keep">
+                    {item.meta}
                   </p>
+                  <span className="shrink-0 text-xs font-bold text-blue-600">
+                    {item.external ? '자세히 보기 ↗' : '자세히 보기 →'}
+                  </span>
                 </div>
               </RecordCardLink>
             ))}
+            {activeFilter === '전체 보기' ? (
+              <Link
+                href={`${SPOKEDU_PATHS.education}#contact`}
+                className={`${v0BentoCard} flex min-h-full flex-col justify-between rounded-3xl border-blue-500/20 bg-blue-600 p-8 text-white shadow-md hover:bg-blue-700`}
+              >
+                <div>
+                  <p className="text-xs font-bold tracking-[0.16em] text-blue-200">CUSTOM OPERATION</p>
+                  <h3 className={`mt-4 ${v0CardTitle} break-keep text-white`}>
+                    우리 기관도 맞춤 수업이 가능할까요?
+                  </h3>
+                  <p className="mt-4 text-sm leading-7 text-blue-100 break-keep">
+                    공간과 인원, 예산만 알려주시면 현장에 최적화된 운영안을 제안해 드립니다.
+                  </p>
+                </div>
+                <span className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-white">
+                  맞춤 운영안 요청하기
+                  <ArrowRight className="size-4" aria-hidden />
+                </span>
+              </Link>
+            ) : null}
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-20 sm:px-8 lg:px-12">
+      <section className={`px-6 sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10">
-            <p className="text-sm font-bold text-blue-600">DESIGN PRINCIPLES</p>
-            <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-              왜 모든 현장의 수업 모습이 다를까요?
-            </h2>
-          </div>
+          <V0SectionHeader kicker="DESIGN PRINCIPLES" title="왜 모든 현장의 수업 모습이 다를까요?" />
           <div className="grid gap-4 md:grid-cols-3">
             {principles.map(([title, detail], index) => (
-              <div key={title} className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
+              <div
+                key={title}
+                className={`${v0BentoCard} rounded-3xl border-slate-200 bg-white p-6 sm:p-8`}
+              >
                 <div className="mb-8 flex size-9 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white sm:mb-10">
                   0{index + 1}
                 </div>
-                <h3 className="text-lg font-extrabold leading-snug break-keep">{title}</h3>
+                <h3 className={`${v0CardTitleCompact} break-keep`}>{title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500 break-keep">{detail}</p>
               </div>
             ))}
@@ -200,14 +240,12 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
         </div>
       </section>
 
-      <section className="bg-slate-900 px-6 py-20 text-white sm:px-8 lg:px-12">
+      <section className={`bg-slate-900 px-6 text-white sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
           <div>
-            <p className="text-sm font-bold text-blue-400">YOUR NEXT CASE FILE</p>
-            <h2 className="mt-3 max-w-2xl text-3xl font-black leading-tight tracking-[-0.04em] sm:text-4xl">
-              우리 기관과 비슷한 사례를 찾으셨나요?
-            </h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">{recordsPage.cta.description}</p>
+            <p className={`${v0SectionKicker} text-blue-400`}>YOUR NEXT CASE FILE</p>
+            <h2 className={`mt-3 max-w-2xl ${v0CtaTitleOnDark}`}>우리 기관과 비슷한 사례를 찾으셨나요?</h2>
+            <p className={`mt-4 max-w-2xl ${v0Lead} text-slate-300`}>{recordsPage.cta.description}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link

@@ -4,7 +4,14 @@ import Link from 'next/link';
 import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
+import {
+  koreanLineBreak,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  v0FilterChipActive,
+  v0FilterChipBase,
+  v0FilterChipIdle,
+} from '../lib/ui-classes';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import { parseConversionEvidenceSlug } from '../data/commercial-routes';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
@@ -449,10 +456,8 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
                   type="button"
                   key={type}
                   onClick={() => setV0ClassType(type)}
-                  className={`rounded-full px-3 py-2 text-xs font-bold transition break-keep ${
-                    v0ClassType === type
-                      ? 'bg-[#246bce] text-white'
-                      : 'bg-slate-100 text-slate-500'
+                  className={`${v0FilterChipBase} px-3 py-2 text-xs font-bold ${
+                    v0ClassType === type ? v0FilterChipActive : v0FilterChipIdle
                   }`}
                 >
                   {v0ClassType === type ? <Check className="mr-1 inline size-3" aria-hidden /> : null}

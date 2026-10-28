@@ -207,12 +207,13 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <Link
                       href={`/admin/centers/${c.id}`}
+                      prefetch={false}
                       className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline text-base leading-tight"
                     >
                       {c.name}
                     </Link>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Link href={`/admin/centers/${c.id}`} className="text-slate-400 hover:text-indigo-600">
+                      <Link href={`/admin/centers/${c.id}`} prefetch={false} className="text-slate-400 hover:text-indigo-600">
                         <ChevronRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -314,6 +315,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                           <div className="flex flex-col gap-0.5">
                             <Link
                               href={`/admin/centers/${c.id}`}
+                              prefetch={false}
                               className="truncate font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
                               title={c.name}
                             >

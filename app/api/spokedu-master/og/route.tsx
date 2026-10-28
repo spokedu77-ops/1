@@ -16,6 +16,10 @@ export async function GET(request: Request) {
       width: 1200,
       height: 630,
       fonts: [{ name: 'Paperlogy', data: fontData, weight: 700, style: 'normal' }],
+      // Public, fixed artwork only. Keep the short-lived SVG fallback separate.
+      headers: {
+        'Cache-Control': 'public, max-age=300, s-maxage=86400',
+      },
     });
   } catch {
     return new Response(FALLBACK_OG_SVG, {

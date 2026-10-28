@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveStorageCacheControl } from '@/app/lib/storage/cacheControl';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
@@ -358,6 +359,7 @@ export async function POST(request: NextRequest) {
     let savedBytes = 0;
     let thumbMap = { ...referencedThumbs };
     let thumbDirty = false;
+    let programMetaUpdated = false;
 
     for (const item of batch) {
       if (item.action === 'delete-orphan') {
@@ -449,6 +451,7 @@ export async function POST(request: NextRequest) {
             });
             continue;
           }
+          programMetaUpdated = true;
         } else if (kind === 'thumbnail' && item.presetId) {
           thumbMap = { ...thumbMap, [item.presetId]: nextPath };
           thumbDirty = true;
@@ -509,6 +512,10 @@ export async function POST(request: NextRequest) {
     const errorSamples = [
       ...new Set(results.filter((r) => r.status === 'error' && r.error).map((r) => r.error as string)),
     ].slice(0, 5);
+
+    if (programMetaUpdated) {
+      invalidateSpokeduMasterProgramSourceCache();
+    }
 
     return NextResponse.json({
       dryRun: false,

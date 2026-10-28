@@ -11,6 +11,7 @@ import {
   footerNavGroups,
   getSocialLinks,
   siteHeaderCta,
+  siteHeaderLabCta,
   siteNav,
   type SiteNavEntry,
   type SiteNavLink,
@@ -327,6 +328,7 @@ export function SiteHeader() {
   };
 
   const ctaActive = isLinkActive(pathname, siteHeaderCta.href, siteHeaderCta.matchPrefix);
+  const labActive = isLinkActive(pathname, siteHeaderLabCta.href, siteHeaderLabCta.matchPrefix);
 
   return (
     <>
@@ -351,6 +353,21 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex h-10 items-center gap-2">
+            <NavAnchor
+              href={siteHeaderLabCta.href}
+              trackLabel={siteHeaderLabCta.trackLabel}
+              className={`hidden h-10 items-center justify-center rounded-full border px-4 text-[14px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+                menuOpen
+                  ? 'pointer-events-none invisible'
+                  : onHero
+                    ? 'border-white/35 text-white hover:bg-white/10 focus-visible:outline-white'
+                    : labActive
+                      ? 'border-[#245DFF] bg-blue-50 text-[#245DFF] focus-visible:outline-[#245DFF]'
+                      : 'border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-[#245DFF]'
+              }`}
+            >
+              {siteHeaderLabCta.label}
+            </NavAnchor>
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
@@ -416,6 +433,14 @@ export function SiteHeader() {
           {siteNav.map(renderMobileEntry)}
           <div className="mt-4 grid gap-2">
             <NavAnchor
+              href={siteHeaderLabCta.href}
+              trackLabel={`mobile-${siteHeaderLabCta.trackLabel}`}
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/30 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              onNavigate={closeMenus}
+            >
+              {siteHeaderLabCta.label}
+            </NavAnchor>
+            <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={`mobile-${siteHeaderCta.trackLabel}`}
               className="inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -477,6 +502,8 @@ export function SiteFooter() {
                 <Mail className="size-4 shrink-0" aria-hidden />
                 {brandProfile.email}
               </a>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
               {kakaoLink ? (
                 <a
                   href={kakaoLink.href}
@@ -484,7 +511,7 @@ export function SiteFooter() {
                   rel="noreferrer"
                   data-track="external-kakao-channel"
                   data-track-label="footer-kakao-channel"
-                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                  className={`rounded-full bg-slate-800/80 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white ${koreanText}`}
                 >
                   {kakaoLink.label}
                 </a>
@@ -496,7 +523,7 @@ export function SiteFooter() {
                   rel="noreferrer"
                   data-track="external-naver-blog"
                   data-track-label="footer-naver-blog"
-                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                  className={`rounded-full bg-slate-800/80 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white ${koreanText}`}
                 >
                   {blogLink.label}
                 </a>
@@ -508,7 +535,7 @@ export function SiteFooter() {
                   rel="noreferrer"
                   data-track="external-instagram"
                   data-track-label="footer-instagram"
-                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                  className={`rounded-full bg-slate-800/80 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white ${koreanText}`}
                 >
                   {instagramLink.label}
                 </a>
@@ -520,7 +547,7 @@ export function SiteFooter() {
                   rel="noreferrer"
                   data-track="external-youtube"
                   data-track-label="footer-youtube"
-                  className={`inline-flex items-center gap-2 hover:text-white ${koreanText}`}
+                  className={`rounded-full bg-slate-800/80 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-700 hover:text-white ${koreanText}`}
                 >
                   {youtubeLink.label}
                 </a>

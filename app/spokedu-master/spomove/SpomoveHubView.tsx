@@ -5,18 +5,12 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
   getPublicUrl,
   withPublicUrlCacheBust,
 } from '@/app/lib/admin/assets/storageClient';
-import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
+import { loadSpomoveHubFeaturedAssetPacks } from '@/app/lib/spomove/loadSpomoveOfficialAssetPacks';
 import {
-  normalizeSpomoveContentMap,
-  normalizeSpomoveThumbnailMap,
-  SPOMOVE_CONTENT_PACK_ID,
-  SPOMOVE_HUB_FAMILY_FEATURED_PACK_ID,
-  SPOMOVE_THUMBNAIL_PACK_ID,
   type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
@@ -62,19 +56,12 @@ import { resolveSpomovePublicDisplayTitle } from './spomovePublicNaming';
 import { ContentCardMetaLine } from '../components/content/ContentCardMetaLine';
 import {
   emptyHubFamilyFeaturedSlots,
-  normalizeHubFamilyFeaturedSlots,
   resolveHubFamilyFeaturedSpomove,
   type SpomoveHubFamilyFeaturedSlots,
 } from '../lib/spomoveHubFamilyFeatured';
 
 type ThinkingLevelTab = 'all' | 'easy' | 'normal' | 'hard';
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
-type SpomoveThumbnailPackQueryResult = {
-  data: { assets_json?: unknown; updated_at?: string | null } | null;
-  error: { code?: string } | null;
-};
-
-type SpomoveContentPackQueryResult = SpomoveThumbnailPackQueryResult;
 
 const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
 const MOVEMENT_FILTERS = [
@@ -809,66 +796,45 @@ function SpomoveHubInner({
 
   useEffect(() => {
     let alive = true;
-    const supabase = getSupabaseBrowserClient();
-    void Promise.all([
-      supabase
-        .from('think_asset_packs')
-        .select('assets_json, updated_at')
-        .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
-        .maybeSingle(),
-      supabase
-        .from('think_asset_packs')
-        .select('assets_json')
-        .eq('id', SPOMOVE_CONTENT_PACK_ID)
-        .maybeSingle(),
-      supabase
-        .from('think_asset_packs')
-        .select('assets_json')
-        .eq('id', SPOMOVE_HUB_FAMILY_FEATURED_PACK_ID)
-        .maybeSingle(),
-    ]).then(([thumbnailResult, contentResult, familyFeaturedResult]) => {
-      if (!alive) return;
+    void loadSpomoveHubFeaturedAssetPacks()
+      .then(({ thumbnail, content, familyFeatured }) => {
+        if (!alive) return;
 
-      const { data: thumbnailData, error: thumbnailError } = thumbnailResult as SpomoveThumbnailPackQueryResult;
-      if (thumbnailError && thumbnailError.code !== 'PGRST116') {
+        if (thumbnail.hadQueryError) {
+          setAssetPackError(true);
+          setThumbnailPaths({});
+          setThumbnailCacheBust(undefined);
+        } else {
+          setThumbnailPaths(thumbnail.thumbnailPaths);
+          setThumbnailCacheBust(thumbnail.thumbnailCacheBust);
+        }
+        setThumbnailPackLoaded(true);
+
+        if (content.hadQueryError) {
+          setAssetPackError(true);
+          setContentOverrides({});
+          setContentLoadState('error');
+        } else {
+          setContentOverrides(content.contentOverrides);
+          setContentLoadState('ready');
+        }
+
+        if (familyFeatured.hadQueryError) {
+          setHubFamilyFeaturedSlots(emptyHubFamilyFeaturedSlots());
+        } else {
+          setHubFamilyFeaturedSlots(familyFeatured.hubFamilyFeaturedSlots);
+        }
+      })
+      .catch(() => {
+        if (!alive) return;
         setAssetPackError(true);
         setThumbnailPaths({});
         setThumbnailCacheBust(undefined);
-      } else {
-        const next = normalizeSpomoveThumbnailMap(thumbnailData?.assets_json);
-        setThumbnailPaths(next);
-        setThumbnailCacheBust(
-          resolveSpomovePackCacheBust(thumbnailData?.updated_at as string | undefined, Object.values(next)),
-        );
-      }
-      setThumbnailPackLoaded(true);
-
-      const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
-      if (contentError && contentError.code !== 'PGRST116') {
-        setAssetPackError(true);
+        setThumbnailPackLoaded(true);
         setContentOverrides({});
         setContentLoadState('error');
-      } else {
-        setContentOverrides(normalizeSpomoveContentMap(contentData?.assets_json));
-        setContentLoadState('ready');
-      }
-
-      const { data: familyFeaturedData, error: familyFeaturedError } = familyFeaturedResult as SpomoveContentPackQueryResult;
-      if (familyFeaturedError && familyFeaturedError.code !== 'PGRST116') {
         setHubFamilyFeaturedSlots(emptyHubFamilyFeaturedSlots());
-      } else {
-        setHubFamilyFeaturedSlots(normalizeHubFamilyFeaturedSlots(familyFeaturedData?.assets_json));
-      }
-    }).catch(() => {
-      if (!alive) return;
-      setAssetPackError(true);
-      setThumbnailPaths({});
-      setThumbnailCacheBust(undefined);
-      setThumbnailPackLoaded(true);
-      setContentOverrides({});
-      setContentLoadState('error');
-      setHubFamilyFeaturedSlots(emptyHubFamilyFeaturedSlots());
-    });
+      });
     return () => {
       alive = false;
     };

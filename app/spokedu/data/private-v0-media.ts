@@ -10,9 +10,9 @@ export const PRIVATE_V0_HERO = {
 } as const;
 
 export const PRIVATE_V0_ONE_TO_ONE = {
-  src: SPOKEDU_IMAGES.private.oneToOne.src,
-  alt: SPOKEDU_IMAGES.private.oneToOne.alt,
-  objectPosition: '48% 35%',
+  src: '/images/spokedu/home/customer-purpose/personal-mentoring.webp',
+  alt: '야외에서 지도자가 아동의 동작을 가까이에서 안내하는 1:1 맞춤 체육수업',
+  objectPosition: '50% 55%',
 } as const;
 
 export const PRIVATE_V0_SMALL_GROUP = {

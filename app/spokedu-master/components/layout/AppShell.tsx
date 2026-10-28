@@ -21,6 +21,12 @@ import { spokeduLabIntroductionHref } from '@/app/spokedu/data/public-routes';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { normalizeMasterAppPath } from './masterPathAlias';
 import { shouldInvalidateMasterAccessIdentity } from './masterAccessIdentity';
+import {
+  isMasterAccessShellPending,
+  isStaleAccessRequest,
+  shouldPreserveSnapshotOnSoftRecheckFailure,
+  shouldSkipHardAccessFetch,
+} from './masterAccessGateState';
 
 export { normalizeMasterAppPath } from './masterPathAlias';
 
@@ -240,6 +246,10 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   const pathnameRef = useRef(pathname);
   const accessRecheckInFlightRef = useRef<Promise<void> | null>(null);
   const lastAccessRecheckAtRef = useRef(0);
+  const accessHardFetchRequestIdRef = useRef(0);
+  const accessSoftFetchRequestIdRef = useRef(0);
+  const accessGuardRef = useRef(accessGuard);
+  accessGuardRef.current = accessGuard;
   pathnameRef.current = pathname;
 
   const isAdmin = activeBasePath.startsWith('/admin');
@@ -263,11 +273,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   const hideChrome = isOnboarding || isParentView || isPromotionRedeem || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
   const isProtectedRoute = isProtectedMasterRoute(pathname, activeBasePath);
   const routeRequirement = getMasterRouteRequirement(pathname, activeBasePath);
-  const isAccessGuardPending =
-    isProtectedRoute &&
-    (!accessGuard.snapshot ||
-      accessGuard.status === 'checking' ||
-      accessGuard.status === 'redirecting');
+  const isAccessGuardPending = isMasterAccessShellPending(isProtectedRoute, accessGuard);
   const isAccessGuardError =
     isProtectedRoute && accessGuard.status === 'error';
   const isAccessGuardDenied =
@@ -371,14 +377,19 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   }, []);
 
   useEffect(() => {
-    if (accessGuard.pathname !== pathname || !accessGuard.snapshot || !profile) return;
+    if (!isProtectedRoute) return;
+    setAccessGuard((prev) => (prev.pathname === pathname ? prev : { ...prev, pathname }));
+  }, [isProtectedRoute, pathname]);
+
+  useEffect(() => {
+    if (!accessGuard.snapshot || !profile) return;
     const serverFields = {
       onboardingDone: accessGuard.snapshot.onboardingDone,
     };
     if (profile.onboardingDone === serverFields.onboardingDone) return;
     setProfile(serverFields);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onboardingDone만 서버와 동기화
-  }, [accessGuard.pathname, accessGuard.snapshot?.onboardingDone, pathname, profile, setProfile]);
+  }, [accessGuard.snapshot?.onboardingDone, profile, setProfile]);
 
   useEffect(() => {
     if (isAdmin || isLanding || isPublicDocument || !isProtectedRoute) return;
@@ -395,21 +406,36 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
       return;
     }
 
+    const requestId = ++accessHardFetchRequestIdRef.current;
     let cancelled = false;
-    setAccessGuard({ pathname: pathnameRef.current, status: 'checking', userId: null, snapshot: null, spomatShopAvailable: false });
+    const priorGuard = accessGuardRef.current;
+
+    if (shouldSkipHardAccessFetch(priorGuard)) {
+      setAccessGuard((prev) => (prev.pathname === pathnameRef.current ? prev : { ...prev, pathname: pathnameRef.current }));
+      return;
+    }
+
+    setAccessGuard({
+      pathname: pathnameRef.current,
+      status: 'checking',
+      userId: null,
+      snapshot: null,
+      spomatShopAvailable: false,
+    });
 
     fetch('/api/spokedu-master/access', {
       cache: 'no-store',
       credentials: 'include',
     })
       .then(async (response) => {
-        if (cancelled) return;
+        if (cancelled || isStaleAccessRequest(requestId, accessHardFetchRequestIdRef.current)) return;
 
         if (response.ok) {
           const payload = await response.json() as MasterAccessApiResponse;
           const { ok, allowed, userId, spomatShopAvailable, ...snapshot } = payload;
           void ok;
           void allowed;
+          if (isStaleAccessRequest(requestId, accessHardFetchRequestIdRef.current)) return;
           setAccessGuard({
             pathname: pathnameRef.current,
             status: 'allowed',
@@ -434,21 +460,22 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
         setAccessGuard({ pathname: pathnameRef.current, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
       })
       .catch(() => {
-        if (!cancelled) {
-          setAccessGuard({ pathname: pathnameRef.current, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
-        }
+        if (cancelled || isStaleAccessRequest(requestId, accessHardFetchRequestIdRef.current)) return;
+        setAccessGuard({ pathname: pathnameRef.current, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [accessRetryKey, currentPathWithQuery, isProtectedRoute, router]);
+  }, [accessRetryKey, isProtectedRoute, router]);
 
   useEffect(() => {
     if (!isProtectedRoute) return;
     const { data: { subscription } } = getSupabaseBrowserClient().auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       const nextUserId = session?.user?.id ?? null;
       if (!shouldInvalidateMasterAccessIdentity(accessGuard.userId, nextUserId)) return;
+      accessHardFetchRequestIdRef.current += 1;
+      accessSoftFetchRequestIdRef.current += 1;
       resetProfile();
       setAccessGuard({ pathname: pathnameRef.current, status: 'checking', userId: null, snapshot: null, spomatShopAvailable: false });
       if (!nextUserId) {
@@ -471,27 +498,31 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
       if (accessRecheckInFlightRef.current) return accessRecheckInFlightRef.current;
       if (Date.now() - lastAccessRecheckAtRef.current < 5_000) return;
       lastAccessRecheckAtRef.current = Date.now();
+      const requestId = ++accessSoftFetchRequestIdRef.current;
       const task = (async () => {
         try {
         const response = await fetch('/api/spokedu-master/access', {
           cache: 'no-store',
           credentials: 'include',
         });
-        if (cancelled) return;
+        if (cancelled || isStaleAccessRequest(requestId, accessSoftFetchRequestIdRef.current)) return;
 
         if (response.status === 401) {
-          setAccessGuard({ pathname, status: 'redirecting', userId: null, snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname: pathnameRef.current, status: 'redirecting', userId: null, snapshot: null, spomatShopAvailable: false });
           router.replace(currentLoginRedirectHref());
           return;
         }
 
         if (response.status === 403) {
-          setAccessGuard({ pathname, status: 'denied', userId: null, snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname: pathnameRef.current, status: 'denied', userId: null, snapshot: null, spomatShopAvailable: false });
           return;
         }
 
         if (!response.ok) {
-          setAccessGuard({ pathname, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
+          setAccessGuard((prev) => {
+            if (shouldPreserveSnapshotOnSoftRecheckFailure(prev)) return prev;
+            return { pathname: pathnameRef.current, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false };
+          });
           return;
         }
 
@@ -499,23 +530,27 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
         const { ok, allowed, userId, spomatShopAvailable, ...snapshot } = payload;
         void ok;
         void allowed;
+        if (isStaleAccessRequest(requestId, accessSoftFetchRequestIdRef.current)) return;
         if (shouldInvalidateMasterAccessIdentity(accessGuard.userId, userId)) {
+          accessHardFetchRequestIdRef.current += 1;
           resetProfile();
-          setAccessGuard({ pathname, status: 'checking', userId: null, snapshot: null, spomatShopAvailable: false });
+          setAccessGuard({ pathname: pathnameRef.current, status: 'checking', userId: null, snapshot: null, spomatShopAvailable: false });
           setAccessRetryKey((key) => key + 1);
           return;
         }
         setAccessGuard({
-          pathname,
+          pathname: pathnameRef.current,
           status: 'allowed',
           userId,
           snapshot: snapshot as MasterAccessSnapshot,
           spomatShopAvailable: spomatShopAvailable === true,
         });
         } catch {
-        if (!cancelled) {
-          setAccessGuard({ pathname, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false });
-        }
+        if (cancelled || isStaleAccessRequest(requestId, accessSoftFetchRequestIdRef.current)) return;
+        setAccessGuard((prev) => {
+          if (shouldPreserveSnapshotOnSoftRecheckFailure(prev)) return prev;
+          return { pathname: pathnameRef.current, status: 'error', userId: null, snapshot: null, spomatShopAvailable: false };
+        });
         }
       })().finally(() => {
         if (accessRecheckInFlightRef.current === task) accessRecheckInFlightRef.current = null;
@@ -536,7 +571,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', onVisible);
       window.clearInterval(intervalId);
     };
-  }, [accessGuard.userId, isProtectedRoute, pathname, resetProfile, router]);
+  }, [accessGuard.userId, isProtectedRoute, resetProfile, router]);
 
   if (isSession) {
     return (

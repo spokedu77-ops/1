@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { resolveReferenceVideoForSeed } from '@/app/spokedu-master/lib/reference-videos';
 import { buildMissingMasterMetaRows } from '../sync-center/metaRowContract';
+import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
@@ -144,6 +145,7 @@ export async function POST(request: Request) {
           if (metaInsertError) throw metaInsertError;
         }
       }
+      invalidateSpokeduMasterProgramSourceCache();
     }
 
     return NextResponse.json({

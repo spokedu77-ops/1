@@ -4,14 +4,9 @@ import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
-import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
+import { loadSpomoveContentPack, loadSpomoveThumbnailPack } from '@/app/lib/spomove/loadSpomoveOfficialAssetPacks';
 import {
-  normalizeSpomoveContentMap,
-  normalizeSpomoveThumbnailMap,
-  SPOMOVE_CONTENT_PACK_ID,
-  SPOMOVE_THUMBNAIL_PACK_ID,
   type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { InstructionalThumb } from '../components/media/InstructionalThumb';
@@ -97,22 +92,15 @@ export default function FavoritesView() {
 
   useEffect(() => {
     let alive = true;
-    const supabase = getSupabaseBrowserClient();
-    void supabase
-      .from('think_asset_packs')
-      .select('assets_json, updated_at')
-      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
-      .maybeSingle()
-      .then((result: { data: { assets_json?: unknown; updated_at?: string | null } | null; error: { code?: string } | null }) => {
+    void loadSpomoveThumbnailPack()
+      .then((result) => {
         if (!alive) return;
-        const { data, error } = result;
-        if (error && error.code !== 'PGRST116') {
+        if (result.hadQueryError) {
           setThumbnailPaths({});
           setThumbnailCacheBust(undefined);
         } else {
-          const next = normalizeSpomoveThumbnailMap(data?.assets_json);
-          setThumbnailPaths(next);
-          setThumbnailCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
+          setThumbnailPaths(result.thumbnailPaths);
+          setThumbnailCacheBust(result.thumbnailCacheBust);
         }
         setThumbnailPackLoaded(true);
       })
@@ -122,19 +110,14 @@ export default function FavoritesView() {
         setThumbnailCacheBust(undefined);
         setThumbnailPackLoaded(true);
       });
-    void supabase
-      .from('think_asset_packs')
-      .select('assets_json')
-      .eq('id', SPOMOVE_CONTENT_PACK_ID)
-      .maybeSingle()
-      .then((result: { data: { assets_json?: unknown } | null; error: { code?: string } | null }) => {
+    void loadSpomoveContentPack()
+      .then((result) => {
         if (!alive) return;
-        const { data, error } = result;
-        if (error && error.code !== 'PGRST116') {
+        if (result.hadQueryError) {
           setContentLoadState('error');
           return;
         }
-        setContentOverrides(normalizeSpomoveContentMap(data?.assets_json));
+        setContentOverrides(result.contentOverrides);
         setContentLoadState('ready');
       })
       .catch(() => {

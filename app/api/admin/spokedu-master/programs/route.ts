@@ -14,6 +14,7 @@ import {
   type AdminProgramSaveStage,
 } from '@/app/spokedu-master/lib/adminProgramEditorContract';
 import { loadSavedAdminProgram } from './savedProgram';
+import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
 
 type MaterialStatus = 'incomplete' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -307,6 +308,7 @@ export async function POST(request: Request) {
     const program = data.find((item) => item.curriculum.id === curriculumId);
     if (!program) throw new Error(`Created program ${curriculumId} could not be reloaded.`);
 
+    invalidateSpokeduMasterProgramSourceCache();
     return NextResponse.json({ ok: true, program });
   } catch (error) {
     return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
@@ -433,6 +435,7 @@ export async function PATCH(request: Request) {
         return { data: result.data, error: result.error };
       },
     });
+    invalidateSpokeduMasterProgramSourceCache();
     return NextResponse.json(buildAdminProgramSaveSuccess(program));
   } catch (error) {
     const message = errorMessage(error);

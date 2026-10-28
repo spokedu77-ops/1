@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
 
 const SLOT_COUNT = 4;
 
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
       if (error) throw error;
     }
 
+    invalidateSpokeduMasterProgramSourceCache();
     return NextResponse.json({
       ok: true,
       slots,

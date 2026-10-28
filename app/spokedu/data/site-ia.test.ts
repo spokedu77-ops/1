@@ -20,7 +20,7 @@ import {
   isSpokeduImageProgramMatch,
   SPOKEDU_IMAGES,
 } from './images';
-import { HOME_PROGRAM_SYSTEM_HREF, MASTER_HANDOFF, REDIRECT_ONLY_PROGRAM_PATHS, footerNavGroups, footerNavLinks, footerServiceLinks, publicGlobalCta, publicGlobalNav, siteHeaderCta, siteNav } from './site';
+import { HOME_PROGRAM_SYSTEM_HREF, MASTER_HANDOFF, REDIRECT_ONLY_PROGRAM_PATHS, footerNavGroups, footerNavLinks, footerServiceLinks, publicGlobalCta, publicGlobalNav, siteHeaderCta, siteHeaderLabCta, siteNav } from './site';
 import { SPOKEDU_BASE_PATH, SPOKEDU_LEGACY_PREFIX, SPOKEDU_PATHS } from './public-routes';
 import { educationHubPage } from './education-hub';
 import { spomoveProgramPage } from './spomove-program-page';
@@ -33,14 +33,13 @@ function allowsVisualFallback(requirement: object): boolean {
 describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
     expect(siteNav.map((entry) => entry.label)).toEqual([
-      '스포키듀 소개',
-      '기관수업',
-      '개인·소그룹',
+      '기관·학교 수업',
+      '개인·소그룹 수업',
       'SPOMOVE',
-      'SPOKEDU LAB',
       '수업사례',
+      'SPOKEDU 소개',
     ]);
-    expect(siteNav).toHaveLength(6);
+    expect(siteNav).toHaveLength(5);
     expect(JSON.stringify(siteNav)).not.toMatch(/문의·협업/);
   });
 
@@ -48,12 +47,13 @@ describe('spokedu site IA', () => {
     const byLabel = Object.fromEntries(
       siteNav.filter((entry) => entry.type === 'link').map((entry) => [entry.label, entry.href]),
     );
-    expect(byLabel['스포키듀 소개']).toBe(SPOKEDU_PATHS.about);
-    expect(byLabel['기관수업']).toBe(SPOKEDU_PATHS.education);
-    expect(byLabel['개인·소그룹']).toBe(SPOKEDU_PATHS.private);
+    expect(byLabel['기관·학교 수업']).toBe(SPOKEDU_PATHS.education);
+    expect(byLabel['개인·소그룹 수업']).toBe(SPOKEDU_PATHS.private);
     expect(byLabel.SPOMOVE).toBe(SPOKEDU_PATHS.spomove);
-    expect(byLabel['SPOKEDU LAB']).toBe(SPOKEDU_PATHS.subscription);
     expect(byLabel['수업사례']).toBe(SPOKEDU_PATHS.records);
+    expect(byLabel['SPOKEDU 소개']).toBe(SPOKEDU_PATHS.about);
+    expect(siteHeaderLabCta.label).toBe('SPOKEDU LAB');
+    expect(siteHeaderLabCta.href).toBe(SPOKEDU_PATHS.subscription);
     expect(siteHeaderCta.label).toBe('문의하기');
     expect(siteHeaderCta.href).toBe(SPOKEDU_PATHS.contact);
     expect(JSON.stringify(siteNav)).not.toMatch(/SPOMAT|"파트너/);
@@ -67,6 +67,7 @@ describe('spokedu site IA', () => {
     const chromeSource = readFileSync(join(process.cwd(), 'app/spokedu/components/site-chrome.tsx'), 'utf8');
     expect(chromeSource).toMatch(/siteNav/);
     expect(chromeSource).toMatch(/siteHeaderCta/);
+    expect(chromeSource).toMatch(/siteHeaderLabCta/);
     expect(chromeSource).not.toMatch(/publicGlobalNav\.map/);
 
     const homeLandingSource = readFileSync(

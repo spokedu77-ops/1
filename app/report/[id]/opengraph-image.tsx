@@ -45,6 +45,12 @@ export default function Image() {
         </div>
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      // This artwork contains no report data and is identical for every report ID.
+      headers: {
+        'Cache-Control': 'public, max-age=300, s-maxage=86400',
+      },
+    }
   );
 }

@@ -12,10 +12,21 @@ export const ABOUT_V0_HERO = {
 } as const;
 
 export const ABOUT_V0_LAB_VISUAL = {
-  src: HOME_MEDIA.homeHeroField.src!,
-  alt: '스포키듀LAB 센터에서 활동하는 모습',
-  objectPosition: '50% 42%',
+  src: '/images/spokedu/home/field-editorial/home-hero-lab-gym-sponsorship-13.jpg',
+  alt: '스포키듀LAB 체육관에서 지도자와 아이들이 수업을 진행하는 센터 현장',
+  objectPosition: '52% 58%',
 } as const;
+
+export const ABOUT_V0_MILESTONES = [
+  { when: '2016. 06', title: '스포키듀(SPOKEDU) 설립 및 방문 체육 출강 시작' },
+  { when: '2017. 02', title: 'KBS 「슈퍼맨이 돌아왔다」 아동 체력 측정 자문 출연' },
+  { when: '2018. 10', title: '서초여성가족플라자 아동체육 인큐베이팅 강의 진행' },
+  { when: '2019. 02', title: '거점형 키움센터 연간 체육 프로그램 정식 계약' },
+  { when: '2020. 03', title: '이마트 문화센터 미니올림픽 특강 운영 (서울·경기·대전)' },
+  { when: '2021. 05', title: '서대문구 어린이날 기념 아동청소년축제 대규모 체험부스 운영' },
+  { when: '2022. 07', title: '광주광역시 체육 지도자 교육 세미나 진행' },
+  { when: '2025 ~ 현재', title: '시지각 에듀테크 SPOMOVE 현장 도입 및 지도자 플랫폼 SPOKEDU LAB 운영' },
+] as const;
 
 /** 리더십 카드 — 홈 Section 03과 동일 프로필 사진 */
 export const ABOUT_V0_LEADERS = [

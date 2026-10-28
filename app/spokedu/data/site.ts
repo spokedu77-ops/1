@@ -75,25 +75,18 @@ export type SiteNavEntry =
       activePathPrefixes?: string[];
     };
 
-/** 글로벌 헤더·모바일 메뉴·푸터 IA SSOT */
+/** 글로벌 헤더·모바일 메뉴·푸터 IA SSOT (SPOKEDU LAB은 `siteHeaderLabCta`) */
 export const siteNav: SiteNavEntry[] = [
   {
     type: 'link',
-    label: '스포키듀 소개',
-    href: SPOKEDU_PATHS.about,
-    trackLabel: 'nav-about',
-    matchPrefix: '/about',
-  },
-  {
-    type: 'link',
-    label: '기관수업',
+    label: '기관·학교 수업',
     href: SPOKEDU_PATHS.education,
     trackLabel: 'nav-education',
     matchPrefix: '/education',
   },
   {
     type: 'link',
-    label: '개인·소그룹',
+    label: '개인·소그룹 수업',
     href: SPOKEDU_PATHS.private,
     trackLabel: 'nav-private',
     matchPrefix: '/private',
@@ -107,19 +100,27 @@ export const siteNav: SiteNavEntry[] = [
   },
   {
     type: 'link',
-    label: 'SPOKEDU LAB',
-    href: SPOKEDU_PATHS.subscription,
-    trackLabel: 'nav-subscription',
-    matchPrefix: '/spokedu-lab',
-  },
-  {
-    type: 'link',
     label: '수업사례',
     href: SPOKEDU_PATHS.records,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
   },
+  {
+    type: 'link',
+    label: 'SPOKEDU 소개',
+    href: SPOKEDU_PATHS.about,
+    trackLabel: 'nav-about',
+    matchPrefix: '/about',
+  },
 ];
+
+/** 헤더 우측 — 문의하기 왼쪽 아웃라인 캡슐 (텍스트 nav와 분리) */
+export const siteHeaderLabCta = {
+  label: 'SPOKEDU LAB',
+  href: SPOKEDU_PATHS.subscription,
+  trackLabel: 'header-subscription',
+  matchPrefix: '/spokedu-lab',
+} as const;
 
 export const siteHeaderCta = {
   key: 'contact',

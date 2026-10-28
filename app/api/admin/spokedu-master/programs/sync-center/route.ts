@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
 import { buildMissingMasterMetaRows } from './metaRowContract';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
@@ -265,6 +266,7 @@ export async function POST(request: Request) {
 
     if (!dryRun && changes.length > 0) {
       await applySync(changes, overlayById);
+      invalidateSpokeduMasterProgramSourceCache();
     }
 
     return NextResponse.json({

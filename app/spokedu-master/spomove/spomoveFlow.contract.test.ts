@@ -72,8 +72,8 @@ describe("SPOMOVE pilot flow contract", () => {
 
   it("loads launch-confirm preview without pad layout clutter", () => {
     expect(hub).toContain("useSpomoveGuideVideo");
-    expect(hub).toContain("SPOMOVE_CONTENT_PACK_ID");
-    expect(hub).toContain("normalizeSpomoveContentMap");
+    expect(hub).toContain("loadSpomoveHubFeaturedAssetPacks");
+    expect(hub).toContain("contentOverrides");
     expect(hub).toContain("useState<SpomoveContentLoadState>('loading')");
     expect(hub).toContain("setContentLoadState('error')");
     expect(hub).toContain("contentLoadState={contentLoadState}");

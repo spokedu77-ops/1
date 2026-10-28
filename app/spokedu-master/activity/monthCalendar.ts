@@ -3,6 +3,9 @@ import type { MasterSessionDto } from '../types/operational';
 
 export type MonthCalendarDay = { day: string; inMonth: boolean; sessions: MasterSessionDto[] };
 
+const SEOUL_WEEKDAY_SHORT_FORMATTER = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' });
+const MONDAY_FIRST_WEEKDAY_INDEX = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 export function getMonthKey(day: string) { return day.slice(0, 7); }
 
 export function moveMonth(month: string, offset: number) {
@@ -19,14 +22,13 @@ export function clampDayToMonth(day: string, month: string) {
 }
 
 export function seoulWeekdayMondayIndex(day: string) {
-  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(seoulDayToDate(day));
-  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(weekday);
+  const weekday = SEOUL_WEEKDAY_SHORT_FORMATTER.format(seoulDayToDate(day));
+  return MONDAY_FIRST_WEEKDAY_INDEX.indexOf(weekday);
 }
 
 export function buildMonthCalendar(month: string, sessions: MasterSessionDto[]): MonthCalendarDay[] {
   const firstDay = `${month}-01`;
-  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(seoulDayToDate(firstDay));
-  const mondayIndex = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(weekday);
+  const mondayIndex = seoulWeekdayMondayIndex(firstDay);
   const gridStart = addSeoulSessionDays(firstDay, -mondayIndex);
   const sessionsByDay = new Map<string, MasterSessionDto[]>();
   for (const session of sessions) {

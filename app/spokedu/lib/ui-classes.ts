@@ -307,3 +307,61 @@ export const marketingButtonSecondaryOnDark =
   `${marketingButtonBase} border border-white/30 bg-white/8 text-white ${fineHover}hover:border-white/50 ${fineHover}hover:bg-white/12 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`;
 export const marketingButtonTextAction =
   `inline-flex min-h-11 items-center font-semibold [color:var(--spokedu-marketing-color-blue)] underline-offset-4 transition ${fineHover}hover:underline ${brandFocusRing}`;
+
+/** v0 6-page landing — 카드 lift, 타이포, 섹션 리듬, 칩 토글 (public marketing) */
+export const v0GradientText =
+  'bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent';
+
+export const v0HeroTitle =
+  `${koreanDisplay} text-3xl font-black leading-[1.12] tracking-[-0.05em] sm:text-4xl md:text-5xl lg:text-6xl`;
+
+export const v0SectionTitle =
+  `${koreanDisplay} text-3xl font-black tracking-[-0.04em] sm:text-4xl md:text-5xl`;
+
+export const v0SectionBand = 'py-20 sm:py-28 md:py-32';
+
+export const v0BentoCard =
+  `group border transition-all duration-300 ease-out ${fineHover}hover:-translate-y-1.5 ${fineHover}hover:shadow-xl ${fineHover}hover:border-blue-500/30`;
+
+export const v0CardImageHover =
+  `transition-transform duration-700 ${fineHover}group-hover:scale-105`;
+
+export const v0FilterChipBase =
+  'shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-300 ease-out break-keep';
+
+export const v0FilterChipActive =
+  'border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-500/25 scale-105';
+
+export const v0FilterChipIdle =
+  'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-600';
+
+/** v0 6-page — eyebrow / kicker / card title / lead / CTA band title */
+export const v0Eyebrow =
+  `${koreanDisplay} inline-flex rounded-full bg-blue-50 px-4 py-2 text-[11px] font-bold tracking-[0.18em] text-blue-600`;
+
+export const v0EyebrowDark =
+  `${koreanDisplay} inline-flex rounded-full bg-white/10 px-4 py-2 text-[11px] font-bold tracking-[0.18em] text-blue-200`;
+
+export const v0EyebrowHero =
+  `${koreanDisplay} inline-flex rounded-full bg-blue-600 px-4 py-2 text-[11px] font-bold tracking-[0.18em] text-white`;
+
+export const v0SectionKicker =
+  `${koreanDisplay} text-sm font-bold tracking-[0.14em] text-blue-600`;
+
+export const v0CardTitle =
+  `${koreanDisplay} text-xl font-black tracking-tight sm:text-2xl`;
+
+export const v0SubsectionTitle =
+  `${koreanDisplay} text-2xl font-black tracking-tight sm:text-3xl`;
+
+export const v0Lead =
+  `${koreanBody} text-base leading-8 text-slate-500 md:text-lg`;
+
+export const v0CtaTitle =
+  `${koreanDisplay} text-3xl font-black leading-tight tracking-[-0.04em] sm:text-4xl md:text-5xl`;
+
+export const v0CtaTitleOnDark = `${v0CtaTitle} text-white`;
+
+/** 사례·그리드 카드 제목 (venue 등) */
+export const v0CardTitleCompact =
+  `${koreanDisplay} text-lg font-black leading-snug tracking-tight sm:text-xl`;

@@ -45,6 +45,6 @@ describe('MASTER execution screen access boundary', () => {
     expect(shell).toContain('resetProfile()');
     expect(shell).toContain("status: 'checking', userId: null, snapshot: null");
     expect(shell).toContain("status: 'error', userId: null, snapshot: null");
-    expect(shell).not.toContain('// Keep current session UI on transient network errors.');
+    expect(shell).toContain('shouldPreserveSnapshotOnSoftRecheckFailure');
   });
 });

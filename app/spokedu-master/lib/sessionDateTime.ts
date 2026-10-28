@@ -1,11 +1,34 @@
 export const SESSION_TIME_ZONE = 'Asia/Seoul';
 
+const SEOUL_DATETIME_INPUT_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: SESSION_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+const DYNAMIC_SEOUL_FORMATTER_CACHE = new Map<string, Intl.DateTimeFormat>();
+const MAX_DYNAMIC_SEOUL_FORMATTERS = 32;
+
+function getSeoulDateTimeFormatter(options: Intl.DateTimeFormatOptions) {
+  const key = JSON.stringify(options);
+  const cached = DYNAMIC_SEOUL_FORMATTER_CACHE.get(key);
+  if (cached) return cached;
+  const formatter = new Intl.DateTimeFormat('ko-KR', { ...options, timeZone: SESSION_TIME_ZONE });
+  if (DYNAMIC_SEOUL_FORMATTER_CACHE.size >= MAX_DYNAMIC_SEOUL_FORMATTERS) {
+    const firstKey = DYNAMIC_SEOUL_FORMATTER_CACHE.keys().next().value;
+    if (firstKey) DYNAMIC_SEOUL_FORMATTER_CACHE.delete(firstKey);
+  }
+  DYNAMIC_SEOUL_FORMATTER_CACHE.set(key, formatter);
+  return formatter;
+}
+
 export function toSeoulDateTimeInput(value: Date | string) {
   const date = typeof value === 'string' ? new Date(value) : value;
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: SESSION_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(date);
+  const parts = SEOUL_DATETIME_INPUT_FORMATTER.formatToParts(date);
   const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? '';
   return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`;
 }
@@ -38,7 +61,7 @@ export function formatSeoulSessionTime(value: Date | string) {
 }
 
 export function formatSeoulSessionDay(day: string, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat('ko-KR', { ...options, timeZone: SESSION_TIME_ZONE }).format(seoulDayToDate(day));
+  return getSeoulDateTimeFormatter(options).format(seoulDayToDate(day));
 }
 
 export function buildSessionDraftDateTimes(initialDate: Date, existing?: { startAt: string; endAt: string }) {

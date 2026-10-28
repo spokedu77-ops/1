@@ -781,13 +781,17 @@ export default function AdminCurriculumPage() {
       return prev.map((it) => (orderMap.has(it.id) ? { ...it, display_order: orderMap.get(it.id)! } : it));
     });
     try {
-      const results = await Promise.all(
-        reordered.map((it, index) =>
-          supabase.from('curriculum').update({ display_order: index }).eq('id', it.id),
-        ),
-      );
-      const firstErr = results.find((r) => r.error);
-      if (firstErr?.error) throw firstErr.error;
+      const response = await fetch('/api/admin/curriculum', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reorder: reordered.map((it, index) => ({ id: it.id, display_order: index })),
+        }),
+      });
+      const result = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+      if (!response.ok || !result?.ok) {
+        throw new Error(result?.error ?? '순서 저장 API 실패');
+      }
       toast.success('순서가 저장되었습니다.');
     } catch (err: unknown) {
       toast.error('순서 저장 실패: ' + formatSaveError(err));
@@ -891,12 +895,15 @@ export default function AdminCurriculumPage() {
     try {
       let savedCurriculumId = editingId;
       if (editingId) {
-        const { error } = await supabase
-          .from('curriculum')
-          .update(postDataBase)
-          .eq('id', editingId);
-
-        if (error) throw error;
+        const response = await fetch('/api/admin/curriculum', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingId, ...postDataBase }),
+        });
+        const result = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+        if (!response.ok || !result?.ok) {
+          throw new Error(result?.error ?? '커리큘럼 수정 API 실패');
+        }
       } else {
         const sameGroup = isSub
           ? items.filter((i) => i.is_sub === true)
@@ -906,14 +913,16 @@ export default function AdminCurriculumPage() {
           const o = typeof i.display_order === 'number' ? i.display_order : -1;
           if (o >= nextOrder) nextOrder = o + 1;
         }
-        const { data: inserted, error } = await supabase
-          .from('curriculum')
-          .insert([{ ...postDataBase, display_order: nextOrder }])
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        savedCurriculumId = (inserted as { id: number }).id;
+        const response = await fetch('/api/admin/curriculum', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...postDataBase, display_order: nextOrder }),
+        });
+        const result = await response.json().catch(() => null) as { ok?: boolean; id?: number; error?: string } | null;
+        if (!response.ok || !result?.ok || typeof result.id !== 'number') {
+          throw new Error(result?.error ?? '커리큘럼 등록 API 실패');
+        }
+        savedCurriculumId = result.id;
       }
 
       if (!savedCurriculumId) throw new Error('저장된 커리큘럼 ID를 확인하지 못했습니다.');
@@ -991,22 +1000,16 @@ export default function AdminCurriculumPage() {
     e.stopPropagation();
     if (!supabase || !confirm('정말 삭제하시겠습니까? (복구 불가)')) return;
     try {
-      // .select()를 추가하여 실제로 삭제된 행이 있는지 확인
-      const { data, error } = await supabase
-          .from('curriculum')
-          .delete()
-          .eq('id', id)
-          .select();
-
-      if (error) throw error;
-
-      // data 배열이 비어있다면 DB 권한(RLS) 문제로 실제 삭제가 안 된 것임
-      if (!data || data.length === 0) {
-        toast.error('삭제되지 않았습니다. Supabase의 RLS(Delete) 정책을 확인해주세요.');
+      const response = await fetch(`/api/admin/curriculum?id=${id}`, { method: 'DELETE' });
+      const result = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+      if (response.status === 404) {
+        toast.error('삭제되지 않았습니다. 대상을 찾을 수 없습니다.');
         return;
       }
+      if (!response.ok || !result?.ok) {
+        throw new Error(result?.error ?? '삭제 API 실패');
+      }
 
-      // 실제 삭제가 확인된 경우에만 UI 업데이트
       setItems(prev => prev.filter((item: CurriculumItem) => item.id !== id));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

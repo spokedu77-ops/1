@@ -1,7 +1,19 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowRight, ChevronDown, MessageCircle, Phone, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  Brain,
+  ChevronDown,
+  ClipboardList,
+  MessageCircle,
+  Phone,
+  Search,
+  Sparkles,
+  UserCheck,
+  Users,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Suspense, useState } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import {
@@ -11,36 +23,98 @@ import {
   PRIVATE_V0_SMALL_GROUP,
 } from '../data/private-v0-media';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
-import { koreanLineBreak } from '../lib/ui-classes';
+import {
+  koreanLineBreak,
+  v0BentoCard,
+  v0CardImageHover,
+  v0CardTitle,
+  v0CardTitleCompact,
+  v0CtaTitleOnDark,
+  v0GradientText,
+  v0HeroTitle,
+  v0Lead,
+  v0SectionBand,
+  v0SubsectionTitle,
+} from '../lib/ui-classes';
 import { PrivateApplyForm } from './private-apply-form';
+import { V0Eyebrow, V0SectionBlock } from './v0-ui';
 
-const concerns = [
-  '기초 체력과 운동 신경이 부족해 체육 시간을 피하거나 자신감이 없는 아이',
-  '소그룹 친구들과 규칙을 지키고 협동하며 또래 사회성을 기르고 싶은 아이',
-  '에너지가 넘치지만 신체 조절과 주의집중, 감정 컨트롤 연습이 필요한 아이',
-  '느린 학습자이거나 개별 발달 속도에 맞춘 세심하고 안전한 특수·맞춤 체육이 필요한 아이',
+const concerns: readonly { text: string; Icon: LucideIcon }[] = [
+  {
+    text: '기초 체력과 운동 신경이 부족해 체육 시간을 피하거나 자신감이 없는 아이',
+    Icon: Sparkles,
+  },
+  {
+    text: '소그룹 친구들과 규칙을 지키고 협동하며 또래 사회성을 기르고 싶은 아이',
+    Icon: Users,
+  },
+  {
+    text: '에너지가 넘치지만 신체 조절과 주의집중, 감정 컨트롤 연습이 필요한 아이',
+    Icon: Brain,
+  },
+  {
+    text: '느린 학습자이거나 개별 발달 속도에 맞춘 세심하고 안전한 특수·맞춤 체육이 필요한 아이',
+    Icon: UserCheck,
+  },
 ] as const;
 
-const differences = [
+type DifferenceFootnote =
+  | { kind: 'summary'; lines: readonly string[] }
+  | { kind: 'image'; image: { src: string; alt: string } };
+
+const differences: readonly [string, string, string, DifferenceFootnote][] = [
   [
     '01',
     '사전 진단 및 성향 파악',
     '아이의 기초 운동 기능(이동·조작·안정성)과 움직임 성향을 먼저 파악하여 무리한 경쟁 없이 성공 경험을 만드는 초기 난이도를 설정합니다.',
-    null,
+    {
+      kind: 'summary',
+      lines: ['이동운동 · 조작운동 · 신체안정성', '16가지 PTG 유형 분석'],
+    },
   ],
   [
     '02',
     '두뇌와 신체를 깨우는 입체 커리큘럼',
     '기초 체력 훈련은 물론, 시지각 반응 프로그램(SPOMOVE)과 다양한 뉴스포츠 교구를 결합해 지루할 틈 없는 50분을 만듭니다.',
-    null,
+    {
+      kind: 'summary',
+      lines: ['기초체력 웜업', '➔ 시지각 SPOMOVE', '➔ 뉴스포츠 조작기술'],
+    },
   ],
   [
     '03',
     '체계적인 학부모 피드백',
     '오늘 수업에서 아이가 어떤 동작을 해냈고 또래와 어떻게 소통했는지, 수업 기록과 성장의 흐름을 학부모님께 투명하게 공유합니다.',
-    PRIVATE_V0_PARENT_REPORT,
+    { kind: 'image', image: PRIVATE_V0_PARENT_REPORT },
   ],
 ] as const;
+
+function DifferenceMiniPanel({ footnote }: { footnote: DifferenceFootnote }) {
+  return (
+    <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80">
+      {footnote.kind === 'image' ? (
+        <Image
+          src={footnote.image.src}
+          alt={footnote.image.alt}
+          fill
+          className="object-cover object-top"
+          sizes="(max-width: 1024px) 100vw, 33vw"
+        />
+      ) : (
+        <div className="flex h-full flex-col justify-center gap-3 bg-gradient-to-br from-[#e8f1ff] to-white p-5 sm:p-6">
+          {footnote.lines.map((line) => (
+            <p
+              key={line}
+              className="rounded-xl bg-white/90 px-4 py-3 text-center text-xs font-bold leading-6 text-[#0f172a] shadow-sm ring-1 ring-slate-200/60 break-keep sm:text-sm"
+            >
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const faqs = [
   [
@@ -61,42 +135,12 @@ const faqs = [
   ],
 ] as const;
 
-const flowSteps = [
-  '간편 상담 신청',
-  '아이 성향·목표·일정 파악',
-  '담당 전문 선생님 매칭 및 첫 수업',
-  '정기 수업 및 피드백 리포트 공유',
+const flowSteps: readonly { text: string; Icon: LucideIcon }[] = [
+  { text: '간편 상담 신청', Icon: ClipboardList },
+  { text: '아이 성향·목표·일정 파악', Icon: Search },
+  { text: '담당 전문 선생님 매칭 및 첫 수업', Icon: UserCheck },
+  { text: '정기 수업 및 피드백 리포트 공유', Icon: MessageCircle },
 ] as const;
-
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex rounded-full bg-[#e8f1ff] px-4 py-2 text-[11px] font-bold tracking-[0.16em] text-[#246bce]">
-      {children}
-    </span>
-  );
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  description,
-}: {
-  eyebrow: string;
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className={`mx-auto mb-14 max-w-2xl text-center ${koreanLineBreak}`}>
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-5 text-balance text-3xl font-bold tracking-[-0.04em] text-[#0f172a] md:text-5xl">
-        {title}
-      </h2>
-      {description ? (
-        <p className="mt-5 text-pretty text-base leading-8 text-slate-500 md:text-lg">{description}</p>
-      ) : null}
-    </div>
-  );
-}
 
 function ProgramCard({
   eyebrow,
@@ -113,21 +157,21 @@ function ProgramCard({
 }) {
   return (
     <article
-      className={`overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/80 ${koreanLineBreak}`}
+      className={`${v0BentoCard} overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/80 ${koreanLineBreak}`}
     >
-      <div className="relative aspect-[16/10] w-full bg-[#e8f1ff]">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#e8f1ff]">
         <Image
           src={image.src}
           alt={image.alt}
           fill
-          className="object-cover"
+          className={`object-cover ${v0CardImageHover}`}
           style={{ objectPosition: image.objectPosition }}
           sizes="(max-width: 1024px) 100vw, 50vw"
         />
       </div>
       <div className="p-6 sm:p-8 md:p-10">
-        <Eyebrow>{eyebrow}</Eyebrow>
-        <h3 className="mt-7 text-xl font-bold tracking-tight break-keep sm:text-2xl">{title}</h3>
+        <V0Eyebrow>{eyebrow}</V0Eyebrow>
+        <h3 className={`mt-7 ${v0CardTitle} break-keep text-[#0f172a]`}>{title}</h3>
         <p className="mt-5 text-sm leading-7 text-slate-500 break-keep sm:text-base sm:leading-8">
           {body}
         </p>
@@ -156,11 +200,11 @@ export function PrivateV0Landing() {
         className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-24 pt-8 sm:pt-12 lg:grid-cols-2 lg:gap-20 lg:pt-16"
       >
         <div className={koreanLineBreak}>
-          <Eyebrow>01 · PERSONAL &amp; SMALL GROUP CLASS</Eyebrow>
-          <h1 className="mt-7 text-balance text-4xl font-bold leading-[1.2] tracking-[-0.06em] sm:text-5xl lg:text-6xl">
+          <V0Eyebrow>01 · PERSONAL &amp; SMALL GROUP CLASS</V0Eyebrow>
+          <h1 className={`mt-7 text-balance ${v0HeroTitle}`}>
             운동을 잘하는 아이보다,
             <br />
-            <span className="text-[#246bce]">움직임을 즐기는 아이</span>로
+            <span className={v0GradientText}>움직임을 즐기는 아이</span>로
             <br />
             성장시킵니다.
           </h1>
@@ -219,22 +263,25 @@ export function PrivateV0Landing() {
         </div>
       </section>
 
-      <section className="bg-[#f8fafc] py-20 sm:py-24">
+      <section className={`bg-[#f8fafc] ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
+          <V0SectionBlock
             eyebrow="FOR WHOM"
             title="우리 아이에게 이런 고민이 있으신가요?"
             description="획일적인 대형 학원에서 소외되거나 흥미를 잃었던 아이들이 스포키듀에서 자신감을 찾습니다."
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {concerns.map((item, i) => (
+            {concerns.map(({ text, Icon }, i) => (
               <article
-                key={item}
-                className={`rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200/60 sm:p-8 ${koreanLineBreak}`}
+                key={text}
+                className={`${v0BentoCard} rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200/60 sm:p-8 ${koreanLineBreak}`}
               >
+                <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-blue-50 text-[#246bce]">
+                  <Icon className="size-5" aria-hidden />
+                </div>
                 <span className="text-sm font-black text-[#246bce]">0{i + 1}</span>
-                <p className="mt-8 text-sm font-semibold leading-7 text-slate-700 break-keep sm:mt-10">
-                  {item}
+                <p className="mt-4 text-sm font-semibold leading-7 text-slate-700 break-keep sm:mt-5">
+                  {text}
                 </p>
               </article>
             ))}
@@ -242,43 +289,31 @@ export function PrivateV0Landing() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24">
+      <section className={v0SectionBand}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
+          <V0SectionBlock
             eyebrow="OUR DIFFERENCE"
             title="단순히 땀만 빼는 놀이가 아니라 성장의 데이터를 쌓습니다"
           />
           <div className="grid gap-4 lg:grid-cols-3">
-            {differences.map(([num, title, text, reportImage]) => (
+            {differences.map(([num, title, text, footnote]) => (
               <article
                 key={num}
-                className={`rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-100 sm:p-8 ${koreanLineBreak}`}
+                className={`${v0BentoCard} flex flex-col rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-100 sm:p-8 ${koreanLineBreak}`}
               >
                 <span className="text-sm font-black text-[#246bce]">{num} ·</span>
-                <h3 className="mt-6 text-lg font-bold tracking-tight break-keep sm:mt-8 sm:text-xl">
-                  {title}
-                </h3>
-                <p className="mt-4 text-sm leading-7 text-slate-500 break-keep sm:mt-5">{text}</p>
-                {reportImage ? (
-                  <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80">
-                    <Image
-                      src={reportImage.src}
-                      alt={reportImage.alt}
-                      fill
-                      className="object-cover object-top"
-                      sizes="(max-width: 1024px) 100vw, 33vw"
-                    />
-                  </div>
-                ) : null}
+                <h3 className={`mt-6 break-keep sm:mt-8 ${v0CardTitleCompact}`}>{title}</h3>
+                <p className="mt-4 flex-1 text-sm leading-7 text-slate-500 break-keep sm:mt-5">{text}</p>
+                <DifferenceMiniPanel footnote={footnote} />
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="program" className="bg-[#f8fafc] py-20 sm:py-24">
+      <section id="program" className={`bg-[#f8fafc] ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading eyebrow="PROGRAM" title="아이에게 꼭 맞는 수업 형태를 선택하세요" />
+          <V0SectionBlock eyebrow="PROGRAM" title="아이에게 꼭 맞는 수업 형태를 선택하세요" />
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <ProgramCard
               eyebrow="1:1 PRIVATE"
@@ -298,22 +333,25 @@ export function PrivateV0Landing() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24">
+      <section className={v0SectionBand}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading eyebrow="HOW IT WORKS" title="안심하고 시작하는 네 단계" />
+          <V0SectionBlock eyebrow="HOW IT WORKS" title="안심하고 시작하는 네 단계" />
           <div className="mb-16 grid gap-3 sm:grid-cols-2 md:grid-cols-4 sm:mb-20">
-            {flowSteps.map((step, i) => (
+            {flowSteps.map(({ text, Icon }, i) => (
               <div
-                key={step}
-                className={`rounded-3xl bg-[#f8fafc] p-5 sm:p-6 ${koreanLineBreak}`}
+                key={text}
+                className={`${v0BentoCard} rounded-3xl bg-[#f8fafc] p-5 sm:p-6 ${koreanLineBreak}`}
               >
+                <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-blue-50 text-[#246bce]">
+                  <Icon className="size-5" aria-hidden />
+                </div>
                 <span className="text-xs font-black text-[#246bce]">0{i + 1}</span>
-                <p className="mt-5 text-sm font-bold leading-6 break-keep sm:mt-7">{step}</p>
+                <p className="mt-3 text-sm font-bold leading-6 break-keep sm:mt-4">{text}</p>
               </div>
             ))}
           </div>
           <div className="mx-auto max-w-3xl">
-            <h3 className="mb-6 text-center text-2xl font-bold tracking-tight">학부모님이 자주 묻는 질문</h3>
+            <h3 className={`mb-6 text-center ${v0SubsectionTitle}`}>학부모님이 자주 묻는 질문</h3>
             <div className="flex flex-col gap-3">
               {faqs.map(([q, a], i) => (
                 <div key={q} className={`rounded-2xl bg-[#f8fafc] px-4 sm:px-6 ${koreanLineBreak}`}>
@@ -339,11 +377,11 @@ export function PrivateV0Landing() {
         </div>
       </section>
 
-      <section id="apply" className="scroll-mt-24 bg-[#0f172a] py-20 text-white sm:py-24">
+      <section id="apply" className={`scroll-mt-24 bg-[#0f172a] text-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-5 lg:gap-20">
           <div className={`lg:col-span-2 ${koreanLineBreak}`}>
-            <Eyebrow>PERSONAL CONSULTATION</Eyebrow>
-            <h2 className="mt-7 text-3xl font-bold leading-tight tracking-[-0.04em] md:text-5xl">
+            <V0Eyebrow dark>PERSONAL CONSULTATION</V0Eyebrow>
+            <h2 className={`mt-7 ${v0CtaTitleOnDark}`}>
               아이의 움직임에
               <br />
               따뜻한 방향을

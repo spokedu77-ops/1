@@ -156,6 +156,12 @@ export function evaluateSpokeduMasterEntitlement(
   return { allowed: false, plan: 'free', status: 'expired' };
 }
 
+export function shouldLoadLiteSpomoveTrialPreset(
+  entitlement: SpokeduMasterEntitlementDecision,
+): boolean {
+  return entitlement.allowed && entitlement.plan === 'lite';
+}
+
 export function evaluateSpokeduMasterEffectiveEntitlement(
   row: SpokeduMasterSubscriptionRow | null,
   grant: SpokeduMasterEntitlementGrantRow | null,
@@ -533,11 +539,10 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
     }
 
     const serviceSupabase = getServiceSupabase();
-    const [{ row: subscription, error }, { row: grant, error: grantError }, { row: profile, error: profileError }, trial] = await Promise.all([
+    const [{ row: subscription, error }, { row: grant, error: grantError }, { row: profile, error: profileError }] = await Promise.all([
       ensureSpokeduMasterEntitlement(serviceSupabase, user.id),
       getActiveSpokeduMasterEntitlementGrant(serviceSupabase, user.id),
       getSpokeduMasterProfile(serviceSupabase, user.id),
-      getConfiguredLiteSpomoveTrialPresetId(serviceSupabase),
     ]);
 
     if (error || grantError || profileError) {
@@ -559,6 +564,17 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       profile?.onboarding_done || isSpokeduMasterPaidPlanActive(subscription),
     );
 
+    const entitlement = evaluateSpokeduMasterEffectiveEntitlement(subscription, grant);
+    let spomoveTrialPresetId: string | null = null;
+    if (shouldLoadLiteSpomoveTrialPreset(entitlement)) {
+      const trial = await getConfiguredLiteSpomoveTrialPresetId(serviceSupabase);
+      if (trial.error) {
+        devLogger.error('[getSpokeduMasterAccessSnapshot] lite trial preset lookup failed', trial.error);
+      } else {
+        spomoveTrialPresetId = trial.presetId;
+      }
+    }
+
     return {
       ok: true,
       userId: user.id,
@@ -567,7 +583,7 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
         grant,
         isAdmin: false,
         onboardingDone,
-        spomoveTrialPresetId: trial.error ? null : trial.presetId,
+        spomoveTrialPresetId,
         freePreviewProgramIds,
       }),
     };

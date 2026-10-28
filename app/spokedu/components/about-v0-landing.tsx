@@ -8,7 +8,6 @@ import {
   Mail,
   MapPin,
   MessageCircle,
-  MoveRight,
   Phone,
   Play,
   Sparkles,
@@ -19,6 +18,7 @@ import {
   ABOUT_V0_LAB_VISUAL,
   ABOUT_V0_LEADER_PHOTO_CLASS,
   ABOUT_V0_LEADERS,
+  ABOUT_V0_MILESTONES,
 } from '../data/about-v0-media';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import {
@@ -27,7 +27,18 @@ import {
   NAVER_BLOG_URL,
 } from '../data/external-channels';
 import { SPOKEDU_PATHS } from '../data/public-routes';
-import { koreanLineBreak } from '../lib/ui-classes';
+import {
+  koreanLineBreak,
+  v0BentoCard,
+  v0CardImageHover,
+  v0CardTitle,
+  v0GradientText,
+  v0HeroTitle,
+  v0Lead,
+  v0SectionBand,
+  v0SectionTitle,
+} from '../lib/ui-classes';
+import { V0Eyebrow } from './v0-ui';
 
 const values = [
   ['01', 'EXPERTISE', '전문성', '연세대학교 체육교육과 출신 연구진이 아동 발달 단계와 운동 학습 이론에 근거하여 체계적인 연간 커리큘럼을 직접 설계합니다.'],
@@ -43,6 +54,7 @@ const ecosystem = [
     en: 'FIELD EDUCATION',
     desc: '학교·복지관·키움센터 맞춤형 정기 출강, 특수·포용 체육, 미니 올림픽 및 개인·소그룹 수업 운영',
     href: SPOKEDU_PATHS.education,
+    linkLabel: '기관·개인 수업 보기 →',
   },
   {
     num: '02',
@@ -50,6 +62,7 @@ const ecosystem = [
     en: 'SPOMOVE & SPOMAT',
     desc: '시지각 반응 브레인 체육 소프트웨어와 KC인증 및 미국 가연성 기준(US 16 CFR)을 통과한 전용 스포매트 자체 제작·보급',
     href: SPOKEDU_PATHS.spomove,
+    linkLabel: 'SPOMOVE 자세히 보기 →',
   },
   {
     num: '03',
@@ -57,35 +70,28 @@ const ecosystem = [
     en: 'SPOKEDU LAB',
     desc: '커리큘럼 아카이브 탐색부터 출강 일정, 출석, 학부모 리포트 생성까지 지원하는 체육 교육 통합 운영 시스템',
     href: SPOKEDU_PATHS.subscription,
+    linkLabel: 'SPOKEDU LAB 바로가기 →',
   },
 ] as const;
-
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <span className="inline-flex rounded-full bg-blue-50 px-4 py-2 text-[11px] font-bold tracking-[0.18em] text-blue-700 break-keep">
-      {children}
-    </span>
-  );
-}
 
 export function AboutV0Landing() {
   return (
     <main className={`bg-white text-slate-950 ${koreanLineBreak} break-keep`} data-spokedu-about-sections="v0">
-      <section className="px-6 py-20 md:px-10 md:py-28 lg:px-16">
+      <section className={`px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2 lg:gap-20">
           <div>
-            <SectionLabel>ABOUT SPOKEDU · PLAY, THINK, GROW</SectionLabel>
+            <V0Eyebrow>ABOUT SPOKEDU · PLAY, THINK, GROW</V0Eyebrow>
             <h1
               id="about-hero-title"
-              className="mt-8 text-balance text-4xl font-black leading-[1.08] tracking-[-0.055em] sm:text-5xl lg:text-7xl"
+              className={`mt-8 text-balance ${v0HeroTitle}`}
             >
               단 한 명의 아이도
               <br />
-              <span className="text-blue-600">소외되지 않는</span>
+              <span className={v0GradientText}>소외되지 않는</span>
               <br />
               체육 교육의 기준을 만듭니다.
             </h1>
-            <p className="mt-8 max-w-xl text-base leading-8 text-slate-500 md:text-lg lg:text-xl">
+            <p className={`mt-8 max-w-xl ${v0Lead} lg:text-xl`}>
               스포키듀(SPOKEDU)는 연세대학교 체육교육과 출신 전문가들이 모여 시작한 아동·청소년 체육교육 전문
               기업입니다. 학문적 근거와 수천 건의 현장 데이터를 결합해, 단순한 신체 활동을 넘어 스스로 생각하고
               함께 성장하는 교육을 실현합니다.
@@ -125,20 +131,23 @@ export function AboutV0Landing() {
         </div>
       </section>
 
-      <section className="bg-slate-50 px-6 py-20 md:px-10 md:py-28 lg:px-16">
+      <section className={`bg-slate-50 px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
-            <SectionLabel>OUR PHILOSOPHY</SectionLabel>
-            <h2 className="mt-5 text-3xl font-black tracking-[-0.04em] md:text-5xl">스포키듀가 지키는 네 가지 교육 원칙</h2>
+            <V0Eyebrow>OUR PHILOSOPHY</V0Eyebrow>
+            <h2 className={`mt-5 ${v0SectionTitle}`}>스포키듀가 지키는 네 가지 교육 원칙</h2>
           </div>
           <div className="mt-14 grid gap-5 md:grid-cols-2">
             {values.map(([num, en, ko, desc]) => (
-              <article key={num} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-10">
+              <article
+                key={num}
+                className={`${v0BentoCard} rounded-3xl border-slate-200/80 bg-white p-6 shadow-sm md:p-10`}
+              >
                 <div className="flex items-start justify-between">
                   <span className="text-sm font-bold text-blue-600">{num}</span>
                   <Sparkles className="size-5 text-slate-300" aria-hidden />
                 </div>
-                <h3 className="mt-10 text-xl font-black md:mt-12">
+                <h3 className={`mt-10 md:mt-12 ${v0CardTitle}`}>
                   {en} <span className="ml-1 font-medium text-slate-400">{ko}</span>
                 </h3>
                 <p className="mt-4 leading-7 text-slate-500 break-keep">{desc}</p>
@@ -148,10 +157,10 @@ export function AboutV0Landing() {
         </div>
       </section>
 
-      <section className="px-6 py-20 md:px-10 md:py-28 lg:px-16">
+      <section className={`px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
-          <SectionLabel>LEADERSHIP &amp; TEAM</SectionLabel>
-          <h2 className="mt-5 max-w-3xl text-3xl font-black leading-tight tracking-[-0.045em] md:text-5xl">
+          <V0Eyebrow>LEADERSHIP &amp; TEAM</V0Eyebrow>
+          <h2 className={`mt-5 max-w-3xl ${v0SectionTitle}`}>
             수업을 설계한 사람들이 현장의 품질을 끝까지 책임집니다
           </h2>
           <p className="mt-6 max-w-2xl text-base leading-8 text-slate-500 md:text-lg">
@@ -160,13 +169,16 @@ export function AboutV0Landing() {
           </p>
           <div className="mt-14 grid gap-5 md:grid-cols-3">
             {ABOUT_V0_LEADERS.map((leader) => (
-              <article key={leader.name} className="overflow-hidden rounded-3xl border border-slate-100 bg-slate-50">
+              <article
+                key={leader.name}
+                className={`${v0BentoCard} overflow-hidden rounded-3xl border-slate-100 bg-slate-50`}
+              >
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-200">
                   <Image
                     src={leader.photo}
                     alt={`${leader.role} ${leader.name}`}
                     fill
-                    className={ABOUT_V0_LEADER_PHOTO_CLASS}
+                    className={`${ABOUT_V0_LEADER_PHOTO_CLASS} ${v0CardImageHover}`}
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
                 </div>
@@ -215,35 +227,58 @@ export function AboutV0Landing() {
         </div>
       </section>
 
-      <section className="bg-slate-50 px-6 py-20 md:px-10 md:py-28 lg:px-16">
+      <section className={`bg-white px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
-          <SectionLabel>WHAT WE DO</SectionLabel>
-          <h2 className="mt-5 max-w-3xl text-3xl font-black tracking-[-0.04em] md:text-5xl">
+          <V0Eyebrow>MILESTONES</V0Eyebrow>
+          <h2 className={`mt-5 max-w-3xl ${v0SectionTitle}`}>주요 연혁</h2>
+          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-500 md:text-lg">
+            현장 출강에서 시작해 에듀테크와 지도자 플랫폼까지, 스포키듀가 쌓아 온 성장의 발자취입니다.
+          </p>
+          <div className="mt-14 grid gap-4 md:grid-cols-2">
+            {ABOUT_V0_MILESTONES.map((item) => (
+              <article
+                key={item.when + item.title}
+                className={`${v0BentoCard} rounded-3xl border-slate-200/80 bg-slate-50 p-6 md:p-8`}
+              >
+                <time className="text-sm font-black tracking-tight text-blue-600">{item.when}</time>
+                <p className="mt-4 text-base font-bold leading-7 text-slate-800 break-keep md:text-lg">{item.title}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`bg-slate-50 px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
+        <div className="mx-auto max-w-7xl">
+          <V0Eyebrow>WHAT WE DO</V0Eyebrow>
+          <h2 className={`mt-5 max-w-3xl ${v0SectionTitle}`}>
             오프라인 현장부터 디지털 솔루션까지 연결합니다
           </h2>
           <div className="mt-14 grid gap-5 md:grid-cols-3">
-            {ecosystem.map(({ num, title, en, desc, href }) => (
+            {ecosystem.map(({ num, title, en, desc, href, linkLabel }) => (
               <Link
                 key={num}
                 href={href}
-                className="group rounded-3xl border border-slate-200/80 bg-white p-6 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-900/5 md:p-8"
+                className={`${v0BentoCard} flex h-full flex-col rounded-3xl border-slate-200/80 bg-white p-6 md:p-8`}
               >
                 <span className="text-sm font-bold text-blue-600">{num}</span>
-                <h3 className="mt-10 text-xl font-black md:mt-14 md:text-2xl">{title}</h3>
+                <h3 className={`mt-10 md:mt-14 ${v0CardTitle}`}>{title}</h3>
                 <p className="mt-2 text-xs font-bold tracking-[0.14em] text-slate-400">{en}</p>
-                <p className="mt-6 leading-7 text-slate-500 break-keep">{desc}</p>
-                <MoveRight className="mt-10 size-5 text-blue-600 transition group-hover:translate-x-2" aria-hidden />
+                <p className="mt-6 flex-1 leading-7 text-slate-500 break-keep">{desc}</p>
+                <span className="mt-10 text-sm font-bold text-blue-600 transition group-hover:underline">
+                  {linkLabel}
+                </span>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-20 md:px-10 md:py-28 lg:px-16">
+      <section className={`px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50 lg:grid-cols-[5fr_7fr]">
           <div className="p-6 md:p-10 lg:p-12">
-            <SectionLabel>SPOKEDU LAB HQ</SectionLabel>
-            <h2 className="mt-6 text-2xl font-black leading-tight tracking-[-0.04em] md:text-3xl lg:text-4xl">
+            <V0Eyebrow>SPOKEDU LAB HQ</V0Eyebrow>
+            <h2 className={`mt-6 ${v0SectionTitle}`}>
               스포키듀LAB 센터 및 본사 안내
             </h2>
             <p className="mt-5 leading-7 text-slate-500 break-keep">

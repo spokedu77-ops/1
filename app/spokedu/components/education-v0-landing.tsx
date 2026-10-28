@@ -22,8 +22,21 @@ import {
   EDUCATION_V0_PROGRAMS,
 } from '../data/education-v0-media';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
-import { koreanLineBreak } from '../lib/ui-classes';
+import {
+  koreanLineBreak,
+  v0BentoCard,
+  v0CardImageHover,
+  v0CardTitle,
+  v0CardTitleCompact,
+  v0CtaTitleOnDark,
+  v0GradientText,
+  v0HeroTitle,
+  v0Lead,
+  v0SectionBand,
+  v0SectionTitle,
+} from '../lib/ui-classes';
 import { DispatchProposalForm } from './dispatch-proposal-form';
+import { V0Eyebrow, V0SectionBlock } from './v0-ui';
 
 const comparison = [
   ['커리큘럼', '연세대 체육교육과 연구진의 연간 커리큘럼', '강사 개인 재량의 단발성 놀이'],
@@ -54,34 +67,6 @@ const classFlowSteps = [
   ['04', '팀 활동', '협동과 규칙 기반 스포츠 게임'],
 ] as const;
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex rounded-full bg-blue-50 px-4 py-1.5 text-[11px] font-bold tracking-[0.16em] text-blue-600">
-      {children}
-    </span>
-  );
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  description,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className={`mx-auto max-w-2xl text-center ${koreanLineBreak}`}>
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-950 md:text-[42px] md:leading-[1.2]">
-        {title}
-      </h2>
-      <p className="mt-5 text-base leading-7 text-slate-500 md:text-lg">{description}</p>
-    </div>
-  );
-}
-
 function EducationV0Image({
   src,
   alt,
@@ -96,12 +81,23 @@ function EducationV0Image({
   const isRemote = src.startsWith('http');
   if (isRemote) {
     return (
-      <Image src={src} alt={alt} fill className={className} priority={priority} sizes="(max-width: 768px) 100vw, 50vw" />
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className={`${v0CardImageHover} ${className ?? ''}`}
+        priority={priority}
+        sizes="(max-width: 768px) 100vw, 50vw"
+      />
     );
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} className={`absolute inset-0 h-full w-full object-cover ${className ?? ''}`} />
+    <img
+      src={src}
+      alt={alt}
+      className={`absolute inset-0 h-full w-full ${v0CardImageHover} ${className ?? ''}`}
+    />
   );
 }
 
@@ -114,18 +110,15 @@ export function EducationV0Landing() {
       <section className="relative bg-white pb-16 pt-10 md:pb-24 md:pt-14">
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20">
           <div>
-            <Eyebrow>SCHOOL &amp; ORGANIZATION</Eyebrow>
-            <h1
-              id="edu-hero-heading"
-              className="mt-6 max-w-xl text-balance text-4xl font-bold leading-[1.18] tracking-[-0.04em] text-slate-950 sm:text-5xl lg:text-6xl"
-            >
+            <V0Eyebrow>SCHOOL &amp; ORGANIZATION</V0Eyebrow>
+            <h1 id="edu-hero-heading" className={`mt-6 max-w-xl ${v0HeroTitle} text-slate-950`}>
               움직이게 하는 수업이 아니라,
               <br />
-              <span className="text-blue-600">움직이고 싶게</span> 만드는
+              <span className={v0GradientText}>움직이고 싶게</span> 만드는
               <br />
               수업입니다.
             </h1>
-            <p className="mt-7 max-w-lg text-lg leading-8 text-slate-600">
+            <p className={`mt-7 max-w-lg ${v0Lead} text-slate-600`}>
               연세대학교 체육교육과 출신 전문가들의 설계와 현장 데이터가 적용된 연간 커리큘럼으로 학교·기관의 체육
               수업을 체계적으로 운영합니다.
             </p>
@@ -223,9 +216,9 @@ export function EducationV0Landing() {
       </section>
 
       {/* 2. Custom design + 4-step timeline */}
-      <section id="design" className="scroll-mt-28 bg-slate-50 py-24 md:py-32">
+      <section id="design" className={`scroll-mt-28 bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
-          <SectionHeading
+          <V0SectionBlock
             eyebrow="CUSTOMIZED DESIGN"
             title="조건이 달라지면 수업의 설계도 달라집니다"
             description="같은 프로그램을 모든 현장에 반복하지 않습니다. 기관의 환경과 아이들의 특성에 맞춰 동선과 규칙을 정밀하게 조정합니다."
@@ -236,11 +229,14 @@ export function EducationV0Landing() {
               [Users, '대기율 제로 인원 설계', '소그룹부터 다인원 학급까지 구경하는 아이 없는 동시 참여 구조'],
               [Sparkles, '포용적 연령·난이도', '유아·초·중등 및 느린 학습자·특수 통합 환경에 맞춘 규칙과 촉진 수준 조절'],
             ].map(([Icon, title, body]) => (
-              <div key={title as string} className="rounded-3xl border border-slate-200/60 bg-white p-8 shadow-sm">
+              <div
+                key={title as string}
+                className={`${v0BentoCard} rounded-3xl border-slate-200/60 bg-white p-8 shadow-sm`}
+              >
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                   <Icon className="size-6" aria-hidden />
                 </div>
-                <h3 className="mt-7 text-xl font-bold">{title as string}</h3>
+                <h3 className={`mt-7 ${v0CardTitle} text-slate-950`}>{title as string}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-500">{body as string}</p>
               </div>
             ))}
@@ -249,7 +245,7 @@ export function EducationV0Landing() {
             <div className="flex flex-col gap-8">
               <div className="max-w-2xl">
                 <p className="text-sm font-bold text-blue-300">ONE SESSION, ONE FLOW</p>
-                <h3 className="mt-3 text-2xl font-bold leading-snug">
+                <h3 className={`mt-3 ${v0CardTitle} leading-snug text-white`}>
                   하나의 활동이 아니라 1회기 수업의 흐름을 설계합니다
                 </h3>
               </div>
@@ -277,9 +273,9 @@ export function EducationV0Landing() {
       </section>
 
       {/* 3. Comparison table */}
-      <section id="compare" className="scroll-mt-28 bg-white py-24 md:py-32">
+      <section id="compare" className={`scroll-mt-28 bg-white ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
-          <SectionHeading
+          <V0SectionBlock
             eyebrow="WHY SPOKEDU"
             title="일반 강사 파견 업체와 스포키듀가 결정적으로 다른 이유"
             description="수업 한 번을 넘어, 기관이 안심하고 맡길 수 있는 운영 시스템을 함께 제공합니다."
@@ -315,9 +311,9 @@ export function EducationV0Landing() {
       </section>
 
       {/* 4. Six program cards */}
-      <section id="programs" className="scroll-mt-28 bg-slate-50 py-24 md:py-32">
+      <section id="programs" className={`scroll-mt-28 bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
-          <SectionHeading
+          <V0SectionBlock
             eyebrow="PROGRAM LINE-UP"
             title="기관 목적에 맞춰 조합하는 6대 타겟 프로그램"
             description="기초 신체 기능을 기르는 펑셔널 무브와 사회성을 기르는 팀빌딩을 베이스로 운영됩니다."
@@ -326,13 +322,13 @@ export function EducationV0Landing() {
             {EDUCATION_V0_PROGRAMS.map((program) => (
               <article
                 key={program.number}
-                className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60"
+                className={`${v0BentoCard} overflow-hidden rounded-3xl border-slate-200/80 bg-white shadow-sm`}
               >
                 <div className="relative aspect-[16/8.5] overflow-hidden">
                   <EducationV0Image
                     src={program.image}
                     alt={`${program.title} 수업 모습`}
-                    className="object-cover transition duration-500 group-hover:scale-105"
+                    className={v0CardImageHover}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" aria-hidden />
                   <div className="absolute left-5 top-5 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm">
@@ -341,7 +337,7 @@ export function EducationV0Landing() {
                   <span className="absolute bottom-5 right-5 text-sm font-bold text-white/80">{program.number}</span>
                 </div>
                 <div className="p-7">
-                  <h3 className="text-xl font-bold text-slate-950">{program.title}</h3>
+                  <h3 className={`${v0CardTitle} text-slate-950`}>{program.title}</h3>
                   <p className="mt-2 font-semibold text-blue-600">{program.subtitle}</p>
                   <p className="mt-3 text-sm leading-6 text-slate-500">{program.description}</p>
                   <div className="mt-5 flex flex-wrap gap-2">
@@ -359,9 +355,9 @@ export function EducationV0Landing() {
       </section>
 
       {/* 5. Field records + reviews */}
-      <section id="records" className="scroll-mt-28 bg-white py-24 md:py-32">
+      <section id="records" className={`scroll-mt-28 bg-white ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
-          <SectionHeading
+          <V0SectionBlock
             eyebrow="FIELD RECORDS & REVIEWS"
             title="현장의 기록과 담당자님의 평가가 증명합니다"
             description="다양한 공간과 아이들을 만난 수업의 기록, 그리고 현장을 가장 가까이에서 지켜본 담당자님의 이야기입니다."
@@ -370,18 +366,18 @@ export function EducationV0Landing() {
             {EDUCATION_V0_FIELD_RECORDS.map((record) => (
               <article
                 key={record.title}
-                className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+                className={`${v0BentoCard} overflow-hidden rounded-2xl border-slate-100 bg-white shadow-sm`}
               >
                 <div className="relative aspect-[1.25] overflow-hidden">
                   <EducationV0Image
                     src={record.image}
                     alt={`${record.title} 현장 수업`}
-                    className="object-cover transition duration-500 group-hover:scale-105"
+                    className={v0CardImageHover}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 to-transparent" aria-hidden />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-lg font-bold text-slate-950">{record.title}</h3>
+                  <h3 className={`${v0CardTitleCompact} text-slate-950`}>{record.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-500">{record.description}</p>
                 </div>
               </article>
@@ -391,7 +387,7 @@ export function EducationV0Landing() {
             {reviews.items.map((item) => (
               <blockquote
                 key={item.headline}
-                className="flex min-h-64 flex-col rounded-3xl border border-slate-100 bg-slate-50 p-8"
+                className={`${v0BentoCard} flex min-h-64 flex-col rounded-3xl border-slate-100 bg-slate-50 p-8`}
               >
                 {item.showStars ? (
                   <div className="flex gap-1 text-amber-400" aria-label="별점 5점">
@@ -420,11 +416,11 @@ export function EducationV0Landing() {
       </section>
 
       {/* 6. Three-step onboarding */}
-      <section className="bg-slate-50 py-24 md:py-32">
+      <section className={`bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-4">
-            <Eyebrow>EASY ONBOARDING</Eyebrow>
-            <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight text-slate-950 md:text-4xl">
+            <V0Eyebrow>EASY ONBOARDING</V0Eyebrow>
+            <h2 className={`mt-5 ${v0SectionTitle} text-slate-950`}>
               조건이 아직 정리되지 않아도 괜찮습니다
             </h2>
             <p className="mt-5 text-base leading-7 text-slate-500">
@@ -433,10 +429,13 @@ export function EducationV0Landing() {
           </div>
           <div className="grid gap-4 md:grid-cols-3 lg:col-span-8">
             {onboardingSteps.map(([step, title, desc], index) => (
-              <div key={step} className="relative rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+              <div
+                key={step}
+                className={`${v0BentoCard} relative rounded-3xl border-slate-200 bg-white p-7 shadow-sm`}
+              >
                 <span className="text-sm font-black text-blue-600">STEP {step}</span>
                 <div className="mt-12">
-                  <h3 className="text-lg font-bold text-slate-950">{title}</h3>
+                  <h3 className={`${v0CardTitleCompact} text-slate-950`}>{title}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-500">{desc}</p>
                 </div>
                 {index < 2 ? (
@@ -452,11 +451,11 @@ export function EducationV0Landing() {
       </section>
 
       {/* 7. FAQ */}
-      <section id="faq" className="scroll-mt-28 bg-white py-24 md:py-32">
+      <section id="faq" className={`scroll-mt-28 bg-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <Eyebrow>FAQ</Eyebrow>
-            <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight text-slate-950">
+            <V0Eyebrow>FAQ</V0Eyebrow>
+            <h2 className={`mt-5 ${v0SectionTitle} text-slate-950`}>
               기관 담당자분들이 자주 묻는 질문
             </h2>
             <div className="mt-8 rounded-3xl bg-blue-50 p-6">
@@ -496,11 +495,11 @@ export function EducationV0Landing() {
       </section>
 
       {/* 8. Contact + operational form */}
-      <section id="contact" className="scroll-mt-28 bg-slate-900 py-24 text-white md:py-32">
+      <section id="contact" className={`scroll-mt-28 bg-slate-900 text-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-12 lg:items-start">
           <div className="lg:col-span-5">
-            <Eyebrow>REQUEST A PLAN</Eyebrow>
-            <h2 className="mt-6 text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+            <V0Eyebrow dark>REQUEST A PLAN</V0Eyebrow>
+            <h2 className={`mt-6 ${v0CtaTitleOnDark}`}>
               우리 기관에 맞는
               <br />
               <span className="text-blue-400">운영안</span>을 받아보세요
