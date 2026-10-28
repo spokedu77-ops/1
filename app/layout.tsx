@@ -107,6 +107,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
               <ContentRoot
                 style={mainFullscreenStyle}
                 data-internal-shell={isAdminShell ? 'admin' : isTeacherShell ? 'teacher' : undefined}
+                data-sidebar-open={isAdminShell && !hideSidebar ? String(isDesktopOpen) : undefined}
                 className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                   hideSidebar
                     ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0${homeSticky ? '' : ' overflow-x-hidden'}`
@@ -114,9 +115,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                         isTeacherShell
                           ? ''
                           : isAdminShell
-                            ? isDesktopOpen
-                              ? ' min-[1200px]:ml-64'
-                              : ' min-[1200px]:ml-0'
+                            ? ''
                             : isDesktopOpen
                               ? ' md:ml-64'
                               : ' md:ml-0'

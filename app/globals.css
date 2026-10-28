@@ -287,6 +287,23 @@ body {
 }
 
 /* Admin / Teacher shared responsive foundation. Public and subscriber surfaces are excluded. */
+:root {
+  --admin-sidebar-width: 216px;
+}
+
+@media (min-width: 1200px) {
+  [data-admin-sidebar="true"] {
+    width: var(--admin-sidebar-width);
+  }
+  [data-internal-shell="admin"][data-sidebar-open="true"] {
+    margin-left: var(--admin-sidebar-width);
+    width: calc(100% - var(--admin-sidebar-width));
+  }
+  [data-internal-shell="admin"][data-sidebar-open="false"] {
+    margin-left: 0;
+  }
+}
+
 [data-internal-shell="admin"],
 [data-internal-shell="teacher"],
 .teacher-shell {

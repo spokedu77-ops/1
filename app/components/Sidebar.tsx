@@ -195,7 +195,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   const desktopOnlyDisplay = isAdminRoute ? 'min-[1200px]:flex' : 'md:flex';
   const desktopOnlyBlock = isAdminRoute ? 'min-[1200px]:block' : 'md:block';
   const desktopNavPadding = isAdminRoute ? 'min-[1200px]:pt-3' : 'md:pt-3';
-  const drawerWidth = isAdminRoute ? 'w-[min(84vw,320px)] min-[1200px]:w-64' : 'w-64';
+  const drawerWidth = isAdminRoute ? 'w-[min(84vw,320px)] min-[1200px]:w-[var(--admin-sidebar-width)]' : 'w-64';
 
   if (!isAdminRoute && !isSubscriber) return null;
 
@@ -264,6 +264,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       ) : null}
 
       <aside
+        data-admin-sidebar={pathname.startsWith('/admin') ? 'true' : undefined}
         className={`fixed !left-0 !top-0 z-[260] m-0 flex h-[var(--viewport-height-px,100dvh)] max-h-[var(--viewport-height-px,100dvh)] ${drawerWidth} flex-col overflow-hidden bg-[#1e293b] pb-[env(safe-area-inset-bottom,0px)] text-white transition-transform duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${desktopSidebarTransform}`}
@@ -293,7 +294,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                     return (
                       <div key={item.href} className={baseClass} aria-disabled>
                         <Icon size={17} className="text-slate-500" />
-                        <span className="text-sm font-medium leading-5">{item.name}</span>
+                        <span className={`${isAdminRoute ? 'text-xs' : 'text-sm'} font-medium leading-5`}>{item.name}</span>
                         <span className="ml-auto text-[10px] text-slate-500">개발 예정</span>
                       </div>
                     );
@@ -302,7 +303,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                   return (
                     <Link key={item.href} href={item.href} onClick={(event) => handleMenuClick(event, item)} className={baseClass}>
                       <Icon size={17} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
-                      <span className="text-sm font-medium leading-5">{item.name}</span>
+                      <span className={`${isAdminRoute ? 'text-xs' : 'text-sm'} font-medium leading-5`}>{item.name}</span>
                       {item.href === '/admin' && consultPendingCount > 0 && (
                         <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
                           +{consultPendingCount}
@@ -328,7 +329,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
           </div>
           <button onClick={handleLogout} className="group flex min-h-[44px] w-full touch-manipulation items-center gap-2.5 px-1.5 py-2 text-slate-500 transition-colors hover:text-rose-400">
             <LogOut size={17} className="transition-transform group-hover:rotate-12" />
-            <span className="text-sm font-medium">로그아웃</span>
+            <span className={`${isAdminRoute ? 'text-xs' : 'text-sm'} font-medium`}>로그아웃</span>
           </button>
         </div>
       </aside>
