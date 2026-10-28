@@ -15,7 +15,6 @@ import { ClassOpsTierFeeTable } from "./components/ClassOpsTierFeeTable";
 import { useClassOpsReferenceData } from "./hooks/useClassOpsReferenceData";
 import { MobileThreeDayView } from "./MobileThreeDayView";
 import { MonthExcelGrid } from "./MonthExcelGrid";
-import { DaySchedulePanel } from "./DaySchedulePanel";
 import { addLocalDays, chunkWeeks, getMonthGrid, startOfLocalDay } from "./lib/dateGrid";
 import { buildEventsByDayMap } from "./lib/eventsByDay";
 import { computeTier, effectiveFees, tierLabelKo, totalLessonsFromCounts } from "@/app/lib/teacherTierSchedule";
@@ -29,6 +28,16 @@ function alignRowWithScrollContainerTop(scrollParent: HTMLElement, row: HTMLElem
 const VIEWPORT_GAP_BELOW_TOOLBAR = 6;
 
 export default function ClassManagementCalendar() {
+  const [displayNow, setDisplayNow] = useState(() => Date.now());
+  useEffect(() => {
+    const refreshClock = () => setDisplayNow(Date.now());
+    const interval = window.setInterval(refreshClock, 30_000);
+    document.addEventListener('visibilitychange', refreshClock);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshClock);
+    };
+  }, []);
   const {
     allEvents,
     filteredEvents,
@@ -53,7 +62,6 @@ export default function ClassManagementCalendar() {
   const [bundleOpen, setBundleOpen] = useState(false);
   const [bundleTitle, setBundleTitle] = useState("");
   const [bundleGroupIds, setBundleGroupIds] = useState<string[]>([]);
-  const [selectedDay, setSelectedDay] = useState<{ day: Date; events: SessionEvent[] } | null>(null);
 
   useLayoutEffect(() => {
     const now = new Date();
@@ -94,6 +102,10 @@ export default function ClassManagementCalendar() {
   const selectedTeacherTier = selectedTeacher ? computeTier(selectedTeacherCount) : null;
   const selectedTeacherFees = selectedTeacher && selectedTeacherTier ? effectiveFees(selectedTeacherTier, selectedTeacher, reference.tierFeeMap) : null;
   const filterOptions = reference.teachers.length > 0 ? reference.teachers : teacherList.map((teacher) => ({ ...teacher, is_active: true }));
+
+  useEffect(() => {
+    void fetchSessions({ anchor: monthAnchor });
+  }, [fetchSessions, monthAnchor]);
 
   const scrollDesktopToTodayWeek = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia && !window.matchMedia("(min-width: 1024px)").matches) return;
@@ -148,10 +160,10 @@ export default function ClassManagementCalendar() {
           </nav>
           {selectedTeacher && selectedTeacherTier && selectedTeacherFees ? <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm"><strong className="text-slate-950">{selectedTeacher.name}</strong><span className="text-slate-600">{selectedTeacher.is_active ? "활동 중" : "비활성"}</span><span className="font-bold text-blue-800">인정 {selectedTeacherCount.toLocaleString("ko-KR")}회 · {tierLabelKo(selectedTeacherTier)}</span><span className="text-xs font-semibold text-slate-600">개인 {selectedTeacherFees.fee_private.toLocaleString("ko-KR")} · 그룹 {selectedTeacherFees.fee_group.toLocaleString("ko-KR")} · 센터 메인 {selectedTeacherFees.fee_center_main.toLocaleString("ko-KR")} · 보조 {selectedTeacherFees.fee_center_assist.toLocaleString("ko-KR")}원</span></div> : null}
 
-          {sessionsFetchNotice ? <div role={sessionsFetchNotice.type === "error" ? "alert" : "status"} className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 ${sessionsFetchNotice.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-amber-200 bg-amber-50 text-amber-950"}`}><p className="text-xs font-bold">{sessionsFetchNotice.type === "error" ? "수업 일정을 불러오지 못했습니다. 빈 일정이 아니라 조회 실패 상태입니다." : "일부 일정만 불러왔습니다. 뒤쪽 일정이 빠져 있을 수 있습니다."}</p><button type="button" onClick={() => void fetchSessions()} className="min-h-11 rounded-lg border border-current bg-white px-3 text-xs font-bold">다시 불러오기</button></div> : null}
+          {sessionsFetchNotice ? <div role={sessionsFetchNotice.type === "error" ? "alert" : "status"} className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 ${sessionsFetchNotice.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-amber-200 bg-amber-50 text-amber-950"}`}><p className="text-xs font-bold">{sessionsFetchNotice.type === "error" ? "수업 일정을 불러오지 못했습니다. 빈 일정이 아니라 조회 실패 상태입니다." : "일부 일정만 불러왔습니다. 뒤쪽 일정이 빠져 있을 수 있습니다."}</p><button type="button" onClick={() => void fetchSessions({ anchor: monthAnchor })} className="min-h-11 rounded-lg border border-current bg-white px-3 text-xs font-bold">다시 불러오기</button></div> : null}
           <div ref={calendarScrollAreaRef} className="mt-3 min-w-0">
-            <MobileThreeDayView days={mobileThreeDays} eventsByDay={eventsByDay} onOpen={openBundleForEvent} />
-            <MonthExcelGrid weekRows={monthWeekRows} eventsByDay={eventsByDay} todayWeekRowRef={todayWeekRowRef} onOpen={openBundleForEvent} onOpenDay={(day, events) => setSelectedDay({ day, events })} />
+            <MobileThreeDayView days={mobileThreeDays} eventsByDay={eventsByDay} onOpen={openBundleForEvent} now={displayNow} />
+            <MonthExcelGrid weekRows={monthWeekRows} eventsByDay={eventsByDay} todayWeekRowRef={todayWeekRowRef} onOpen={openBundleForEvent} now={displayNow} />
           </div>
           {localToday ? <p className="mt-2 text-[11px] text-slate-500">오늘 {localToday.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" })} · 수업을 선택하면 기존 상세 관리 패널이 열립니다.</p> : null}
         </section>
@@ -159,8 +171,7 @@ export default function ClassManagementCalendar() {
         <ClassOpsTeacherDirectory teachers={reference.teachers} selectedTeacherId={filterTeacher} events={allEvents} tierFeeMap={reference.tierFeeMap} state={reference.state} onSelect={setFilterTeacher} onRetry={() => void reference.reload()} />
         <div className="mt-10 grid gap-10 min-[1100px]:grid-cols-[1fr_1.18fr] min-[1100px]:gap-6"><ClassOpsPolicyReference /><ClassOpsTierFeeTable teacher={selectedTeacher} tierFeeMap={reference.tierFeeMap} feeSource={reference.feeSource} /></div>
       </main>
-      <ClassBundlePanel visible={bundleOpen} bundleTitle={bundleTitle} groupIds={bundleGroupIds} calendarEvents={allEvents} calendarDataStatus={sessionsFetchNotice ? "incomplete" : allEvents.length > 0 ? "range-limited" : "unavailable"} onClose={() => setBundleOpen(false)} onChanged={() => void fetchSessions()} />
-      <DaySchedulePanel day={selectedDay?.day ?? null} events={selectedDay?.events ?? []} onClose={() => setSelectedDay(null)} onOpen={(event) => { setSelectedDay(null); void openBundleForEvent(event); }} />
+      <ClassBundlePanel visible={bundleOpen} bundleTitle={bundleTitle} groupIds={bundleGroupIds} calendarEvents={allEvents} calendarDataStatus={sessionsFetchNotice ? "incomplete" : allEvents.length > 0 ? "range-limited" : "unavailable"} onClose={() => setBundleOpen(false)} onChanged={() => void fetchSessions({ anchor: monthAnchor })} />
     </div>
   );
 }

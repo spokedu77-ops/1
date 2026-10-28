@@ -3,6 +3,7 @@
 import type { SessionEvent } from "@/app/admin/classes-shared/types";
 import { monthRowToneClassesForSessionType } from "../lib/sessionTypeCategory";
 import { formatTimeShort, toDate } from "./lib/dateGrid";
+import { sessionDisplayStatus } from "./lib/sessionDisplayStatus";
 
 function roundLabel(ev: SessionEvent) {
   if (ev.roundInfo) return ev.roundInfo;
@@ -22,13 +23,6 @@ function showFinBadge(ev: SessionEvent) {
 
 function sessionTypeOf(ev: SessionEvent): string {
   return String(ev.type ?? ev.session_type ?? "").trim();
-}
-
-function statusLabel(status: string | null | undefined): string {
-  if (status === "postponed") return "연기";
-  if (status === "cancelled" || status === "deleted") return "취소";
-  if (status === "finished" || status === "verified" || status === "completed") return "완료";
-  return "예정";
 }
 
 function monthRowTone(ev: SessionEvent): string {
@@ -59,10 +53,12 @@ export function MonthExcelEventRow({
   ev,
   isPastDay,
   onOpen,
+  now,
 }: {
   ev: SessionEvent;
   isPastDay: boolean;
   onOpen: (ev: SessionEvent) => void;
+  now: number;
 }) {
   const start = toDate(ev.start);
   const r = roundLabel(ev);
@@ -70,8 +66,10 @@ export function MonthExcelEventRow({
   const struck = ev.status === "cancelled" || ev.status === "deleted";
   const strikeTitle = struck;
   const teacherShort = ev.teacher ? String(ev.teacher).trim() : "";
-  const institutionShort = ev.studentsText ? String(ev.studentsText).trim() : "";
-  const assignmentLabel = [institutionShort, teacherShort].filter(Boolean).join(" · ");
+  // studentsText is also the feedback document, not a dedicated institution field.
+  // Only a plain single-line label is safe to show in the calendar.
+  const studentsText = String(ev.studentsText || "").trim();
+  const institutionShort = /[\r\n]|EXTRA_TEACHERS:|주요\s*활동|✅|☑/.test(studentsText) ? "" : studentsText;
 
   return (
     <button
@@ -79,21 +77,14 @@ export function MonthExcelEventRow({
       onClick={() => onOpen(ev)}
       className={`mx-1.5 mb-1.5 flex min-h-[74px] w-[calc(100%-0.75rem)] min-w-0 flex-col gap-1 rounded-xl border-l-4 px-2.5 py-2 text-left ${monthRowTone(ev)} ${isPastDay && !struck ? "opacity-80" : ""} hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
     >
-      <div className="flex items-start gap-1 min-w-0">
-        <span className="w-10 shrink-0 text-xs font-black tabular-nums text-slate-800">
+      <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <span className="text-[10px] font-black tabular-nums text-slate-800">
           {formatTimeShort(start)}
-        </span>
-        <span
-          className={`min-w-0 flex-1 line-clamp-2 text-[13px] font-extrabold leading-[1.3] text-slate-950 ${
-            strikeTitle ? "line-through text-slate-500" : ""
-          }`}
-        >
-          {ev.title}
         </span>
         <span className="shrink-0 flex flex-col items-end gap-0.5">
           {r ? (
             <span
-              className={`whitespace-nowrap text-[11px] font-bold tabular-nums ${
+              className={`whitespace-nowrap text-[10px] font-bold tabular-nums ${
                 strikeTitle ? "line-through text-slate-500" : "text-slate-600"
               }`}
             >
@@ -102,17 +93,19 @@ export function MonthExcelEventRow({
           ) : null}
         </span>
       </div>
-      {assignmentLabel || fin ? (
+      <span className={`block w-full min-w-0 whitespace-normal [overflow-wrap:anywhere] text-[11px] font-extrabold leading-normal text-slate-950 ${strikeTitle ? "line-through text-slate-500" : ""}`}>
+        {ev.title}
+      </span>
+      {institutionShort ? <span className="block w-full whitespace-normal [overflow-wrap:anywhere] text-[10px] leading-normal text-slate-600">{institutionShort}</span> : null}
+      {teacherShort ? <span className="block w-full whitespace-normal [overflow-wrap:anywhere] text-[10px] font-semibold leading-normal text-slate-600">{teacherShort}</span> : null}
         <div
-          className={`pl-10 flex min-w-0 items-center justify-between gap-1.5 ${
+          className={`flex w-full min-w-0 flex-wrap items-center gap-1.5 ${
             strikeTitle ? "line-through text-slate-400" : "text-slate-500"
           }`}
         >
-          <span className="min-w-0 flex-1 truncate text-[11px] font-semibold">{assignmentLabel || "\u00A0"}</span>
-          <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-extrabold">{statusLabel(ev.status)}</span>
+          <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-extrabold">{sessionDisplayStatus(ev, now)}</span>
           {fin ? <span className={FIN_BADGE_CLASS}>FIN</span> : null}
         </div>
-      ) : null}
     </button>
   );
 }

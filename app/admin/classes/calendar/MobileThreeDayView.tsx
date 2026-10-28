@@ -5,21 +5,22 @@ import { MonthExcelEventRow } from "./MonthExcelEventRow";
 import { dayMapKey, isPastCalendarDay, startOfLocalDay } from "./lib/dateGrid";
 
 type Props = {
+  now: number;
   days: Date[];
   eventsByDay: Map<string, SessionEvent[]>;
   onOpen: (ev: SessionEvent) => void;
 };
 
 /** 모바일: 가운데 날짜 기준 전날·당일·다음날 */
-export function MobileThreeDayView({ days, eventsByDay, onOpen }: Props) {
+export function MobileThreeDayView({ days, eventsByDay, onOpen, now }: Props) {
   return (
     <div data-class-ops-view="three-day" className="space-y-3 min-[1024px]:hidden">
       {days.map((cell) => {
         const key = dayMapKey(cell);
         const dayEvents = eventsByDay.get(key) || [];
-        const t = new Date();
+        const t = new Date(now);
         const isToday = startOfLocalDay(t).getTime() === startOfLocalDay(cell).getTime();
-        const isPastDay = isPastCalendarDay(cell);
+        const isPastDay = isPastCalendarDay(cell, t);
         const headerLabel = cell.toLocaleDateString("ko-KR", {
           weekday: "short",
           month: "numeric",
@@ -60,6 +61,7 @@ export function MobileThreeDayView({ days, eventsByDay, onOpen }: Props) {
                   <MonthExcelEventRow
                     key={ev.id}
                     ev={ev}
+                    now={now}
                     isPastDay={isPastDay}
                     onOpen={onOpen}
                   />

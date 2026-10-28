@@ -752,7 +752,21 @@ export default function ClassBundlePanel({
 
   const saveSessionExtras = async (gid: string, row: SessionRow, extras: TeacherInput[]) => {
     const memo = persistMemoExtras(row.memo, extras);
-    await applyInlineUpdate(gid, row.id, { memo });
+    // 보조강사는 기존 관리자 일괄 저장 경로로 저장한다. 브라우저 RLS에 의존하면
+    // memo 변경이 거절되어 '+'를 눌러도 보조 선택 행이 사라질 수 있다.
+    try {
+      await applyBulkSessionChanges([{ id: row.id, memo }]);
+      setSessionsByGroupId((prev) => ({
+        ...prev,
+        [gid]: (prev[gid] || []).map((candidate) =>
+          candidate.id === row.id ? { ...candidate, memo } : candidate,
+        ),
+      }));
+      onChanged?.();
+    } catch (err) {
+      devLogger.error(err);
+      toast.error("보조 강사 저장에 실패했습니다.");
+    }
   };
 
   const addAssistRow = async (gid: string, row: SessionRow) => {

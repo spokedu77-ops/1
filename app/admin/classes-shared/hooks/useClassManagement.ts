@@ -19,79 +19,11 @@ type SessionRow = {
 
 type TeacherRow = { id: string; name: string };
 
-function buildSessionEvents(data: SessionRow[], teachers: TeacherRow[]): SessionEvent[] {
-  const groupTotals = buildGroupPlannedTotals(data as {
-    group_id?: string | null;
-    status?: string | null;
-    round_total?: number | null;
-    round_index?: number | null;
-  }[]);
-  const groupCurrentRounds: Record<string, number> = {};
-
-  return data.map((session) => {
-    const title = session.title ?? '';
-    const groupId = session.group_id;
-    const total = groupId ? groupTotals[groupId] : undefined;
-    const roundIndex = typeof session.round_index === 'number' ? session.round_index : undefined;
-    let roundDisplay =
-      typeof roundIndex === 'number' && typeof total === 'number' && Number.isFinite(roundIndex) && Number.isFinite(total) && total > 0
-        ? `${clampRoundIndex(roundIndex, total)}/${total}`
-        : undefined;
-
-    if (!roundDisplay) {
-      const roundMatch = title.match(/(\d+)\/(\d+)/);
-      if (roundMatch) roundDisplay = `${Number(roundMatch[1])}/${Number(roundMatch[2])}`;
-      else if (groupId) {
-        const status = String(session.status ?? '');
-        if (status !== 'postponed' && status !== 'cancelled' && status !== 'deleted') {
-          groupCurrentRounds[groupId] = (groupCurrentRounds[groupId] || 0) + 1;
-          const plannedTotal = groupTotals[groupId] ?? 0;
-          if (plannedTotal > 0) roundDisplay = `${groupCurrentRounds[groupId]}/${plannedTotal}`;
-        }
-      }
-    }
-
-    let displayTeacher = session.users?.name || '담당자 없음';
-    const { extraTeachers } = parseExtraTeachers(session.memo || '');
-    const extraTeacherIds = extraTeachers
-      .map((teacher: { id?: string }) => (teacher.id ? String(teacher.id).trim() : ''))
-      .filter(Boolean);
-    const extraNames = extraTeacherIds
-      .map((id) => teachers.find((teacher) => teacher.id === id)?.name)
-      .filter(Boolean) as string[];
-    if (extraNames.length > 0) displayTeacher += `, ${extraNames.join(', ')}`;
-
-    const custom = {
-      teacher: displayTeacher,
-      teacherId: session.users?.id || '',
-      extraTeacherIds,
-      type: session.session_type,
-      status: session.status,
-      groupId: session.group_id ?? undefined,
-      price: session.price ?? 0,
-      studentsText: session.students_text || '',
-      memo: session.memo || '',
-      isAdmin: ADMIN_NAMES.some((admin) => displayTeacher.includes(admin)),
-      roundInfo: roundDisplay,
-      themeColor: themeColorHexForSessionType(session.session_type),
-      mileageAction: session.mileage_option || '',
-      roundIndex: session.round_index ?? undefined,
-      roundTotal: session.round_total ?? undefined,
-      roundDisplay,
-      session_type: session.session_type,
-      mileage_option: session.mileage_option || '',
-    };
-
-    return {
-      id: session.id,
-      title: title.replace(/(\d+(?:\.\d+)?\/\d+(?:\.\d+)?)\s?/, '').trim(),
-      start: session.start_at,
-      end: session.end_at,
-      ...custom,
-      extendedProps: custom,
-    } as SessionEvent;
-  });
-}
+type SessionFetchOptions = {
+  anchor?: Date;
+  monthsBefore?: number;
+  monthsAfter?: number;
+};
 
 export function useClassManagement() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
@@ -104,16 +36,16 @@ export function useClassManagement() {
     null | { type: 'error' } | { type: 'truncated' }
   >(null);
 
-  const fetchSessions = useCallback(async () => {
-    // All calendar instances use the same month-boundary anchor so concurrent
-    // loads produce identical request keys instead of differing by milliseconds.
-    const rangeAnchor = new Date();
+  const fetchSessions = useCallback(async (options: SessionFetchOptions = {}) => {
+    // 현재 표시 월과 인접 월만 가져온다. 이전의 49개월 전체 조회는 대량 데이터에서
+    // 직렬 페이지 요청을 만들었고, 화면에 보이지 않는 데이터 때문에 로딩을 지연시켰다.
+    const rangeAnchor = new Date(options.anchor ?? new Date());
     rangeAnchor.setDate(1);
     rangeAnchor.setHours(0, 0, 0, 0);
-    const rangeStart = new Date(rangeAnchor);
-    rangeStart.setMonth(rangeStart.getMonth() - 24);
-    const rangeEnd = new Date(rangeAnchor);
-    rangeEnd.setMonth(rangeEnd.getMonth() + 25);
+    const monthsBefore = options.monthsBefore ?? 1;
+    const monthsAfter = options.monthsAfter ?? 1;
+    const rangeStart = new Date(rangeAnchor.getFullYear(), rangeAnchor.getMonth() - monthsBefore, 1);
+    const rangeEnd = new Date(rangeAnchor.getFullYear(), rangeAnchor.getMonth() + monthsAfter + 1, 1);
     const rangeStartIso = rangeStart.toISOString();
     const rangeEndIso = rangeEnd.toISOString();
     const PAGE = 1000;
@@ -128,29 +60,18 @@ export function useClassManagement() {
       return fetchAdminSessions<SessionRow>(params);
     };
 
-    const quickStart = new Date(rangeAnchor);
-    quickStart.setMonth(quickStart.getMonth() - 1);
-    const quickEnd = new Date(quickStart);
-    quickEnd.setMonth(quickEnd.getMonth() + 3);
-
     let usersRes: { data: TeacherRow[] | null; error: unknown };
     let data: SessionRow[];
     try {
       const usersPromise = supabase
         ? supabase.from('users').select('id, name').eq('is_active', true).order('name', { ascending: true })
         : Promise.resolve({ data: [] as TeacherRow[], error: null });
-      const [resolvedUsers, quickData] = await Promise.all([
+      const [resolvedUsers, resolvedSessions] = await Promise.all([
         usersPromise,
-        fetchSessionPage(0, quickStart.toISOString(), quickEnd.toISOString()),
+        fetchSessionPage(0),
       ]);
       usersRes = resolvedUsers;
-      const quickTeachers = usersRes.data || [];
-      setTeacherList(quickTeachers);
-      const quickEvents = buildSessionEvents(quickData, quickTeachers);
-      setAllEvents(quickEvents);
-      setFilteredEvents(quickEvents);
-
-      data = await fetchSessionPage(0);
+      data = resolvedSessions;
     } catch (caught) {
       devLogger.error('fetchSessions network error:', caught);
       setSessionsFetchNotice({ type: 'error' });
@@ -305,8 +226,6 @@ export function useClassManagement() {
       return false;
     }
   };
-
-  useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
   return {
     allEvents,
