@@ -6,7 +6,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import type { ClassGroup, EditableSession } from '@/app/admin/classes-shared/types';
+import type { ClassGroup } from '@/app/admin/classes-shared/types';
+import { buildMemoWithExtras } from '@/app/admin/classes-shared/lib/sessionUtils';
+import { CreateScheduleFields } from './components/CreateScheduleFields';
+import { CreateSessionEditor } from './components/CreateSessionEditor';
+import { buildCreateSchedule, daySettings, localDateInput, scheduleValidation, MONDAY_FIRST_DAYS, type CreateSession, type DaySchedule } from './lib/createSchedule';
 import {
   cloneTierFeeMap,
   HARD_CODED_TIER_FEES,
@@ -24,28 +28,9 @@ import {
 } from '../lib/v2BundleResolve';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
 import { SESSION_TYPE_OPTIONS } from '../lib/sessionTypeCategory';
-import { resolveDefaultSessionPrice } from '../lib/bulkSessionDefaults';
+import { resolveDefaultSessionPrice, resolveDefaultAssistSessionPrice } from '../lib/bulkSessionDefaults';
 import { fetchAllClassListSessions } from './lib/fetchAllClassListSessions';
 
-const CREATE_TYPE_ICONS: Record<(typeof SESSION_TYPE_OPTIONS)[number]['value'], string> = {
-  one_day_private: '🎓',
-  regular_private: '🏠',
-  regular_group: '👥',
-  regular_center: '🏢',
-  one_day_center: '🎉',
-  special_lecture: '⭐',
-};
-
-type DayOption = { label: string; value: number };
-const DAYS: DayOption[] = [
-  { label: '일', value: 0 },
-  { label: '월', value: 1 },
-  { label: '화', value: 2 },
-  { label: '수', value: 3 },
-  { label: '목', value: 4 },
-  { label: '금', value: 5 },
-  { label: '토', value: 6 },
-];
 
 type TimeStatus = 'upcoming' | 'ongoing' | 'completed';
 
@@ -149,7 +134,7 @@ function ClassListPageContent() {
     title: '',
     type: 'regular_private' as (typeof SESSION_TYPE_OPTIONS)[number]['value'],
     teacherId: '',
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: localDateInput(new Date()),
     startTime: '10:00',
     durationMinutes: '60',
     price: 30000,
@@ -157,8 +142,34 @@ function ClassListPageContent() {
     daysOfWeek: [new Date().getDay()],
     sessionCount: 4,
     roundWeight: 1,
+    repeatOnce: false,
   });
-  const [editableSessions, setEditableSessions] = useState<EditableSession[]>([]);
+  const [editableSessions, setEditableSessions] = useState<CreateSession[]>([]);
+  const [dayOverrides, setDayOverrides] = useState<Record<number, DaySchedule>>({});
+  const generatedSettingsRef = useRef('');
+  const createDialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    createDialogRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(createDialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]') ?? []).filter((control) => control.getClientRects().length);
+      const first = controls[0]; const last = controls.at(-1);
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === createDialogRef.current)) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isCreateOpen]);
+  const createPreview = buildCreateSchedule(createForm, dayOverrides);
+  const assistDefault = (id: string) => resolveDefaultAssistSessionPrice(teachers.find((teacher) => teacher.id === id), createForm.type, tierFeeMap);
 
   const resolveDefaultPrice = useCallback(
     (teacherId: string, clsType: string): number => {
@@ -442,6 +453,13 @@ function ClassListPageContent() {
   }, [loading, aliasGroupIdsByTitle, bundleGroupIdsByKey, router]);
 
   const handleCreateChange = (field: string, value: string | number | boolean) => {
+    if (field === 'type') {
+      setDayOverrides((prev) => Object.fromEntries(Object.entries(prev).map(([day, config]) => [day, {
+        ...config,
+        price: resolveDefaultPrice(config.teacherId, String(value)),
+        assistants: config.assistants.map((teacher) => ({ ...teacher, price: resolveDefaultAssistSessionPrice(teachers.find((candidate) => candidate.id === teacher.id), String(value), tierFeeMap) })),
+      }])));
+    }
     setCreateForm((prev) => {
       const applyTierDefaultPrice = (next: typeof prev) =>
         next.teacherId
@@ -473,6 +491,7 @@ function ClassListPageContent() {
         return applyTierDefaultPrice({
           ...prev,
           type: v as typeof prev.type,
+          repeatOnce: false,
           sessionCount: wasSingle ? 4 : prev.sessionCount,
         });
       }
@@ -511,70 +530,43 @@ function ClassListPageContent() {
 
   const toggleCreateDay = (dayValue: number) => {
     setCreateForm((prev) => {
-      const baseDay = new Date(`${prev.startDate}T${prev.startTime}`).getDay();
+      const baseDay = new Date(`${prev.startDate}T00:00:00`).getDay();
       if (dayValue === baseDay) return prev;
-      const exists = prev.daysOfWeek.includes(dayValue);
-      const nextDays = exists
-        ? prev.daysOfWeek.filter((d) => d !== dayValue)
+      const nextDays = prev.daysOfWeek.includes(dayValue)
+        ? prev.daysOfWeek.filter((day) => day !== dayValue)
         : [...prev.daysOfWeek, dayValue].sort((a, b) => a - b);
-      return { ...prev, daysOfWeek: nextDays };
+      return { ...prev, daysOfWeek: nextDays, weeklyFrequency: nextDays.length };
     });
   };
 
-  const buildCreateDates = () => {
-    const sessions: Date[] = [];
-    const start = new Date(`${createForm.startDate}T${createForm.startTime}`);
-    if (createForm.type === 'one_day_private' || createForm.type === 'one_day_center') return [start];
-    const selectedDays = createForm.daysOfWeek.length ? createForm.daysOfWeek : [start.getDay()];
-    const cursor = new Date(start);
-
-    while (sessions.length < createForm.sessionCount) {
-      const weekStart = new Date(cursor);
-      weekStart.setDate(cursor.getDate() - cursor.getDay());
-
-      for (const d of selectedDays) {
-        const dayDate = new Date(weekStart);
-        dayDate.setDate(weekStart.getDate() + d);
-        dayDate.setHours(start.getHours(), start.getMinutes(), 0, 0);
-
-        if (dayDate >= start && sessions.length < createForm.sessionCount) {
-          sessions.push(new Date(dayDate));
-        }
-      }
-      cursor.setDate(cursor.getDate() + 7);
-    }
-    return sessions;
+  const applyCreatePreset = (count: number) => {
+    setCreateForm((prev) => {
+      const baseDay = new Date(`${prev.startDate}T00:00:00`).getDay();
+      const singleType = prev.type === 'one_day_private' || prev.type === 'one_day_center';
+      const type = count > 0 && singleType ? (prev.type === 'one_day_center' ? 'regular_center' : 'regular_private') : prev.type;
+      const offsets = count === 2 ? [0, 3] : count === 3 ? [0, 2, 4] : Array.from({ length: Math.max(count, 1) }, (_, i) => i);
+      const daysOfWeek = offsets.map((offset) => (baseDay + offset) % 7).sort((a, b) => a - b);
+      return { ...prev, type, repeatOnce: count === 0, daysOfWeek, weeklyFrequency: daysOfWeek.length, sessionCount: count === 0 ? 1 : prev.sessionCount === 1 ? 4 : prev.sessionCount };
+    });
   };
 
-  const initializeEditableSessions = () => {
-    const dates = buildCreateDates();
-    const next: EditableSession[] = dates.map((startDateTime, index) => {
-      const endDateTime = new Date(startDateTime);
-      endDateTime.setMinutes(
-        endDateTime.getMinutes() + Number(createForm.durationMinutes || '60')
-      );
-      return {
-        roundIndex: index + 1,
-        startAt: startDateTime,
-        endAt: endDateTime,
-        teacherId: createForm.teacherId,
-        price: Number(createForm.price) || 0,
-      };
-    });
-    setEditableSessions(next);
+  const copyFirstDaySettings = () => {
+    const days = MONDAY_FIRST_DAYS.filter((day) => createForm.daysOfWeek.includes(day));
+    const first = days[0];
+    if (first == null) return;
+    const config = daySettings(createForm, dayOverrides, first);
+    setDayOverrides((prev) => ({ ...prev, ...Object.fromEntries(days.map((day) => [day, { ...config, assistants: config.assistants.map((teacher) => ({ ...teacher })) }])) }));
   };
 
   const goToCreateStep2 = () => {
-    if (!createForm.title || !createForm.teacherId) return toast.error('수업명과 강사를 확인해주세요!');
-    if (
-      createForm.type !== 'one_day_private' &&
-      createForm.type !== 'one_day_center' &&
-      createForm.weeklyFrequency > 1 &&
-      createForm.daysOfWeek.length < createForm.weeklyFrequency
-    ) {
-      return toast.error('주간 횟수만큼 요일을 선택해주세요.');
+    if (!createForm.title.trim()) return toast.error('수업명을 입력해 주세요.');
+    const error = scheduleValidation(createPreview);
+    if (error) return toast.error(error);
+    const signature = JSON.stringify([createForm, dayOverrides]);
+    if (signature !== generatedSettingsRef.current) {
+      setEditableSessions(createPreview);
+      generatedSettingsRef.current = signature;
     }
-    initializeEditableSessions();
     setCreateStep(2);
   };
 
@@ -588,19 +580,21 @@ function ClassListPageContent() {
       const end = new Date(start);
       const diffMinutes = (first.endAt.getTime() - first.startAt.getTime()) / (1000 * 60);
       end.setMinutes(end.getMinutes() + diffMinutes);
-      return { ...s, teacherId: first.teacherId, price: first.price, startAt: start, endAt: end };
+      return { ...s, teacherId: first.teacherId, price: first.price, assistants: first.assistants.map((teacher) => ({ ...teacher })), startAt: start, endAt: end };
     });
     setEditableSessions(updated);
   };
 
   const resetCreate = () => {
+    generatedSettingsRef.current = '';
+    setDayOverrides({});
     setCreateStep(1);
     setEditableSessions([]);
     setCreateForm({
       title: '',
       type: 'regular_private',
       teacherId: '',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: localDateInput(new Date()),
       startTime: '10:00',
       durationMinutes: '60',
       price: 30000,
@@ -608,11 +602,14 @@ function ClassListPageContent() {
       daysOfWeek: [new Date().getDay()],
       sessionCount: 4,
       roundWeight: 1,
+      repeatOnce: false,
     });
   };
 
   const handleCreateSubmit = async () => {
     if (!supabase) return;
+    const validationError = scheduleValidation(editableSessions);
+    if (validationError) return toast.error(validationError);
     if (!editableSessions.length) return toast.error('회차가 없습니다. 회차를 먼저 생성해주세요.');
 
     setCreateLoading(true);
@@ -645,6 +642,7 @@ function ClassListPageContent() {
           round_display: roundDisplay,
           price: Number(session.price) || 0,
           created_by: session.teacherId || createForm.teacherId,
+          ...(session.assistants.length ? { memo: buildMemoWithExtras('', session.assistants) } : {}),
         });
       });
 
@@ -694,12 +692,12 @@ function ClassListPageContent() {
           <div className="fixed inset-0 z-[400]">
             <div className="absolute inset-0 bg-black/40" onClick={() => setIsCreateOpen(false)} />
             <div className="absolute inset-0 flex items-end justify-center p-0 md:items-center md:p-4">
-              <div className="flex h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-slate-100 bg-white shadow-2xl md:h-auto md:max-h-[calc(var(--viewport-height-px,100dvh)-2rem)] md:rounded-3xl">
+              <div ref={createDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="class-create-title" aria-busy={createLoading} className="flex h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-slate-100 bg-white shadow-2xl outline-none md:h-auto md:max-h-[calc(var(--viewport-height-px,100dvh)-2rem)] md:rounded-3xl">
                 <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
                   <div>
-                    <h2 className="text-lg font-black text-slate-900">수업 개설</h2>
+                    <h2 id="class-create-title" className="text-lg font-black text-slate-900">수업 개설</h2>
                     <p className="text-xs text-slate-500 font-bold mt-1">
-                      기존 개설 로직(날짜 생성 → 회차 편집 → insert)을 그대로 사용합니다.
+                      요일마다 시간과 메인·보조강사를 설정하고, 생성할 일정을 확인하세요.
                     </p>
                   </div>
                   <button
@@ -708,188 +706,34 @@ function ClassListPageContent() {
                       setIsCreateOpen(false);
                       resetCreate();
                     }}
-                    className="min-h-[44px] px-3 py-1.5 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    disabled={createLoading}
+                    className="min-h-[44px] min-w-11 shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
                   >
                     닫기
                   </button>
                 </div>
 
                 <div className="p-4 sm:p-6 space-y-6 overflow-y-auto min-h-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {SESSION_TYPE_OPTIONS.map((t) => (
-                      <button
-                        key={t.value}
-                        type="button"
-                        onClick={() => handleCreateChange('type', t.value)}
-                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${
-                          createForm.type === t.value
-                            ? 'border-blue-600 bg-blue-50 text-blue-700'
-                            : 'border-slate-100 bg-white text-slate-400 hover:text-slate-600'
-                        }`}
-                      >
-                        <span className="text-2xl">{CREATE_TYPE_ICONS[t.value]}</span>
-                        <span className="text-sm font-black text-center leading-tight">{t.label}</span>
-                      </button>
-                    ))}
-                  </div>
+                  {createStep === 1 ? <>
+                    <fieldset><legend className="mb-2 text-xs font-semibold text-slate-600">수업 유형</legend><div className="flex flex-wrap gap-2">{SESSION_TYPE_OPTIONS.map((type) => <button key={type.value} type="button" aria-pressed={createForm.type === type.value} onClick={() => handleCreateChange('type', type.value)} className={`min-h-11 rounded-xl border px-3 text-sm font-bold ${createForm.type === type.value ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600'}`}>{type.label}</button>)}</div></fieldset>
+                    <CreateScheduleFields form={createForm} overrides={dayOverrides} teachers={teachers}
+                      onChange={handleCreateChange} onDays={toggleCreateDay}
+                      onDayChange={(day, value) => setDayOverrides((prev) => ({ ...prev, [day]: value }))}
+                      onPreset={applyCreatePreset} onCopy={copyFirstDaySettings}
+                      mainDefault={(id) => resolveDefaultPrice(id, createForm.type)} assistDefault={assistDefault} />
+                    <section aria-label="생성 일정 미리보기" className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="mb-3 flex flex-wrap justify-between gap-2"><h3 className="text-sm font-bold">생성 일정 미리보기</h3><span className="text-xs text-slate-500">총 {createPreview.length}회 · 저장 전 확인</span></div>
+                      <div className="max-h-64 overflow-y-auto">{createPreview.map((session) => <div key={session.roundIndex} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 border-t border-slate-200 py-2 text-xs">
+                        <strong className="text-slate-500">{session.roundIndex}</strong><div><p className="font-bold text-slate-800">{session.startAt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })} {session.startAt.toTimeString().slice(0, 5)}–{session.endAt.toTimeString().slice(0, 5)}</p><p className="mt-1 break-words text-slate-600">메인 {teacherMap[session.teacherId] || '미정'} · {session.price.toLocaleString('ko-KR')}원{session.assistants.map((teacher) => ` / 보조 ${teacherMap[teacher.id] || '미정'} ${teacher.price.toLocaleString('ko-KR')}원`).join('')}</p></div>
+                      </div>)}</div>
+                      {!createPreview.length ? <p className="text-sm text-slate-500">날짜와 요일·총 회차를 설정하면 일정이 표시됩니다.</p> : null}
+                    </section>
+                  </> : null}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-600">수업명</label>
-                      <input
-                        type="text"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold"
-                        value={createForm.title}
-                        onChange={(e) => handleCreateChange('title', e.target.value)}
-                        placeholder="예: 스피치 8회"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-600">담당 강사</label>
-                      <select
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold"
-                        value={createForm.teacherId}
-                        onChange={(e) => handleCreateChange('teacherId', e.target.value)}
-                      >
-                        <option value="">강사를 선택하세요</option>
-                        {teachers.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} T
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-600">첫 수업일</label>
-                      <input
-                        type="date"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold"
-                        value={createForm.startDate}
-                        onChange={(e) => handleCreateChange('startDate', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-600">시작 시간</label>
-                      <input
-                        type="time"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold"
-                        value={createForm.startTime}
-                        onChange={(e) => handleCreateChange('startTime', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-600">수업 시간</label>
-                      <select
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold"
-                        value={createForm.durationMinutes}
-                        onChange={(e) => handleCreateChange('durationMinutes', e.target.value)}
-                      >
-                        {[60, 90, 120].map((m) => (
-                          <option key={m} value={m}>
-                            {m}분
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-slate-600">수업료(1회)</label>
-                      <input
-                        type="number"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold"
-                        value={createForm.price}
-                        onChange={(e) => handleCreateChange('price', Number(e.target.value))}
-                      />
-                    </div>
-                  </div>
-
-                  {createForm.type !== 'one_day_private' &&
-                    createForm.type !== 'one_day_center' && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <label className="text-xs font-black text-slate-700">주당 횟수</label>
-                        <select
-                          value={createForm.weeklyFrequency}
-                          onChange={(e) => handleCreateChange('weeklyFrequency', Number(e.target.value))}
-                          className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold"
-                        >
-                          {[1, 2].map((n) => (
-                            <option key={n} value={n}>
-                              {n}회
-                            </option>
-                          ))}
-                        </select>
-
-                        <label className="text-xs font-black text-slate-700">총 회차</label>
-                        <input
-                          type="number"
-                          className="w-20 bg-white border border-slate-200 rounded-lg px-2 py-2 text-xs font-bold"
-                          value={createForm.sessionCount}
-                          onChange={(e) => handleCreateChange('sessionCount', Number(e.target.value))}
-                        />
-
-                        <label className="text-xs font-black text-slate-700">회차 표시</label>
-                        <select
-                          value={createForm.roundWeight}
-                          onChange={(e) => handleCreateChange('roundWeight', Number(e.target.value))}
-                          className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold"
-                        >
-                          <option value={1}>기본</option>
-                          <option value={1.5}>90분(1.5회)</option>
-                        </select>
-                      </div>
-
-                      {createForm.weeklyFrequency === 1 ? (
-                        <div className="text-xs font-bold text-slate-600">
-                          수업 요일:{" "}
-                          {
-                            DAYS.find(
-                              (d) =>
-                                d.value ===
-                                new Date(`${createForm.startDate}T${createForm.startTime}`).getDay()
-                            )?.label
-                          }
-                          요일 (첫 수업일 기준 자동)
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="text-xs font-black text-slate-700">
-                            추가 요일 선택 ({createForm.weeklyFrequency - 1}개 더)
-                          </div>
-                          <div className="flex gap-2">
-                            {DAYS.map((d) => {
-                              const baseDay = new Date(
-                                `${createForm.startDate}T${createForm.startTime}`
-                              ).getDay();
-                              const isBase = d.value === baseDay;
-                              const isSelected = createForm.daysOfWeek.includes(d.value);
-                              return (
-                                <button
-                                  key={d.value}
-                                  type="button"
-                                  onClick={() => toggleCreateDay(d.value)}
-                                  disabled={isBase}
-                                  className={`flex-1 py-2 rounded-lg text-xs font-black transition-all ${
-                                    isBase
-                                      ? 'bg-blue-600 text-white cursor-not-allowed'
-                                      : isSelected
-                                        ? 'bg-slate-900 text-white'
-                                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
-                                  }`}
-                                >
-                                  {d.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="sticky bottom-0 z-20 -mx-4 flex flex-col gap-3 border-y border-slate-100 bg-white/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:flex-row md:items-center md:justify-between md:border-0 md:bg-transparent md:p-0">
+                  {createStep === 2 ? <CreateSessionEditor sessions={editableSessions} teachers={teachers} onChange={setEditableSessions} mainDefault={(id) => resolveDefaultPrice(id, createForm.type)} assistDefault={assistDefault} /> : null}
+                </div>
+                  <div className="shrink-0 z-20 flex flex-col gap-3 border-t border-slate-100 bg-white/95 px-4 py-3 backdrop-blur md:flex-row md:items-center md:justify-between md:px-6">
+                    <p className="text-xs font-semibold text-slate-600">총 {(createStep === 1 ? createPreview : editableSessions).length}회{(createStep === 1 ? createPreview : editableSessions).length ? ` · ${(createStep === 1 ? createPreview : editableSessions)[0]!.startAt.toLocaleDateString('ko-KR')} ~ ${(createStep === 1 ? createPreview : editableSessions).at(-1)!.startAt.toLocaleDateString('ko-KR')}` : ''}</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-black ${
@@ -911,7 +755,7 @@ function ClassListPageContent() {
                         type="button"
                         onClick={goToCreateStep2}
                         disabled={createLoading}
-                        className="px-4 py-2 rounded-full text-sm font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 shrink-0"
+                        className="min-h-11 px-4 py-2 rounded-full text-sm font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 shrink-0"
                       >
                         회차 설정으로
                       </button>
@@ -920,14 +764,14 @@ function ClassListPageContent() {
                         <button
                           type="button"
                           onClick={() => setCreateStep(1)}
-                          className="px-4 py-2 rounded-full text-sm font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          className="min-h-11 px-4 py-2 rounded-full text-sm font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
                         >
                           기본 설정 수정
                         </button>
                         <button
                           type="button"
                           onClick={applyFirstRowToAll}
-                          className="px-4 py-2 rounded-full text-sm font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          className="min-h-11 px-4 py-2 rounded-full text-sm font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
                           disabled={!editableSessions.length}
                         >
                           전체 동일 적용
@@ -936,198 +780,13 @@ function ClassListPageContent() {
                           type="button"
                           onClick={handleCreateSubmit}
                           disabled={createLoading}
-                          className="px-4 py-2 rounded-full text-sm font-black bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                          className="min-h-11 px-4 py-2 rounded-full text-sm font-black bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
                         >
                           {createLoading ? '등록 중...' : '등록'}
                         </button>
                       </div>
                     )}
                   </div>
-
-                  {createStep === 2 && (
-                    <>
-                    <div className="hidden overflow-x-auto rounded-2xl border border-slate-100 md:block">
-                      <table className="min-w-full text-sm">
-                        <thead className="bg-slate-50 text-xs font-bold text-slate-500">
-                          <tr>
-                            <th className="px-3 py-2 text-left">회차</th>
-                            <th className="px-3 py-2 text-left">날짜</th>
-                            <th className="px-3 py-2 text-left">시간</th>
-                            <th className="px-3 py-2 text-left">선생님</th>
-                            <th className="px-3 py-2 text-right">금액</th>
-                            <th className="px-3 py-2 text-center">삭제</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {editableSessions.map((s, idx) => {
-                            const startDateStr = s.startAt.toISOString().split('T')[0];
-                            const timeStr = s.startAt.toTimeString().slice(0, 5);
-                            return (
-                              <tr key={idx} className="border-t border-slate-100">
-                                <td className="px-3 py-2 font-bold text-slate-700">
-                                  {s.roundIndex}/{editableSessions.length}
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input
-                                    type="date"
-                                    className="bg-transparent border rounded-lg px-2 py-1 text-xs"
-                                    value={startDateStr}
-                                    onChange={(e) => {
-                                      const next = [...editableSessions];
-                                      const d = new Date(next[idx].startAt);
-                                      const [y, m, dStr] = e.target.value.split('-').map(Number);
-                                      d.setFullYear(y, m - 1, dStr);
-                                      const duration =
-                                        (next[idx].endAt.getTime() - next[idx].startAt.getTime()) /
-                                        (1000 * 60);
-                                      const end = new Date(d);
-                                      end.setMinutes(end.getMinutes() + duration);
-                                      next[idx] = { ...next[idx], startAt: d, endAt: end };
-                                      setEditableSessions(next);
-                                    }}
-                                  />
-                                </td>
-                                <td className="px-3 py-2">
-                                  <input
-                                    type="time"
-                                    className="bg-transparent border rounded-lg px-2 py-1 text-xs"
-                                    value={timeStr}
-                                    onChange={(e) => {
-                                      const next = [...editableSessions];
-                                      const [hh, mm] = e.target.value.split(':').map(Number);
-                                      const d = new Date(next[idx].startAt);
-                                      d.setHours(hh, mm, 0, 0);
-                                      const duration =
-                                        (next[idx].endAt.getTime() - next[idx].startAt.getTime()) /
-                                        (1000 * 60);
-                                      const end = new Date(d);
-                                      end.setMinutes(end.getMinutes() + duration);
-                                      next[idx] = { ...next[idx], startAt: d, endAt: end };
-                                      setEditableSessions(next);
-                                    }}
-                                  />
-                                </td>
-                                <td className="px-3 py-2">
-                                  <select
-                                    className="bg-transparent border rounded-lg px-2 py-1 text-xs"
-                                    value={s.teacherId}
-                                    onChange={(e) => {
-                                      const next = [...editableSessions];
-                                      const nextTeacherId = e.target.value;
-                                      const nextPrice = resolveDefaultPrice(
-                                        nextTeacherId,
-                                        createForm.type,
-                                      );
-                                      next[idx] = {
-                                        ...next[idx],
-                                        teacherId: nextTeacherId,
-                                        price: nextPrice,
-                                      };
-                                      setEditableSessions(next);
-                                    }}
-                                  >
-                                    <option value="">기본 강사</option>
-                                    {teachers.map((t) => (
-                                      <option key={t.id} value={t.id}>
-                                        {t.name} T
-                                      </option>
-                                    ))}
-                                  </select>
-                                </td>
-                                <td className="px-3 py-2 text-right">
-                                  <input
-                                    type="number"
-                                    className="w-24 bg-transparent border rounded-lg px-2 py-1 text-xs text-right"
-                                    value={s.price}
-                                    onChange={(e) => {
-                                      const next = [...editableSessions];
-                                      next[idx] = { ...next[idx], price: Number(e.target.value) || 0 };
-                                      setEditableSessions(next);
-                                    }}
-                                  />
-                                </td>
-                                <td className="px-3 py-2 text-center">
-                                  <button
-                                    type="button"
-                                    className="px-2 py-1 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 hover:bg-rose-100"
-                                    onClick={() => {
-                                      const next = editableSessions.filter((_, i) => i !== idx);
-                                      const reindexed = next.map((row, i) => ({
-                                        ...row,
-                                        roundIndex: i + 1,
-                                      }));
-                                      setEditableSessions(reindexed);
-                                    }}
-                                  >
-                                    삭제
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="space-y-3 md:hidden">
-                      {editableSessions.map((s, idx) => {
-                        const startDateStr = s.startAt.toISOString().split('T')[0];
-                        const timeStr = s.startAt.toTimeString().slice(0, 5);
-                        return (
-                          <div key={idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="mb-3 flex items-center justify-between gap-3">
-                              <span className="text-sm font-black text-slate-800">{s.roundIndex}/{editableSessions.length}회차</span>
-                              <button
-                                type="button"
-                                className="min-h-[44px] rounded-full bg-rose-50 px-4 text-xs font-black text-rose-700"
-                                onClick={() => {
-                                  const next = editableSessions.filter((_, i) => i !== idx);
-                                  setEditableSessions(next.map((row, i) => ({ ...row, roundIndex: i + 1 })));
-                                }}
-                              >
-                                삭제
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-1 gap-3">
-                              <label className="space-y-1 text-xs font-black text-slate-600">날짜
-                                <input type="date" className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={startDateStr} onChange={(e) => {
-                                  const next = [...editableSessions];
-                                  const d = new Date(next[idx].startAt);
-                                  const [y, m, dStr] = e.target.value.split('-').map(Number);
-                                  d.setFullYear(y, m - 1, dStr);
-                                  const duration = (next[idx].endAt.getTime() - next[idx].startAt.getTime()) / (1000 * 60);
-                                  const end = new Date(d); end.setMinutes(end.getMinutes() + duration);
-                                  next[idx] = { ...next[idx], startAt: d, endAt: end }; setEditableSessions(next);
-                                }} />
-                              </label>
-                              <label className="space-y-1 text-xs font-black text-slate-600">시간
-                                <input type="time" className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={timeStr} onChange={(e) => {
-                                  const next = [...editableSessions];
-                                  const [hh, mm] = e.target.value.split(':').map(Number);
-                                  const d = new Date(next[idx].startAt); d.setHours(hh, mm, 0, 0);
-                                  const duration = (next[idx].endAt.getTime() - next[idx].startAt.getTime()) / (1000 * 60);
-                                  const end = new Date(d); end.setMinutes(end.getMinutes() + duration);
-                                  next[idx] = { ...next[idx], startAt: d, endAt: end }; setEditableSessions(next);
-                                }} />
-                              </label>
-                              <label className="space-y-1 text-xs font-black text-slate-600">선생님
-                                <select className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={s.teacherId} onChange={(e) => {
-                                  const next = [...editableSessions]; const teacherId = e.target.value;
-                                  next[idx] = { ...next[idx], teacherId, price: resolveDefaultPrice(teacherId, createForm.type) }; setEditableSessions(next);
-                                }}><option value="">기본 강사</option>{teachers.map((t) => <option key={t.id} value={t.id}>{t.name} T</option>)}</select>
-                              </label>
-                              <label className="space-y-1 text-xs font-black text-slate-600">금액
-                                <input type="number" className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={s.price} onChange={(e) => {
-                                  const next = [...editableSessions]; next[idx] = { ...next[idx], price: Number(e.target.value) || 0 }; setEditableSessions(next);
-                                }} />
-                              </label>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    </>
-                  )}
-                </div>
               </div>
             </div>
           </div>
