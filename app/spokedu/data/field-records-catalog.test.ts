@@ -19,7 +19,7 @@ const REMOTE_MEDIA_RE = /https?:\/\/|pstatic\.net|blog\.naver\.com|postfiles\.|b
 const RUNTIME_GUARD_SOURCES = [
   'app/spokedu/lib/resolve-field-records.ts',
   'app/spokedu/components/home/home-editorial-landing.tsx',
-  'app/spokedu/components/records-landing.tsx',
+  'app/spokedu/components/records-v0-landing.tsx',
   'app/spokedu/components/records-case-detail.tsx',
   'app/spokedu/data/field-records-catalog.ts',
 ] as const;
