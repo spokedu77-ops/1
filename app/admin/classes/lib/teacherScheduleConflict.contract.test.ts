@@ -10,6 +10,7 @@ const route = readFileSync(
   'utf8',
 );
 const panel = readFileSync(new URL('../components/ClassBundlePanel.tsx', import.meta.url), 'utf8');
+const checkedRoute = readFileSync(new URL('../../../api/admin/classes/sessions/checked-update/route.ts', import.meta.url), 'utf8');
 const createPage = readFileSync(new URL('../list/page.tsx', import.meta.url), 'utf8');
 const roundExtend = readFileSync(new URL('../../classes-shared/lib/roundExtendUtils.ts', import.meta.url), 'utf8');
 const postponeRoute = readFileSync(new URL('../../../api/admin/classes/postpone/route.ts', import.meta.url), 'utf8');
@@ -32,7 +33,8 @@ describe('Stage 2C teacher schedule conflict guard', () => {
     expect(migration).toContain('admin_apply_session_schedule_changes(p_changes jsonb)');
     expect(migration).toContain('GRANT EXECUTE ON FUNCTION public.admin_apply_session_schedule_changes(jsonb) TO service_role');
     expect(route).toContain("requireAdmin()");
-    expect(route).toContain("supabase.rpc('admin_apply_session_schedule_changes'");
+    expect(route).toContain("'admin_apply_session_checked_changes' : 'admin_apply_session_schedule_changes'");
+    expect(route).toContain('supabase.rpc(rpcName');
     expect(panel).toContain('applyBulkSessionChanges(changes)');
   });
 
@@ -41,7 +43,10 @@ describe('Stage 2C teacher schedule conflict guard', () => {
     expect(createPage).toContain("supabase.from('sessions').insert(sessionsToInsert)");
     expect(roundExtend).toContain(".from('sessions')");
     expect(roundExtend).toContain('.insert(newSessions)');
-    expect(panel).toContain('supabase.from("sessions").update(patch).eq("id", sessionId)');
+    expect(panel).toContain("fetch('/api/admin/classes/sessions/checked-update'");
+    expect(checkedRoute).toContain('requireAdmin()');
+    expect(checkedRoute).toContain("supabase.from('sessions').update(patch).eq('id', input.sessionId)");
+    expect(checkedRoute).toContain('Object.entries(input.expected)');
     expect(postponeRoute).toContain("rpc('admin_apply_class_postpone'");
     expect(migration).toContain('Status-only changes preserve legacy cancel/restore behavior');
   });

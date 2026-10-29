@@ -13,7 +13,7 @@ import {
   resolveLatestSeoulWeekdayTemplates,
 } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
-import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
+import { jsonMetadataSpan, replaceSessionAssistants, validateSessionAssistants, postponeRestoreAvailability } from "@/app/admin/classes-shared/lib/sessionMetadata";
 import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
 import { formatRoundDisplay } from "@/app/admin/classes-shared/lib/roundFields";
 import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
@@ -130,18 +130,16 @@ type SessionRow = {
 
 /** v1 수업 모달(SessionEditModal)과 동일: memo의 EXTRA_TEACHERS, 보조 최대 2명 */
 function extraTeachersFromMemo(memo: string | null | undefined): TeacherInput[] {
-  const { extraTeachers } = parseExtraTeachers(memo || "");
-  return extraTeachers.slice(0, 2);
+  try {
+    const source = memo ?? '';
+    const span = jsonMetadataSpan(source, 'EXTRA_TEACHERS:');
+    const rows = span ? JSON.parse(source.slice(span.start, span.end)) : [];
+    return Array.isArray(rows) ? rows.slice(0, 2) : [];
+  } catch { return []; }
 }
 
 function persistMemoExtras(rowMemo: string | null | undefined, extras: TeacherInput[]): string {
-  const { cleanMemo } = parseExtraTeachers(rowMemo || "");
-  const list = extras.slice(0, 2).map((e) => ({
-    id: e.id || "",
-    price: Number(e.price) || 0,
-  }));
-  if (list.length === 0) return cleanMemo;
-  return buildMemoWithExtras(cleanMemo, list);
+  return replaceSessionAssistants(rowMemo, extras);
 }
 
 function statusBadgeClass(label: string): string {
@@ -343,6 +341,10 @@ export default function ClassBundlePanel({
     Record<string, SessionScheduleDraft>
   >({});
   const [savingSessionScheduleId, setSavingSessionScheduleId] = useState<string | null>(null);
+  const [assistantDrafts, setAssistantDrafts] = useState<Record<string, { rows: TeacherInput[]; baseline: SessionRow }>>({});
+  const [assistantErrors, setAssistantErrors] = useState<Record<string, string>>({});
+  const [savingAssistants, setSavingAssistants] = useState<Record<string, boolean>>({});
+  const assistantSavesRef = useRef(new Set<string>());
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const [restoringSessionId, setRestoringSessionId] = useState<string | null>(null);
   const [mileageModal, setMileageModal] = useState<{ gid: string; row: SessionRow } | null>(null);
@@ -663,47 +665,63 @@ export default function ClassBundlePanel({
     setOpenGroupIds((prev) => ({ ...prev, [gid]: !prev[gid] }));
   };
 
+  const checkedSessionUpdate = async (gid: string, row: SessionRow, patch: Record<string, unknown>, assistants?: TeacherInput[]) => {
+    const response = await fetch('/api/admin/classes/sessions/checked-update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: row.id, expected: {
+        start_at: row.start_at, end_at: row.end_at, created_by: row.created_by,
+        memo: row.memo ?? null, price: row.price, status: row.status,
+      }, patch, ...(assistants ? { assistants } : {}) }),
+    });
+    const result = await response.json().catch(() => ({})) as { error?: string; session?: SessionRow };
+    if (!response.ok || !result.session) throw new Error(result.error || 'SESSION_UPDATE_FAILED');
+    let rows: SessionRow[];
+    try { rows = await fetchAdminSessions<SessionRow>(new URLSearchParams({ groupIds: gid })); }
+    catch { throw new Error('SESSION_UPDATE_RELOAD_FAILED'); }
+    const actual = rows.find((candidate) => candidate.id === row.id);
+    if (!actual) throw new Error('SESSION_UPDATE_RELOAD_FAILED');
+    setSessionsByGroupId((prev) => ({ ...prev, [gid]: rows }));
+    onChanged?.();
+    return actual;
+  };
+
+  const saveErrorMessage = (error: unknown) => {
+    const code = error instanceof Error ? error.message : String(error);
+    if (code.includes('STALE')) return '다른 관리자가 수업을 수정했습니다. 다시 조회한 뒤 변경 내용을 확인해 주세요.';
+    if (code.includes('TEACHER_SCHEDULE_CONFLICT')) return '메인·보조강사의 다른 수업과 시간이 겹칩니다. 입력 내용은 유지했습니다.';
+    if (code.includes('FORBIDDEN')) return '저장 권한을 확인할 수 없습니다. 입력 내용은 유지했습니다.';
+    if (code.includes('RELOAD')) return '저장은 처리됐지만 재조회에 실패했습니다. 다시 저장하기 전에 새로고침으로 확인해 주세요.';
+    return '저장에 실패했습니다. 연결 상태를 확인해 주세요. 입력 내용은 유지했습니다.';
+  };
+
   const applyInlineUpdate = async (
-    gid: string,
-    sessionId: string,
-    patch: {
-      start_at?: string;
-      end_at?: string;
-      price?: number;
-      created_by?: string;
-      memo?: string | null;
-      mileage_option?: string | null;
-    }
-  ) => {
-    if (!supabase) return;
+    gid: string, sessionId: string,
+    patch: { start_at?: string; end_at?: string; price?: number; created_by?: string },
+  ): Promise<boolean> => {
+    const row = sessionsByGroupId[gid]?.find((candidate) => candidate.id === sessionId);
+    if (!row || !supabase) return false;
+    if (assistantDrafts[sessionId]) { toast.error('보조강사 입력을 먼저 저장하거나 취소해 주세요.'); return false; }
     try {
-      const { error } = await supabase.from("sessions").update(patch).eq("id", sessionId);
-      if (error) throw error;
-      toast.success("저장되었습니다.");
-      if (patch.start_at && patch.end_at) {
-        setScheduleDraftBySessionId((prev) => {
-          const next = { ...prev };
-          delete next[sessionId];
-          return next;
-        });
-      }
-      setSessionsByGroupId((prev) => {
-        const next = { ...prev };
-        next[gid] = (next[gid] || []).map((r) => (r.id === sessionId ? { ...r, ...(patch as any) } : r));
-        return next;
-      });
-      onChanged?.();
-    } catch (err) {
-      devLogger.error(err);
-      toast.error("저장에 실패했습니다.");
+      await checkedSessionUpdate(gid, row, patch);
+      toast.success('저장되었습니다.');
+      if (patch.start_at && patch.end_at) setScheduleDraftBySessionId((prev) => { const next = { ...prev }; delete next[sessionId]; return next; });
+      return true;
+    } catch (error) {
+      devLogger.error(error); toast.error(saveErrorMessage(error)); return false;
     }
   };
 
   const applyBulkSessionChanges = async (changes: Array<Record<string, unknown>>) => {
+    const checkedChanges = changes.map((change) => {
+      const row = Object.values(sessionsByGroupId).flat().find((candidate) => candidate.id === change.id);
+      if (!row) throw new Error('SESSION_UPDATE_STALE');
+      if (assistantDrafts[row.id]) throw new Error('보조강사 입력을 먼저 저장하거나 취소해 주세요.');
+      return { ...change, expected: { start_at: row.start_at, end_at: row.end_at, created_by: row.created_by, memo: row.memo ?? null, price: row.price, status: row.status } };
+    });
     const response = await fetch("/api/admin/classes/sessions/bulk-update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ changes }),
+      body: JSON.stringify({ changes: checkedChanges }),
     });
     const payload = (await response.json().catch(() => ({}))) as { error?: string };
     if (!response.ok) throw new Error(payload.error || "SESSION_BULK_UPDATE_FAILED");
@@ -733,10 +751,11 @@ export default function ClassBundlePanel({
           ? { ...row, start_at: patchIso.start_at, end_at: patchIso.end_at }
           : row
       );
-      await applyInlineUpdate(gid, r.id, {
+      const saved = await applyInlineUpdate(gid, r.id, {
         start_at: patchIso.start_at,
         end_at: patchIso.end_at,
       });
+      if (!saved) return;
       if (supabase) {
         const n = await reindexGroupRounds(supabase, rowsAfterSchedule);
         if (n > 1) {
@@ -750,55 +769,46 @@ export default function ClassBundlePanel({
     }
   };
 
-  const saveSessionExtras = async (gid: string, row: SessionRow, extras: TeacherInput[]) => {
-    const memo = persistMemoExtras(row.memo, extras);
-    // 보조강사는 기존 관리자 일괄 저장 경로로 저장한다. 브라우저 RLS에 의존하면
-    // memo 변경이 거절되어 '+'를 눌러도 보조 선택 행이 사라질 수 있다.
+  const editAssistants = (row: SessionRow, change: (rows: TeacherInput[]) => TeacherInput[]) => {
+    if (assistantSavesRef.current.has(row.id)) return;
+    setAssistantDrafts((prev) => {
+      const draft = prev[row.id] ?? { baseline: { ...row }, rows: extraTeachersFromMemo(row.memo).map((teacher) => ({ ...teacher })) };
+      return { ...prev, [row.id]: { ...draft, rows: change(draft.rows) } };
+    });
+    setAssistantErrors((prev) => ({ ...prev, [row.id]: '' }));
+  };
+
+  const saveSessionExtras = async (gid: string, row: SessionRow) => {
+    const draft = assistantDrafts[row.id];
+    if (!draft || assistantSavesRef.current.has(row.id)) return;
+    const error = validateSessionAssistants(draft.rows, draft.baseline.created_by);
+    if (error) { setAssistantErrors((prev) => ({ ...prev, [row.id]: error })); return; }
+    assistantSavesRef.current.add(row.id);
+    setSavingAssistants((prev) => ({ ...prev, [row.id]: true }));
     try {
-      await applyBulkSessionChanges([{ id: row.id, memo }]);
-      setSessionsByGroupId((prev) => ({
-        ...prev,
-        [gid]: (prev[gid] || []).map((candidate) =>
-          candidate.id === row.id ? { ...candidate, memo } : candidate,
-        ),
-      }));
-      onChanged?.();
-    } catch (err) {
-      devLogger.error(err);
-      toast.error("보조 강사 저장에 실패했습니다.");
+      await checkedSessionUpdate(gid, draft.baseline, {}, draft.rows);
+      setAssistantDrafts((prev) => { const next = { ...prev }; delete next[row.id]; return next; });
+      setAssistantErrors((prev) => ({ ...prev, [row.id]: '' }));
+      toast.success('보조강사 배정을 저장했습니다.');
+    } catch (error) {
+      devLogger.error(error);
+      setAssistantErrors((prev) => ({ ...prev, [row.id]: saveErrorMessage(error) }));
+    } finally {
+      assistantSavesRef.current.delete(row.id);
+      setSavingAssistants((prev) => ({ ...prev, [row.id]: false }));
     }
   };
 
-  const addAssistRow = async (gid: string, row: SessionRow) => {
-    const extras = extraTeachersFromMemo(row.memo);
-    if (extras.length >= 2) return;
-    await saveSessionExtras(gid, row, [...extras, { id: "", price: 0 }]);
-  };
-
-  const removeAssistRow = async (gid: string, row: SessionRow, index: number) => {
-    const extras = extraTeachersFromMemo(row.memo).filter((_, i) => i !== index);
-    await saveSessionExtras(gid, row, extras);
-  };
-
-  const setAssistIdAt = async (gid: string, row: SessionRow, index: number, teacherId: string) => {
-    const extras = [...extraTeachersFromMemo(row.memo)];
-    while (extras.length <= index) extras.push({ id: "", price: 0 });
-    extras[index] = { ...extras[index]!, id: teacherId };
-    await saveSessionExtras(gid, row, extras);
-  };
-
-  const setAssistPriceAt = async (gid: string, row: SessionRow, index: number, price: number) => {
-    const extras = [...extraTeachersFromMemo(row.memo)];
-    while (extras.length <= index) extras.push({ id: "", price: 0 });
-    extras[index] = { ...extras[index]!, price };
-    await saveSessionExtras(gid, row, extras);
-  };
+  const addAssistRow = (_gid: string, row: SessionRow) => editAssistants(row, (rows) => rows.length >= 2 ? rows : [...rows, { id: '', price: 0 }]);
+  const removeAssistRow = (_gid: string, row: SessionRow, index: number) => editAssistants(row, (rows) => rows.filter((_, i) => i !== index));
+  const setAssistIdAt = (_gid: string, row: SessionRow, index: number, teacherId: string) => editAssistants(row, (rows) => rows.map((teacher, i) => i === index ? { ...teacher, id: teacherId } : teacher));
+  const setAssistPriceAt = (_gid: string, row: SessionRow, index: number, price: number) => editAssistants(row, (rows) => rows.map((teacher, i) => i === index ? { ...teacher, price } : teacher));
 
   const applyMainTeacher = async (gid: string, row: SessionRow, newMainId: string) => {
-    let extras = extraTeachersFromMemo(row.memo);
-    extras = extras.filter((t) => !t.id || t.id !== newMainId);
-    const memo = persistMemoExtras(row.memo, extras);
-    await applyInlineUpdate(gid, row.id, { created_by: newMainId, memo });
+    if (assistantDrafts[row.id]) { toast.error('보조강사 입력을 먼저 저장하거나 취소해 주세요.'); return; }
+    const error = validateSessionAssistants(extraTeachersFromMemo(row.memo), newMainId);
+    if (error) { toast.error(error); return; }
+    await applyInlineUpdate(gid, row.id, { created_by: newMainId });
   };
 
   const handlePostpone = async (
@@ -869,6 +879,11 @@ export default function ClassBundlePanel({
   const handleUndoPostpone = async (sessionId: string) => {
     if (!supabase) return;
     if (!sessionId) return;
+    const target = Object.values(sessionsByGroupId).flat().find((row) => row.id === sessionId);
+    if (!target || postponeRestoreAvailability(target.memo) !== 'snapshot') {
+      toast.error('이 연기 기록은 복구 스냅샷이 없거나 손상되어 개별 검토가 필요합니다.');
+      return;
+    }
     if (undoingPostponeSessionId === sessionId) return;
     if (!confirm("연기 전 시간 슬롯 기준으로 복구합니다. 계속할까요?")) return;
 
@@ -1497,10 +1512,8 @@ export default function ClassBundlePanel({
         if (assistId === mainId) continue;
 
         const prev = extraTeachersFromMemo(s.memo);
-        const assistPrice = wantsPrice ? priceNum : Number(prev[0]?.price) || defaultAssistPrice;
-        const keptSecond = prev
-          .filter((t) => t.id && t.id !== mainId && t.id !== assistId)
-          .slice(0, 1)[0];
+        const assistPrice = wantsPrice ? priceNum : prev[0]?.price ?? defaultAssistPrice;
+        const keptSecond = prev[1]?.id && prev[1].id !== mainId && prev[1].id !== assistId ? prev[1] : undefined;
         const nextExtras: TeacherInput[] = [
           { id: assistId, price: assistPrice },
           ...(keptSecond ? [keptSecond] : []),
@@ -1859,7 +1872,16 @@ export default function ClassBundlePanel({
                                   const total = plannedTotalOfGroup(rows);
                                   const n = Math.min(r.round_index ?? i + 1, total);
                                   const s = getTimeStatusLabel(r);
-                                  const assistList = extraTeachersFromMemo(r.memo);
+                                  const assistList = assistantDrafts[r.id]?.rows ?? extraTeachersFromMemo(r.memo);
+                                  const assistantActions = assistantDrafts[r.id] ? (
+                                    <div className="space-y-1" aria-label={`${n}회차 보조강사 저장`}>
+                                      <div className="flex flex-wrap gap-1">
+                                        <button type="button" disabled={savingAssistants[r.id]} onClick={() => void saveSessionExtras(gid, r)} className={`${SESSION_ROW_MINI_BTN} border-blue-600 bg-blue-600 text-white`}>{savingAssistants[r.id] ? '저장 중...' : '보조 저장'}</button>
+                                        <button type="button" disabled={savingAssistants[r.id]} onClick={() => { setAssistantDrafts((prev) => { const next = { ...prev }; delete next[r.id]; return next; }); setAssistantErrors((prev) => ({ ...prev, [r.id]: '' })); }} className={`${SESSION_ROW_MINI_BTN} border-slate-200 bg-white`}>입력 취소</button>
+                                      </div>
+                                      {assistantErrors[r.id] ? <p role="alert" className="text-xs text-rose-700">{assistantErrors[r.id]}</p> : <p className="text-[11px] text-slate-500">저장 전 입력입니다.</p>}
+                                    </div>
+                                  ) : null;
                                   const onScheduleDateChange = (dateStrNext: string) => {
                                     setScheduleDraftBySessionId((prev) => ({
                                       ...prev,
@@ -1907,7 +1929,9 @@ export default function ClassBundlePanel({
                                       </button>
                                     ) : isPastCycle || r.status === "deleted" ? null : (
                                       <div className="flex flex-wrap items-center gap-1">
-                                        {r.status === "postponed" ? (
+                                        {r.status === "postponed" ? postponeRestoreAvailability(r.memo) !== 'snapshot' ? (
+                                          <span className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">과거 연기 기록 · 복구 개별 검토 필요</span>
+                                        ) : (
                                           <button
                                             type="button"
                                             className={`${SESSION_ROW_MINI_BTN} border-violet-600 bg-violet-600 text-white hover:bg-violet-700`}
@@ -2019,6 +2043,7 @@ export default function ClassBundlePanel({
                                               보조
                                             </button>
                                           ) : null}
+                                          {assistantActions}
                                         </div>
                                         <div className="flex flex-col gap-1">
                                           <input
@@ -2034,12 +2059,13 @@ export default function ClassBundlePanel({
                                           />
                                           {assistList.map((ex, aidx) => (
                                             <input
-                                              key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
+                                              key={`assist-price-${r.id}-${aidx}`}
                                               type="number"
+                                              aria-label={`${n}회차 보조${aidx + 1} 수업료`}
                                               className={`${SESSION_PRICE_CONTROL} text-slate-600`}
                                               placeholder="수업료"
-                                              defaultValue={Number(ex.price) || 0}
-                                              onBlur={(e) =>
+                                              value={Number.isNaN(ex.price) ? '' : ex.price}
+                                              onChange={(e) =>
                                                 void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)
                                               }
                                             />
@@ -2135,6 +2161,7 @@ export default function ClassBundlePanel({
                                             보조
                                           </button>
                                         ) : null}
+                                        {assistantActions}
                                         <input
                                           key={`m-price-${r.id}-${r.price ?? 0}`}
                                           type="number"
@@ -2148,12 +2175,13 @@ export default function ClassBundlePanel({
                                         />
                                         {assistList.map((ex, aidx) => (
                                           <input
-                                            key={`m-assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
+                                            key={`m-assist-price-${r.id}-${aidx}`}
                                             type="number"
+                                            aria-label={`${n}회차 보조${aidx + 1} 수업료`}
                                             className={`${SESSION_PRICE_CONTROL} text-slate-600`}
                                             placeholder="보조 수업료"
-                                            defaultValue={Number(ex.price) || 0}
-                                            onBlur={(e) =>
+                                            value={Number.isNaN(ex.price) ? '' : ex.price}
+                                            onChange={(e) =>
                                               void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)
                                             }
                                           />
