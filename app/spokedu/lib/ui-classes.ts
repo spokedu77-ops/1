@@ -340,7 +340,7 @@ export const v0CtaButtonRow =
   'flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center';
 
 export const v0CtaButton =
-  'inline-flex h-12 items-center justify-center whitespace-nowrap rounded-full px-6 text-sm font-semibold';
+  'inline-flex min-h-12 min-w-0 max-w-full items-center justify-center rounded-full px-4 py-2.5 text-center text-sm font-semibold leading-snug break-keep sm:px-6 sm:whitespace-nowrap';
 
 export const v0BentoCard =
   `group border transition-all duration-300 ease-out ${fineHover}hover:-translate-y-1.5 ${fineHover}hover:shadow-xl ${fineHover}hover:border-blue-500/30`;
@@ -378,6 +378,14 @@ export const v0SubsectionTitle =
 
 export const v0Lead =
   `${koreanBody} text-[15px] leading-relaxed text-slate-600 break-keep sm:text-base`;
+
+/** slate-800~900 패널 본문 — WCAG 본문 대비 목표 */
+export const v0LeadOnDark =
+  `${koreanBody} text-[15px] leading-relaxed text-slate-200 break-keep sm:text-base`;
+
+/** blue-600 CTA 카드 본문 */
+export const v0LeadOnBlue =
+  `${koreanBody} text-[15px] leading-relaxed text-white/95 break-keep sm:text-base`;
 
 export const v0BodyText = v0Lead;
 

@@ -1,4 +1,5 @@
 import { HOME_SECTION03_PEOPLE } from '../components/home-web/home-section03-people';
+import { PUBLIC_V0_METRICS } from './marketing-public-metrics';
 import { getFieldRecordCatalogItem, type FieldRecordSlug } from './field-records-catalog';
 import { SPOKEDU_PATHS } from './public-routes';
 
@@ -64,7 +65,7 @@ function fieldCase(frame: (typeof FIELD_CASE_FRAMES)[number]) {
 /** `home-web-landing.tsx` AUDIENCE_PATHS 와 동일 자산·경로 */
 export const HOME_V0_SERVICES = [
   {
-    number: '01 · PERSONAL CLASS',
+    number: '01 · 개인·소그룹',
     title: '개인·소그룹 맞춤 수업',
     description:
       '아이의 운동 수준, 성향, 사회성 목표에 맞춰 소수 정예로 진행하는 맞춤형 체육 클래스',
@@ -77,7 +78,7 @@ export const HOME_V0_SERVICES = [
     featured: false,
   },
   {
-    number: '02 · SCHOOL & ORGANIZATION',
+    number: '02 · 학교·기관',
     title: '기관·학교 출강 수업',
     description:
       '초등학교, 복지관, 키움센터의 공간·인원·연령에 맞춰 설계하는 체계적인 맞춤형 파견 교육',
@@ -90,7 +91,7 @@ export const HOME_V0_SERVICES = [
     featured: true,
   },
   {
-    number: '03 · FOR EDUCATORS',
+    number: '03 · 지도자·LAB',
     title: 'SPOKEDU LAB',
     description:
       '전국 체육 지도자를 위한 검증된 놀이체육 커리큘럼 탐색과 수업 일정·출석·리포트 운영 도구',
@@ -109,7 +110,7 @@ export const HOME_V0_FIELD_CASES = FIELD_CASE_FRAMES.map(fieldCase);
 export const HOME_V0_EXPERTISE = [
   '학교·기관 맞춤형 커리큘럼 직접 설계',
   '자체 에듀테크 및 KC인증 교구 연구 개발',
-  '약 30명의 전문 지도자 교육 및 본사 직영 품질 관리',
+  `${PUBLIC_V0_METRICS.instructors.value} ${PUBLIC_V0_METRICS.instructors.label} — 본사 직영 품질 관리`,
 ] as const;
 
 export const HOME_V0_TEAM = HOME_SECTION03_PEOPLE.map((person) => ({

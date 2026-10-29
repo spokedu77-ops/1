@@ -33,23 +33,20 @@ import {
   v0GradientText,
   v0HeroTitle,
   v0Lead,
+  v0LeadOnBlue,
+  v0LeadOnDark,
   v0SectionBand,
   v0SectionKicker,
   v0SectionTitle,
 } from '../lib/ui-classes';
-import { V0Eyebrow, V0SectionHeader } from './v0-ui';
+import { PUBLIC_V0_METRICS_HERO_ROW, PUBLIC_V0_METRICS } from '../data/marketing-public-metrics';
+import { V0_KO } from '../data/v0-korean-labels';
+import { V0Eyebrow, V0MetricsNote, V0SectionHeader } from './v0-ui';
 
 const principles = [
   ['공간에 맞춘 동선 재설계', '교실·활동실·강당·운동장'],
   ['대기 시간을 없애는 인원 분배', '소그룹 밀착 케어부터 다인원 순환까지'],
   ['소외 없는 규칙 튜닝', '연령 격차 및 특수·통합 환경을 고려한 난이도 조절'],
-] as const;
-
-const heroStats = [
-  { value: '500+', label: '누적 출강 학교·기관' },
-  { value: '2,500+', label: '누적 운영 클래스' },
-  { value: '98%', label: '기관 재계약률' },
-  { value: '전국', label: '서울·경기 중심 맞춤 파견' },
 ] as const;
 
 function RecordCardLink({
@@ -111,7 +108,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
     <div className={`break-keep bg-white text-slate-950 ${koreanLineBreak}`}>
       <section className={`px-6 sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-5xl text-center">
-          <V0Eyebrow>FIELD RECORDS ARCHIVE</V0Eyebrow>
+          <V0Eyebrow>{V0_KO.recordsArchive}</V0Eyebrow>
           <h1
             id="records-title"
             className={`mt-7 ${v0HeroTitle}`}
@@ -123,15 +120,15 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
           <p className={`mx-auto mt-7 max-w-2xl ${v0Lead}`}>
             {recordsPage.hero.subtitle}
           </p>
-          <div className="mx-auto mt-10 grid max-w-4xl grid-cols-2 overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-50 p-2 sm:grid-cols-4 sm:p-3">
-            {heroStats.map(({ value, label }) => (
+          <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-50 p-2 sm:grid-cols-3 sm:p-3">
+            {PUBLIC_V0_METRICS_HERO_ROW.map(({ value, label }) => (
               <div
                 key={label}
                 className="flex flex-col gap-1 border-slate-200/70 px-3 py-4 sm:border-r last:border-0"
               >
                 <strong
                   className={`text-xl font-black tracking-tight sm:text-2xl ${
-                    value === '전국' || value.includes('+') || value.includes('%') ? v0GradientText : ''
+                    value.includes('+') || value.includes('서울') ? v0GradientText : ''
                   }`}
                 >
                   {value}
@@ -140,13 +137,16 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
               </div>
             ))}
           </div>
+          <V0MetricsNote>
+            {PUBLIC_V0_METRICS.institutions.note} · {PUBLIC_V0_METRICS.classes.note}
+          </V0MetricsNote>
         </div>
       </section>
 
       <section className={`bg-slate-50 px-6 sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 flex flex-col items-center gap-5 text-center">
-            <p className={v0SectionKicker}>SPOKEDU CASE FILES</p>
+            <p className={v0SectionKicker}>{V0_KO.caseFiles}</p>
             <h2 className={v0SectionTitle}>현장마다 다른 답을 만들었습니다.</h2>
             <div className="flex w-full gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center sm:overflow-visible">
               {RECORDS_V0_FILTERS.map((filter) => (
@@ -178,7 +178,9 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                       src={item.image}
                       alt={`${item.venue} 수업 현장`}
                       fill
-                      className={`${v0CardMediaImgCover} ${v0CardImageHover}`}
+                      className={`${v0CardMediaImgCover} ${v0CardImageHover} ${
+                        item.slug === 'shinwol-integrated-pe' ? 'scale-110 blur-[2px]' : ''
+                      }`}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <span className="absolute left-4 top-4 max-w-[calc(100%-2rem)] rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm break-keep">
@@ -196,7 +198,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                     {item.meta}
                   </p>
                   <span className="shrink-0 text-xs font-bold text-blue-600">
-                    {item.external ? '자세히 보기 ↗' : '자세히 보기 →'}
+                    {item.external ? '외부 블로그에서 보기 ↗' : '자세히 보기 →'}
                   </span>
                 </div>
               </RecordCardLink>
@@ -207,13 +209,18 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                 className={`${v0BentoCard} flex min-h-full flex-col justify-between rounded-3xl border-blue-500/20 bg-blue-600 text-white shadow-md hover:bg-blue-700 ${v0CardInnerPad}`}
               >
                 <div>
-                  <p className="text-xs font-bold tracking-[0.16em] text-blue-200">CUSTOM OPERATION</p>
+                  <p className="text-xs font-bold tracking-[0.16em] text-blue-200">{V0_KO.customOperation}</p>
                   <h3 className={`mt-4 ${v0CardTitle} break-keep text-white`}>
                     우리 기관도 맞춤 수업이 가능할까요?
                   </h3>
-                  <p className={`mt-4 ${v0Lead} text-blue-100`}>
+                  <p className={`mt-4 ${v0LeadOnBlue}`}>
                     공간과 인원, 예산만 알려주시면 현장에 최적화된 운영안을 제안해 드립니다.
                   </p>
+                  <ul className={`mt-5 space-y-2 text-sm ${v0LeadOnBlue}`}>
+                    <li>· 공간·인원·연령에 맞춘 동선·규칙 설계</li>
+                    <li>· SPOMOVE·교구 포함 여부 협의</li>
+                    <li>· 정기·단기·원데이 등 운영 형태 제안</li>
+                  </ul>
                 </div>
                 <span className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-white">
                   맞춤 운영안 요청하기
@@ -227,7 +234,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
 
       <section className={`px-6 sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
-          <V0SectionHeader kicker="DESIGN PRINCIPLES" title="왜 모든 현장의 수업 모습이 다를까요?" />
+          <V0SectionHeader kicker="설계 원칙" title="왜 모든 현장의 수업 모습이 다를까요?" />
           <div className="grid gap-4 md:grid-cols-3">
             {principles.map(([title, detail], index) => (
               <div
@@ -248,9 +255,9 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
       <section className={`bg-slate-900 px-6 text-white sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
           <div>
-            <p className={`${v0SectionKicker} text-blue-400`}>YOUR NEXT CASE FILE</p>
+            <p className={`${v0SectionKicker} text-blue-400`}>{V0_KO.nextCase}</p>
             <h2 className={`mt-3 max-w-2xl ${v0CtaTitleOnDark}`}>우리 기관과 비슷한 사례를 찾으셨나요?</h2>
-            <p className={`mt-4 max-w-2xl ${v0Lead} text-slate-300`}>{recordsPage.cta.description}</p>
+            <p className={`mt-4 max-w-2xl ${v0LeadOnDark}`}>{recordsPage.cta.description}</p>
           </div>
           <div className={v0CtaButtonRow}>
             <Link

@@ -87,6 +87,7 @@ export function OperationalDataProvider({
   }, []);
 
   const reload = useCallback(async (mode: 'hard' | 'soft' = 'hard') => {
+    if (!syncWhenRouteNeedsData) return;
     if (!ownerId || !canUseAttendance) {
       activeOwnerRef.current = null;
       clearData();
@@ -136,7 +137,7 @@ export function OperationalDataProvider({
     } finally {
       if (reloadInFlightRef.current?.promise === task) reloadInFlightRef.current = null;
     }
-  }, [canUseAttendance, clearData, ownerId]);
+  }, [canUseAttendance, clearData, ownerId, syncWhenRouteNeedsData]);
 
   useEffect(() => {
     if (!ownerId || !canUseAttendance) {
@@ -169,7 +170,7 @@ export function OperationalDataProvider({
 
   // Second-tab SPOMOVE / field return: soft refresh keeps lists visible (no blank cockpit).
   useEffect(() => {
-    if (!ownerId || !canUseAttendance) return;
+    if (!ownerId || !canUseAttendance || !syncWhenRouteNeedsData) return;
     const refreshOnReturn = () => {
       if (document.visibilityState !== 'visible') return;
       if (Date.now() - lastSoftRefreshAtRef.current < OPERATIONAL_SOFT_REFRESH_MIN_INTERVAL_MS) return;
@@ -182,7 +183,7 @@ export function OperationalDataProvider({
       window.removeEventListener('focus', refreshOnReturn);
       document.removeEventListener('visibilitychange', refreshOnReturn);
     };
-  }, [canUseAttendance, ownerId, reload]);
+  }, [canUseAttendance, ownerId, reload, syncWhenRouteNeedsData]);
 
   const createStudent = useCallback(async (input: CreateStudentInput) => {
     const json = await masterFetchJson<{ data: MasterStudentDto; classIds: string[] }>('/api/spokedu-master/students', {

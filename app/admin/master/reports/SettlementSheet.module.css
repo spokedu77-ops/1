@@ -124,6 +124,12 @@
 .moneyFieldInput { padding-right: 21px !important; }
 .moneySuffix { position: absolute; top: 50%; right: 6px; z-index: 1; transform: translateY(-50%); color: var(--sheet-muted); font-size: 10px; line-height: 1; pointer-events: none; }
 .numericInput { text-align: right; }
+
+/* Keep grouped amounts and select labels legible; scroll the policy table instead of squeezing fields. */
+.policyTable .moneyField { min-width: 112px; }
+.policyTable select { min-width: 76px; }
+.policyTable th:first-child, .policyTable td:first-child { min-width: 240px; }
+.policyTable td { vertical-align: top; }
 .totalInput::placeholder { color: #34413c; opacity: 1; }
 .centerInput { font-weight: 550; }
 .statusCell { text-align: center; }

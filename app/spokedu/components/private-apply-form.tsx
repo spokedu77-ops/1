@@ -13,6 +13,7 @@ import {
   v0FilterChipBase,
   v0FilterChipIdle,
 } from '../lib/ui-classes';
+import { V0PrivacyConsent } from './v0-privacy-consent';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import { parseConversionEvidenceSlug } from '../data/commercial-routes';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
@@ -40,7 +41,7 @@ const inputClass =
 const labelClass = 'text-sm font-semibold text-slate-800';
 
 const v0InputClass =
-  'mt-2 w-full rounded-xl bg-slate-50 px-4 py-3.5 text-sm font-normal text-slate-900 outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-[#246bce]';
+  'mt-2 w-full rounded-xl bg-slate-50 px-4 py-3.5 text-sm font-normal text-slate-900 outline-none ring-1 ring-slate-200 focus-visible:ring-2 focus-visible:ring-[#246bce]';
 
 function safeVal(v: string): string {
   return v.trim() ? v.trim() : '[정보 미기재]';
@@ -111,6 +112,8 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
   const [v0ChildAge, setV0ChildAge] = useState('');
   const [v0ClassType, setV0ClassType] = useState<PrivateV0ClassType>('1:1 개인수업');
   const [v0Memo, setV0Memo] = useState('');
+  const [v0Region, setV0Region] = useState('');
+  const [v0PrivacyConsent, setV0PrivacyConsent] = useState(false);
 
   useEffect(() => {
     try {
@@ -328,12 +331,21 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
         });
         return;
       }
+      if (!v0Region.trim()) {
+        setStatus({ tone: 'error', message: '수업 희망 지역(시·구)을 입력해 주세요.' });
+        return;
+      }
+      if (!v0PrivacyConsent) {
+        setStatus({ tone: 'error', message: '개인정보 수집·이용에 동의해 주세요.' });
+        return;
+      }
 
       const mapped = mapPrivateV0ClassType(v0ClassType);
       const content = [
         `[학부모] ${safeVal(v0ParentName)}`,
         `[아이 연령/학년] ${safeVal(v0ChildAge)}`,
         `[희망 수업 형태] ${v0ClassType}`,
+        `[희망 지역] ${v0Region.trim()}`,
         '',
         '--- 성향·고민 ---',
         v0Memo.trim() || '[정보 미기재]',
@@ -356,8 +368,9 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
             start_direction: mapped.startDirection,
             preferred_format: mapped.preferredFormat,
             sport: mapped.sport,
-            region: '[상담 후 확인]',
+            region: v0Region.trim(),
             schedule: '[상담 후 확인]',
+            privacy_consent: true,
             acquisition: getAcquisitionContext({
               submitPath:
                 typeof window !== 'undefined'
@@ -392,6 +405,8 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
         setV0Memo('');
         setPhone('');
         setV0ClassType('1:1 개인수업');
+        setV0Region('');
+        setV0PrivacyConsent(false);
         setStatus({
           tone: 'ok',
           message: '접수가 완료되었습니다. 담당자가 확인 후 연락드립니다.',
@@ -403,7 +418,7 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
         setSubmitting(false);
       }
     },
-    [submitted, v0ParentName, v0ChildAge, v0ClassType, v0Memo, phone, conversionEvidenceSlug],
+    [submitted, v0ParentName, v0ChildAge, v0ClassType, v0Memo, v0Region, v0PrivacyConsent, phone, conversionEvidenceSlug],
   );
 
   if (variant === 'privateV0') {
@@ -469,6 +484,18 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
           </div>
         </div>
         <label className="mt-5 block text-sm font-bold break-keep">
+          수업 희망 지역 (시·구)
+          <input
+            required
+            name="region"
+            className={v0InputClass}
+            placeholder="예: 서울 강동구, 경기 성남시 분당구"
+            value={v0Region}
+            onChange={(e) => setV0Region(e.target.value)}
+            autoComplete="address-level2"
+          />
+        </label>
+        <label className="mt-5 block text-sm font-bold break-keep">
           우리 아이 성향 및 고민사항
           <textarea
             name="memo"
@@ -479,6 +506,11 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
             onChange={(e) => setV0Memo(e.target.value)}
           />
         </label>
+        <V0PrivacyConsent
+          checked={v0PrivacyConsent}
+          onChange={setV0PrivacyConsent}
+          id="private-v0-privacy"
+        />
         {status.message ? (
           <p
             className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
@@ -495,7 +527,7 @@ export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' 
         ) : null}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !v0PrivacyConsent}
           aria-busy={submitting}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#246bce] px-6 py-4 text-sm font-bold text-white transition hover:bg-[#1559b6] disabled:opacity-60"
         >

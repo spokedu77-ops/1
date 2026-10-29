@@ -37,17 +37,20 @@ import {
   v0GradientText,
   v0HeroTitle,
   v0Lead,
+  v0LeadOnDark,
   v0SectionBand,
   v0SectionTitle,
 } from '../lib/ui-classes';
 import { DispatchProposalForm } from './dispatch-proposal-form';
-import { V0Eyebrow, V0SectionBlock } from './v0-ui';
+import { PUBLIC_V0_METRICS } from '../data/marketing-public-metrics';
+import { V0_KO } from '../data/v0-korean-labels';
+import { V0Eyebrow, V0MetricsNote, V0SectionBlock } from './v0-ui';
 
 const comparison = [
   ['커리큘럼', '연세대 체육교육과 연구진의 연간 커리큘럼', '강사 개인 재량의 단발성 놀이'],
   ['강사 리스크 관리', '본사 직영 관리 · 검증된 대체 강사 즉시 투입', '단순 프리랜서 중개로 결원 시 대처 불가'],
   ['느린 학습자·특수 통합', '개별 속도에 맞춘 포용형 규칙 재설계', '획일적 경기 진행으로 소외 발생'],
-  ['교구 및 에듀테크', '자체 개발 SPOMOVE · KC인증 교구 직접 지참', '기관 내 기본 교구만 제한적 사용'],
+  ['교구 및 에듀테크', '자체 개발 SPOMOVE · 전용 교구 직접 지참', '기관 내 기본 교구만 제한적 사용'],
   ['기관 행정 지원', '맞춤 계획서 · 비교견적서 · 결과 보고 자료 지원', '단순 출강 외 행정 대응 미흡'],
 ] as const;
 
@@ -115,7 +118,7 @@ export function EducationV0Landing() {
       <section className={`relative bg-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20">
           <div>
-            <V0Eyebrow>SCHOOL &amp; ORGANIZATION</V0Eyebrow>
+            <V0Eyebrow>{V0_KO.schoolOrg}</V0Eyebrow>
             <h1 id="edu-hero-heading" className={`mt-6 max-w-xl ${v0HeroTitle} text-slate-950`}>
               움직이게 하는 수업이 아니라,
               <br />
@@ -141,18 +144,10 @@ export function EducationV0Landing() {
                 실제 수업 사례 보기
               </a>
             </div>
-            <div className="mt-12 flex items-center gap-5 text-sm text-slate-500">
-              <div className="flex -space-x-2" aria-hidden>
-                <div className="size-8 rounded-full border-2 border-white bg-blue-200" />
-                <div className="size-8 rounded-full border-2 border-white bg-sky-300" />
-                <div className="size-8 rounded-full border-2 border-white bg-indigo-300" />
-              </div>
-              <span>
-                전국 500개+ 기관이 선택한
-                <br />
-                <strong className="text-slate-900">아이들의 움직임 전문가</strong>
-              </span>
-            </div>
+            <p className="mt-10 text-sm text-slate-600">
+              <strong className="text-slate-900">{PUBLIC_V0_METRICS.institutions.value}</strong>{' '}
+              {PUBLIC_V0_METRICS.institutions.label} · 연세대 체육교육과 출신 연구진 설계
+            </p>
           </div>
           <div className="relative">
             <div className="relative aspect-[0.94] overflow-hidden rounded-[2rem] bg-slate-100 shadow-2xl shadow-blue-100">
@@ -169,19 +164,13 @@ export function EducationV0Landing() {
                 <GraduationCap className="size-6" aria-hidden />
               </div>
               <div>
-                <p className="text-[11px] font-bold tracking-wide text-blue-600">DESIGNED BY EXPERTS</p>
+                <p className="text-[11px] font-bold tracking-wide text-blue-600">전문가 설계</p>
                 <p className="mt-1 text-sm font-bold leading-5 text-slate-800">
                   연세대 체육교육과 출신
                   <br />
                   연구진 직접 설계
                 </p>
               </div>
-            </div>
-            <div className="absolute -right-3 top-8 rounded-2xl bg-slate-950 px-4 py-3 text-white shadow-xl">
-              <p className="text-[10px] font-bold tracking-widest text-blue-300">FIELD DATA</p>
-              <p className="mt-1 text-lg font-bold">
-                98<span className="text-blue-400">%</span>
-              </p>
             </div>
           </div>
         </div>
@@ -192,9 +181,9 @@ export function EducationV0Landing() {
             </div>
             <div>
               <p className="text-2xl font-black tracking-tight text-slate-950">
-                500개<span className="text-blue-600">+</span>
+                {PUBLIC_V0_METRICS.institutions.value}
               </p>
-              <p className="text-xs text-slate-500">누적 출강 학교 및 기관</p>
+              <p className="text-xs text-slate-500">{PUBLIC_V0_METRICS.institutions.label}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 px-5 py-4 sm:border-r sm:border-slate-100 sm:py-2">
@@ -202,10 +191,8 @@ export function EducationV0Landing() {
               <HeartHandshake className="size-5" aria-hidden />
             </div>
             <div>
-              <p className="text-2xl font-black tracking-tight text-slate-950">
-                98<span className="text-blue-600">%</span>
-              </p>
-              <p className="text-xs text-slate-500">출강 기관 재계약률</p>
+              <p className="text-2xl font-black tracking-tight text-slate-950">SPOMOVE</p>
+              <p className="text-xs text-slate-500">자체 에듀테크·교구 지참</p>
             </div>
           </div>
           <div className="flex items-center gap-4 px-5 py-4 sm:py-2">
@@ -218,13 +205,16 @@ export function EducationV0Landing() {
             </div>
           </div>
         </div>
+        <V0MetricsNote className="px-6">
+          {PUBLIC_V0_METRICS.institutions.note} · {PUBLIC_V0_METRICS.classes.note}
+        </V0MetricsNote>
       </section>
 
       {/* 2. Custom design + 4-step timeline */}
       <section id="design" className={`scroll-mt-28 bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <V0SectionBlock
-            eyebrow="CUSTOMIZED DESIGN"
+            eyebrow="맞춤 설계"
             title="조건이 달라지면 수업의 설계도 달라집니다"
             description="같은 프로그램을 모든 현장에 반복하지 않습니다. 기관의 환경과 아이들의 특성에 맞춰 동선과 규칙을 정밀하게 조정합니다."
           />
@@ -249,7 +239,7 @@ export function EducationV0Landing() {
           <div className="mt-6 rounded-3xl bg-slate-950 p-8 text-white md:p-10">
             <div className="flex flex-col gap-8">
               <div className="max-w-2xl">
-                <p className="text-sm font-bold text-blue-300">ONE SESSION, ONE FLOW</p>
+                <p className="text-sm font-bold text-blue-300">{V0_KO.oneSessionFlow}</p>
                 <h3 className={`mt-3 ${v0CardTitle} leading-snug text-white`}>
                   하나의 활동이 아니라 1회기 수업의 흐름을 설계합니다
                 </h3>
@@ -266,9 +256,11 @@ export function EducationV0Landing() {
                         aria-hidden
                       />
                     ) : null}
-                    <span className="text-xs font-black tracking-[0.12em] text-blue-300">STEP {num}</span>
+                    <span className="text-xs font-black tracking-[0.12em] text-blue-300">
+                      {V0_KO.step} {num}
+                    </span>
                     <p className="mt-8 text-lg font-bold">{title}</p>
-                    <p className={`mt-2 ${v0Lead} text-slate-300`}>{desc}</p>
+                    <p className={`mt-2 ${v0LeadOnDark}`}>{desc}</p>
                   </div>
                 ))}
               </div>
@@ -281,19 +273,34 @@ export function EducationV0Landing() {
       <section id="compare" className={`scroll-mt-28 bg-white ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <V0SectionBlock
-            eyebrow="WHY SPOKEDU"
-            title="일반 강사 파견 업체와 스포키듀가 결정적으로 다른 이유"
-            description="수업 한 번을 넘어, 기관이 안심하고 맡길 수 있는 운영 시스템을 함께 제공합니다."
+            eyebrow={V0_KO.whySpokedu}
+            title="일반 파견과 스포키듀, 무엇이 다른가요?"
+            description="강사 한 명을 보내는 것을 넘어, 커리큘럼·교구·운영 지원까지 기관 조건에 맞춰 설계합니다."
           />
-          <div className="mt-14 overflow-x-auto">
+          <div className="mt-14 space-y-4 md:hidden">
+            {comparison.map(([label, premium, regular]) => (
+              <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="text-sm font-black text-slate-900">{label}</h3>
+                <p className="mt-3 flex gap-2 text-sm font-semibold text-slate-800">
+                  <CircleCheck className="mt-0.5 size-5 shrink-0 text-blue-600" aria-hidden />
+                  {premium}
+                </p>
+                <p className="mt-2 flex gap-2 text-sm text-slate-600">
+                  <X className="mt-0.5 size-5 shrink-0 text-slate-400" aria-hidden />
+                  {regular}
+                </p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-14 hidden overflow-x-auto md:block">
             <div className="min-w-[760px] overflow-hidden rounded-3xl border border-blue-200 shadow-xl shadow-blue-100/60">
               <div className="grid grid-cols-[1.05fr_1.65fr_1.65fr] bg-slate-50 text-sm font-bold text-slate-500">
                 <div className="p-6">비교 항목</div>
                 <div className="relative border-x-2 border-blue-600 bg-blue-600 p-6 pt-9 text-white shadow-xl">
-                  <span className="absolute left-6 top-3 text-[10px] font-black tracking-widest text-blue-500">
-                    RECOMMENDED
+                  <span className="absolute left-6 top-3 text-[10px] font-black tracking-widest text-blue-200">
+                    {V0_KO.recommended}
                   </span>
-                  SPOKEDU PREMIUM
+                  스포키듀 기관 솔루션
                 </div>
                 <div className="p-6">일반 파견 업체</div>
               </div>
@@ -304,8 +311,8 @@ export function EducationV0Landing() {
                     <CircleCheck className="mt-0.5 size-5 shrink-0 text-blue-600" aria-hidden />
                     {premium}
                   </div>
-                  <div className="flex items-start gap-3 p-6 text-slate-400">
-                    <X className="mt-0.5 size-5 shrink-0 text-slate-300" aria-hidden />
+                  <div className="flex items-start gap-3 p-6 text-slate-600">
+                    <X className="mt-0.5 size-5 shrink-0 text-slate-400" aria-hidden />
                     {regular}
                   </div>
                 </div>
@@ -319,7 +326,7 @@ export function EducationV0Landing() {
       <section id="programs" className={`scroll-mt-28 bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <V0SectionBlock
-            eyebrow="PROGRAM LINE-UP"
+            eyebrow={V0_KO.programLineUp}
             title="기관 목적에 맞춰 조합하는 6대 타겟 프로그램"
             description="기초 신체 기능을 기르는 펑셔널 무브와 사회성을 기르는 팀빌딩을 베이스로 운영됩니다."
           />
@@ -361,7 +368,7 @@ export function EducationV0Landing() {
       <section id="records" className={`scroll-mt-28 bg-white ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-6">
           <V0SectionBlock
-            eyebrow="FIELD RECORDS & REVIEWS"
+            eyebrow={V0_KO.fieldRecordsReviews}
             title="현장의 기록과 담당자님의 평가가 증명합니다"
             description="다양한 공간과 아이들을 만난 수업의 기록, 그리고 현장을 가장 가까이에서 지켜본 담당자님의 이야기입니다."
           />
@@ -421,7 +428,7 @@ export function EducationV0Landing() {
       <section className={`bg-slate-50 ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-4">
-            <V0Eyebrow>EASY ONBOARDING</V0Eyebrow>
+            <V0Eyebrow>{V0_KO.easyOnboarding}</V0Eyebrow>
             <h2 className={`mt-5 ${v0SectionTitle} text-slate-950`}>
               조건이 아직 정리되지 않아도 괜찮습니다
             </h2>
@@ -435,7 +442,9 @@ export function EducationV0Landing() {
                 key={step}
                 className={`${v0BentoCard} relative rounded-3xl border-slate-200 bg-white shadow-sm ${v0CardInnerPad}`}
               >
-                <span className="text-sm font-black text-blue-600">STEP {step}</span>
+                <span className="text-sm font-black text-blue-600">
+                  {V0_KO.step} {step}
+                </span>
                 <div className="mt-12">
                   <h3 className={`${v0CardTitleCompact} text-slate-950`}>{title}</h3>
                   <p className={`mt-3 ${v0Lead}`}>{desc}</p>
@@ -456,7 +465,7 @@ export function EducationV0Landing() {
       <section id="faq" className={`scroll-mt-28 bg-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <V0Eyebrow>FAQ</V0Eyebrow>
+            <V0Eyebrow>{V0_KO.faq}</V0Eyebrow>
             <h2 className={`mt-5 ${v0SectionTitle} text-slate-950`}>
               기관 담당자분들이 자주 묻는 질문
             </h2>
@@ -500,13 +509,13 @@ export function EducationV0Landing() {
       <section id="contact" className={`scroll-mt-28 bg-slate-900 text-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-12 lg:items-start">
           <div className="lg:col-span-5">
-            <V0Eyebrow dark>REQUEST A PLAN</V0Eyebrow>
+            <V0Eyebrow dark>{V0_KO.requestPlan}</V0Eyebrow>
             <h2 className={`mt-6 ${v0CtaTitleOnDark}`}>
               우리 기관에 맞는
               <br />
               <span className="text-blue-400">운영안</span>을 받아보세요
             </h2>
-            <p className={`mt-6 max-w-md ${v0Lead} text-slate-300`}>
+            <p className={`mt-6 max-w-md ${v0LeadOnDark}`}>
               복잡한 조건을 먼저 정리하지 않으셔도 괜찮습니다. 기관명과 예상 인원부터 편하게 남겨주세요.
             </p>
             <div className="mt-10 flex flex-col gap-4 text-sm text-slate-200">

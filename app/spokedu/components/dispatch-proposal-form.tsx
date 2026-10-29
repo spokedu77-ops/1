@@ -22,6 +22,7 @@ import {
   v0FilterChipBase,
   v0FilterChipIdle,
 } from '../lib/ui-classes';
+import { V0PrivacyConsent } from './v0-privacy-consent';
 
 const AGE_OPTIONS = ['유아', '초등 저학년', '초등 고학년', '중등', '혼합 연령'] as const;
 const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상'] as const;
@@ -29,7 +30,7 @@ const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상
 const inputClass =
   'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
 const v0InputClass =
-  'mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
+  'mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10';
 const labelClass = 'text-sm font-semibold text-slate-800';
 const hintClass = 'mt-1 text-xs leading-relaxed text-stone-500';
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
@@ -67,6 +68,7 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
   const [conversionEvidenceSlug, setConversionEvidenceSlug] = useState<FieldRecordSlug | null>(null);
   const [v0ContactLine, setV0ContactLine] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
 
   const toggleProgram = useCallback((value: string) => {
@@ -92,6 +94,7 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
     setSpecialNeeds('');
     setInquiry('');
     setV0ContactLine('');
+    setPrivacyConsent(false);
   }, []);
 
   useEffect(() => {
@@ -135,6 +138,10 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
         setStatus({ tone: 'error', message: '전화번호 또는 이메일 중 하나는 필수입니다.' });
         return;
       }
+      if (!privacyConsent) {
+        setStatus({ tone: 'error', message: '개인정보 수집·이용에 동의해 주세요.' });
+        return;
+      }
 
       setSubmitting(true);
       setStatus({ tone: 'idle', message: '' });
@@ -165,6 +172,7 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
             }),
             cta_intent_id: 'dispatch_proposal',
             conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
+            privacy_consent: privacyConsent,
           }),
         });
         const result = (await response.json().catch(() => null)) as {
@@ -216,6 +224,7 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
       specialNeeds,
       inquiry,
       conversionEvidenceSlug,
+      privacyConsent,
       reset,
     ],
   );
@@ -298,6 +307,7 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
             onChange={(e) => setInquiry(e.target.value)}
           />
         </label>
+        <V0PrivacyConsent checked={privacyConsent} onChange={setPrivacyConsent} id="education-v0-privacy" />
         {status.message ? (
           <p
             className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
@@ -314,7 +324,7 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
         ) : null}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || !privacyConsent}
           aria-busy={submitting}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:opacity-60"
         >
@@ -541,6 +551,8 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
           />
         </div>
 
+        <V0PrivacyConsent checked={privacyConsent} onChange={setPrivacyConsent} id="dispatch-proposal-privacy" />
+
         {status.message ? (
           <p
             className={`mt-4 rounded-2xl px-4 py-3 text-sm font-medium ${
@@ -557,7 +569,11 @@ export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFo
         ) : null}
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <button type="submit" disabled={submitting} className={`${marketingButtonPrimary} disabled:opacity-60`}>
+          <button
+            type="submit"
+            disabled={submitting || !privacyConsent}
+            className={`${marketingButtonPrimary} disabled:opacity-60`}
+          >
             {submitting ? '접수 중…' : '기관 조건으로 운영안 요청하기'}
           </button>
           <a href={brandContactLinks.phone} className={marketingButtonSecondary}>

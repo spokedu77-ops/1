@@ -6,9 +6,10 @@ const shell = readFileSync(join(process.cwd(), 'app/spokedu-master/components/la
 const provider = readFileSync(join(process.cwd(), 'app/spokedu-master/operational/OperationalDataProvider.tsx'), 'utf8');
 
 describe('AppShell P2-3 operational data host contract', () => {
-  it('keeps OperationalDataProvider mounted for attendance users independent of route', () => {
-    expect(shell).toContain('canHostOperationalData');
-    expect(shell).toContain('syncWhenRouteNeedsData={needsOperationalData}');
+  it('provides context for Free as well as paid users independent of route', () => {
+    expect(shell).not.toContain('canHostOperationalData');
+    expect(shell).toContain('syncWhenRouteNeedsData={canUseAttendance && needsOperationalData}');
+    expect(shell).toContain('key={`${accessGuard.userId}:${profile?.id}:${canUseAttendance}`}');
     expect(shell).not.toMatch(/\{needsOperationalData \?\s*\(\s*<OperationalDataProvider>/);
   });
 

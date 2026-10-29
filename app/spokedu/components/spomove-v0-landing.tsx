@@ -32,17 +32,20 @@ import {
   v0GradientText,
   v0HeroTitle,
   v0Lead,
+  v0LeadOnDark,
   v0SectionBand,
   v0SectionKicker,
   v0SectionTitle,
   v0SubsectionTitle,
 } from '../lib/ui-classes';
+import { V0_KO } from '../data/v0-korean-labels';
+import { SpomoveSignalGrid } from './spomove-signal-grid';
 import { V0Eyebrow } from './v0-ui';
 
 const steps = [
   {
     number: '01',
-    label: 'SEE',
+    label: '보기',
     title: '시각 정보 인지',
     description:
       '화면에 나타나는 색상, 숫자, 방향, 도형 등 다양한 시각 자극과 단서를 순간적으로 포착합니다.',
@@ -50,7 +53,7 @@ const steps = [
   },
   {
     number: '02',
-    label: 'THINK',
+    label: '생각',
     title: '두뇌 판단 및 억제',
     description:
       '단순 반응부터 조건부 규칙까지 두뇌에서 정답 위치를 빠르게 계산하고 불필요한 반응을 억제합니다.',
@@ -58,7 +61,7 @@ const steps = [
   },
   {
     number: '03',
-    label: 'MOVE',
+    label: '움직임',
     title: '신체 반응 및 이동',
     description:
       '전용 스포매트 위에서 정확한 스텝, 점프, 터치 동작으로 반응하며 민첩성과 협응력을 기릅니다.',
@@ -70,7 +73,7 @@ const modules = [
   {
     index: '01',
     title: '몰입형 시지각 웜업',
-    english: 'IIWarmup',
+    english: '도입 웜업',
     description:
       '본 수업 시작 전 5~10분 만에 아이들의 시선과 집중력을 화면으로 모으고 심박수를 끌어올리는 고효율 도입 프로그램',
     color: 'bg-blue-600',
@@ -79,7 +82,7 @@ const modules = [
   {
     index: '02',
     title: '기초 반응 및 방향 전환',
-    english: 'Reaction & Agility',
+    english: '반응·민첩',
     description:
       '무작위로 변하는 색상과 방향 신호에 맞춰 스텝을 밟으며 순발력과 하체 밸런스를 기르는 훈련',
     color: 'bg-amber-400',
@@ -88,7 +91,7 @@ const modules = [
   {
     index: '03',
     title: '인지 부하 & 이중 과제',
-    english: 'Dual-Task Brain',
+    english: '이중 과제',
     description:
       '계산, 기억, 색상 반전 등 인지 과제를 풀면서 동시에 몸을 움직여 두뇌 실행 기능을 극대화하는 훈련',
     color: 'bg-emerald-500',
@@ -97,7 +100,7 @@ const modules = [
   {
     index: '04',
     title: '협동 및 대결 모드',
-    english: 'Team Challenge',
+    english: '협동·대결',
     description:
       '2인 이상이 호흡을 맞추거나 릴레이로 참여하여 현장 분위기를 최고조로 끌어올리는 그룹 게임 모드',
     color: 'bg-rose-500',
@@ -139,7 +142,10 @@ const cognitiveTasks = [
 ] as const;
 
 const specs = [
-  ['안전성 인증', 'KC 공급자적합성 확인 완료 및 미국 연방 가연성 시험(US 16 CFR 1630/1631) 기준 통과'],
+  [
+    '안전·인증 안내',
+    'KC 공급자적합성 확인 대상 제품입니다. 시험·성적서는 구매·견적 문의 시 안내드립니다. (미국 16 CFR 등 해외 기준 문구는 제품별 시험 범위에 따릅니다.)',
+  ],
   ['논슬립 & 내구성', '격렬한 점프와 스텝에도 밀리지 않는 강력한 바닥 논슬립 처리 및 고밀도 파일 원단'],
   ['직관적 4분할 설계', '시지각 인지에 최적화된 고채도 4색 분할로 유아부터 청소년, 특수 체육까지 즉시 활용'],
   ['휴대 및 보관성', '말아서 간편하게 이동·보관할 수 있어 방문 출강 및 다인원 동시 세팅에 최적화'],
@@ -197,39 +203,16 @@ function SectionIntro({
   );
 }
 
-const SPOMOVE_SIGNAL_COLORS = ['#2563eb', '#fbbf24', '#22c55e', '#f43f5e'] as const;
-
-function SpomoveSignalGrid({ compact = false }: { compact?: boolean }) {
-  return (
-    <div
-      className={`grid grid-cols-2 gap-3 rounded-2xl bg-slate-900 p-4 ${compact ? '' : 'mt-4'}`}
-      aria-hidden
-    >
-      {SPOMOVE_SIGNAL_COLORS.map((color, i) => (
-        <div
-          key={color}
-          style={{ backgroundColor: color }}
-          className={`flex items-center justify-center rounded-xl ${
-            compact ? 'aspect-square' : 'aspect-[1.5]'
-          } ${i === 0 ? 'shadow-[0_0_30px_rgba(37,99,235,0.55)]' : ''}`}
-        >
-          <span className={`font-black text-white/85 ${compact ? 'text-xl' : 'text-2xl'}`}>{i + 1}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function HeroVisual() {
   return (
     <div className="relative mx-auto w-full max-w-[540px]">
       <div className="absolute -inset-8 rounded-full bg-blue-500/20 blur-3xl" aria-hidden />
       <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.07] p-4 shadow-2xl backdrop-blur-sm sm:p-6">
         <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4 text-[10px] font-bold tracking-[0.18em] text-slate-400">
-          <span>SPOMOVE / LIVE SESSION</span>
+          <span>SPOMOVE · 수업 세션</span>
           <span className="flex items-center gap-1.5 text-emerald-400">
             <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />
-            READY
+            준비됨
           </span>
         </div>
         <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-950/70">
@@ -243,7 +226,7 @@ function HeroVisual() {
             priority
           />
         </div>
-        <SpomoveSignalGrid />
+        <SpomoveSignalGrid className="mt-4" />
         <p className="mt-5 flex items-center justify-center gap-2 text-xs font-medium text-slate-400 break-keep">
           <span className="size-2 rounded-full bg-blue-400" aria-hidden />
           SPOMAT 4색 시그널 · 화면-매트 1:1 연동
@@ -268,7 +251,7 @@ export function SpomoveV0Landing() {
           className={`relative mx-auto grid max-w-7xl items-center gap-16 px-6 sm:px-10 lg:grid-cols-2 lg:gap-10 lg:px-12 ${v0SectionBand}`}
         >
           <div>
-            <span className={`mb-7 ${v0EyebrowHero} break-keep`}>COGNITIVE MOTOR EDUTECH</span>
+            <span className={`mb-7 ${v0EyebrowHero} break-keep`}>인지·운동 에듀테크</span>
             <h1
               id="spomove-hero-heading"
               className={`max-w-xl text-balance break-keep ${v0HeroTitle}`}
@@ -281,9 +264,9 @@ export function SpomoveV0Landing() {
               <br />
               <span className={v0GradientText}>시지각 브레인 체육</span>
             </h1>
-            <p className={`mt-8 max-w-xl ${v0Lead} text-slate-300`}>
-              SPOMOVE(스포무브)는 화면의 시각 자극을 인지해 즉각적인 신체 움직임으로 연결하는 인터랙티브 체육
-              솔루션입니다. 단순한 신체 활동을 넘어 주의집중력, 판단력, 순발력을 동시에 깨웁니다.
+            <p className={`mt-8 max-w-xl ${v0LeadOnDark}`}>
+              SPOMOVE(스포무브)는 화면의 시각 자극을 인지하고 신체 움직임으로 연결하는 인터랙티브 체육
+              활동입니다. 의학적 치료 효과를 주장하지 않으며, 수업 안에서 반응·규칙·협응을 연습합니다.
             </p>
             <div className={`mt-9 ${v0CtaButtonRow}`}>
               <Link
@@ -316,7 +299,7 @@ export function SpomoveV0Landing() {
       <section className={`bg-white px-6 sm:px-10 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
           <SectionIntro
-            eyebrow="CORE MECHANISM"
+            eyebrow="핵심 원리"
             title="두뇌의 인지와 신체의 움직임을 하나로 연결합니다"
             description="아이들은 게임처럼 즐겁게 몰입하는 동안 보고-생각하고-움직이는 고차원적 신경 협응 과정을 반복합니다."
           />
@@ -330,7 +313,9 @@ export function SpomoveV0Landing() {
                   <div className="flex size-12 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
                     <Icon className="size-6" aria-hidden />
                   </div>
-                  <span className="text-sm font-black tracking-[0.18em] text-slate-300">STEP {number}</span>
+                  <span className="text-sm font-black tracking-[0.18em] text-slate-300">
+                    {V0_KO.step} {number}
+                  </span>
                 </div>
                 <div className="mt-10 sm:mt-12">
                   <span className="text-xs font-black tracking-[0.2em] text-blue-600">{label}</span>
@@ -345,13 +330,12 @@ export function SpomoveV0Landing() {
 
       <section className={`bg-slate-50 px-6 sm:px-10 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
-          <SectionIntro eyebrow="TRAINING MODULES" title="연령과 목적에 맞춰 단계별로 확장되는 훈련 콘텐츠" />
+          <SectionIntro eyebrow={V0_KO.trainingModules} title="연령과 목적에 맞춰 단계별로 확장되는 훈련 콘텐츠" />
           <div className="mt-14 grid gap-5 sm:grid-cols-2">
             {modules.map(({ index, title, english, description, color, icon: Icon }) => (
-              <Link
+              <article
                 key={index}
-                href={SPOMOVE_V0_LINKS.catalog}
-                className={`${v0BentoCard} relative block overflow-hidden rounded-3xl border-slate-200/80 bg-white shadow-sm ${v0CardInnerPad}`}
+                className={`${v0BentoCard} relative overflow-hidden rounded-3xl border-slate-200/80 bg-white shadow-sm ${v0CardInnerPad}`}
               >
                 <div className={`mb-10 flex size-12 items-center justify-center rounded-2xl ${color} text-slate-950 sm:mb-12`}>
                   <Icon className="size-6" aria-hidden />
@@ -359,23 +343,26 @@ export function SpomoveV0Landing() {
                 <span className="absolute right-6 top-6 text-5xl font-black tracking-[-0.08em] text-slate-100 sm:right-8 sm:top-8">
                   {index}
                 </span>
-                <span className="text-xs font-bold tracking-[0.16em] text-blue-600">{english}</span>
+                <span className="text-xs font-bold text-blue-600">{english}</span>
                 <h3 className={`mt-3 ${v0CardTitle} break-keep`}>{title}</h3>
                 <p className={`mt-4 max-w-lg ${v0Lead}`}>{description}</p>
-                <div className="mt-7 flex items-center gap-2 text-xs font-bold text-slate-400 transition group-hover:text-blue-600">
-                  공식 카탈로그에서 보기
-                  <MoveUpRight className="size-4" aria-hidden />
-                </div>
-              </Link>
+              </article>
             ))}
           </div>
+          <p className="mt-8 text-center">
+            <Link
+              href={SPOMOVE_V0_LINKS.catalog}
+              className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:underline"
+            >
+              SPOMOVE 공식 카탈로그에서 전체 모듈 보기
+              <MoveUpRight className="size-4" aria-hidden />
+            </Link>
+          </p>
 
           <div className="mt-16">
-            <p className="text-center text-xs font-bold tracking-[0.18em] text-blue-600 break-keep">
-              CORE COGNITIVE TASKS
-            </p>
+            <p className="text-center text-xs font-bold tracking-[0.18em] text-blue-600 break-keep">{V0_KO.coreTasks}</p>
             <h3 className={`mt-3 text-center break-keep ${v0SubsectionTitle}`}>SPOMOVE 핵심 인지 과제 5종</h3>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
               {cognitiveTasks.map((task) => (
                 <article
                   key={task.code}
@@ -398,15 +385,15 @@ export function SpomoveV0Landing() {
 
       <section id="spomat" className={`scroll-mt-24 bg-white px-6 sm:px-10 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-5">
-          <div className="relative lg:col-span-2">
-            <div className="relative mx-auto w-full max-w-[460px] overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-950 p-6 shadow-xl shadow-slate-900/10 sm:p-8">
-              <p className="text-[10px] font-black tracking-[0.2em] text-slate-500">SPOMAT / 4-PANEL TARGET</p>
+          <div className="relative lg:col-span-2 overflow-visible px-2 pt-4">
+            <div className="relative mx-auto w-full max-w-[460px] overflow-visible rounded-[2rem] border border-slate-200 bg-slate-950 p-6 shadow-xl shadow-slate-900/10 sm:p-8">
+              <p className="text-[10px] font-black tracking-[0.2em] text-slate-500">SPOMAT · 2×2 타깃</p>
               <SpomoveSignalGrid compact />
-              <div className="absolute -right-3 -top-3 flex size-20 flex-col items-center justify-center rounded-full border-4 border-white bg-blue-600 text-center text-[9px] font-black leading-tight text-white shadow-lg sm:-right-4 sm:-top-4">
-                <ShieldCheck className="mb-1 size-5" aria-hidden />
+              <div className="absolute right-2 top-2 flex size-[4.5rem] flex-col items-center justify-center rounded-full border-4 border-white bg-blue-600 text-center text-[8px] font-black leading-tight text-white shadow-lg sm:right-3 sm:top-3">
+                <ShieldCheck className="mb-0.5 size-4" aria-hidden />
                 KC
                 <br />
-                CERTIFIED
+                확인
               </div>
             </div>
             <p className="mt-6 text-center text-sm text-slate-500 break-keep">
@@ -420,7 +407,7 @@ export function SpomoveV0Landing() {
             </p>
           </div>
           <div className="lg:col-span-3">
-            <V0Eyebrow className="mb-5">DEDICATED HARDWARE</V0Eyebrow>
+            <V0Eyebrow className="mb-5">전용 교구 SPOMAT</V0Eyebrow>
             <h2 className={`max-w-2xl break-keep ${v0SectionTitle}`}>
               SPOMAT : 안전과 직관성을 모두 잡은 전용 타겟 매트
             </h2>
@@ -445,7 +432,7 @@ export function SpomoveV0Landing() {
 
       <section className={`bg-slate-50 px-6 sm:px-10 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl">
-          <SectionIntro eyebrow="WAYS TO EXPERIENCE SPOMOVE" title="SPOMOVE를 만나는 3가지 방법" />
+          <SectionIntro eyebrow={V0_KO.waysToExperience} title="SPOMOVE를 만나는 3가지 방법" />
           <div className="mt-14 grid gap-5 lg:grid-cols-3">
             {experiencePaths.map(({ num, title, description, href, linkLabel }) => (
               <article
@@ -466,22 +453,22 @@ export function SpomoveV0Landing() {
           <div id="contact" className="mt-16 scroll-mt-24 rounded-3xl bg-slate-900 p-6 text-white sm:mt-20 sm:p-10 lg:p-12">
             <div className="flex flex-col justify-between gap-9 lg:flex-row lg:items-center">
               <div className="lg:flex-[5]">
-                <p className={`${v0SectionKicker} text-blue-400 break-keep`}>START WITH SPOMOVE</p>
+                <p className={`${v0SectionKicker} text-blue-400 break-keep`}>{V0_KO.startSpomove}</p>
                 <h2 className={`mt-4 max-w-2xl break-keep ${v0CtaTitleOnDark}`}>
                   우리 학교와 기관에 SPOMOVE와 스포매트를 도입해 보세요
                 </h2>
               </div>
-              <div className={`lg:flex-[7] lg:justify-end ${v0CtaButtonRow} sm:flex-nowrap`}>
+              <div className="flex w-full flex-col gap-3 lg:max-w-md lg:flex-[7] lg:justify-end lg:ml-auto">
                 <Link
                   href={SPOMOVE_V0_LINKS.institutionEducationContact}
-                  className={`${v0CtaButton} gap-2 bg-blue-600 text-white hover:bg-blue-500`}
+                  className={`${v0CtaButton} w-full justify-center gap-2 bg-blue-600 text-white hover:bg-blue-500`}
                 >
                   기관 출강 수업 문의하기
                   <ArrowRight className="size-4" aria-hidden />
                 </Link>
                 <Link
                   href={SPOMOVE_V0_LINKS.spomatPurchaseInquiry}
-                  className={`${v0CtaButton} gap-2 border border-white/20 text-white hover:bg-white/10`}
+                  className={`${v0CtaButton} w-full justify-center gap-2 border border-white/20 text-white hover:bg-white/10`}
                 >
                   스포매트 구매·견적 문의
                   <ExternalLink className="size-4" aria-hidden />
@@ -491,7 +478,7 @@ export function SpomoveV0Landing() {
                     href={KAKAO_CHANNEL_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${v0CtaButton} gap-2 border border-white/20 text-white hover:bg-white/10`}
+                    className={`${v0CtaButton} w-full justify-center gap-2 border border-white/20 text-white hover:bg-white/10`}
                   >
                     카카오톡 상담
                     <ExternalLink className="size-4" aria-hidden />

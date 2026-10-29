@@ -40,6 +40,7 @@ import {
   v0SectionBand,
   v0SubsectionTitle,
 } from '../lib/ui-classes';
+import { V0_KO } from '../data/v0-korean-labels';
 import { PrivateApplyForm } from './private-apply-form';
 import { V0Eyebrow, V0SectionBlock } from './v0-ui';
 
@@ -69,11 +70,11 @@ type DifferenceFootnote =
 const differences: readonly [string, string, string, DifferenceFootnote][] = [
   [
     '01',
-    '사전 진단 및 성향 파악',
+    '사전 상담 및 움직임 성향 파악',
     '아이의 기초 운동 기능(이동·조작·안정성)과 움직임 성향을 먼저 파악하여 무리한 경쟁 없이 성공 경험을 만드는 초기 난이도를 설정합니다.',
     {
       kind: 'summary',
-      lines: ['이동운동 · 조작운동 · 신체안정성', '16가지 PTG 유형 분석'],
+      lines: ['이동운동 · 조작운동 · 신체안정성', '움직임 성향 설문(16유형)으로 수업 난이도 조정'],
     },
   ],
   [
@@ -97,13 +98,18 @@ function DifferenceMiniPanel({ footnote }: { footnote: DifferenceFootnote }) {
   return (
     <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80">
       {footnote.kind === 'image' ? (
-        <Image
-          src={footnote.image.src}
-          alt={footnote.image.alt}
-          fill
-          className="object-cover object-top"
-          sizes="(max-width: 1024px) 100vw, 33vw"
-        />
+        <>
+          <Image
+            src={footnote.image.src}
+            alt={footnote.image.alt}
+            fill
+            className="object-cover object-top"
+            sizes="(max-width: 1024px) 100vw, 33vw"
+          />
+          <span className="absolute bottom-2 left-2 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold text-white">
+            UI 목업 · 실제 리포트는 상담 후 안내
+          </span>
+        </>
       ) : (
         <div className="flex h-full flex-col justify-center gap-3 bg-gradient-to-br from-[#e8f1ff] to-white p-5 sm:p-6">
           {footnote.lines.map((line) => (
@@ -136,6 +142,10 @@ const faqs = [
   [
     '수업 시간과 주당 횟수는 어떻게 되나요?',
     '기본 1회 50분 수업으로 주 1회 또는 주 2회 정기 수업으로 진행되며, 상담을 통해 아이의 체력과 일정에 맞춰 조정 가능합니다.',
+  ],
+  [
+    '수업 비용은 어떻게 되나요?',
+    '수업 형태(1:1·소그룹), 횟수, 장소(센터·방문)에 따라 달라집니다. 상담 신청 후 조건을 확인해 견적과 일정을 안내드립니다.',
   ],
 ] as const;
 
@@ -216,7 +226,7 @@ export function PrivateV0Landing() {
         className={`mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:gap-20 ${v0SectionBand}`}
       >
         <div className={koreanLineBreak}>
-          <V0Eyebrow>01 · PERSONAL &amp; SMALL GROUP CLASS</V0Eyebrow>
+          <V0Eyebrow>01 · {V0_KO.personalClass}</V0Eyebrow>
           <h1 className={`mt-7 text-balance ${v0HeroTitle}`}>
             운동을 잘하는 아이보다,
             <br />
@@ -243,7 +253,7 @@ export function PrivateV0Landing() {
             </a>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative overflow-visible px-2 sm:px-4">
           <div className="overflow-hidden rounded-3xl bg-[#e8f1ff] p-3">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[1.35rem]">
               <Image
@@ -257,19 +267,19 @@ export function PrivateV0Landing() {
               />
             </div>
           </div>
-          <div className="absolute -left-3 bottom-8 max-w-[11rem] rounded-2xl bg-white p-4 shadow-xl shadow-slate-900/10 sm:-left-8">
+          <div className="absolute bottom-6 left-2 max-w-[11rem] rounded-2xl bg-white p-4 shadow-xl shadow-slate-900/10 sm:bottom-8 sm:left-4">
             <div className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-[#246bce]">
                 <Sparkles className="size-5" aria-hidden />
               </div>
               <p className="text-xs font-bold leading-5 break-keep">
-                16가지 PTG
+                움직임 성향
                 <br />
-                움직임 성향 기반 지도
+                설문 기반 지도
               </p>
             </div>
           </div>
-          <div className="absolute -right-3 top-8 max-w-[10.5rem] rounded-2xl bg-[#0f172a] p-4 text-white shadow-xl shadow-slate-900/20 sm:-right-8">
+          <div className="absolute right-2 top-6 max-w-[10.5rem] rounded-2xl bg-[#0f172a] p-4 text-white shadow-xl shadow-slate-900/20 sm:right-4 sm:top-8">
             <p className="text-xs font-bold leading-5 break-keep">
               수업 후 학부모
               <br />
@@ -282,9 +292,9 @@ export function PrivateV0Landing() {
       <section className={`bg-[#f8fafc] ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <V0SectionBlock
-            eyebrow="FOR WHOM"
+            eyebrow={V0_KO.forWhom}
             title="우리 아이에게 이런 고민이 있으신가요?"
-            description="획일적인 대형 학원에서 소외되거나 흥미를 잃었던 아이들이 스포키듀에서 자신감을 찾습니다."
+            description="아이마다 속도와 성향이 다릅니다. 경쟁보다 성공 경험을 쌓을 수 있는 소규모·맞춤 수업을 찾는 가정을 돕습니다."
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {concerns.map(({ text, Icon }, i) => (
@@ -308,7 +318,7 @@ export function PrivateV0Landing() {
       <section className={v0SectionBand}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <V0SectionBlock
-            eyebrow="OUR DIFFERENCE"
+            eyebrow={V0_KO.ourDifference}
             title="단순히 땀만 빼는 놀이가 아니라 성장의 데이터를 쌓습니다"
           />
           <div className="grid gap-4 lg:grid-cols-3">
@@ -329,17 +339,17 @@ export function PrivateV0Landing() {
 
       <section id="program" className={`bg-[#f8fafc] ${v0SectionBand}`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <V0SectionBlock eyebrow="PROGRAM" title="아이에게 꼭 맞는 수업 형태를 선택하세요" />
+          <V0SectionBlock eyebrow={V0_KO.program} title="아이에게 꼭 맞는 수업 형태를 선택하세요" />
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <ProgramCard
-              eyebrow="1:1 PRIVATE"
+              eyebrow={V0_KO.oneToOnePrivate}
               title="온전히 아이 한 명에게 집중하는 밀착 지도"
               body="기초 운동 기능 향상, 특수 체육, 특정 종목(줄넘기·구기·인라인·자전거 등) 마스터, PAPS 집중 대비 등 아이의 고유 목표를 가장 빠르게 달성합니다."
-              tags={['#개별진도100%', '#특수맞춤체육', '#종목집중마스터']}
+              tags={['#개별진도맞춤', '#특수맞춤체육', '#종목집중마스터']}
               image={PRIVATE_V0_ONE_TO_ONE}
             />
             <ProgramCard
-              eyebrow="SMALL GROUP"
+              eyebrow={V0_KO.smallGroup}
               title="함께 땀 흘리며 배우는 건강한 협동과 규칙"
               body="비슷한 연령과 수준의 친구들과 팀을 이뤄 양보, 응원, 승패 수용, 작전 수행을 경험하며 신체 기능과 사회성을 동시에 기릅니다."
               tags={['#또래사회성', '#팀워크향상', '#소수정예케어']}
@@ -351,7 +361,7 @@ export function PrivateV0Landing() {
 
       <section className={v0SectionBand}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <V0SectionBlock eyebrow="HOW IT WORKS" title="안심하고 시작하는 네 단계" />
+          <V0SectionBlock eyebrow={V0_KO.howItWorks} title="안심하고 시작하는 네 단계" />
           <div className="mb-16 grid gap-3 sm:grid-cols-2 md:grid-cols-4 sm:mb-20">
             {flowSteps.map(({ text, detail, Icon }, i) => (
               <div
@@ -393,7 +403,7 @@ export function PrivateV0Landing() {
       <section id="apply" className={`scroll-mt-24 bg-[#0f172a] text-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-5 lg:gap-20">
           <div className={`lg:col-span-2 ${koreanLineBreak}`}>
-            <V0Eyebrow dark>PERSONAL CONSULTATION</V0Eyebrow>
+            <V0Eyebrow dark>{V0_KO.personalConsult}</V0Eyebrow>
             <h2 className={`mt-7 ${v0CtaTitleOnDark}`}>
               아이의 움직임에
               <br />

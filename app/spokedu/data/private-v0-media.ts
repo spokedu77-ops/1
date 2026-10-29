@@ -1,12 +1,11 @@
 import { SPOKEDU_IMAGES } from './images';
-import { privatePage } from './private-page';
 import type { PrivatePreferredFormat, PrivateStartDirection } from './private-page';
 
-/** Hero — 기존 private 수업 실사 (`class-flow-01`) */
+/** Hero — 1:1 맞춤 수업 실사 */
 export const PRIVATE_V0_HERO = {
-  src: privatePage.classFlow.images[0]!.src,
-  alt: privatePage.classFlow.images[0]!.alt,
-  objectPosition: '50% 42%',
+  src: '/images/spokedu/home/customer-purpose/personal-mentoring.webp',
+  alt: '야외에서 지도자가 아동의 동작을 가까이에서 안내하는 1:1 맞춤 체육수업',
+  objectPosition: '50% 55%',
 } as const;
 
 export const PRIVATE_V0_ONE_TO_ONE = {

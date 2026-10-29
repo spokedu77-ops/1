@@ -48,6 +48,7 @@ describe('FAULT_INJECTION_TEST private/leads E08', () => {
         name: 'Fault Test',
         phone: '01099998888',
         content: 'FAULT_INJECTION_TEST',
+        privacy_consent: true,
         preferred_format: 'undecided',
         cta_intent_id: 'private_fit_consult',
         acquisition: { entrySurface: 'direct' },
@@ -60,5 +61,21 @@ describe('FAULT_INJECTION_TEST private/leads E08', () => {
     expect(res.status).toBe(500);
     expect(body.ok).toBe(false);
     expect(body.message).toMatch(/DB|저장|실패/i);
+    const { createConsultLead } = await import('@/app/lib/server/leadEnvelope');
+    expect(createConsultLead).toHaveBeenCalled();
+  });
+
+  it.each([undefined, false, 'true'])('rejects invalid consent %s before CRM insert', async (consent) => {
+    const { createConsultLead } = await import('@/app/lib/server/leadEnvelope');
+    vi.mocked(createConsultLead).mockClear();
+    const { POST } = await import('./route');
+    const res = await POST(new NextRequest('http://localhost/api/private/leads', {
+      method: 'POST',
+      body: JSON.stringify({ type: 'private', name: 'Fault Test', phone: '01099998888',
+        content: 'FAULT_INJECTION_TEST', privacy_consent: consent }),
+    }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ ok: false, message: '개인정보 수집·이용에 동의해 주세요.' });
+    expect(createConsultLead).not.toHaveBeenCalled();
   });
 });

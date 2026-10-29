@@ -19,7 +19,7 @@ const CATEGORY_BY_SLUG: Record<FieldRecordSlug, RecordsV0Category> = {
   'dongjak-spomove': 'SPOMOVE',
   'yangcheon-paps': '키움센터·복지관',
   'gangdong-health-pe': '키움센터·복지관',
-  'dasarang-oneday': '미니올림픽·체험부스',
+  'dasarang-oneday': '키움센터·복지관',
   'seodaemun-event-booth': '미니올림픽·체험부스',
   'shinwol-integrated-pe': '미니올림픽·체험부스',
 };

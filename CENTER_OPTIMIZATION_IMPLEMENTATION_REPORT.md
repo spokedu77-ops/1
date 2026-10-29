@@ -1,5 +1,13 @@
 # 센터관리 최적화 로컬 구현 보고
 
+## 후속 수정 — 정산 금액 표시
+
+사용자가 지적한 합계 칸의 계산식 노출을 수정했다. `150000+45000원`은 `195,000원`, `40000+55000원`은 `95,000원`으로 표시한다. 금액 입력에도 천 단위 콤마를 적용하고, 입력 시 콤마를 제거한 원래 값/계산식만 기존 저장 콜백에 전달한다. 기존 금액·요율·월별 계산 의미 및 DB 데이터는 바꾸지 않는다.
+
+함께 확인한 문제는 수정 중 합계가 즉시 갱신되지 않던 점과 좁은 금액 칸의 잘림이다. 합계를 즉시 다시 표시하고 정책 표의 금액/선택 칸 최소 폭을 확보했다. 좁은 화면은 표 안에서 가로 스크롤한다. 계산 불가 값은 합계에 ‘계산식 확인 필요’로 표시한다.
+
+변경: SettlementSheet.tsx, SettlementSheet.module.css, 신규 SettlementMoneyInput.tsx/settlementMoney.ts/settlementMoney.test.ts 및 fixture QA 스크립트. 모의 Playwright에서 계산된 합계·입력 콤마·수정 즉시 합계 갱신·기존 정산 값 보존을 확인했다. 관련 14개 테스트 및 전체 Vitest 3,052개 통과(기존 2개 skip), typecheck·변경 파일 ESLint 통과. 정상 관리자 실데이터 E2E는 여전히 NOT_MEASURED이며 배포하지 않았다. 아래 내용은 앞선 구현 보고다.
+
 2026-10-30 KST. **LOCAL_IMPLEMENTATION_COMPLETE / RELEASE_PENDING**
 
 - BASE_SHA: `a8a93158375d8e664cda1dddd60bc547e749ba71`

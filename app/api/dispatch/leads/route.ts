@@ -54,6 +54,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: '문의 유형(type)이 올바르지 않습니다.' }, { status: 400 });
     }
     const source = typeof body.source === 'string' ? body.source.trim() : 'dispatch-page';
+    const dispatchSourcesRequiringPrivacy = new Set([
+      'spokedu-education-v0',
+      'spokedu-dispatch-proposal',
+    ]);
+    if (dispatchSourcesRequiringPrivacy.has(source) && body.privacy_consent !== true) {
+      return NextResponse.json(
+        { ok: false, error: '개인정보 수집·이용에 동의해 주세요.' },
+        { status: 400 },
+      );
+    }
     const programs = Array.isArray(body.programs)
       ? body.programs.filter((v): v is string => typeof v === 'string')
       : [];

@@ -66,6 +66,7 @@ describe('dispatch/leads education v0 minimal payload', () => {
         programs: ['SPOMOVE'],
         inquiry: '예상 인원 25명, 4월 시작 희망',
         source: 'spokedu-education-v0',
+        privacy_consent: true,
         cta_intent_id: 'dispatch_proposal',
         acquisition: { entrySurface: 'direct' },
       }),
@@ -77,5 +78,61 @@ describe('dispatch/leads education v0 minimal payload', () => {
     expect(body.ok).toBe(true);
     expect(body.consultId).toBe(consultId);
     expect(body.detailId).toBe(detailId);
+  });
+
+  it('rejects spokedu-education-v0 without privacy_consent', async () => {
+    const { POST } = await import('./route');
+    const req = new NextRequest('http://localhost/api/dispatch/leads', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'dispatch',
+        organization: '테스트',
+        manager: '담당',
+        phone: '01011112222',
+        source: 'spokedu-education-v0',
+        cta_intent_id: 'dispatch_proposal',
+      }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts spokedu-dispatch-proposal with privacy_consent', async () => {
+    const { POST } = await import('./route');
+    const req = new NextRequest('http://localhost/api/dispatch/leads', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'dispatch',
+        organization: 'legacy 폼 기관',
+        manager: '담당',
+        phone: '01033334444',
+        email: 'legacy@example.com',
+        programs: ['월간 뉴스포츠'],
+        inquiry: '운영안 문의',
+        source: 'spokedu-dispatch-proposal',
+        privacy_consent: true,
+        cta_intent_id: 'dispatch_proposal',
+        acquisition: { entrySurface: 'direct' },
+      }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects spokedu-dispatch-proposal without privacy_consent', async () => {
+    const { POST } = await import('./route');
+    const req = new NextRequest('http://localhost/api/dispatch/leads', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'dispatch',
+        organization: 'legacy',
+        manager: '담당',
+        phone: '01055556666',
+        source: 'spokedu-dispatch-proposal',
+        cta_intent_id: 'dispatch_proposal',
+      }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
   });
 });

@@ -40,7 +40,7 @@ export function V0SectionBlock({
   titleClassName?: string;
 }) {
   const wrap =
-    align === 'center' ? `mx-auto mb-14 max-w-2xl text-center ${koreanLineBreak}` : `max-w-3xl ${koreanLineBreak}`;
+    align === 'center' ? `mx-auto mb-10 max-w-2xl text-center ${koreanLineBreak}` : `max-w-3xl ${koreanLineBreak}`;
   return (
     <div className={`${wrap} ${className}`.trim()}>
       <V0Eyebrow>{eyebrow}</V0Eyebrow>
@@ -51,6 +51,15 @@ export function V0SectionBlock({
 }
 
 /** v0 — DESIGN PRINCIPLES 등 좌측 정렬 kicker + h2 */
+/** 히어로·지표 아래 내부 집계 각주 */
+export function V0MetricsNote({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <p className={`mx-auto mt-4 max-w-2xl text-center text-[11px] leading-5 text-slate-400 ${className}`.trim()}>
+      {children}
+    </p>
+  );
+}
+
 export function V0SectionHeader({
   kicker,
   title,

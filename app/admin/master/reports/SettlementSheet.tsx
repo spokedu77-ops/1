@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type InputHTMLAttributes } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Download, FileDown, Lock, MoreHorizontal, Plus, Redo2, Save, Settings, Trash2, Undo2, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import SettlementCenterLink from './SettlementCenterLink';
+import MoneyInput from './SettlementMoneyInput';
+import { formatMoneyExpression, formatSettlementAmount } from './settlementMoney';
 import styles from './SettlementSheet.module.css';
 import {
   calculateRow, carryOver, centerFee, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize, uid,
@@ -32,10 +34,6 @@ const secondaryButton = 'inline-flex min-h-11 items-center justify-center gap-2 
 const money = (value: number) => `${Math.round(value || 0).toLocaleString('ko-KR')}원`;
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const sortedMonths = (data: SettlementSheetData) => Object.values(data.months).sort((a, b) => a.key.localeCompare(b.key));
-
-function MoneyInput({ className = '', showSuffix = true, ...props }: InputHTMLAttributes<HTMLInputElement> & { showSuffix?: boolean }) {
-  return <div className={styles.moneyField}><input {...props} inputMode={props.inputMode ?? 'decimal'} className={`${className} ${showSuffix ? styles.moneyFieldInput : ''}`}/>{showSuffix&&<span className={styles.moneySuffix} aria-hidden="true">원</span>}</div>;
-}
 
 function newCenter(type: CenterType): SettlementCenter {
   return { id: uid(), name: '', type, instr: '', assist: '', rental: '', fee: '', cost: '', sessions: '',
@@ -435,7 +433,8 @@ function YearView({ data, selectMonth }:{data:SettlementSheetData;selectMonth:(k
 function CentersView({centers,tab,setTab,save,remove,add,fromCurrent,fromAll,syncMonths}:{centers:SettlementCenter[];tab:'center'|'private';setTab:(tab:'center'|'private')=>void;save:(center:SettlementCenter)=>Promise<void>;remove:(center:SettlementCenter)=>Promise<void>;add:()=>void;fromCurrent:()=>void;fromAll:()=>void;syncMonths:()=>void}) {
   const privateMode=tab==='private';
   const shown=centers.filter((center)=>privateMode?center.type==='private':center.type!=='private');
-  const patch=(center:SettlementCenter,key:keyof SettlementCenter,value:unknown)=>Object.assign(center,{[key]:value});
+  const [, refreshDraft] = useState(0);
+  const patch=(center:SettlementCenter,key:keyof SettlementCenter,value:unknown)=>{ Object.assign(center,{[key]:value}); refreshDraft((version)=>version+1); };
   const actions=(center:SettlementCenter)=><div className="flex items-center justify-end gap-2 whitespace-nowrap"><button className="rounded-md px-2 py-1 text-slate-600 hover:bg-slate-100" onClick={()=>{const from=prompt('요율 적용 시작 월 (YYYY-MM)',new Date().toISOString().slice(0,7));if(!from)return;center.rates=[...(center.rates||[]),{id:uid(),from,instr:center.instr,assist:center.assist,rental:center.rental,cost:center.cost}];void save({...center});}} title={`요율 이력 ${(center.rates||[]).length}건`}>이력</button><button className="rounded-md p-1.5 text-emerald-700 hover:bg-emerald-50" onClick={()=>void save({...center})} title="저장" aria-label={`${center.name} 저장`}><Save size={15}/></button><button className="rounded-md p-1.5 text-red-500 hover:bg-red-50" onClick={()=>void remove(center)} title="삭제" aria-label={`${center.name} 삭제`}><Trash2 size={15}/></button></div>;
   const operationalFields=(center:SettlementCenter)=><>
     <td className="p-1"><input className={fieldClass} defaultValue={center.sessions} inputMode="numeric" aria-label="기본 회기" onChange={(e)=>patch(center,'sessions',e.target.value)}/></td>
@@ -449,11 +448,11 @@ function CentersView({centers,tab,setTab,save,remove,add,fromCurrent,fromAll,syn
   </>;
   return <div className="space-y-4">
     <div className="flex flex-wrap justify-between gap-2"><div className="flex rounded-xl border bg-white p-1"><button className={`rounded-lg px-4 py-2 text-sm ${tab==='center'?'bg-slate-900 text-white':''}`} onClick={()=>setTab('center')}>센터</button><button className={`rounded-lg px-4 py-2 text-sm ${tab==='private'?'bg-slate-900 text-white':''}`} onClick={()=>setTab('private')}>개인수업</button></div><div className="flex flex-wrap gap-2"><button className={secondaryButton} onClick={fromCurrent}>현재 달에서</button><button className={secondaryButton} onClick={fromAll}>월 전체에서</button><button className={secondaryButton} onClick={syncMonths}>미확정 월 반영</button><button className={primaryButton} onClick={add}><Plus size={15}/>{privateMode?'개인수업':'센터'} 추가</button></div></div>
-    <div className="overflow-x-auto rounded-2xl border bg-white"><table className={`w-full text-xs ${privateMode?'min-w-[960px]':'min-w-[1180px]'}`}>
+    <div className="overflow-x-auto rounded-2xl border bg-white"><table className={`${styles.policyTable} w-full text-xs ${privateMode?'min-w-[960px]':'min-w-[1180px]'}`}>
       <thead className="bg-slate-50 text-slate-600"><tr>{(privateMode?['이름 · 수업명','수업료','인건비','기본 회기','부가세','원천징수','결제조건','상태','비고','']:['기관명','구분','강사료','보조','대여','수업료 합계','인건비','기본 회기','부가세','원천징수','결제조건','상태','비고','']).map((label)=><th key={label||'actions'} className="whitespace-nowrap p-2 text-left">{label}</th>)}</tr></thead>
       <tbody>{shown.map((center)=>privateMode
         ? <tr key={center.id} className="border-t"><td className="p-1"><input className={fieldClass} defaultValue={center.name} aria-label="이름 또는 수업명" onChange={(e)=>patch(center,'name',e.target.value)}/></td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.fee} aria-label="수업료" onChange={(e)=>patch(center,'fee',e.target.value)}/></td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.cost} aria-label="인건비" onChange={(e)=>patch(center,'cost',e.target.value)}/></td>{operationalFields(center)}<td className="p-1"><input className={fieldClass} type="number" defaultValue={center.whRate} aria-label="원천징수율" onChange={(e)=>patch(center,'whRate',Number(e.target.value))}/></td>{managementFields(center)}</tr>
-        : <tr key={center.id} className="border-t"><td className="p-1"><input className={fieldClass} defaultValue={center.name} aria-label="기관명" onChange={(e)=>patch(center,'name',e.target.value)}/><SettlementCenterLink centerId={center.center_id} onSelect={async (center_id)=>{await save({...center,center_id});}}/></td><td className="p-1"><select className={fieldClass} defaultValue={center.type} aria-label="구분" onChange={(e)=>patch(center,'type',e.target.value)}><option value="regular">정규</option><option value="short">단기</option><option value="private">개인</option><option value="etc">기타</option></select></td>{(['instr','assist','rental'] as const).map((key)=><td key={key} className="p-1"><MoneyInput className={fieldClass} defaultValue={center[key]} aria-label={key==='instr'?'강사료':key==='assist'?'보조강사료':'대여비'} onChange={(e)=>patch(center,key,e.target.value)}/></td>)}<td className="p-2 text-right font-bold">{centerFee(center)?`${centerFee(center)}원`:'-'}</td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.cost} aria-label="인건비" onChange={(e)=>patch(center,'cost',e.target.value)}/></td>{operationalFields(center)}<td className="p-1"><input className={fieldClass} type="number" defaultValue={center.whRate} aria-label="원천징수율" onChange={(e)=>patch(center,'whRate',Number(e.target.value))}/></td>{managementFields(center)}</tr>)}</tbody>
+        : <tr key={center.id} className="border-t"><td className="p-1"><input className={fieldClass} defaultValue={center.name} aria-label="기관명" onChange={(e)=>patch(center,'name',e.target.value)}/><SettlementCenterLink centerId={center.center_id} onSelect={async (center_id)=>{await save({...center,center_id});}}/></td><td className="p-1"><select className={fieldClass} defaultValue={center.type} aria-label="구분" onChange={(e)=>patch(center,'type',e.target.value)}><option value="regular">정규</option><option value="short">단기</option><option value="private">개인</option><option value="etc">기타</option></select></td>{(['instr','assist','rental'] as const).map((key)=><td key={key} className="p-1"><MoneyInput className={fieldClass} defaultValue={center[key]} aria-label={key==='instr'?'강사료':key==='assist'?'보조강사료':'대여비'} onChange={(e)=>patch(center,key,e.target.value)}/></td>)}<td className="whitespace-nowrap p-2 text-right font-bold tabular-nums" title={formatMoneyExpression(centerFee(center))}>{formatSettlementAmount(centerFee(center), center.sessions)}</td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.cost} aria-label="인건비" onChange={(e)=>patch(center,'cost',e.target.value)}/></td>{operationalFields(center)}<td className="p-1"><input className={fieldClass} type="number" defaultValue={center.whRate} aria-label="원천징수율" onChange={(e)=>patch(center,'whRate',Number(e.target.value))}/></td>{managementFields(center)}</tr>)}</tbody>
     </table></div>
   </div>;
 }

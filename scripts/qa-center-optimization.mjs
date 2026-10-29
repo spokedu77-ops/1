@@ -170,6 +170,9 @@ try {
   await page.goto(base+'/?sheet=1'); await page.getByRole('heading',{name:'수업료 정산'}).waitFor();
   check(!results.requests['sheet:centers'],'no initial policy preload');
   await page.getByRole('button',{name:'센터 · 개인수업 DB',exact:true}).click();
+  await page.getByRole('cell',{name:'105,000원',exact:true}).waitFor();
+  check(await page.getByLabel('강사료',{exact:true}).inputValue()==='90,000','policy inputs use thousands separators');
+  check(await page.getByRole('cell',{name:'105,000원',exact:true}).count()===1,'fee total displays a computed amount rather than its expression');
   await page.getByRole('button',{name:'센터관리 연결',exact:true}).click();
   await page.getByRole('textbox',{name:'센터관리 기관 검색'}).fill('테스트');
   await page.getByRole('button',{name:new RegExp(first.name+' · active')}).click();
@@ -177,8 +180,18 @@ try {
   check(savedPolicy.center_id===first.id&&savedPolicy.id===policy.id,'operating UUID linked; policy ID retained');
   for(const key of ['instr','assist','rental','fee','cost','sessions']) check(savedPolicy[key]===policy[key],`settlement ${key} preserved`);
   check(month.locked===true&&month.rows.length===0,'confirmed month unchanged');
+  const instructorFee = page.getByLabel('강사료', {exact:true});
+  await instructorFee.fill('150000'); await instructorFee.blur();
+  await page.getByRole('cell',{name:'165,000원',exact:true}).waitFor();
+  check(await instructorFee.inputValue()==='150,000','amount edit formats on blur and refreshes total immediately');
+  await instructorFee.fill('90000'); await instructorFee.blur();
   for (const width of [375,768,1024,1280,1440]) {
     await page.setViewportSize({width,height:900});
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      document.querySelectorAll('div').forEach((node) => { if (node.scrollWidth > node.clientWidth) node.scrollLeft = 0; });
+    });
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.screenshot({path:path.join(dir,`settlement-link-${width}.png`),fullPage:true});results.screenshots.push(`settlement-link-${width}.png`);
     check(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth),`width ${width}: sheet overflow contained`);
   }
@@ -186,7 +199,7 @@ try {
   await page.goto(base+'/?sheet=1');
   const name=page.locator('input[aria-label="기관명"]');
   await name.fill(policy.name);await name.blur();
-  await page.waitForFunction(()=>document.querySelector('input[aria-label$=" 수업료"]')?.value==='90000+10000+5000');
+  await page.waitForFunction(()=>document.querySelector('input[aria-label$=" 수업료"]')?.value.replace(/,/g,'')==='90000+10000+5000');
   await page.waitForTimeout(900);
   check(Boolean(savedMonth),'delayed policy autofill persists after early blur');
   for(const key of ['total','inv','rcpt','rcptAmt','invDate','rcptDate','adj','note'])check(savedMonth.rows[0][key]===legacyRow[key],`legacy monthly ${key} preserved`);

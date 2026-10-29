@@ -39,6 +39,7 @@ type LeadBody = {
   conversion_evidence_slug?: unknown;
   cta_intent_id?: unknown;
   website?: unknown;
+  privacy_consent?: unknown;
 };
 
 function normalize(value: unknown): string {
@@ -152,6 +153,13 @@ export async function POST(req: NextRequest) {
     const conversionEvidenceSlug =
       parseConversionEvidenceSlug(normalize(body.conversion_evidence_slug)) ?? undefined;
     const ctaIntentId = normalize(body.cta_intent_id) || 'private_fit_consult';
+
+    if (body.privacy_consent !== true) {
+      return NextResponse.json(
+        { ok: false, message: '개인정보 수집·이용에 동의해 주세요.' },
+        { status: 400 },
+      );
+    }
 
     if (!name || !content) {
       return NextResponse.json(

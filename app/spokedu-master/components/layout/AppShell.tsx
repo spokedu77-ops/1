@@ -271,7 +271,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   const needsExplanationData = masterRouteNeedsExplanationData(pathname, activeBasePath);
   const needsProgramCatalog = masterRouteNeedsProgramCatalog(pathname, activeBasePath);
   const needsFavoriteSync = masterRouteNeedsFavoriteSync(pathname, activeBasePath);
-  const canHostOperationalData = Boolean(accessGuard.snapshot?.canUseAttendance);
+  const canUseAttendance = accessGuard.snapshot?.canUseAttendance === true;
   const hideChrome = isOnboarding || isParentView || isPromotionRedeem || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
   const isProtectedRoute = isProtectedMasterRoute(pathname, activeBasePath);
   const routeRequirement = getMasterRouteRequirement(pathname, activeBasePath);
@@ -628,17 +628,14 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
                     snapshot={accessGuard.snapshot}
                     spomatShopAvailable={accessGuard.spomatShopAvailable}
                   >
-                    {canHostOperationalData ? (
-                      <OperationalDataProvider syncWhenRouteNeedsData={needsOperationalData}>
-                        {needsExplanationData ? (
-                          <ExplanationDataProvider enabled={accessGuard.snapshot.canUseRecords}>{children}</ExplanationDataProvider>
-                        ) : children}
-                      </OperationalDataProvider>
-                    ) : needsExplanationData ? (
-                      <ExplanationDataProvider enabled={accessGuard.snapshot?.canUseRecords === true}>{children}</ExplanationDataProvider>
-                    ) : (
-                      children
-                    )}
+                    <OperationalDataProvider
+                      key={`${accessGuard.userId}:${profile?.id}:${canUseAttendance}`}
+                      syncWhenRouteNeedsData={canUseAttendance && needsOperationalData}
+                    >
+                      {needsExplanationData ? (
+                        <ExplanationDataProvider enabled={accessGuard.snapshot.canUseRecords}>{children}</ExplanationDataProvider>
+                      ) : children}
+                    </OperationalDataProvider>
                   </MasterAccessProvider>
                 ) : (
                   children
