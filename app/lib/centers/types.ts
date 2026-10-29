@@ -45,6 +45,12 @@ export interface TeacherOption {
   name: string;
 }
 
+/** Fields actually rendered by the center list; never serialize detail placeholders. */
+export type CenterListItem = Pick<Center,
+  'id' | 'name' | 'region_tag' | 'status' | 'contact_name' | 'contact_phone' |
+  'contact_email' | 'contact_role' | 'weekly_schedule' | 'highlights' | 'updated_at' |
+  'main_teacher_name' | 'main_teacher_2_name' | 'main_teacher_3_name'>;
+
 export interface Center {
   id: string;
   name: string;

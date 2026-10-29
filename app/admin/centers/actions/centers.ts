@@ -1,7 +1,8 @@
 'use server';
 
 import { createCenterSchema } from '@/app/lib/centers/schemas';
-import type { Center, TeacherOption } from '@/app/lib/centers/types';
+import type { Center, CenterListItem, TeacherOption } from '@/app/lib/centers/types';
+import { toCenterListItem } from '@/app/lib/centers/listItem';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { z } from 'zod';
 
@@ -20,7 +21,7 @@ export type GetCentersFilters = {
   region_tag?: string;
 };
 
-type MainTeacherJoin = { id: string; name: string } | { id: string; name: string }[] | null;
+type MainTeacherJoin = { name: string } | { name: string }[] | null;
 
 type CenterRowWithTeacher = Partial<Center> & {
   main_teacher?: MainTeacherJoin;
@@ -97,7 +98,7 @@ const CENTER_SELECT_WITH_TEACHERS = `
   mt3:main_teacher_3_id(id, name)
 `;
 
-export async function getCenters(filters: GetCentersFilters = {}): Promise<Center[]> {
+export async function getCenters(filters: GetCentersFilters = {}): Promise<CenterListItem[]> {
   const auth = await requireAdmin();
   if (!auth.ok) throw new Error(ADMIN_REQUIRED);
   const parsedFilters = getCentersFiltersSchema.safeParse(filters);
@@ -117,11 +118,10 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
         status,
         weekly_schedule,
         highlights,
-        created_at,
         updated_at,
-        main_teacher:main_teacher_id(id, name),
-        mt2:main_teacher_2_id(id, name),
-        mt3:main_teacher_3_id(id, name)
+        main_teacher:main_teacher_id(name),
+        mt2:main_teacher_2_id(name),
+        mt3:main_teacher_3_id(name)
       `
     )
     .order('name');
@@ -143,7 +143,12 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
   const { data, error } = await q;
   if (error) throw error;
 
-  return ((data ?? []) as unknown as CenterRowWithTeacher[]).map(normalizeCenterRow);
+  return ((data ?? []) as unknown as CenterRowWithTeacher[]).map((row) => toCenterListItem({
+    ...row,
+    main_teacher_name: teacherJoinName(row.main_teacher),
+    main_teacher_2_name: teacherJoinName(row.mt2),
+    main_teacher_3_name: teacherJoinName(row.mt3),
+  }));
 }
 
 export async function getCenterById(id: string): Promise<Center | null> {

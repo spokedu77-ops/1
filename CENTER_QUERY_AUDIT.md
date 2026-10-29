@@ -1,5 +1,7 @@
 # 센터 쿼리 감사
 
+> 2026-10-30 구현 반영: getCenters는 CenterListItem을 반환한다. SELECT에서 centers.created_at과 세 강사 관계의 id를 제거했고 표시용 세 관계(name)는 유지했다. 주소 등 12개 상세/미사용 키를 목록 응답에서 제외한다. 기존 검색/350ms debounce 유지, pagination/추가 캐시/인덱스 없음. 생성·삭제·상태·상세 저장은 액션 결과로 해당 목록 행을 갱신하며 전체 재조회하지 않는다. 필터 응답 경쟁과 StrictMode 초기 중복도 방어한다. [최종 보고](CENTER_OPTIMIZATION_IMPLEMENTATION_REPORT.md)의 전후 표/검증을 참고한다. 아래는 승인 전 감사 기록이다.
+
 기준과 실측 한계: [기준선](CENTER_PERFORMANCE_BASELINE.md). 모든 개수는 별도 표기가 없으면 코드 경로 분석이며 실제 계측값이 아니다.
 
 ## 호출과 projection

@@ -6,5 +6,5 @@ export default async function CenterDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <CenterDetailClient id={id} />;
+  return <CenterDetailClient key={id} id={id} />;
 }

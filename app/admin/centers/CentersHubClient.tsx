@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import type { Center } from '@/app/lib/centers/types';
+import type { CenterListItem } from '@/app/lib/centers/types';
 import CentersClient from './CentersClient';
 import CenterTbdCalendar from './components/CenterTbdCalendar';
 
 type TabId = 'list' | 'calendar';
 
 interface CentersHubClientProps {
-  initialCenters: Center[];
+  initialCenters: CenterListItem[];
 }
 
 export default function CentersHubClient({ initialCenters }: CentersHubClientProps) {

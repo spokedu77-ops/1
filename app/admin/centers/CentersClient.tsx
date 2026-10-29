@@ -4,8 +4,10 @@ import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { getCenters, createCenter, updateCenter, deleteCenter, type GetCentersFilters } from './actions/centers';
-import type { Center, CenterStatus } from '@/app/lib/centers/types';
+import type { Center, CenterListItem, CenterStatus } from '@/app/lib/centers/types';
+import { matchesCenterFilters, toCenterListItem } from '@/app/lib/centers/listItem';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Search, Plus, Loader2, X, Trash2, ChevronRight } from 'lucide-react';
 
@@ -33,15 +35,18 @@ const DAY_LABELS: Record<string, string> = {
 };
 
 const EMPTY_BADGE = 'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500';
+const CenterDetailModal = dynamic(() => import('./components/CenterDetailModal'), { ssr: false });
 
 interface CentersClientProps {
-  initialCenters: Center[];
+  initialCenters: CenterListItem[];
   /** CentersHubClient 탭 안에 embed 시 상단 제목 숨김 */
   embedded?: boolean;
 }
 
 export default function CentersClient({ initialCenters, embedded = false }: CentersClientProps) {
-  const [centers, setCenters] = useState<Center[]>(initialCenters);
+  const [centers, setCenters] = useState<CenterListItem[]>(initialCenters);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const requestVersion = useRef(0);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -58,7 +63,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
-  const isInitialMount = useRef(true);
+  const lastFilters = useRef(JSON.stringify(['', 'active', '']));
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 350);
@@ -66,6 +71,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
   }, [search]);
 
   const loadCenters = useCallback(async () => {
+    const version = ++requestVersion.current;
     setIsLoading(true);
     try {
       const filters: GetCentersFilters = {};
@@ -73,32 +79,29 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
       if (regionFilter) filters.region_tag = regionFilter;
       if (debouncedSearch.trim()) filters.search = debouncedSearch.trim();
       const list = await getCenters(filters);
-      setCenters(list);
+      if (version === requestVersion.current) setCenters(list);
     } catch (err) {
       devLogger.error(err);
     } finally {
-      setIsLoading(false);
+      if (version === requestVersion.current) setIsLoading(false);
     }
   }, [debouncedSearch, statusFilter, regionFilter]);
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    loadCenters();
-  }, [loadCenters]);
+    const key = JSON.stringify([debouncedSearch, statusFilter, regionFilter]);
+    if (lastFilters.current === key) return;
+    lastFilters.current = key;
+    void loadCenters();
+  }, [loadCenters, debouncedSearch, statusFilter, regionFilter]);
 
-  const handleStatusChange = async (c: Center, newStatus: CenterStatus) => {
+  const handleStatusChange = async (c: CenterListItem, newStatus: CenterStatus) => {
     if (newStatus === c.status) return;
     setUpdatingStatusId(c.id);
     try {
       const result = await updateCenter(c.id, { status: newStatus });
       if (result.error) {
         toast.error(result.error);
-      } else {
-        setCenters((prev) => prev.map((x) => x.id === c.id ? { ...x, status: newStatus } : x));
-      }
+      } else if (result.data) applySavedCenter(result.data);
     } finally {
       setUpdatingStatusId(null);
     }
@@ -125,26 +128,50 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
       }
       setIsCreateOpen(false);
       setCreateForm({ name: '', region_tag: '', address: '', status: 'active' });
-      loadCenters();
+      if (result.data) applySavedCenter(result.data);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (c: Center) => {
+  const handleDelete = async (c: CenterListItem) => {
     if (!confirm(`"${c.name}" 센터를 삭제할까요? 되돌릴 수 없습니다.`)) return;
     setDeletingId(c.id);
     try {
       const result = await deleteCenter(c.id);
       if (result.error) toast.error(result.error);
-      else loadCenters();
+      else {
+        requestVersion.current += 1;
+        setIsLoading(false);
+        setCenters((rows) => rows.filter((row) => row.id !== c.id));
+      }
     } finally {
       setDeletingId(null);
     }
   };
 
+  const openDetail = (event: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    setSelectedId(id);
+  };
+  const applySavedCenter = (center: Center) => {
+    // Invalidate any pre-save response without re-fetching the entire list.
+    requestVersion.current += 1;
+    setIsLoading(false);
+    const row = toCenterListItem(center);
+    setCenters((previous) => {
+      const remaining = previous.filter((item) => item.id !== row.id);
+      if (matchesCenterFilters(center, { status: statusFilter, region: regionFilter, search: debouncedSearch })) remaining.push(row);
+      return remaining.sort((a, b) => a.name.localeCompare(b.name));
+    });
+  };
+
   return (
     <div className={`${embedded ? '' : 'min-h-screen'} bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]`}>
+      {selectedId && <CenterDetailModal key={selectedId} id={selectedId}
+        onClose={() => setSelectedId(null)} onSaved={applySavedCenter}
+        onDeleted={() => { setCenters((rows) => rows.filter((row) => row.id !== selectedId)); setSelectedId(null); }} />}
       <div className="p-4 sm:p-6 md:p-8 min-w-0">
         <div className={`flex flex-col gap-4 sm:flex-row sm:items-center ${embedded ? 'sm:justify-end mb-4' : 'sm:justify-between mb-6'}`}>
           {!embedded ? (
@@ -206,14 +233,14 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                 <div key={c.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <Link
-                      href={`/admin/centers/${c.id}`}
+                      href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)}
                       prefetch={false}
                       className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline text-base leading-tight"
                     >
                       {c.name}
                     </Link>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Link href={`/admin/centers/${c.id}`} prefetch={false} className="text-slate-400 hover:text-indigo-600">
+                      <Link href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)} prefetch={false} className="text-slate-400 hover:text-indigo-600">
                         <ChevronRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -314,7 +341,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                         <td className="min-w-[10rem] max-w-[16rem] px-4 py-3">
                           <div className="flex flex-col gap-0.5">
                             <Link
-                              href={`/admin/centers/${c.id}`}
+                              href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)}
                               prefetch={false}
                               className="truncate font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
                               title={c.name}

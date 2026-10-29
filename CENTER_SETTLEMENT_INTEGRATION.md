@@ -1,5 +1,7 @@
 # 센터관리와 정산 연결 설계
 
+> 2026-10-30 구현 반영: 기존 정책 id/월행 centerId는 유지하고 정책 JSON에 nullable center_id를 명시 선택해 저장한다. 새로운 master 전용 검색은 id/name/status/linked만, 선택한 센터 상세는 계약·session_fee 참고 필드만 반환한다. 연결은 금액/수금/과거 월을 갱신하지 않는다. 초기 scope=sheet GET은 정책 쿼리를 생략한다. 전체 정책은 기존 관리·일괄·기관명 입력·백업 기능 사용 시 지연 로딩해 기능을 보존한다. 정책 수정은 revision 조건으로 보호한다. 확정 월 보호를 위해 내용 변경을 동반한 unlock 및 확정 월 존재 시 전체 restore는 거부한다. DDL/migration 없음. [최종 보고](CENTER_OPTIMIZATION_IMPLEMENTATION_REPORT.md)가 최신 상태다. 아래는 승인 전 설계 기록이다.
+
 상태: 제품 의미 확인 및 PO 승인 대기. 기존 `/admin/master/reports?tab=sheet`와 저장 데이터를 유지한다.
 
 ## D — 전체 정산 정책 선로딩 제거 영향도

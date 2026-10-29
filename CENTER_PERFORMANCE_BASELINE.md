@@ -1,5 +1,7 @@
 # 센터관리 성능 기준선
 
+> 2026-10-30 로컬 구현 보완: 구현은 승인 범위 내 완료했으며 실제 관리자 성능 기준선은 `NOT_MEASURED`다. 격리 fixture 비교는 목록 JSON 응답 본문 1,682B → 1,036B, 상세 열람 action/fixture HTTP 요청 3 → 2였다. 실제 RSC 전송량·Supabase 실행 수·응답/렌더 시간·개선율로 환산하지 않는다. [최종 구현 보고](CENTER_OPTIMIZATION_IMPLEMENTATION_REPORT.md)를 최신 상태로 따른다. 아래는 이전 감사 기록이다.
+
 작성일: 2026-10-29 KST. 보완 판정: CONDITIONAL APPROVAL / IMPLEMENTATION PENDING. 상태: 정적 감사 완료 / 정상 관리자 실측 불가 원인 확인 / 구현 승인 대기.
 
 ## 기준 환경과 보존

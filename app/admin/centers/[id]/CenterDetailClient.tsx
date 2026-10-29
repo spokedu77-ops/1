@@ -1,7 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCenterById } from '../actions/centers';
@@ -143,7 +143,13 @@ const DEFAULT_EDIT_FORM: EditForm = {
   criminal_check_files: [],
 };
 
-export function CenterDetailClient({ id }: { id: string }) {
+export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCloseGuard }: {
+  id: string;
+  onClose?: () => void;
+  onSaved?: (center: Center) => void;
+  onDeleted?: () => void;
+  registerCloseGuard?: (check: () => boolean) => void;
+}) {
   const router = useRouter();
   const [center, setCenter] = useState<Center | null>(null);
   const [loading, setLoading] = useState(true);
@@ -168,32 +174,69 @@ export function CenterDetailClient({ id }: { id: string }) {
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
   const [passwordDeleteRequested, setPasswordDeleteRequested] = useState(false);
+  const editSnapshot = useRef('');
+  const editDialog = useRef<HTMLDivElement>(null);
+  const initialRequest = useRef<{ id: string; promise: Promise<Center | null> } | null>(null);
+  const historyRequest = useRef<{ id: string; promise: Promise<CenterHistoryEntry[]> } | null>(null);
+  const teachersRequest = useRef<Promise<TeacherOption[]> | null>(null);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+  const [teachersError, setTeachersError] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const dirty = (isEditOpen && JSON.stringify(editForm) !== editSnapshot.current) ||
+    Boolean(historyDraft.trim() || historyEditingId || passwordChanged || passwordDeleteRequested);
+  const busy = editSubmitting || deleteSubmitting || criminalUploading || Boolean(criminalDeletingPath) ||
+    historySaving || historyUpdating || Boolean(historyDeletingId);
+  const canLeave = () => {
+    if (busy) { toast.error('진행 중인 작업이 끝난 후 닫아주세요.'); return false; }
+    return !dirty || window.confirm('저장하지 않은 변경사항을 버릴까요?');
+  };
+  const closeEdit = () => { if (canLeave()) { setIsEditOpen(false); setPasswordChanged(false); setPasswordDeleteRequested(false); } };
 
-  const loadCenter = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getCenterById(id);
-      setCenter(data);
-    } catch (err) {
-      devLogger.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+  useEffect(() => { registerCloseGuard?.(canLeave); });
+  useEffect(() => {
+    if (!isEditOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    editDialog.current?.querySelector<HTMLInputElement>('input')?.focus();
+    return () => previous?.focus({ preventScroll: true });
+  }, [isEditOpen]);
+  useEffect(() => {
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty || busy) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [dirty, busy]);
 
   useEffect(() => {
-    loadCenter();
-    getActiveTeachers()
-      .then(setTeachers)
-      .catch((err) => devLogger.error(err));
-  }, [loadCenter]);
+    let cancelled = false;
+    setLoading(true);
+    if (initialRequest.current?.id !== id) {
+      initialRequest.current = { id, promise: getCenterById(id) };
+    }
+    initialRequest.current.promise.then((data) => { if (!cancelled) setCenter(data); })
+      .catch((err) => devLogger.error(err))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [id]);
+
+  const loadTeachers = () => {
+    setTeachersLoading(true);
+    setTeachersError(false);
+    const request = teachersRequest.current ?? getActiveTeachers();
+    teachersRequest.current = request;
+    request.then((rows) => { if (mounted.current) setTeachers(rows); }).catch((err) => {
+      teachersRequest.current = null;
+      if (mounted.current) setTeachersError(true);
+      devLogger.error(err);
+    }).finally(() => { if (mounted.current) setTeachersLoading(false); });
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setHistoryLoading(true);
       try {
-        const rows = await getCenterHistory(id);
+        if (historyRequest.current?.id !== id) historyRequest.current = { id, promise: getCenterHistory(id) };
+        const rows = await historyRequest.current.promise;
         if (!cancelled) setHistory(rows);
       } catch (e) {
         devLogger.error(e);
@@ -267,6 +310,7 @@ export function CenterDetailClient({ id }: { id: string }) {
 
   const openEditModal = () => {
     if (!center) return;
+    loadTeachers();
     setHistoryEditingId(null);
     setHistoryEditBody('');
     const existingSub = center.instructors_default?.sub?.trim() || '';
@@ -274,7 +318,7 @@ export function CenterDetailClient({ id }: { id: string }) {
     const mergedBackup = Array.from(
       new Set([existingSub, ...existingBackup].map((s) => (s || '').trim()).filter(Boolean))
     );
-    setEditForm({
+    const nextForm: EditForm = {
       name: center.name,
       region_tag: center.region_tag ?? '',
       address: center.address ?? '',
@@ -301,7 +345,9 @@ export function CenterDetailClient({ id }: { id: string }) {
       criminal_check_facility_id: center.criminal_check_facility_id ?? '',
       criminal_check_facility_password: '',
       criminal_check_files: center.criminal_check_files ?? [],
-    });
+    };
+    setEditForm(nextForm);
+    editSnapshot.current = JSON.stringify(nextForm);
     setShowEditPassword(false);
     setPasswordChanged(false);
     setPasswordDeleteRequested(false);
@@ -489,7 +535,10 @@ export function CenterDetailClient({ id }: { id: string }) {
         toast.error(result.error);
       } else if (result.data) {
         setCenter(result.data);
+        onSaved?.(result.data);
         setRevealedPassword(undefined);
+        setPasswordChanged(false);
+        setPasswordDeleteRequested(false);
         setIsEditOpen(false);
         toast.success('센터 정보를 저장했습니다.');
       }
@@ -508,7 +557,8 @@ export function CenterDetailClient({ id }: { id: string }) {
         toast.error(result.error);
         return;
       }
-      router.push('/admin/centers');
+      if (onDeleted) onDeleted();
+      else router.push('/admin/centers');
     } finally {
       setDeleteSubmitting(false);
     }
@@ -552,7 +602,7 @@ export function CenterDetailClient({ id }: { id: string }) {
     return (
       <div className="flex-1 min-h-screen bg-slate-50 w-full flex flex-col items-center justify-center gap-4 min-h-[60vh]">
         <p className="text-slate-600">센터를 찾을 수 없습니다.</p>
-        <Link href="/admin/centers" className="text-indigo-600 hover:underline cursor-pointer">
+        <Link href="/admin/centers" onClick={(event) => { if (onClose) { event.preventDefault(); onClose(); } else if (!canLeave()) event.preventDefault(); }} className="text-indigo-600 hover:underline cursor-pointer">
           센터 목록으로
         </Link>
       </div>
@@ -564,12 +614,13 @@ export function CenterDetailClient({ id }: { id: string }) {
 
   return (
     <div className="flex-1 min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="p-4 sm:p-6 md:p-8 min-w-0 max-w-4xl mx-auto">
+      <div inert={isEditOpen} className="p-4 sm:p-6 md:p-8 min-w-0 max-w-4xl mx-auto">
 
         {/* 헤더 */}
         <div className="mb-4">
           <Link
             href="/admin/centers"
+            onClick={(event) => { if (onClose) { event.preventDefault(); onClose(); } else if (!canLeave()) event.preventDefault(); }}
             className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-indigo-600 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -989,12 +1040,21 @@ export function CenterDetailClient({ id }: { id: string }) {
       {/* 수정 모달 (전체 필드) */}
       {isEditOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-slate-200 max-h-[90dvh] flex flex-col">
+          <div ref={editDialog} role="dialog" aria-modal="true" aria-labelledby="center-edit-heading"
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeEdit(); }
+              if (event.key === 'Tab') {
+                const nodes = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')];
+                const first = nodes[0]; const last = nodes[nodes.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+              }
+            }} className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-slate-200 max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-              <h2 className="text-lg font-semibold tracking-tight text-slate-900">센터 정보 수정</h2>
+              <h2 id="center-edit-heading" className="text-lg font-semibold tracking-tight text-slate-900">센터 정보 수정</h2>
               <button
                 type="button"
-                onClick={() => setIsEditOpen(false)}
+                onClick={closeEdit}
                 className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
               >
                 <X className="h-5 w-5" />
@@ -1002,6 +1062,8 @@ export function CenterDetailClient({ id }: { id: string }) {
             </div>
 
             <form onSubmit={handleEditSubmit} className="overflow-y-auto flex-1">
+              {teachersLoading && <p role="status" className="px-6 pt-4 text-sm text-slate-500">강사 목록을 불러오는 중…</p>}
+              {teachersError && <button type="button" onClick={loadTeachers} className="px-6 pt-4 text-sm text-red-600">강사 목록 조회 실패 · 다시 시도</button>}
               <div className="px-6 py-4 space-y-5">
                 {editError && (
                   <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{editError}</p>
@@ -1117,6 +1179,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">미선택</option>
+                        {editForm.main_teacher_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_id) && <option value={editForm.main_teacher_id}>{center.main_teacher_name ?? "Existing assigned teacher"}</option>}
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
@@ -1130,6 +1193,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">미선택</option>
+                        {editForm.main_teacher_2_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_2_id) && <option value={editForm.main_teacher_2_id}>{center.main_teacher_2_name ?? "Existing assigned teacher"}</option>}
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
@@ -1143,6 +1207,7 @@ export function CenterDetailClient({ id }: { id: string }) {
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">미선택</option>
+                        {editForm.main_teacher_3_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_3_id) && <option value={editForm.main_teacher_3_id}>{center.main_teacher_3_name ?? "Existing assigned teacher"}</option>}
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
@@ -1353,14 +1418,14 @@ export function CenterDetailClient({ id }: { id: string }) {
               <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsEditOpen(false)}
+                  onClick={closeEdit}
                   className="min-h-[40px] rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  disabled={editSubmitting}
+                  disabled={editSubmitting || teachersLoading || teachersError}
                   className="min-h-[40px] rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
                 >
                   {editSubmitting ? '저장 중…' : '저장'}

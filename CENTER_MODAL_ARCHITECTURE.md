@@ -1,5 +1,7 @@
 # 센터 상세 모달 설계안
 
+> 2026-10-30 구현 반영: Client 경계의 next/dynamic으로 CenterDetailModal을 클릭 후 로딩하며, 모달과 기존 직접 URL 모두 CenterDetailClient를 공유한다. native dialog로 배경 inert/포커스·스크롤 복귀 및 모바일 전체 화면을 제공한다. 편집·히스토리 draft 및 처리 중 작업을 닫기에서 보호하고 편집 dialog의 ESC/Tab을 처리한다. 활성 강사는 편집 때 조회한다. 민감 데이터 영속 캐시와 재열기 간 상세 캐시는 추가하지 않았다. 로컬 fixture 5폭 시각 QA와 저장·닫기 테스트가 완료됐지만 정상 관리자 E2E는 `NOT_MEASURED`다. [최종 보고](CENTER_OPTIMIZATION_IMPLEMENTATION_REPORT.md)가 최신 상태다. 아래는 승인 전 설계 기록이다.
+
 상태: 제안 / 구현 전 승인 대기. 근거: [쿼리 감사](CENTER_QUERY_AUDIT.md). 이번 B/C 보완 및 변경 계획의 P0/P1/P2 분류가 아래 초기 상세 설계보다 우선하며, 조건부 캐시 등은 확정 구현 요구가 아니다.
 
 ## B — 상세·활성 강사 지연 로딩 영향도
