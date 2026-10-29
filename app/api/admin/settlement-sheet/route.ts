@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { MASTER_EMAIL } from '@/app/lib/constants/admin';
+import { z } from 'zod';
+import { isDeepStrictEqual } from 'node:util';
 
 const noStore = (response: NextResponse) => {
   response.headers.set('Cache-Control', 'private, no-store, max-age=0');
@@ -11,15 +13,24 @@ const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
 const isObject = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 const isSettlementMaster = (email: string | null) => email?.toLowerCase() === MASTER_EMAIL;
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return noStore(auth.response);
   if (!isSettlementMaster(auth.email)) return json({ error: 'Forbidden' }, 403);
   try {
     const service = getServiceSupabase();
+    const scope = new URL(request.url).searchParams.get('scope');
+    if (scope === 'centers') {
+      const policies = await service.from('admin_settlement_sheet_centers').select('id,payload,revision').order('updated_at');
+      if (policies.error) throw policies.error;
+      return json({ centers: Object.fromEntries((policies.data ?? []).map((row) => [row.id, {
+        ...(isObject(row.payload) ? row.payload : {}), id: row.id, rev: row.revision,
+      }])) });
+    }
     const [months, centers, settings] = await Promise.all([
       service.from('admin_settlement_sheet_months').select('month_key,payload,revision,locked,locked_at').order('month_key'),
-      service.from('admin_settlement_sheet_centers').select('id,payload,revision').order('updated_at'),
+      scope === 'sheet' ? Promise.resolve({ data: [], error: null })
+        : service.from('admin_settlement_sheet_centers').select('id,payload,revision').order('updated_at'),
       service.from('admin_settlement_sheet_settings').select('payload').eq('singleton', true).maybeSingle(),
     ]);
     const error = months.error ?? centers.error ?? settings.error;
@@ -59,11 +70,11 @@ export async function PUT(request: Request) {
       const payload = { ...month };
       delete payload.rev; delete payload.locked; delete payload.lockedAt;
       if (expectedRevision) {
-        const current = await service.from('admin_settlement_sheet_months').select('revision,locked').eq('month_key', month.key).maybeSingle();
+        const current = await service.from('admin_settlement_sheet_months').select('revision,locked,payload').eq('month_key', month.key).maybeSingle();
         if (current.error) throw current.error;
         if (!current.data || current.data.revision !== expectedRevision) return json({ error: '다른 곳에서 변경된 데이터입니다. 새로고침 후 다시 시도해 주세요.', code: 'REVISION_CONFLICT' }, 409);
         const requestedLock = Boolean(month.locked);
-        if (current.data.locked && requestedLock) return json({ error: '확정된 달은 수정할 수 없습니다.' }, 423);
+        if (current.data.locked && (requestedLock || !isDeepStrictEqual(current.data.payload, payload))) return json({ error: '확정된 달은 수정할 수 없습니다.' }, 423);
       }
       const locked = Boolean(month.locked);
       const lockedAt = locked ? (typeof month.lockedAt === 'string' ? month.lockedAt : new Date().toISOString()) : null;
@@ -78,11 +89,23 @@ export async function PUT(request: Request) {
     if (kind === 'center') {
       const center = body.value;
       if (!isObject(center) || typeof center.id !== 'string' || !center.id) return json({ error: '기관 데이터 형식이 올바르지 않습니다.' }, 400);
+      const current = await service.from('admin_settlement_sheet_centers').select('payload,revision').eq('id', center.id).maybeSingle();
+      if (current.error) throw current.error;
+      if (current.data && center.rev !== current.data.revision) return json({ error: '기관 정보가 변경됐습니다. 다시 불러와 주세요.', code: 'REVISION_CONFLICT' }, 409);
+      if (center.center_id != null) {
+        if (!z.string().uuid().safeParse(center.center_id).success) return json({ error: '잘못된 센터 ID입니다.' }, 400);
+        const linked = await service.from('centers').select('id').eq('id', center.center_id).maybeSingle();
+        if (linked.error) throw linked.error;
+        if (!linked.data) return json({ error: '센터를 찾을 수 없습니다.' }, 404);
+      }
       const nextRevision = crypto.randomUUID();
-      const payload = { ...center }; delete payload.rev;
-      const result = await service.from('admin_settlement_sheet_centers').upsert({ id: center.id, payload,
-        revision: nextRevision, updated_at: new Date().toISOString(), updated_by: auth.userId }, { onConflict: 'id' });
+      const payload = { ...(isObject(current.data?.payload) ? current.data.payload : {}), ...center }; delete payload.rev;
+      const values = { payload, revision: nextRevision, updated_at: new Date().toISOString(), updated_by: auth.userId };
+      const result = current.data
+        ? await service.from('admin_settlement_sheet_centers').update(values).eq('id', center.id).eq('revision', current.data.revision).select('id').maybeSingle()
+        : await service.from('admin_settlement_sheet_centers').insert({ id: center.id, ...values }).select('id').maybeSingle();
       if (result.error) throw result.error;
+      if (!result.data) return json({ error: '기관 정보가 변경됐습니다. 다시 불러와 주세요.', code: 'REVISION_CONFLICT' }, 409);
       return json({ revision: nextRevision });
     }
     if (kind === 'settings' && isObject(body.value)) {
@@ -94,6 +117,10 @@ export async function PUT(request: Request) {
     if (kind === 'restore' && isObject(body.value)) {
       const backup = body.value;
       if (!isObject(backup.months) || !isObject(backup.centers) || !isObject(backup.settings)) return json({ error: '백업 파일 형식이 올바르지 않습니다.' }, 400);
+      // Restore replaces rows and may remove months; never let it replace a confirmed month.
+      const confirmed = await service.from('admin_settlement_sheet_months').select('month_key').eq('locked', true).limit(1);
+      if (confirmed.error) throw confirmed.error;
+      if (confirmed.data?.length) return json({ error: '확정된 월이 있어 전체 백업 복원을 진행할 수 없습니다.' }, 423);
       for (const key of Object.keys(backup.months)) if (!monthPattern.test(key)) return json({ error: `잘못된 월 키: ${key}` }, 400);
       const monthRows = Object.entries(backup.months).map(([key, raw]) => {
         const value = isObject(raw) ? raw : {}; const payload = { ...value }; delete payload.rev; delete payload.locked; delete payload.lockedAt;
@@ -103,7 +130,16 @@ export async function PUT(request: Request) {
         const value = isObject(raw) ? raw : {}; const payload = { ...value }; delete payload.rev;
         return { id, payload, revision: crypto.randomUUID(), updated_by: auth.userId };
       });
-      if (monthRows.length) { const result = await service.from('admin_settlement_sheet_months').upsert(monthRows, { onConflict: 'month_key' }); if (result.error) throw result.error; }
+      for (const row of monthRows) {
+        const current = await service.from('admin_settlement_sheet_months').select('revision,locked').eq('month_key', row.month_key).maybeSingle();
+        if (current.error) throw current.error;
+        if (current.data?.locked) return json({ error: '확정된 월은 복원으로 변경할 수 없습니다.' }, 423);
+        const result = current.data
+          ? await service.from('admin_settlement_sheet_months').update(row).eq('month_key', row.month_key).eq('revision', current.data.revision).eq('locked', false).select('month_key').maybeSingle()
+          : await service.from('admin_settlement_sheet_months').insert(row).select('month_key').maybeSingle();
+        if (result.error) throw result.error;
+        if (!result.data) return json({ error: '복원 중 월 정보가 변경됐습니다.', code: 'REVISION_CONFLICT' }, 409);
+      }
       if (centerRows.length) { const result = await service.from('admin_settlement_sheet_centers').upsert(centerRows, { onConflict: 'id' }); if (result.error) throw result.error; }
       const settingsResult = await service.from('admin_settlement_sheet_settings').upsert({ singleton: true, payload: backup.settings, updated_by: auth.userId }, { onConflict: 'singleton' });
       if (settingsResult.error) throw settingsResult.error;
@@ -113,7 +149,7 @@ export async function PUT(request: Request) {
       const existingCenters = await service.from('admin_settlement_sheet_centers').select('id');
       if (existingMonths.error ?? existingCenters.error) throw existingMonths.error ?? existingCenters.error;
       for (const row of existingMonths.data ?? []) if (!monthKeys.has(row.month_key)) {
-        const removed = await service.from('admin_settlement_sheet_months').delete().eq('month_key', row.month_key);
+        const removed = await service.from('admin_settlement_sheet_months').delete().eq('month_key', row.month_key).eq('locked', false);
         if (removed.error) throw removed.error;
       }
       for (const row of existingCenters.data ?? []) if (!centerIds.has(row.id)) {
@@ -141,7 +177,8 @@ export async function DELETE(request: Request) {
     if (!monthPattern.test(id)) return json({ error: '잘못된 월입니다.' }, 400);
     const current = await service.from('admin_settlement_sheet_months').select('locked').eq('month_key', id).maybeSingle();
     if (current.data?.locked) return json({ error: '확정된 달은 삭제할 수 없습니다.' }, 423);
-    const result = await service.from('admin_settlement_sheet_months').delete().eq('month_key', id);
+    if (current.error) return json({ error: '월 상태를 확인하지 못했습니다.' }, 500);
+    const result = await service.from('admin_settlement_sheet_months').delete().eq('month_key', id).eq('locked', false);
     return result.error ? json({ error: '월을 삭제하지 못했습니다.' }, 500) : json({ ok: true });
   }
   if (kind === 'center') {

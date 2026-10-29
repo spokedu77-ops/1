@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type InputHTMLAttributes } from 'react';
 import { Download, FileDown, Lock, MoreHorizontal, Plus, Redo2, Save, Settings, Trash2, Undo2, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
+import SettlementCenterLink from './SettlementCenterLink';
 import styles from './SettlementSheet.module.css';
 import {
   calculateRow, carryOver, centerFee, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize, uid,
@@ -71,11 +72,34 @@ export default function SettlementSheet() {
   const editVersion = useRef(0);
   const pendingMonth = useRef<SettlementMonth | null>(null);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
+  const latest = useRef({ data, currentKey });
+  const mounted = useRef(true);
+  useEffect(() => { latest.current = { data, currentKey }; }, [data, currentKey]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+
+  const policiesRequest = useRef<Promise<Record<string, SettlementCenter>> | null>(null);
+  const policiesLoaded = useRef(false);
+  const loadPolicies = async (): Promise<Record<string, SettlementCenter> | null> => {
+    if (policiesLoaded.current) return data.centers;
+    try {
+      const request = policiesRequest.current ?? fetch('/api/admin/settlement-sheet?scope=centers', { cache: 'no-store' }).then(async (response) => {
+        if (!response.ok) throw new Error('policy load');
+        return (await response.json()).centers as Record<string, SettlementCenter>;
+      });
+      policiesRequest.current = request;
+      const centers = await request;
+      setData((state) => ({ ...state, centers }));
+      policiesLoaded.current = true;
+      return centers;
+    } catch { toast.error('정산 기관 정보를 불러오지 못했습니다.'); return null; }
+    finally { policiesRequest.current = null; }
+  };
 
   const reload = useCallback(async () => {
     setLoading(true);
+    policiesLoaded.current = false;
     try {
-      const response = await fetch('/api/admin/settlement-sheet', { cache: 'no-store' });
+      const response = await fetch('/api/admin/settlement-sheet?scope=sheet', { cache: 'no-store' });
       if (!response.ok) throw new Error();
       const next = await response.json() as SettlementSheetData;
       setData(next);
@@ -155,6 +179,8 @@ export default function SettlementSheet() {
       sessions: row.sessions, vat: row.vatMode === 'none' ? 'none' : 'auto', whRate: row.whRate, ord: Date.now() + order };
   };
   const syncCentersFromMonths = async (onlyCurrent: boolean) => {
+    const loaded = await loadPolicies(); if (!loaded) return;
+    const centers = Object.values(loaded);
     const existing = new Set(centers.map((center) => center.name.trim()).filter(Boolean));
     const source = (onlyCurrent && current ? [current] : sortedMonths(data).reverse());
     const additions: SettlementCenter[] = [];
@@ -168,13 +194,15 @@ export default function SettlementSheet() {
     toast.success(`${additions.length}곳을 기관 DB에 추가했습니다.`);
   };
   const syncCentersToMonths = async () => {
+    const loaded = await loadPolicies(); if (!loaded) return;
+    const centers = Object.values(loaded);
     let updated = 0;
     for (const month of sortedMonths(data)) {
       if (month.locked) continue;
       let changed = false;
       const rows = month.rows.map((row) => {
         if (row.kind === 'section') return row;
-        const center = data.centers[row.centerId] ?? centers.find((item) => item.name.trim() === row.name.trim());
+        const center = loaded[row.centerId] ?? centers.find((item) => item.name.trim() === row.name.trim());
         if (!center) return row;
         const fresh = rowFromCenter(center, month.key); changed = true;
         return { ...row, fee: fresh.fee, cost: fresh.cost, vatMode: fresh.vatMode, whRate: fresh.whRate, dueDate: fresh.dueDate, centerId: center.id, type: center.type };
@@ -183,13 +211,28 @@ export default function SettlementSheet() {
     }
     toast.success(updated ? `미확정 월 ${updated}건에 최신 요율을 반영했습니다.` : '변경할 미확정 월이 없습니다.');
   };
-  const updateRows = (nextRows: SettlementRow[]) => {
-    if (!current || current.locked) return;
-    setHistory((state) => ({ ...state, [current.key]: [...(state[current.key] ?? []), clone(current.rows)].slice(-50) }));
-    setFuture((state) => ({ ...state, [current.key]: [] }));
-    const nextMonth = { ...current, rows: nextRows };
-    setData((state) => ({ ...state, months: { ...state.months, [current.key]: nextMonth } }));
+  const updateMonthRows = (month: SettlementMonth, nextRows: SettlementRow[]) => {
+    if (month.locked) return;
+    setHistory((state) => ({ ...state, [month.key]: [...(state[month.key] ?? []), clone(month.rows)].slice(-50) }));
+    setFuture((state) => ({ ...state, [month.key]: [] }));
+    const nextMonth = { ...month, rows: nextRows };
+    setData((state) => ({ ...state, months: { ...state.months, [month.key]: nextMonth } }));
     scheduleMonthSave(nextMonth);
+  };
+  const updateRows = (nextRows: SettlementRow[]) => { if (current) updateMonthRows(current, nextRows); };
+  const applyPolicyByName = async (monthKey: string, rowId: string, name: string) => {
+    const loaded = await loadPolicies();
+    if (!loaded || !mounted.current || latest.current.currentKey !== monthKey) return;
+    const month = latest.current.data.months[monthKey];
+    const row = month?.rows.find((item) => item.id === rowId);
+    if (!month || month.locked || !row || row.name !== name || row.fee !== '' || row.cost !== '') return;
+    const policy = Object.values(loaded).find((item) => item.name.trim() === name.trim());
+    if (!policy) return;
+    // Preserve the existing policy-name convenience without linking an operational center by name.
+    const replacement = { ...rowFromCenter(policy, monthKey), id: row.id, name: row.name,
+      total: row.total, inv: row.inv, rcpt: row.rcpt, rcptAmt: row.rcptAmt,
+      invDate: row.invDate, rcptDate: row.rcptDate, adj: row.adj, note: row.note };
+    updateMonthRows(month, month.rows.map((item) => item.id === rowId ? replacement : item));
   };
   const updateRow = (id: string, patch: Partial<SettlementRow>) => current && updateRows(current.rows.map((row) => row.id === id ? { ...row, ...patch } : row));
   const persistCurrent = async () => {
@@ -224,6 +267,9 @@ export default function SettlementSheet() {
     const previous = sortedMonths(data).filter((month) => month.key < key).at(-1);
     const source = window.confirm('확인: 센터 DB의 정규 수업으로 시작\n취소: 이전 달을 복사하거나 빈 달로 시작') ? 'db'
       : previous && window.confirm('이전 달을 복사할까요?\n취소하면 빈 달로 시작합니다.') ? 'copy' : 'blank';
+    const loaded = source === 'db' ? await loadPolicies() : {};
+    if (!loaded) return;
+    const centers = Object.values(loaded);
     const rows = source === 'db' ? [section('[정규 수업 : 다회기]', 'regular'), ...centers.filter((center) => center.type === 'regular' && center.status !== 'ended').map((center) => rowFromCenter(center, key)),
       section('[단기 수업 : 단회기]', 'short'), section('[개인 수업]', 'private'), section('[기타]', 'etc')]
       : source === 'copy' && previous ? carryOver(previous.rows) : [];
@@ -245,8 +291,9 @@ export default function SettlementSheet() {
     await reload(); toast.success('월을 삭제했습니다.');
   };
 
-  const backup = () => {
-    const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...data }, null, 2)], { type: 'application/json' });
+  const backup = async () => {
+    const centers = await loadPolicies(); if (!centers) return;
+    const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...data, centers }, null, 2)], { type: 'application/json' });
     const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `수업료 백업 ${new Date().toISOString().slice(0, 10)}.json`; link.click(); URL.revokeObjectURL(link.href);
   };
   const restore = async (file: File) => {
@@ -276,7 +323,7 @@ export default function SettlementSheet() {
       <div className={styles.brand}><span className={styles.mark} aria-hidden="true">₩</span><div><h1 className={styles.heading}>수업료 정산</h1><p className={styles.subheading}>{view === 'month' ? current?.label ?? '월을 만들어 시작하세요' : view === 'year' ? '연간 대시보드' : '센터 · 개인수업 DB'} · {saveState}</p></div></div>
       <div className={styles.headerActions}>
         <button className={styles.secondaryButton} onClick={() => void exportExcel(false)} disabled={!current}><FileDown size={14}/>현재 월</button>
-        <button className={styles.secondaryButton} onClick={backup}><Download size={14}/>백업</button>
+        <button className={styles.secondaryButton} onClick={() => void backup()}><Download size={14}/>백업</button>
         <button className={styles.secondaryButton} onClick={configureSettings}><Settings size={14}/>설정</button>
         <details className="relative"><summary className={styles.moreSummary}><MoreHorizontal size={18}/></summary><div className="absolute right-0 z-20 mt-2 grid w-44 gap-1 rounded-xl border bg-white p-2 shadow-xl"><button className="p-2 text-left text-sm" onClick={() => void exportExcel(true)}>전체 Excel 내보내기</button><button className="p-2 text-left text-sm" onClick={() => restoreRef.current?.click()}>백업 복원</button></div></details>
       </div>
@@ -284,9 +331,9 @@ export default function SettlementSheet() {
     <input ref={restoreRef} hidden type="file" accept=".json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void restore(file); event.target.value=''; }}/>
     <nav className={styles.monthBar}>
       <div className={styles.monthGroup}>{sortedMonths(data).map((month) => <button key={month.key} onClick={() => { setCurrentKey(month.key); setView('month'); }} className={`${styles.monthTab} ${view==='month'&&currentKey===month.key?styles.monthTabActive:''}`}>{Number(month.key.slice(5))}월{month.locked?' 🔒':''}</button>)}<button onClick={createMonth} className={`${styles.monthTab} ${styles.monthAdd}`}><Plus size={13} className="inline"/> 새 달</button></div>
-      <div className={styles.monthGroup}><button onClick={() => setView('year')} className={`${styles.monthTab} ${view==='year'?styles.viewTabActive:''}`}>연간 대시보드</button><button onClick={() => setView('centers')} className={`${styles.monthTab} ${view==='centers'?styles.viewTabActive:''}`}>센터 · 개인수업 DB</button></div>
+      <div className={styles.monthGroup}><button onClick={() => setView('year')} className={`${styles.monthTab} ${view==='year'?styles.viewTabActive:''}`}>연간 대시보드</button><button onClick={() => { void loadPolicies().then((loaded) => { if (loaded) setView('centers'); }); }} className={`${styles.monthTab} ${view==='centers'?styles.viewTabActive:''}`}>센터 · 개인수업 DB</button></div>
     </nav>
-    {view === 'month' ? <MonthView month={current} settings={data.settings} summary={summary} centers={centers} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} updateRow={updateRow} updateRows={updateRows} persist={persistCurrent} toggleLock={toggleLock} deleteMonth={deleteMonth} undo={undo} redo={redo} canUndo={Boolean(current&&history[current.key]?.length)} canRedo={Boolean(current&&future[current.key]?.length)}/>
+    {view === 'month' ? <MonthView applyPolicyByName={applyPolicyByName} loadPolicies={loadPolicies} month={current} settings={data.settings} summary={summary} centers={centers} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} updateRow={updateRow} updateRows={updateRows} persist={persistCurrent} toggleLock={toggleLock} deleteMonth={deleteMonth} undo={undo} redo={redo} canUndo={Boolean(current&&history[current.key]?.length)} canRedo={Boolean(current&&future[current.key]?.length)}/>
       : view === 'year' ? <YearView data={data} selectMonth={(key) => { setCurrentKey(key); setView('month'); }}/>
         : <CentersView
             centers={centers} tab={centerTab} setTab={setCenterTab} save={saveCenter}
@@ -307,7 +354,9 @@ export default function SettlementSheet() {
 
 const section = (name: string, type: CenterType): SettlementRow => ({ ...emptyRow(), kind: 'section', name, type });
 
-function MonthView({ month, settings, summary, centers, query, setQuery, filter, setFilter, updateRow, updateRows, persist, toggleLock, deleteMonth, undo, redo, canUndo, canRedo }: {
+function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, centers, query, setQuery, filter, setFilter, updateRow, updateRows, persist, toggleLock, deleteMonth, undo, redo, canUndo, canRedo }: {
+  applyPolicyByName: (monthKey: string, rowId: string, name: string) => Promise<void>;
+  loadPolicies: () => Promise<Record<string, SettlementCenter> | null>;
   month?: SettlementMonth; settings: SettlementSettings; summary: ReturnType<typeof summarize> | null; centers: SettlementCenter[]; query: string; setQuery:(value:string)=>void;
   filter:'all'|'wait'|'invoice'|'unpaid'; setFilter:(value:'all'|'wait'|'invoice'|'unpaid')=>void; updateRow:(id:string,patch:Partial<SettlementRow>)=>void; updateRows:(rows:SettlementRow[])=>void;
   persist:()=>Promise<void>; toggleLock:()=>Promise<void>; deleteMonth:()=>Promise<void>; undo:()=>void; redo:()=>void; canUndo:boolean; canRedo:boolean;
@@ -334,7 +383,7 @@ function MonthView({ month, settings, summary, centers, query, setQuery, filter,
     </div>
     <div className={styles.toolbar}>
       <input className={styles.search} type="search" placeholder="기관명·비고 검색" aria-label="기관명·비고 검색" value={query} onChange={(event)=>setQuery(event.target.value)}/>
-      <div className={styles.toolbarActions}><button className={styles.secondaryButton} onClick={toggleLock}>{month.locked?<Unlock size={14}/>:<Lock size={14}/>} {month.locked?'확정 해제':'이 달 확정'}</button><button className={styles.secondaryButton} disabled={month.locked} onClick={()=>updateRows([...month.rows,...centers.filter((center)=>center.type==='regular'&&center.status!=='ended'&&!month.rows.some((row)=>row.centerId===center.id)).map((center)=>rowFromCenter(center,month.key))])}>+ 정규 센터</button><button className={styles.secondaryButton} disabled={month.locked} onClick={()=>updateRows([...month.rows,emptyRow()])}>+ 기관 추가</button><button className={styles.secondaryButton} disabled={month.locked} onClick={()=>updateRows([...month.rows,section('[새 구분]','etc')])}>+ 구분 추가</button><button className={`${styles.secondaryButton} ${styles.dangerButton}`} disabled={month.locked} onClick={()=>void deleteMonth()}><Trash2 size={14}/>이 달 삭제</button><button className={styles.primaryButton} disabled={month.locked} onClick={()=>void persist()}><Save size={14}/>저장</button></div>
+      <div className={styles.toolbarActions}><button className={styles.secondaryButton} onClick={toggleLock}>{month.locked?<Unlock size={14}/>:<Lock size={14}/>} {month.locked?'확정 해제':'이 달 확정'}</button><button className={styles.secondaryButton} disabled={month.locked} onClick={()=>void loadPolicies().then((loaded)=>{if(loaded)updateRows([...month.rows,...Object.values(loaded).filter((center)=>center.type==='regular'&&center.status!=='ended'&&!month.rows.some((row)=>row.centerId===center.id)).map((center)=>rowFromCenter(center,month.key))]);})}>+ 정규 센터</button><button className={styles.secondaryButton} disabled={month.locked} onClick={()=>updateRows([...month.rows,emptyRow()])}>+ 기관 추가</button><button className={styles.secondaryButton} disabled={month.locked} onClick={()=>updateRows([...month.rows,section('[새 구분]','etc')])}>+ 구분 추가</button><button className={`${styles.secondaryButton} ${styles.dangerButton}`} disabled={month.locked} onClick={()=>void deleteMonth()}><Trash2 size={14}/>이 달 삭제</button><button className={styles.primaryButton} disabled={month.locked} onClick={()=>void persist()}><Save size={14}/>저장</button></div>
     </div>
     <div className={styles.tableWrap}><table className={styles.grid}>
       <colgroup><col style={{width:'2%'}}/><col style={{width:'15%'}}/><col style={{width:'7.5%'}}/><col style={{width:'5%'}}/><col style={{width:'8.5%'}}/><col style={{width:'5%'}}/><col style={{width:'6.5%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'10%'}}/><col style={{width:'12.5%'}}/><col style={{width:'9%'}}/></colgroup>
@@ -345,7 +394,7 @@ function MonthView({ month, settings, summary, centers, query, setQuery, filter,
         const move=(direction:-1|1)=>{const index=month.rows.indexOf(row);const target=index+direction;if(target<0||target>=month.rows.length)return;const next=[...month.rows];[next[target],next[index]]=[next[index],next[target]];updateRows(next);};
         return <tr key={row.id}>
           <td><div className={styles.actions} aria-hidden="true">⋮⋮</div></td>
-          <td data-label="기관명"><input disabled={month.locked} list="settlement-centers" className={styles.centerInput} value={row.name} aria-label="기관명" onChange={(e)=>updateRow(row.id,{name:e.target.value})} onBlur={(e)=>{const center=centers.find((item)=>item.name.trim()===e.target.value.trim());if(center&&row.fee===''&&row.cost==='')updateRow(row.id,{...rowFromCenter(center,month.key),id:row.id,name:row.name});}}/></td>
+          <td data-label="기관명"><input disabled={month.locked} onFocus={() => void loadPolicies()} list="settlement-centers" className={styles.centerInput} value={row.name} aria-label="기관명" onChange={(e)=>updateRow(row.id,{name:e.target.value})} onBlur={(e)=>void applyPolicyByName(month.key,row.id,e.currentTarget.value)}/></td>
           <td data-label="수업료"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.fee} aria-label={`${row.name} 수업료`} onChange={(e)=>updateRow(row.id,{fee:e.target.value})}/></td>
           <td data-label="회기"><input disabled={month.locked} className={styles.numericInput} value={row.sessions} inputMode="numeric" aria-label={`${row.name} 회기`} onChange={(e)=>updateRow(row.id,{sessions:e.target.value})}/></td>
           <td data-label="총액"><MoneyInput disabled={month.locked} className={`${styles.numericInput} ${styles.totalInput}`} placeholder={Math.round(value.total).toLocaleString('ko-KR')} value={row.total} aria-label={`${row.name} 총액`} title="비워 두면 수업료×회기" onChange={(e)=>updateRow(row.id,{total:e.target.value})}/></td>
@@ -404,7 +453,7 @@ function CentersView({centers,tab,setTab,save,remove,add,fromCurrent,fromAll,syn
       <thead className="bg-slate-50 text-slate-600"><tr>{(privateMode?['이름 · 수업명','수업료','인건비','기본 회기','부가세','원천징수','결제조건','상태','비고','']:['기관명','구분','강사료','보조','대여','수업료 합계','인건비','기본 회기','부가세','원천징수','결제조건','상태','비고','']).map((label)=><th key={label||'actions'} className="whitespace-nowrap p-2 text-left">{label}</th>)}</tr></thead>
       <tbody>{shown.map((center)=>privateMode
         ? <tr key={center.id} className="border-t"><td className="p-1"><input className={fieldClass} defaultValue={center.name} aria-label="이름 또는 수업명" onChange={(e)=>patch(center,'name',e.target.value)}/></td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.fee} aria-label="수업료" onChange={(e)=>patch(center,'fee',e.target.value)}/></td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.cost} aria-label="인건비" onChange={(e)=>patch(center,'cost',e.target.value)}/></td>{operationalFields(center)}<td className="p-1"><input className={fieldClass} type="number" defaultValue={center.whRate} aria-label="원천징수율" onChange={(e)=>patch(center,'whRate',Number(e.target.value))}/></td>{managementFields(center)}</tr>
-        : <tr key={center.id} className="border-t"><td className="p-1"><input className={fieldClass} defaultValue={center.name} aria-label="기관명" onChange={(e)=>patch(center,'name',e.target.value)}/></td><td className="p-1"><select className={fieldClass} defaultValue={center.type} aria-label="구분" onChange={(e)=>patch(center,'type',e.target.value)}><option value="regular">정규</option><option value="short">단기</option><option value="private">개인</option><option value="etc">기타</option></select></td>{(['instr','assist','rental'] as const).map((key)=><td key={key} className="p-1"><MoneyInput className={fieldClass} defaultValue={center[key]} aria-label={key==='instr'?'강사료':key==='assist'?'보조강사료':'대여비'} onChange={(e)=>patch(center,key,e.target.value)}/></td>)}<td className="p-2 text-right font-bold">{centerFee(center)?`${centerFee(center)}원`:'-'}</td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.cost} aria-label="인건비" onChange={(e)=>patch(center,'cost',e.target.value)}/></td>{operationalFields(center)}<td className="p-1"><input className={fieldClass} type="number" defaultValue={center.whRate} aria-label="원천징수율" onChange={(e)=>patch(center,'whRate',Number(e.target.value))}/></td>{managementFields(center)}</tr>)}</tbody>
+        : <tr key={center.id} className="border-t"><td className="p-1"><input className={fieldClass} defaultValue={center.name} aria-label="기관명" onChange={(e)=>patch(center,'name',e.target.value)}/><SettlementCenterLink centerId={center.center_id} onSelect={async (center_id)=>{await save({...center,center_id});}}/></td><td className="p-1"><select className={fieldClass} defaultValue={center.type} aria-label="구분" onChange={(e)=>patch(center,'type',e.target.value)}><option value="regular">정규</option><option value="short">단기</option><option value="private">개인</option><option value="etc">기타</option></select></td>{(['instr','assist','rental'] as const).map((key)=><td key={key} className="p-1"><MoneyInput className={fieldClass} defaultValue={center[key]} aria-label={key==='instr'?'강사료':key==='assist'?'보조강사료':'대여비'} onChange={(e)=>patch(center,key,e.target.value)}/></td>)}<td className="p-2 text-right font-bold">{centerFee(center)?`${centerFee(center)}원`:'-'}</td><td className="p-1"><MoneyInput className={fieldClass} defaultValue={center.cost} aria-label="인건비" onChange={(e)=>patch(center,'cost',e.target.value)}/></td>{operationalFields(center)}<td className="p-1"><input className={fieldClass} type="number" defaultValue={center.whRate} aria-label="원천징수율" onChange={(e)=>patch(center,'whRate',Number(e.target.value))}/></td>{managementFields(center)}</tr>)}</tbody>
     </table></div>
   </div>;
 }

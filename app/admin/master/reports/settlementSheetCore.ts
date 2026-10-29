@@ -16,6 +16,8 @@ export type SettlementMonth = {
 
 export type RateHistory = { id: string; from: string; instr: string | number; assist: string | number; rental: string | number; cost: string | number };
 export type SettlementCenter = {
+  /** Operational center UUID. id and monthly row.centerId remain settlement policy IDs. */
+  center_id?: string | null;
   id: string; name: string; type: CenterType; instr: string | number; assist: string | number;
   rental: string | number; fee: string | number; cost: string | number; sessions: string | number;
   vat: 'auto' | 'none'; whRate: number; status: 'active' | 'ended'; note: string; ord: number;
