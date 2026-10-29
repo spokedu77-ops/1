@@ -17,12 +17,19 @@ import {
   koreanLineBreak,
   v0BentoCard,
   v0CardImageHover,
+  v0CardInnerPad,
+  v0CardMediaFrame,
+  v0CardMediaImgCover,
   v0CardTitle,
   v0CardTitleCompact,
+  v0CtaButton,
+  v0CtaButtonRow,
   v0CtaTitleOnDark,
   v0GradientText,
   v0HeroTitle,
   v0Lead,
+  v0LeaderPhotoFrame,
+  v0LeaderPhotoImg,
   v0SectionBand,
   v0SectionTitle,
 } from '../lib/ui-classes';
@@ -39,19 +46,19 @@ function ServiceCard({ service }: { service: HomeService }) {
           : 'border-transparent shadow-sm ring-1 ring-slate-100'
       }`}
     >
-      <div className="h-56 overflow-hidden">
+      <div className={v0CardMediaFrame}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={service.image}
           alt={service.imageAlt}
-          className={`h-full w-full ${v0CardImageHover}`}
+          className={`${v0CardMediaImgCover} ${v0CardImageHover}`}
           style={{ objectPosition: service.imagePosition }}
         />
       </div>
-      <div className="flex min-h-[340px] flex-col p-7 md:p-8">
+      <div className={`flex min-h-[340px] flex-col ${v0CardInnerPad}`}>
         <p className="text-[11px] font-bold tracking-[0.12em] text-blue-600">{service.number}</p>
         <h3 className={`mt-4 ${v0CardTitle} text-slate-950`}>{service.title}</h3>
-        <p className={`mt-4 text-sm leading-7 text-slate-500 ${koreanLineBreak}`}>{service.description}</p>
+        <p className={`mt-4 ${v0Lead} ${koreanLineBreak}`}>{service.description}</p>
         <p className="mt-auto pt-7 text-xs font-medium leading-6 text-slate-400">{service.tags}</p>
         <Link
           href={service.href}
@@ -71,8 +78,11 @@ function ServiceCard({ service }: { service: HomeService }) {
 
 export function HomeV0Landing() {
   return (
-    <main className={`overflow-hidden bg-white pb-8 text-slate-950 ${koreanLineBreak}`}>
-      <section id="top" className="mx-auto grid max-w-7xl items-center gap-14 px-6 pb-24 pt-10 lg:grid-cols-2 lg:gap-20 lg:pb-32 lg:pt-16">
+    <div className={`overflow-hidden bg-white pb-8 text-slate-950 ${koreanLineBreak}`}>
+      <section
+        id="top"
+        className={`mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20 ${v0SectionBand}`}
+      >
         <div>
           <V0Eyebrow>CHILD &amp; YOUTH PHYSICAL EDUCATION</V0Eyebrow>
           <h1
@@ -85,20 +95,20 @@ export function HomeV0Landing() {
             <br />
             설계합니다.
           </h1>
-          <p className="mt-8 max-w-xl text-base leading-8 text-slate-500 md:text-lg">
+          <p className={`mt-8 max-w-xl ${v0Lead}`}>
             연세대학교 체육교육과 출신 전문가들이 학교·기관 출강부터 개인 맞춤 수업까지 직접 설계하고 운영합니다.
             현장의 검증된 데이터는 에듀테크 SPOMOVE와 지도자 솔루션 SPOKEDU LAB으로 확장됩니다.
           </p>
-          <div className="mt-10 flex flex-wrap gap-3">
+          <div className={`mt-10 ${v0CtaButtonRow}`}>
             <a
               href="#services"
-              className="rounded-full bg-blue-600 px-6 py-4 text-sm font-bold text-white transition hover:bg-blue-700"
+              className={`${v0CtaButton} bg-blue-600 text-white transition hover:bg-blue-700`}
             >
               필요한 수업 찾기 <ArrowRight className="ml-2 inline size-4" aria-hidden />
             </a>
             <Link
               href={HOME_V0_CONTACT.contactHref}
-              className="inline-flex items-center rounded-full border-2 border-slate-200 bg-white px-6 py-4 text-sm font-bold text-slate-800 transition hover:bg-slate-50 hover:border-slate-300"
+              className={`${v0CtaButton} border-2 border-slate-200 bg-white text-slate-800 transition hover:border-slate-300 hover:bg-slate-50`}
             >
               수업 상담하기
             </Link>
@@ -136,7 +146,7 @@ export function HomeV0Landing() {
             <h2 id="audience-heading" className={`mt-6 ${v0SectionTitle}`}>
               어떤 체육 교육이 필요하신가요?
             </h2>
-            <p className="mt-5 text-slate-500">대상의 목적과 환경에 맞는 최적의 솔루션을 선택해 보세요.</p>
+            <p className={`mt-5 ${v0Lead}`}>대상의 목적과 환경에 맞는 최적의 솔루션을 선택해 보세요.</p>
           </div>
           <div className="mt-14 grid gap-8 lg:grid-cols-3">
             {HOME_V0_SERVICES.map((service) => (
@@ -157,7 +167,7 @@ export function HomeV0Landing() {
           </div>
           <div className="mt-14 grid gap-6 lg:grid-cols-12 lg:items-stretch">
             <div
-              className={`${v0BentoCard} flex h-full min-h-full flex-col justify-between rounded-3xl border-slate-700/50 bg-slate-800/70 p-8 ring-1 ring-slate-700 lg:col-span-7`}
+              className={`${v0BentoCard} flex h-full min-h-full flex-col justify-between rounded-3xl border-slate-700/50 bg-slate-800/70 ${v0CardInnerPad} ring-1 ring-slate-700 lg:col-span-7`}
             >
               <div>
                 <V0Eyebrow dark>EDUTECH SOLUTION</V0Eyebrow>
@@ -165,7 +175,7 @@ export function HomeV0Landing() {
                   SPOMOVE : 보고, 판단하고,
                   <br /> 몸으로 반응하는 시지각 체육
                 </h3>
-                <p className="mt-4 max-w-lg text-sm leading-7 text-slate-400">
+                <p className={`mt-4 max-w-lg ${v0Lead} text-slate-400`}>
                   화면의 색상·방향·위치 자극을 인지하고 전용 스포매트(SPOMAT) 위에서 즉각 반응하며 두뇌 회전과 신체
                   협응을 동시에 끌어올립니다.
                 </p>
@@ -191,14 +201,14 @@ export function HomeV0Landing() {
               </Link>
             </div>
             <div
-              className={`${v0BentoCard} flex h-full min-h-full flex-col justify-between rounded-3xl border-slate-700/50 bg-slate-800/70 p-8 ring-1 ring-slate-700 lg:col-span-5`}
+              className={`${v0BentoCard} flex h-full min-h-full flex-col justify-between rounded-3xl border-slate-700/50 bg-slate-800/70 ${v0CardInnerPad} ring-1 ring-slate-700 lg:col-span-5`}
             >
               <div className="flex min-h-0 flex-1 flex-col">
                 <V0Eyebrow dark>SAAS FOR TEACHERS</V0Eyebrow>
                 <h3 className={`mt-6 ${v0CardTitle} text-white`}>
                   SPOKEDU LAB :<br /> 수업을 찾고 현장을 운영합니다
                 </h3>
-                <p className="mt-4 text-sm leading-7 text-slate-400">
+                <p className={`mt-4 ${v0Lead} text-slate-400`}>
                   조건별 놀이체육 프로그램 검색부터 반별 일정, 출석, 학부모 리포트 생성까지 지도자의 모든 워크플로우를
                   연결합니다.
                 </p>
@@ -246,19 +256,19 @@ export function HomeV0Landing() {
             </div>
             <div className="grid gap-5 sm:grid-cols-3 lg:col-span-3">
               {HOME_V0_TEAM.map((person) => (
-                <div key={person.name} className={`${v0BentoCard} rounded-3xl bg-slate-50 p-6`}>
-                  <div className="mx-auto size-24 overflow-hidden rounded-2xl bg-slate-200 sm:mx-0 sm:size-28">
+                <div key={person.name} className={`${v0BentoCard} rounded-3xl bg-slate-50 ${v0CardInnerPad}`}>
+                  <div className={v0LeaderPhotoFrame}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={person.photo}
                       alt={`${person.role} ${person.name}`}
-                      className={`size-full object-cover object-top ${v0CardImageHover}`}
+                      className={`${v0LeaderPhotoImg} ${v0CardImageHover}`}
                       style={{ objectPosition: person.photoObjectPosition ?? '50% 12%' }}
                     />
                   </div>
                   <h3 className="mt-6 font-bold">{person.name}</h3>
                   <p className="mt-1 text-xs font-bold text-blue-600">{person.role}</p>
-                  <p className="mt-4 text-sm leading-6 text-slate-500">{person.description}</p>
+                  <p className={`mt-4 ${v0Lead}`}>{person.description}</p>
                 </div>
               ))}
             </div>
@@ -284,21 +294,21 @@ export function HomeV0Landing() {
                 href={item.href}
                 className={`${v0BentoCard} overflow-hidden rounded-3xl border-transparent bg-white shadow-sm`}
               >
-                <div className="h-52 overflow-hidden">
+                <div className={v0CardMediaFrame}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.image}
                     alt={item.alt}
-                    className={`h-full w-full object-cover ${v0CardImageHover}`}
+                    className={`${v0CardMediaImgCover} ${v0CardImageHover}`}
                     style={{ objectPosition: item.objectPosition }}
                   />
                 </div>
-                <div className="p-6">
+                <div className={v0CardInnerPad}>
                   <span className="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-700">
                     {item.category}
                   </span>
                   <h3 className={`mt-5 ${v0CardTitleCompact} leading-6`}>{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.summary}</p>
+                  <p className={`mt-2 ${v0Lead}`}>{item.summary}</p>
                 </div>
               </Link>
             ))}
@@ -306,8 +316,8 @@ export function HomeV0Landing() {
         </div>
       </section>
 
-      <section id="contact" className="scroll-mt-28 bg-white px-6 py-12 md:py-20">
-        <div className="mx-auto max-w-7xl rounded-3xl bg-blue-600 p-8 text-white md:p-14">
+      <section id="contact" className={`scroll-mt-28 bg-white px-6 ${v0SectionBand}`}>
+        <div className={`mx-auto max-w-7xl rounded-3xl bg-blue-600 text-white ${v0CardInnerPad} lg:p-10`}>
           <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-bold tracking-wide text-blue-100">LET&apos;S TALK</p>
@@ -316,16 +326,16 @@ export function HomeV0Landing() {
                 <br className="hidden md:block" /> 체육 수업을 찾고 계신가요?
               </h2>
             </div>
-            <div className="grid w-full max-w-sm gap-3">
+            <div className={`max-w-full sm:max-w-none ${v0CtaButtonRow}`}>
               <Link
                 href={HOME_V0_CONTACT.institutionHref}
-                className="flex items-center justify-between rounded-2xl bg-white px-5 py-4 text-sm font-bold text-blue-700"
+                className={`${v0CtaButton} justify-between bg-white text-blue-700 sm:justify-center`}
               >
                 기관·학교 출강 문의하기 <ArrowRight className="size-4" aria-hidden />
               </Link>
               <Link
                 href={HOME_V0_CONTACT.privateHref}
-                className="flex items-center justify-between rounded-2xl bg-blue-500 px-5 py-4 text-sm font-bold text-white"
+                className={`${v0CtaButton} justify-between bg-blue-500 text-white sm:justify-center`}
               >
                 개인·소그룹 수업 문의하기 <ArrowRight className="size-4" aria-hidden />
               </Link>
@@ -334,14 +344,14 @@ export function HomeV0Landing() {
                   href={KAKAO_CHANNEL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-2xl border border-blue-300 px-5 py-4 text-sm font-bold text-white"
+                  className={`${v0CtaButton} justify-between border border-blue-300 text-white sm:justify-center`}
                 >
                   카카오톡 간편 상담 <ExternalLink className="size-4" aria-hidden />
                 </a>
               ) : (
                 <a
                   href={brandContactLinks.phone}
-                  className="flex items-center justify-between rounded-2xl border border-blue-300 px-5 py-4 text-sm font-bold text-white"
+                  className={`${v0CtaButton} justify-between border border-blue-300 text-white sm:justify-center`}
                 >
                   전화 상담 {brandProfile.phone} <ArrowRight className="size-4" aria-hidden />
                 </a>
@@ -350,6 +360,6 @@ export function HomeV0Landing() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

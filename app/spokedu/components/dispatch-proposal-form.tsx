@@ -2,7 +2,7 @@
 
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useClientSearchParams } from '../lib/client-search-params';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import {
   DISPATCH_PROGRAM_OPTIONS,
@@ -50,7 +50,7 @@ export type DispatchProposalFormProps = {
 };
 
 export function DispatchProposalForm({ variant = 'default' }: DispatchProposalFormProps) {
-  const searchParams = useSearchParams();
+  const searchParams = useClientSearchParams();
   const [organization, setOrganization] = useState('');
   const [manager, setManager] = useState('');
   const [phone, setPhone] = useState('');

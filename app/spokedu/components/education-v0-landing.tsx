@@ -4,6 +4,7 @@ import Image from 'next/image';
 import {
   ArrowRight,
   ChevronRight,
+  Building2,
   CircleCheck,
   Clock3,
   GraduationCap,
@@ -13,7 +14,6 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { Suspense } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import { educationHubPage } from '../data/education-hub';
 import {
@@ -26,8 +26,13 @@ import {
   koreanLineBreak,
   v0BentoCard,
   v0CardImageHover,
+  v0CardInnerPad,
+  v0CardMediaFrame,
+  v0CardMediaImgCover,
   v0CardTitle,
   v0CardTitleCompact,
+  v0CtaButton,
+  v0CtaButtonRow,
   v0CtaTitleOnDark,
   v0GradientText,
   v0HeroTitle,
@@ -85,7 +90,7 @@ function EducationV0Image({
         src={src}
         alt={alt}
         fill
-        className={`${v0CardImageHover} ${className ?? ''}`}
+        className={`${v0CardMediaImgCover} ${v0CardImageHover} ${className ?? ''}`}
         priority={priority}
         sizes="(max-width: 768px) 100vw, 50vw"
       />
@@ -96,7 +101,7 @@ function EducationV0Image({
     <img
       src={src}
       alt={alt}
-      className={`absolute inset-0 h-full w-full ${v0CardImageHover} ${className ?? ''}`}
+      className={`absolute inset-0 ${v0CardMediaImgCover} ${v0CardImageHover} ${className ?? ''}`}
     />
   );
 }
@@ -105,9 +110,9 @@ export function EducationV0Landing() {
   const { reviews } = educationHubPage;
 
   return (
-    <main className={`overflow-hidden bg-white pb-24 text-slate-900 ${koreanLineBreak}`}>
+    <div className={`overflow-hidden bg-white pb-24 text-slate-900 ${koreanLineBreak}`}>
       {/* 1. Hero + metrics bar */}
-      <section className="relative bg-white pb-16 pt-10 md:pb-24 md:pt-14">
+      <section className={`relative bg-white ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20">
           <div>
             <V0Eyebrow>SCHOOL &amp; ORGANIZATION</V0Eyebrow>
@@ -118,20 +123,20 @@ export function EducationV0Landing() {
               <br />
               수업입니다.
             </h1>
-            <p className={`mt-7 max-w-lg ${v0Lead} text-slate-600`}>
+            <p className={`mt-7 max-w-lg ${v0Lead}`}>
               연세대학교 체육교육과 출신 전문가들의 설계와 현장 데이터가 적용된 연간 커리큘럼으로 학교·기관의 체육
               수업을 체계적으로 운영합니다.
             </p>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <div className={`mt-9 ${v0CtaButtonRow}`}>
               <a
                 href="#contact"
-                className="rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+                className={`${v0CtaButton} bg-blue-600 text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700`}
               >
                 기관 맞춤 운영안 받기 <ArrowRight className="ml-1 inline size-4" aria-hidden />
               </a>
               <a
                 href="#records"
-                className="rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:text-blue-600"
+                className={`${v0CtaButton} border border-slate-200 bg-white text-slate-700 transition hover:border-blue-200 hover:text-blue-600`}
               >
                 실제 수업 사례 보기
               </a>
@@ -231,13 +236,13 @@ export function EducationV0Landing() {
             ].map(([Icon, title, body]) => (
               <div
                 key={title as string}
-                className={`${v0BentoCard} rounded-3xl border-slate-200/60 bg-white p-8 shadow-sm`}
+                className={`${v0BentoCard} rounded-3xl border-slate-200/60 bg-white shadow-sm ${v0CardInnerPad}`}
               >
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                   <Icon className="size-6" aria-hidden />
                 </div>
                 <h3 className={`mt-7 ${v0CardTitle} text-slate-950`}>{title as string}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-500">{body as string}</p>
+                <p className={`mt-3 ${v0Lead}`}>{body as string}</p>
               </div>
             ))}
           </div>
@@ -263,7 +268,7 @@ export function EducationV0Landing() {
                     ) : null}
                     <span className="text-xs font-black tracking-[0.12em] text-blue-300">STEP {num}</span>
                     <p className="mt-8 text-lg font-bold">{title}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{desc}</p>
+                    <p className={`mt-2 ${v0Lead} text-slate-300`}>{desc}</p>
                   </div>
                 ))}
               </div>
@@ -324,22 +329,20 @@ export function EducationV0Landing() {
                 key={program.number}
                 className={`${v0BentoCard} overflow-hidden rounded-3xl border-slate-200/80 bg-white shadow-sm`}
               >
-                <div className="relative aspect-[16/8.5] overflow-hidden">
+                <div className={v0CardMediaFrame}>
                   <EducationV0Image
                     src={program.image}
                     alt={`${program.title} 수업 모습`}
-                    className={v0CardImageHover}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" aria-hidden />
                   <div className="absolute left-5 top-5 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-sm">
-                    {program.target}
+                    {program.number} · {program.target}
                   </div>
-                  <span className="absolute bottom-5 right-5 text-sm font-bold text-white/80">{program.number}</span>
                 </div>
-                <div className="p-7">
+                <div className={v0CardInnerPad}>
                   <h3 className={`${v0CardTitle} text-slate-950`}>{program.title}</h3>
                   <p className="mt-2 font-semibold text-blue-600">{program.subtitle}</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">{program.description}</p>
+                  <p className={`mt-3 ${v0Lead}`}>{program.description}</p>
                   <div className="mt-5 flex flex-wrap gap-2">
                     {program.tags.map((tag) => (
                       <span key={tag} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500">
@@ -368,17 +371,16 @@ export function EducationV0Landing() {
                 key={record.title}
                 className={`${v0BentoCard} overflow-hidden rounded-2xl border-slate-100 bg-white shadow-sm`}
               >
-                <div className="relative aspect-[1.25] overflow-hidden">
+                <div className={v0CardMediaFrame}>
                   <EducationV0Image
                     src={record.image}
                     alt={`${record.title} 현장 수업`}
-                    className={v0CardImageHover}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 to-transparent" aria-hidden />
                 </div>
-                <div className="p-6">
+                <div className={v0CardInnerPad}>
                   <h3 className={`${v0CardTitleCompact} text-slate-950`}>{record.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{record.description}</p>
+                  <p className={`mt-2 ${v0Lead}`}>{record.description}</p>
                 </div>
               </article>
             ))}
@@ -387,7 +389,7 @@ export function EducationV0Landing() {
             {reviews.items.map((item) => (
               <blockquote
                 key={item.headline}
-                className={`${v0BentoCard} flex min-h-64 flex-col rounded-3xl border-slate-100 bg-slate-50 p-8`}
+                className={`${v0BentoCard} flex min-h-64 flex-col rounded-3xl border-slate-100 bg-slate-50 ${v0CardInnerPad}`}
               >
                 {item.showStars ? (
                   <div className="flex gap-1 text-amber-400" aria-label="별점 5점">
@@ -399,10 +401,10 @@ export function EducationV0Landing() {
                   </div>
                 ) : null}
                 <p className="mt-5 text-xl font-bold leading-8 text-slate-900">{item.headline}</p>
-                <p className="mt-3 flex-1 text-sm leading-7 text-slate-600">&ldquo;{item.quote}&rdquo;</p>
+                <p className={`mt-3 flex-1 ${v0Lead}`}>&ldquo;{item.quote}&rdquo;</p>
                 <footer className="mt-auto flex items-center gap-3 pt-7">
-                  <span className="flex size-10 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
-                    {item.name.slice(0, 1)}
+                  <span className="flex size-10 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                    <Building2 className="size-5" aria-hidden />
                   </span>
                   <span className="text-xs leading-5 text-slate-500">
                     <strong className="block text-slate-800">{item.name}</strong>
@@ -423,7 +425,7 @@ export function EducationV0Landing() {
             <h2 className={`mt-5 ${v0SectionTitle} text-slate-950`}>
               조건이 아직 정리되지 않아도 괜찮습니다
             </h2>
-            <p className="mt-5 text-base leading-7 text-slate-500">
+            <p className={`mt-5 ${v0Lead}`}>
               기관명과 예상 인원만 알려주셔도 문의 접수 후 최단 7일 이내에 맞춤 체육 수업이 시작됩니다.
             </p>
           </div>
@@ -431,12 +433,12 @@ export function EducationV0Landing() {
             {onboardingSteps.map(([step, title, desc], index) => (
               <div
                 key={step}
-                className={`${v0BentoCard} relative rounded-3xl border-slate-200 bg-white p-7 shadow-sm`}
+                className={`${v0BentoCard} relative rounded-3xl border-slate-200 bg-white shadow-sm ${v0CardInnerPad}`}
               >
                 <span className="text-sm font-black text-blue-600">STEP {step}</span>
                 <div className="mt-12">
                   <h3 className={`${v0CardTitleCompact} text-slate-950`}>{title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">{desc}</p>
+                  <p className={`mt-3 ${v0Lead}`}>{desc}</p>
                 </div>
                 {index < 2 ? (
                   <ChevronRight
@@ -460,18 +462,18 @@ export function EducationV0Landing() {
             </h2>
             <div className="mt-8 rounded-3xl bg-blue-50 p-6">
               <p className="font-bold text-blue-900">카카오톡으로 빠르게 상담하세요</p>
-              <p className="mt-2 text-sm leading-6 text-blue-700">운영 조건을 간단히 남겨주시면 확인 후 연락드립니다.</p>
+              <p className={`mt-2 ${v0Lead} text-blue-700`}>운영 조건을 간단히 남겨주시면 확인 후 연락드립니다.</p>
               {KAKAO_CHANNEL_URL ? (
                 <a
                   href={KAKAO_CHANNEL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-5 inline-flex rounded-full bg-[#FEE500] px-4 py-2.5 text-sm font-bold text-slate-900"
+                  className={`mt-5 ${v0CtaButton} bg-[#FEE500] text-slate-900`}
                 >
                   카카오톡 채널 상담 <ArrowRight className="ml-2 size-4" aria-hidden />
                 </a>
               ) : (
-                <a href="#contact" className="mt-5 inline-flex rounded-full bg-[#FEE500] px-4 py-2.5 text-sm font-bold text-slate-900">
+                <a href="#contact" className={`mt-5 ${v0CtaButton} bg-[#FEE500] text-slate-900`}>
                   운영안 요청하기 <ArrowRight className="ml-2 size-4" aria-hidden />
                 </a>
               )}
@@ -487,7 +489,7 @@ export function EducationV0Landing() {
                   </span>
                   <ChevronRight className="size-5 shrink-0 text-slate-400 transition group-open:rotate-90" aria-hidden />
                 </summary>
-                <p className="mt-4 pl-9 text-sm leading-7 text-slate-500">{answer}</p>
+                <p className={`mt-4 pl-9 ${v0Lead}`}>{answer}</p>
               </details>
             ))}
           </div>
@@ -504,7 +506,7 @@ export function EducationV0Landing() {
               <br />
               <span className="text-blue-400">운영안</span>을 받아보세요
             </h2>
-            <p className="mt-6 max-w-md text-base leading-7 text-slate-300">
+            <p className={`mt-6 max-w-md ${v0Lead} text-slate-300`}>
               복잡한 조건을 먼저 정리하지 않으셔도 괜찮습니다. 기관명과 예상 인원부터 편하게 남겨주세요.
             </p>
             <div className="mt-10 flex flex-col gap-4 text-sm text-slate-200">
@@ -519,7 +521,7 @@ export function EducationV0Landing() {
                   href={KAKAO_CHANNEL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex w-fit rounded-full bg-[#FEE500] px-5 py-3 font-bold text-slate-900"
+                  className={`mt-2 ${v0CtaButton} w-full bg-[#FEE500] text-slate-900 sm:w-fit`}
                 >
                   카카오톡 채널 바로가기 <ArrowRight className="ml-2 size-4" aria-hidden />
                 </a>
@@ -527,9 +529,7 @@ export function EducationV0Landing() {
             </div>
           </div>
           <div className="lg:col-span-7">
-            <Suspense fallback={<div className="min-h-[320px] rounded-3xl bg-white/10" aria-hidden />}>
-              <DispatchProposalForm variant="educationV0" />
-            </Suspense>
+            <DispatchProposalForm variant="educationV0" />
           </div>
         </div>
       </section>
@@ -547,6 +547,6 @@ export function EducationV0Landing() {
           운영안 요청하기 <ArrowRight className="ml-1 inline size-4" aria-hidden />
         </a>
       </div>
-    </main>
+    </div>
   );
 }

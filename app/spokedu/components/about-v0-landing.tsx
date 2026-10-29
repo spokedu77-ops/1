@@ -31,10 +31,12 @@ import {
   koreanLineBreak,
   v0BentoCard,
   v0CardImageHover,
+  v0CardInnerPad,
   v0CardTitle,
   v0GradientText,
   v0HeroTitle,
   v0Lead,
+  v0LeaderPhotoFrame,
   v0SectionBand,
   v0SectionTitle,
 } from '../lib/ui-classes';
@@ -76,7 +78,7 @@ const ecosystem = [
 
 export function AboutV0Landing() {
   return (
-    <main className={`bg-white text-slate-950 ${koreanLineBreak} break-keep`} data-spokedu-about-sections="v0">
+    <div className={`bg-white text-slate-950 ${koreanLineBreak} break-keep`} data-spokedu-about-sections="v0">
       <section className={`px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2 lg:gap-20">
           <div>
@@ -91,7 +93,7 @@ export function AboutV0Landing() {
               <br />
               체육 교육의 기준을 만듭니다.
             </h1>
-            <p className={`mt-8 max-w-xl ${v0Lead} lg:text-xl`}>
+            <p className={`mt-8 max-w-xl ${v0Lead}`}>
               스포키듀(SPOKEDU)는 연세대학교 체육교육과 출신 전문가들이 모여 시작한 아동·청소년 체육교육 전문
               기업입니다. 학문적 근거와 수천 건의 현장 데이터를 결합해, 단순한 신체 활동을 넘어 스스로 생각하고
               함께 성장하는 교육을 실현합니다.
@@ -141,7 +143,7 @@ export function AboutV0Landing() {
             {values.map(([num, en, ko, desc]) => (
               <article
                 key={num}
-                className={`${v0BentoCard} rounded-3xl border-slate-200/80 bg-white p-6 shadow-sm md:p-10`}
+                className={`${v0BentoCard} rounded-3xl border-slate-200/80 bg-white shadow-sm ${v0CardInnerPad}`}
               >
                 <div className="flex items-start justify-between">
                   <span className="text-sm font-bold text-blue-600">{num}</span>
@@ -150,7 +152,7 @@ export function AboutV0Landing() {
                 <h3 className={`mt-10 md:mt-12 ${v0CardTitle}`}>
                   {en} <span className="ml-1 font-medium text-slate-400">{ko}</span>
                 </h3>
-                <p className="mt-4 leading-7 text-slate-500 break-keep">{desc}</p>
+                <p className={`mt-4 ${v0Lead}`}>{desc}</p>
               </article>
             ))}
           </div>
@@ -163,7 +165,7 @@ export function AboutV0Landing() {
           <h2 className={`mt-5 max-w-3xl ${v0SectionTitle}`}>
             수업을 설계한 사람들이 현장의 품질을 끝까지 책임집니다
           </h2>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-500 md:text-lg">
+          <p className={`mt-6 max-w-2xl ${v0Lead}`}>
             본사 코어 매니지먼트 팀(대표·총괄·수업팀장)의 직영 관리 시스템과 약 30명의 검증된 전문 지도자가 하나의
             기준으로 움직입니다.
           </p>
@@ -173,7 +175,7 @@ export function AboutV0Landing() {
                 key={leader.name}
                 className={`${v0BentoCard} overflow-hidden rounded-3xl border-slate-100 bg-slate-50`}
               >
-                <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-200">
+                <div className={v0LeaderPhotoFrame}>
                   <Image
                     src={leader.photo}
                     alt={`${leader.role} ${leader.name}`}
@@ -182,7 +184,7 @@ export function AboutV0Landing() {
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
                 </div>
-                <div className="p-6 md:p-8">
+                <div className={v0CardInnerPad}>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-300">{leader.num}</span>
                   </div>
@@ -191,7 +193,7 @@ export function AboutV0Landing() {
                     <p className="mt-1 text-xs font-bold tracking-[0.16em] text-blue-600">{leader.nameEn}</p>
                   ) : null}
                   <p className="mt-4 font-bold text-slate-800">{leader.role}</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-500 break-keep">{leader.bio}</p>
+                  <p className={`mt-3 ${v0Lead}`}>{leader.bio}</p>
                 </div>
               </article>
             ))}
@@ -231,14 +233,14 @@ export function AboutV0Landing() {
         <div className="mx-auto max-w-7xl">
           <V0Eyebrow>MILESTONES</V0Eyebrow>
           <h2 className={`mt-5 max-w-3xl ${v0SectionTitle}`}>주요 연혁</h2>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-500 md:text-lg">
+          <p className={`mt-6 max-w-2xl ${v0Lead}`}>
             현장 출강에서 시작해 에듀테크와 지도자 플랫폼까지, 스포키듀가 쌓아 온 성장의 발자취입니다.
           </p>
           <div className="mt-14 grid gap-4 md:grid-cols-2">
             {ABOUT_V0_MILESTONES.map((item) => (
               <article
                 key={item.when + item.title}
-                className={`${v0BentoCard} rounded-3xl border-slate-200/80 bg-slate-50 p-6 md:p-8`}
+                className={`${v0BentoCard} rounded-3xl border-slate-200/80 bg-slate-50 ${v0CardInnerPad}`}
               >
                 <time className="text-sm font-black tracking-tight text-blue-600">{item.when}</time>
                 <p className="mt-4 text-base font-bold leading-7 text-slate-800 break-keep md:text-lg">{item.title}</p>
@@ -259,7 +261,7 @@ export function AboutV0Landing() {
               <Link
                 key={num}
                 href={href}
-                className={`${v0BentoCard} flex h-full flex-col rounded-3xl border-slate-200/80 bg-white p-6 md:p-8`}
+                className={`${v0BentoCard} flex h-full flex-col rounded-3xl border-slate-200/80 bg-white ${v0CardInnerPad}`}
               >
                 <span className="text-sm font-bold text-blue-600">{num}</span>
                 <h3 className={`mt-10 md:mt-14 ${v0CardTitle}`}>{title}</h3>
@@ -276,7 +278,7 @@ export function AboutV0Landing() {
 
       <section className={`px-6 md:px-10 lg:px-16 ${v0SectionBand}`}>
         <div className="mx-auto grid max-w-7xl overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50 lg:grid-cols-[5fr_7fr]">
-          <div className="p-6 md:p-10 lg:p-12">
+          <div className={v0CardInnerPad}>
             <V0Eyebrow>SPOKEDU LAB HQ</V0Eyebrow>
             <h2 className={`mt-6 ${v0SectionTitle}`}>
               스포키듀LAB 센터 및 본사 안내
@@ -284,18 +286,11 @@ export function AboutV0Landing() {
             <p className="mt-5 leading-7 text-slate-500 break-keep">
               프로그램 연구 개발, 지도자 세미나, 소그룹 수업이 이루어지는 스포키듀의 오프라인 거점 공간입니다.
             </p>
-            <dl className="mt-10 flex flex-col gap-5 text-sm">
+            <dl className="mt-10 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
               <div>
                 <dt className="font-bold text-slate-900">상호명 · 대표</dt>
                 <dd className="mt-1 text-slate-500">
                   스포키듀 (SPOKEDU) · {brandProfile.representative}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-bold text-slate-900">주소</dt>
-                <dd className="mt-1 flex items-start gap-2 text-slate-500 break-keep">
-                  <MapPin className="mt-0.5 size-4 shrink-0 text-blue-600" aria-hidden />
-                  {ABOUT_V0_HQ_ADDRESS}
                 </dd>
               </div>
               <div>
@@ -309,6 +304,13 @@ export function AboutV0Landing() {
                     <Mail className="size-4 text-blue-600" aria-hidden />
                     {brandProfile.email}
                   </a>
+                </dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="font-bold text-slate-900">주소</dt>
+                <dd className="mt-1 flex items-start gap-2 text-slate-500 break-keep">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-blue-600" aria-hidden />
+                  {ABOUT_V0_HQ_ADDRESS}
                 </dd>
               </div>
             </dl>
@@ -352,27 +354,30 @@ export function AboutV0Landing() {
               src={ABOUT_V0_LAB_VISUAL.src}
               alt={ABOUT_V0_LAB_VISUAL.alt}
               fill
-              className="object-cover brightness-[0.78]"
+              className="object-cover brightness-110 contrast-105"
               style={{ objectPosition: ABOUT_V0_LAB_VISUAL.objectPosition }}
               sizes="(max-width: 1024px) 100vw, 55vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" aria-hidden />
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent"
+              aria-hidden
+            />
             <div className="absolute bottom-8 left-8 right-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div className="text-white">
                 <p className="text-xs font-bold tracking-[0.18em] text-blue-200">VISIT SPOKEDU LAB</p>
                 <p className="mt-2 text-lg font-bold break-keep">아이들의 움직임을 연구하는 공간</p>
               </div>
-              <a
-                href={brandContactLinks.email}
+              <Link
+                href={`${SPOKEDU_PATHS.education}#contact`}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
               >
                 기관 출강 및 파트너십 문의하기
                 <ArrowUpRight className="size-4" aria-hidden />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

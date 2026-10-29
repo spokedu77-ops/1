@@ -313,12 +313,34 @@ export const v0GradientText =
   'bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent';
 
 export const v0HeroTitle =
-  `${koreanDisplay} text-3xl font-black leading-[1.12] tracking-[-0.05em] sm:text-4xl md:text-5xl lg:text-6xl`;
+  `${koreanDisplay} text-[28px] font-bold leading-[1.25] tracking-tight break-keep sm:text-4xl lg:text-[46px]`;
 
 export const v0SectionTitle =
-  `${koreanDisplay} text-3xl font-black tracking-[-0.04em] sm:text-4xl md:text-5xl`;
+  `${koreanDisplay} text-[22px] font-bold leading-[1.3] tracking-tight break-keep sm:text-3xl lg:text-4xl`;
 
-export const v0SectionBand = 'py-20 sm:py-28 md:py-32';
+export const v0SectionBand = 'py-12 sm:py-20 lg:py-24';
+
+/** v0 카드 본문 — article / 카드 콘텐츠 내부 */
+export const v0CardInnerPad = 'p-5 sm:p-7 lg:p-8';
+
+/** v0 카드 상단 미디어 프레임 */
+export const v0CardMediaFrame =
+  'relative w-full aspect-[16/10] overflow-hidden rounded-t-2xl bg-slate-100';
+
+/** img/Image — 카드 상단; hover는 `${v0CardMediaImgCover} ${v0CardImageHover}` */
+export const v0CardMediaImgCover = 'h-full w-full object-cover object-center';
+
+export const v0LeaderPhotoFrame =
+  'relative w-full aspect-[4/3] sm:aspect-square overflow-hidden rounded-2xl bg-slate-100';
+
+export const v0LeaderPhotoImg = 'h-full w-full object-cover object-top';
+
+/** 히어로·하단 배너 CTA 행 / 버튼 */
+export const v0CtaButtonRow =
+  'flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center';
+
+export const v0CtaButton =
+  'inline-flex h-12 items-center justify-center whitespace-nowrap rounded-full px-6 text-sm font-semibold';
 
 export const v0BentoCard =
   `group border transition-all duration-300 ease-out ${fineHover}hover:-translate-y-1.5 ${fineHover}hover:shadow-xl ${fineHover}hover:border-blue-500/30`;
@@ -355,12 +377,13 @@ export const v0SubsectionTitle =
   `${koreanDisplay} text-2xl font-black tracking-tight sm:text-3xl`;
 
 export const v0Lead =
-  `${koreanBody} text-base leading-8 text-slate-500 md:text-lg`;
+  `${koreanBody} text-[15px] leading-relaxed text-slate-600 break-keep sm:text-base`;
 
-export const v0CtaTitle =
-  `${koreanDisplay} text-3xl font-black leading-tight tracking-[-0.04em] sm:text-4xl md:text-5xl`;
+export const v0BodyText = v0Lead;
 
-export const v0CtaTitleOnDark = `${v0CtaTitle} text-white`;
+export const v0CtaTitle = v0SectionTitle;
+
+export const v0CtaTitleOnDark = `${v0SectionTitle} text-white`;
 
 /** 사례·그리드 카드 제목 (venue 등) */
 export const v0CardTitleCompact =

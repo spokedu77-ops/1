@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useClientSearchParams } from '../lib/client-search-params';
 import {
   koreanLineBreak,
   marketingButtonPrimary,
@@ -87,7 +88,7 @@ function ChipGroup<T extends string>({
 
 /** 개인수업 상담 폼 — 온페이지 문의 전환 */
 export function PrivateApplyForm({ variant = 'default' }: { variant?: 'default' | 'privateV0' }) {
-  const searchParams = useSearchParams();
+  const searchParams = useClientSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 

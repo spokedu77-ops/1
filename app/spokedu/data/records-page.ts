@@ -23,7 +23,7 @@ export const recordsPage = {
     kicker: '수업 사례',
     lines: ['현장에서 운영한 수업 사례'] as const,
     subtitle:
-      '온사이트 사례는 기관·대상·운영 형태·프로그램을 한눈에 보고, 값이 있는 요청·관찰만 표시합니다. 외부 후기는 블로그로 이어집니다.',
+      '초등학교, 거점형 키움센터, 복지관, 특수학교부터 대규모 지자체 축제 부스까지. 현장의 조건에 맞춰 실제로 설계하고 운영한 스포키듀의 수업 기록입니다.',
     venueTypes: heroSummary.venueTypes,
     stats: [
       { value: String(heroSummary.caseCount), label: '공개 운영 사례' },

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import {
   ArrowRight,
   Brain,
-  ChevronDown,
+  ChevronRight,
   ClipboardList,
   MessageCircle,
   Phone,
@@ -14,7 +14,6 @@ import {
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Suspense, useState } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import {
   PRIVATE_V0_HERO,
@@ -27,8 +26,13 @@ import {
   koreanLineBreak,
   v0BentoCard,
   v0CardImageHover,
+  v0CardInnerPad,
+  v0CardMediaFrame,
+  v0CardMediaImgCover,
   v0CardTitle,
   v0CardTitleCompact,
+  v0CtaButton,
+  v0CtaButtonRow,
   v0CtaTitleOnDark,
   v0GradientText,
   v0HeroTitle,
@@ -119,27 +123,43 @@ function DifferenceMiniPanel({ footnote }: { footnote: DifferenceFootnote }) {
 const faqs = [
   [
     '수업 장소는 어디서 진행되나요?',
-    '스포키듀 스튜디오와 협의된 제휴 공간에서 진행됩니다. 상담 시 우리 아이에게 가장 편안하고 안전한 장소를 함께 안내해 드립니다.',
+    '서울 강동구 스포키듀LAB 전용 센터 또는 학부모님과 협의된 자택 인근 공간·제휴 시설로 선생님이 직접 방문하여 진행됩니다.',
   ],
   [
-    '친구들을 모아서 소그룹 신청도 가능한가요?',
-    '물론입니다. 친구, 형제자매 등 원하는 멤버로 1:2부터 1:6까지 구성할 수 있습니다. 연령과 수준을 먼저 확인해 안정적으로 매칭합니다.',
+    '운동 신경이 전혀 없거나 느린 학습자 아이도 따라갈 수 있나요?',
+    '네, 사전 성향 파악을 통해 무리한 경쟁 없이 아이의 개별 속도와 성공 경험에 맞춘 맞춤형 난이도로 수업을 설계합니다.',
   ],
   [
-    '운동을 전혀 못 따라가는 아이도 괜찮을까요?',
-    '괜찮습니다. 사전 진단을 통해 현재 수준에서 시작하고, 작은 성공을 충분히 경험하도록 난이도와 속도를 세밀하게 조정합니다.',
+    '마음 맞는 친구들을 모아서 소그룹으로 신청해도 되나요?',
+    '가능합니다. 또래 친구들(2~6명)로 소그룹을 구성해 신청하시면 사회성 발달과 협동심을 기르는 맞춤형 팀 클래스로 운영해 드립니다.',
   ],
   [
-    '수업 시간과 횟수는 어떻게 되나요?',
-    '기본 수업은 50분이며 주 1~2회를 권장합니다. 아이의 목표와 가정의 일정에 맞춰 상담 후 유연하게 설계합니다.',
+    '수업 시간과 주당 횟수는 어떻게 되나요?',
+    '기본 1회 50분 수업으로 주 1회 또는 주 2회 정기 수업으로 진행되며, 상담을 통해 아이의 체력과 일정에 맞춰 조정 가능합니다.',
   ],
 ] as const;
 
-const flowSteps: readonly { text: string; Icon: LucideIcon }[] = [
-  { text: '간편 상담 신청', Icon: ClipboardList },
-  { text: '아이 성향·목표·일정 파악', Icon: Search },
-  { text: '담당 전문 선생님 매칭 및 첫 수업', Icon: UserCheck },
-  { text: '정기 수업 및 피드백 리포트 공유', Icon: MessageCircle },
+const flowSteps: readonly { text: string; detail: string; Icon: LucideIcon }[] = [
+  {
+    text: '간편 상담 신청',
+    detail: '아이 연령과 현재 고민만 간편하게 남겨주세요.',
+    Icon: ClipboardList,
+  },
+  {
+    text: '아이 성향·목표·일정 파악',
+    detail: '16가지 움직임 성향과 사회성 목표를 사전 파악합니다.',
+    Icon: Search,
+  },
+  {
+    text: '담당 전문 선생님 매칭',
+    detail: '아이 성향에 가장 잘 맞는 전문 선생님을 배정합니다.',
+    Icon: UserCheck,
+  },
+  {
+    text: '정기 수업 및 피드백',
+    detail: '매회 수업 후 활동 기록과 성장 피드백을 공유합니다.',
+    Icon: MessageCircle,
+  },
 ] as const;
 
 function ProgramCard({
@@ -159,22 +179,20 @@ function ProgramCard({
     <article
       className={`${v0BentoCard} overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/80 ${koreanLineBreak}`}
     >
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#e8f1ff]">
+      <div className={`${v0CardMediaFrame} bg-[#e8f1ff]`}>
         <Image
           src={image.src}
           alt={image.alt}
           fill
-          className={`object-cover ${v0CardImageHover}`}
+          className={`${v0CardMediaImgCover} ${v0CardImageHover}`}
           style={{ objectPosition: image.objectPosition }}
           sizes="(max-width: 1024px) 100vw, 50vw"
         />
       </div>
-      <div className="p-6 sm:p-8 md:p-10">
+      <div className={v0CardInnerPad}>
         <V0Eyebrow>{eyebrow}</V0Eyebrow>
         <h3 className={`mt-7 ${v0CardTitle} break-keep text-[#0f172a]`}>{title}</h3>
-        <p className="mt-5 text-sm leading-7 text-slate-500 break-keep sm:text-base sm:leading-8">
-          {body}
-        </p>
+        <p className={`mt-5 ${v0Lead}`}>{body}</p>
         <div className="mt-8 flex flex-wrap gap-2">
           {tags.map((t) => (
             <span
@@ -191,13 +209,11 @@ function ProgramCard({
 }
 
 export function PrivateV0Landing() {
-  const [openFaq, setOpenFaq] = useState(0);
-
   return (
-    <main className="overflow-hidden bg-white text-[#0f172a]">
+    <div className="overflow-hidden bg-white text-[#0f172a]">
       <section
         id="top"
-        className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-24 pt-8 sm:pt-12 lg:grid-cols-2 lg:gap-20 lg:pt-16"
+        className={`mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:gap-20 ${v0SectionBand}`}
       >
         <div className={koreanLineBreak}>
           <V0Eyebrow>01 · PERSONAL &amp; SMALL GROUP CLASS</V0Eyebrow>
@@ -208,20 +224,20 @@ export function PrivateV0Landing() {
             <br />
             성장시킵니다.
           </h1>
-          <p className="mt-7 max-w-xl text-pretty text-base leading-8 text-slate-500">
+          <p className={`mt-7 max-w-xl text-pretty ${v0Lead}`}>
             아이마다 신체 발달 속도와 성향은 모두 다릅니다. 연세대학교 체육교육과 출신 전문가들이 아이의
             움직임 수준과 사회성 목표에 맞춰 1:1 및 소그룹 수업을 세밀하게 설계합니다.
           </p>
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className={`mt-9 ${v0CtaButtonRow}`}>
             <a
               href="#apply"
-              className="inline-flex items-center gap-2 rounded-full bg-[#246bce] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#1559b6]"
+              className={`${v0CtaButton} gap-2 bg-[#246bce] text-white transition hover:bg-[#1559b6]`}
             >
               우리 아이 맞춤 상담 신청하기 <ArrowRight className="size-4" aria-hidden />
             </a>
             <a
               href="#program"
-              className="rounded-full border border-slate-200 px-6 py-3.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              className={`${v0CtaButton} border border-slate-200 text-slate-700 transition hover:bg-slate-50`}
             >
               수업 프로그램 보기
             </a>
@@ -274,7 +290,7 @@ export function PrivateV0Landing() {
             {concerns.map(({ text, Icon }, i) => (
               <article
                 key={text}
-                className={`${v0BentoCard} rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200/60 sm:p-8 ${koreanLineBreak}`}
+                className={`${v0BentoCard} rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/60 ${v0CardInnerPad} ${koreanLineBreak}`}
               >
                 <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-blue-50 text-[#246bce]">
                   <Icon className="size-5" aria-hidden />
@@ -299,11 +315,11 @@ export function PrivateV0Landing() {
             {differences.map(([num, title, text, footnote]) => (
               <article
                 key={num}
-                className={`${v0BentoCard} flex flex-col rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-100 sm:p-8 ${koreanLineBreak}`}
+                className={`${v0BentoCard} flex flex-col rounded-3xl bg-slate-50 ring-1 ring-slate-100 ${v0CardInnerPad} ${koreanLineBreak}`}
               >
                 <span className="text-sm font-black text-[#246bce]">{num} ·</span>
                 <h3 className={`mt-6 break-keep sm:mt-8 ${v0CardTitleCompact}`}>{title}</h3>
-                <p className="mt-4 flex-1 text-sm leading-7 text-slate-500 break-keep sm:mt-5">{text}</p>
+                <p className={`mt-4 flex-1 sm:mt-5 ${v0Lead}`}>{text}</p>
                 <DifferenceMiniPanel footnote={footnote} />
               </article>
             ))}
@@ -337,40 +353,37 @@ export function PrivateV0Landing() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <V0SectionBlock eyebrow="HOW IT WORKS" title="안심하고 시작하는 네 단계" />
           <div className="mb-16 grid gap-3 sm:grid-cols-2 md:grid-cols-4 sm:mb-20">
-            {flowSteps.map(({ text, Icon }, i) => (
+            {flowSteps.map(({ text, detail, Icon }, i) => (
               <div
                 key={text}
-                className={`${v0BentoCard} rounded-3xl bg-[#f8fafc] p-5 sm:p-6 ${koreanLineBreak}`}
+                className={`${v0BentoCard} rounded-3xl bg-[#f8fafc] ${v0CardInnerPad} ${koreanLineBreak}`}
               >
                 <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-blue-50 text-[#246bce]">
                   <Icon className="size-5" aria-hidden />
                 </div>
                 <span className="text-xs font-black text-[#246bce]">0{i + 1}</span>
-                <p className="mt-3 text-sm font-bold leading-6 break-keep sm:mt-4">{text}</p>
+                <p className="mt-3 text-sm font-bold leading-6 break-keep">{text}</p>
+                <p className={`mt-1.5 ${v0Lead}`}>{detail}</p>
               </div>
             ))}
           </div>
           <div className="mx-auto max-w-3xl">
             <h3 className={`mb-6 text-center ${v0SubsectionTitle}`}>학부모님이 자주 묻는 질문</h3>
             <div className="flex flex-col gap-3">
-              {faqs.map(([q, a], i) => (
-                <div key={q} className={`rounded-2xl bg-[#f8fafc] px-4 sm:px-6 ${koreanLineBreak}`}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
-                    className="flex w-full items-center justify-between gap-4 py-5 text-left text-sm font-bold break-keep"
-                    aria-expanded={openFaq === i}
-                  >
+              {faqs.map(([q, a]) => (
+                <details
+                  key={q}
+                  className={`group rounded-2xl bg-[#f8fafc] px-4 sm:px-6 ${koreanLineBreak}`}
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-bold text-slate-900 break-keep">
                     {q}
-                    <ChevronDown
-                      className={`size-5 shrink-0 text-slate-400 transition ${openFaq === i ? 'rotate-180' : ''}`}
+                    <ChevronRight
+                      className="size-5 shrink-0 text-slate-400 transition group-open:rotate-90"
                       aria-hidden
                     />
-                  </button>
-                  {openFaq === i ? (
-                    <p className="pb-6 pr-4 text-sm leading-7 text-slate-500 break-keep sm:pr-8">{a}</p>
-                  ) : null}
-                </div>
+                  </summary>
+                  <p className={`pb-6 pr-4 sm:pr-8 ${v0Lead}`}>{a}</p>
+                </details>
               ))}
             </div>
           </div>
@@ -388,10 +401,10 @@ export function PrivateV0Landing() {
               <br />
               찾아주세요.
             </h2>
-            <p className="mt-6 leading-8 text-slate-400">
+            <p className={`mt-6 ${v0Lead} text-slate-400`}>
               아이의 연령과 고민만 편하게 남겨주세요. 담당 선생님이 가장 알맞은 수업 방향을 안내해 드립니다.
             </p>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <div className={`mt-9 ${v0CtaButtonRow}`}>
               <a
                 href={brandContactLinks.phone}
                 className="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-3 text-sm font-bold text-white"
@@ -411,12 +424,10 @@ export function PrivateV0Landing() {
             </div>
           </div>
           <div className="lg:col-span-3">
-            <Suspense fallback={<div className="min-h-[320px] rounded-3xl bg-white/10" aria-hidden />}>
-              <PrivateApplyForm variant="privateV0" />
-            </Suspense>
+            <PrivateApplyForm variant="privateV0" />
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

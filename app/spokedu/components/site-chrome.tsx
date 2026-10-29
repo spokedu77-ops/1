@@ -343,7 +343,7 @@ export function SiteHeader() {
         <div
           className={`${marketingSectionInner} grid h-[var(--spokedu-public-header-height)] grid-cols-[auto_1fr_auto] items-center gap-3 xl:gap-4`}
         >
-          <BrandLogo onDark={onHero} scrollHomeOnClick size="lg" />
+          <BrandLogo onDark={onHero} scrollHomeOnClick size="sm" />
 
           <nav
             className="hidden h-10 min-w-0 items-center justify-center gap-3 text-[14px] xl:flex xl:gap-4 xl:text-[15px] 2xl:gap-6"
@@ -356,7 +356,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderLabCta.href}
               trackLabel={siteHeaderLabCta.trackLabel}
-              className={`hidden h-10 items-center justify-center rounded-full border px-4 text-[14px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
                   : onHero
@@ -371,7 +371,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
-              className={`hidden h-10 items-center justify-center rounded-[0.5rem] px-4 text-[15px] font-medium leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden h-10 items-center justify-center rounded-full px-5 text-sm font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
                   : onHero
@@ -443,7 +443,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={`mobile-${siteHeaderCta.trackLabel}`}
-              className="inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="inline-flex min-h-12 items-center justify-center rounded-full px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               style={{ backgroundColor: ATHLETIC_BLUE }}
               onNavigate={closeMenus}
             >

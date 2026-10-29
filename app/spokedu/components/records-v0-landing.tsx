@@ -19,6 +19,11 @@ import {
   koreanLineBreak,
   v0BentoCard,
   v0CardImageHover,
+  v0CardInnerPad,
+  v0CardMediaFrame,
+  v0CardMediaImgCover,
+  v0CtaButton,
+  v0CtaButtonRow,
   v0FilterChipActive,
   v0FilterChipBase,
   v0FilterChipIdle,
@@ -103,7 +108,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
   }, [activeFilter, cards]);
 
   return (
-    <main className={`break-keep bg-white text-slate-950 ${koreanLineBreak}`}>
+    <div className={`break-keep bg-white text-slate-950 ${koreanLineBreak}`}>
       <section className={`px-6 sm:px-8 lg:px-12 ${v0SectionBand}`}>
         <div className="mx-auto max-w-5xl text-center">
           <V0Eyebrow>FIELD RECORDS ARCHIVE</V0Eyebrow>
@@ -115,7 +120,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
             <br />
             <span className={v0GradientText}>서로 다른 수업</span>을 설계합니다.
           </h1>
-          <p className="mx-auto mt-7 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
+          <p className={`mx-auto mt-7 max-w-2xl ${v0Lead}`}>
             {recordsPage.hero.subtitle}
           </p>
           <div className="mx-auto mt-10 grid max-w-4xl grid-cols-2 overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-50 p-2 sm:grid-cols-4 sm:p-3">
@@ -168,22 +173,22 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                 className={`${v0BentoCard} flex h-full flex-col justify-between overflow-hidden rounded-3xl border-slate-200/80 bg-white shadow-sm`}
               >
                 <div>
-                  <div className="relative aspect-[16/9] overflow-hidden">
+                  <div className={v0CardMediaFrame}>
                     <Image
                       src={item.image}
                       alt={`${item.venue} 수업 현장`}
                       fill
-                      className={`object-cover ${v0CardImageHover}`}
+                      className={`${v0CardMediaImgCover} ${v0CardImageHover}`}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <span className="absolute left-4 top-4 max-w-[calc(100%-2rem)] rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm break-keep">
                       {item.categoryBadge}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-2 p-6">
+                  <div className={`flex flex-col gap-2 ${v0CardInnerPad}`}>
                     <h3 className={`${v0CardTitleCompact} break-keep`}>{item.venue}</h3>
                     <p className="text-sm font-bold text-blue-600 break-keep">{item.theme}</p>
-                    <p className="text-sm leading-6 text-slate-500 break-keep">{item.description}</p>
+                    <p className={v0Lead}>{item.description}</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
@@ -199,14 +204,14 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
             {activeFilter === '전체 보기' ? (
               <Link
                 href={`${SPOKEDU_PATHS.education}#contact`}
-                className={`${v0BentoCard} flex min-h-full flex-col justify-between rounded-3xl border-blue-500/20 bg-blue-600 p-8 text-white shadow-md hover:bg-blue-700`}
+                className={`${v0BentoCard} flex min-h-full flex-col justify-between rounded-3xl border-blue-500/20 bg-blue-600 text-white shadow-md hover:bg-blue-700 ${v0CardInnerPad}`}
               >
                 <div>
                   <p className="text-xs font-bold tracking-[0.16em] text-blue-200">CUSTOM OPERATION</p>
                   <h3 className={`mt-4 ${v0CardTitle} break-keep text-white`}>
                     우리 기관도 맞춤 수업이 가능할까요?
                   </h3>
-                  <p className="mt-4 text-sm leading-7 text-blue-100 break-keep">
+                  <p className={`mt-4 ${v0Lead} text-blue-100`}>
                     공간과 인원, 예산만 알려주시면 현장에 최적화된 운영안을 제안해 드립니다.
                   </p>
                 </div>
@@ -227,13 +232,13 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
             {principles.map(([title, detail], index) => (
               <div
                 key={title}
-                className={`${v0BentoCard} rounded-3xl border-slate-200 bg-white p-6 sm:p-8`}
+                className={`${v0BentoCard} rounded-3xl border-slate-200 bg-white ${v0CardInnerPad}`}
               >
                 <div className="mb-8 flex size-9 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white sm:mb-10">
                   0{index + 1}
                 </div>
                 <h3 className={`${v0CardTitleCompact} break-keep`}>{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-500 break-keep">{detail}</p>
+                <p className={`mt-2 ${v0Lead}`}>{detail}</p>
               </div>
             ))}
           </div>
@@ -247,10 +252,10 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
             <h2 className={`mt-3 max-w-2xl ${v0CtaTitleOnDark}`}>우리 기관과 비슷한 사례를 찾으셨나요?</h2>
             <p className={`mt-4 max-w-2xl ${v0Lead} text-slate-300`}>{recordsPage.cta.description}</p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <div className={v0CtaButtonRow}>
             <Link
               href={`${SPOKEDU_PATHS.education}#contact`}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-5 py-3.5 text-sm font-bold transition hover:bg-blue-500"
+              className={`${v0CtaButton} gap-2 bg-blue-600 text-white transition hover:bg-blue-500`}
             >
               {recordsPage.cta.label}
               <ArrowRight className="size-4" aria-hidden />
@@ -260,7 +265,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                 href={KAKAO_CHANNEL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-700 px-5 py-3.5 text-sm font-bold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                className={`${v0CtaButton} gap-2 border border-slate-700 text-slate-200 transition hover:border-slate-500 hover:bg-slate-800`}
               >
                 <MessageCircle className="size-4" aria-hidden />
                 카카오톡 간편 문의
@@ -269,6 +274,6 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
