@@ -227,6 +227,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   const setOnline = useMasterStore((state) => state.setOnline);
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
+  const loadHomePrograms = useMasterStore((state) => state.loadHomePrograms);
   const reloadHomePrograms = useMasterStore((state) => state.reloadHomePrograms);
   const syncFavoriteProgramsFromServer = useMasterStore((state) => state.syncFavoriteProgramsFromServer);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
@@ -270,6 +271,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   const needsExplanationData = masterRouteNeedsExplanationData(pathname, activeBasePath);
   const needsProgramCatalog = masterRouteNeedsProgramCatalog(pathname, activeBasePath);
   const needsFavoriteSync = masterRouteNeedsFavoriteSync(pathname, activeBasePath);
+  const canHostOperationalData = Boolean(accessGuard.snapshot?.canUseAttendance);
   const hideChrome = isOnboarding || isParentView || isPromotionRedeem || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
   const isProtectedRoute = isProtectedMasterRoute(pathname, activeBasePath);
   const routeRequirement = getMasterRouteRequirement(pathname, activeBasePath);
@@ -318,10 +320,10 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
     if (isLanding || isPublicDocument) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     if (!canBrowseLibrary) return;
-    if (pathname === `${activeBasePath}/dashboard`) void reloadHomePrograms();
+    if (pathname === `${activeBasePath}/dashboard`) void loadHomePrograms();
     else if (needsProgramCatalog) void loadPrograms();
     if (canSyncFavorites && needsFavoriteSync) void syncFavoriteProgramsFromServer();
-  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadPrograms, needsFavoriteSync, needsProgramCatalog, pathname, reloadHomePrograms, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, needsFavoriteSync, needsProgramCatalog, pathname, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
@@ -331,7 +333,7 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
       if (pathname === `${activeBasePath}/dashboard`) void reloadHomePrograms();
       else if (needsProgramCatalog) void reloadPrograms();
       else return;
-      if (canSyncFavorites && needsFavoriteSync) void syncFavoriteProgramsFromServer();
+      if (canSyncFavorites && needsFavoriteSync) void syncFavoriteProgramsFromServer({ force: true });
     };
     window.addEventListener('focus', refreshProgramsOnFocus);
     document.addEventListener('visibilitychange', refreshProgramsOnFocus);
@@ -626,13 +628,17 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
                     snapshot={accessGuard.snapshot}
                     spomatShopAvailable={accessGuard.spomatShopAvailable}
                   >
-                    {needsOperationalData ? (
-                      <OperationalDataProvider>
+                    {canHostOperationalData ? (
+                      <OperationalDataProvider syncWhenRouteNeedsData={needsOperationalData}>
                         {needsExplanationData ? (
                           <ExplanationDataProvider enabled={accessGuard.snapshot.canUseRecords}>{children}</ExplanationDataProvider>
                         ) : children}
                       </OperationalDataProvider>
-                    ) : children}
+                    ) : needsExplanationData ? (
+                      <ExplanationDataProvider enabled={accessGuard.snapshot?.canUseRecords === true}>{children}</ExplanationDataProvider>
+                    ) : (
+                      children
+                    )}
                   </MasterAccessProvider>
                 ) : (
                   children

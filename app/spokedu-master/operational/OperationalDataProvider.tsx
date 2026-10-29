@@ -61,7 +61,13 @@ function getProviderErrorMessage(caught: unknown) {
   return getMasterRequestErrorMessage(caught);
 }
 
-export function OperationalDataProvider({ children }: { children: ReactNode }) {
+export function OperationalDataProvider({
+  children,
+  syncWhenRouteNeedsData = false,
+}: {
+  children: ReactNode;
+  syncWhenRouteNeedsData?: boolean;
+}) {
   const profile = useProfile();
   const canUseAttendance = useMasterCanUseAttendance();
   const ownerId = getProfileOwnerId(profile);
@@ -102,13 +108,16 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       const studentsRequest = masterFetchJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students')
         .then((studentsJson) => {
           if (activeOwnerRef.current !== ownerId) return;
-          setStudents(studentsJson.data ?? []);
+          const nextStudents = studentsJson.data ?? [];
+          setStudents(nextStudents);
         });
       const scheduleRequest = masterFetchJson<{ data?: { classes?: MasterClassDto[]; sessions?: MasterSessionDto[] } }>('/api/spokedu-master/sessions')
         .then((sessionsJson) => {
           if (activeOwnerRef.current !== ownerId) return;
-          setClasses(sessionsJson.data?.classes ?? []);
-          setSessions(sessionsJson.data?.sessions ?? []);
+          const nextClasses = sessionsJson.data?.classes ?? [];
+          const nextSessions = sessionsJson.data?.sessions ?? [];
+          setClasses(nextClasses);
+          setSessions(nextSessions);
         });
       const results = await Promise.allSettled([studentsRequest, scheduleRequest]);
       if (activeOwnerRef.current !== ownerId) return;
@@ -130,8 +139,33 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, [canUseAttendance, clearData, ownerId]);
 
   useEffect(() => {
-    void reload('hard');
-  }, [reload]);
+    if (!ownerId || !canUseAttendance) {
+      activeOwnerRef.current = null;
+      clearData();
+      setError(null);
+      setStatus('idle');
+      lastSoftRefreshAtRef.current = 0;
+      return;
+    }
+    if (activeOwnerRef.current && activeOwnerRef.current !== ownerId) {
+      activeOwnerRef.current = null;
+      clearData();
+      setError(null);
+      setStatus('idle');
+      lastSoftRefreshAtRef.current = 0;
+    }
+  }, [canUseAttendance, clearData, ownerId]);
+
+  useEffect(() => {
+    if (!ownerId || !canUseAttendance || !syncWhenRouteNeedsData) return;
+    if (status === 'idle' || status === 'error') {
+      void reload('hard');
+      return;
+    }
+    if (status === 'ready' && Date.now() - lastSoftRefreshAtRef.current >= OPERATIONAL_SOFT_REFRESH_MIN_INTERVAL_MS) {
+      void reload('soft');
+    }
+  }, [canUseAttendance, ownerId, reload, status, syncWhenRouteNeedsData]);
 
   // Second-tab SPOMOVE / field return: soft refresh keeps lists visible (no blank cockpit).
   useEffect(() => {

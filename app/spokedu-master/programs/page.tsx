@@ -14,6 +14,7 @@ import {
   PROGRAM_GATEWAY_PACK_ID,
   resolveProgramGatewayHero,
 } from '../lib/programGatewayAssets';
+import { readProgramGatewayMediaCache, writeProgramGatewayMediaCache } from '../lib/programGatewayMediaCache';
 
 type ProgramGatewayQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
@@ -28,6 +29,17 @@ export default function ProgramsPage() {
 
   useEffect(() => {
     let alive = true;
+    const cached = readProgramGatewayMediaCache();
+    if (cached) {
+      setLessonHero(cached.media.lessonHero);
+      setSpomoveHero(cached.media.spomoveHero);
+      setHeroCacheBust(cached.cacheBust);
+      setGatewayMediaLoaded(true);
+      return () => {
+        alive = false;
+      };
+    }
+
     const supabase = getSupabaseBrowserClient();
 
     void supabase
@@ -42,12 +54,12 @@ export default function ProgramsPage() {
           const media = normalizeProgramGatewayMedia(gateway.data?.assets_json);
           setLessonHero(media.lessonHero);
           setSpomoveHero(media.spomoveHero);
-          setHeroCacheBust(
-            resolveSpomovePackCacheBust(
-              gateway.data?.updated_at as string | undefined,
-              [media.lessonHero, media.spomoveHero].filter(Boolean) as string[],
-            ),
+          const cacheBust = resolveSpomovePackCacheBust(
+            gateway.data?.updated_at as string | undefined,
+            [media.lessonHero, media.spomoveHero].filter(Boolean) as string[],
           );
+          setHeroCacheBust(cacheBust);
+          writeProgramGatewayMediaCache({ media, cacheBust });
         }
         setGatewayMediaLoaded(true);
       })

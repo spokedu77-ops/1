@@ -27,6 +27,8 @@ describe('OperationalDataProvider server-first contract', () => {
     expect(text).toContain('lastSoftRefreshAtRef');
     expect(text).toContain('activeOwnerRef.current = null');
     expect(text).toContain("mode === 'hard'");
+    expect(text).toContain('syncWhenRouteNeedsData');
+    expect(text).not.toMatch(/useEffect\(\(\) => \{\s*void reload\('hard'\);\s*\}, \[reload\]\)/);
   });
 
   it('publishes schedule data independently of the student request and keeps soft refresh data visible', () => {
@@ -34,8 +36,10 @@ describe('OperationalDataProvider server-first contract', () => {
 
     expect(text).toContain('const studentsRequest =');
     expect(text).toContain('const scheduleRequest =');
-    expect(text).toContain('setClasses(sessionsJson.data?.classes ?? [])');
-    expect(text).toContain('setSessions(sessionsJson.data?.sessions ?? [])');
+    expect(text).toContain('setClasses((current)');
+    expect(text).toContain('setSessions((current)');
+    expect(text).not.toContain('mergeStudentsPreservingEqualItems');
+    expect(text).not.toContain('mergeSessionsPreservingEqualItems');
     expect(text).toContain('Promise.allSettled([studentsRequest, scheduleRequest])');
     expect(text).toContain("if (mode === 'hard') setStatus('error')");
     expect(text).not.toContain('const [studentsJson, sessionsJson] = await Promise.all');

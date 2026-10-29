@@ -125,7 +125,7 @@ interface MasterState {
   addTodayLesson: (ownerId: string | null, program: { id: string; title: string }) => void;
   removeTodayLesson: (ownerId: string | null, programId: string) => void;
   clearTodayLesson: (ownerId: string | null) => void;
-  syncFavoriteProgramsFromServer: () => Promise<boolean>;
+  syncFavoriteProgramsFromServer: (options?: { force?: boolean }) => Promise<boolean>;
   notifications: Notification[];
   markRead: (id: string) => void;
   markAllRead: () => void;
@@ -434,6 +434,8 @@ type StoreGet = Parameters<StateCreator<MasterState>>[1];
 const programsLoadInFlight = new Map<string, Promise<void>>();
 const homeProgramsLoadInFlight = new Map<string, Promise<void>>();
 const favoritesSyncInFlight = new Map<string, Promise<boolean>>();
+const favoritesSyncCompletedAt = new Map<string, number>();
+const FAVORITES_SYNC_MIN_INTERVAL_MS = 60_000;
 
 async function fetchAndSetPrograms(
   set: StoreSet,
@@ -899,9 +901,13 @@ export const useMasterStore = create<MasterState>()(
           todayLessonByOwner: clearTodayLessonForOwner(state.todayLessonByOwner, ownerId),
         }));
       },
-      syncFavoriteProgramsFromServer: async () => {
+      syncFavoriteProgramsFromServer: async (options) => {
         const ownerId = getServerSyncableOwnerId(getRecentActivityOwner(get().profile)?.ownerId ?? null);
         if (!ownerId) return false;
+        if (!options?.force) {
+          const completedAt = favoritesSyncCompletedAt.get(ownerId) ?? 0;
+          if (Date.now() - completedAt < FAVORITES_SYNC_MIN_INTERVAL_MS) return true;
+        }
         const existing = favoritesSyncInFlight.get(ownerId);
         if (existing) return existing;
         const request: Promise<boolean> = (async () => {
@@ -922,6 +928,7 @@ export const useMasterStore = create<MasterState>()(
             for (const ref of mergedRefs) {
               if (!remoteKeys.has(`${ref.type}:${ref.id}`)) await mutateFavoriteOnServer(ownerId, ref, 'POST');
             }
+            favoritesSyncCompletedAt.set(ownerId, Date.now());
             return true;
           } catch {
             return false;
