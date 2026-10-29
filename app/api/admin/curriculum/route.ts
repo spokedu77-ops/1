@@ -115,15 +115,48 @@ export async function PATCH(request: Request) {
 
   const reorder = parseReorder(body);
   if (reorder) {
+    // Not a single DB transaction: Supabase row updates run sequentially. Rollback is best-effort only.
     const supabase = getServiceSupabase();
-    for (const entry of reorder) {
-      const { error } = await supabase
-        .from('curriculum')
-        .update({ display_order: entry.display_order })
-        .eq('id', entry.id);
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    const ids = reorder.map((entry) => entry.id);
+    const { data: beforeRows, error: readError } = await supabase
+      .from('curriculum')
+      .select('id, display_order')
+      .in('id', ids);
+    if (readError) {
+      return NextResponse.json({ error: readError.message }, { status: 500 });
+    }
+    const beforeOrder = new Map(
+      (beforeRows ?? []).map((row) => [(row as { id: number }).id, (row as { display_order: number }).display_order]),
+    );
+    const applied: ReorderEntry[] = [];
+    try {
+      for (const entry of reorder) {
+        const { error } = await supabase
+          .from('curriculum')
+          .update({ display_order: entry.display_order })
+          .eq('id', entry.id);
+        if (error) throw new Error(error.message);
+        applied.push(entry);
       }
+    } catch (reorderError) {
+      let rollbackFailed = false;
+      for (let index = applied.length - 1; index >= 0; index -= 1) {
+        const entry = applied[index]!;
+        const previous = beforeOrder.get(entry.id);
+        if (previous == null) continue;
+        const { error: revertError } = await supabase
+          .from('curriculum')
+          .update({ display_order: previous })
+          .eq('id', entry.id);
+        if (revertError) rollbackFailed = true;
+      }
+      // Partial writes may remain; invalidate even when rollback fails so readers re-sync from DB.
+      invalidateSpokeduMasterProgramSourceCache();
+      const message = reorderError instanceof Error ? reorderError.message : 'reorder failed';
+      return NextResponse.json(
+        { error: message, partialApplied: applied.length, rollbackFailed },
+        { status: 500 },
+      );
     }
     invalidateSpokeduMasterProgramSourceCache();
     return NextResponse.json({ ok: true, updated: reorder.length });
