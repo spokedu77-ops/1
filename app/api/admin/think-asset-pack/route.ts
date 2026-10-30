@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { isSpomoveOnlyAdmin, isSpomoveAssetPack } from '@/app/lib/server/spomoveAdminScope';
 import {
   hasOnlyAllowedSpomoveGuideVideoRefs,
   SPOMOVE_CONTENT_PACK_ID,
@@ -15,12 +16,15 @@ import {
 import { validateSpomovePublishedGuidesForSave } from '@/app/lib/spomove/validateSpomovePublishedGuidesForSave';
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin({ scope: 'spomove' });
   if (!auth.ok) return auth.response;
 
   try {
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     const id = typeof body?.id === 'string' ? body.id.trim() : '';
+    if (isSpomoveOnlyAdmin(auth.email) && !isSpomoveAssetPack(id)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     const theme = typeof body?.theme === 'string' ? body.theme.trim() : null;
     const assets_json = body?.assets_json;

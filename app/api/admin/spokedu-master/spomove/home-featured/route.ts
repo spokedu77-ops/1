@@ -50,7 +50,7 @@ async function loadHomeFeaturedSlots() {
 }
 
 export async function GET() {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin({ scope: 'spomove' });
   if (!auth.ok) return auth.response;
 
   try {
@@ -64,7 +64,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin({ scope: 'spomove' });
   if (!auth.ok) return auth.response;
 
   try {

@@ -1,5 +1,9 @@
 import { MASTER_EMAIL, SPOMOVE_EMAIL, ROLES, getAdminEmails } from '@/app/lib/constants/admin';
 
+export function isSpomoveOnlyAdmin(email: string | null | undefined): boolean {
+  return email?.trim().toLowerCase() === SPOMOVE_EMAIL.toLowerCase();
+}
+
 /** 로그인 alias와 동일 — 플랫폼 운영진 3인 auth 이메일 */
 export const PLATFORM_ADMIN_EMAILS = [
   MASTER_EMAIL,

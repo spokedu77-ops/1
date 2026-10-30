@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { isSpomoveOnlyAdmin, isSpomoveStoragePath } from '@/app/lib/server/spomoveAdminScope';
 
 type ReqBody = {
   path?: string;
@@ -9,12 +10,15 @@ type ReqBody = {
 };
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin({ scope: 'spomove' });
   if (!auth.ok) return auth.response;
 
   try {
     const body = (await request.json().catch(() => null)) as ReqBody | null;
     const path = typeof body?.path === 'string' ? body.path.trim().replace(/^\/+/, '') : '';
+    if (isSpomoveOnlyAdmin(auth.email) && !isSpomoveStoragePath(path)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     if (!path) {
       return NextResponse.json({ error: 'path가 필요합니다.' }, { status: 400 });
     }

@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/lib/server/adminAuth';
 
 export async function GET() {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin({ scope: 'spomove' });
   if (!auth.ok) {
     const status = auth.response.status;
     const reason =

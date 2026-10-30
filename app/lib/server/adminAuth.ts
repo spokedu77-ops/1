@@ -20,6 +20,7 @@ import {
   isPlatformAdminFromUserRow,
 } from '@/app/lib/auth/platformAdminIdentity';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { isSpomoveOnlyAdmin } from '@/app/lib/auth/platformAdminIdentity';
 
 // ─── 결과 타입 ────────────────────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ export async function isPlatformAdminUser(
  *   // ...
  * }
  */
-export async function requireAdmin(): Promise<AdminAuthResult> {
+export async function requireAdmin(options?: { scope: 'spomove' }): Promise<AdminAuthResult> {
   try {
     const serverSupabase = await createServerSupabaseClient();
 
@@ -156,6 +157,9 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
       };
     }
 
+    if (isSpomoveOnlyAdmin(user.email) && options?.scope !== 'spomove') {
+      return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+    }
     const admin = await isPlatformAdminUser(user, serverSupabase);
     if (admin) {
       return { ok: true, userId: user.id, email: user.email ?? null };

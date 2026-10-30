@@ -1,0 +1,13 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+const fx=vi.hoisted(()=>({row:{is_active:true} as {is_active:boolean}|null,error:null as Error|null,admin:false,account:'individual'}));
+vi.mock('@/app/lib/server/adminAuth',()=>({getServiceSupabase:()=>({}),isPlatformAdminUser:async()=>fx.admin}));
+vi.mock('@/app/lib/server/institutionAccount',()=>({getMasterAccountType:async()=>({accountType:fx.account,error:null})}));
+vi.mock('@/app/lib/supabase/server',()=>({createServerSupabaseClient:async()=>({from:()=>{const query={select:()=>query,eq:()=>query,maybeSingle:async()=>({data:fx.row,error:fx.error})};return query}})}));
+import {canAccessTeacherMaterials} from './teacherAuth';
+beforeEach(()=>{fx.row={is_active:true};fx.error=null;fx.admin=false;fx.account='individual'});
+it.each([false,true])('denies missing registration, admin=%s',async admin=>{fx.admin=admin;fx.row=null;expect(await canAccessTeacherMaterials({id:'unregistered'})).toBe(false)});
+it('denies failed registration lookup',async()=>{fx.error=new Error('offline');expect(await canAccessTeacherMaterials({id:'error'})).toBe(false)});
+it('preserves registered active teachers',async()=>{expect(await canAccessTeacherMaterials({id:'teacher'})).toBe(true)});
+it('preserves inactive teacher denial',async()=>{fx.row={is_active:false};expect(await canAccessTeacherMaterials({id:'inactive'})).toBe(false)});
+it('preserves institution denial',async()=>{fx.account='institution';expect(await canAccessTeacherMaterials({id:'institution'})).toBe(false)});
+it('preserves the existing registered-admin handling',async()=>{fx.admin=true;fx.row={is_active:false};expect(await canAccessTeacherMaterials({id:'admin'})).toBe(true)});

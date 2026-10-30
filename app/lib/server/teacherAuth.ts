@@ -2,7 +2,7 @@
  * 강사 자료(공지·커리큘럼·SPOMOVE) 접근 권한 검사
  *
  * 종료 처리된 강사(users.is_active = false)는 자료 열람 불가.
- * 플랫폼 관리자는 teacher 화면을 볼 때도 접근 허용.
+ * 등록된 플랫폼 관리자는 teacher 화면을 볼 때도 접근 허용.
  */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
@@ -26,6 +26,12 @@ export async function canAccessTeacherMaterials(
 ): Promise<boolean> {
   const supabase = serverSupabase ?? (await createServerSupabaseClient());
 
+  const { data, error } = await supabase.from('users').select('is_active').eq('id', user.id).maybeSingle();
+  if (error || !data) {
+    if (error) devLogger.error('[canAccessTeacherMaterials] users lookup failed', error);
+    return false;
+  }
+
   if (await isPlatformAdminUser(user, supabase)) {
     return true;
   }
@@ -42,18 +48,7 @@ export async function canAccessTeacherMaterials(
     return false;
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('is_active')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (error) {
-    devLogger.error('[canAccessTeacherMaterials] users lookup failed', error);
-    return false;
-  }
-
-  return data?.is_active !== false;
+  return data.is_active !== false;
 }
 
 /** API 라우트용 — 종료 강사는 403 */

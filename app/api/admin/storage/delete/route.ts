@@ -6,10 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { isSpomoveOnlyAdmin, isSpomoveStoragePath } from '@/app/lib/server/spomoveAdminScope';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin({ scope: 'spomove' });
   if (!auth.ok) return auth.response;
 
   try {
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
 
     let toRemove: string[] = path ? [path] : paths ?? [];
     toRemove = toRemove.map((p) => p.trim().replace(/^\/+/, '')).filter(Boolean);
+    if (isSpomoveOnlyAdmin(auth.email) && toRemove.some(path => !isSpomoveStoragePath(path))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     if (toRemove.length === 0) {
       return NextResponse.json({ error: 'path 또는 paths 필수' }, { status: 400 });
     }
