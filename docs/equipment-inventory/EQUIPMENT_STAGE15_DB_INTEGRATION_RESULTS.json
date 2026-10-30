@@ -1,0 +1,95 @@
+{
+  "ran_at": "2026-10-30T11:30:53.826Z",
+  "results": [
+    {
+      "section": "docker_postgres",
+      "status": "PASS",
+      "detail": "spokedu-equipment-stage15-pg:55432/equipment_stage15"
+    },
+    {
+      "section": "migration_clean",
+      "status": "PASS",
+      "detail": "bootstrap + expand"
+    },
+    {
+      "section": "migration_reapply",
+      "status": "PASS",
+      "detail": "second apply no error"
+    },
+    {
+      "section": "opening_gate",
+      "status": "PASS",
+      "detail": "rent blocked"
+    },
+    {
+      "section": "scenario_step1",
+      "status": "PASS",
+      "detail": "T10 L0 Q0 A10"
+    },
+    {
+      "section": "scenario_step2",
+      "status": "PASS",
+      "detail": "L4 A6"
+    },
+    {
+      "section": "scenario_step3",
+      "status": "PASS",
+      "detail": "L7 A3 distinct rental_id"
+    },
+    {
+      "section": "scenario_step4",
+      "status": "PASS",
+      "detail": "L5 A5 partial return"
+    },
+    {
+      "section": "scenario_step5",
+      "status": "PASS",
+      "detail": "Q2 A3"
+    },
+    {
+      "section": "scenario_step6",
+      "status": "PASS",
+      "detail": "L2 Q2 A6"
+    },
+    {
+      "section": "over_return",
+      "status": "PASS",
+      "detail": "RETURN_EXCEEDS_OUTSTANDING"
+    },
+    {
+      "section": "closed_rental",
+      "status": "PASS",
+      "detail": "EQUIPMENT_RENTAL_ALREADY_CLOSED"
+    },
+    {
+      "section": "idempotency_replay",
+      "status": "PASS",
+      "detail": "rental 63e9f329-5ae6-4e73-bb73-89f0d17796ff"
+    },
+    {
+      "section": "idempotency_conflict",
+      "status": "PASS",
+      "detail": "EQUIPMENT_IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "section": "rpc_grants_authenticated",
+      "status": "PASS",
+      "detail": "execute=f"
+    },
+    {
+      "section": "rpc_grants_service_role",
+      "status": "PASS",
+      "detail": "execute=t"
+    },
+    {
+      "section": "concurrency_available",
+      "status": "PASS",
+      "detail": "second rent rejected"
+    },
+    {
+      "section": "opening_vs_rent_ledger",
+      "status": "PASS",
+      "detail": "opening_rows catalog1=1 rent_rows=3"
+    }
+  ]
+}

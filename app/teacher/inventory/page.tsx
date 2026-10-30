@@ -59,6 +59,31 @@ export default function TeacherInventoryPage() {
     setLoading(true);
     setFetchError(null);
     try {
+      const holdingsRes = await fetch('/api/teacher/equipment/holdings', { cache: 'no-store' });
+      if (holdingsRes.status === 401) {
+        setFetchError('로그인이 필요합니다.');
+        setLoading(false);
+        return;
+      }
+      if (holdingsRes.ok) {
+        const holdingsBody = (await holdingsRes.json()) as {
+          mode?: 'legacy' | 'ledger';
+          items?: InventoryItem[];
+        };
+        if (holdingsBody.mode === 'ledger') {
+          setInventory(holdingsBody.items ?? []);
+          setLogs([]);
+          const session = await getSessionWithRefreshRecovery(supabase);
+          const user = session?.user;
+          if (user) {
+            const { data: userData } = await supabase.from('users').select('name').eq('id', user.id).single();
+            if (userData) setUserName(userData.name);
+          }
+          setLoading(false);
+          return;
+        }
+      }
+
       const session = await getSessionWithRefreshRecovery(supabase);
       const user = session?.user;
 
@@ -68,18 +93,16 @@ export default function TeacherInventoryPage() {
         return;
       }
 
-      // 2. 유저 이름 가져오기
       const { data: userData } = await supabase.from('users').select('name').eq('id', user.id).single();
       if (userData) setUserName(userData.name);
 
-      // 3. 내 교구 리스트 가져오기
+      // legacy: inventory + logs (666행 SSOT — ledger와 이중 합산하지 않음)
       const { data: invData } = await supabase
         .from('inventory')
         .select('*')
         .eq('user_id', user.id)
         .order('name', { ascending: true });
 
-      // 4. 내 활동 로그 가져오기
       const { data: logData } = await supabase
         .from('inventory_logs')
         .select('*')

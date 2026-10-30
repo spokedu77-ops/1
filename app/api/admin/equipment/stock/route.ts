@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { fetchEquipmentStock } from '@/app/lib/equipment/fetchStock';
+import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -8,7 +9,12 @@ export async function GET() {
   try {
     const items = await fetchEquipmentStock(getServiceSupabase());
     return NextResponse.json(
-      { items },
+      {
+        items,
+        capabilities: {
+          ledger_writes: isLedgerWriteMode(),
+        },
+      },
       { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
     );
   } catch {

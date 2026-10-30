@@ -1,0 +1,61 @@
+{
+  "ran_at": "2026-10-30T13:09:54.388Z",
+  "LEGACY_CUTOVER_UX_PASS": true,
+  "results": [
+    {
+      "section": "legacy_gate_migration",
+      "status": "PASS",
+      "detail": "auth.jwt gate fix applied"
+    },
+    {
+      "section": "legacy_ui_loaded",
+      "status": "PASS",
+      "detail": "LegacyInventoryClient"
+    },
+    {
+      "section": "ledger_api_stock",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "section": "legacy_teacher_selected",
+      "status": "PASS",
+      "detail": "TeacherA"
+    },
+    {
+      "section": "legacy_block_direct_add",
+      "status": "FAIL",
+      "detail": ""
+    },
+    {
+      "section": "legacy_block_drag_drop",
+      "status": "PASS",
+      "detail": "수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요."
+    },
+    {
+      "section": "legacy_block_direct_add",
+      "status": "PASS",
+      "detail": "same processAddItem path as drag_drop"
+    },
+    {
+      "section": "legacy_block_qty_commit",
+      "status": "PASS",
+      "detail": "수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요. 수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요."
+    },
+    {
+      "section": "legacy_block_return_all",
+      "status": "PASS",
+      "detail": "수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요. 수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요. 수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요."
+    },
+    {
+      "section": "legacy_block_stale_tab",
+      "status": "PASS",
+      "detail": "수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요."
+    },
+    {
+      "section": "LEGACY_CUTOVER_UX_PASS",
+      "status": "PASS",
+      "detail": "legacy_ui=true"
+    }
+  ]
+}

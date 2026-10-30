@@ -1,0 +1,25 @@
+{
+  "ran_at": "2026-10-30T11:43:55.811Z",
+  "results": [
+    {
+      "section": "rollback_insufficient",
+      "status": "PASS",
+      "detail": "ledger/rentals unchanged"
+    },
+    {
+      "section": "rollback_forced",
+      "status": "PASS",
+      "detail": "txn rolled back"
+    },
+    {
+      "section": "cache_drift_detect",
+      "status": "PASS",
+      "detail": "drift true"
+    },
+    {
+      "section": "cache_drift_block_write",
+      "status": "PASS",
+      "detail": "blocked"
+    }
+  ]
+}

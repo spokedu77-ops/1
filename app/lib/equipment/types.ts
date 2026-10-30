@@ -12,6 +12,8 @@ export type EquipmentStockRow = {
   qty_lent: number;
   qty_warehouse: number;
   qty_available: number;
+  opening_confirmed: boolean;
+  cache_drift: boolean;
 };
 
 export type EquipmentRentalRow = {

@@ -15,6 +15,22 @@ export function mapEquipmentRpcError(message: string): { status: number; code: s
   if (m.includes('EQUIPMENT_REQUEST_INVALID')) {
     return { status: 400, code: 'INVALID_REQUEST', error: '요청 형식이 올바르지 않습니다.' };
   }
+  if (m.includes('EQUIPMENT_CACHE_DRIFT')) {
+    return { status: 409, code: 'CACHE_DRIFT', error: '재고 캐시 불일치가 탐지되었습니다. 수불 처리가 차단됩니다.' };
+  }
+  if (m.includes('EQUIPMENT_OPENING_ALREADY_CONFIRMED')) {
+    return {
+      status: 409,
+      code: 'OPENING_ALREADY_CONFIRMED',
+      error: '이미 기초재고(OPENING)가 확정된 품목입니다.',
+    };
+  }
+  if (m.includes('EQUIPMENT_OPENING_NOT_CONFIRMED')) {
+    return { status: 409, code: 'OPENING_NOT_CONFIRMED', error: '기초재고 확정 전에는 대여할 수 없습니다.' };
+  }
+  if (m.includes('EQUIPMENT_RENTAL_ALREADY_CLOSED')) {
+    return { status: 409, code: 'RENTAL_ALREADY_CLOSED', error: '이미 종료된 대여입니다.' };
+  }
   if (m.includes('EQUIPMENT_CATALOG_NOT_FOUND') || m.includes('EQUIPMENT_RENTAL_NOT_FOUND')) {
     return { status: 404, code: 'NOT_FOUND', error: '대상을 찾을 수 없습니다.' };
   }

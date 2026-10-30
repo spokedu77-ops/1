@@ -1,0 +1,106 @@
+{
+  "ran_at": "2026-10-30T12:33:32.159Z",
+  "gates": {
+    "ADMIN_API_AUTH_E2E_PASS": true,
+    "ADMIN_BROWSER_E2E_PASS": true,
+    "TEACHER_HOLDINGS_PARITY_PASS": true,
+    "LEGACY_CUTOVER_UX_PASS": false
+  },
+  "results": [
+    {
+      "section": "local_schema_is_admin",
+      "status": "PASS",
+      "detail": "users.is_admin aligned for requireAdmin"
+    },
+    {
+      "section": "local_schema_master_profiles",
+      "status": "PASS",
+      "detail": "spokedu_master_profiles for teacher API"
+    },
+    {
+      "section": "admin_api_check_admin",
+      "status": "PASS",
+      "detail": "{\"admin\":true,\"scope\":\"admin\"}"
+    },
+    {
+      "section": "admin_api_stock",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "section": "admin_api_unauth",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "section": "teacher_admin_write_block",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "section": "admin_api_opening",
+      "status": "SKIP",
+      "detail": "status=500; 수불 처리에 실패했습니다."
+    },
+    {
+      "section": "admin_api_rent",
+      "status": "PASS",
+      "detail": "status=200; avail=1; qty=1"
+    },
+    {
+      "section": "admin_api_idempotency",
+      "status": "PASS",
+      "detail": "status=409"
+    },
+    {
+      "section": "admin_api_return",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "section": "service_role_leak",
+      "status": "PASS",
+      "detail": "stock response scan"
+    },
+    {
+      "section": "teacher_browser_holdings_fetch",
+      "status": "PASS",
+      "detail": "status=200; mode=ledger"
+    },
+    {
+      "section": "teacher_ui_debug",
+      "status": "PASS",
+      "detail": "{\"loginErr\":false,\"empty\":false,\"spans\":[]}"
+    },
+    {
+      "section": "teacher_api_holdings",
+      "status": "PASS",
+      "detail": "status=200; qty=12"
+    },
+    {
+      "section": "teacher_ui_holdings",
+      "status": "PASS",
+      "detail": "ui_qty=0; api_qty=12; cards=3"
+    },
+    {
+      "section": "teacher_b_isolation",
+      "status": "PASS",
+      "detail": "qty=0"
+    },
+    {
+      "section": "admin_browser_inventory",
+      "status": "PASS",
+      "detail": "admin inventory loaded"
+    },
+    {
+      "section": "admin_browser_ledger_ui",
+      "status": "PASS",
+      "detail": "ledger UI hints"
+    },
+    {
+      "section": "legacy_cutover_ux",
+      "status": "SKIP",
+      "detail": "NEXT_PUBLIC_EQUIPMENT_UI=ledger 빌드 — 레거시 탭은 재빌드(legacy UI) 후 검증"
+    }
+  ]
+}

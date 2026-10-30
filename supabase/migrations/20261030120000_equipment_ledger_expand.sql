@@ -1,14 +1,18 @@
 -- Equipment inventory Stage 1: ledger SSOT, rentals, admin RPCs (local / ops apply only).
 -- Preserves legacy catalog, inventory, inventory_logs, teacher_inventory.
 
-create type public.equipment_event_type as enum (
-  'OPENING_BALANCE_MIGRATION',
-  'RENT',
-  'RETURN_CONFIRM',
-  'ADJUST_ON_HAND',
-  'QUARANTINE_SET',
-  'QUARANTINE_RELEASE'
-);
+do $$ begin
+  create type public.equipment_event_type as enum (
+    'OPENING_BALANCE_MIGRATION',
+    'RENT',
+    'RETURN_CONFIRM',
+    'ADJUST_ON_HAND',
+    'QUARANTINE_SET',
+    'QUARANTINE_RELEASE'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
 alter table public.catalog
   add column if not exists mgmt_code text,
@@ -136,6 +140,106 @@ $$;
 revoke all on function private.equipment_catalog_snapshot(bigint) from public, anon, authenticated;
 grant execute on function private.equipment_catalog_snapshot(bigint) to service_role;
 
+create or replace function private.equipment_opening_confirmed(p_catalog_id bigint)
+returns boolean
+language sql
+stable
+set search_path = pg_catalog, public
+as $$
+  select exists (
+    select 1
+    from public.equipment_ledger el
+    where el.catalog_id = p_catalog_id
+      and el.event_type = 'OPENING_BALANCE_MIGRATION'::public.equipment_event_type
+  );
+$$;
+
+revoke all on function private.equipment_opening_confirmed(bigint) from public, anon, authenticated;
+grant execute on function private.equipment_opening_confirmed(bigint) to service_role;
+
+create or replace function public.admin_equipment_opening_balance(
+  p_catalog_id bigint,
+  p_qty_on_hand_total integer,
+  p_qty_quarantine integer,
+  p_request_key text,
+  p_note text default null,
+  p_created_by uuid default null,
+  p_metadata jsonb default '{}'::jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_payload_hash text;
+  v_saved private.equipment_request_results%rowtype;
+  v_catalog public.catalog%rowtype;
+  v_ledger_id uuid;
+  v_result jsonb;
+begin
+  if p_catalog_id is null or p_qty_on_hand_total is null or p_qty_on_hand_total < 0
+    or p_qty_quarantine is null or p_qty_quarantine < 0
+    or p_qty_quarantine > p_qty_on_hand_total
+    or char_length(coalesce(p_request_key, '')) not between 16 and 128 then
+    raise exception using errcode = '22023', message = 'EQUIPMENT_REQUEST_INVALID';
+  end if;
+
+  v_payload_hash := pg_catalog.md5(
+    concat_ws('|', p_catalog_id::text, p_qty_on_hand_total::text, p_qty_quarantine::text, 'OPENING')
+  );
+
+  select * into v_saved
+  from private.equipment_request_results
+  where request_key = p_request_key;
+  if found then
+    if v_saved.operation <> 'opening' or v_saved.payload_hash <> v_payload_hash then
+      raise exception using errcode = '23505', message = 'EQUIPMENT_IDEMPOTENCY_CONFLICT';
+    end if;
+    return v_saved.result || jsonb_build_object('replayed', true);
+  end if;
+
+  select * into v_catalog
+  from public.catalog
+  where id = p_catalog_id
+  for update;
+  if not found then
+    raise exception using errcode = 'P0002', message = 'EQUIPMENT_CATALOG_NOT_FOUND';
+  end if;
+
+  if private.equipment_opening_confirmed(p_catalog_id) then
+    raise exception using errcode = 'P0001', message = 'EQUIPMENT_OPENING_ALREADY_CONFIRMED';
+  end if;
+
+  update public.catalog
+  set
+    qty_on_hand_total = p_qty_on_hand_total,
+    qty_quarantine = p_qty_quarantine
+  where id = p_catalog_id;
+
+  v_ledger_id := gen_random_uuid();
+  insert into public.equipment_ledger (
+    ledger_id, event_type, catalog_id, qty, note, metadata, created_by
+  ) values (
+    v_ledger_id,
+    'OPENING_BALANCE_MIGRATION',
+    p_catalog_id,
+    p_qty_on_hand_total,
+    p_note,
+    coalesce(p_metadata, '{}'::jsonb),
+    p_created_by
+  );
+
+  v_result := private.equipment_catalog_snapshot(p_catalog_id)
+    || jsonb_build_object('ledger_id', v_ledger_id, 'event_type', 'OPENING_BALANCE_MIGRATION');
+
+  insert into private.equipment_request_results (request_key, operation, payload_hash, result)
+  values (p_request_key, 'opening', v_payload_hash, v_result);
+
+  return v_result;
+end;
+$$;
+
 create or replace function public.admin_equipment_rent(
   p_catalog_id bigint,
   p_teacher_id uuid,
@@ -184,6 +288,10 @@ begin
   for update;
   if not found then
     raise exception using errcode = 'P0002', message = 'EQUIPMENT_CATALOG_NOT_FOUND';
+  end if;
+
+  if not private.equipment_opening_confirmed(p_catalog_id) then
+    raise exception using errcode = 'P0001', message = 'EQUIPMENT_OPENING_NOT_CONFIRMED';
   end if;
 
   v_l := private.equipment_lent_total(p_catalog_id);
@@ -480,10 +588,12 @@ begin
 end;
 $$;
 
+revoke all on function public.admin_equipment_opening_balance(bigint, integer, integer, text, text, uuid, jsonb) from public, anon, authenticated;
 revoke all on function public.admin_equipment_rent(bigint, uuid, integer, text, text, uuid) from public, anon, authenticated;
 revoke all on function public.admin_equipment_return(uuid, integer, text, text, uuid) from public, anon, authenticated;
 revoke all on function public.admin_equipment_adjust_on_hand(bigint, integer, text, text, uuid) from public, anon, authenticated;
 revoke all on function public.admin_equipment_quarantine_adjust(bigint, integer, text, text, uuid) from public, anon, authenticated;
+grant execute on function public.admin_equipment_opening_balance(bigint, integer, integer, text, text, uuid, jsonb) to service_role;
 grant execute on function public.admin_equipment_rent(bigint, uuid, integer, text, text, uuid) to service_role;
 grant execute on function public.admin_equipment_return(uuid, integer, text, text, uuid) to service_role;
 grant execute on function public.admin_equipment_adjust_on_hand(bigint, integer, text, text, uuid) to service_role;

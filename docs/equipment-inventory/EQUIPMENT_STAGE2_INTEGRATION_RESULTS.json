@@ -1,0 +1,70 @@
+{
+  "ran_at": "2026-10-30T11:36:55.826Z",
+  "results": [
+    {
+      "section": "docker",
+      "status": "PASS",
+      "detail": "spokedu-equipment-stage2-pg"
+    },
+    {
+      "section": "scale_fixture",
+      "status": "PASS",
+      "detail": "48/666/2 + M1=4 U1=19"
+    },
+    {
+      "section": "expand_idempotent",
+      "status": "PASS",
+      "detail": "no delete/double migration"
+    },
+    {
+      "section": "legacy_gate_off",
+      "status": "PASS",
+      "detail": "inventory update ok"
+    },
+    {
+      "section": "legacy_gate_on_admin_jwt",
+      "status": "PASS",
+      "detail": "ERROR:  EQUIPMENT_LEGACY_WRITE_BLOCKED"
+    },
+    {
+      "section": "legacy_gate_service_role",
+      "status": "PASS",
+      "detail": "service_role update ok"
+    },
+    {
+      "section": "view_teacher_own",
+      "status": "PASS",
+      "detail": "A=2 B=0"
+    },
+    {
+      "section": "admin_rentals_select",
+      "status": "PASS",
+      "detail": "1"
+    },
+    {
+      "section": "ledger_dml_authenticated",
+      "status": "PASS",
+      "detail": "ERROR:  permission denied for table equipment_ledger"
+    },
+    {
+      "section": "rpc_authenticated_execute",
+      "status": "PASS",
+      "detail": "ERROR:  permission denied for function admin_equipment_rent"
+    },
+    {
+      "section": "inventory_rls_cross_teacher",
+      "status": "PASS",
+      "detail": "0 rows"
+    },
+    {
+      "section": "legacy_insert_blocked_when_on",
+      "status": "PASS",
+      "detail": "ERROR:  permission denied for sequence inventory_id_seq"
+    },
+    {
+      "section": "supabase_jwt_live",
+      "status": "SKIP",
+      "detail": "STAGE2_SUPABASE_ANON_KEY unset (run supabase status)"
+    }
+  ]
+}

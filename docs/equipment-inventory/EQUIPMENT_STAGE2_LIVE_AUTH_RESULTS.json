@@ -1,0 +1,55 @@
+{
+  "ran_at": "2026-10-30T11:44:15.038Z",
+  "results": [
+    {
+      "section": "anon_unauthenticated",
+      "status": "PASS",
+      "detail": "inventory_rows=0; ledger_rows=0"
+    },
+    {
+      "section": "admin_signin_rentals",
+      "status": "PASS",
+      "detail": "rows=3"
+    },
+    {
+      "section": "teacher_a_holdings",
+      "status": "PASS",
+      "detail": "held=4"
+    },
+    {
+      "section": "teacher_a_cross_inventory",
+      "status": "PASS",
+      "detail": "rows=0"
+    },
+    {
+      "section": "teacher_b_holdings",
+      "status": "PASS",
+      "detail": "held=0"
+    },
+    {
+      "section": "ledger_dml_jwt",
+      "status": "PASS",
+      "detail": "permission denied for table equipment_ledger"
+    },
+    {
+      "section": "rentals_dml_jwt",
+      "status": "PASS",
+      "detail": "permission denied for table equipment_rentals"
+    },
+    {
+      "section": "rpc_authenticated",
+      "status": "PASS",
+      "detail": "permission denied for function admin_equipment_rent"
+    },
+    {
+      "section": "service_role_return",
+      "status": "PASS",
+      "detail": "ok"
+    },
+    {
+      "section": "service_role_browser_exposure",
+      "status": "PASS",
+      "detail": "app/lib/supabase/browser.ts"
+    }
+  ]
+}

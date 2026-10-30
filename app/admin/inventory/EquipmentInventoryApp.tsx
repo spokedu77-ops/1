@@ -16,12 +16,9 @@ type TeacherRow = {
   ledger_total_held: number;
 };
 
-function ledgerWritesEnabled() {
-  return process.env.NEXT_PUBLIC_EQUIPMENT_WRITE_MODE !== 'legacy';
-}
-
 export function EquipmentInventoryApp() {
   const [tab, setTab] = useState<TabId>('stock');
+  const [ledgerWrites, setLedgerWrites] = useState(false);
   const [stock, setStock] = useState<EquipmentStockRow[]>([]);
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [history, setHistory] = useState<EquipmentLedgerRow[]>([]);
@@ -33,12 +30,17 @@ export function EquipmentInventoryApp() {
   const [rentTarget, setRentTarget] = useState<EquipmentStockRow | null>(null);
   const [rentTeacherId, setRentTeacherId] = useState('');
   const [rentQty, setRentQty] = useState('1');
+  const [stockQuery, setStockQuery] = useState('');
 
   const refreshStock = useCallback(async () => {
     const res = await fetch('/api/admin/equipment/stock', { cache: 'no-store' });
     if (!res.ok) throw new Error('stock fetch failed');
-    const body = (await res.json()) as { items: EquipmentStockRow[] };
+    const body = (await res.json()) as {
+      items: EquipmentStockRow[];
+      capabilities?: { ledger_writes?: boolean };
+    };
     setStock(body.items ?? []);
+    setLedgerWrites(body.capabilities?.ledger_writes === true);
   }, []);
 
   const refreshTeachers = useCallback(async () => {
@@ -90,6 +92,17 @@ export function EquipmentInventoryApp() {
     () => teachers.map((t) => ({ id: t.id, name: t.name })),
     [teachers],
   );
+
+  const filteredStock = useMemo(() => {
+    const q = stockQuery.trim().toLowerCase();
+    if (!q) return stock;
+    return stock.filter(
+      (row) =>
+        row.name.toLowerCase().includes(q) ||
+        (row.mgmt_code ?? '').toLowerCase().includes(q) ||
+        (row.category ?? '').toLowerCase().includes(q),
+    );
+  }, [stock, stockQuery]);
 
   const postJson = async (url: string, payload: Record<string, unknown>) => {
     const res = await fetch(url, {
@@ -183,7 +196,7 @@ export function EquipmentInventoryApp() {
     );
   }
 
-  const writes = ledgerWritesEnabled();
+  const writes = ledgerWrites;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -226,6 +239,25 @@ export function EquipmentInventoryApp() {
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
         {tab === 'stock' && (
           <div className="space-y-4">
+            {ledgerWrites && stock.some((r) => !r.opening_confirmed) && (
+              <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                기초재고(OPENING)가 확정되지 않은 품목은 가용 수량을 표시하지 않으며 대여할 수 없습니다.
+              </p>
+            )}
+            {stock.some((r) => r.cache_drift) && (
+              <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                재고 캐시 불일치가 탐지된 품목이 있습니다. 수불 쓰기가 차단됩니다. (자동 보정 없음)
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2 justify-between items-center">
+              <input
+                type="search"
+                placeholder="교구명·관리번호·카테고리 검색"
+                value={stockQuery}
+                onChange={(e) => setStockQuery(e.target.value)}
+                className="flex-1 min-w-[200px] max-w-md p-3 rounded-xl border border-slate-200 bg-white text-sm"
+              />
+            </div>
             <div className="flex justify-end">
               <button
                 type="button"
@@ -249,14 +281,25 @@ export function EquipmentInventoryApp() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stock.map((row) => (
+                  {filteredStock.map((row) => {
+                    const showQty = row.opening_confirmed && !row.cache_drift;
+                    const canMutate = writes && showQty;
+                    return (
                     <tr key={row.catalog_id} className="border-t border-slate-100">
-                      <td className="p-3 font-semibold">{row.name}</td>
+                      <td className="p-3 font-semibold">
+                        {row.name}
+                        {!row.opening_confirmed && ledgerWrites ? (
+                          <span className="ml-2 text-[10px] font-bold text-amber-600 uppercase">OPENING 미확정</span>
+                        ) : null}
+                        {row.cache_drift ? (
+                          <span className="ml-2 text-[10px] font-bold text-red-600 uppercase">캐시 불일치</span>
+                        ) : null}
+                      </td>
                       <td className="p-3 text-slate-500">{row.mgmt_code ?? '—'}</td>
-                      <td className="p-3 text-right tabular-nums">{row.qty_on_hand_total}</td>
-                      <td className="p-3 text-right tabular-nums">{row.qty_lent}</td>
-                      <td className="p-3 text-right tabular-nums">{row.qty_quarantine}</td>
-                      <td className="p-3 text-right tabular-nums font-bold text-indigo-700">{row.qty_available}</td>
+                      <td className="p-3 text-right tabular-nums">{showQty ? row.qty_on_hand_total : '—'}</td>
+                      <td className="p-3 text-right tabular-nums">{showQty ? row.qty_lent : '—'}</td>
+                      <td className="p-3 text-right tabular-nums">{showQty ? row.qty_quarantine : '—'}</td>
+                      <td className="p-3 text-right tabular-nums font-bold text-indigo-700">{showQty ? row.qty_available : '—'}</td>
                       <td className="p-3 flex flex-wrap gap-1">
                         <button type="button" className="text-xs text-indigo-600 font-bold" onClick={() => setDetailItem(row)}>
                           상세
@@ -264,7 +307,7 @@ export function EquipmentInventoryApp() {
                         <button type="button" className="text-xs text-slate-600" onClick={() => openEdit(row)}>
                           수정
                         </button>
-                        {writes && (
+                        {canMutate && (
                           <>
                             <button type="button" className="text-xs text-indigo-600" onClick={() => { setRentTarget(row); setRentTeacherId(''); setRentQty('1'); }}>
                               대여
@@ -279,7 +322,7 @@ export function EquipmentInventoryApp() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </div>

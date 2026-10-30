@@ -53,7 +53,13 @@ export function LegacyInventoryClient() {
     data: { id: number } | null,
     error: { message: string } | null
   ) => {
-    if (error) throw error;
+    if (error) {
+      const msg = error.message ?? '';
+      if (msg.includes('EQUIPMENT_LEGACY_WRITE_BLOCKED')) {
+        throw new Error('수불 원장 운영 중에는 이 화면에서 재고를 변경할 수 없습니다. 관리자 수불 화면을 사용하세요.');
+      }
+      throw error;
+    }
     if (!data) throw new Error('변경이 반영되지 않았습니다. 권한 또는 RLS 정책을 확인해 주세요.');
   };
 
@@ -179,7 +185,7 @@ export function LegacyInventoryClient() {
       await processAddItem(draggedItem);
     } catch (err) {
       devLogger.error('[inventory] drop add item failed:', err);
-      toast.error('데이터 처리에 실패했습니다.');
+      toast.error(err instanceof Error ? err.message : '데이터 처리에 실패했습니다.');
     }
   };
 
@@ -220,7 +226,15 @@ export function LegacyInventoryClient() {
     const newQty = parseInt(val);
     if (isNaN(newQty) || newQty < 0) return toast.error('올바른 숫자를 입력하세요.');
     if (newQty === item.quantity) return;
-    if (newQty === 0) { await handleReturnAll(item); return; }
+    if (newQty === 0) {
+      try {
+        await handleReturnAll(item);
+      } catch (err) {
+        devLogger.error('[inventory] return all via commit failed:', err);
+        toast.error(err instanceof Error ? err.message : '반납 처리에 실패했습니다.');
+      }
+      return;
+    }
 
     const prevQty = item.quantity ?? 0;
     const diff = newQty - prevQty;
