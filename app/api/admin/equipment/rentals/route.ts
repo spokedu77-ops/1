@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type { EquipmentRentalRow } from '@/app/lib/equipment/types';
+import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
+import { fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
 
 export async function GET(request: Request) {
   const auth = await requireAdmin();
@@ -11,6 +13,18 @@ export async function GET(request: Request) {
   const activeOnly = params.get('active') !== 'false';
 
   const service = getServiceSupabase();
+  if (!isLedgerWriteMode()) {
+    if (catalogId) {
+      return NextResponse.json({ error: '기존 보유 내역에는 교구 ID 연결이 없습니다.' }, { status: 400 });
+    }
+    try {
+      const inventoryItems = await fetchLegacyInventory(service, teacherId ?? undefined);
+      return NextResponse.json({ items: [], inventory_items: inventoryItems, data_source: 'legacy' },
+        { headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+    } catch {
+      return NextResponse.json({ error: '보유 내역을 불러오지 못했습니다.' }, { status: 500 });
+    }
+  }
   let query = service
     .from('equipment_rentals')
     .select(

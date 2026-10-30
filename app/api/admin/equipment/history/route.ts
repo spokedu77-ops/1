@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type { EquipmentLedgerRow } from '@/app/lib/equipment/types';
+import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
 
 export async function GET(request: Request) {
   const auth = await requireAdmin();
@@ -12,6 +13,19 @@ export async function GET(request: Request) {
   const offset = Math.max(0, Number(params.get('offset') ?? 0) || 0);
 
   const service = getServiceSupabase();
+  if (!isLedgerWriteMode()) {
+    if (catalogId) {
+      return NextResponse.json({ error: '기존 이력에는 교구 ID 연결이 없습니다.' }, { status: 400 });
+    }
+    let legacyQuery = service.from('inventory_logs')
+      .select('id, user_id, content, type, created_at')
+      .order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+    if (teacherId) legacyQuery = legacyQuery.eq('user_id', teacherId);
+    const { data, error } = await legacyQuery;
+    if (error) return NextResponse.json({ error: '이력을 불러오지 못했습니다.' }, { status: 500 });
+    return NextResponse.json({ items: [], history_items: data ?? [], data_source: 'legacy' },
+      { headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+  }
   let query = service
     .from('equipment_ledger')
     .select(

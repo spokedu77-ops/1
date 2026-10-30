@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
+import { fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -14,6 +16,29 @@ export async function GET() {
     .order('name');
   if (tErr) {
     return NextResponse.json({ error: '강사 목록을 불러오지 못했습니다.' }, { status: 500 });
+  }
+
+  if (!isLedgerWriteMode()) {
+    try {
+      const inventory = await fetchLegacyInventory(service);
+      const totals = new Map<string, { item_count: number; total_held: number }>();
+      for (const row of inventory) {
+        const total = totals.get(row.user_id) ?? { item_count: 0, total_held: 0 };
+        total.item_count += 1;
+        total.total_held += Number(row.quantity) || 0;
+        totals.set(row.user_id, total);
+      }
+      return NextResponse.json({
+        data_source: 'legacy',
+        items: (teachers ?? []).map((teacher) => ({
+          id: teacher.id, name: teacher.name, role: teacher.role,
+          inventory_item_count: totals.get(teacher.id)?.item_count ?? 0,
+          inventory_total_held: totals.get(teacher.id)?.total_held ?? 0,
+        })),
+      }, { headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+    } catch {
+      return NextResponse.json({ error: '보유 내역을 불러오지 못했습니다.' }, { status: 500 });
+    }
   }
 
   const { data: holdings, error: hErr } = await service

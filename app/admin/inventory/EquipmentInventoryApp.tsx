@@ -4,28 +4,37 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { History, Package, Plus, RotateCcw, UserCircle2 } from 'lucide-react';
 import type { EquipmentLedgerRow, EquipmentRentalRow, EquipmentStockRow } from '@/app/lib/equipment/types';
-import { CatalogDetailModal } from './equipmentUiShared';
+import { CatalogDetailModal, type CatalogDetailShape } from './equipmentUiShared';
 import { CatalogEditorModal, type CatalogFormState } from './CatalogEditorModal';
+import { LegacyInventoryClient } from './LegacyInventoryClient';
+import type { LegacyEquipmentCatalogItem, LegacyEquipmentHistoryItem, LegacyEquipmentInventoryItem } from '@/app/lib/equipment/legacyReads';
 
 type TabId = 'stock' | 'teachers' | 'history';
 
 type TeacherRow = {
   id: string;
   name: string;
-  ledger_sku_count: number;
-  ledger_total_held: number;
+  ledger_sku_count?: number;
+  ledger_total_held?: number;
+  inventory_item_count?: number;
+  inventory_total_held?: number;
 };
 
 export function EquipmentInventoryApp() {
   const [tab, setTab] = useState<TabId>('stock');
   const [ledgerWrites, setLedgerWrites] = useState(false);
+  const [isLegacy, setIsLegacy] = useState(false);
+  const [showLegacyEditor, setShowLegacyEditor] = useState(false);
+  const [legacyCatalog, setLegacyCatalog] = useState<LegacyEquipmentCatalogItem[]>([]);
+  const [legacyInventory, setLegacyInventory] = useState<LegacyEquipmentInventoryItem[]>([]);
+  const [legacyHistory, setLegacyHistory] = useState<LegacyEquipmentHistoryItem[]>([]);
   const [stock, setStock] = useState<EquipmentStockRow[]>([]);
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [history, setHistory] = useState<EquipmentLedgerRow[]>([]);
   const [rentals, setRentals] = useState<EquipmentRentalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
-  const [detailItem, setDetailItem] = useState<EquipmentStockRow | null>(null);
+  const [detailItem, setDetailItem] = useState<CatalogDetailShape | null>(null);
   const [catalogEdit, setCatalogEdit] = useState<{ id: number | null; form: CatalogFormState | null } | null>(null);
   const [rentTarget, setRentTarget] = useState<EquipmentStockRow | null>(null);
   const [rentTeacherId, setRentTeacherId] = useState('');
@@ -37,9 +46,13 @@ export function EquipmentInventoryApp() {
     if (!res.ok) throw new Error('stock fetch failed');
     const body = (await res.json()) as {
       items: EquipmentStockRow[];
+      data_source?: 'legacy' | 'ledger';
+      catalog_items?: LegacyEquipmentCatalogItem[];
       capabilities?: { ledger_writes?: boolean };
     };
     setStock(body.items ?? []);
+    setIsLegacy(body.data_source === 'legacy');
+    setLegacyCatalog(body.catalog_items ?? []);
     setLedgerWrites(body.capabilities?.ledger_writes === true);
   }, []);
 
@@ -55,18 +68,23 @@ export function EquipmentInventoryApp() {
     if (selectedTeacherId) params.set('teacher_id', selectedTeacherId);
     const res = await fetch(`/api/admin/equipment/history?${params}`, { cache: 'no-store' });
     if (!res.ok) throw new Error('history fetch failed');
-    const body = (await res.json()) as { items: EquipmentLedgerRow[] };
+    const body = (await res.json()) as { items: EquipmentLedgerRow[]; history_items?: LegacyEquipmentHistoryItem[] };
     setHistory(body.items ?? []);
+    setLegacyHistory(body.history_items ?? []);
   }, [selectedTeacherId]);
 
-  const refreshRentals = useCallback(async (teacherId: string) => {
+  const refreshRentals = useCallback(async (teacherId: string, signal?: AbortSignal) => {
+    setRentals([]);
+    setLegacyInventory([]);
     const res = await fetch(
       `/api/admin/equipment/rentals?teacher_id=${encodeURIComponent(teacherId)}&active=true`,
-      { cache: 'no-store' },
+      { cache: 'no-store', signal },
     );
     if (!res.ok) throw new Error('rentals fetch failed');
-    const body = (await res.json()) as { items: EquipmentRentalRow[] };
+    const body = (await res.json()) as { items: EquipmentRentalRow[]; inventory_items?: LegacyEquipmentInventoryItem[] };
+    if (signal?.aborted) return;
     setRentals(body.items ?? []);
+    setLegacyInventory(body.inventory_items ?? []);
   }, []);
 
   useEffect(() => {
@@ -84,7 +102,11 @@ export function EquipmentInventoryApp() {
 
   useEffect(() => {
     if (tab === 'teachers' && selectedTeacherId) {
-      void refreshRentals(selectedTeacherId).catch(() => toast.error('대여 목록을 불러오지 못했습니다.'));
+      const controller = new AbortController();
+      void refreshRentals(selectedTeacherId, controller.signal).catch(() => {
+        if (!controller.signal.aborted) toast.error('보유 내역을 불러오지 못했습니다.');
+      });
+      return () => controller.abort();
     }
   }, [tab, selectedTeacherId, refreshRentals]);
 
@@ -173,7 +195,7 @@ export function EquipmentInventoryApp() {
     }
   };
 
-  const openEdit = (row: EquipmentStockRow) => {
+  const openEdit = (row: LegacyEquipmentCatalogItem & { mgmt_code?: string | null }) => {
     setCatalogEdit({
       id: row.catalog_id,
       form: {
@@ -187,6 +209,18 @@ export function EquipmentInventoryApp() {
       },
     });
   };
+
+  if (showLegacyEditor) {
+    return <div>
+      <button type="button" className="m-4 px-4 py-2 rounded-xl border font-bold" onClick={() => {
+        setShowLegacyEditor(false);
+        void Promise.all([refreshStock(), refreshTeachers()]).catch(() => toast.error('교구 데이터를 불러오지 못했습니다.'));
+        if (selectedTeacherId) void refreshRentals(selectedTeacherId).catch(() => toast.error('보유 내역을 불러오지 못했습니다.'));
+        if (tab === 'history') void refreshHistory().catch(() => toast.error('이력을 불러오지 못했습니다.'));
+      }}>교구 재고 · 강사 목록 · 이력으로 돌아가기</button>
+      <LegacyInventoryClient />
+    </div>;
+  }
 
   if (loading) {
     return (
@@ -206,10 +240,12 @@ export function EquipmentInventoryApp() {
             <Package className="text-indigo-600" size={22} />
             <h1 className="text-lg font-black text-slate-900">교구 수불관리</h1>
           </div>
-          {!writes && (
-            <p className="text-xs text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-              ledger 쓰기 비활성 — 조회만 가능
-            </p>
+          {isLegacy ? (
+            <button type="button" onClick={() => setShowLegacyEditor(true)} className="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-2 rounded-full border border-indigo-200">
+              기존 재고 수량 관리
+            </button>
+          ) : !writes && (
+            <p className="text-xs text-amber-700">재고 변경 권한이 비활성화되어 있습니다.</p>
           )}
         </div>
         <div className="mt-4 inline-flex gap-1 p-1 rounded-full bg-slate-100 border border-slate-200" role="tablist">
@@ -252,7 +288,7 @@ export function EquipmentInventoryApp() {
             <div className="flex flex-wrap gap-2 justify-between items-center">
               <input
                 type="search"
-                placeholder="교구명·관리번호·카테고리 검색"
+                placeholder={isLegacy ? '교구명·카테고리 검색' : '교구명·관리번호·카테고리 검색'}
                 value={stockQuery}
                 onChange={(e) => setStockQuery(e.target.value)}
                 className="flex-1 min-w-[200px] max-w-md p-3 rounded-xl border border-slate-200 bg-white text-sm"
@@ -272,16 +308,27 @@ export function EquipmentInventoryApp() {
                 <thead className="bg-slate-50 text-[11px] uppercase text-slate-500">
                   <tr>
                     <th className="p-3">교구</th>
+                    {isLegacy ? <th className="p-3">카테고리</th> : <>
                     <th className="p-3">관리번호</th>
                     <th className="p-3 text-right">총(T)</th>
                     <th className="p-3 text-right">대여(L)</th>
                     <th className="p-3 text-right">격리(Q)</th>
                     <th className="p-3 text-right">가용(A)</th>
+                    </>}
                     <th className="p-3">작업</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStock.map((row) => {
+                  {isLegacy ? legacyCatalog.filter((row) => `${row.name} ${row.category ?? ''}`.toLowerCase().includes(stockQuery.trim().toLowerCase())).map((row) => (
+                    <tr key={row.catalog_id} className="border-t border-slate-100">
+                      <td className="p-3 font-semibold">{row.name}</td>
+                      <td className="p-3 text-slate-500">{row.category ?? '—'}</td>
+                      <td className="p-3 space-x-2 whitespace-nowrap">
+                        <button type="button" className="text-xs font-bold text-indigo-600" onClick={() => setDetailItem(row)}>상세</button>
+                        <button type="button" className="text-xs font-bold text-slate-600" onClick={() => openEdit(row)}>수정</button>
+                      </td>
+                    </tr>
+                  )) : filteredStock.map((row) => {
                     const showQty = row.opening_confirmed && !row.cache_drift;
                     const canMutate = writes && showQty;
                     return (
@@ -326,6 +373,7 @@ export function EquipmentInventoryApp() {
                 </tbody>
               </table>
             </div>
+            {isLegacy && <p className="text-xs text-slate-500">강사별 실제 보유 수량은 강사 목록에서 확인하세요. 기존 재고에는 창고 총량·대여 수량 구분이 없어 임의로 계산하지 않습니다.</p>}
           </div>
         )}
 
@@ -346,7 +394,7 @@ export function EquipmentInventoryApp() {
                     <span className="font-bold">{t.name}</span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    SKU {t.ledger_sku_count} · 보유 {t.ledger_total_held}개 (ledger)
+                    품목 {isLegacy ? t.inventory_item_count : t.ledger_sku_count} · 보유 {isLegacy ? t.inventory_total_held : t.ledger_total_held}개
                   </p>
                 </button>
               ))}
@@ -356,9 +404,15 @@ export function EquipmentInventoryApp() {
                 <p className="text-slate-400 text-sm">강사를 선택하세요.</p>
               ) : (
                 <div className="space-y-3">
-                  <h3 className="font-black text-slate-800">활성 대여</h3>
-                  {rentals.length === 0 ? (
-                    <p className="text-sm text-slate-400">ledger 대여 없음 (legacy inventory는 별도 화면)</p>
+                  <h3 className="font-black text-slate-800">{isLegacy ? '보유 교구' : '활성 대여'}</h3>
+                  {isLegacy ? (
+                    legacyInventory.length === 0 ? <p className="text-sm text-slate-400">보유 교구가 없습니다.</p> : legacyInventory.map((item) => (
+                      <div key={item.id} className="flex justify-between gap-2 border border-slate-100 rounded-xl p-3">
+                        <span className="font-bold">{item.name}</span><span>보유 {item.quantity ?? 0}개</span>
+                      </div>
+                    ))
+                  ) : rentals.length === 0 ? (
+                    <p className="text-sm text-slate-400">활성 대여가 없습니다.</p>
                   ) : (
                     rentals.map((r) => (
                       <div key={r.rental_id} className="flex flex-wrap items-center justify-between gap-2 border border-slate-100 rounded-xl p-3">
@@ -399,11 +453,21 @@ export function EquipmentInventoryApp() {
           <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
             <div className="px-4 py-3 border-b bg-slate-50 flex items-center gap-2">
               <History size={16} className="text-slate-400" />
-              <span className="text-xs font-black text-slate-500 uppercase">equipment_ledger</span>
+              <span className="text-xs font-black text-slate-500">{isLegacy ? '기존 재고 변경 이력' : '대여·반납 이력'}</span>
             </div>
             <ul className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
-              {history.length === 0 ? (
-                <li className="p-6 text-sm text-slate-400">이력 없음 (마이그레이션·대여 후 표시)</li>
+              {isLegacy ? (
+                legacyHistory.length === 0 ? <li className="p-6 text-sm text-slate-400">이력이 없습니다.</li> : legacyHistory.map((item) => (
+                  <li key={item.id} className="px-4 py-3 text-sm">
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <span className="font-bold text-slate-800">{teachers.find((teacher) => teacher.id === item.user_id)?.name ?? '—'}</span>
+                      <time className="text-xs text-slate-400">{new Date(item.created_at).toLocaleString('ko-KR')}</time>
+                    </div>
+                    <p className="text-slate-600 whitespace-pre-line">{item.content}</p>
+                  </li>
+                ))
+              ) : history.length === 0 ? (
+                <li className="p-6 text-sm text-slate-400">이력이 없습니다.</li>
               ) : (
                 history.map((h) => (
                   <li key={h.ledger_id} className="px-4 py-3 text-sm">
@@ -435,6 +499,7 @@ export function EquipmentInventoryApp() {
         <CatalogEditorModal
           editingId={catalogEdit.id}
           initial={catalogEdit.form}
+          supportsManagementCode={!isLegacy}
           onClose={() => setCatalogEdit(null)}
           onSaved={() => void refreshStock()}
         />

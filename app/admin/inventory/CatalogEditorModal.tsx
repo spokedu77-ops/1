@@ -30,11 +30,13 @@ export function CatalogEditorModal({
   initial,
   onClose,
   onSaved,
+  supportsManagementCode = true,
 }: {
   editingId: number | null;
   initial: CatalogFormState | null;
   onClose: () => void;
   onSaved: () => void;
+  supportsManagementCode?: boolean;
 }) {
   const [form, setForm] = useState<CatalogFormState>(initial ?? emptyForm);
   const [uploading, setUploading] = useState(false);
@@ -78,7 +80,7 @@ export function CatalogEditorModal({
         simple_desc: form.simple_desc || null,
         key_points: form.key_points || null,
         usage_examples: form.usage_examples || null,
-        mgmt_code: form.mgmt_code?.trim() || null,
+        ...(supportsManagementCode ? { mgmt_code: form.mgmt_code?.trim() || null } : {}),
       };
       if (editingId) {
         const { error } = await supabase.from('catalog').update(payload).eq('id', editingId);
@@ -118,10 +120,10 @@ export function CatalogEditorModal({
               <input className="w-full p-3 bg-slate-50 rounded-xl font-bold" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
             </div>
           </div>
-          <div>
+          {supportsManagementCode && <div>
             <label className="text-[10px] font-black text-slate-400 uppercase">관리번호 (선택)</label>
             <input className="w-full p-3 bg-slate-50 rounded-xl font-bold" value={form.mgmt_code ?? ''} onChange={(e) => setForm({ ...form, mgmt_code: e.target.value })} />
-          </div>
+          </div>}
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase">이미지</label>
             <div className="flex gap-4 items-center mt-1">
