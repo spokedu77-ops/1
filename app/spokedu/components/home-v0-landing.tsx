@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, ExternalLink, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, ExternalLink } from 'lucide-react';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import {
@@ -14,6 +14,7 @@ import {
   HOME_V0_TEAM,
 } from '../data/home-v0-media';
 import {
+  brandFocusRing,
   koreanLineBreak,
   v0BentoCard,
   v0CardImageHover,
@@ -25,7 +26,6 @@ import {
   v0CtaButton,
   v0CtaButtonRow,
   v0CtaTitleOnDark,
-  v0GradientText,
   v0HeroTitle,
   v0Lead,
   v0LeadOnDark,
@@ -34,9 +34,9 @@ import {
   v0SectionBand,
   v0SectionTitle,
 } from '../lib/ui-classes';
-import { PUBLIC_V0_METRICS } from '../data/marketing-public-metrics';
+import { SPOKEDU_PATHS } from '../data/public-routes';
 import { V0_KO } from '../data/v0-korean-labels';
-import { SpomoveSignalGrid } from './spomove-signal-grid';
+import { SpomoveMatVisual } from './spomove-signal-grid';
 import { V0Eyebrow } from './v0-ui';
 
 type HomeService = (typeof HOME_V0_SERVICES)[number];
@@ -101,37 +101,62 @@ export function HomeV0Landing() {
         className={`mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 lg:gap-20 ${v0SectionBand}`}
       >
         <div>
-          <V0Eyebrow>아동·청소년 체육교육</V0Eyebrow>
+          <V0Eyebrow>SPOKEDU · 아동·청소년 맞춤 체육교육</V0Eyebrow>
           <h1
             id="home-heading"
-            className={`mt-7 ${v0HeroTitle}`}
+            className={`mt-7 ${v0HeroTitle} lg:!text-[36px] xl:!text-[40px]`}
           >
-            아이의 움직임을
-            <br />
-            <span className={v0GradientText}>성장의 경험</span>으로
-            <br />
-            설계합니다.
+            <span className="block">아이와 현장의 조건에 맞춰</span>
+            <span className="block text-[#2563EB]">움직이고 싶게 만드는</span>
+            <span className="block">체육수업을 설계합니다.</span>
           </h1>
-          <p className={`mt-8 max-w-xl ${v0Lead}`}>
-            연세대학교 체육교육과 출신 전문가들이 학교·기관 출강부터 개인 맞춤 수업까지 직접 설계하고 운영합니다.
-            현장의 검증된 데이터는 에듀테크 SPOMOVE와 지도자 솔루션 SPOKEDU LAB으로 확장됩니다.
-          </p>
-          <div className={`mt-10 ${v0CtaButtonRow}`}>
-            <a
-              href="#services"
-              className={`${v0CtaButton} bg-blue-600 text-white transition hover:bg-blue-700`}
-            >
-              필요한 수업 찾기 <ArrowRight className="ml-2 inline size-4" aria-hidden />
-            </a>
-            <Link
-              href={HOME_V0_CONTACT.contactHref}
-              className={`${v0CtaButton} border-2 border-slate-200 bg-white text-slate-800 transition hover:border-slate-300 hover:bg-slate-50`}
-            >
-              수업 상담하기
-            </Link>
+          <div className={`mt-8 max-w-xl space-y-3 ${v0Lead}`}>
+            <p>학교·키움센터·복지관 출강부터 1:1·소그룹 수업까지.</p>
+            <p>연세대학교 체육교육과 출신 전문가들이 수업을 직접 설계하고 자체 개발 SPOMOVE로 현장의 경험을 확장합니다.</p>
           </div>
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {[
+              '연세대 체육교육과 출신 운영진',
+              '시지각 체육 SPOMOVE 자체 개발',
+              '서울·경기 중심 직영 운영',
+            ].map((label) => (
+              <li key={label}>
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3.5 py-1.5 text-xs font-semibold text-slate-700 sm:text-sm">
+                  <Check className="size-4 shrink-0 text-blue-600" aria-hidden />
+                  {label}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className={`mt-8 ${v0CtaButtonRow} sm:flex-wrap`}>
+            <Link
+              href={SPOKEDU_PATHS.contact}
+              className={`${v0CtaButton} bg-blue-600 text-white transition hover:bg-blue-700 ${brandFocusRing}`}
+            >
+              맞춤 수업 상담하기 <ArrowRight className="ml-2 inline size-4" aria-hidden />
+            </Link>
+            <a href="#services" className={`${v0CtaButton} border-2 border-slate-200 bg-white text-slate-800 transition hover:border-slate-300 hover:bg-slate-50 ${brandFocusRing}`}>
+              수업 유형 살펴보기
+            </a>
+          </div>
+          <nav aria-label="고객별 수업 안내" className="mt-5 flex flex-wrap gap-2">
+            {[
+              { href: SPOKEDU_PATHS.education, label: '기관·학교 출강' },
+              { href: SPOKEDU_PATHS.private, label: '개인·소그룹 수업' },
+              { href: SPOKEDU_PATHS.subscription, label: '지도자용 SPOKEDU LAB' },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-slate-700 underline-offset-4 transition hover:border-blue-200 hover:text-blue-600 hover:underline ${brandFocusRing}`}
+              >
+                {label}
+                <span aria-hidden>→</span>
+              </Link>
+            ))}
+          </nav>
         </div>
-        <div className="relative pb-16 sm:pb-0">
+        <div className="relative">
           <div className="aspect-[0.95] overflow-hidden rounded-3xl bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -140,22 +165,6 @@ export function HomeV0Landing() {
               className="h-full w-full object-cover"
               style={{ objectPosition: HOME_V0_HERO.objectPosition }}
             />
-          </div>
-          <div className="mt-4 flex flex-col gap-3 sm:absolute sm:bottom-4 sm:left-4 sm:right-4 sm:mt-0 sm:flex-row sm:items-stretch sm:justify-between">
-            <div className="rounded-2xl bg-white/90 p-4 shadow-xl shadow-slate-900/10 backdrop-blur-md sm:max-w-[11rem]">
-              <p className={`text-3xl font-black tracking-tight ${v0GradientText}`}>
-                {PUBLIC_V0_METRICS.institutions.value}
-              </p>
-              <p className="mt-1 text-xs font-bold text-slate-500">{PUBLIC_V0_METRICS.institutions.label}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-950/90 p-4 text-white shadow-xl backdrop-blur-md sm:max-w-[11rem] sm:self-start">
-              <Sparkles className="mb-2 size-5 text-blue-300" aria-hidden />
-              <p className="text-xs font-bold leading-5">
-                SPOMOVE 자체
-                <br />
-                에듀테크 보유
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -197,10 +206,10 @@ export function HomeV0Landing() {
                   <br /> 몸으로 반응하는 시지각 체육
                 </h3>
                 <p className={`mt-4 max-w-lg ${v0LeadOnDark}`}>
-                  화면의 색·위치 자극을 인지하고 SPOMAT 위에서 반응하며, 수업 안에서 규칙·협응을 연습합니다. 의학적
-                  치료 효과를 주장하지 않습니다.
+                  화면의 색·위치 자극을 인지하고 SPOMAT 위에서 반응하며, 주의·판단·순발력을 한 수업 흐름으로
+                  연결합니다.
                 </p>
-                <SpomoveSignalGrid className="mt-9" />
+                <SpomoveMatVisual compact className="mt-9" />
               </div>
               <Link
                 href={HOME_V0_CONTACT.spomoveHref}
@@ -257,16 +266,19 @@ export function HomeV0Landing() {
               연세대학교 체육교육과 출신 리더십이 수업의 기준을 만들고 현장의 품질을 직접 관리합니다.
             </p>
           </div>
-          <div className="mt-14 grid gap-12 lg:grid-cols-4">
-            <div className="flex flex-col gap-7">
+          <div className="mt-14 grid gap-5 lg:grid-cols-4 lg:items-stretch">
+            <div className="flex flex-col gap-5 lg:col-span-1">
               {HOME_V0_EXPERTISE.map((item, i) => (
-                <div key={item} className="flex gap-4">
+                <div
+                  key={item}
+                  className="flex flex-1 gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-5"
+                >
                   <span className="font-mono text-sm font-bold text-blue-600">0{i + 1}</span>
                   <p className="text-sm font-bold leading-6 text-slate-700">{item}</p>
                 </div>
               ))}
             </div>
-            <div className="grid gap-5 sm:grid-cols-3 lg:col-span-3">
+            <div className="grid gap-5 sm:grid-cols-3 lg:col-span-3 lg:min-h-full">
               {HOME_V0_TEAM.map((person) => (
                 <div key={person.name} className={`${v0BentoCard} rounded-3xl bg-slate-50 ${v0CardInnerPad}`}>
                   <div className={v0LeaderPhotoFrame}>
@@ -278,8 +290,11 @@ export function HomeV0Landing() {
                       style={{ objectPosition: person.photoObjectPosition ?? '50% 12%' }}
                     />
                   </div>
-                  <h3 className="mt-6 font-bold">{person.name}</h3>
-                  <p className="mt-1 text-xs font-bold text-blue-600">{person.role}</p>
+                  <h3 className="mt-6 text-xl font-black leading-tight text-slate-950">
+                    {person.name}
+                    <span className="ml-2 text-sm font-bold text-slate-500">{person.role}</span>
+                  </h3>
+                  <p className="mt-1 text-xs font-bold tracking-[0.16em] text-blue-600">{person.nameEn}</p>
                   <p className={`mt-4 ${v0Lead}`}>{person.description}</p>
                 </div>
               ))}

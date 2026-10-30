@@ -182,11 +182,13 @@ export function AboutV0Landing() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-300">{leader.num}</span>
                   </div>
-                  <h3 className="mt-4 text-2xl font-black">{leader.name}</h3>
-                  {leader.nameEn ? (
-                    <p className="mt-1 text-xs font-bold tracking-[0.16em] text-blue-600">{leader.nameEn}</p>
-                  ) : null}
-                  <p className="mt-4 font-bold text-slate-800">{leader.role}</p>
+                  <h3 className="mt-4 text-2xl font-black leading-tight text-slate-950">
+                    {leader.name}
+                    <span className="ml-2 text-base font-bold text-slate-500">{leader.role}</span>
+                  </h3>
+                  <p className="mt-1 min-h-[1rem] text-xs font-bold tracking-[0.16em] text-blue-600">
+                    {leader.nameEn}
+                  </p>
                   <p className={`mt-3 ${v0Lead}`}>{leader.bio}</p>
                 </div>
               </article>
@@ -210,11 +212,11 @@ export function AboutV0Landing() {
                 </p>
               </div>
               <div>
-                <p className="text-3xl font-black text-blue-300">정기</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  실전 체육
+                <p className="text-3xl font-black text-blue-300">연 20회+</p>
+                <p className="mt-1 text-sm text-slate-400 break-keep">
+                  실전 체육 세미나
                   <br />
-                  세미나 운영
+                  및 교육 운영
                 </p>
               </div>
             </div>
@@ -229,14 +231,15 @@ export function AboutV0Landing() {
           <p className={`mt-6 max-w-2xl ${v0Lead}`}>
             현장 출강에서 시작해 에듀테크와 지도자 플랫폼까지, 스포키듀가 쌓아 온 성장의 발자취입니다.
           </p>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="relative mt-10 ml-3 border-l-2 border-blue-600 pl-8 md:ml-4 md:pl-10">
             {ABOUT_V0_MILESTONES.map((item) => (
-              <article
-                key={item.when + item.title}
-                className={`${v0BentoCard} rounded-3xl border-slate-200/80 bg-slate-50 ${v0CardInnerPad}`}
-              >
+              <article key={item.when + item.title} className="relative pb-10 last:pb-0">
+                <span
+                  className="absolute -left-[calc(2rem+5px)] top-1.5 size-3 rounded-full bg-blue-600 ring-4 ring-white md:-left-[calc(2.5rem+5px)]"
+                  aria-hidden
+                />
                 <time className="text-sm font-black tracking-tight text-blue-600">{item.when}</time>
-                <p className="mt-4 text-base font-bold leading-7 text-slate-800 break-keep md:text-lg">{item.title}</p>
+                <p className="mt-3 text-base font-bold leading-7 text-slate-800 break-keep md:text-lg">{item.title}</p>
               </article>
             ))}
           </div>

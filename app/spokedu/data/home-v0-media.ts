@@ -2,12 +2,13 @@ import { HOME_SECTION03_PEOPLE } from '../components/home-web/home-section03-peo
 import { PUBLIC_V0_METRICS } from './marketing-public-metrics';
 import { getFieldRecordCatalogItem, type FieldRecordSlug } from './field-records-catalog';
 import { SPOKEDU_PATHS } from './public-routes';
+import { SPOKEDU_LAB_GYM_SPONSORSHIP_14 } from './sponsorship-public-assets';
 
-/** `home-web-assets.ts` HOME_HERO_IMAGE 와 동일 */
+/** 메인 히어로 — LAB 체육관 협찬 고화질 (13번 슬라이드 컷 제외) */
 export const HOME_V0_HERO = {
-  src: '/images/spokedu/home/field-editorial/home-hero-lab-gym-sponsorship-13.jpg',
-  alt: '스포키듀 랩 체육관에서 지도자가 여러 아동에게 교구 활동을 설명하는 수업 현장',
-  objectPosition: '50% 62%',
+  src: SPOKEDU_LAB_GYM_SPONSORSHIP_14,
+  alt: '스포키듀LAB 체육관에서 지도자가 여러 아동과 교구 활동을 진행하는 밝은 수업 현장',
+  objectPosition: '50% 48%',
 } as const;
 
 /** `home-web-assets.ts` HOME_MASTER_VISUAL — Section 3 LAB 카드 */
@@ -70,9 +71,9 @@ export const HOME_V0_SERVICES = [
     description:
       '아이의 운동 수준, 성향, 사회성 목표에 맞춰 소수 정예로 진행하는 맞춤형 체육 클래스',
     tags: '#기초체력 #사회성발달 #방문및센터수업',
-    image: '/images/spokedu/home/customer-purpose/personal-mentoring.webp',
-    imageAlt: '야외 체육수업에서 지도자가 아동의 동작을 가까이에서 안내하는 모습',
-    imagePosition: '50% 57%',
+    image: '/images/spokedu/private/private-coaching.jpg',
+    imageAlt: '체육관에서 지도자와 아동이 스텝레더·민첩성 활동을 함께하는 개인수업',
+    imagePosition: '50% 42%',
     cta: '개인수업 자세히 보기',
     href: SPOKEDU_PATHS.private,
     featured: false,
@@ -83,9 +84,9 @@ export const HOME_V0_SERVICES = [
     description:
       '초등학교, 복지관, 키움센터의 공간·인원·연령에 맞춰 설계하는 체계적인 맞춤형 파견 교육',
     tags: '#정기출강 #특수포용체육 #미니올림픽',
-    image: '/images/spokedu/home/customer-purpose/institution-group-jumprope.webp',
-    imageAlt: '복지관 체육수업에서 지도자와 여러 아동이 함께 줄넘기 활동을 하는 모습',
-    imagePosition: '48% 50%',
+    image: '/images/spokedu/records/donghaeng-special-pe-field.jpg',
+    imageAlt: '기관·센터 현장에서 지도자와 아동이 교구 활동에 참여하는 출강 수업',
+    imagePosition: '50% 45%',
     cta: '기관수업 자세히 보기',
     href: SPOKEDU_PATHS.education,
     featured: true,
@@ -115,6 +116,7 @@ export const HOME_V0_EXPERTISE = [
 
 export const HOME_V0_TEAM = HOME_SECTION03_PEOPLE.map((person) => ({
   name: person.name,
+  nameEn: person.nameEn,
   role: person.role,
   photo: person.photo,
   photoObjectPosition: person.objectPosition,

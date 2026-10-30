@@ -178,9 +178,7 @@ export function RecordsV0Landing({ fieldRecords }: { fieldRecords: FieldRecordWi
                       src={item.image}
                       alt={`${item.venue} 수업 현장`}
                       fill
-                      className={`${v0CardMediaImgCover} ${v0CardImageHover} ${
-                        item.slug === 'shinwol-integrated-pe' ? 'scale-110 blur-[2px]' : ''
-                      }`}
+                      className={`${v0CardMediaImgCover} ${v0CardImageHover}`}
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <span className="absolute left-4 top-4 max-w-[calc(100%-2rem)] rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm break-keep">

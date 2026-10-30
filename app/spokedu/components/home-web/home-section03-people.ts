@@ -2,6 +2,7 @@ export type HomeSection03Person = {
   readonly photo: string;
   readonly objectPosition: string;
   readonly name: string;
+  readonly nameEn: string;
   readonly role: string;
   readonly credentials: readonly string[];
 };
@@ -13,9 +14,10 @@ export type HomeSection03Person = {
  */
 export const HOME_SECTION03_PEOPLE: readonly HomeSection03Person[] = [
   {
-    photo: '/images/spokedu/home/people/choi-temp-crop.jpg',
-    objectPosition: '50% 30%',
+    photo: '/images/spokedu/private/instructor-choi.jpg',
+    objectPosition: '50% 22%',
     name: '최지훈',
+    nameEn: 'JIHOON CHOI',
     role: 'SPOKEDU 대표',
     credentials: ['연세대학교 체육교육학과'],
   },
@@ -23,6 +25,7 @@ export const HOME_SECTION03_PEOPLE: readonly HomeSection03Person[] = [
     photo: '/images/spokedu/private/instructor-kim-yunki.jpg',
     objectPosition: '50% 30%',
     name: '김윤기',
+    nameEn: 'KIM YUNKI',
     role: 'SPOKEDU 총괄',
     credentials: ['연세대학교 체육교육학과', '중등 2급 정교사 자격'],
   },
@@ -30,6 +33,7 @@ export const HOME_SECTION03_PEOPLE: readonly HomeSection03Person[] = [
     photo: '/images/spokedu/private/instructor-kim-gumin.jpg',
     objectPosition: '50% 30%',
     name: '김구민',
+    nameEn: 'KIM GUMIN',
     role: 'SPOKEDU 수업팀장',
     credentials: ['강원대학교 레저스포츠학과', '생활스포츠지도사 2급(배드민턴)'],
   },

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import {
   ArrowRight,
   Brain,
+  Check,
   ChevronRight,
   ClipboardList,
   MessageCircle,
@@ -18,7 +19,6 @@ import { brandContactLinks, brandProfile } from '../data/brand';
 import {
   PRIVATE_V0_HERO,
   PRIVATE_V0_ONE_TO_ONE,
-  PRIVATE_V0_PARENT_REPORT,
   PRIVATE_V0_SMALL_GROUP,
 } from '../data/private-v0-media';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
@@ -63,65 +63,45 @@ const concerns: readonly { text: string; Icon: LucideIcon }[] = [
   },
 ] as const;
 
-type DifferenceFootnote =
-  | { kind: 'summary'; lines: readonly string[] }
-  | { kind: 'image'; image: { src: string; alt: string } };
-
-const differences: readonly [string, string, string, DifferenceFootnote][] = [
+const differences: readonly [string, string, string, readonly string[]][] = [
   [
     '01',
     '사전 상담 및 움직임 성향 파악',
     '아이의 기초 운동 기능(이동·조작·안정성)과 움직임 성향을 먼저 파악하여 무리한 경쟁 없이 성공 경험을 만드는 초기 난이도를 설정합니다.',
-    {
-      kind: 'summary',
-      lines: ['이동운동 · 조작운동 · 신체안정성', '움직임 성향 설문(16유형)으로 수업 난이도 조정'],
-    },
+    ['이동운동 · 조작운동 · 신체안정성', '16가지 PTG 움직임 유형으로 수업 난이도 조정'],
   ],
   [
     '02',
     '두뇌와 신체를 깨우는 입체 커리큘럼',
     '기초 체력 훈련은 물론, 시지각 반응 프로그램(SPOMOVE)과 다양한 뉴스포츠 교구를 결합해 지루할 틈 없는 50분을 만듭니다.',
-    {
-      kind: 'summary',
-      lines: ['기초체력 웜업', '➔ 시지각 SPOMOVE', '➔ 뉴스포츠 조작기술'],
-    },
+    ['기초체력 웜업', '시지각 SPOMOVE 연계', '뉴스포츠 조작·규칙 활동'],
   ],
   [
     '03',
     '체계적인 학부모 피드백',
     '오늘 수업에서 아이가 어떤 동작을 해냈고 또래와 어떻게 소통했는지, 수업 기록과 성장의 흐름을 학부모님께 투명하게 공유합니다.',
-    { kind: 'image', image: PRIVATE_V0_PARENT_REPORT },
+    [
+      '오늘 수행한 핵심 동작 및 성취 기록',
+      '또래 협동·규칙 참여도 피드백',
+      '담당 선생님의 1:1 성장 코멘트',
+    ],
   ],
 ] as const;
 
-function DifferenceMiniPanel({ footnote }: { footnote: DifferenceFootnote }) {
+function DifferenceChecklistPanel({ lines }: { lines: readonly string[] }) {
   return (
-    <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80">
-      {footnote.kind === 'image' ? (
-        <>
-          <Image
-            src={footnote.image.src}
-            alt={footnote.image.alt}
-            fill
-            className="object-cover object-top"
-            sizes="(max-width: 1024px) 100vw, 33vw"
-          />
-          <span className="absolute bottom-2 left-2 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold text-white">
-            UI 목업 · 실제 리포트는 상담 후 안내
-          </span>
-        </>
-      ) : (
-        <div className="flex h-full flex-col justify-center gap-3 bg-gradient-to-br from-[#e8f1ff] to-white p-5 sm:p-6">
-          {footnote.lines.map((line) => (
-            <p
-              key={line}
-              className="rounded-xl bg-white/90 px-4 py-3 text-center text-xs font-bold leading-6 text-[#0f172a] shadow-sm ring-1 ring-slate-200/60 break-keep sm:text-sm"
-            >
-              {line}
-            </p>
-          ))}
-        </div>
-      )}
+    <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
+      <ul className="space-y-3">
+        {lines.map((line) => (
+          <li
+            key={line}
+            className="flex items-start gap-2.5 text-sm font-semibold leading-6 text-slate-700 break-keep"
+          >
+            <Check className="mt-0.5 size-4 shrink-0 text-[#246bce]" aria-hidden />
+            {line}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -227,12 +207,12 @@ export function PrivateV0Landing() {
       >
         <div className={koreanLineBreak}>
           <V0Eyebrow>01 · {V0_KO.personalClass}</V0Eyebrow>
-          <h1 className={`mt-7 text-balance ${v0HeroTitle}`}>
-            운동을 잘하는 아이보다,
-            <br />
-            <span className={v0GradientText}>움직임을 즐기는 아이</span>로
-            <br />
-            성장시킵니다.
+          <h1 className={`mt-7 ${v0HeroTitle}`}>
+            <span className="block text-balance break-keep">운동을 잘하는 아이보다,</span>
+            <span className="block text-balance break-keep">
+              <span className={v0GradientText}>움직임을 즐기는 아이</span>로
+            </span>
+            <span className="block text-balance break-keep">성장시킵니다.</span>
           </h1>
           <p className={`mt-7 max-w-xl text-pretty ${v0Lead}`}>
             아이마다 신체 발달 속도와 성향은 모두 다릅니다. 연세대학교 체육교육과 출신 전문가들이 아이의
@@ -273,9 +253,9 @@ export function PrivateV0Landing() {
                 <Sparkles className="size-5" aria-hidden />
               </div>
               <p className="text-xs font-bold leading-5 break-keep">
-                움직임 성향
+                16가지 PTG
                 <br />
-                설문 기반 지도
+                움직임 유형 기반 지도
               </p>
             </div>
           </div>
@@ -322,7 +302,7 @@ export function PrivateV0Landing() {
             title="단순히 땀만 빼는 놀이가 아니라 성장의 데이터를 쌓습니다"
           />
           <div className="grid gap-4 lg:grid-cols-3">
-            {differences.map(([num, title, text, footnote]) => (
+            {differences.map(([num, title, text, checklist]) => (
               <article
                 key={num}
                 className={`${v0BentoCard} flex flex-col rounded-3xl bg-slate-50 ring-1 ring-slate-100 ${v0CardInnerPad} ${koreanLineBreak}`}
@@ -330,7 +310,7 @@ export function PrivateV0Landing() {
                 <span className="text-sm font-black text-[#246bce]">{num} ·</span>
                 <h3 className={`mt-6 break-keep sm:mt-8 ${v0CardTitleCompact}`}>{title}</h3>
                 <p className={`mt-4 flex-1 sm:mt-5 ${v0Lead}`}>{text}</p>
-                <DifferenceMiniPanel footnote={footnote} />
+                <DifferenceChecklistPanel lines={checklist} />
               </article>
             ))}
           </div>
@@ -368,11 +348,15 @@ export function PrivateV0Landing() {
                 key={text}
                 className={`${v0BentoCard} rounded-3xl bg-[#f8fafc] ${v0CardInnerPad} ${koreanLineBreak}`}
               >
-                <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-blue-50 text-[#246bce]">
-                  <Icon className="size-5" aria-hidden />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex size-11 items-center justify-center rounded-2xl bg-blue-50 text-[#246bce]">
+                    <Icon className="size-5" aria-hidden />
+                  </div>
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black tracking-[0.12em] text-[#246bce]">
+                    STEP 0{i + 1}
+                  </span>
                 </div>
-                <span className="text-xs font-black text-[#246bce]">0{i + 1}</span>
-                <p className="mt-3 text-sm font-bold leading-6 break-keep">{text}</p>
+                <p className="mt-4 text-sm font-bold leading-6 break-keep">{text}</p>
                 <p className={`mt-1.5 ${v0Lead}`}>{detail}</p>
               </div>
             ))}

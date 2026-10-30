@@ -1,17 +1,17 @@
 import { SPOKEDU_IMAGES } from './images';
 import type { PrivatePreferredFormat, PrivateStartDirection } from './private-page';
 
-/** Hero — 1:1 맞춤 수업 실사 */
+/** Hero — 1:1 맞춤 수업 실사 (협찬 스텝레더·러닝스텝) */
 export const PRIVATE_V0_HERO = {
-  src: '/images/spokedu/home/customer-purpose/personal-mentoring.webp',
-  alt: '야외에서 지도자가 아동의 동작을 가까이에서 안내하는 1:1 맞춤 체육수업',
-  objectPosition: '50% 55%',
+  src: '/images/spokedu/private/private-coaching.jpg',
+  alt: '체육관에서 지도자가 아동과 함께 스텝레더·민첩성 활동을 진행하는 밝은 개인수업 현장',
+  objectPosition: '50% 42%',
 } as const;
 
 export const PRIVATE_V0_ONE_TO_ONE = {
-  src: '/images/spokedu/home/customer-purpose/personal-mentoring.webp',
-  alt: '야외에서 지도자가 아동의 동작을 가까이에서 안내하는 1:1 맞춤 체육수업',
-  objectPosition: '50% 55%',
+  src: '/images/spokedu/private/private-tool-activity.jpg',
+  alt: '지도자가 아동과 1:1로 줄넘기·후프 연계 활동을 밀착 지도하는 개인수업 현장',
+  objectPosition: '50% 40%',
 } as const;
 
 export const PRIVATE_V0_SMALL_GROUP = {

@@ -39,7 +39,7 @@ import {
   v0SubsectionTitle,
 } from '../lib/ui-classes';
 import { V0_KO } from '../data/v0-korean-labels';
-import { SpomoveSignalGrid } from './spomove-signal-grid';
+import { SpomoveMatVisual, SpomoveTargetChips } from './spomove-signal-grid';
 import { V0Eyebrow } from './v0-ui';
 
 const steps = [
@@ -226,7 +226,7 @@ function HeroVisual() {
             priority
           />
         </div>
-        <SpomoveSignalGrid className="mt-4" />
+        <SpomoveMatVisual compact className="mt-4" />
         <p className="mt-5 flex items-center justify-center gap-2 text-xs font-medium text-slate-400 break-keep">
           <span className="size-2 rounded-full bg-blue-400" aria-hidden />
           SPOMAT 4색 시그널 · 화면-매트 1:1 연동
@@ -266,7 +266,8 @@ export function SpomoveV0Landing() {
             </h1>
             <p className={`mt-8 max-w-xl ${v0LeadOnDark}`}>
               SPOMOVE(스포무브)는 화면의 시각 자극을 인지하고 신체 움직임으로 연결하는 인터랙티브 체육
-              활동입니다. 의학적 치료 효과를 주장하지 않으며, 수업 안에서 반응·규칙·협응을 연습합니다.
+              활동입니다. 단순한 신체 활동을 넘어 주의집중력, 상황 판단력, 순발력을 동시에 깨우는 통합형
+              에듀테크 체육입니다.
             </p>
             <div className={`mt-9 ${v0CtaButtonRow}`}>
               <Link
@@ -388,7 +389,8 @@ export function SpomoveV0Landing() {
           <div className="relative lg:col-span-2 overflow-visible px-2 pt-4">
             <div className="relative mx-auto w-full max-w-[460px] overflow-visible rounded-[2rem] border border-slate-200 bg-slate-950 p-6 shadow-xl shadow-slate-900/10 sm:p-8">
               <p className="text-[10px] font-black tracking-[0.2em] text-slate-500">SPOMAT · 2×2 타깃</p>
-              <SpomoveSignalGrid compact />
+              <SpomoveMatVisual compact className="mt-4" />
+              <SpomoveTargetChips compact className="mt-3" />
               <div className="absolute right-2 top-2 flex size-[4.5rem] flex-col items-center justify-center rounded-full border-4 border-white bg-blue-600 text-center text-[8px] font-black leading-tight text-white shadow-lg sm:right-3 sm:top-3">
                 <ShieldCheck className="mb-0.5 size-4" aria-hidden />
                 KC
