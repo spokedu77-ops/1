@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('SPOKEDU LAB landing entry P0', () => {
   const publicPage = read('app/(spokedu-public)/spokedu-lab/page.tsx');
-  const landingPage = read('app/(spokedu-public)/subscription/page.tsx');
+  const landingPage = read('app/(spokedu-public)/subscription/SpokeduLabLanding.tsx');
   const publicRoutes = read('app/spokedu/data/public-routes.ts');
 
   it('checks the existing server access snapshot before rendering the LAB root', () => {

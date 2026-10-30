@@ -1,3 +1,4 @@
+import { calculateRenewalRetryAt } from './renewalRetry';
 import { NextResponse } from 'next/server';
 
 import { hashForMonitoring, reportError } from '@/app/lib/monitoring/errorReporter';
@@ -58,7 +59,7 @@ type RenewalOrderRow = {
 };
 
 const BILLING_RUN_ID_HEADER = 'x-spokedu-billing-run-id';
-export const SPOKEDU_MASTER_RENEWAL_BATCH_LIMIT = 20;
+const SPOKEDU_MASTER_RENEWAL_BATCH_LIMIT = 20;
 const SPOKEDU_MASTER_RENEWAL_RUN_BUDGET_MS = 240_000;
 const SPOKEDU_MASTER_RENEWAL_ITEM_RESERVE_MS = 80_000;
 const SPOKEDU_MASTER_RECOVERY_SCAN_LIMIT = 40;
@@ -271,12 +272,7 @@ async function recoverApprovedRenewalOrders(
   }
 }
 
-export function calculateRenewalRetryAt(retryCount: number, now = Date.now()): string {
-  // The scheduler is hourly, so the first backoff must exceed one interval;
-  // otherwise the same poison row would be eligible at the very next run.
-  const delayHours = Math.min(24, 2 ** Math.min(Math.max(retryCount, 0) + 1, 5));
-  return new Date(now + delayHours * 60 * 60 * 1000).toISOString();
-}
+
 
 async function scheduleRenewalRetry(
   service: ReturnType<typeof getServiceSupabase>,

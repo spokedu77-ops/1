@@ -105,7 +105,7 @@ describe('official SPOMOVE runtime contract', () => {
   });
 
   it('does not translate legacy drill IDs in the public programs API', () => {
-    const source = read('app/api/spokedu-master/programs/route.ts');
+    const source = read('app/api/spokedu-master/programs/programCatalogHandlers.ts');
 
     expect(source).toContain('findOfficialSpomovePreset');
     expect(source).not.toMatch(/'SR-05':|'RS-05':|'IC-05':|'gonogo'|'taskswitch'/);

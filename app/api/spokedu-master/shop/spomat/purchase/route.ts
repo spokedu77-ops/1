@@ -1,3 +1,4 @@
+import { isSafePurchaseUrl } from '../../../../../spokedu-master/shop/isSafePurchaseUrl';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -5,10 +6,7 @@ export const revalidate = 0;
 
 // Only http and https are accepted as purchase destinations.
 // mailto is intentionally excluded because bulk inquiry uses a separate constant.
-export function isSafePurchaseUrl(url: string | undefined): url is string {
-  if (!url) return false;
-  return url.startsWith('http://') || url.startsWith('https://');
-}
+
 
 const SHOP_INQUIRY_PATH = '/spokedu-lab/shop';
 

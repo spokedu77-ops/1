@@ -47,7 +47,7 @@ describe('Premium SPOMOVE media boundary', () => {
   });
 
   it('lets Admin persist YouTube and Vimeo guide-video URLs', () => {
-    const admin = read('app/admin/spokedu-master/programs/page.tsx');
+    const admin = read('app/admin/spokedu-master/programs/ProgramsAdmin.tsx');
     expect(admin).toContain('isAllowedSpomoveGuideVideoRef');
     expect(admin).toContain('placeholder="https://youtu.be/..."');
   });

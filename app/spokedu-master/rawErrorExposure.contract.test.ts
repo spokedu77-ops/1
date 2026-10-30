@@ -45,7 +45,7 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
     const studentDelete = read('app/api/spokedu-master/students/[id]/route.ts');
     const explanations = read('app/api/spokedu-master/explanations/route.ts');
     const classRecords = read('app/api/spokedu-master/class-records/route.ts');
-    const programs = read('app/api/spokedu-master/programs/route.ts');
+    const programs = read('app/api/spokedu-master/programs/programCatalogHandlers.ts');
 
     expect(students).not.toContain('{ error: error.message }');
     expect(students).not.toContain('{ error: existingError.message }');

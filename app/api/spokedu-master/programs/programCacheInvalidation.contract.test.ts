@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const writeRoutes = [
-  'app/api/spokedu-master/programs/route.ts',
+  'app/api/spokedu-master/programs/programCatalogHandlers.ts',
   'app/api/admin/curriculum/route.ts',
   'app/api/admin/spokedu-master/programs/route.ts',
   'app/api/admin/spokedu-master/programs/home-featured/route.ts',

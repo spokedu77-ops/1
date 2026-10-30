@@ -138,7 +138,7 @@ describe('SPOKEDU MASTER explanations route', () => {
   it('blocks unauthenticated GET', async () => {
     denyAccess(401);
 
-    const response = await GET();
+    const response = await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(response.status).toBe(401);
     expect(getServiceSupabase).not.toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe('SPOKEDU MASTER explanations route', () => {
   it('blocks GET without access', async () => {
     denyAccess(403);
 
-    const response = await GET();
+    const response = await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(response.status).toBe(403);
     expect(getServiceSupabase).not.toHaveBeenCalled();
@@ -157,7 +157,7 @@ describe('SPOKEDU MASTER explanations route', () => {
     allowAccess();
     const { calls } = createSupabaseMock();
 
-    await GET();
+    await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(calls).toContainEqual({
       table: 'spokedu_master_explanations',
@@ -175,7 +175,7 @@ describe('SPOKEDU MASTER explanations route', () => {
     allowAccess();
     const { calls } = createSupabaseMock();
 
-    await GET();
+    await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(calls).toContainEqual({
       table: 'spokedu_master_explanations',
@@ -188,7 +188,7 @@ describe('SPOKEDU MASTER explanations route', () => {
     allowAccess();
     const { calls } = createSupabaseMock();
 
-    await GET();
+    await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(calls).toContainEqual({
       table: 'spokedu_master_explanations',
@@ -216,7 +216,7 @@ describe('SPOKEDU MASTER explanations route', () => {
       },
     });
 
-    const response = await GET();
+    const response = await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -244,7 +244,7 @@ describe('SPOKEDU MASTER explanations route', () => {
       },
     });
 
-    const response = await GET();
+    const response = await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ total: 42 });
@@ -369,7 +369,7 @@ describe('SPOKEDU MASTER explanations route', () => {
       getResult: { data: null, error: { message: 'GET failed' } },
     });
 
-    const response = await GET();
+    const response = await GET(new Request('http://local/api/spokedu-master/explanations'));
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
@@ -397,7 +397,7 @@ describe('SPOKEDU MASTER explanations route', () => {
   });
 
   it.each([
-    ['GET', () => GET()],
+    ['GET', () => GET(new Request('http://local/api/spokedu-master/explanations'))],
     ['POST', () => POST(requestJson({
       programId: '52',
       programTitle: 'Band Lesson',

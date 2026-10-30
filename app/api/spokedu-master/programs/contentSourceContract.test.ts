@@ -7,7 +7,7 @@ describe('public program lesson content sources', () => {
   it('maps briefing and variation content only from Master meta', async () => {
     const source = await readFile(path.join(
       process.cwd(),
-      'app/api/spokedu-master/programs/route.ts',
+      'app/api/spokedu-master/programs/programCatalogHandlers.ts',
     ), 'utf8');
 
     expect(source).toContain('parseTextareaLines(meta?.sm_briefing_notes)');
@@ -21,7 +21,7 @@ describe('public program lesson content sources', () => {
   it('maps participant format from structured people tags instead of legacy duration', async () => {
     const source = await readFile(path.join(
       process.cwd(),
-      'app/api/spokedu-master/programs/route.ts',
+      'app/api/spokedu-master/programs/programCatalogHandlers.ts',
     ), 'utf8');
 
     expect(source).toContain('const participantFormat = getMasterParticipantFormat(smTags)');
@@ -32,7 +32,7 @@ describe('public program lesson content sources', () => {
   it('selects the new meta columns and not the retired public content sources', async () => {
     const source = await readFile(path.join(
       process.cwd(),
-      'app/api/spokedu-master/programs/route.ts',
+      'app/api/spokedu-master/programs/programCatalogHandlers.ts',
     ), 'utf8');
 
     expect(source).toContain('sm_briefing_notes,sm_variation_method');
@@ -44,7 +44,7 @@ describe('public program lesson content sources', () => {
   it('does not retain dead Funstick overlays or unused public columns', async () => {
     const source = await readFile(path.join(
       process.cwd(),
-      'app/api/spokedu-master/programs/route.ts',
+      'app/api/spokedu-master/programs/programCatalogHandlers.ts',
     ), 'utf8');
 
     expect(source).not.toContain('applyPremiumContentOverlay');
@@ -58,7 +58,7 @@ describe('public program lesson content sources', () => {
   it('does not fall back to curriculum or legacy overlay content', async () => {
     const source = await readFile(path.join(
       process.cwd(),
-      'app/api/spokedu-master/programs/route.ts',
+      'app/api/spokedu-master/programs/programCatalogHandlers.ts',
     ), 'utf8');
 
     expect(source).toContain(".select('id,display_order,created_at')");

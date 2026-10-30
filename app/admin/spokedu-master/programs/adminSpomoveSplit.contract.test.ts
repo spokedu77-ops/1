@@ -6,7 +6,7 @@ function read(path: string) {
   return readFileSync(join(process.cwd(), path), 'utf8');
 }
 
-const programsPage = read('app/admin/spokedu-master/programs/page.tsx');
+const programsPage = read('app/admin/spokedu-master/programs/ProgramsAdmin.tsx');
 const spomovePage = read('app/admin/spokedu-master/spomove/page.tsx');
 const sidebar = read('app/components/Sidebar.tsx');
 

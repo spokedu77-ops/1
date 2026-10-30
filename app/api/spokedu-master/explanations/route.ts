@@ -25,7 +25,7 @@ const EXPLANATION_SERVER_ERROR = '리포트를 처리하지 못했습니다. 잠
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(request?: Request) {
+export async function GET(request: Request) {
   const access = await requireSpokeduMasterCapability('records');
   if (!access.ok) return withPrivateNoStore(access.response);
 

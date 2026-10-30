@@ -19,7 +19,7 @@ describe('admin program PATCH contract', () => {
   it('does not refresh the full admin or public program list after a normal save', async () => {
     const source = await readFile(path.join(
       process.cwd(),
-      'app/admin/spokedu-master/programs/page.tsx',
+      'app/admin/spokedu-master/programs/ProgramsAdmin.tsx',
     ), 'utf8');
     const saveStart = source.indexOf('const save = async () =>');
     const saveEnd = source.indexOf('const selectedQuality =', saveStart);
@@ -52,7 +52,7 @@ describe('admin program PATCH contract', () => {
     ), 'utf8');
     const pageSource = await readFile(path.join(
       process.cwd(),
-      'app/admin/spokedu-master/programs/page.tsx',
+      'app/admin/spokedu-master/programs/ProgramsAdmin.tsx',
     ), 'utf8');
 
     expect(routeSource).not.toContain('check_list');

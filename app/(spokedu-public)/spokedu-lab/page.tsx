@@ -1,4 +1,4 @@
-import { SpokeduLabLandingPage } from '../subscription/page';
+import { SpokeduLabLandingPage } from '../subscription/SpokeduLabLanding';
 
 export { metadata } from '../subscription/page';
 

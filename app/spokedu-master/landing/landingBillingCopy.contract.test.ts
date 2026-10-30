@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { getPublicProductContract } from '../lib/publicProductContract';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
-const canonicalPage = read('app/(spokedu-public)/subscription/page.tsx');
+const canonicalPage = read('app/(spokedu-public)/subscription/SpokeduLabLanding.tsx');
 const commercialPage = read('app/spokedu-master/landing/CommercialLanding.tsx');
 const legacyPage = read('app/spokedu-master/landing/page.tsx');
 const sections = read('app/spokedu-master/landing/components/LandingSections.tsx');

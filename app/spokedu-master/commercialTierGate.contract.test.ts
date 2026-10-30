@@ -14,7 +14,7 @@ function read(path: string) {
 
 describe('SPOKEDU MASTER commercial tier gate contracts', () => {
   it('redacts non-preview lesson details in the programs API using library capability, not isPro', () => {
-    const source = read('app/api/spokedu-master/programs/route.ts');
+    const source = read('app/api/spokedu-master/programs/programCatalogHandlers.ts');
     expect(source).toContain('function redactProgramForAccess');
     expect(source).toContain('lessonDetail: undefined');
     expect(source).toContain('steps: []');

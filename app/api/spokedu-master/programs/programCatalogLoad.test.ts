@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MasterProgramSourceLoadError, loadPublishedMasterProgramsFromDb } from './route';
+import { MasterProgramSourceLoadError, loadPublishedMasterProgramsFromDb } from './programCatalogHandlers';
 
 vi.mock('@/app/lib/server/spokeduMasterProgramSourceCache', () => ({
   wrapSpokeduMasterProgramSourceLoader: (loader: () => Promise<unknown>) => loader,

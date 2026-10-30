@@ -8,7 +8,7 @@ describe('SPOKEDU LAB Open Graph image contract', () => {
   const route = read('app/api/spokedu-master/og/route.tsx');
   const layout = read('app/spokedu-master/layout.tsx');
   const labLayout = read('app/spokedu-lab/layout.tsx');
-  const publicLabPage = read('app/(spokedu-public)/subscription/page.tsx');
+  const publicLabPage = read('app/(spokedu-public)/subscription/SpokeduLabLanding.tsx');
 
   it('uses the current LAB product capture and never renders the retired MASTER brand', () => {
     expect(route).toContain('/images/spokedu/subscription/library-program-cards-20261008-final.png');

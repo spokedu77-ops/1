@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(
-  join(process.cwd(), 'app/api/spokedu-master/programs/route.ts'),
+  join(process.cwd(), 'app/api/spokedu-master/programs/programCatalogHandlers.ts'),
   'utf8',
 );
 

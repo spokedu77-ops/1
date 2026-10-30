@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(new URL('./page.tsx', import.meta.url), 'utf8');
+const source = readFileSync(new URL('./ProgramsAdmin.tsx', import.meta.url), 'utf8');
 
 describe('SPOMOVE admin 72-preset mapping', () => {
   it('uses the public 72-preset group counts and order', () => {

@@ -30,7 +30,8 @@ vi.mock('@/app/lib/monitoring/errorReporter', () => ({
   reportError: mocks.reportError,
 }));
 
-import { POST, calculateRenewalRetryAt } from './route';
+import { POST } from './route';
+import { calculateRenewalRetryAt } from './renewalRetry';
 
 type Row = Record<string, unknown>;
 const billingRunPatches: Row[] = [];

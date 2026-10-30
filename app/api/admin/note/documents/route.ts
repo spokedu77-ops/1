@@ -1,3 +1,4 @@
+import { softDeleteBlocksForDocument } from '../../../../lib/note/softDeleteBlocksForDocument';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -30,27 +31,7 @@ type NoteDocument = {
 const DOCUMENT_SELECT =
   'id, title, is_archived, is_favorite, is_pinned, is_public, share_token, parent_id, slug, properties, created_at, updated_at';
 
-export async function softDeleteBlocksForDocument(
-  supabase: ReturnType<typeof getServiceSupabase>,
-  documentId: string,
-  actorId: string,
-  deletedAt: string,
-): Promise<number> {
-  const { data, error } = await supabase
-    .from('note_blocks')
-    .update({
-      deleted_at: deletedAt,
-      deleted_by: actorId,
-      updated_at: deletedAt,
-      updated_by: actorId,
-    })
-    .eq('document_id', documentId)
-    .is('deleted_at', null)
-    .select('id');
 
-  if (error) throw new Error(error.message);
-  return data?.length ?? 0;
-}
 
 async function insertAuditLog({
   documentId,

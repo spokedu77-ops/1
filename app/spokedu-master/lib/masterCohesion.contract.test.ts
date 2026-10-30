@@ -72,7 +72,7 @@ describe('MASTER commercial cohesion contracts', () => {
     expect(read('app/api/spokedu-master/program-favorites/route.ts')).toContain(
       "requireSpokeduMasterCapability('library')",
     );
-    expect(read('app/api/spokedu-master/programs/route.ts')).toContain(
+    expect(read('app/api/spokedu-master/programs/programCatalogHandlers.ts')).toContain(
       "requireSpokeduMasterCapability('libraryBrowse')",
     );
     expect(read('app/api/spokedu-master/explanations/route.ts')).toContain(

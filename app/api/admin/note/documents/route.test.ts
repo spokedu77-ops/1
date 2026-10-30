@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { softDeleteBlocksForDocument } from './route';
+import { softDeleteBlocksForDocument } from '@/app/lib/note/softDeleteBlocksForDocument';
 
 describe('softDeleteBlocksForDocument', () => {
   it('soft-deletes only active blocks in the deleted document', async () => {

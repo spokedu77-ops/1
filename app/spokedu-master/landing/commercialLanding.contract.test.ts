@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('official MASTER commercial landing IA', () => {
   const page = read('app/spokedu-master/landing/CommercialLanding.tsx');
   const sections = read('app/spokedu-master/landing/components/LandingSections.tsx');
-  const subscription = read('app/(spokedu-public)/subscription/page.tsx');
+  const subscription = read('app/(spokedu-public)/subscription/SpokeduLabLanding.tsx');
   const faqSource = read('app/spokedu-master/landing/landingFaq.ts');
 
   it('keeps the approved section sequence', () => {

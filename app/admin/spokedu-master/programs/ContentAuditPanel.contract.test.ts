@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const page = readFileSync(join(process.cwd(), 'app/admin/spokedu-master/programs/page.tsx'), 'utf8');
+const page = readFileSync(join(process.cwd(), 'app/admin/spokedu-master/programs/ProgramsAdmin.tsx'), 'utf8');
 const panel = readFileSync(
   join(process.cwd(), 'app/admin/spokedu-master/programs/ContentAuditPanel.tsx'),
   'utf8',

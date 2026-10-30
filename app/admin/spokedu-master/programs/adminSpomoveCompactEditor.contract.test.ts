@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync('app/admin/spokedu-master/programs/page.tsx', 'utf8');
+const source = readFileSync('app/admin/spokedu-master/programs/ProgramsAdmin.tsx', 'utf8');
 
 describe('MASTER SPOMOVE compact editor contract', () => {
   it('keeps the guide as the primary modal editing surface', () => {

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
 import { SPOMAT_BULK_INQUIRY_HREF } from '../lib/businessInfo';
-import { isSafePurchaseUrl } from '../../api/spokedu-master/shop/spomat/purchase/route';
+import { isSafePurchaseUrl } from './isSafePurchaseUrl';
 
 const ROOT = process.cwd();
 const read = (path: string) => readFileSync(join(ROOT, path), 'utf8');
