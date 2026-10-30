@@ -1,0 +1,1925 @@
+[
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "visual-reaction-number-cart-l2",
+    "engine": {
+      "mode": "reactTrain",
+      "level": 8,
+      "numberCartTier": 1
+    },
+    "steps": {
+      "setup": {
+        "text": "숫자 연산 기차 · 1단계\n\n시지각 반응\n\n숫자 연산 기차 · 1단계\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 42
+          },
+          {
+            "text": "효과음만",
+            "height": 42
+          },
+          {
+            "text": "✓ 무음",
+            "height": 42
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "라운드\n3 / 15\n숫자 연산 기차\nL1 · 1~4\n중지\n숫자\n?\n목표 숫자가 있는 문을 찾으세요 · 3초 후 출발",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "중지",
+            "height": 37.5
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"a3789f88-4be0-4e25-9e8a-d30abc1a0366\",\"presetId\":\"visual-reaction-number-cart-l2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:31:13.734Z\",\"elapsedActiveMs\":34563,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-number-cart-l2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341908297}",
+        "recent": []
+      }
+    },
+    "ready": true,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "라운드\n3 / 15\n숫자 연산 기차\nL1 · 1~4\n중지\n숫자\n?\n도착",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "중지",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"a3789f88-4be0-4e25-9e8a-d30abc1a0366\",\"presetId\":\"visual-reaction-number-cart-l2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:31:13.734Z\",\"elapsedActiveMs\":48560,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-number-cart-l2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341922294}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "visual-reaction-color-tracker-l2",
+    "engine": {
+      "mode": "reactTrain",
+      "level": 9,
+      "colorTrackerTier": 1,
+      "colorTrackerDualPanel": false
+    },
+    "steps": {
+      "setup": {
+        "text": "흰 공 찾기 · 보통\n\n시지각 반응\n\n흰 공 찾기 · 보통\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "ROUND\n1 / 10\n흰 공 찾기\n보통 · 1패널 · 공 9개 · 느림\nSTOP\n흰 공 하나를 기억하세요",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 37.5
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"a1e8c1e4-d025-44d5-ad3c-b4d026517542\",\"presetId\":\"visual-reaction-color-tracker-l2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:32:39.028Z\",\"elapsedActiveMs\":4183,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-color-tracker-l2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341963211}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n◆\n흰 공 찾기 · 보통\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n흰 공 찾기 · 보통 · 20회\n\n중도 종료\n진행 시간\n6초\n설정 분량\n20회\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 흰 공 찾기\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n흰 공 찾기 · 보통\n단계\n흰 공 찾기\n설정 분량\n20회\n진행 시간\n6초\n종료 상태\n중도 종료\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n흰 공 찾기 · 보통\n색 자극 · 반응 훈련\n\n흰 공 찾기 · 보통의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n색과 위치를 함께 확인하고, 서두르기보다 정확한 반응을 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"a1e8c1e4-d025-44d5-ad3c-b4d026517542\",\"presetId\":\"visual-reaction-color-tracker-l2\",\"completionReason\":\"stopped_early\",\"endedAt\":1793341964967}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "흰 공 찾기 · 보통\n\n시지각 반응\n\n흰 공 찾기 · 보통\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=visual-reaction-color-tracker-l2&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"a1e8c1e4-d025-44d5-ad3c-b4d026517542\",\"presetId\":\"visual-reaction-color-tracker-l2\",\"completionReason\":\"stopped_early\",\"endedAt\":1793341964967}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n◆\n흰 공 찾기 · 보통\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n흰 공 찾기 · 보통 · 20회\n\n정상 완료\n진행 시간\n3분 23초\n설정 분량\n20회\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 흰 공 찾기\n\n색상 제시 횟수\n\n총 10회 관문 색상이 제시되었습니다.\n\n빨강\n20%\n2회\n노랑\n50%\n5회\n초록\n10%\n1회\n파랑\n20%\n2회\n\n노랑이 가장 많이 나왔어요 · 5회(50%)\n\n훈련 정리\n흰 공 찾기 · 보통\n색 자극 · 반응 훈련\n\n흰 공 찾기 · 보통의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n색과 위치를 함께 확인하고, 서두르기보다 정확한 반응을 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=visual-reaction-color-tracker-l2&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"d0003e09-8466-407b-bf42-0aaf28f2f892\",\"presetId\":\"visual-reaction-color-tracker-l2\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342168801}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=visual-reaction-color-tracker-l2&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"d0003e09-8466-407b-bf42-0aaf28f2f892\",\"presetId\":\"visual-reaction-color-tracker-l2\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342168801}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 200000,
+      "reveals": 10
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "visual-reaction-white-ball-hard-skeleton",
+    "engine": {
+      "mode": "reactTrain",
+      "level": 9,
+      "colorTrackerTier": 2,
+      "colorTrackerDualPanel": true
+    },
+    "steps": {
+      "setup": {
+        "text": "흰 공 찾기 · 어려움\n\n시지각 반응\n\n흰 공 찾기 · 어려움\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 2초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 42
+          },
+          {
+            "text": "효과음만",
+            "height": 42
+          },
+          {
+            "text": "✓ 무음",
+            "height": 42
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "ROUND\n1 / 10\n흰 공 찾기\n어려움 · 2패널 · 공 13개 · 빠름\nSTOP\nLEFT\nRIGHT\n추적 13초 · 눈으로 끝까지 따라가세요",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 37.5
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"9d600142-a449-4f91-908f-9c6fc0deaba6\",\"presetId\":\"visual-reaction-white-ball-hard-skeleton\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:32:55.062Z\",\"elapsedActiveMs\":6440,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-white-ball-hard-skeleton\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":2,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341981502}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n◆\n흰 공 찾기 · 어려움\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n흰 공 찾기 · 어려움 · 20회\n\n중도 종료\n진행 시간\n7초\n설정 분량\n20회\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 흰 공 찾기\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n흰 공 찾기 · 어려움\n단계\n흰 공 찾기\n설정 분량\n20회\n진행 시간\n7초\n종료 상태\n중도 종료\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n흰 공 찾기 · 어려움\n색 자극 · 반응 훈련\n\n흰 공 찾기 · 어려움의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n색과 위치를 함께 확인하고, 서두르기보다 정확한 반응을 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"9d600142-a449-4f91-908f-9c6fc0deaba6\",\"presetId\":\"visual-reaction-white-ball-hard-skeleton\",\"completionReason\":\"stopped_early\",\"endedAt\":1793341982533}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "흰 공 찾기 · 어려움\n\n시지각 반응\n\n흰 공 찾기 · 어려움\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 2초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=visual-reaction-white-ball-hard-skeleton&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=2&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"9d600142-a449-4f91-908f-9c6fc0deaba6\",\"presetId\":\"visual-reaction-white-ball-hard-skeleton\",\"completionReason\":\"stopped_early\",\"endedAt\":1793341982533}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n◆\n흰 공 찾기 · 어려움\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n흰 공 찾기 · 어려움 · 20회\n\n정상 완료\n진행 시간\n5분 2초\n설정 분량\n20회\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 흰 공 찾기\n\n색상 제시 횟수\n\n총 20회 관문 색상이 제시되었습니다.\n\n빨강\n25%\n5회\n노랑\n25%\n5회\n초록\n30%\n6회\n파랑\n20%\n4회\n\n초록이 가장 많이 나왔어요 · 6회(30%)\n\n훈련 정리\n흰 공 찾기 · 어려움\n색 자극 · 반응 훈련\n\n흰 공 찾기 · 어려움의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n색과 위치를 함께 확인하고, 서두르기보다 정확한 반응을 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=visual-reaction-white-ball-hard-skeleton&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=2&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"2b395cfb-e7bb-4e30-bc89-5e5ae0558f44\",\"presetId\":\"visual-reaction-white-ball-hard-skeleton\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342286253}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=visual-reaction-white-ball-hard-skeleton&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=2&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"2b395cfb-e7bb-4e30-bc89-5e5ae0558f44\",\"presetId\":\"visual-reaction-white-ball-hard-skeleton\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342286253}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 300000,
+      "reveals": 10
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "flanker-5circle-46",
+    "engine": {
+      "mode": "flanker",
+      "level": 3,
+      "variantColorTheme": "animal",
+      "flankerStimulusType": "color",
+      "flankerExtremeMode": "theme"
+    },
+    "steps": {
+      "setup": {
+        "text": "크기 다른 동물 색 따라가기\n\n플랭커 이펙트\n\n크기 다른 동물 색 따라가기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n자극 속도\n\n현재 속도\n3초\n추천 3초\n1\n2\n3\n4\n5\n6\n빠름\n느림\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "REPS\n19\nSTOP",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"2f81d10d-782e-42b8-a541-04ac5099e02c\",\"presetId\":\"flanker-5circle-46\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:33:09.948Z\",\"elapsedActiveMs\":6309,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"flanker-5circle-46\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"responseWindow\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341996256}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n◎\n크기 다른 동물 색 따라가기\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n크기 다른 동물 색 따라가기 · 20회\n\n중도 종료\n진행 시간\n3초\n설정 분량\n20회\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 크기 방해 · 가운데 색 선택\n\n가운데 목표 색\n\n총 1회 가운데 목표 색이 제시되었습니다.\n\n빨강\n100%\n1회\n노랑\n0%\n0회\n초록\n0%\n0회\n파랑\n0%\n0회\n\n빨강이 가운데 목표로 가장 많이 나왔어요 · 1회(100%)\n\n훈련 정리\n크기 다른 동물 색 따라가기\n방해 자극 · 목표 선택\n\n크기 다른 동물 색 따라가기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n주변 신호보다 목표 신호에 집중해 한 번에 하나씩 반응해 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"2f81d10d-782e-42b8-a541-04ac5099e02c\",\"presetId\":\"flanker-5circle-46\",\"completionReason\":\"stopped_early\",\"endedAt\":1793341996492}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "크기 다른 동물 색 따라가기\n\n플랭커 이펙트\n\n크기 다른 동물 색 따라가기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n자극 속도\n\n현재 속도\n3초\n추천 3초\n1\n2\n3\n4\n5\n6\n빠름\n느림\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=flanker-5circle-46&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1&opv=1&startZone=onMat&participant=individual&equipmentMode=none&timing=responseWindow&format=independent"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"2f81d10d-782e-42b8-a541-04ac5099e02c\",\"presetId\":\"flanker-5circle-46\",\"completionReason\":\"stopped_early\",\"endedAt\":1793341996492}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n◎\n크기 다른 동물 색 따라가기\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n크기 다른 동물 색 따라가기 · 20회\n\n정상 완료\n진행 시간\n57초\n설정 분량\n20회\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 크기 방해 · 가운데 색 선택\n\n가운데 목표 색\n\n총 20회 가운데 목표 색이 제시되었습니다.\n\n빨강\n20%\n4회\n노랑\n20%\n4회\n초록\n30%\n6회\n파랑\n30%\n6회\n\n초록이 가운데 목표로 가장 많이 나왔어요 · 6회(30%)\n\n훈련 정리\n크기 다른 동물 색 따라가기\n방해 자극 · 목표 선택\n\n크기 다른 동물 색 따라가기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n주변 신호보다 목표 신호에 집중해 한 번에 하나씩 반응해 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=flanker-5circle-46&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1&opv=1&startZone=onMat&participant=individual&equipmentMode=none&timing=responseWindow&format=independent"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"35dff17e-5501-4582-878d-d5bb42e4f6df\",\"presetId\":\"flanker-5circle-46\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342057809}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=flanker-5circle-46&rounds=20&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=footTap&limb=free&diveTheme=space&flowDuration=20&flowBonus=1&opv=1&startZone=onMat&participant=individual&equipmentMode=none&timing=responseWindow&format=independent",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"35dff17e-5501-4582-878d-d5bb42e4f6df\",\"presetId\":\"flanker-5circle-46\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342057809}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 60000,
+      "reveals": 0
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "sequential-memory-3color-09",
+    "engine": {
+      "mode": "spatial",
+      "level": 1
+    },
+    "steps": {
+      "setup": {
+        "text": "세 가지 색 순서 기억하기\n\n순차 기억\n\n세 가지 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n10라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 42
+          },
+          {
+            "text": "효과음만",
+            "height": 42
+          },
+          {
+            "text": "✓ 무음",
+            "height": 42
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "기억\n1 / 10\n|\n3색\nSTOP\n3 / 3번째\n파랑\n🔵",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"ee56d19e-ac6f-447a-a593-55d5fe1e32c1\",\"presetId\":\"sequential-memory-3color-09\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:33:19.000Z\",\"elapsedActiveMs\":8376,\"currentMovement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"sequential-memory-3color-09\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":10,\"movement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342007376}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n세 가지 색 순서 기억하기\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n세 가지 색 순서 기억하기 · 10라운드\n\n중도 종료\n진행 시간\n10초\n설정 분량\n10라운드\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 색 순서 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n세 가지 색 순서 기억하기\n단계\n색 순서 기억\n설정 분량\n10라운드\n진행 시간\n10초\n기억 길이\n3색\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n세 가지 색 순서 기억하기\n작업기억 · 순서 재생\n\n세 가지 색 순서 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"ee56d19e-ac6f-447a-a593-55d5fe1e32c1\",\"presetId\":\"sequential-memory-3color-09\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342008550}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "세 가지 색 순서 기억하기\n\n순차 기억\n\n세 가지 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n10라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-3color-09&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"ee56d19e-ac6f-447a-a593-55d5fe1e32c1\",\"presetId\":\"sequential-memory-3color-09\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342008550}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🎨\n세 가지 색 순서 기억하기\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n세 가지 색 순서 기억하기 · 10라운드\n\n정상 완료\n진행 시간\n3분 30초\n설정 분량\n10라운드\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 색 순서 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n세 가지 색 순서 기억하기\n단계\n색 순서 기억\n설정 분량\n10라운드\n진행 시간\n3분 30초\n기억 길이\n3색\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n세 가지 색 순서 기억하기\n작업기억 · 순서 재생\n\n세 가지 색 순서 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-3color-09&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"37b64e6d-62db-4d83-b562-a2ab90f67040\",\"presetId\":\"sequential-memory-3color-09\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342219537}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-3color-09&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"37b64e6d-62db-4d83-b562-a2ab90f67040\",\"presetId\":\"sequential-memory-3color-09\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342219537}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 210000,
+      "reveals": 21
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "sequential-memory-5color-51",
+    "engine": {
+      "mode": "spatial",
+      "level": 2
+    },
+    "steps": {
+      "setup": {
+        "text": "다섯 가지 색 순서 기억하기\n\n순차 기억\n\n다섯 가지 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n10라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 42
+          },
+          {
+            "text": "효과음만",
+            "height": 42
+          },
+          {
+            "text": "✓ 무음",
+            "height": 42
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "기억\n1 / 10\n|\n5색\nSTOP\n3 / 5번째\n빨강\n🔴",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"4c6f6f78-935b-40b5-9915-b84eb3feaad1\",\"presetId\":\"sequential-memory-5color-51\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:33:27.168Z\",\"elapsedActiveMs\":8379,\"currentMovement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"sequential-memory-5color-51\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":10,\"movement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342015547}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n다섯 가지 색 순서 기억하기\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n다섯 가지 색 순서 기억하기 · 10라운드\n\n중도 종료\n진행 시간\n10초\n설정 분량\n10라운드\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 색·번호 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n다섯 가지 색 순서 기억하기\n단계\n색·번호 기억\n설정 분량\n10라운드\n진행 시간\n10초\n기억 길이\n5색\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n다섯 가지 색 순서 기억하기\n작업기억 · 순서 재생\n\n다섯 가지 색 순서 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"4c6f6f78-935b-40b5-9915-b84eb3feaad1\",\"presetId\":\"sequential-memory-5color-51\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342016763}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "다섯 가지 색 순서 기억하기\n\n순차 기억\n\n다섯 가지 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n10라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-5color-51&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"4c6f6f78-935b-40b5-9915-b84eb3feaad1\",\"presetId\":\"sequential-memory-5color-51\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342016763}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🎨\n다섯 가지 색 순서 기억하기\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n다섯 가지 색 순서 기억하기 · 10라운드\n\n정상 완료\n진행 시간\n3분 51초\n설정 분량\n10라운드\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 색·번호 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n다섯 가지 색 순서 기억하기\n단계\n색·번호 기억\n설정 분량\n10라운드\n진행 시간\n3분 51초\n기억 길이\n5색\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n다섯 가지 색 순서 기억하기\n작업기억 · 순서 재생\n\n다섯 가지 색 순서 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-5color-51&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"05e3cd3c-52ed-4a85-be28-cfa63aab4dea\",\"presetId\":\"sequential-memory-5color-51\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342248863}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-5color-51&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"05e3cd3c-52ed-4a85-be28-cfa63aab4dea\",\"presetId\":\"sequential-memory-5color-51\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342248863}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 230000,
+      "reveals": 21
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "sequential-memory-10color-52",
+    "engine": {
+      "mode": "spatial",
+      "level": 3
+    },
+    "steps": {
+      "setup": {
+        "text": "늘어나는 색 순서 기억하기\n\n순차 기억\n\n늘어나는 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n5라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "기억\n1 / 5\n|\n추가 · 3색\nSTOP\n3 / 3번째\n노랑\n🟡",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"ccc7d55e-956b-4cb4-bb88-7aff5bdec09c\",\"presetId\":\"sequential-memory-10color-52\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:33:38.592Z\",\"elapsedActiveMs\":8802,\"currentMovement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"sequential-memory-10color-52\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":5,\"movement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342027394}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n늘어나는 색 순서 기억하기\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n늘어나는 색 순서 기억하기 · 5라운드\n\n중도 종료\n진행 시간\n10초\n설정 분량\n5라운드\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 순간 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n늘어나는 색 순서 기억하기\n단계\n순간 기억\n설정 분량\n5라운드\n진행 시간\n10초\n기억 길이\n추가(3→7)\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n늘어나는 색 순서 기억하기\n작업기억 · 순서 재생\n\n늘어나는 색 순서 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"ccc7d55e-956b-4cb4-bb88-7aff5bdec09c\",\"presetId\":\"sequential-memory-10color-52\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342028100}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "늘어나는 색 순서 기억하기\n\n순차 기억\n\n늘어나는 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n5라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-10color-52&rounds=5&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"ccc7d55e-956b-4cb4-bb88-7aff5bdec09c\",\"presetId\":\"sequential-memory-10color-52\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342028100}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "모든 라운드를 마쳤습니다.\n전체 정답 목록을 확인한 뒤 훈련을 완료하세요.\n정답 목록 보기",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "정답 목록 보기",
+            "height": 71.984375
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-10color-52&rounds=5&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"ccc7d55e-956b-4cb4-bb88-7aff5bdec09c\",\"presetId\":\"sequential-memory-10color-52\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342028100}",
+        "active": "{\"version\":1,\"runId\":\"50295ca8-0904-4d3b-b4d4-a53c0c42093d\",\"presetId\":\"sequential-memory-10color-52\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:33:49.058Z\",\"elapsedActiveMs\":370100,\"currentMovement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"sequential-memory-10color-52\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":5,\"movement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342399158}",
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": false,
+      "virtualMs": 360000,
+      "reveals": 10
+    },
+    "status": "UNVERIFIED_TIMEOUT",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "sequential-memory-color-number-exp",
+    "engine": {
+      "mode": "spatial",
+      "level": 4
+    },
+    "steps": {
+      "setup": {
+        "text": "색깔과 번호 기억하기\n\n순차 기억\n\n색깔과 번호 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n실행 구성\n\n색·번호 10개 + 퀴즈 5문항\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "🎨\n2 / 10\n|\nSTOP\n2 / 10번째\n6\n노랑",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"c04e94c4-b1ee-46db-92b9-f0d789043e40\",\"presetId\":\"sequential-memory-color-number-exp\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:33:56.075Z\",\"elapsedActiveMs\":8422,\"currentMovement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"sequential-memory-color-number-exp\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":10,\"movement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342044497}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n색깔과 번호 기억하기\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n색깔과 번호 기억하기 · 색·번호 10개 + 퀴즈 5문항\n\n중도 종료\n진행 시간\n10초\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 색 순서 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n색깔과 번호 기억하기\n단계\n색 순서 기억\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n진행 시간\n10초\n기억 길이\n색·번호\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n색깔과 번호 기억하기\n작업기억 · 순서 재생\n\n색깔과 번호 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"c04e94c4-b1ee-46db-92b9-f0d789043e40\",\"presetId\":\"sequential-memory-color-number-exp\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342045684}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "색깔과 번호 기억하기\n\n순차 기억\n\n색깔과 번호 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n실행 구성\n\n색·번호 10개 + 퀴즈 5문항\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-color-number-exp&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"c04e94c4-b1ee-46db-92b9-f0d789043e40\",\"presetId\":\"sequential-memory-color-number-exp\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342045684}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🎨\n색깔과 번호 기억하기\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n색깔과 번호 기억하기 · 색·번호 10개 + 퀴즈 5문항\n\n정상 완료\n진행 시간\n2분 30초\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 색 순서 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n색깔과 번호 기억하기\n단계\n색 순서 기억\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n진행 시간\n2분 30초\n기억 길이\n색·번호\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n색깔과 번호 기억하기\n작업기억 · 순서 재생\n\n색깔과 번호 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-color-number-exp&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"cdc5982e-d904-438d-ba86-d8f78f18b3f5\",\"presetId\":\"sequential-memory-color-number-exp\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342196163}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-color-number-exp&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"cdc5982e-d904-438d-ba86-d8f78f18b3f5\",\"presetId\":\"sequential-memory-color-number-exp\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342196163}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 150000,
+      "reveals": 12
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "sequential-memory-color-number-movement-v2",
+    "engine": {
+      "mode": "spatial",
+      "level": 4,
+      "spatialMemoryResponse": "movement"
+    },
+    "steps": {
+      "setup": {
+        "text": "(내부) 색·번호 기억 이동 후보\n\n순차 기억\n\n(내부) 색·번호 기억 이동 후보\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n실행 구성\n\n색·번호 10개 + 퀴즈 5문항\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 42
+          },
+          {
+            "text": "효과음만",
+            "height": 42
+          },
+          {
+            "text": "✓ 무음",
+            "height": 42
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "🎨\n2 / 10\n|\nSTOP\n2 / 10번째\n9\n빨강",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"e80f2216-467f-4887-b6ad-8089277a9c76\",\"presetId\":\"sequential-memory-color-number-movement-v2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:34:05.546Z\",\"elapsedActiveMs\":8360,\"currentMovement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"sequential-memory-color-number-movement-v2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":10,\"movement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342053906}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n(내부) 색·번호 기억 이동 후보\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n(내부) 색·번호 기억 이동 후보 · 색·번호 10개 + 퀴즈 5문항\n\n중도 종료\n진행 시간\n10초\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 색 순서 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n(내부) 색·번호 기억 이동 후보\n단계\n색 순서 기억\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n진행 시간\n10초\n기억 길이\n색·번호\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n(내부) 색·번호 기억 이동 후보\n작업기억 · 순서 재생\n\n(내부) 색·번호 기억 이동 후보의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"e80f2216-467f-4887-b6ad-8089277a9c76\",\"presetId\":\"sequential-memory-color-number-movement-v2\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342055078}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "(내부) 색·번호 기억 이동 후보\n\n순차 기억\n\n(내부) 색·번호 기억 이동 후보\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n실행 구성\n\n색·번호 10개 + 퀴즈 5문항\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-color-number-movement-v2&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"e80f2216-467f-4887-b6ad-8089277a9c76\",\"presetId\":\"sequential-memory-color-number-movement-v2\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342055078}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🎨\n(내부) 색·번호 기억 이동 후보\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n(내부) 색·번호 기억 이동 후보 · 색·번호 10개 + 퀴즈 5문항\n\n정상 완료\n진행 시간\n2분 30초\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 색 순서 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n(내부) 색·번호 기억 이동 후보\n단계\n색 순서 기억\n설정 분량\n색·번호 10개 + 퀴즈 5문항\n진행 시간\n2분 30초\n기억 길이\n색·번호\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n(내부) 색·번호 기억 이동 후보\n작업기억 · 순서 재생\n\n(내부) 색·번호 기억 이동 후보의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-color-number-movement-v2&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"0c9da704-5f29-452e-9f71-2a72f2c02d29\",\"presetId\":\"sequential-memory-color-number-movement-v2\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342206018}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-color-number-movement-v2&rounds=10&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"0c9da704-5f29-452e-9f71-2a72f2c02d29\",\"presetId\":\"sequential-memory-color-number-movement-v2\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342206018}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 150000,
+      "reveals": 12
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "dive-standard",
+    "engine": {
+      "mode": "flow",
+      "level": 1,
+      "flowFeatures": [
+        "punch",
+        "kick",
+        "duck",
+        "reach"
+      ],
+      "flowDuration": 20,
+      "flowLayout": "sequential",
+      "flowIncludeBonus": true
+    },
+    "steps": {
+      "setup": {
+        "text": "액션 무브\n\nDIVE\n\n액션 무브\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n5단계 × 20초 + BONUS 60초\n\n총 운동\n\n2분 40초\n\n전환 안내 시간은 총 운동시간에 포함되지 않습니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "STAGE 1\n11s\n✕ 나가기",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "✕ 나가기",
+            "height": 36.71875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"ad614e91-f8d9-406d-a82b-b8fa0f645694\",\"presetId\":\"dive-standard\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:34:15.771Z\",\"elapsedActiveMs\":40013,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-standard\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":1,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342095784}",
+        "recent": []
+      }
+    },
+    "ready": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "STAGE 1\n11s\n✕ 나가기",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "✕ 나가기",
+          "height": 36.71875
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"ad614e91-f8d9-406d-a82b-b8fa0f645694\",\"presetId\":\"dive-standard\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:34:15.771Z\",\"elapsedActiveMs\":40013,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-standard\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":1,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342095784}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "dive-color-gate-61",
+    "engine": {
+      "mode": "flow",
+      "level": 2,
+      "flowFeatures": [
+        "colorGate"
+      ],
+      "flowDuration": 60,
+      "flowLayout": "sequential",
+      "colorGateVariant": "solo-easy",
+      "colorGateCategory": "all"
+    },
+    "steps": {
+      "setup": {
+        "text": "모션 게이트\n\nDIVE\n\n모션 게이트\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n자극 속도\n\n현재 속도\n3초\n추천 3초\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n빠름\n느림\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "COLOR GATE\n\n플랭크\n\n3 / 20회\nMOTION GATE\n2 / 20회\n✕ 나가기",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "✕ 나가기",
+            "height": 36.71875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"8cdd4faf-e30d-4dc4-a4d7-c0b09b5cc352\",\"presetId\":\"dive-color-gate-61\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:34:47.664Z\",\"elapsedActiveMs\":32801,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-color-gate-61\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":60,\"flowIncludeBonus\":true},\"savedAt\":1793342120465}",
+        "recent": []
+      }
+    },
+    "ready": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "COLOR GATE\n\n플랭크\n\n3 / 20회\nMOTION GATE\n2 / 20회\n✕ 나가기",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "✕ 나가기",
+          "height": 36.71875
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"8cdd4faf-e30d-4dc4-a4d7-c0b09b5cc352\",\"presetId\":\"dive-color-gate-61\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:34:47.664Z\",\"elapsedActiveMs\":34850,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-color-gate-61\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":60,\"flowIncludeBonus\":true},\"savedAt\":1793342122514}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "dive-random",
+    "engine": {
+      "mode": "flow",
+      "level": 1,
+      "flowFeatures": [
+        "punch",
+        "kick",
+        "duck",
+        "reach"
+      ],
+      "flowDuration": 20,
+      "flowLayout": "random"
+    },
+    "steps": {
+      "setup": {
+        "text": "액션 무브\n\nDIVE\n\n액션 무브\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n환경 테마\n\nSPACE\n놀이공원\n정글\n테마 4\n테마 5\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "SPACE",
+            "height": 44
+          },
+          {
+            "text": "놀이공원",
+            "height": 44
+          },
+          {
+            "text": "정글",
+            "height": 44
+          },
+          {
+            "text": "테마 4",
+            "height": 44
+          },
+          {
+            "text": "테마 5",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "STAGE 1\n12s\n✕ 나가기",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "✕ 나가기",
+            "height": 36.71875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"0390b677-fd11-4310-81c7-784a1fa16d24\",\"presetId\":\"dive-random\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:35:08.913Z\",\"elapsedActiveMs\":39686,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-random\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342148599}",
+        "recent": []
+      }
+    },
+    "ready": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "STAGE 1\n11s\n✕ 나가기",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "✕ 나가기",
+          "height": 36.71875
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"0390b677-fd11-4310-81c7-784a1fa16d24\",\"presetId\":\"dive-random\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:35:08.913Z\",\"elapsedActiveMs\":41845,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-random\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342150758}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  }
+]

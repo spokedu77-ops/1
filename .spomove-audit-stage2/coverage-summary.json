@@ -1,0 +1,130 @@
+{
+  "official": {
+    "total": 100,
+    "attempted": 100,
+    "allStagesObserved": 93,
+    "notCompleted": [
+      {
+        "id": "visual-reaction-rush-39",
+        "status": "FAILED_OR_BLOCKED",
+        "error": "AUDIT_CLOCK_COMMAND_TIMEOUT",
+        "evidence": "official-results-shard3.json"
+      },
+      {
+        "id": "visual-reaction-goalkeeper-easy-skeleton",
+        "status": "FAILED_OR_BLOCKED",
+        "error": "NO_STOP_CONTROL",
+        "evidence": "official-results-shard1.json"
+      },
+      {
+        "id": "visual-reaction-goalkeeper-42",
+        "status": "UNVERIFIED_TIMEOUT",
+        "evidence": "official-results-shard2.json"
+      },
+      {
+        "id": "visual-reaction-number-cart-l2",
+        "status": "FAILED_OR_BLOCKED",
+        "error": "NO_STOP_CONTROL",
+        "evidence": "official-results-shardstable.json"
+      },
+      {
+        "id": "dive-standard",
+        "status": "FAILED_OR_BLOCKED",
+        "error": "NO_STOP_CONTROL",
+        "evidence": "official-results-shardstable.json"
+      },
+      {
+        "id": "dive-color-gate-61",
+        "status": "FAILED_OR_BLOCKED",
+        "error": "NO_STOP_CONTROL",
+        "evidence": "official-results-shardstable.json"
+      },
+      {
+        "id": "dive-random",
+        "status": "FAILED_OR_BLOCKED",
+        "error": "NO_STOP_CONTROL",
+        "evidence": "official-results-shardstable.json"
+      }
+    ],
+    "stopReasonWrong": [],
+    "naturalReasonWrong": [],
+    "setupRoundTripChanged": [],
+    "returnLockResidue": []
+  },
+  "teacher": {
+    "total": 33,
+    "attempted": 33,
+    "allStagesObserved": 33,
+    "notCompleted": [],
+    "stopClaimsCompletion": [
+      "w1-rc-space",
+      "w1-rc-quad-color",
+      "w1-rc-full-color",
+      "w1-stroop-arrow",
+      "w1-stroop-arrow-bg",
+      "w2-rc-full-animal",
+      "w2-rc-full-fruit",
+      "w2-rc-full-food",
+      "w2-vr-balloon",
+      "w2-vr-bricks",
+      "w3-rc-mod-quad-1",
+      "w3-rc-mod-quad-2",
+      "w3-stroop-word",
+      "w3-stroop-word-bg",
+      "w4-rc-full-vehicle",
+      "w4-rc-full-nature",
+      "w4-rc-full-emotion",
+      "w4-vr-mole",
+      "w5-rc-2panel-animal",
+      "w5-rc-2panel-fruit",
+      "w5-rc-2panel-food",
+      "w5-rc-3panel-vehicle",
+      "w5-rc-3panel-nature",
+      "w5-rc-3panel-emotion",
+      "w6-rc-mod-quad-2-easy",
+      "w6-rc-mod-quad-3-easy",
+      "w6-vr-camouflage-balance",
+      "w7-simon-effect",
+      "w7-flanker-random",
+      "w7-flanker-arrow",
+      "w8-memory-5items",
+      "w8-memory-color-number-quiz",
+      "w8-memory-color-number-full"
+    ],
+    "returnLockResidue": [
+      "w1-rc-space",
+      "w1-rc-quad-color",
+      "w1-rc-full-color",
+      "w1-stroop-arrow",
+      "w1-stroop-arrow-bg",
+      "w2-rc-full-animal",
+      "w2-rc-full-fruit",
+      "w2-rc-full-food",
+      "w2-vr-balloon",
+      "w2-vr-bricks",
+      "w3-rc-mod-quad-1",
+      "w3-rc-mod-quad-2",
+      "w3-stroop-word",
+      "w3-stroop-word-bg",
+      "w4-rc-full-vehicle",
+      "w4-rc-full-nature",
+      "w4-rc-full-emotion",
+      "w4-vr-mole",
+      "w5-rc-2panel-animal",
+      "w5-rc-2panel-fruit",
+      "w5-rc-2panel-food",
+      "w5-rc-3panel-vehicle",
+      "w5-rc-3panel-nature",
+      "w5-rc-3panel-emotion",
+      "w6-rc-mod-quad-2-easy",
+      "w6-rc-mod-quad-3-easy",
+      "w6-vr-camouflage-balance",
+      "w7-simon-effect",
+      "w7-flanker-random",
+      "w7-flanker-arrow",
+      "w8-memory-5items",
+      "w8-memory-color-number-quiz",
+      "w8-memory-color-number-full"
+    ]
+  }
+}

@@ -1,0 +1,876 @@
+[
+  {
+    "surface": "teacher-client",
+    "week": 1,
+    "id": "w1-rc-space",
+    "config": {
+      "id": "w1-rc-space",
+      "title": "반응인지 - 공간 방향",
+      "mode": "basic",
+      "level": 1,
+      "speed": 2,
+      "targetReps": 15,
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "반응인지 - 공간 방향",
+        "speed": 2,
+        "timeMode": "reps",
+        "targetReps": 15,
+        "hideBodyLabelModeControls": false
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "REPS\n20\nSTOP\nGet ready",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n⚡\n반응인지 - 공간 방향\n다시 실행\n훈련 완료\n\n반응인지 - 공간 방향을 끝까지 완주했어요.\n\n반응인지 - 공간 방향 · 15회\n\n진행 시간\n2초\n설정 분량\n15회\n오늘 느낌\n끝까지 집중해서 참여했어요\n오늘의 포인트\n\n”중앙 화살표가 보이는 순간 발이 먼저 출발해요\n\n민첩성\n순발력\n눈과 몸 연결\n활동 요약\n\n이번 활동에서 진행한 과제와 시간을 정리합니다.\n\n프로그램\n반응인지 - 공간 방향\n단계\n공간방향 자극\n설정 분량\n15회\n진행 시간\n2초\n오늘 느낌\n끝까지 집중해서 참여했어요\n\n표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.\n\n훈련 정리\n반응인지 - 공간 방향\n화면 신호 · 지각 훈련\n\n화면 중앙에 큰 화살표(↑↓←→)가 하나씩 표시됩니다.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n스스로 점검\n1\n놓친 뒤에도 다시 집중했나요?\n2\n화면의 신호에 집중했나요?\n3\n점프와 이동 동작을 크게 했나요?\n4\n다음에도 다시 해보고 싶나요?\n5\n신호가 바뀔 때 바로 움직였나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n⚡\n반응인지 - 공간 방향\n다시 실행\n훈련 완료\n\n반응인지 - 공간 방향을 끝까지 완주했어요.\n\n반응인지 - 공간 방향 · 15회\n\n진행 시간\n35초\n설정 분량\n15회\n오늘 느낌\n끝까지 집중해서 참여했어요\n오늘의 포인트\n\n”중앙 화살표가 보이는 순간 발이 먼저 출발해요\n\n민첩성\n순발력\n눈과 몸 연결\n활동 요약\n\n이번 활동에서 진행한 과제와 시간을 정리합니다.\n\n프로그램\n반응인지 - 공간 방향\n단계\n공간방향 자극\n설정 분량\n15회\n진행 시간\n35초\n오늘 느낌\n끝까지 집중해서 참여했어요\n\n표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.\n\n훈련 정리\n반응인지 - 공간 방향\n화면 신호 · 지각 훈련\n\n화면 중앙에 큰 화살표(↑↓←→)가 하나씩 표시됩니다.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n스스로 점검\n1\n점프와 이동 동작을 크게 했나요?\n2\n끝까지 참여했나요?\n3\n신호에 맞는 위치로 이동했나요?\n4\n놓친 뒤에도 다시 집중했나요?\n5\n신호가 바뀔 때 바로 움직였나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 40000
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "teacher-client",
+    "week": 1,
+    "id": "w1-rc-quad-color",
+    "config": {
+      "id": "w1-rc-quad-color",
+      "title": "반응인지 - 사분할 색상",
+      "mode": "basic",
+      "level": 2,
+      "speed": 2,
+      "targetReps": 15,
+      "variantColorTheme": "color",
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "반응인지 - 사분할 색상",
+        "speed": 2,
+        "timeMode": "reps",
+        "targetReps": 15,
+        "variantColorTheme": "color",
+        "hideBodyLabelModeControls": false
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "REPS\n20\nSTOP\nGet ready",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n⚡\n반응인지 - 사분할 색상\n다시 실행\n훈련 완료\n\n반응인지 - 사분할 색상을 끝까지 완주했어요.\n\n반응인지 - 사분할 색상 · 15회\n\n진행 시간\n2초\n설정 분량\n15회\n오늘 느낌\n끝까지 힘차게 움직였어요\n오늘의 포인트\n\n눈이 색을 잡는 순간 발이 출발합니다\n\n민첩성\n순발력\n눈과 몸 연결\n색상 제시 횟수\n\n총 1회 관문 색상이 제시되었습니다.\n\n빨강\n0%\n0회\n노랑\n0%\n0회\n초록\n100%\n1회\n파랑\n0%\n0회\n\n초록이 가장 많이 나왔어요 · 1회(100%)\n\n훈련 정리\n반응인지 - 사분할 색상\n화면 신호 · 지각 훈련\n\n화면은 2×2 4분할 그리드형이에요.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n스스로 점검\n1\n신호가 바뀔 때 바로 움직였나요?\n2\n다음에도 다시 해보고 싶나요?\n3\n신호에 맞는 위치로 이동했나요?\n4\n화면의 신호에 집중했나요?\n5\n이동한 뒤 몸의 균형을 잡았나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n⚡\n반응인지 - 사분할 색상\n다시 실행\n훈련 완료\n\n반응인지 - 사분할 색상을 끝까지 완주했어요.\n\n반응인지 - 사분할 색상 · 15회\n\n진행 시간\n35초\n설정 분량\n15회\n오늘 느낌\n색을 보고 활발히 이동했어요\n오늘의 포인트\n\n눈이 색을 잡는 순간 발이 출발합니다\n\n민첩성\n순발력\n눈과 몸 연결\n색상 제시 횟수\n\n총 15회 관문 색상이 제시되었습니다.\n\n빨강\n13%\n2회\n노랑\n33%\n5회\n초록\n33%\n5회\n파랑\n20%\n3회\n\n노랑이 가장 많이 나왔어요 · 5회(33%)\n\n훈련 정리\n반응인지 - 사분할 색상\n화면 신호 · 지각 훈련\n\n화면은 2×2 4분할 그리드형이에요.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n스스로 점검\n1\n신호가 바뀔 때 바로 움직였나요?\n2\n놓친 뒤에도 다시 집중했나요?\n3\n점프와 이동 동작을 크게 했나요?\n4\n끝까지 참여했나요?\n5\n화면의 신호에 집중했나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 40000
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "teacher-client",
+    "week": 1,
+    "id": "w1-rc-full-color",
+    "config": {
+      "id": "w1-rc-full-color",
+      "title": "반응인지 - 전면색상: 색상",
+      "mode": "basic",
+      "level": 3,
+      "speed": 2,
+      "targetReps": 15,
+      "variantColorTheme": "color",
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "반응인지 - 전면색상: 색상",
+        "speed": 2,
+        "timeMode": "reps",
+        "targetReps": 15,
+        "variantColorTheme": "color",
+        "hideBodyLabelModeControls": false
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "REPS\n20\nSTOP\nGet ready",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n⚡\n반응인지 - 전면색상: 색상\n다시 실행\n훈련 완료\n\n반응인지 - 전면색상: 색상을 끝까지 완주했어요.\n\n반응인지 - 전면색상: 색상 · 15회\n\n진행 시간\n2초\n설정 분량\n15회\n오늘 느낌\n몸을 크게 움직였어요\n오늘의 포인트\n\n화면 색을 보는 순간 바로 그 패드로 점프해요\n\n민첩성\n순발력\n눈과 몸 연결\n색상 제시 횟수\n\n총 1회 관문 색상이 제시되었습니다.\n\n빨강\n100%\n1회\n노랑\n0%\n0회\n초록\n0%\n0회\n파랑\n0%\n0회\n\n빨강이 가장 많이 나왔어요 · 1회(100%)\n\n훈련 정리\n반응인지 - 전면색상: 색상\n화면 신호 · 지각 훈련\n\n화면 전체가 한 색(또는 이미지 색)으로 채워져요. 그 색 패드로 바로 이동해요.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n스스로 점검\n1\n신호에 맞는 위치로 이동했나요?\n2\n신호가 바뀔 때 바로 움직였나요?\n3\n화면의 신호에 집중했나요?\n4\n점프와 이동 동작을 크게 했나요?\n5\n놓친 뒤에도 다시 집중했나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n⚡\n반응인지 - 전면색상: 색상\n다시 실행\n훈련 완료\n\n반응인지 - 전면색상: 색상을 끝까지 완주했어요.\n\n반응인지 - 전면색상: 색상 · 15회\n\n진행 시간\n35초\n설정 분량\n15회\n오늘 느낌\n빠르게 방향을 바꿔 움직였어요\n오늘의 포인트\n\n화면 색을 보는 순간 바로 그 패드로 점프해요\n\n민첩성\n순발력\n눈과 몸 연결\n색상 제시 횟수\n\n총 15회 관문 색상이 제시되었습니다.\n\n빨강\n33%\n5회\n노랑\n33%\n5회\n초록\n20%\n3회\n파랑\n13%\n2회\n\n빨강이 가장 많이 나왔어요 · 5회(33%)\n\n훈련 정리\n반응인지 - 전면색상: 색상\n화면 신호 · 지각 훈련\n\n화면 전체가 한 색(또는 이미지 색)으로 채워져요. 그 색 패드로 바로 이동해요.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n스스로 점검\n1\n끝까지 참여했나요?\n2\n이동한 뒤 몸의 균형을 잡았나요?\n3\n놓친 뒤에도 다시 집중했나요?\n4\n다음에도 다시 해보고 싶나요?\n5\n신호에 맞는 위치로 이동했나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 40000
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "teacher-client",
+    "week": 1,
+    "id": "w1-stroop-arrow",
+    "config": {
+      "id": "w1-stroop-arrow",
+      "title": "스트룹 - 공간 방향 · 색상",
+      "mode": "stroop",
+      "level": 1,
+      "speed": 3,
+      "targetReps": 15,
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "스트룹 - 공간 방향 · 색상",
+        "speed": 3,
+        "timeMode": "reps",
+        "targetReps": 15,
+        "hideBodyLabelModeControls": false
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "stopped": {
+        "text": "REPS\n20\nSTOP\n2",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_RESULT",
+    "failure": {
+      "text": "REPS\n20\nSTOP\n2",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 47.578125
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": null,
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "teacher-client",
+    "week": 1,
+    "id": "w1-stroop-arrow-bg",
+    "config": {
+      "id": "w1-stroop-arrow-bg",
+      "title": "스트룹 - 화살표/배경 간섭",
+      "mode": "stroop",
+      "level": 2,
+      "speed": 3,
+      "targetReps": 15,
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "스트룹 - 화살표/배경 간섭",
+        "speed": 3,
+        "timeMode": "reps",
+        "targetReps": 15,
+        "hideBodyLabelModeControls": false
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "REPS\n20\nSTOP\nGet ready",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🧠\n스트룹 - 화살표/배경 간섭\n다시 실행\n훈련 완료\n\n스트룹 - 화살표/배경 간섭을 끝까지 완주했어요.\n\n스트룹 - 화살표/배경 간섭 · 15회\n\n진행 시간\n2초\n설정 분량\n15회\n오늘 느낌\n보고 생각한 뒤 또렷하게 말했어요\n오늘의 포인트\n\n이번엔 단어 / 이번엔 칠한 색\n\n억제력\n인지 유연성\n빠른 판단\n색상 제시 횟수\n\n총 1회 관문 색상이 제시되었습니다.\n\n빨강\n100%\n1회\n노랑\n0%\n0회\n초록\n0%\n0회\n파랑\n0%\n0회\n\n빨강이 가장 많이 나왔어요 · 1회(100%)\n\n훈련 정리\n스트룹 - 화살표/배경 간섭\n통제 제어 · 인지 지연\n\n배경 검정.\n\n다음 시도 팁\n\n이번 활동의 규칙을 먼저 떠올리고, 화면을 본 뒤 차분하게 반응해 보세요.\n\n스스로 점검\n1\n헷갈리는 자극에서도 규칙을 다시 떠올렸나요?\n2\n목소리를 크고 또렷하게 냈나요?\n3\n놓친 뒤에도 다시 집중했나요?\n4\n다음에도 다시 해보고 싶나요?\n5\n이번 활동의 규칙대로 답했나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🧠\n스트룹 - 화살표/배경 간섭\n다시 실행\n훈련 완료\n\n스트룹 - 화살표/배경 간섭을 끝까지 완주했어요.\n\n스트룹 - 화살표/배경 간섭 · 15회\n\n진행 시간\n49초\n설정 분량\n15회\n오늘 느낌\n목소리와 생각을 함께 썼어요\n오늘의 포인트\n\n이번엔 단어 / 이번엔 칠한 색\n\n억제력\n인지 유연성\n빠른 판단\n색상 제시 횟수\n\n총 15회 관문 색상이 제시되었습니다.\n\n빨강\n27%\n4회\n노랑\n33%\n5회\n초록\n20%\n3회\n파랑\n20%\n3회\n\n노랑이 가장 많이 나왔어요 · 5회(33%)\n\n훈련 정리\n스트룹 - 화살표/배경 간섭\n통제 제어 · 인지 지연\n\n배경 검정.\n\n다음 시도 팁\n\n이번 활동의 규칙을 먼저 떠올리고, 화면을 본 뒤 차분하게 반응해 보세요.\n\n스스로 점검\n1\n놓친 뒤에도 다시 집중했나요?\n2\n다음에도 다시 해보고 싶나요?\n3\n신호가 바뀔 때 바로 답했나요?\n4\n이번 활동의 규칙대로 답했나요?\n5\n목소리를 크고 또렷하게 냈나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "홈\n1주차\n5 프로그램\n01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동\n02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동\n03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동\n04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동\n05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n반응인지 - 공간 방향\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n반응인지 - 사분할 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n반응인지 - 전면색상: 색상\n2초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "04\n스트룹 - 공간 방향 · 색상\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "05\n스트룹 - 화살표/배경 간섭\n3초\n15회\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 60000
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  }
+]

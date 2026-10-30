@@ -1,0 +1,12 @@
+{
+  "start": "2026-10-30T07:43:41.054Z",
+  "end": "2026-10-30T07:43:44.092Z",
+  "code": 0,
+  "signal": null,
+  "command": [
+    "C:\\Program Files\\nodejs\\node.exe",
+    "C:\\Users\\user\\Desktop\\coach-app\\node_modules\\next\\dist\\bin\\next",
+    "typegen"
+  ],
+  "cwd": "C:\\Users\\user\\Desktop\\coach-app\\.spomove-gate-a\\workspace"
+}

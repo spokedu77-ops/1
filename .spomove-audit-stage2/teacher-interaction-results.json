@@ -1,0 +1,443 @@
+[
+  {
+    "surface": "teacher-client",
+    "week": 8,
+    "id": "w8-memory-5items",
+    "config": {
+      "id": "w8-memory-5items",
+      "title": "순차기억 5항 기억",
+      "mode": "spatial",
+      "level": 2,
+      "targetReps": 4,
+      "displayChips": [
+        "1~3초 랜덤",
+        "4라운드",
+        "BGM 자동"
+      ],
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "순차기억 5항 기억",
+        "speed": 3,
+        "timeMode": "reps",
+        "targetReps": 4
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n8주차\n3 프로그램\n01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동\n02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동\n03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "기억\n1 / 4\n|\n5색\nSTOP\n4 / 5번째\n초록\n🟢",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n순차기억 5항 기억\n다시 실행\n훈련 완료\n\n순차기억 5항 기억을 끝까지 완주했어요.\n\n순차기억 5항 기억 · 10라운드\n\n진행 시간\n6초\n설정 분량\n10라운드\n오늘 느낌\n차분히 보고 기억했어요\n오늘의 포인트\n\n번호를 기준으로 색을 붙여 외운다”고 규칙을 고정합니다\n\n기억력\n집중력\n차분함\n활동 요약\n\n이번 활동에서 진행한 과제와 시간을 정리합니다.\n\n프로그램\n순차기억 5항 기억\n단계\n색·번호 기억\n설정 분량\n10라운드\n진행 시간\n6초\n기억 길이\n5색\n\n표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.\n\n훈련 정리\n순차기억 5항 기억\n작업기억 · 순서 재생\n\n색 배경 위에 번호가 순서대로 나타납니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n스스로 점검\n1\n신호를 짧게 나누어 기억했나요?\n2\n화면의 신호에 집중했나요?\n3\n서두르지 않고 한 단계씩 확인했나요?\n4\n끝까지 참여했나요?\n5\n다음에도 다시 해보고 싶나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🎨\n순차기억 5항 기억\n다시 실행\n훈련 완료\n\n순차기억 5항 기억을 끝까지 완주했어요.\n\n순차기억 5항 기억 · 10라운드\n\n진행 시간\n1분 56초\n설정 분량\n10라운드\n오늘 느낌\n차분히 보고 기억했어요\n오늘의 포인트\n\n번호를 기준으로 색을 붙여 외운다”고 규칙을 고정합니다\n\n기억력\n집중력\n차분함\n활동 요약\n\n이번 활동에서 진행한 과제와 시간을 정리합니다.\n\n프로그램\n순차기억 5항 기억\n단계\n색·번호 기억\n설정 분량\n10라운드\n진행 시간\n1분 56초\n기억 길이\n5색\n\n표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.\n\n훈련 정리\n순차기억 5항 기억\n작업기억 · 순서 재생\n\n색 배경 위에 번호가 순서대로 나타납니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n스스로 점검\n1\n서두르지 않고 한 단계씩 확인했나요?\n2\n나온 순서와 위치를 기억했나요?\n3\n신호를 짧게 나누어 기억했나요?\n4\n다음에도 다시 해보고 싶나요?\n5\n화면의 신호에 집중했나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "홈\n8주차\n3 프로그램\n01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동\n02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동\n03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 120000,
+      "reveals": 9
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "teacher-client",
+    "week": 8,
+    "id": "w8-memory-color-number-quiz",
+    "config": {
+      "id": "w8-memory-color-number-quiz",
+      "title": "순차기억 색-번호 맞추기",
+      "mode": "spatial",
+      "level": 4,
+      "speed": 3,
+      "targetReps": 10,
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "순차기억 색-번호 맞추기",
+        "speed": 3,
+        "timeMode": "reps",
+        "targetReps": 10
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n8주차\n3 프로그램\n01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동\n02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동\n03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "🎨\n2 / 10\n|\nSTOP\n2 / 10번째\n10\n파랑",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n순차기억 색-번호 맞추기\n다시 실행\n훈련 완료\n\n순차기억 색-번호 맞추기를 끝까지 완주했어요.\n\n순차기억 색-번호 맞추기 · 10라운드\n\n진행 시간\n6초\n설정 분량\n10라운드\n오늘 느낌\n순서와 위치에 집중했어요\n오늘의 포인트\n\n첫 색을 소리 내어 반복 → 두 번째를 앞에 붙여 말하기” 식으로 청킹을 안내합니다\n\n기억력\n집중력\n차분함\n활동 요약\n\n이번 활동에서 진행한 과제와 시간을 정리합니다.\n\n프로그램\n순차기억 색-번호 맞추기\n단계\n색 순서 기억\n설정 분량\n10라운드\n진행 시간\n6초\n기억 길이\n색·번호\n\n표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.\n\n훈련 정리\n순차기억 색-번호 맞추기\n작업기억 · 순서 재생\n\n색이 약 1초 단위로 하나씩 바뀝니다(설정 속도 반영).\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n스스로 점검\n1\n놓친 뒤에도 다시 집중했나요?\n2\n서두르지 않고 한 단계씩 확인했나요?\n3\n화면의 신호에 집중했나요?\n4\n다음에도 다시 해보고 싶나요?\n5\n기억한 순서대로 차분히 움직였나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🎨\n순차기억 색-번호 맞추기\n다시 실행\n훈련 완료\n\n순차기억 색-번호 맞추기를 끝까지 완주했어요.\n\n순차기억 색-번호 맞추기 · 10라운드\n\n진행 시간\n2분 26초\n설정 분량\n10라운드\n오늘 느낌\n눈으로 살피고 머릿속에 담았어요\n오늘의 포인트\n\n첫 색을 소리 내어 반복 → 두 번째를 앞에 붙여 말하기” 식으로 청킹을 안내합니다\n\n기억력\n집중력\n차분함\n활동 요약\n\n이번 활동에서 진행한 과제와 시간을 정리합니다.\n\n프로그램\n순차기억 색-번호 맞추기\n단계\n색 순서 기억\n설정 분량\n10라운드\n진행 시간\n2분 26초\n기억 길이\n색·번호\n\n표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.\n\n훈련 정리\n순차기억 색-번호 맞추기\n작업기억 · 순서 재생\n\n색이 약 1초 단위로 하나씩 바뀝니다(설정 속도 반영).\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n스스로 점검\n1\n끝까지 참여했나요?\n2\n기억한 순서대로 차분히 움직였나요?\n3\n신호를 짧게 나누어 기억했나요?\n4\n놓친 뒤에도 다시 집중했나요?\n5\n나온 순서와 위치를 기억했나요?",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 32.390625
+          },
+          {
+            "text": "다시 실행",
+            "height": 28.390625
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "홈\n8주차\n3 프로그램\n01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동\n02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동\n03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 150000,
+      "reveals": 12
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "teacher-client",
+    "week": 8,
+    "id": "w8-memory-color-number-full",
+    "config": {
+      "id": "w8-memory-color-number-full",
+      "title": "순차기억 색-번호 전체보기",
+      "mode": "spatial",
+      "level": 5,
+      "speed": 3,
+      "targetReps": 10,
+      "launch": {
+        "audioMode": "beep",
+        "warmup": 3,
+        "programTitle": "순차기억 색-번호 전체보기",
+        "speed": 3,
+        "timeMode": "reps",
+        "targetReps": 10
+      }
+    },
+    "steps": {
+      "setup": {
+        "text": "홈\n8주차\n3 프로그램\n01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동\n02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동\n03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "홈",
+            "height": 44
+          },
+          {
+            "text": "",
+            "height": 40
+          },
+          {
+            "text": "01\n순차기억 5항 기억\n1~3초 랜덤\n4라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "02\n순차기억 색-번호 맞추기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          },
+          {
+            "text": "03\n순차기억 색-번호 전체보기\n3초\n10라운드\nBGM 자동",
+            "height": 116.25
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "실행 화면을 준비하고 있습니다.",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "실행 화면을 준비하고 있습니다.",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [],
+      "navigations": [],
+      "receipts": null,
+      "active": null,
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2",
+        "https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css",
+        "https://fonts.googleapis.com/css2"
+      ],
+      "writes": []
+    }
+  }
+]

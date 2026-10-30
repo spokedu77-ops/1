@@ -1,0 +1,285 @@
+[
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "visual-reaction-number-cart-l2",
+    "engine": {
+      "mode": "reactTrain",
+      "level": 8,
+      "numberCartTier": 1
+    },
+    "steps": {
+      "setup": {
+        "text": "숫자 연산 기차 · 1단계\n\n시지각 반응\n\n숫자 연산 기차 · 1단계\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "라운드\n1 / 15\n숫자 연산 기차\nL1 · 1~4\n중지\n숫자\n?\n이동 중 · 기차 목표 확인",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "중지",
+            "height": 37.5
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"db8fd666-748d-4da3-9a09-01fef0ebe470\",\"presetId\":\"visual-reaction-number-cart-l2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:39:30.793Z\",\"elapsedActiveMs\":8486,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-number-cart-l2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342379279}",
+        "recent": []
+      }
+    },
+    "ready": true,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "라운드\n1 / 15\n숫자 연산 기차\nL1 · 1~4\n중지\n숫자\n?\n도착",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "중지",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"db8fd666-748d-4da3-9a09-01fef0ebe470\",\"presetId\":\"visual-reaction-number-cart-l2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:39:30.793Z\",\"elapsedActiveMs\":17077,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-number-cart-l2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342387870}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "sequential-memory-10color-52",
+    "engine": {
+      "mode": "spatial",
+      "level": 3
+    },
+    "steps": {
+      "setup": {
+        "text": "늘어나는 색 순서 기억하기\n\n순차 기억\n\n늘어나는 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n5라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "기억\n1 / 5\n|\n추가 · 3색\nSTOP\n3 / 3번째\n초록\n🟢",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 45.1875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"fb713187-0660-4b2c-9c25-6ee0bd7613eb\",\"presetId\":\"sequential-memory-10color-52\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:40:07.563Z\",\"elapsedActiveMs\":8377,\"currentMovement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"sequential-memory-10color-52\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":5,\"movement\":{\"baseMovement\":\"stepHold\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342415940}",
+        "recent": []
+      },
+      "stopped": {
+        "text": "목록\n🎨\n늘어나는 색 순서 기억하기\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n늘어나는 색 순서 기억하기 · 5라운드\n\n중도 종료\n진행 시간\n10초\n설정 분량\n5라운드\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 순간 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n늘어나는 색 순서 기억하기\n단계\n순간 기억\n설정 분량\n5라운드\n진행 시간\n10초\n기억 길이\n추가(3→7)\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n늘어나는 색 순서 기억하기\n작업기억 · 순서 재생\n\n늘어나는 색 순서 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"fb713187-0660-4b2c-9c25-6ee0bd7613eb\",\"presetId\":\"sequential-memory-10color-52\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342417161}",
+        "active": null,
+        "recent": []
+      },
+      "retrySetup": {
+        "text": "늘어나는 색 순서 기억하기\n\n순차 기억\n\n늘어나는 색 순서 기억하기\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 1~3초 (랜덤)\n\n총 라운드\n\n5라운드\n\n자극 시간\n\n1~3초 (랜덤)\n\n각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "1~3초 (랜덤)",
+            "height": 48
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-10color-52&rounds=5&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"fb713187-0660-4b2c-9c25-6ee0bd7613eb\",\"presetId\":\"sequential-memory-10color-52\",\"completionReason\":\"stopped_early\",\"endedAt\":1793342417161}",
+        "active": null,
+        "recent": []
+      },
+      "naturalResult": {
+        "text": "목록\n🎨\n늘어나는 색 순서 기억하기\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n늘어나는 색 순서 기억하기 · 5라운드\n\n정상 완료\n진행 시간\n2분 40초\n설정 분량\n5라운드\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 순간 기억\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n늘어나는 색 순서 기억하기\n단계\n순간 기억\n설정 분량\n5라운드\n진행 시간\n2분 40초\n기억 길이\n추가(3→7)\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n늘어나는 색 순서 기억하기\n작업기억 · 순서 재생\n\n늘어나는 색 순서 기억하기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-10color-52&rounds=5&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"4096472d-0e8e-48c2-9518-6c7504c21c1d\",\"presetId\":\"sequential-memory-10color-52\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342578378}",
+        "active": null,
+        "recent": []
+      },
+      "returned": {
+        "text": "returned",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [
+          "/spokedu-lab/spomove/session?preset=sequential-memory-10color-52&rounds=5&sound=off&mode=mobile&entry=settings&hubReturn=%2Fspokedu-lab%2Fspomove&cueSeconds=3&audio=silent&movement=stepHold&limb=free&diveTheme=space&flowDuration=20&flowBonus=1",
+          "/spokedu-lab/spomove"
+        ],
+        "receipts": "{\"version\":1,\"runId\":\"4096472d-0e8e-48c2-9518-6c7504c21c1d\",\"presetId\":\"sequential-memory-10color-52\",\"completionReason\":\"natural_complete\",\"endedAt\":1793342578378}",
+        "active": null,
+        "recent": []
+      }
+    },
+    "ready": true,
+    "stopControl": "button:has-text(\"STOP\")",
+    "stopResult": true,
+    "natural": {
+      "completed": true,
+      "virtualMs": 160000,
+      "reveals": 12
+    },
+    "status": "EXECUTED",
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  }
+]

@@ -1,0 +1,5787 @@
+{
+  "official": [
+    {
+      "id": "reaction-cognition-space-direction-01",
+      "sortOrder": 1,
+      "title": "화살표",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 1
+      },
+      "description": "전체형 화면 중앙에 표시되는 큰 화살표를 보고, 화살표가 가리키는 방향 색 패드로 즉시 점프하거나 이동하는 공간방향 자극 활동",
+      "salesCopy": "순발력 · 색·방향·수 지각 · 반응-실행 연결",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "수업 도입, 방향 인지, 순발력, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "쉬움 · 화살표 · 3초 · 20회",
+      "settingChips": [
+        "쉬움",
+        "화살표",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전체형 · 중앙 화살표"
+        },
+        {
+          "label": "신호 방식",
+          "value": "화살표"
+        },
+        {
+          "label": "난이도",
+          "value": "쉬움"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "reaction-space-direction",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-space-direction-color-01b",
+      "sortOrder": 2,
+      "title": "색상 화살표",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 1,
+        "spatialArrowColorMode": "color",
+        "spatialArrowColorMapping": "compass"
+      },
+      "description": "전체형 화면 중앙에 표시되는 큰 색상 화살표를 보고, 화살표가 가리키는 방향 색 패드로 즉시 점프하거나 이동하는 공간방향 자극 활동. 위 빨·좌 초·우 노·아래 파로 방향별 색이 고정됩니다.",
+      "salesCopy": "순발력 · 색·방향·수 지각 · 반응-실행 연결",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "수업 도입, 방향 인지, 색상 화살표, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "보통 · 색상 화살표 · 3초 · 20회",
+      "settingChips": [
+        "보통",
+        "색상 화살표",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전체형 · 중앙 화살표"
+        },
+        {
+          "label": "신호 방식",
+          "value": "색상 화살표"
+        },
+        {
+          "label": "난이도",
+          "value": "보통"
+        },
+        {
+          "label": "색 매핑",
+          "value": "위·좌·우·아래 고정"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-space-direction",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-quad-color-02",
+      "sortOrder": 3,
+      "title": "색상",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 2,
+        "variantColorTheme": "color"
+      },
+      "description": "2×2 그리드형 화면에서 한 칸에 표시되는 색상 신호를 보고 해당 색 패드 위치로 즉시 이동하는 4분할 자극 활동",
+      "salesCopy": "색·위치 지각을 연결하는 4분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 지각, 위치 선택, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "4분할 그리드형 · 색상 · 3초 · 20회",
+      "settingChips": [
+        "4분할",
+        "그리드형",
+        "색상",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "4분할 그리드형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "색상 신호"
+        },
+        {
+          "label": "테마",
+          "value": "색상"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "reaction-quadrant",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-quad-fruit-10",
+      "sortOrder": 4,
+      "title": "과일",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 2,
+        "variantColorTheme": "fruit"
+      },
+      "description": "2×2 그리드형 화면에서 한 칸에 표시되는 과일 이미지 신호를 보고 해당 색 패드 위치로 즉시 이동하는 4분할 자극 활동",
+      "salesCopy": "과일 테마로 색·위치 지각을 연결하는 4분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 지각, 위치 선택, 어린 학습자",
+      "isReady": true,
+      "settingSummary": "4분할 그리드형 · 과일 · 3초 · 20회",
+      "settingChips": [
+        "4분할",
+        "그리드형",
+        "과일",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "4분할 그리드형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "과일"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "reaction-quadrant",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l2-animal-exp",
+      "sortOrder": 5,
+      "title": "동물",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 2,
+        "variantColorTheme": "animal"
+      },
+      "description": "2×2 그리드형 화면에서 한 칸에 표시되는 동물 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "동물 테마로 색·위치 지각을 연결하는 4분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 지각, 위치 선택, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "4분할 그리드형 · 동물 · 3초 · 20회",
+      "settingChips": [
+        "4분할",
+        "그리드형",
+        "동물",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "4분할 그리드형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "동물"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-quadrant",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l2-food-exp",
+      "sortOrder": 6,
+      "title": "음식",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 2,
+        "variantColorTheme": "food"
+      },
+      "description": "2×2 그리드형 화면에서 한 칸에 표시되는 음식 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "음식 테마로 색·위치 지각을 연결하는 4분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 지각, 위치 선택, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "4분할 그리드형 · 음식 · 3초 · 20회",
+      "settingChips": [
+        "4분할",
+        "그리드형",
+        "음식",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "4분할 그리드형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "음식"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-quadrant",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l2-nature-exp",
+      "sortOrder": 7,
+      "title": "자연",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 2,
+        "variantColorTheme": "nature"
+      },
+      "description": "2×2 그리드형 화면에서 한 칸에 표시되는 자연 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "자연 테마로 색·위치 지각을 연결하는 4분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 지각, 위치 선택, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "4분할 그리드형 · 자연 · 3초 · 20회",
+      "settingChips": [
+        "4분할",
+        "그리드형",
+        "자연",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "4분할 그리드형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "자연"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-quadrant",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l2-vehicle-exp",
+      "sortOrder": 8,
+      "title": "탈 것",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 2,
+        "variantColorTheme": "vehicle"
+      },
+      "description": "2×2 그리드형 화면에서 한 칸에 표시되는 탈 것 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "탈 것 테마로 색·위치 지각을 연결하는 4분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 지각, 위치 선택, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "4분할 그리드형 · 탈 것 · 3초 · 20회",
+      "settingChips": [
+        "4분할",
+        "그리드형",
+        "탈 것",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "4분할 그리드형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "탈 것"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-quadrant",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l2-mix-exp",
+      "sortOrder": 9,
+      "title": "믹스",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 2,
+        "variantColorTheme": "mix"
+      },
+      "description": "2×2 그리드형 화면에서 한 칸에 표시되는 믹스 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "믹스 테마로 색·위치 지각을 연결하는 4분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 지각, 위치 선택, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "4분할 그리드형 · 믹스 · 3초 · 20회",
+      "settingChips": [
+        "4분할",
+        "그리드형",
+        "믹스",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "4분할 그리드형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "믹스"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-quadrant",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-full-color-03",
+      "sortOrder": 10,
+      "title": "전면단일 · 색상",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 3,
+        "variantColorTheme": "color"
+      },
+      "description": "전체형 화면 하나를 채우는 색상 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동",
+      "salesCopy": "색상 테마로 전신 반응을 끌어내는 전면단일 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, 색상 판단, 집중 전환",
+      "isReady": true,
+      "settingSummary": "전면단일 전체형 · 색상 · 3초 · 20회",
+      "settingChips": [
+        "전면단일",
+        "전체형",
+        "색상",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전면단일 전체형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "색상 신호"
+        },
+        {
+          "label": "테마",
+          "value": "색상"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "reaction-full",
+      "movementProfileId": "themedFullResponse",
+      "recommendedMovement": {
+        "baseMovement": "twoLegJump",
+        "limbRule": "free"
+      },
+      "recommendedOperation": {
+        "startZone": "onMat",
+        "participantScale": "individual",
+        "equipment": {
+          "mode": "none"
+        },
+        "timing": {
+          "pattern": "continuous"
+        },
+        "participationFormat": "independent"
+      }
+    },
+    {
+      "id": "reaction-cognition-l3-fruit-exp",
+      "sortOrder": 11,
+      "title": "전면단일 · 과일",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 3,
+        "variantColorTheme": "fruit"
+      },
+      "description": "전체형 화면 하나에 크게 표시되는 과일 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동",
+      "salesCopy": "과일 테마로 색·이미지 지각을 연결하는 전면단일 반응",
+      "cueSeconds": 4,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "전면단일 전체형 · 과일 · 3초 · 20회",
+      "settingChips": [
+        "전면단일",
+        "전체형",
+        "과일",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전면단일 전체형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "과일"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-full",
+      "movementProfileId": "themedFullResponse",
+      "recommendedMovement": {
+        "baseMovement": "singleLegHop",
+        "limbRule": "free"
+      },
+      "recommendedOperation": {
+        "startZone": "onMat",
+        "participantScale": "individual",
+        "equipment": {
+          "mode": "none"
+        },
+        "timing": {
+          "pattern": "responseWindow"
+        },
+        "participationFormat": "independent"
+      }
+    },
+    {
+      "id": "reaction-cognition-full-animal-18",
+      "sortOrder": 12,
+      "title": "전면단일 · 동물",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 3,
+        "variantColorTheme": "animal"
+      },
+      "description": "전체형 화면 하나에 크게 표시되는 동물 이미지 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동",
+      "salesCopy": "동물 테마로 색·이미지 지각을 연결하는 전면단일 반응",
+      "cueSeconds": 4,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, 이미지 판단, 어린 학습자 친화",
+      "isReady": true,
+      "settingSummary": "전면단일 전체형 · 동물 · 3초 · 20회",
+      "settingChips": [
+        "전면단일",
+        "전체형",
+        "동물",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전면단일 전체형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "동물"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "reaction-full",
+      "movementProfileId": "themedFullResponse",
+      "recommendedMovement": {
+        "baseMovement": "squatTouch",
+        "limbRule": "free"
+      },
+      "recommendedOperation": {
+        "startZone": "adjacentToMat",
+        "participantScale": "individual",
+        "equipment": {
+          "mode": "none"
+        },
+        "timing": {
+          "pattern": "responseWindow"
+        },
+        "participationFormat": "independent"
+      }
+    },
+    {
+      "id": "reaction-cognition-l3-food-exp",
+      "sortOrder": 13,
+      "title": "전면단일 · 음식",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 3,
+        "variantColorTheme": "food"
+      },
+      "description": "전체형 화면 하나에 크게 표시되는 음식 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동",
+      "salesCopy": "음식 테마로 색·이미지 지각을 연결하는 전면단일 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "전면단일 전체형 · 음식 · 3초 · 20회",
+      "settingChips": [
+        "전면단일",
+        "전체형",
+        "음식",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전면단일 전체형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "음식"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-full",
+      "movementProfileId": "themedFullResponse",
+      "recommendedMovement": {
+        "baseMovement": "quickStep",
+        "limbRule": "free"
+      },
+      "recommendedOperation": {
+        "startZone": "onMat",
+        "participantScale": "individual",
+        "equipment": {
+          "mode": "none"
+        },
+        "timing": {
+          "pattern": "interval",
+          "workSeconds": 20,
+          "restSeconds": 10,
+          "sets": 3
+        },
+        "participationFormat": "independent"
+      }
+    },
+    {
+      "id": "reaction-cognition-full-nature-19",
+      "sortOrder": 14,
+      "title": "전면단일 · 자연",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 3,
+        "variantColorTheme": "nature"
+      },
+      "description": "전체형 화면 하나에 크게 표시되는 자연 이미지 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동",
+      "salesCopy": "자연 테마로 색·이미지 지각을 연결하는 전면단일 반응",
+      "cueSeconds": 5,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, 이미지 판단, 자연 친화 수업",
+      "isReady": true,
+      "settingSummary": "전면단일 전체형 · 자연 · 3초 · 20회",
+      "settingChips": [
+        "전면단일",
+        "전체형",
+        "자연",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전면단일 전체형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "자연"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "reaction-full",
+      "movementProfileId": "themedFullResponse",
+      "recommendedMovement": {
+        "baseMovement": "lungeReach",
+        "limbRule": "free"
+      },
+      "recommendedOperation": {
+        "startZone": "adjacentToMat",
+        "participantScale": "individual",
+        "equipment": {
+          "mode": "none"
+        },
+        "timing": {
+          "pattern": "responseWindow"
+        },
+        "participationFormat": "independent"
+      }
+    },
+    {
+      "id": "reaction-cognition-l3-vehicle-exp",
+      "sortOrder": 15,
+      "title": "전면단일 · 탈 것",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 3,
+        "variantColorTheme": "vehicle"
+      },
+      "description": "전체형 화면 하나에 크게 표시되는 탈 것 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동",
+      "salesCopy": "탈 것 테마로 색·이미지 지각을 연결하는 전면단일 반응",
+      "cueSeconds": 5,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "전면단일 전체형 · 탈 것 · 3초 · 20회",
+      "settingChips": [
+        "전면단일",
+        "전체형",
+        "탈 것",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전면단일 전체형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "탈 것"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-full",
+      "movementProfileId": "themedFullResponse",
+      "recommendedMovement": {
+        "baseMovement": "plankTouch",
+        "limbRule": "free"
+      },
+      "recommendedOperation": {
+        "startZone": "adjacentToMat",
+        "participantScale": "individual",
+        "equipment": {
+          "mode": "none"
+        },
+        "timing": {
+          "pattern": "responseWindow"
+        },
+        "participationFormat": "independent"
+      }
+    },
+    {
+      "id": "reaction-cognition-l3-mix-exp",
+      "sortOrder": 16,
+      "title": "전면단일 · 믹스",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 3,
+        "variantColorTheme": "mix"
+      },
+      "description": "전체형 화면 하나에 크게 표시되는 믹스 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동",
+      "salesCopy": "믹스 테마로 색·이미지 지각을 연결하는 전면단일 반응",
+      "cueSeconds": 4,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "전면단일 전체형 · 믹스 · 3초 · 20회",
+      "settingChips": [
+        "전면단일",
+        "전체형",
+        "믹스",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "전면단일 전체형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "믹스"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-full",
+      "movementProfileId": "themedFullResponse",
+      "recommendedMovement": {
+        "baseMovement": "cooperativeJump",
+        "limbRule": "free"
+      },
+      "recommendedOperation": {
+        "startZone": "onMat",
+        "participantScale": "individual",
+        "equipment": {
+          "mode": "none"
+        },
+        "timing": {
+          "pattern": "responseWindow"
+        },
+        "participationFormat": "independent"
+      }
+    },
+    {
+      "id": "reaction-cognition-split-color-04",
+      "sortOrder": 17,
+      "title": "2분할 · 색상",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 4,
+        "variantColorTheme": "color"
+      },
+      "description": "2분할 패널형 화면의 좌우 두 패널에 표시되는 색상 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "색상 테마로 두 패널의 색 지각을 연결하는 2분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 양측 이동, 색상 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "2분할 패널형 · 색상 · 3초 · 20회",
+      "settingChips": [
+        "2분할",
+        "패널형",
+        "색상",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "2분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "색상 신호"
+        },
+        {
+          "label": "테마",
+          "value": "색상"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "reaction-split",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l4-fruit-exp",
+      "sortOrder": 18,
+      "title": "2분할 · 과일",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 4,
+        "variantColorTheme": "fruit"
+      },
+      "description": "2분할 패널형 화면의 좌우 두 패널에 표시되는 과일 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "과일 테마로 두 패널의 색·이미지 지각을 연결하는 2분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 양측 이동, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "2분할 패널형 · 과일 · 3초 · 20회",
+      "settingChips": [
+        "2분할",
+        "패널형",
+        "과일",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "2분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "과일"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-split",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l4-animal-exp",
+      "sortOrder": 19,
+      "title": "2분할 · 동물",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 4,
+        "variantColorTheme": "animal"
+      },
+      "description": "2분할 패널형 화면의 좌우 두 패널에 표시되는 동물 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "동물 테마로 두 패널의 색·이미지 지각을 연결하는 2분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 양측 이동, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "2분할 패널형 · 동물 · 3초 · 20회",
+      "settingChips": [
+        "2분할",
+        "패널형",
+        "동물",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "2분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "동물"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-split",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l4-food-exp",
+      "sortOrder": 20,
+      "title": "2분할 · 음식",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 4,
+        "variantColorTheme": "food"
+      },
+      "description": "2분할 패널형 화면의 좌우 두 패널에 표시되는 음식 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "음식 테마로 두 패널의 색·이미지 지각을 연결하는 2분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 양측 이동, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "2분할 패널형 · 음식 · 3초 · 20회",
+      "settingChips": [
+        "2분할",
+        "패널형",
+        "음식",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "2분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "음식"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-split",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l4-nature-exp",
+      "sortOrder": 21,
+      "title": "2분할 · 자연",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 4,
+        "variantColorTheme": "nature"
+      },
+      "description": "2분할 패널형 화면의 좌우 두 패널에 표시되는 자연 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "자연 테마로 두 패널의 색·이미지 지각을 연결하는 2분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 양측 이동, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "2분할 패널형 · 자연 · 3초 · 20회",
+      "settingChips": [
+        "2분할",
+        "패널형",
+        "자연",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "2분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "자연"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-split",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l4-vehicle-exp",
+      "sortOrder": 22,
+      "title": "2분할 · 탈 것",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 4,
+        "variantColorTheme": "vehicle"
+      },
+      "description": "2분할 패널형 화면의 좌우 두 패널에 표시되는 탈 것 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "탈 것 테마로 두 패널의 색·이미지 지각을 연결하는 2분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 양측 이동, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "2분할 패널형 · 탈 것 · 3초 · 20회",
+      "settingChips": [
+        "2분할",
+        "패널형",
+        "탈 것",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "2분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "탈 것"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-split",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l4-mix-exp",
+      "sortOrder": 23,
+      "title": "2분할 · 믹스",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 4,
+        "variantColorTheme": "mix"
+      },
+      "description": "2분할 패널형 화면의 좌우 두 패널에 표시되는 믹스 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "믹스 테마로 두 패널의 색·이미지 지각을 연결하는 2분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 양측 이동, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "2분할 패널형 · 믹스 · 3초 · 20회",
+      "settingChips": [
+        "2분할",
+        "패널형",
+        "믹스",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "2분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "믹스"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "reaction-split",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-triple-color-25",
+      "sortOrder": 24,
+      "title": "3분할 · 색상",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 5,
+        "variantColorTheme": "color"
+      },
+      "description": "3분할 패널형 화면의 세 패널에 표시되는 서로 다른 색상 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "색상 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 시선 분산, 색상 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "3분할 패널형 · 색상 · 3초 · 20회",
+      "settingChips": [
+        "3분할",
+        "패널형",
+        "색상",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "3분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "색상 신호"
+        },
+        {
+          "label": "테마",
+          "value": "색상"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-triple-diff-color-31",
+      "sortOrder": 25,
+      "title": "랜덤분할 · 색상",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 6,
+        "variantColorTheme": "color"
+      },
+      "description": "전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 색상 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "색상 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 선택 반응, 시선 분산, 색상 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "랜덤분할 전체/패널형 · 색상 · 3초 · 20회",
+      "settingChips": [
+        "랜덤분할",
+        "패널형",
+        "색상",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "랜덤분할 전체/패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "색상 신호"
+        },
+        {
+          "label": "테마",
+          "value": "색상"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple-diff",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-mq1-32",
+      "sortOrder": 26,
+      "title": "(보류) 손 따로, 발 따로 · 쉬움",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 7,
+        "variantColorTheme": "color",
+        "hideBodyLabelModeControls": true,
+        "bodyLabelMode": "easy"
+      },
+      "description": "색상 자극과 신체 부위(발)가 함께 제시될 때 해당 패드에 발을 접촉하는 활동",
+      "salesCopy": "발 중심 변형 사분할로 신체-색 연결",
+      "cueSeconds": 5,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 반응, 집중력, 변형 사분할",
+      "isReady": true,
+      "catalogStatus": "hold",
+      "holdReason": "시지각 반응 · 손 따로, 발 따로 쉬움으로 이관 예정",
+      "settingSummary": "5초 · 20회",
+      "settingChips": [
+        "5초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "신호 방식",
+          "value": "변형 사분할 · 발"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "reaction-variant-foot",
+      "movementProfileId": "variantFootFixed"
+    },
+    {
+      "id": "reaction-cognition-mq2-33",
+      "sortOrder": 27,
+      "title": "(보류) 손 따로, 발 따로 · 보통",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 8,
+        "variantColorTheme": "color",
+        "hideBodyLabelModeControls": true,
+        "bodyLabelMode": "easy"
+      },
+      "description": "색상 1~3개와 신체 부위(발·손)가 함께 제시될 때 해당 패드로 이동하는 활동",
+      "salesCopy": "1~3색 손·발 혼합 변형 사분할",
+      "cueSeconds": 5,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 반응, 집중력, 변형 사분할",
+      "isReady": true,
+      "catalogStatus": "hold",
+      "holdReason": "시지각 반응 · 손 따로, 발 따로 보통으로 이관 예정",
+      "settingSummary": "5초 · 20회",
+      "settingChips": [
+        "5초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "신호 방식",
+          "value": "변형 사분할 · 1~3색"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "reaction-variant-body-cue",
+      "movementProfileId": "bodyCueBuiltIn"
+    },
+    {
+      "id": "reaction-cognition-mq3-34",
+      "sortOrder": 28,
+      "title": "(보류) 손 따로, 발 따로 · 어려움",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 9,
+        "variantColorTheme": "color",
+        "hideBodyLabelModeControls": true,
+        "bodyLabelMode": "easy"
+      },
+      "description": "3색에 손·발이 혼합 배정될 때 규칙에 맞게 패드로 이동하는 활동",
+      "salesCopy": "3색 손·발 혼합 변형 사분할",
+      "cueSeconds": 5,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 반응, 집중력, 변형 사분할",
+      "isReady": true,
+      "catalogStatus": "hold",
+      "holdReason": "시지각 반응 · 손 따로, 발 따로 어려움으로 이관 예정",
+      "settingSummary": "5초 · 20회",
+      "settingChips": [
+        "5초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "신호 방식",
+          "value": "변형 사분할 · 3색 혼합"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "reaction-variant-body-cue",
+      "movementProfileId": "bodyCueBuiltIn"
+    },
+    {
+      "id": "reaction-cognition-l5-fruit-exp",
+      "sortOrder": 29,
+      "title": "3분할 · 과일",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 5,
+        "variantColorTheme": "fruit"
+      },
+      "description": "3분할 패널형 화면의 세 패널에 표시되는 서로 다른 과일 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "과일 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "3분할 패널형 · 과일 · 3초 · 20회",
+      "settingChips": [
+        "3분할",
+        "패널형",
+        "과일",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "3분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "과일"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l5-animal-exp",
+      "sortOrder": 30,
+      "title": "3분할 · 동물",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 5,
+        "variantColorTheme": "animal"
+      },
+      "description": "3분할 패널형 화면의 세 패널에 표시되는 서로 다른 동물 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "동물 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "3분할 패널형 · 동물 · 3초 · 20회",
+      "settingChips": [
+        "3분할",
+        "패널형",
+        "동물",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "3분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "동물"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l5-food-exp",
+      "sortOrder": 31,
+      "title": "3분할 · 음식",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 5,
+        "variantColorTheme": "food"
+      },
+      "description": "3분할 패널형 화면의 세 패널에 표시되는 서로 다른 음식 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "음식 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "3분할 패널형 · 음식 · 3초 · 20회",
+      "settingChips": [
+        "3분할",
+        "패널형",
+        "음식",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "3분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "음식"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l5-nature-exp",
+      "sortOrder": 32,
+      "title": "3분할 · 자연",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 5,
+        "variantColorTheme": "nature"
+      },
+      "description": "3분할 패널형 화면의 세 패널에 표시되는 서로 다른 자연 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "자연 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "3분할 패널형 · 자연 · 3초 · 20회",
+      "settingChips": [
+        "3분할",
+        "패널형",
+        "자연",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "3분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "자연"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l5-vehicle-exp",
+      "sortOrder": 33,
+      "title": "3분할 · 탈 것",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 5,
+        "variantColorTheme": "vehicle"
+      },
+      "description": "3분할 패널형 화면의 세 패널에 표시되는 서로 다른 탈 것 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "탈 것 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "3분할 패널형 · 탈 것 · 3초 · 20회",
+      "settingChips": [
+        "3분할",
+        "패널형",
+        "탈 것",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "3분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "탈 것"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l5-mix-exp",
+      "sortOrder": 34,
+      "title": "3분할 · 믹스",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 5,
+        "variantColorTheme": "mix"
+      },
+      "description": "3분할 패널형 화면의 세 패널에 표시되는 서로 다른 믹스 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "믹스 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "3분할 패널형 · 믹스 · 3초 · 20회",
+      "settingChips": [
+        "3분할",
+        "패널형",
+        "믹스",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "3분할 패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "믹스"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l6-fruit-exp",
+      "sortOrder": 35,
+      "title": "랜덤분할 · 과일",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 6,
+        "variantColorTheme": "fruit"
+      },
+      "description": "전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 과일 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "과일 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "랜덤분할 전체/패널형 · 과일 · 3초 · 20회",
+      "settingChips": [
+        "랜덤분할",
+        "패널형",
+        "과일",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "랜덤분할 전체/패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "과일"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple-diff",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l6-animal-exp",
+      "sortOrder": 36,
+      "title": "랜덤분할 · 동물",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 6,
+        "variantColorTheme": "animal"
+      },
+      "description": "전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 동물 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "동물 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "랜덤분할 전체/패널형 · 동물 · 3초 · 20회",
+      "settingChips": [
+        "랜덤분할",
+        "패널형",
+        "동물",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "랜덤분할 전체/패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "동물"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple-diff",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l6-food-exp",
+      "sortOrder": 37,
+      "title": "랜덤분할 · 음식",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 6,
+        "variantColorTheme": "food"
+      },
+      "description": "전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 음식 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "음식 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "랜덤분할 전체/패널형 · 음식 · 3초 · 20회",
+      "settingChips": [
+        "랜덤분할",
+        "패널형",
+        "음식",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "랜덤분할 전체/패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "음식"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple-diff",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l6-nature-exp",
+      "sortOrder": 38,
+      "title": "랜덤분할 · 자연",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 6,
+        "variantColorTheme": "nature"
+      },
+      "description": "전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 자연 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "자연 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "랜덤분할 전체/패널형 · 자연 · 3초 · 20회",
+      "settingChips": [
+        "랜덤분할",
+        "패널형",
+        "자연",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "랜덤분할 전체/패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "자연"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple-diff",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l6-vehicle-exp",
+      "sortOrder": 39,
+      "title": "랜덤분할 · 탈 것",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 6,
+        "variantColorTheme": "vehicle"
+      },
+      "description": "전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 탈 것 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "탈 것 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "랜덤분할 전체/패널형 · 탈 것 · 3초 · 20회",
+      "settingChips": [
+        "랜덤분할",
+        "패널형",
+        "탈 것",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "랜덤분할 전체/패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "탈 것"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple-diff",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "reaction-cognition-l6-mix-exp",
+      "sortOrder": 40,
+      "title": "랜덤분할 · 믹스",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "reaction-cognition",
+      "programTitle": "반응 인지",
+      "engine": {
+        "mode": "basic",
+        "level": 6,
+        "variantColorTheme": "mix"
+      },
+      "description": "전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 믹스 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동",
+      "salesCopy": "믹스 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "심화 선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결",
+      "isReady": true,
+      "settingSummary": "랜덤분할 전체/패널형 · 믹스 · 3초 · 20회",
+      "settingChips": [
+        "랜덤분할",
+        "패널형",
+        "믹스",
+        "3초",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "화면 형태",
+          "value": "랜덤분할 전체/패널형"
+        },
+        {
+          "label": "신호 방식",
+          "value": "테마 이미지"
+        },
+        {
+          "label": "테마",
+          "value": "믹스"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "reaction-triple-diff",
+      "movementProfileId": "simpleColorResponse"
+    },
+    {
+      "id": "visual-reaction-flash-33",
+      "sortOrder": 41,
+      "title": "시지각 반응 · 풍선 터뜨리기",
+      "en": "Visual Reaction",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 3
+      },
+      "description": "화면 어디서든 떨어지는 색 풍선이 하단 가시에 닿을 때 해당 색으로 반응하는 시지각 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "낙하 추적, 가시 접촉 타이밍, 시각 각성",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "풍선 터뜨리기",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "풍선 터뜨리기"
+        },
+        {
+          "label": "진행 방식",
+          "value": "낙하 · 가시 접촉"
+        },
+        {
+          "label": "실행 시간",
+          "value": "약 60초"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "visual-flash",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-rush-39",
+      "sortOrder": 42,
+      "title": "시지각 반응 · 파도 피하기",
+      "en": "Visual Reaction",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 1
+      },
+      "description": "파도처럼 빠르게 쏟아지는 자극에 연속으로 반응하는 초고속 시지각 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "초고속 반응, 연속 자극 처리, 극한 집중",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "파도 피하기",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "파도 피하기"
+        },
+        {
+          "label": "진행 방식",
+          "value": "연속 반응"
+        },
+        {
+          "label": "실행 시간",
+          "value": "약 60초"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "visual-rush",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-flow-2x-31",
+      "sortOrder": 43,
+      "title": "시지각 반응 · 떨어지는 벽돌",
+      "en": "Visual Reaction",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 2,
+        "reactTrainConcurrent": 2
+      },
+      "description": "떨어지는 벽돌처럼 색 자극이 동시에 2개씩 흘러내릴 때 빠르게 반응하는 시지각 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "시지각 분할, 동시 자극 처리, 반응력 강화",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "떨어지는 벽돌",
+        "동시 2개",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "동시 자극",
+          "value": "2개"
+        },
+        {
+          "label": "진행 방식",
+          "value": "떨어지는 벽돌"
+        },
+        {
+          "label": "실행 시간",
+          "value": "약 60초"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "visual-flow",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-mole-l1",
+      "sortOrder": 44,
+      "title": "시지각 반응 · 두더지 잡기",
+      "en": "Visual Reaction",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 6,
+        "moleLookMode": "classic"
+      },
+      "description": "화면 곳곳 구멍에서 색 두더지가 튀어나오면 같은 색 패드로 빠르게 반응하는 시지각 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "순발력, 팝업 반응, 게임형 활동",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "두더지 잡기",
+        "쉬움/보통",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "두더지 잡기"
+        },
+        {
+          "label": "난이도",
+          "value": "쉬움 1마리 · 보통 1~2마리"
+        },
+        {
+          "label": "진행 방식",
+          "value": "팝업 반응"
+        },
+        {
+          "label": "실행 시간",
+          "value": "약 60초"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "visual-mole",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-mole-normal-skeleton",
+      "title": "시지각 반응 · 두더지 잡기 · 보통",
+      "en": "Mole Catch Normal",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 6,
+        "moleLookMode": "variant"
+      },
+      "description": "두더지 색 위치를 보고 해당 패드로 이동해 반응하는 시지각 반응 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "시지각 반응, 위치 선택, 빠른 실행",
+      "isReady": true,
+      "settingSummary": "보통 · 20회 · BGM 자동",
+      "settingChips": [
+        "보통",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "보통"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 45,
+      "activityFamilyId": "visual-mole",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-goalkeeper-easy-skeleton",
+      "title": "시지각 반응 · 축구 : 골키퍼 · 쉬움",
+      "en": "Goalkeeper Easy",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 10,
+        "goalkeeperTier": 1,
+        "goalkeeperBonusTimeEnabled": true
+      },
+      "description": "멀리서 날아오는 공의 궤적을 끝까지 추적해 도착 코너 색 패드로 반응하는 골키퍼 활동. 공은 항상 1개이며 커브가 포함될 수 있습니다.",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "궤적 추적, 도착 코너 색 반응, 순발력",
+      "isReady": true,
+      "settingSummary": "쉬움 · 60초 + 보너스 15초 · BGM 자동",
+      "settingChips": [
+        "쉬움",
+        "60초 + 보너스 15초",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "쉬움"
+        },
+        {
+          "label": "실행 시간",
+          "value": "60초 + 보너스 15초"
+        }
+      ],
+      "sortOrder": 46,
+      "activityFamilyId": "visual-goalkeeper",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-goalkeeper-42",
+      "sortOrder": 47,
+      "title": "시지각 반응 · 골키퍼 모드",
+      "en": "Visual Reaction",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 10,
+        "goalkeeperTier": 2,
+        "goalkeeperBonusTimeEnabled": true
+      },
+      "description": "4코너로 날아오는 슛·커브볼을 끝까지 추적해 도착 코너 색 패드로 반응하는 시지각 반응 활동. 보통 난이도는 공 1~2개가 동시에 올 수 있습니다.",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "궤적 추적, 도착 코너 색 반응, 동시 자극 처리",
+      "isReady": true,
+      "settingSummary": "골키퍼 방어 · 비행 3초 · 1~2개 · 60초 + 보너스 15초 · BGM 자동",
+      "settingChips": [
+        "골키퍼 모드",
+        "비행 3초",
+        "1~2개",
+        "60초 + 보너스 15초",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "골키퍼 모드"
+        },
+        {
+          "label": "진행 방식",
+          "value": "궤적 추적 · 도착 코너 색 반응"
+        },
+        {
+          "label": "비행 시간",
+          "value": "약 3초(설정 가능)"
+        },
+        {
+          "label": "동시 공",
+          "value": "1~2개"
+        },
+        {
+          "label": "실행 시간",
+          "value": "60초 + 보너스 15초"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "visual-goalkeeper",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-hand-foot-easy-skeleton",
+      "title": "시지각 반응 · 손 따로, 발 따로 · 쉬움",
+      "en": "Hand and Foot Separate Easy",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "basic",
+        "level": 7,
+        "handFootDifficulty": "easy"
+      },
+      "description": "발 자극 1개를 보고 해당 위치로 한 발 또는 두 발을 놓는 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "발 반응, 위치 판단, 신체 분리",
+      "isReady": true,
+      "settingSummary": "쉬움 · 20회 · BGM 자동",
+      "settingChips": [
+        "쉬움",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "쉬움"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 48,
+      "activityFamilyId": "visual-flow",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-hand-foot-normal-skeleton",
+      "title": "시지각 반응 · 손 따로, 발 따로 · 보통",
+      "en": "Hand and Foot Separate Normal",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "basic",
+        "level": 7,
+        "handFootDifficulty": "normal"
+      },
+      "description": "발과 손 자극을 보고 해당 위치에 몸을 분리해 반응하는 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "손발 분리, 위치 판단, 협응 반응",
+      "isReady": true,
+      "settingSummary": "보통 · 20회 · BGM 자동",
+      "settingChips": [
+        "보통",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "보통"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 49,
+      "activityFamilyId": "visual-flow",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-hand-foot-hard-skeleton",
+      "title": "시지각 반응 · 손 따로, 발 따로 · 어려움",
+      "en": "Hand and Foot Separate Hard",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "basic",
+        "level": 7,
+        "handFootDifficulty": "hard"
+      },
+      "description": "1~3개 손발 자극을 보고 동시에 위치를 분리해 반응하는 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "복합 손발 반응, 협응, 시지각 선택",
+      "isReady": true,
+      "settingSummary": "어려움 · 20회 · BGM 자동",
+      "settingChips": [
+        "어려움",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "어려움"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 50,
+      "activityFamilyId": "visual-flow",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "visual-reaction-number-cart-l2",
+      "catalogStatus": "hold",
+      "holdReason": "보류: 숫자 연산 기차는 스포키듀 마스터 공개 목록에서 숨김",
+      "sortOrder": 51,
+      "title": "시지각 반응 · 숫자 연산 기차",
+      "en": "Visual Reaction",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 8,
+        "numberCartTier": 1
+      },
+      "description": "숫자 연산 기차의 목표 숫자(또는 +-×÷ 식)를 보고 같은 답이 붙은 색 문으로 기차가 들어가는 시지각 반응 활동. 난이도 1/2/3은 세션에서 고릅니다.",
+      "cueSeconds": 3,
+      "rounds": 5,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "숫자·색 매칭, 사전 판단, 선택 반응",
+      "isReady": true,
+      "settingSummary": "3초 · 5라운드 · BGM 자동",
+      "settingChips": [
+        "숫자 연산 기차",
+        "5라운드",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "숫자 연산 기차"
+        },
+        {
+          "label": "진행 방식",
+          "value": "라운드 · 숫자·색 매칭"
+        },
+        {
+          "label": "라운드",
+          "value": "5라운드"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "visual-number-cart",
+      "movementProfileId": "gameSpecific"
+    },
+    {
+      "id": "visual-reaction-color-tracker-l2",
+      "sortOrder": 52,
+      "title": "시지각 반응 · 흰 공 찾기",
+      "en": "Visual Reaction",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 9,
+        "colorTrackerTier": 1,
+        "colorTrackerDualPanel": false
+      },
+      "description": "흰 공을 끝까지 추적한 뒤 빨·노·초·파 구역 중 어디에 멈췄는지 맞추는 시지각 반응 활동. 난이도 보통/어려움과 속도 느림/빠름은 세션에서 고릅니다.",
+      "cueSeconds": 3,
+      "rounds": 5,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "시각 추적, 지속 주의, 다중 물체 추적",
+      "isReady": true,
+      "settingSummary": "흰 공 추적 · 5라운드 · BGM 자동",
+      "settingChips": [
+        "흰 공 찾기",
+        "5라운드",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "흰 공을 찾아라"
+        },
+        {
+          "label": "진행 방식",
+          "value": "라운드 · 정답 수동 공개"
+        },
+        {
+          "label": "라운드",
+          "value": "5라운드"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "visual-color-tracker",
+      "movementProfileId": "gameSpecific"
+    },
+    {
+      "id": "visual-reaction-white-ball-hard-skeleton",
+      "title": "시지각 반응 · 흰 공 찾기 · 어려움",
+      "en": "Find White Ball Hard",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "visual-reaction",
+      "programTitle": "시지각 반응",
+      "salesCopy": "보고 바로 움직이는 단순 반응력",
+      "engine": {
+        "mode": "reactTrain",
+        "level": 9,
+        "colorTrackerTier": 2,
+        "colorTrackerDualPanel": true
+      },
+      "description": "2패널에서 흰 공 위치를 찾아 해당 패드로 이동하는 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "시각 탐색, 분할 화면 판단, 위치 반응",
+      "isReady": true,
+      "settingSummary": "어려움 · 2패널 · 20회",
+      "settingChips": [
+        "어려움",
+        "2패널",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "어려움"
+        },
+        {
+          "label": "화면",
+          "value": "2패널"
+        }
+      ],
+      "sortOrder": 53,
+      "catalogStatus": "hold",
+      "holdReason": "SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기",
+      "activityFamilyId": "visual-color-tracker",
+      "movementProfileId": "gameSpecific"
+    },
+    {
+      "id": "simon-pole-arrows-41",
+      "sortOrder": 54,
+      "title": "사이먼 이펙트 · 화살표 · 보통",
+      "en": "Simon Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 2,
+        "simonPoleCount": 1
+      },
+      "description": "화살표가 극단에 나타나 위치와 충돌할 때, 위치가 아니라 화살표가 가리키는 방향으로 반응하는 선택 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "위치-방향 간섭, 선택주의 심화, 집중 반응",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "화살표 방향",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Pole Arrows · 방향"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "simon-pole",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-arrow-hard-skeleton",
+      "title": "사이먼 이펙트 · 화살표 · 어려움",
+      "en": "Arrow Simon Hard",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 2,
+        "simonPoleCount": 2
+      },
+      "description": "서로 다른 극단 위치에 동시에 나타나는 화살표 자극을 처리하는 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "사이먼 간섭, 방향 억제, 선택 반응",
+      "isReady": true,
+      "settingSummary": "어려움 · 2개 · 20회",
+      "settingChips": [
+        "어려움",
+        "2개",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "어려움"
+        },
+        {
+          "label": "자극 수",
+          "value": "2개"
+        }
+      ],
+      "sortOrder": 55,
+      "activityFamilyId": "simon-pole",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-pole-shape-06",
+      "sortOrder": 56,
+      "title": "사이먼 이펙트 · 도형 · 보통",
+      "en": "Simon Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 1,
+        "simonPoleCount": 1
+      },
+      "description": "도형이 나타난 위치에 끌려가지 않고, 도형의 색을 기준으로 반응하는 선택 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "위치 간섭 조절, 선택주의, 집중 반응",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Pole Shape"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "simon-pole",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-shape-hard-skeleton",
+      "title": "사이먼 이펙트 · 도형 · 어려움",
+      "en": "Shape Simon Hard",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 1,
+        "simonPoleCount": 2
+      },
+      "description": "서로 다른 극단 위치에 동시에 나타나는 도형 자극을 처리하는 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "사이먼 간섭, 도형 판단, 선택 반응",
+      "isReady": true,
+      "settingSummary": "어려움 · 2개 · 20회",
+      "settingChips": [
+        "어려움",
+        "2개",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "어려움"
+        },
+        {
+          "label": "자극 수",
+          "value": "2개"
+        }
+      ],
+      "sortOrder": 57,
+      "activityFamilyId": "simon-pole",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-balloon-flash-05",
+      "sortOrder": 58,
+      "title": "사이먼 이펙트 · 풍선 · 보통",
+      "en": "Simon Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 5
+      },
+      "description": "화면 어디에나 나타나는 색 풍선이 터질 때 해당 색 위치로 이동하는 선택 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "위치 간섭 조절, 순간 색 변별, 선택주의",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "풍선 사이먼",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "풍선 사이먼"
+        },
+        {
+          "label": "진행 방식",
+          "value": "순간 등장 · 터짐"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "simon-balloon",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-balloon-hard-skeleton",
+      "title": "사이먼 이펙트 · 풍선 · 어려움",
+      "en": "Balloon Simon Hard",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 5,
+        "simonPoleCount": 2
+      },
+      "description": "극단 위치에 동시에 나타나는 풍선 자극을 보고 반응하는 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "풍선 자극, 사이먼 간섭, 선택 반응",
+      "isReady": true,
+      "settingSummary": "어려움 · 2개 · 20회",
+      "settingChips": [
+        "어려움",
+        "2개",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "어려움"
+        },
+        {
+          "label": "자극 수",
+          "value": "2개"
+        }
+      ],
+      "sortOrder": 59,
+      "activityFamilyId": "simon-balloon",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-mixed-gallery-exp",
+      "title": "사이먼 이펙트 · 랜덤 테마 · 보통",
+      "en": "Simon Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 3
+      },
+      "description": "과일·동물 등 변형 색상 이미지가 섞여 극단 위치에 나타날 때 이미지 색(패드) 위치로 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "혼합 자극 처리, 선택주의 심화, 이미지 색 반응",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 믹스 갤러리 · BGM 자동",
+      "settingChips": [
+        "믹스 갤러리",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Mixed Gallery"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "sortOrder": 60,
+      "activityFamilyId": "simon-mixed",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-random-hard-skeleton",
+      "title": "사이먼 이펙트 · 랜덤 테마 · 어려움",
+      "en": "Random Theme Simon Hard",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 3,
+        "simonPoleCount": 2
+      },
+      "description": "서로 다른 테마 자극 2개를 동시에 처리하는 랜덤 테마 사이먼 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "랜덤 테마, 간섭 억제, 선택 반응",
+      "isReady": true,
+      "settingSummary": "어려움 · 2개 · 20회",
+      "settingChips": [
+        "어려움",
+        "2개",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "어려움"
+        },
+        {
+          "label": "자극 수",
+          "value": "2개"
+        }
+      ],
+      "sortOrder": 61,
+      "activityFamilyId": "simon-mixed",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-camouflage-center-skeleton",
+      "title": "사이먼 이펙트 · 카모플라쥬 · 보통",
+      "en": "Camouflage Simon Normal",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 4,
+        "camouflagePlacement": "center",
+        "camouflagePlacementResponse": "preset",
+        "simonPoleCount": 1
+      },
+      "description": "노이즈 배경 중앙에 숨겨진 색 1개를 찾아 반응하는 카모플라쥬 활동",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "시각 간섭, 숨은 자극 찾기, 선택 반응",
+      "isReady": true,
+      "settingSummary": "보통 · 1개 · 20회",
+      "settingChips": [
+        "보통",
+        "1개",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "보통"
+        },
+        {
+          "label": "자극 수",
+          "value": "1개"
+        },
+        {
+          "label": "배치",
+          "value": "중앙"
+        }
+      ],
+      "sortOrder": 62,
+      "activityFamilyId": "simon-mixed",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "visual-reaction-blackout-37",
+      "sortOrder": 63,
+      "title": "사이먼 이펙트 · 카모플라쥬 · 어려움",
+      "en": "Simon Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 4,
+        "camouflagePlacement": "variant",
+        "camouflagePlacementResponse": "preset",
+        "simonPoleCount": 2
+      },
+      "description": "노이즈 속 화면 가장자리에 동시에 숨겨진 색 2개를 찾아 반응하는 카모플라쥬 활동",
+      "cueSeconds": 5,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "고난도 집중, 색 변별, 극단 위치 탐지",
+      "isReady": true,
+      "settingSummary": "5초 · 2개 · 20회 · 가장자리 · BGM 자동",
+      "settingChips": [
+        "숨은 색",
+        "2개",
+        "가장자리",
+        "5초 고정",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "숨은 색"
+        },
+        {
+          "label": "자극 수",
+          "value": "2개"
+        },
+        {
+          "label": "배치",
+          "value": "가장자리"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "visual-blackout",
+      "movementProfileId": "visualSearch"
+    },
+    {
+      "id": "simon-camouflage-center-v2",
+      "catalogStatus": "hold",
+      "internalCandidate": true,
+      "holdReason": "2C 내부 후보: Camouflage CENTER 배치. Public 교체 전 검증용.",
+      "sortOrder": 64,
+      "title": "(내부) 사이먼 카모플라쥬 중앙 배치 후보",
+      "en": "Simon Camouflage Center (candidate)",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 4,
+        "camouflagePlacement": "center",
+        "camouflagePlacementResponse": "preset"
+      },
+      "description": "노이즈 속 위장 도형이 화면 중앙에 드러날 때 색을 찾아 해당 SPOMAT으로 이동하는 내부 검증용 CENTER 후보",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "내부 검증 전용. Public Hub 미노출.",
+      "isReady": true,
+      "settingSummary": "2초 · 20회 · 중앙 배치",
+      "settingChips": [
+        "2초",
+        "20회",
+        "중앙"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "카모플라쥬 색 탐지"
+        },
+        {
+          "label": "배치",
+          "value": "CENTER"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "simon-mixed",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "simon-camouflage-variant-v2",
+      "catalogStatus": "hold",
+      "internalCandidate": true,
+      "holdReason": "2C 내부 후보: Camouflage VARIANT 배치 대조군. Public 교체 전 검증용.",
+      "sortOrder": 65,
+      "title": "(내부) 사이먼 카모플라쥬 변형 배치 후보",
+      "en": "Simon Camouflage Variant (candidate)",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "simon",
+      "programTitle": "사이먼 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "simon",
+        "level": 4,
+        "camouflagePlacement": "variant",
+        "camouflagePlacementResponse": "preset"
+      },
+      "description": "노이즈 속 위장 도형이 기존 변형 위치에 드러날 때 색을 찾아 해당 SPOMAT으로 이동하는 내부 검증용 VARIANT 대조군",
+      "cueSeconds": 2,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "내부 검증 전용. Public Hub 미노출.",
+      "isReady": true,
+      "settingSummary": "2초 · 20회 · 변형 배치",
+      "settingChips": [
+        "2초",
+        "20회",
+        "변형"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "카모플라쥬 색 탐지"
+        },
+        {
+          "label": "배치",
+          "value": "VARIANT"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "simon-mixed",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-uniform-07",
+      "sortOrder": 66,
+      "title": "화살표 · 보통 (좌우)",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 5,
+        "flankerStimulusType": "color",
+        "flankerArrowMode": "lr"
+      },
+      "description": "가로로 나란히 제시되는 다섯 원 중 가운데 목표 색에 반응하는 선택 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택주의, 목표 집중, 방해 정보 조절",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Uniform"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "flanker-uniform",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-arrow-udlr-exp",
+      "title": "화살표 · 어려움 (상하좌우)",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 5,
+        "flankerArrowMode": "udlr",
+        "flankerStimulusType": "color"
+      },
+      "description": "상하좌우 화살표 방해 자극 속에서 가운데 방향만 보고 반응하는 응용 화살표 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "방향 방해 억제, 상하좌우 반응, 선택주의",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 상하좌우 · BGM 자동",
+      "settingChips": [
+        "화살표",
+        "상하좌우",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Arrow Flanker · UDLR"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "sortOrder": 67,
+      "activityFamilyId": "flanker-arrow",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-theme-color-skeleton",
+      "title": "랜덤 자극 · 색상",
+      "en": "Theme Flanker Color",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 2,
+        "variantColorTheme": "color",
+        "flankerStimulusType": "color"
+      },
+      "description": "색상 테마 플랭커 자극에서 가운데 목표만 보고 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택주의, 색상 자극, 방해 억제",
+      "isReady": true,
+      "settingSummary": "보통 · 색상 · 20회",
+      "settingChips": [
+        "보통",
+        "색상",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "테마",
+          "value": "색상"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 68,
+      "activityFamilyId": "flanker-theme",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-theme-06",
+      "sortOrder": 69,
+      "title": "랜덤 자극 · 과일",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 2,
+        "variantColorTheme": "fruit",
+        "flankerStimulusType": "color"
+      },
+      "description": "선택한 이미지 테마(색상·과일 등 7종)가 다섯 원 안에 나타날 때 가운데 원 색 위치로 반응하는 테마 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "이미지 색 반응, 방해 억제, 선택주의",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 과일 테마 · BGM 자동",
+      "settingChips": [
+        "테마 플랭커",
+        "이미지 테마",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Theme Flanker"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "flanker-theme",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-theme-animal-skeleton",
+      "title": "랜덤 자극 · 동물",
+      "en": "Theme Flanker Animal",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 2,
+        "variantColorTheme": "animal",
+        "flankerStimulusType": "color"
+      },
+      "description": "동물 테마 플랭커 자극에서 가운데 목표만 보고 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택주의, 테마 자극, 방해 억제",
+      "isReady": true,
+      "settingSummary": "보통 · 동물 · 20회",
+      "settingChips": [
+        "보통",
+        "동물",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "테마",
+          "value": "동물"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 70,
+      "activityFamilyId": "flanker-theme",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-theme-food-skeleton",
+      "title": "랜덤 자극 · 음식",
+      "en": "Theme Flanker Food",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 2,
+        "variantColorTheme": "food",
+        "flankerStimulusType": "color"
+      },
+      "description": "음식 테마 플랭커 자극에서 가운데 목표만 보고 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택주의, 음식 자극, 방해 억제",
+      "isReady": true,
+      "settingSummary": "보통 · 음식 · 20회",
+      "settingChips": [
+        "보통",
+        "음식",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "테마",
+          "value": "음식"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 71,
+      "activityFamilyId": "flanker-theme",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-theme-nature-skeleton",
+      "title": "랜덤 자극 · 자연",
+      "en": "Theme Flanker Nature",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 2,
+        "variantColorTheme": "nature",
+        "flankerStimulusType": "color"
+      },
+      "description": "자연 테마 플랭커 자극에서 가운데 목표만 보고 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택주의, 자연 자극, 방해 억제",
+      "isReady": true,
+      "settingSummary": "보통 · 자연 · 20회",
+      "settingChips": [
+        "보통",
+        "자연",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "테마",
+          "value": "자연"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 72,
+      "activityFamilyId": "flanker-theme",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-theme-vehicle-skeleton",
+      "title": "랜덤 자극 · 탈 것",
+      "en": "Theme Flanker Vehicle",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 2,
+        "variantColorTheme": "vehicle",
+        "flankerStimulusType": "color"
+      },
+      "description": "탈 것 테마 플랭커 자극에서 가운데 목표만 보고 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택주의, 탈 것 자극, 방해 억제",
+      "isReady": true,
+      "settingSummary": "보통 · 탈 것 · 20회",
+      "settingChips": [
+        "보통",
+        "탈 것",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "테마",
+          "value": "탈 것"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 73,
+      "activityFamilyId": "flanker-theme",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-theme-mix-skeleton",
+      "title": "랜덤 자극 · 믹스",
+      "en": "Theme Flanker Mix",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 2,
+        "variantColorTheme": "mix",
+        "flankerStimulusType": "color"
+      },
+      "description": "믹스 테마 플랭커 자극에서 가운데 목표만 보고 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "선택주의, 혼합 테마, 방해 억제",
+      "isReady": true,
+      "settingSummary": "보통 · 믹스 · 20회",
+      "settingChips": [
+        "보통",
+        "믹스",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "테마",
+          "value": "믹스"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 74,
+      "activityFamilyId": "flanker-theme",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-nested-circles-04",
+      "sortOrder": 75,
+      "title": "극단 · 색상",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "variantColorTheme": "color",
+        "flankerStimulusType": "color",
+        "flankerExtremeMode": "theme"
+      },
+      "description": "동심으로 겹친 원들 중 가장 안쪽 목표 원을 보고 해당 색 위치로 반응하는 선택주의 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "중첩 자극 처리, 목표 원 집중, 방해 정보 억제",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 원 속의 원 5개 · BGM 자동",
+      "settingChips": [
+        "원 속의 원",
+        "5개 기본",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Nested Circles"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "flanker-nested",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-random-43",
+      "sortOrder": 76,
+      "title": "극단 · 과일",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "variantColorTheme": "fruit",
+        "flankerStimulusType": "color",
+        "flankerExtremeMode": "theme"
+      },
+      "description": "무작위로 배치된 방해 자극 사이에서 목표 신호를 선택하는 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "무작위 자극 처리, 선택주의 강화, 반응력",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "무작위 자극",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Random"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "flanker-random",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-5circle-46",
+      "sortOrder": 77,
+      "title": "극단 · 동물",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "variantColorTheme": "animal",
+        "flankerStimulusType": "color",
+        "flankerExtremeMode": "theme"
+      },
+      "description": "매우 큰 원과 매우 작은 원이 섞인 다섯 원에서 가운데 목표 색에 반응하는 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "크기 극단 비교, 방해 자극 억제, 선택주의 훈련",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 극단 크기 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "극단 크기",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "5 Circle Extreme"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "flanker-5circle",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-arrow-05",
+      "sortOrder": 78,
+      "title": "극단 · 음식",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "variantColorTheme": "food",
+        "flankerStimulusType": "color",
+        "flankerExtremeMode": "theme"
+      },
+      "description": "다섯 화살표 중 가운데 방향만 보고 해당 방향으로 이동하는 화살표 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "방향 방해 억제, 선택주의, 좌우 반응",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 좌우 · BGM 자동",
+      "settingChips": [
+        "화살표",
+        "좌우 기본",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Arrow Flanker · UDLR"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "flanker-arrow",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-uniform-number-exp",
+      "title": "극단 · 자연",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "flankerStimulusType": "color",
+        "variantColorTheme": "nature",
+        "flankerExtremeMode": "theme"
+      },
+      "description": "다섯 원이 같은 색일 때 가운데 숫자에 맞는 색 위치로 반응하는 숫자 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "숫자·색 매칭, 선택주의, 방해 억제",
+      "isReady": true,
+      "settingSummary": "3초 · Uniform · 숫자 · 20회",
+      "settingChips": [
+        "Uniform",
+        "숫자",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Uniform · 숫자"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "sortOrder": 79,
+      "activityFamilyId": "flanker-uniform",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-random-number-exp",
+      "title": "극단 · 탈 것",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "flankerStimulusType": "color",
+        "variantColorTheme": "vehicle",
+        "flankerExtremeMode": "theme"
+      },
+      "description": "무작위 색 원 중 가운데 숫자에 맞는 색 위치로 반응하는 숫자 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "숫자·색 매칭, 무작위 방해 억제, 선택주의",
+      "isReady": true,
+      "settingSummary": "3초 · Random · 숫자 · 20회",
+      "settingChips": [
+        "Random",
+        "숫자",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Random · 숫자"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "sortOrder": 80,
+      "activityFamilyId": "flanker-random",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-5circle-number-exp",
+      "title": "극단 · 믹스",
+      "en": "Flanker Effect",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "flankerStimulusType": "color",
+        "variantColorTheme": "mix",
+        "flankerExtremeMode": "theme"
+      },
+      "description": "극단적 크기 대비 다섯 원에서 가운데 숫자에 맞는 색 위치로 반응하는 숫자 플랭커 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "숫자·색 매칭, 크기 극단 비교, 선택주의",
+      "isReady": true,
+      "settingSummary": "3초 · 극단 크기 · 숫자 · 20회",
+      "settingChips": [
+        "극단 크기",
+        "숫자",
+        "20회",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "5 Circle Extreme · 숫자"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "sortOrder": 81,
+      "activityFamilyId": "flanker-5circle",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "flanker-extreme-arrow-hard-skeleton",
+      "title": "극단 · 화살표 · 어려움",
+      "en": "Extreme Arrow Flanker",
+      "axis": "attention",
+      "axisTitle": "선택 반응",
+      "programGroup": "flanker",
+      "programTitle": "플랭커 이펙트",
+      "salesCopy": "여러 대안 중 목표를 고르는 선택 반응력",
+      "engine": {
+        "mode": "flanker",
+        "level": 3,
+        "flankerArrowMode": "udlr",
+        "flankerStimulusType": "color",
+        "flankerExtremeMode": "arrow"
+      },
+      "description": "크기가 다른 화살표 플랭커 자극에서 가운데 방향만 보고 반응하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "극단 크기, 화살표 방해 억제, 선택주의",
+      "isReady": true,
+      "settingSummary": "어려움 · 화살표 · 20회",
+      "settingChips": [
+        "어려움",
+        "화살표",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "난이도",
+          "value": "어려움"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "sortOrder": 82,
+      "activityFamilyId": "flanker-arrow",
+      "movementProfileId": "choiceReaction"
+    },
+    {
+      "id": "stroop-arrow-reverse-08",
+      "sortOrder": 83,
+      "title": "색상화살표 · 보통 (기본)",
+      "en": "Stroop Effect",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "basic",
+        "level": 1,
+        "spatialArrowColorMode": "color",
+        "spatialArrowColorMapping": "compass"
+      },
+      "description": "방향별 색이 채워진 화살표를 보고 해당 방향 패드로 빠르게 이동하는 활동. 위 빨·좌 초·우 노·아래 파로 고정됩니다.",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "방향 인지, 색-방향 연계, 수업 도입",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 색상 모드 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "색상 모드",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "신호 방식",
+          "value": "방향별 색 화살표"
+        },
+        {
+          "label": "색 매핑",
+          "value": "위빨·좌초·우노·하파"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "stroop-arrow",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "stroop-arrow-bg-47",
+      "sortOrder": 84,
+      "title": "단어 · 보통 (의미/잉크 전환)",
+      "en": "Stroop Effect",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "stroop",
+        "level": 2
+      },
+      "description": "검정 배경의 색 단어에서 의미 또는 글자 색(잉크) 규칙을 따라 말로 답하고, 규칙이 뒤집히면 반대로 말하는 음성 스트룹 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "의미-잉크 전환, 규칙 역전, 음성 반응",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "단어 전환",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "단어 의미/잉크 전환"
+        },
+        {
+          "label": "응답",
+          "value": "음성 · 교사 확인"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "stroop-arrow",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "stroop-word-reverse-48",
+      "sortOrder": 85,
+      "title": "단어 · 보통+ (의미/잉크·역전)",
+      "en": "Stroop Effect",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "stroop",
+        "level": 3
+      },
+      "description": "단어 의미와 반대되는 규칙에 따라 반응하는 언어-운동 복합 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "언어 간섭 처리, 규칙 역전, 실행력 심화",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "언어 역전",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "Word Reverse"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "stroop-word",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "stroop-word-bg-49",
+      "sortOrder": 86,
+      "title": "단어 · 어려움 (배경간섭 추가)",
+      "en": "Stroop Effect",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "stroop",
+        "level": 4,
+        "stroopWordMode": "bg"
+      },
+      "description": "배경 색상과 단어 의미가 충돌할 때 단어 규칙을 따라 반응하는 복합 반응 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "언어-색상 충돌 처리, 실행 제어, 심화 훈련",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "단어+배경",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "단어+배경"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "stroop-word",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "stroop-arrow-direction-color-v2",
+      "catalogStatus": "hold",
+      "internalCandidate": true,
+      "holdReason": "2A 내부 후보: Public 교체 전 검증용. Hub 비노출.",
+      "sortOrder": 87,
+      "title": "(내부) 스트룹 화살표 방향×색 이동 후보",
+      "en": "Stroop Arrow Direction × Color (candidate)",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "stroop",
+        "level": 1,
+        "stroopArrowResponse": "movement"
+      },
+      "description": "색이 채워진 화살표에서 방향 또는 색 규칙을 따라 해당 SPOMAT으로 이동하는 내부 검증용 스트룹 화살표 후보",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "내부 검증 전용. Public Hub 미노출.",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 이동 응답 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "방향×색",
+        "이동 응답"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "색상 화살표 · 방향/색 전환"
+        },
+        {
+          "label": "응답",
+          "value": "SPOMAT 이동"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "stroop-arrow",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "stroop-word-switch-movement-v2",
+      "catalogStatus": "hold",
+      "internalCandidate": true,
+      "holdReason": "2B 내부 후보: Word Switch 이동. Public 교체 전 검증용.",
+      "sortOrder": 88,
+      "title": "(내부) 스트룹 단어 스위치 이동 후보",
+      "en": "Stroop Word Switch Movement (candidate)",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "stroop",
+        "level": 2,
+        "stroopWordResponse": "movement",
+        "stroopWordRuleMode": "switch"
+      },
+      "description": "색 단어의 의미 또는 글자 색 규칙을 그대로 따라 해당 SPOMAT으로 이동하는 내부 검증용 단어 스트룹 후보",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "내부 검증 전용. Public Hub 미노출.",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 스위치 이동 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "단어 스위치",
+        "이동 응답"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "색 단어 · 의미/잉크"
+        },
+        {
+          "label": "규칙",
+          "value": "지정 차원 그대로"
+        },
+        {
+          "label": "응답",
+          "value": "SPOMAT 이동"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "stroop-word",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "stroop-word-reverse-movement-v2",
+      "catalogStatus": "hold",
+      "internalCandidate": true,
+      "holdReason": "2B 내부 후보: Word Reverse 이동. Public 교체 전 검증용.",
+      "sortOrder": 89,
+      "title": "(내부) 스트룹 단어 역규칙 이동 후보",
+      "en": "Stroop Word Reverse Movement (candidate)",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "stroop",
+        "level": 3,
+        "stroopWordResponse": "movement",
+        "stroopWordRuleMode": "reverse"
+      },
+      "description": "색 단어에서 Cue 차원의 반대 정보로 해당 SPOMAT에 이동하는 내부 검증용 단어 역규칙 후보",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "내부 검증 전용. Public Hub 미노출.",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · 역규칙 이동 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "단어 역규칙",
+        "이동 응답"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "색 단어 · 의미/잉크"
+        },
+        {
+          "label": "규칙",
+          "value": "지정 차원의 반대"
+        },
+        {
+          "label": "응답",
+          "value": "SPOMAT 이동"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        }
+      ],
+      "activityFamilyId": "stroop-word",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "stroop-missing-color-50",
+      "catalogStatus": "hold",
+      "holdReason": "보류: 스트룹 3/4번 정리로 마스터 공개 목록에서 숨김",
+      "sortOrder": 90,
+      "title": "스트룹 이펙트 · 누락 색상 찾기",
+      "en": "Stroop Effect",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "stroop",
+      "programTitle": "스트룹 이펙트",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "stroop",
+        "level": 4,
+        "stroopWordMode": "missing"
+      },
+      "description": "글자·잉크·배경에 쓰인 세 색을 제외한 남은 색을 찾아 말하는 활동",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "탐색적 실행 제어, 빠진 정보 탐지, 고급 집중력",
+      "isReady": true,
+      "settingSummary": "3초 · 20회 · BGM 자동",
+      "settingChips": [
+        "3초",
+        "20회",
+        "누락 색상",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "자극 방식",
+          "value": "누락 색상 찾기"
+        },
+        {
+          "label": "반복",
+          "value": "20회"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "stroop-missing",
+      "movementProfileId": "complexReaction"
+    },
+    {
+      "id": "sequential-memory-3color-09",
+      "sortOrder": 91,
+      "title": "순서 기억 · 쉬움 (3개)",
+      "en": "Sequential Memory",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "sequential-memory",
+      "programTitle": "순차 기억",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "spatial",
+        "level": 1
+      },
+      "description": "차례로 제시되는 색 3개의 순서를 기억하고 몸으로 재현하는 기억 수행 활동",
+      "cueSeconds": 3,
+      "rounds": 10,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "순서 기억, 작업기억, 차분한 마무리 활동",
+      "isReady": true,
+      "settingSummary": "3색 기억 · 1~3초 랜덤 · 10라운드 · BGM 자동",
+      "settingChips": [
+        "3색 기억",
+        "1~3초 랜덤",
+        "10라운드",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "기억 방식",
+          "value": "3색 순서"
+        },
+        {
+          "label": "색 전환",
+          "value": "1~3초 랜덤"
+        },
+        {
+          "label": "라운드",
+          "value": "10라운드"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "sequential-memory",
+      "movementProfileId": "sequentialMemory"
+    },
+    {
+      "id": "sequential-memory-5color-51",
+      "sortOrder": 92,
+      "title": "순서 기억 · 보통 (5개)",
+      "en": "Sequential Memory",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "sequential-memory",
+      "programTitle": "순차 기억",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "spatial",
+        "level": 2
+      },
+      "description": "차례로 제시되는 색 5개의 순서를 기억하고 몸으로 재현하는 기억 수행 활동",
+      "cueSeconds": 3,
+      "rounds": 10,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "순서 기억, 작업기억 확장, 집중 마무리 활동",
+      "isReady": true,
+      "settingSummary": "5색 기억 · 1~3초 랜덤 · 10라운드 · BGM 자동",
+      "settingChips": [
+        "5색 기억",
+        "1~3초 랜덤",
+        "10라운드",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "기억 방식",
+          "value": "5색 순서"
+        },
+        {
+          "label": "색 전환",
+          "value": "1~3초 랜덤"
+        },
+        {
+          "label": "라운드",
+          "value": "10라운드"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "sequential-memory",
+      "movementProfileId": "sequentialMemory"
+    },
+    {
+      "id": "sequential-memory-10color-52",
+      "sortOrder": 93,
+      "title": "순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)",
+      "en": "Sequential Memory",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "sequential-memory",
+      "programTitle": "순차 기억",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "spatial",
+        "level": 3
+      },
+      "description": "5라운드 동안 색 항 수가 3→7개로 늘어나는 색 순서 기억 활동",
+      "cueSeconds": 3,
+      "rounds": 5,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "점증 순서 기억, 작업기억 심화, 고급 마무리 활동",
+      "isReady": true,
+      "settingSummary": "추가 · 1~3초 랜덤 · 5라운드 · 3→7색 · BGM 자동",
+      "settingChips": [
+        "추가",
+        "1~3초 랜덤",
+        "5라운드",
+        "3→7색",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "기억 방식",
+          "value": "추가(3→7)"
+        },
+        {
+          "label": "색 전환",
+          "value": "1~3초 랜덤"
+        },
+        {
+          "label": "라운드",
+          "value": "5라운드"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "activityFamilyId": "sequential-memory",
+      "movementProfileId": "sequentialMemory"
+    },
+    {
+      "id": "sequential-memory-full-reveal-54",
+      "sortOrder": 94,
+      "title": "순간 기억 3X3 그리드 (원샷)",
+      "en": "Sequential Memory",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "sequential-memory",
+      "programTitle": "순차 기억",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "spatial",
+        "level": 7,
+        "colorMemoryGridSize": 3,
+        "colorMemoryGridMode": "oneshot"
+      },
+      "description": "3×3 색 그리드를 잠깐 기억한 뒤, 단 한 칸만 바뀐 색을 원샷으로 찾아 패드로 반응하는 순간 기억 활동",
+      "cueSeconds": 3,
+      "rounds": 10,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "순간 기억 입문, 변화 탐색, 시각적 작업기억",
+      "isReady": true,
+      "settingSummary": "3×3 그리드 · 원샷 · 기억 3초 · 답 3초 · BGM 자동",
+      "settingChips": [
+        "3×3 그리드",
+        "원샷",
+        "기억 3초",
+        "답 3초"
+      ],
+      "executionFacts": [
+        {
+          "label": "기억 방식",
+          "value": "순간 기억 3×3 원샷"
+        },
+        {
+          "label": "기억 시간",
+          "value": "3초"
+        },
+        {
+          "label": "답 고르기",
+          "value": "3초 고정"
+        },
+        {
+          "label": "라운드",
+          "value": "10라운드"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "sequential-memory",
+      "movementProfileId": "sequentialMemory"
+    },
+    {
+      "id": "sequential-memory-custom-10color-exp",
+      "title": "순간 기억 · 4×4 그리드 (원샷)",
+      "en": "Sequential Memory",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "sequential-memory",
+      "programTitle": "순차 기억",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "spatial",
+        "level": 7,
+        "colorMemoryGridSize": 4,
+        "colorMemoryGridMode": "oneshot"
+      },
+      "description": "4×4 색 그리드를 잠깐 기억한 뒤, 단 한 칸만 바뀐 색을 원샷으로 찾아 패드로 반응하는 순간 기억 활동",
+      "cueSeconds": 3,
+      "rounds": 10,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "순간 기억, 변화맹, 작업기억 마무리",
+      "isReady": true,
+      "settingSummary": "4×4 그리드 · 원샷 · 기억 3초 · 답 3초 · BGM 자동",
+      "settingChips": [
+        "4×4 그리드",
+        "원샷",
+        "기억 3초",
+        "답 3초"
+      ],
+      "executionFacts": [
+        {
+          "label": "기억 방식",
+          "value": "순간 기억 4×4 원샷"
+        },
+        {
+          "label": "기억 시간",
+          "value": "3초"
+        },
+        {
+          "label": "답 고르기",
+          "value": "3초 고정"
+        },
+        {
+          "label": "라운드",
+          "value": "10라운드"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "sortOrder": 95,
+      "activityFamilyId": "sequential-memory",
+      "movementProfileId": "sequentialMemory"
+    },
+    {
+      "id": "sequential-memory-color-number-exp",
+      "title": "랜덤 기억 · 어려움 (퀴즈)",
+      "en": "Sequential Memory",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "sequential-memory",
+      "programTitle": "순차 기억",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "spatial",
+        "level": 4
+      },
+      "description": "번호 1~10에 매칭된 색을 기억하고 질문에 답하는 색·번호 연합 기억 활동",
+      "cueSeconds": 3,
+      "rounds": 10,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색·번호 연합 기억, 작업기억, 퀴즈형 마무리",
+      "isReady": true,
+      "settingSummary": "색·번호 10개 암기 · 퀴즈 5문항 · BGM 자동",
+      "settingChips": [
+        "색·번호 10개",
+        "퀴즈 5문항",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "기억 방식",
+          "value": "색·번호 매칭"
+        },
+        {
+          "label": "실행 분량",
+          "value": "10개 암기 + 5문항"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        },
+        {
+          "label": "효과음",
+          "value": "자동"
+        }
+      ],
+      "sortOrder": 96,
+      "activityFamilyId": "sequential-memory",
+      "movementProfileId": "sequentialMemory"
+    },
+    {
+      "id": "sequential-memory-color-number-movement-v2",
+      "catalogStatus": "hold",
+      "internalCandidate": true,
+      "holdReason": "2D 내부 후보: Color-Number Memory 이동. Public 교체 전 검증용.",
+      "sortOrder": 97,
+      "title": "(내부) 색·번호 기억 이동 후보",
+      "en": "Color-Number Memory Movement (candidate)",
+      "axis": "executive",
+      "axisTitle": "복합 반응",
+      "programGroup": "sequential-memory",
+      "programTitle": "순차 기억",
+      "salesCopy": "규칙·기억을 겹쳐 수행하는 복합 반응력",
+      "engine": {
+        "mode": "spatial",
+        "level": 4,
+        "spatialMemoryResponse": "movement"
+      },
+      "description": "번호-색 연결을 기억한 뒤 질문 번호의 색 SPOMAT으로 이동하고 교사가 정답을 공개하는 내부 검증용 후보",
+      "cueSeconds": 3,
+      "rounds": 10,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "내부 검증 전용. Public Hub 미노출.",
+      "isReady": true,
+      "settingSummary": "색·번호 기억 · 이동 응답 · BGM 자동",
+      "settingChips": [
+        "색·번호 기억",
+        "이동 응답",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "기억 방식",
+          "value": "번호-색 연합"
+        },
+        {
+          "label": "응답",
+          "value": "SPOMAT 이동"
+        },
+        {
+          "label": "질문",
+          "value": "랜덤 5문항"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "sequential-memory",
+      "movementProfileId": "sequentialMemory"
+    },
+    {
+      "id": "dive-standard",
+      "sortOrder": 98,
+      "title": "DIVE · 기본",
+      "en": "Dive",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "dive",
+      "programTitle": "DIVE",
+      "engine": {
+        "mode": "flow",
+        "level": 1,
+        "flowFeatures": [
+          "punch",
+          "kick",
+          "duck",
+          "reach"
+        ],
+        "flowDuration": 20,
+        "flowLayout": "sequential",
+        "flowIncludeBonus": true
+      },
+      "description": "점프·펀치·킥·숙이기·벽 닿기를 20초씩 익힌 뒤 60초 보너스로 마무리하는 DIVE 기본 활동.",
+      "salesCopy": "모든 장애물을 순차적으로 배우는 DIVE 기본 코스",
+      "cueSeconds": 3,
+      "rounds": 1,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "전신 반응, DIVE 도입, 장애물 순차 학습",
+      "isReady": true,
+      "settingSummary": "순차 · 5단계×20초 + 보너스 60초 · BGM 자동",
+      "settingChips": [
+        "순차",
+        "5단계×20초",
+        "보너스 60초",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "동작",
+          "value": "점프+펀치+킥+숙이기+벽"
+        },
+        {
+          "label": "진행 방식",
+          "value": "순차 스테이지"
+        },
+        {
+          "label": "스테이지당",
+          "value": "20초"
+        },
+        {
+          "label": "보너스",
+          "value": "60초"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "dive",
+      "movementProfileId": "diveBuiltIn"
+    },
+    {
+      "id": "dive-color-gate-61",
+      "sortOrder": 99,
+      "title": "DIVE · 모션 게이트",
+      "en": "Dive Motion Gate",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "dive",
+      "programTitle": "DIVE",
+      "engine": {
+        "mode": "flow",
+        "level": 2,
+        "flowFeatures": [
+          "colorGate"
+        ],
+        "flowDuration": 60,
+        "flowLayout": "sequential",
+        "colorGateVariant": "solo-easy",
+        "colorGateCategory": "all"
+      },
+      "description": "빨·노·초·파 색 관문을 확인하고 근력·유연성·평형성·순발력의 쉬운 동작 20가지를 수행하는 1인 모션 게이트 활동",
+      "salesCopy": "색상 판단과 쉬운 전신 동작 전환을 함께 훈련하는 1인 모션 게이트",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "색상 반응, 포즈 전환, 모션 게이트",
+      "isReady": true,
+      "settingSummary": "1인 · 모든 유형 · 쉬움 · 20회 · BGM 자동",
+      "settingChips": [
+        "1인",
+        "모든 유형",
+        "쉬움",
+        "20회"
+      ],
+      "executionFacts": [
+        {
+          "label": "항목",
+          "value": "모션 게이트"
+        },
+        {
+          "label": "참여",
+          "value": "1인"
+        },
+        {
+          "label": "난이도",
+          "value": "쉬움"
+        },
+        {
+          "label": "관문 색",
+          "value": "빨·노·초·파"
+        },
+        {
+          "label": "동작",
+          "value": "모든 유형의 쉬운 동작 20개"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "dive",
+      "movementProfileId": "diveBuiltIn"
+    },
+    {
+      "id": "dive-random",
+      "catalogStatus": "hold",
+      "holdReason": "보류: 다이브는 액션 무브/모션 게이트 2개만 공개",
+      "sortOrder": 100,
+      "title": "DIVE · 랜덤",
+      "en": "Dive Random",
+      "axis": "response",
+      "axisTitle": "단순 반응",
+      "programGroup": "dive",
+      "programTitle": "DIVE",
+      "engine": {
+        "mode": "flow",
+        "level": 1,
+        "flowFeatures": [
+          "punch",
+          "kick",
+          "duck",
+          "reach"
+        ],
+        "flowDuration": 20,
+        "flowLayout": "random"
+      },
+      "description": "모든 장애물이 무작위로 등장하는 1분 DIVE 챌린지 활동",
+      "salesCopy": "1분 동안 모든 장애물을 랜덤으로 처리하는 DIVE",
+      "cueSeconds": 3,
+      "rounds": 20,
+      "bgmAutoPlay": true,
+      "bgmCategory": "spomove-training",
+      "recommendedUse": "종합 전신 반응, 챌린지, 수업 클라이맥스",
+      "isReady": true,
+      "settingSummary": "랜덤 · 60초 · BGM 자동",
+      "settingChips": [
+        "랜덤",
+        "60초",
+        "BGM 자동"
+      ],
+      "executionFacts": [
+        {
+          "label": "동작",
+          "value": "점프+펀치+킥+숙이기+벽"
+        },
+        {
+          "label": "진행 방식",
+          "value": "랜덤 혼합"
+        },
+        {
+          "label": "세션",
+          "value": "60초"
+        },
+        {
+          "label": "BGM",
+          "value": "자동 재생"
+        }
+      ],
+      "activityFamilyId": "dive",
+      "movementProfileId": "diveBuiltIn"
+    }
+  ],
+  "teacher": [
+    {
+      "week": 1,
+      "label": "1주차",
+      "summary": "반응인지와 스트룹으로 방향, 색상, 간섭 반응을 시작합니다.",
+      "programs": [
+        {
+          "id": "w1-rc-space",
+          "title": "반응인지 - 공간 방향",
+          "mode": "basic",
+          "level": 1,
+          "speed": 2,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 공간 방향",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w1-rc-quad-color",
+          "title": "반응인지 - 사분할 색상",
+          "mode": "basic",
+          "level": 2,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "color",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 사분할 색상",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "color",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w1-rc-full-color",
+          "title": "반응인지 - 전면색상: 색상",
+          "mode": "basic",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "color",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 전면색상: 색상",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "color",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w1-stroop-arrow",
+          "title": "스트룹 - 공간 방향 · 색상",
+          "mode": "stroop",
+          "level": 1,
+          "speed": 3,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "스트룹 - 공간 방향 · 색상",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w1-stroop-arrow-bg",
+          "title": "스트룹 - 화살표/배경 간섭",
+          "mode": "stroop",
+          "level": 2,
+          "speed": 3,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "스트룹 - 화살표/배경 간섭",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "label": "2주차",
+      "summary": "전면색상 테마와 시지각 반응 게임으로 반응 폭을 넓힙니다.",
+      "programs": [
+        {
+          "id": "w2-rc-full-animal",
+          "title": "반응인지 - 전면색상: 동물",
+          "mode": "basic",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "animal",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 전면색상: 동물",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "animal",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w2-rc-full-fruit",
+          "title": "반응인지 - 전면색상: 과일",
+          "mode": "basic",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "fruit",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 전면색상: 과일",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "fruit",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w2-rc-full-food",
+          "title": "반응인지 - 전면색상: 음식",
+          "mode": "basic",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "food",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 전면색상: 음식",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "food",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w2-vr-balloon",
+          "title": "시지각 반응 - 풍선 터뜨리기 1개",
+          "mode": "reactTrain",
+          "level": 3,
+          "speed": 2,
+          "duration": 30,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "시지각 반응 - 풍선 터뜨리기 1개",
+            "speed": 2,
+            "timeMode": "time",
+            "duration": 30,
+            "reactTrainConcurrent": 1
+          }
+        },
+        {
+          "id": "w2-vr-bricks",
+          "title": "시지각 반응 - 떨어지는 벽돌 2개",
+          "mode": "reactTrain",
+          "level": 2,
+          "speed": 2.5,
+          "duration": 60,
+          "reactTrainConcurrent": 2,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "시지각 반응 - 떨어지는 벽돌 2개",
+            "speed": 2.5,
+            "timeMode": "time",
+            "duration": 60,
+            "reactTrainConcurrent": 2
+          }
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "label": "3주차",
+      "summary": "변형 사분할과 단어 스트룹으로 간섭 반응을 확장합니다.",
+      "programs": [
+        {
+          "id": "w3-rc-mod-quad-1",
+          "title": "반응인지 - 변형 사분할 1단계",
+          "mode": "basic",
+          "level": 7,
+          "speed": 2,
+          "targetReps": 15,
+          "bodyLabelMode": "easy",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 변형 사분할 1단계",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "bodyLabelMode": "easy",
+            "hideBodyLabelModeControls": true
+          }
+        },
+        {
+          "id": "w3-rc-mod-quad-2",
+          "title": "반응인지 - 변형 사분할 2단계",
+          "mode": "basic",
+          "level": 8,
+          "speed": 4,
+          "targetReps": 15,
+          "bodyLabelMode": "easy",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 변형 사분할 2단계",
+            "speed": 4,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "bodyLabelMode": "easy",
+            "hideBodyLabelModeControls": true
+          }
+        },
+        {
+          "id": "w3-stroop-word",
+          "title": "스트룹 - 단어 스트룹/역스트룹",
+          "mode": "stroop",
+          "level": 3,
+          "speed": 3,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "스트룹 - 단어 스트룹/역스트룹",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w3-stroop-word-bg",
+          "title": "스트룹 - 단어+배경",
+          "mode": "stroop",
+          "level": 4,
+          "speed": 3,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "스트룹 - 단어+배경",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "label": "4주차",
+      "summary": "새 전면색상 테마와 두더지 반응으로 선택 반응을 확장합니다.",
+      "programs": [
+        {
+          "id": "w4-rc-full-vehicle",
+          "title": "반응인지 - 전면색상: 탈 것",
+          "mode": "basic",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "vehicle",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 전면색상: 탈 것",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "vehicle",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w4-rc-full-nature",
+          "title": "반응인지 - 전면색상: 자연물",
+          "mode": "basic",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "nature",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 전면색상: 자연물",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "nature",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w4-rc-full-emotion",
+          "title": "반응인지 - 전면색상: 감정",
+          "mode": "basic",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "variantColorTheme": "emotion",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 전면색상: 감정",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "emotion",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w4-vr-mole",
+          "title": "시지각 반응 - 두더지 잡기",
+          "mode": "reactTrain",
+          "level": 6,
+          "speed": 2,
+          "duration": 30,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "시지각 반응 - 두더지 잡기",
+            "speed": 2,
+            "timeMode": "time",
+            "duration": 30,
+            "reactTrainConcurrent": 1
+          }
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "label": "5주차",
+      "summary": "2패널과 3패널 반응인지로 선택 폭을 넓힙니다.",
+      "programs": [
+        {
+          "id": "w5-rc-2panel-animal",
+          "title": "반응인지 - 2패널: 동물",
+          "mode": "basic",
+          "level": 4,
+          "speed": 3,
+          "targetReps": 15,
+          "variantColorTheme": "animal",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 2패널: 동물",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "animal",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w5-rc-2panel-fruit",
+          "title": "반응인지 - 2패널: 과일",
+          "mode": "basic",
+          "level": 4,
+          "speed": 3,
+          "targetReps": 15,
+          "variantColorTheme": "fruit",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 2패널: 과일",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "fruit",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w5-rc-2panel-food",
+          "title": "반응인지 - 2패널: 음식",
+          "mode": "basic",
+          "level": 4,
+          "speed": 3,
+          "targetReps": 15,
+          "variantColorTheme": "food",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 2패널: 음식",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "food",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w5-rc-3panel-vehicle",
+          "title": "반응인지 - 3패널: 탈 것",
+          "mode": "basic",
+          "level": 6,
+          "speed": 3,
+          "targetReps": 15,
+          "variantColorTheme": "vehicle",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 3패널: 탈 것",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "vehicle",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w5-rc-3panel-nature",
+          "title": "반응인지 - 3패널: 자연물",
+          "mode": "basic",
+          "level": 6,
+          "speed": 3,
+          "targetReps": 15,
+          "variantColorTheme": "nature",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 3패널: 자연물",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "nature",
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w5-rc-3panel-emotion",
+          "title": "반응인지 - 3패널: 감정",
+          "mode": "basic",
+          "level": 6,
+          "speed": 3,
+          "targetReps": 15,
+          "variantColorTheme": "emotion",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 3패널: 감정",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "variantColorTheme": "emotion",
+            "hideBodyLabelModeControls": false
+          }
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "label": "6주차",
+      "summary": "변형 사분할 2·3단계와 카모플라쥬 밸런스 무빙을 진행합니다.",
+      "programs": [
+        {
+          "id": "w6-rc-mod-quad-2-easy",
+          "title": "반응인지 - 변형 사분할 2단계",
+          "mode": "basic",
+          "level": 8,
+          "speed": 4,
+          "targetReps": 15,
+          "bodyLabelMode": "easy",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 변형 사분할 2단계",
+            "speed": 4,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "bodyLabelMode": "easy",
+            "hideBodyLabelModeControls": true
+          }
+        },
+        {
+          "id": "w6-rc-mod-quad-3-easy",
+          "title": "반응인지 - 변형 사분할 3단계",
+          "mode": "basic",
+          "level": 9,
+          "speed": 4,
+          "targetReps": 15,
+          "bodyLabelMode": "easy",
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "반응인지 - 변형 사분할 3단계",
+            "speed": 4,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "bodyLabelMode": "easy",
+            "hideBodyLabelModeControls": true
+          }
+        },
+        {
+          "id": "w6-vr-camouflage-balance",
+          "title": "시지각 반응 - 카모플라쥬: 밸런스 무빙",
+          "mode": "reactTrain",
+          "level": 5,
+          "speed": 3,
+          "duration": 30,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "시지각 반응 - 카모플라쥬: 밸런스 무빙",
+            "speed": 3,
+            "timeMode": "time",
+            "duration": 30,
+            "reactTrainConcurrent": 1
+          }
+        }
+      ]
+    },
+    {
+      "week": 7,
+      "label": "7주차",
+      "summary": "사이먼 믹스 갤러리와 랜덤·화살표 플랭커로 선택·억제 반응을 연습합니다.",
+      "programs": [
+        {
+          "id": "w7-simon-effect",
+          "title": "사이먼 효과 - 믹스 갤러리",
+          "mode": "simon",
+          "level": 3,
+          "speed": 2,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "사이먼 효과 - 믹스 갤러리",
+            "speed": 2,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w7-flanker-random",
+          "title": "플랭커 - 랜덤 플랭커",
+          "mode": "flanker",
+          "level": 2,
+          "speed": 2.5,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "플랭커 - 랜덤 플랭커",
+            "speed": 2.5,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        },
+        {
+          "id": "w7-flanker-arrow",
+          "title": "플랭커 - 화살표 플랭커",
+          "mode": "flanker",
+          "level": 5,
+          "speed": 2.5,
+          "targetReps": 15,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "플랭커 - 화살표 플랭커",
+            "speed": 2.5,
+            "timeMode": "reps",
+            "targetReps": 15,
+            "hideBodyLabelModeControls": false
+          }
+        }
+      ]
+    },
+    {
+      "week": 8,
+      "label": "8주차",
+      "summary": "순차기억 5항·색-번호 과제로 작업기억을 마무리합니다.",
+      "programs": [
+        {
+          "id": "w8-memory-5items",
+          "title": "순차기억 5항 기억",
+          "mode": "spatial",
+          "level": 2,
+          "targetReps": 4,
+          "displayChips": [
+            "1~3초 랜덤",
+            "4라운드",
+            "BGM 자동"
+          ],
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "순차기억 5항 기억",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 4
+          }
+        },
+        {
+          "id": "w8-memory-color-number-quiz",
+          "title": "순차기억 색-번호 맞추기",
+          "mode": "spatial",
+          "level": 4,
+          "speed": 3,
+          "targetReps": 10,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "순차기억 색-번호 맞추기",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 10
+          }
+        },
+        {
+          "id": "w8-memory-color-number-full",
+          "title": "순차기억 색-번호 전체보기",
+          "mode": "spatial",
+          "level": 5,
+          "speed": 3,
+          "targetReps": 10,
+          "launch": {
+            "audioMode": "beep",
+            "warmup": 3,
+            "programTitle": "순차기억 색-번호 전체보기",
+            "speed": 3,
+            "timeMode": "reps",
+            "targetReps": 10
+          }
+        }
+      ]
+    }
+  ]
+}

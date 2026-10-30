@@ -1,0 +1,34 @@
+{
+  "nextAdmin": [
+    {
+      "script": "admin-matrix.cjs",
+      "status": "UNVERIFIED",
+      "error": "page.goto timeout 120000ms"
+    },
+    {
+      "script": "next-repro.cjs",
+      "status": "UNVERIFIED",
+      "error": "page.goto timeout 180000ms"
+    }
+  ],
+  "harnessAdmin": {
+    "script": "admin-state-harness.cjs",
+    "status": "UNVERIFIED",
+    "errors": [
+      "initial card locator timeout",
+      "subsequent auditCatalog initialization timeout"
+    ]
+  },
+  "browsers": {
+    "executed": [
+      "Playwright Chromium on Windows"
+    ],
+    "notExecuted": [
+      "Firefox",
+      "WebKit",
+      "real iOS Safari",
+      "real Android browser"
+    ]
+  },
+  "audio": "muted MASTER and no BGM fixture; Teacher beep path not auditory-validated"
+}

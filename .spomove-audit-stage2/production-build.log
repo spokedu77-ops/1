@@ -1,0 +1,22 @@
+▲ Next.js 16.2.11 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.1min
+  Running TypeScript ...
+Failed to type check.
+
+.next/types/app/admin/spokedu-master/programs/page.ts:14:13
+Type error: Type 'OmitWithTag<typeof import("C:/Users/user/Desktop/coach-app/.spomove-audit-stage2/build-workspace/app/admin/spokedu-master/programs/page"), "metadata" | "default" | "config" | "revalidate" | ... 11 more ... | "generateViewport", "">' does not satisfy the constraint '{ [x: string]: never; }'.
+  Property 'SpomoveContentManager' is incompatible with index signature.
+    Type '() => Element' is not assignable to type 'never'.
+
+  [90m12 |[0m
+  [90m13 |[0m [90m// Check that the entry is a valid entry[0m
+[31m[1m>[0m [90m14 |[0m checkFields<[33mDiff[0m<{
+  [90m   |[0m             [31m[1m^[0m
+  [90m15 |[0m   [36mdefault[0m: [33mFunction[0m
+  [90m16 |[0m   config?: {}
+  [90m17 |[0m   generateStaticParams?: [33mFunction[0m
+Next.js build worker exited with code: 1 and signal: null

@@ -1,0 +1,25 @@
+[
+  {
+    "id": "visual-reaction-goalkeeper-easy-skeleton",
+    "clock": "runFor native RAF cadence",
+    "completed": false,
+    "reveals": 0,
+    "result": {
+      "text": "",
+      "htmlOverflow": "",
+      "bodyOverflow": "",
+      "overflow": false,
+      "buttons": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"ed8bca3d-aa9a-4842-8acc-444288dba490\",\"presetId\":\"visual-reaction-goalkeeper-easy-skeleton\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:15:01.002Z\",\"elapsedActiveMs\":30542,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-goalkeeper-easy-skeleton\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793340931544}"
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css",
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  }
+]

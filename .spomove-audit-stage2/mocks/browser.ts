@@ -1,0 +1,7 @@
+const empty=()=>new URLSearchParams(location.search).get('assets')==='empty';
+const packs=['spomove_variant_fruits','spomove_variant_vehicles','spomove_variant_emotions','spomove_variant_animals','spomove_variant_nature','spomove_variant_food'];
+const row=(id:string)=>({id,updated_at:'2026-10-30T00:00:00Z',assets_json:{paths:Array.from({length:16},(_,i)=>'audit-local/slot-'+i+'.svg')}});
+function query(){let id='',many=false;const chain:any=new Proxy(function(){},{get(_,key){if(key==='then')return (resolve:any)=>Promise.resolve({data:empty()?null:many?packs.map(row):id.includes('variant')?row(id):null,error:null,count:0}).then(resolve);if(['insert','update','upsert','delete'].includes(String(key)))return()=>{throw Error('AUDIT_DB_WRITE_FORBIDDEN')};return (...args:any[])=>{if(key==='eq'&&args[0]==='id')id=args[1];if(key==='in')many=true;return chain}},apply(){return chain}});return chain}
+const client:any={from:()=>query(),auth:{getUser:async()=>({data:{user:{id:'audit-user',email:'audit@example.invalid'}},error:null}),getSession:async()=>({data:{session:null},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signOut:async()=>({error:null})},storage:{from:()=>({getPublicUrl:(p:string)=>({data:{publicUrl:p.startsWith('audit-local/')?'/.spomove-audit-stage2/assets/'+p.split('/').pop():'/audit-missing/'+p}}),createSignedUrl:async()=>({data:null,error:null})})}};
+export function getSupabaseBrowserClient(){return client}
+export const supabase=client;export default client;

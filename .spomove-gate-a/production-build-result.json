@@ -1,0 +1,13 @@
+{
+  "start": "2026-10-30T07:44:43.982Z",
+  "end": "2026-10-30T07:54:29.757Z",
+  "code": 1,
+  "signal": null,
+  "command": [
+    "C:\\Program Files\\nodejs\\node.exe",
+    "C:\\Users\\user\\Desktop\\coach-app\\node_modules\\next\\dist\\bin\\next",
+    "build",
+    "--webpack"
+  ],
+  "cwd": "C:\\Users\\user\\Desktop\\coach-app\\.spomove-gate-a\\workspace"
+}

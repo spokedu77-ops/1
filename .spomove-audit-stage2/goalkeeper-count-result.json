@@ -1,0 +1,74 @@
+{
+  "settings": {
+    "text": "골키퍼 막기 (보통)\n\n시지각 반응\n\n골키퍼 막기 (보통)\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 6초\n\n총 반복\n\n30회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n자극 속도\n\n현재 속도\n6초\n추천 3초\n1\n2\n3\n4\n5\n6\n빠름\n느림\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+    "htmlOverflow": "",
+    "bodyOverflow": "",
+    "overflow": false,
+    "buttons": [
+      {
+        "text": "",
+        "height": 44
+      },
+      {
+        "text": "10회",
+        "height": 40
+      },
+      {
+        "text": "15회",
+        "height": 40
+      },
+      {
+        "text": "20회",
+        "height": 40
+      },
+      {
+        "text": "30회",
+        "height": 40
+      },
+      {
+        "text": "음악 + 효과음 · BGM 없음",
+        "height": 40
+      },
+      {
+        "text": "효과음만",
+        "height": 40
+      },
+      {
+        "text": "✓ 무음",
+        "height": 40
+      },
+      {
+        "text": "수업 시작",
+        "height": 44
+      }
+    ],
+    "navigations": [],
+    "receipts": null,
+    "active": null,
+    "recent": []
+  },
+  "after": {
+    "text": "TIME\n0\nDEFENSE\n3500\n시지각 반응\n14 COMBO\nSTOP\nRED\nYELLOW\nGREEN\nBLUE",
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "hidden",
+    "overflow": false,
+    "buttons": [
+      {
+        "text": "STOP",
+        "height": 37.5
+      }
+    ],
+    "navigations": [],
+    "receipts": null,
+    "active": "{\"version\":1,\"runId\":\"09952911-b715-46ef-8b1b-332315fa6172\",\"presetId\":\"visual-reaction-goalkeeper-42\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:36:56.616Z\",\"elapsedActiveMs\":132424,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-goalkeeper-42\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":6,\"rounds\":30,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342349040}",
+    "recent": []
+  },
+  "completed": false,
+  "transport": {
+    "errors": [],
+    "blocked": [
+      "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+    ],
+    "writes": []
+  }
+}

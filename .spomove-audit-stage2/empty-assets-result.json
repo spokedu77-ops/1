@@ -1,0 +1,66 @@
+{
+  "start": {
+    "text": "REPS\n20\nSTOP\nGet ready",
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "hidden",
+    "overflow": false,
+    "buttons": [
+      {
+        "text": "STOP",
+        "height": 47.578125
+      }
+    ],
+    "navigations": [],
+    "receipts": null,
+    "active": "{\"version\":1,\"runId\":\"f7505c54-46fb-4e59-af73-ef12fa4e8c5e\",\"presetId\":\"reaction-cognition-l3-fruit-exp\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:12:05.696Z\",\"elapsedActiveMs\":6556,\"currentMovement\":{\"baseMovement\":\"singleLegHop\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"reaction-cognition-l3-fruit-exp\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"singleLegHop\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"responseWindow\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793340732252}",
+    "recent": []
+  },
+  "after": {
+    "text": "REPS\n20\nSTOP\nGet ready",
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "hidden",
+    "overflow": false,
+    "buttons": [
+      {
+        "text": "STOP",
+        "height": 47.578125
+      }
+    ],
+    "navigations": [],
+    "receipts": null,
+    "active": "{\"version\":1,\"runId\":\"f7505c54-46fb-4e59-af73-ef12fa4e8c5e\",\"presetId\":\"reaction-cognition-l3-fruit-exp\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:12:05.696Z\",\"elapsedActiveMs\":131387,\"currentMovement\":{\"baseMovement\":\"singleLegHop\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"reaction-cognition-l3-fruit-exp\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"singleLegHop\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"responseWindow\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793340857083}",
+    "recent": []
+  },
+  "stopControl": "button:has-text(\"STOP\")",
+  "stopped": {
+    "text": "목록\n⚡\n화면 가득 과일 색 따라가기\n같은 설정으로 다시 준비\n훈련을 중간에 종료했습니다\n\n활동이 완료되기 전에 종료되었습니다.\n\n화면 가득 과일 색 따라가기 · 20회\n\n중도 종료\n진행 시간\n2분 9초\n설정 분량\n20회\n종료 상태\n중도 종료\n활동 내용\n\n설정된 활동 내용 · 전면단일 자극\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n화면 가득 과일 색 따라가기\n단계\n전면단일 자극\n설정 분량\n20회\n진행 시간\n2분 9초\n종료 상태\n중도 종료\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n화면 가득 과일 색 따라가기\n화면 신호 · 지각 훈련\n\n화면 가득 과일 색 따라가기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "hidden",
+    "overflow": false,
+    "buttons": [
+      {
+        "text": "목록",
+        "height": 39.015625
+      },
+      {
+        "text": "같은 설정으로 다시 준비",
+        "height": 35.015625
+      },
+      {
+        "text": "같은 설정으로 다시 준비",
+        "height": 48
+      }
+    ],
+    "navigations": [],
+    "receipts": "{\"version\":1,\"runId\":\"f7505c54-46fb-4e59-af73-ef12fa4e8c5e\",\"presetId\":\"reaction-cognition-l3-fruit-exp\",\"completionReason\":\"stopped_early\",\"endedAt\":1793340858204}",
+    "active": null,
+    "recent": []
+  },
+  "transport": {
+    "errors": [],
+    "blocked": [
+      "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+    ],
+    "writes": []
+  }
+}

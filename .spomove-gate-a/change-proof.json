@@ -1,0 +1,51 @@
+{
+  "file": "app/admin/spokedu-master/programs/page.tsx",
+  "beforeSha256": "fa4783b54033ead789b554379bb69f57f2effaf05b6ea85e8d068a19a5e0046f",
+  "afterSha256": "a56128b3e3d6437f9be69a7c5b55296120c207e342aafe1b4d2b17eab5ec4127",
+  "onlyNamedExportRemoved": true,
+  "exportsBefore": [
+    {
+      "name": "SpomoveContentManager",
+      "default": false
+    },
+    {
+      "name": "AdminSmProgramsPage",
+      "default": true
+    }
+  ],
+  "exportsAfter": [
+    {
+      "name": "AdminSmProgramsPage",
+      "default": true
+    }
+  ],
+  "stage2EvidenceDiscrepancies": [],
+  "lint": {
+    "before": [
+      {
+        "errors": 0,
+        "warnings": 0,
+        "messages": []
+      }
+    ],
+    "after": [
+      {
+        "errors": 0,
+        "warnings": 1,
+        "messages": [
+          {
+            "ruleId": "@typescript-eslint/no-unused-vars",
+            "severity": 1,
+            "message": "'SpomoveContentManager' is defined but never used.",
+            "line": 1612,
+            "column": 10,
+            "nodeType": null,
+            "messageId": "unusedVar",
+            "endLine": 1612,
+            "endColumn": 31
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "status": "GATE_A_BLOCKED",
+  "productFilesChanged": [
+    "app/admin/spokedu-master/programs/page.tsx"
+  ],
+  "change": "remove export keyword from SpomoveContentManager only",
+  "typegen": {
+    "start": "2026-10-30T07:43:41.054Z",
+    "end": "2026-10-30T07:43:44.092Z",
+    "code": 0,
+    "signal": null,
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\user\\Desktop\\coach-app\\node_modules\\next\\dist\\bin\\next",
+      "typegen"
+    ],
+    "cwd": "C:\\Users\\user\\Desktop\\coach-app\\.spomove-gate-a\\workspace"
+  },
+  "typescript": {
+    "start": "2026-10-30T07:43:44.098Z",
+    "end": "2026-10-30T07:45:56.108Z",
+    "code": 2,
+    "signal": null,
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\user\\Desktop\\coach-app\\node_modules\\typescript\\bin\\tsc",
+      "--noEmit",
+      "--incremental",
+      "false",
+      "--pretty",
+      "false"
+    ],
+    "cwd": "C:\\Users\\user\\Desktop\\coach-app\\.spomove-gate-a\\workspace"
+  },
+  "build": {
+    "start": "2026-10-30T07:44:43.982Z",
+    "end": "2026-10-30T07:54:29.757Z",
+    "code": 1,
+    "signal": null,
+    "command": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\user\\Desktop\\coach-app\\node_modules\\next\\dist\\bin\\next",
+      "build",
+      "--webpack"
+    ],
+    "cwd": "C:\\Users\\user\\Desktop\\coach-app\\.spomove-gate-a\\workspace"
+  },
+  "eslint": {
+    "before": [
+      {
+        "errors": 0,
+        "warnings": 0,
+        "messages": []
+      }
+    ],
+    "after": [
+      {
+        "errors": 0,
+        "warnings": 1,
+        "messages": [
+          {
+            "ruleId": "@typescript-eslint/no-unused-vars",
+            "severity": 1,
+            "message": "'SpomoveContentManager' is defined but never used.",
+            "line": 1612,
+            "column": 10,
+            "nodeType": null,
+            "messageId": "unusedVar",
+            "endLine": 1612,
+            "endColumn": 31
+          }
+        ]
+      }
+    ]
+  },
+  "unapprovedGatesStarted": [],
+  "dbChanged": false,
+  "published": false
+}

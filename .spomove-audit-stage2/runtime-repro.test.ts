@@ -1,0 +1,12 @@
+// @vitest-environment happy-dom
+import React,{act} from 'react';import {createRoot} from 'react-dom/client';import {describe,it,expect,vi,afterEach} from 'vitest';
+import {useTrainingTimer} from '../app/admin/spomove/training/_player/hooks/useTrainingTimer';
+import {COLORS} from '../app/admin/spomove/training/_player/constants';
+import {setSpomoveRuntimePaused,resetSpomoveRuntimeClock} from '../app/admin/spomove/training/_player/lib/runtimeClock';
+import {lockViewportScroll,unlockViewportScroll,forceUnlockViewportScroll} from '../app/admin/spomove/training/_player/lib/lockViewportScroll';
+afterEach(()=>{resetSpomoveRuntimeClock();forceUnlockViewportScroll();vi.useRealTimers();vi.unstubAllGlobals()});
+describe('Observed defect reproductions — assertions document broken behavior, not fixed behavior',()=>{
+it('F01: actual training hook continues and completes after pause flag',async()=>{vi.useFakeTimers({toFake:['setTimeout','clearTimeout','performance']});vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);vi.stubGlobal('requestAnimationFrame',(cb:FrameRequestCallback)=>setTimeout(()=>cb(performance.now()),16));vi.stubGlobal('cancelAnimationFrame',(id:number)=>clearTimeout(id));let signals=0,done=0;const target=document.createElement('div');document.body.append(target);const root=createRoot(target);function Timer(){useTrainingTimer({active:true,speed:.2,timeMode:'reps',duration:10,targetReps:10,mode:'basic',level:1,audioMode:'off',colors:COLORS,onSignal:()=>signals++,onFinish:()=>done++});return null}try{await act(async()=>root.render(React.createElement(Timer)));await act(async()=>vi.advanceTimersByTime(350));const atPause=signals;expect(atPause).toBeGreaterThan(0);setSpomoveRuntimePaused(true);await act(async()=>vi.advanceTimersByTime(2500));expect(signals).toBe(10);expect(signals).toBeGreaterThan(atPause);expect(done).toBe(1)}finally{await act(async()=>root.unmount());target.remove()}});
+it('F03: extra retry acquisition survives owned screen releases',()=>{lockViewportScroll();lockViewportScroll();unlockViewportScroll();lockViewportScroll();unlockViewportScroll();expect(document.body.style.overflow).toBe('hidden')});
+it('F04: force unlock discards original clip and scroll inline values',()=>{document.documentElement.style.overflow='clip';document.body.style.overflow='scroll';lockViewportScroll();forceUnlockViewportScroll();expect(document.documentElement.style.overflow).toBe('');expect(document.body.style.overflow).toBe('')});
+});

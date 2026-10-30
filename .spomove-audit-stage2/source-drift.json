@@ -1,0 +1,46 @@
+{
+  "compared": 2266,
+  "drift": [
+    {
+      "file": "app/spokedu/components/about-v0-landing.tsx",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/components/home-v0-landing.tsx",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/components/home-web/home-section03-people.ts",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/components/private-v0-landing.tsx",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/components/records-v0-landing.tsx",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/components/spomove-signal-grid.tsx",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/components/spomove-v0-landing.tsx",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/data/about-v0-media.ts",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/data/home-v0-media.ts",
+      "status": "changed"
+    },
+    {
+      "file": "app/spokedu/data/private-v0-media.ts",
+      "status": "changed"
+    }
+  ],
+  "coreDrift": []
+}

@@ -1,0 +1,16 @@
+{
+  "start": "2026-10-30T07:43:44.098Z",
+  "end": "2026-10-30T07:45:56.108Z",
+  "code": 2,
+  "signal": null,
+  "command": [
+    "C:\\Program Files\\nodejs\\node.exe",
+    "C:\\Users\\user\\Desktop\\coach-app\\node_modules\\typescript\\bin\\tsc",
+    "--noEmit",
+    "--incremental",
+    "false",
+    "--pretty",
+    "false"
+  ],
+  "cwd": "C:\\Users\\user\\Desktop\\coach-app\\.spomove-gate-a\\workspace"
+}

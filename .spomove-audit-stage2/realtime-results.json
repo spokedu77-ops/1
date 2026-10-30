@@ -1,0 +1,134 @@
+[
+  {
+    "id": "visual-reaction-goalkeeper-easy-skeleton",
+    "clock": "native real time; no clock injection",
+    "completed": false,
+    "running": {
+      "text": "TIME\n58\nDEFENSE\n0\n시지각 반응\nREADY\nSTOP\nRED\nYELLOW\nGREEN\nBLUE",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"cd148537-bf7a-49ec-8005-091cbcbb50de\",\"presetId\":\"visual-reaction-goalkeeper-easy-skeleton\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:23:31.163Z\",\"elapsedActiveMs\":6072,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-goalkeeper-easy-skeleton\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341417235}",
+      "recent": []
+    },
+    "result": {
+      "text": "TIME\n0\nDEFENSE\n5220\n시지각 반응\n18 COMBO\nSTOP\nRED\nYELLOW\nGREEN\nBLUE",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"cd148537-bf7a-49ec-8005-091cbcbb50de\",\"presetId\":\"visual-reaction-goalkeeper-easy-skeleton\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:23:31.163Z\",\"elapsedActiveMs\":106164.90000000037,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-goalkeeper-easy-skeleton\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341517328}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "id": "visual-reaction-goalkeeper-42",
+    "clock": "native real time; no clock injection",
+    "completed": false,
+    "running": {
+      "text": "TIME\n58\nDEFENSE\n0\n시지각 반응\nREADY\nSTOP\nRED\nYELLOW\nGREEN\nBLUE",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"78542a37-5f03-43ef-b7b5-97cab2dbfc42\",\"presetId\":\"visual-reaction-goalkeeper-42\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:23:32.216Z\",\"elapsedActiveMs\":6041.5999999996275,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-goalkeeper-42\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341418258}",
+      "recent": []
+    },
+    "result": {
+      "text": "TIME\n0\nDEFENSE\n10920\n시지각 반응\n28 COMBO\nSTOP\nRED\nYELLOW\nGREEN\nBLUE",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"78542a37-5f03-43ef-b7b5-97cab2dbfc42\",\"presetId\":\"visual-reaction-goalkeeper-42\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:23:32.216Z\",\"elapsedActiveMs\":110151.30000000075,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-goalkeeper-42\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341522368}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "id": "visual-reaction-rush-39",
+    "clock": "native real time; no clock injection",
+    "completed": false,
+    "running": {
+      "text": "TIME\n00:57\nSTIMS\n0\nMAX STREAK\n0\nSTOP\n0\nCOMBO",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"b31f68d2-88c1-4ea1-a153-022d61958df3\",\"presetId\":\"visual-reaction-rush-39\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:23:31.298Z\",\"elapsedActiveMs\":6061.800000000745,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-rush-39\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341417360}",
+      "recent": []
+    },
+    "result": {
+      "text": "TIME\n00:00\nSTIMS\n1\nMAX STREAK\n1\nSTOP\n0\nCOMBO",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"b31f68d2-88c1-4ea1-a153-022d61958df3\",\"presetId\":\"visual-reaction-rush-39\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:23:31.298Z\",\"elapsedActiveMs\":110423.59999999963,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-rush-39\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793341521721}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  }
+]

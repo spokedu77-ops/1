@@ -1,0 +1,13 @@
+diff --git a/app/admin/spokedu-master/programs/page.tsx b/app/admin/spokedu-master/programs/page.tsx
+index 366fbec8..d4748481 100644
+--- a/app/admin/spokedu-master/programs/page.tsx
++++ b/app/admin/spokedu-master/programs/page.tsx
+@@ -1609,7 +1609,7 @@ function SpomoveCatalogManager() {
+   );
+ }
+ 
+-export function SpomoveContentManager() {
++function SpomoveContentManager() {
+   const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
+   const contentRef = useRef(contentMap);
+   contentRef.current = contentMap;

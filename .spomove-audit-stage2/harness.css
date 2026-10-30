@@ -1,0 +1,714 @@
+﻿@import url("https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css");
+@import "tailwindcss" source(none);
+@source "../app";
+@import "tw-animate-css";
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-4Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-5Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-6SemiBold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-7Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-8ExtraBold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cafe24SsurroundAir";
+  src: url("/fonts/Cafe24SsurroundAir.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@theme inline {
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(
+        --radix-accordion-content-height,
+        var(--accordion-panel-height, auto)
+      );
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(
+        --radix-accordion-content-height,
+        var(--accordion-panel-height, auto)
+      );
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-checked {
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-unchecked {
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+:root {
+  --spm-bg: #f4f6fb;
+  --spm-s1: #ffffff;
+  --spm-s2: #eef1f8;
+  --spm-s3: #e4e9f4;
+  --spm-s4: #d8dfee;
+  --spm-t: #0f172a;
+  --spm-t2: #475569;
+  --spm-t3: #94a3b8;
+  --spm-acc: #0f172a;
+  --spm-acc-muted: #334155;
+  --spm-acc-glow: #f1f5f9;
+  /* 전 제품 Primary CTA (실행/시작/저장·핵심 행동) — slate-950과 섞지 말 것 */
+  --spm-cta: #2563eb;
+  --spm-cta-hover: #1d4ed8;
+  /* SPOMOVE discovery surface (Home 추천 / Hub header) — runtime·게임 화면과 분리 */
+  --spm-spomove-surface: #18263f;
+  --spm-spomove-surface-fg: #f8fafc;
+  --spm-spomove-surface-muted: #cbd5e1;
+  --spm-spomove-surface-border: rgba(255, 255, 255, 0.09);
+  --spm-spomove-accent: #172554;
+  --spm-acc-a06: color-mix(in srgb, var(--spm-acc) 6%, transparent);
+  --spm-acc-a08: color-mix(in srgb, var(--spm-acc) 8%, transparent);
+  --spm-acc-a09: color-mix(in srgb, var(--spm-acc) 9%, transparent);
+  --spm-acc-a10: color-mix(in srgb, var(--spm-acc) 10%, transparent);
+  --spm-acc-a12: color-mix(in srgb, var(--spm-acc) 12%, transparent);
+  --spm-acc-a13: color-mix(in srgb, var(--spm-acc) 13%, transparent);
+  --spm-acc-a14: color-mix(in srgb, var(--spm-acc) 14%, transparent);
+  --spm-acc-a15: color-mix(in srgb, var(--spm-acc) 15%, transparent);
+  --spm-acc-a16: color-mix(in srgb, var(--spm-acc) 16%, transparent);
+  --spm-acc-a18: color-mix(in srgb, var(--spm-acc) 18%, transparent);
+  --spm-acc-a20: color-mix(in srgb, var(--spm-acc) 20%, transparent);
+  --spm-acc-a22: color-mix(in srgb, var(--spm-acc) 22%, transparent);
+  --spm-acc-a24: color-mix(in srgb, var(--spm-acc) 24%, transparent);
+  --spm-acc-a25: color-mix(in srgb, var(--spm-acc) 25%, transparent);
+  --spm-acc-a28: color-mix(in srgb, var(--spm-acc) 28%, transparent);
+  --spm-acc-a30: color-mix(in srgb, var(--spm-acc) 30%, transparent);
+  --spm-acc-a32: color-mix(in srgb, var(--spm-acc) 32%, transparent);
+  --spm-acc-a34: color-mix(in srgb, var(--spm-acc) 34%, transparent);
+  --spm-acc-a36: color-mix(in srgb, var(--spm-acc) 36%, transparent);
+  --spm-acc-a40: color-mix(in srgb, var(--spm-acc) 40%, transparent);
+  --spm-acc-a42: color-mix(in srgb, var(--spm-acc) 42%, transparent);
+  --spm-acc-a45: color-mix(in srgb, var(--spm-acc) 45%, transparent);
+  --spm-acc-a50: color-mix(in srgb, var(--spm-acc) 50%, transparent);
+  --spm-acc-a55: color-mix(in srgb, var(--spm-acc) 55%, transparent);
+  --spm-acc-a68: color-mix(in srgb, var(--spm-acc) 68%, transparent);
+  --spm-grn: #10b981;
+  --spm-grn-strong: #047857;
+  --spm-grn-a07: color-mix(in srgb, var(--spm-grn) 7%, transparent);
+  --spm-grn-a08: color-mix(in srgb, var(--spm-grn) 8%, transparent);
+  --spm-grn-a10: color-mix(in srgb, var(--spm-grn) 10%, transparent);
+  --spm-grn-a11: color-mix(in srgb, var(--spm-grn) 11%, transparent);
+  --spm-grn-a12: color-mix(in srgb, var(--spm-grn) 12%, transparent);
+  --spm-grn-a13: color-mix(in srgb, var(--spm-grn) 13%, transparent);
+  --spm-grn-a14: color-mix(in srgb, var(--spm-grn) 14%, transparent);
+  --spm-grn-a15: color-mix(in srgb, var(--spm-grn) 15%, transparent);
+  --spm-grn-a16: color-mix(in srgb, var(--spm-grn) 16%, transparent);
+  --spm-grn-a18: color-mix(in srgb, var(--spm-grn) 18%, transparent);
+  --spm-grn-a24: color-mix(in srgb, var(--spm-grn) 24%, transparent);
+  --spm-grn-a28: color-mix(in srgb, var(--spm-grn) 28%, transparent);
+  --spm-grn-a38: color-mix(in srgb, var(--spm-grn) 38%, transparent);
+  --spm-grn-a80: color-mix(in srgb, var(--spm-grn) 80%, transparent);
+  --spm-amb: #f59e0b;
+  --spm-amb-strong: #b45309;
+  --spm-amb-a10: color-mix(in srgb, var(--spm-amb) 10%, transparent);
+  --spm-amb-a12: color-mix(in srgb, var(--spm-amb) 12%, transparent);
+  --spm-amb-a13: color-mix(in srgb, var(--spm-amb) 13%, transparent);
+  --spm-amb-a14: color-mix(in srgb, var(--spm-amb) 14%, transparent);
+  --spm-amb-a16: color-mix(in srgb, var(--spm-amb) 16%, transparent);
+  --spm-amb-a18: color-mix(in srgb, var(--spm-amb) 18%, transparent);
+  --spm-amb-a24: color-mix(in srgb, var(--spm-amb) 24%, transparent);
+  --spm-amb-a26: color-mix(in srgb, var(--spm-amb) 26%, transparent);
+  --spm-amb-a28: color-mix(in srgb, var(--spm-amb) 28%, transparent);
+  --spm-yel: var(--spm-amb);
+  --spm-red: #f43f5e;
+  --spm-br: rgba(15, 23, 42, 0.07);
+  --spm-br2: rgba(15, 23, 42, 0.11);
+  --spm-br3: rgba(15, 23, 42, 0.18);
+  --spm-font-body: "Paperlogy", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --spm-font-display: "Paperlogy", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+}
+
+@keyframes spmSkeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* iOS Safari에서 flex 높이 체인(height:100%/flex-1)이 동작하려면
+   html과 body에 명시적 height가 필요함 (WebKit 동작 방식) */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+}
+
+/* Admin / Teacher shared responsive foundation. Public and subscriber surfaces are excluded. */
+:root {
+  --admin-sidebar-width: 216px;
+}
+
+@media (min-width: 1200px) {
+  [data-admin-sidebar="true"] {
+    width: var(--admin-sidebar-width);
+  }
+  [data-internal-shell="admin"][data-sidebar-open="true"] {
+    margin-left: var(--admin-sidebar-width);
+    width: calc(100% - var(--admin-sidebar-width));
+  }
+  [data-internal-shell="admin"][data-sidebar-open="false"] {
+    margin-left: 0;
+  }
+}
+
+[data-internal-shell="admin"],
+[data-internal-shell="teacher"],
+.teacher-shell {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.teacher-shell {
+  --teacher-bottom-nav-height: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.internal-page-header,
+.internal-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.internal-table-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.internal-table-scroll::after {
+  content: "";
+  position: sticky;
+  right: 0;
+  display: block;
+  width: 1rem;
+  height: 1px;
+  margin-left: auto;
+  box-shadow: 10px 0 18px 12px rgba(15, 23, 42, 0.18);
+  pointer-events: none;
+}
+
+.internal-dialog-panel {
+  width: min(100% - 2rem, 42rem);
+  max-height: calc(var(--viewport-height-px, 100dvh) - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.internal-calendar-frame {
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+/* The shell header owns vertical navigation; direct page headers stay in flow. */
+.teacher-shell > div > main > header.sticky {
+  position: static;
+}
+
+@media (max-width: 1023px) {
+  .internal-page-header,
+  .internal-toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .internal-page-header,
+  .internal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .internal-dialog-panel {
+    width: calc(100% - 1.5rem);
+    max-height: calc(var(--viewport-height-px, 100dvh) - 1.5rem);
+  }
+
+  .internal-dialog-actions {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* 클릭·탭 가능한 요소는 기본 포인터 (텍스트 필드/textarea 제외) */
+@layer base {
+  a,
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="link"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]),
+  [role="radio"]:not([aria-disabled="true"]),
+  summary,
+  label,
+  select:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="color"],
+  input[type="range"],
+  input[type="image"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  * {
+    border-color: var(--border);
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/*
+ * SPOKEDU MASTER Primary CTA
+ * - 색: --spm-cta (홈/SPOMOVE/상세 실행 버튼 통일)
+ * - 흰 세로선: inset shadow·전역 border AA 차단
+ * - 선택 칩은 .spm-chip-* / masterUiClasses (acc). Primary와 혼용 금지
+ */
+.spm-btn-primary {
+  -webkit-appearance: none;
+  appearance: none;
+  border-style: none !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
+  outline: none;
+  box-shadow: none !important;
+  background-color: var(--spm-cta) !important;
+  background-image: linear-gradient(var(--spm-cta), var(--spm-cta)) !important;
+  color: #ffffff !important;
+  isolation: isolate;
+  transform: translateZ(0);
+}
+.spm-btn-primary:hover:not(:disabled) {
+  background-color: var(--spm-cta-hover) !important;
+  background-image: linear-gradient(var(--spm-cta-hover), var(--spm-cta-hover)) !important;
+}
+.spm-btn-primary:disabled {
+  opacity: 0.5;
+}
+.spm-btn-primary:focus-visible {
+  outline: 2px solid var(--spm-cta) !important;
+  outline-offset: 2px;
+}
+
+.spm-spomove-surface {
+  color: var(--spm-spomove-surface-fg);
+  border: 1px solid var(--spm-spomove-surface-border);
+  background: var(--spm-spomove-surface);
+}
+
+/* 터치 최적화가 붙은 클릭 영역 — 포인터 보강 */
+.touch-manipulation {
+  cursor: pointer;
+}
+
+/* 스크롤바 숨김 유틸리티 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* PLAY DROP: 위→아래 낙하 (0.5s) */
+@keyframes play-drop {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(20vh);
+  }
+}
+.animate-drop {
+  animation: play-drop 0.5s ease-out forwards;
+}
+
+/* 로딩 스켈레톤 shimmer */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 0%,
+    #eef2f7 40%,
+    #f8fafc 50%,
+    #eef2f7 60%,
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Flow Phase (legacy Space Flow) */
+.speed-line-2d {
+  position: absolute;
+  background: white;
+  pointer-events: none;
+}
+.font-game {
+  font-family: var(--spm-font-display);
+  font-synthesis: none;
+}
+.fade-out {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/** Public Marketing 전용 foundation. 제품 UI의 --spm-*와 분리한다. */
+.spokedu-marketing {
+  --spokedu-marketing-font-body: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --spokedu-marketing-font-display: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --spokedu-marketing-font-metric: var(--spokedu-marketing-font-display);
+  --spokedu-marketing-color-navy-deep: #081126;
+  --spokedu-marketing-color-navy: #0b1f46;
+  --spokedu-marketing-color-blue: #245dff;
+  --spokedu-marketing-color-blue-hover: #174be6;
+  --spokedu-marketing-color-blue-soft: #eaf1ff;
+  --spokedu-marketing-color-mint: #0ca678;
+  --spokedu-marketing-color-paper: #f5f7fb;
+  --spokedu-marketing-color-white: #ffffff;
+  --spokedu-marketing-color-ink: #14213a;
+  --spokedu-marketing-color-body: #536279;
+  --spokedu-marketing-color-muted: #728097;
+  --spokedu-marketing-color-border: #dce3ee;
+  --spokedu-marketing-color-dark-body: #cfdaea;
+  --spokedu-marketing-color-dark-eyebrow: #9fc0ff;
+  --spokedu-marketing-color-soft: var(--spokedu-marketing-color-blue-soft);
+  --spokedu-public-header-height: 3.5rem;
+  --spokedu-marketing-content-max: 85.5rem;
+  /** 와이드 히어로·홈 등 — STEP 3에서 home-canonical과 alias 연결 */
+  --spokedu-marketing-content-wide: 80rem;
+  --spokedu-marketing-gutter-mobile: 1.25rem;
+  --spokedu-marketing-gutter-wide: 3rem;
+  --spokedu-marketing-section-gap-y: 3.5rem;
+  --spokedu-marketing-grid-gap: 2rem;
+  --spokedu-marketing-radius-small: 0.875rem;
+  --spokedu-marketing-radius-medium: 1.375rem;
+  --spokedu-marketing-radius-large: 2rem;
+  --spokedu-marketing-radius-pill: 9999px;
+  --spokedu-marketing-radius-sm: var(--spokedu-marketing-radius-small);
+  --spokedu-marketing-radius-md: var(--spokedu-marketing-radius-medium);
+  --spokedu-marketing-radius-lg: var(--spokedu-marketing-radius-large);
+  --spokedu-marketing-shadow-subtle: 0 8px 24px rgba(15, 33, 70, 0.065);
+  --spokedu-marketing-shadow-interactive: 0 18px 48px rgba(15, 33, 70, 0.11);
+  --spokedu-marketing-shadow-media: 0 24px 64px rgba(15, 33, 70, 0.14);
+  font-family: var(--spokedu-marketing-font-body);
+  font-synthesis: none;
+  color: var(--spokedu-marketing-color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.spokedu-marketing main {
+  color: var(--spokedu-marketing-color-ink);
+}
+
+@media (min-width: 1024px) {
+  .spokedu-marketing {
+    --spokedu-public-header-height: 4.5rem;
+  }
+}
+
+/** SPOKEDU public marketing — locked shell geometry (no clamp gutters) */
+.site-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1368px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+@media (min-width: 768px) {
+  .site-container {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .site-container {
+    padding-inline: 48px;
+  }
+}
+
+/** 마케팅 와이드 inner (1280px) — 일반 `.site-container`(1368px)와 분리 */
+.site-container-wide {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--spokedu-marketing-content-wide, 80rem);
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+@media (min-width: 768px) {
+  .site-container-wide {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .site-container-wide {
+    padding-inline: 48px;
+  }
+}
+
+/* SPOKEDU MASTER viewport-family contract: mobile < 768, tablet/compact 768-1199, desktop >= 1200. */
+[data-spm-app-shell='true'] {
+  --spm-tabbar-clearance: calc(70px + max(8px, env(safe-area-inset-bottom, 0px)));
+  font-family: var(--spm-font-body);
+  font-synthesis: none;
+}
+
+@media (min-width: 768px) {
+  [data-spm-app-shell='true'] {
+    --spm-tabbar-clearance: 0px;
+  }
+}
+

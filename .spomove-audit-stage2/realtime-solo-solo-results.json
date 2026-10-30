@@ -1,0 +1,46 @@
+[
+  {
+    "id": "visual-reaction-rush-39",
+    "clock": "native real time; no clock injection",
+    "completed": false,
+    "running": {
+      "text": "TIME\n00:57\nSTIMS\n0\nMAX STREAK\n0\nSTOP\n0\nCOMBO",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"d18fe579-f301-43fd-aeb5-911abec79491\",\"presetId\":\"visual-reaction-rush-39\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:44:37.989Z\",\"elapsedActiveMs\":6995.199999999255,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-rush-39\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342684985}",
+      "recent": []
+    },
+    "result": {
+      "text": "TIME\n00:00\nSTIMS\n3\nMAX STREAK\n3\nSTOP\n0\nCOMBO",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "STOP",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"d18fe579-f301-43fd-aeb5-911abec79491\",\"presetId\":\"visual-reaction-rush-39\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:44:37.989Z\",\"elapsedActiveMs\":107397.80000000075,\"currentMovement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-rush-39\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"handTouch\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342785387}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  }
+]

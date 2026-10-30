@@ -1,0 +1,1 @@
+import React,{lazy,Suspense} from 'react';export default function dynamic(loader:any,opts:any={}){const C=lazy(async()=>{const m=await loader();return m.default?m:{default:m}});return (p:any)=><Suspense fallback={opts.loading?<opts.loading/>:null}><C {...p}/></Suspense>}

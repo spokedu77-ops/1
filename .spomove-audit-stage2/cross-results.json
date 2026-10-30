@@ -1,0 +1,112 @@
+[
+  {
+    "test": "F11-unmount",
+    "result": {
+      "before": {
+        "text": "REPS\n19\nSTOP",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"89e59f3b-6cba-46ba-8e53-67fc35b507b4\",\"presetId\":\"reaction-cognition-space-direction-01\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T05:58:22.167Z\",\"elapsedActiveMs\":4039,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"reaction-cognition-space-direction-01\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793339906205}",
+        "recent": []
+      },
+      "after": {
+        "text": "returned",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"89e59f3b-6cba-46ba-8e53-67fc35b507b4\",\"presetId\":\"reaction-cognition-space-direction-01\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T05:58:22.167Z\",\"elapsedActiveMs\":4039,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"reaction-cognition-space-direction-01\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793339906205}",
+        "recent": []
+      }
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "test": "F01-pause-flag",
+    "result": {
+      "before": {
+        "text": "REPS\n19\nSTOP",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "STOP",
+            "height": 47.578125
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"ed7a0fc7-b370-42fe-a680-c370f36b2f3b\",\"presetId\":\"reaction-cognition-space-direction-01\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T05:58:31.718Z\",\"elapsedActiveMs\":4049,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"reaction-cognition-space-direction-01\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793339915767}",
+        "recent": []
+      },
+      "completion": {
+        "completed": true,
+        "virtualMs": 60000
+      },
+      "after": {
+        "text": "목록\n⚡\n화살표 방향 따라가기\n같은 설정으로 다시 준비\n훈련 완료\n\n설정된 활동이 정상적으로 종료되었습니다.\n\n화살표 방향 따라가기 · 20회\n\n정상 완료\n진행 시간\n58초\n설정 분량\n20회\n종료 상태\n정상 완료\n활동 내용\n\n설정된 활동 내용 · 공간방향 자극\n\n활동 요약\n\n설정된 과제와 실제 진행 시간을 구분해 정리합니다.\n\n프로그램\n화살표 방향 따라가기\n단계\n공간방향 자극\n설정 분량\n20회\n진행 시간\n58초\n종료 상태\n정상 완료\n\n진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.\n\n훈련 정리\n화살표 방향 따라가기\n화면 신호 · 지각 훈련\n\n화살표 방향 따라가기의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.\n\n다음 시도 팁\n\n화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.\n\n결과 안내\n1\n진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.\n같은 설정으로 다시 준비\n활동 목록으로",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "목록",
+            "height": 39.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 35.015625
+          },
+          {
+            "text": "같은 설정으로 다시 준비",
+            "height": 48
+          }
+        ],
+        "navigations": [],
+        "receipts": "{\"version\":1,\"runId\":\"ed7a0fc7-b370-42fe-a680-c370f36b2f3b\",\"presetId\":\"reaction-cognition-space-direction-01\",\"completionReason\":\"natural_complete\",\"endedAt\":1793339973195}",
+        "active": null,
+        "recent": []
+      },
+      "paused": true
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "test": "F04-force-restore",
+    "result": {
+      "html": "",
+      "body": ""
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  }
+]

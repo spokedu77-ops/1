@@ -1,0 +1,2 @@
+const fs=require('fs'),cp=require('child_process');
+const result=cp.spawnSync(process.execPath,['node_modules/eslint/bin/eslint.js','--stdin','--stdin-filename','app/admin/spokedu-master/programs/page.tsx','--format','json','--output-file','.spomove-gate-a/eslint-before-snapshot.json'],{input:fs.readFileSync('.spomove-gate-a/programs-page.before.tsx'),windowsHide:true,stdio:['pipe','pipe','pipe']});if(result.stdout.length)process.stdout.write(result.stdout);if(result.stderr.length)process.stderr.write(result.stderr);process.exitCode=result.status;

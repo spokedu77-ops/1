@@ -1,0 +1,50 @@
+{
+  "scope": "app/**/{page,route}.{ts,tsx}",
+  "files": 323,
+  "exportsChecked": 509,
+  "findings": [
+    {
+      "file": "app\\(spokedu-public)\\subscription\\page.tsx",
+      "line": 51,
+      "name": "SpokeduLabLandingPage",
+      "review": false
+    },
+    {
+      "file": "app\\api\\admin\\note\\documents\\route.ts",
+      "line": 33,
+      "name": "softDeleteBlocksForDocument",
+      "review": false
+    },
+    {
+      "file": "app\\api\\spokedu-master\\shop\\spomat\\purchase\\route.ts",
+      "line": 8,
+      "name": "isSafePurchaseUrl",
+      "review": false
+    },
+    {
+      "file": "app\\api\\spokedu-master\\programs\\route.ts",
+      "line": 399,
+      "name": "MasterProgramSourceLoadError",
+      "review": false
+    },
+    {
+      "file": "app\\api\\spokedu-master\\programs\\route.ts",
+      "line": 415,
+      "name": "loadPublishedMasterProgramsFromDb",
+      "review": false
+    },
+    {
+      "file": "app\\api\\spokedu-master\\payment\\billing\\renew\\route.ts",
+      "line": 61,
+      "name": "SPOKEDU_MASTER_RENEWAL_BATCH_LIMIT",
+      "review": false
+    },
+    {
+      "file": "app\\api\\spokedu-master\\payment\\billing\\renew\\route.ts",
+      "line": 274,
+      "name": "calculateRenewalRetryAt",
+      "review": false
+    }
+  ],
+  "note": "Named reexports flagged for manual value/type resolution. Installed Next type plugin supplies allowed names. Static scan is not a build PASS."
+}

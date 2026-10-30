@@ -1,0 +1,435 @@
+[
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "visual-reaction-number-cart-l2",
+    "engine": {
+      "mode": "reactTrain",
+      "level": 8,
+      "numberCartTier": 1
+    },
+    "steps": {
+      "setup": {
+        "text": "숫자 연산 기차 · 1단계\n\n시지각 반응\n\n숫자 연산 기차 · 1단계\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "라운드\n2 / 15\n숫자 연산 기차\nL1 · 1~4\n중지\n숫자\n?\n도착",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "중지",
+            "height": 37.5
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"a0adddb8-ea3c-473d-b837-47780a3592f5\",\"presetId\":\"visual-reaction-number-cart-l2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:43:57.721Z\",\"elapsedActiveMs\":31554,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-number-cart-l2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342669275}",
+        "recent": []
+      }
+    },
+    "ready": true,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "라운드\n2 / 15\n숫자 연산 기차\nL1 · 1~4\n중지\n숫자\n?\n도착",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "중지",
+          "height": 37.5
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"a0adddb8-ea3c-473d-b837-47780a3592f5\",\"presetId\":\"visual-reaction-number-cart-l2\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:43:57.721Z\",\"elapsedActiveMs\":38956,\"currentMovement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"visual-reaction-number-cart-l2\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":{\"baseMovement\":\"footTap\",\"limbRule\":\"free\"},\"operationLayerStatus\":\"legacyDisabled\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"continuous\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342676677}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "dive-standard",
+    "engine": {
+      "mode": "flow",
+      "level": 1,
+      "flowFeatures": [
+        "punch",
+        "kick",
+        "duck",
+        "reach"
+      ],
+      "flowDuration": 20,
+      "flowLayout": "sequential",
+      "flowIncludeBonus": true
+    },
+    "steps": {
+      "setup": {
+        "text": "액션 무브\n\nDIVE\n\n액션 무브\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n5단계 × 20초 + BONUS 60초\n\n총 운동\n\n2분 40초\n\n전환 안내 시간은 총 운동시간에 포함되지 않습니다.\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 42
+          },
+          {
+            "text": "효과음만",
+            "height": 42
+          },
+          {
+            "text": "✓ 무음",
+            "height": 42
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "STAGE 1\n13s\n✕ 나가기",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "✕ 나가기",
+            "height": 36.71875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"2cae7fc0-612e-46fb-8f28-0610c203a1d8\",\"presetId\":\"dive-standard\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:45:19.756Z\",\"elapsedActiveMs\":42850,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-standard\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":1,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342762606}",
+        "recent": []
+      }
+    },
+    "ready": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "STAGE 1\n13s\n✕ 나가기",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "✕ 나가기",
+          "height": 36.71875
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"2cae7fc0-612e-46fb-8f28-0610c203a1d8\",\"presetId\":\"dive-standard\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:45:19.756Z\",\"elapsedActiveMs\":42850,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-standard\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":1,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342762606}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "dive-color-gate-61",
+    "engine": {
+      "mode": "flow",
+      "level": 2,
+      "flowFeatures": [
+        "colorGate"
+      ],
+      "flowDuration": 60,
+      "flowLayout": "sequential",
+      "colorGateVariant": "solo-easy",
+      "colorGateCategory": "all"
+    },
+    "steps": {
+      "setup": {
+        "text": "모션 게이트\n\nDIVE\n\n모션 게이트\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n자극 속도\n\n현재 속도\n3초\n추천 3초\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n빠름\n느림\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "MOTION GATE\n1 / 20회\n✕ 나가기",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "✕ 나가기",
+            "height": 36.71875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"3b1ce5f8-1f2d-476c-ad80-de2193eb01d9\",\"presetId\":\"dive-color-gate-61\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:45:56.215Z\",\"elapsedActiveMs\":28509,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-color-gate-61\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":60,\"flowIncludeBonus\":true},\"savedAt\":1793342784724}",
+        "recent": []
+      }
+    },
+    "ready": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "MOTION GATE\n1 / 20회\n✕ 나가기",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "✕ 나가기",
+          "height": 36.71875
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"3b1ce5f8-1f2d-476c-ad80-de2193eb01d9\",\"presetId\":\"dive-color-gate-61\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:45:56.215Z\",\"elapsedActiveMs\":28509,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-color-gate-61\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":60,\"flowIncludeBonus\":true},\"savedAt\":1793342784724}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "surface": "master-client",
+    "clockMode": "fastForward500ms",
+    "id": "dive-random",
+    "engine": {
+      "mode": "flow",
+      "level": 1,
+      "flowFeatures": [
+        "punch",
+        "kick",
+        "duck",
+        "reach"
+      ],
+      "flowDuration": 20,
+      "flowLayout": "random"
+    },
+    "steps": {
+      "setup": {
+        "text": "액션 무브\n\nDIVE\n\n액션 무브\n\n매트 배치\n\n화면 방향 ↑\n\nSPOMAT 1장\n\n자극 3초\n\n총 반복\n\n20회\n\n반복 횟수\n\n10회\n15회\n20회\n30회\n\n환경 테마\n\nSPACE\n놀이공원\n정글\n테마 4\n테마 5\n\n소리\n\n음악 + 효과음 · BGM 없음\n효과음만\n✓ 무음\n수업 시작",
+        "htmlOverflow": "",
+        "bodyOverflow": "",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "",
+            "height": 44
+          },
+          {
+            "text": "10회",
+            "height": 40
+          },
+          {
+            "text": "15회",
+            "height": 40
+          },
+          {
+            "text": "20회",
+            "height": 40
+          },
+          {
+            "text": "30회",
+            "height": 40
+          },
+          {
+            "text": "SPACE",
+            "height": 44
+          },
+          {
+            "text": "놀이공원",
+            "height": 44
+          },
+          {
+            "text": "정글",
+            "height": 44
+          },
+          {
+            "text": "테마 4",
+            "height": 44
+          },
+          {
+            "text": "테마 5",
+            "height": 44
+          },
+          {
+            "text": "음악 + 효과음 · BGM 없음",
+            "height": 40
+          },
+          {
+            "text": "효과음만",
+            "height": 40
+          },
+          {
+            "text": "✓ 무음",
+            "height": 40
+          },
+          {
+            "text": "수업 시작",
+            "height": 44
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": null,
+        "recent": []
+      },
+      "running": {
+        "text": "STAGE 1\n12s\n✕ 나가기",
+        "htmlOverflow": "hidden",
+        "bodyOverflow": "hidden",
+        "overflow": false,
+        "buttons": [
+          {
+            "text": "✕ 나가기",
+            "height": 36.71875
+          }
+        ],
+        "navigations": [],
+        "receipts": null,
+        "active": "{\"version\":1,\"runId\":\"b91063f4-095b-4477-a5c0-bfa4fd073de0\",\"presetId\":\"dive-random\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:46:13.907Z\",\"elapsedActiveMs\":40527,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-random\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342814434}",
+        "recent": []
+      }
+    },
+    "ready": false,
+    "status": "FAILED_OR_BLOCKED",
+    "error": "NO_STOP_CONTROL",
+    "failure": {
+      "text": "STAGE 1\n12s\n✕ 나가기",
+      "htmlOverflow": "hidden",
+      "bodyOverflow": "hidden",
+      "overflow": false,
+      "buttons": [
+        {
+          "text": "✕ 나가기",
+          "height": 36.71875
+        }
+      ],
+      "navigations": [],
+      "receipts": null,
+      "active": "{\"version\":1,\"runId\":\"b91063f4-095b-4477-a5c0-bfa4fd073de0\",\"presetId\":\"dive-random\",\"phase\":\"running\",\"startedAt\":\"2026-10-30T06:46:13.907Z\",\"elapsedActiveMs\":40527,\"currentMovement\":null,\"movementChanges\":[],\"runtimeSettings\":{\"presetId\":\"dive-random\",\"launchMode\":\"mobile\",\"soundEnabled\":false,\"bgmPath\":\"\",\"cueSeconds\":3,\"rounds\":20,\"movement\":null,\"operationLayerStatus\":\"ready\",\"operation\":{\"startZone\":\"onMat\",\"participantScale\":\"individual\",\"equipment\":{\"mode\":\"none\"},\"timing\":{\"pattern\":\"builtIn\"},\"participationFormat\":\"independent\"},\"diveEnvironmentTheme\":\"space\",\"sportsArenaFeatures\":[],\"flowDuration\":20,\"flowIncludeBonus\":true},\"savedAt\":1793342814434}",
+      "recent": []
+    },
+    "transport": {
+      "errors": [],
+      "blocked": [
+        "https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css"
+      ],
+      "writes": []
+    }
+  }
+]
