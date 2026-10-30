@@ -145,3 +145,20 @@ next-env.d.ts
 /scripts/naver-blog-p0/*.backup
 /scripts/naver-blog-p0/rich-paste/*.backup*
 /scripts/naver-blog-p0/rich-paste/*.bak-*
+
+# Local SPOMOVE verification workspaces and preserved raw evidence
+/.spomove-final/
+/.spomove-gate-b/
+/.spomove-gate-c/
+/.spomove-stage3-review/
+
+# Local settlement captures and generated command output (reports stay tracked)
+/docs/center-settlement/stage1/screenshots/
+/docs/center-settlement/stage1/implementation.diff
+/docs/center-settlement/reports-lab/center-screenshots/
+/docs/center-settlement/reports-lab/lab-screenshots/
+/docs/center-settlement/reports-lab/implementation.diff
+/docs/center-settlement/reports-lab/*.log
+
+# One-off local SQL probe; the maintained trigger is in the equipment migration
+/docs/equipment-inventory/_tmp_force_trigger.sql
