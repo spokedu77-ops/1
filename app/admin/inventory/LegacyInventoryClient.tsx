@@ -1,0 +1,581 @@
+'use client';
+
+import { toast } from 'sonner';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { devLogger } from '@/app/lib/logging/devLogger';
+import { 
+  Plus, Trash2, X, Package, ChevronDown, 
+  UserCircle2, Check, Image as ImageIcon, CheckSquare, ListOrdered, History, ExternalLink, Menu
+} from 'lucide-react';
+
+const renderTextWithLinks = (text: string) => {
+  if (!text) return "";
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300 inline-flex items-center gap-0.5 break-all cursor-pointer z-[100] relative" onClick={(e) => e.stopPropagation()}>
+          {part} <ExternalLink size={10} />
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
+interface CatalogItem { id?: number; name?: string; category?: string; image?: string; simple_desc?: string; key_points?: string; usage_examples?: string; [key: string]: unknown }
+interface TeacherBasic { id: string; name?: string; [key: string]: unknown }
+interface InventoryItem { id?: number; name?: string; quantity?: number; category?: string; image?: string; simple_desc?: string; key_points?: string; usage_examples?: string; [key: string]: unknown }
+interface InventoryLog { id?: number; created_at?: string; type?: string; content?: string; [key: string]: unknown }
+
+export function LegacyInventoryClient() {
+  const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [teachers, setTeachers] = useState<TeacherBasic[]>([]);
+  const [teacherInventory, setTeacherInventory] = useState<InventoryItem[]>([]);
+  const [logs, setLogs] = useState<InventoryLog[]>([]);
+  const [selectedTeacher, setSelectedTeacher] = useState<TeacherBasic | null>(null);
+  const [isTeacherDropdownOpen, setIsTeacherDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
+  const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null);
+  const [catalogForm, setCatalogForm] = useState({ name: '', category: '', image: '', simple_desc: '', key_points: '', usage_examples: '' });
+  const [tempQuantities, setTempQuantities] = useState<{[key: number]: string}>({});
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const assertInventoryMutation = (
+    data: { id: number } | null,
+    error: { message: string } | null
+  ) => {
+    if (error) throw error;
+    if (!data) throw new Error('변경이 반영되지 않았습니다. 권한 또는 RLS 정책을 확인해 주세요.');
+  };
+
+  const fetchCatalog = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('catalog').select('id, name, category, image, simple_desc, key_points, usage_examples, created_at').order('created_at', { ascending: false });
+    if (error) devLogger.error('[inventory] fetchCatalog error:', error);
+    if (data) setCatalog(data);
+  }, [supabase]);
+
+  const fetchTeachers = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('users').select('id, name, role, is_active').eq('is_active', true).order('name');
+    if (error) devLogger.error('[inventory] fetchTeachers error:', error);
+    if (data) setTeachers(data);
+  }, [supabase]);
+
+  const fetchTeacherData = useCallback(async (userId: string) => {
+    if (!supabase) return;
+    const { data: invData } = await supabase.from('inventory').select('id, user_id, name, quantity, category, image, simple_desc, key_points, usage_examples, updated_at').eq('user_id', userId).order('name', { ascending: true });
+    const { data: logData } = await supabase.from('inventory_logs').select('id, user_id, content, type, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+    
+    if (invData) {
+      setTeacherInventory(invData);
+      const qtyMap: {[key: number]: string} = {};
+      invData.forEach((item: InventoryItem) => {
+        if (item.id != null) qtyMap[item.id] = (item.quantity ?? 0).toString();
+      });
+      setTempQuantities(qtyMap);
+    }
+    if (logData) setLogs(logData);
+  }, [supabase]);
+
+  useEffect(() => {
+     
+    setIsInitialLoading(true);
+    Promise.all([fetchCatalog(), fetchTeachers()]).finally(() => setIsInitialLoading(false));
+  }, [fetchCatalog, fetchTeachers]);
+
+  const filteredTeachers = useMemo(() => 
+    teachers.filter(t => (t.name ?? '').includes(searchQuery)),
+    [teachers, searchQuery]
+  );
+
+  const addLog = async (userId: string, content: string, type: 'in' | 'out' | 'info' = 'info') => {
+    if (!supabase) return;
+    const { data: inserted, error: insertError } = await supabase
+      .from('inventory_logs')
+      .insert([{ user_id: userId, content, type }])
+      .select('id')
+      .maybeSingle();
+    assertInventoryMutation(inserted, insertError);
+    const { data } = await supabase.from('inventory_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+    if (data) setLogs(data);
+  };
+
+  const openCatalogModal = (item: CatalogItem | null = null) => {
+    if (item) {
+      setEditingCatalogId(item.id ?? null);
+      setCatalogForm({ name: item.name ?? '', category: item.category ?? '', image: item.image ?? '', simple_desc: item.simple_desc ?? '', key_points: item.key_points ?? '', usage_examples: item.usage_examples ?? '' });
+    } else {
+      setEditingCatalogId(null);
+      setCatalogForm({ name: '', category: '', image: '', simple_desc: '', key_points: '', usage_examples: '' });
+    }
+    setIsCatalogModalOpen(true);
+    setIsMobileSidebarOpen(false);
+  };
+
+  const handleSelectTeacher = (teacher: TeacherBasic) => {
+    setSelectedTeacher(teacher);
+    setIsTeacherDropdownOpen(false);
+    fetchTeacherData(teacher.id);
+  };
+
+  const processAddItem = async (item: InventoryItem) => {
+    if (!supabase || !selectedTeacher) return;
+    const existing = teacherInventory.find(i => i.name === item.name);
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const newQty = (existing.quantity || 0) + 1;
+      const { data, error } = await supabase
+        .from('inventory')
+        .update({ quantity: newQty, updated_at: now })
+        .eq('id', existing.id)
+        .select('id')
+        .maybeSingle();
+      assertInventoryMutation(data, error);
+      await addLog(selectedTeacher.id, `${item.name} 1개 추가 배부 (합계: ${newQty}개)`, 'in');
+    } else {
+      const { data, error } = await supabase.from('inventory').insert([{
+        user_id: selectedTeacher.id,
+        name: item.name,
+        quantity: 1,
+        category: item.category,
+        image: item.image,
+        simple_desc: item.simple_desc,
+        key_points: item.key_points,
+        usage_examples: item.usage_examples,
+        updated_at: now
+      }])
+        .select('id')
+        .maybeSingle();
+      assertInventoryMutation(data, error);
+      await addLog(selectedTeacher.id, `${item.name} 1개 신규 배부`, 'in');
+    }
+    fetchTeacherData(selectedTeacher.id);
+  };
+
+  const handleDragStart = (e: React.DragEvent, item: InventoryItem) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(item));
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    if (!selectedTeacher) return toast.error('선생님을 먼저 선택해주세요.');
+    const dataJson = e.dataTransfer.getData('application/json');
+    if (!dataJson) return;
+    try {
+      const draggedItem = JSON.parse(dataJson);
+      await processAddItem(draggedItem);
+    } catch (err) {
+      devLogger.error('[inventory] drop add item failed:', err);
+      toast.error('데이터 처리에 실패했습니다.');
+    }
+  };
+
+  const handleDirectAdd = async (e: React.MouseEvent, item: InventoryItem) => {
+    e.stopPropagation();
+    if (!selectedTeacher) return toast.error('선생님을 먼저 선택해주세요.');
+    try {
+      await processAddItem(item);
+    } catch (err) {
+      devLogger.error('[inventory] direct add item failed:', err);
+      toast.error(err instanceof Error ? err.message : '데이터 처리에 실패했습니다.');
+    }
+  };
+
+  const handleReturnAll = async (item: InventoryItem) => {
+    if (!supabase || !selectedTeacher) return;
+    if (confirm(`${item.name ?? ''} 전량을 반납(목록 삭제)하시겠습니까?`)) {
+      if (item.id == null) return;
+      const { data, error } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('id', item.id)
+        .select('id')
+        .maybeSingle();
+      assertInventoryMutation(data, error);
+      await addLog(selectedTeacher.id, `${item.name ?? ''} 전량 반납 완료`, 'out');
+      fetchTeacherData(selectedTeacher.id);
+    } else {
+      const id = item.id;
+      if (id != null) setTempQuantities(prev => ({ ...prev, [id]: (item.quantity ?? 0).toString() }));
+    }
+  };
+
+  const commitQuantity = async (item: InventoryItem) => {
+    if (!supabase || !selectedTeacher) return;
+    if (item.id == null) return;
+    const val = tempQuantities[item.id];
+    const newQty = parseInt(val);
+    if (isNaN(newQty) || newQty < 0) return toast.error('올바른 숫자를 입력하세요.');
+    if (newQty === item.quantity) return;
+    if (newQty === 0) { await handleReturnAll(item); return; }
+
+    const prevQty = item.quantity ?? 0;
+    const diff = newQty - prevQty;
+    const { data, error } = await supabase
+      .from('inventory')
+      .update({ quantity: newQty, updated_at: new Date().toISOString() })
+      .eq('id', item.id)
+      .select('id')
+      .maybeSingle();
+    assertInventoryMutation(data, error);
+    await addLog(selectedTeacher.id, `${item.name ?? ''} 수량 변경 (${prevQty} -> ${newQty})`, diff > 0 ? 'in' : 'out');
+    fetchTeacherData(selectedTeacher.id);
+  };
+
+  const handleSaveCatalog = async () => {
+    if (!supabase || !catalogForm.name) return toast.error('교구명을 입력하세요');
+    try {
+      if (editingCatalogId) {
+        const { data, error } = await supabase
+          .from('catalog')
+          .update(catalogForm)
+          .eq('id', editingCatalogId)
+          .select('id')
+          .maybeSingle();
+        assertInventoryMutation(data, error);
+        toast.success('교구 정보가 수정되었습니다.');
+      } else {
+        const { data, error } = await supabase
+          .from('catalog')
+          .insert([catalogForm])
+          .select('id')
+          .maybeSingle();
+        assertInventoryMutation(data, error);
+        toast.success('새 교구가 등록되었습니다.');
+      }
+      await fetchCatalog();
+      setIsCatalogModalOpen(false);
+    } catch (err: unknown) {
+      toast.error('저장 실패: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleDeleteCatalog = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!supabase || !confirm('마스터 DB에서 삭제하시겠습니까?')) return;
+    const { data, error } = await supabase
+      .from('catalog')
+      .delete()
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+    try {
+      assertInventoryMutation(data, error);
+    } catch (err) {
+      toast.error('삭제 실패: ' + (err instanceof Error ? err.message : String(err)));
+      return;
+    }
+    if (error) {
+      toast.error('삭제 실패: ' + error.message);
+      return;
+    }
+    toast.success('삭제되었습니다.');
+    await fetchCatalog();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      toast.error('JPG, PNG, WEBP, GIF 형식의 10MB 이하 이미지만 업로드할 수 있습니다.');
+      return;
+    }
+    setIsImageUploading(true);
+    try {
+      const form = new FormData();
+      form.set('file', file);
+      const response = await fetch('/api/admin/inventory/images', { method: 'POST', body: form });
+      const result = await response.json().catch(() => ({})) as { publicUrl?: string; error?: string };
+      if (!response.ok || !result.publicUrl) throw new Error(result.error ?? '이미지 업로드 실패');
+      setCatalogForm((current) => ({ ...current, image: result.publicUrl! }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsImageUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900 relative">
+        <aside className="hidden md:block w-64 shrink-0 bg-white border-r border-slate-200 animate-pulse">
+          <div className="h-16 border-b border-slate-100 bg-slate-50/50" />
+          <div className="p-2 space-y-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-slate-200" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-3 w-3/4 bg-slate-200 rounded" />
+                  <div className="h-2 w-1/2 bg-slate-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+        <main className="flex-1 flex flex-col">
+          <header className="h-16 px-4 flex items-center border-b border-slate-200 bg-white">
+            <div className="h-8 w-32 bg-slate-100 rounded animate-pulse" />
+            <div className="h-9 w-40 bg-slate-100 rounded-xl animate-pulse ml-4" />
+          </header>
+          <div className="flex-1 p-4 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+              <p className="text-sm font-bold text-slate-400">교구·강사 목록 불러오는 중...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900 relative">
+      
+      {isMobileSidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[110] md:hidden backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)} />
+      )}
+
+      {/* 사이드바 최적화: 닫혔을 때 잔상이 헤더를 침범하지 않도록 함 */}
+      <aside className={`
+        fixed md:relative top-0 left-0 h-full bg-white border-r border-slate-200 flex flex-col shrink-0 z-[120] shadow-xl md:shadow-sm transition-all duration-300 overflow-hidden
+        ${isMobileSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0 w-0 md:w-64'}
+      `}>
+        <div className="flex flex-col h-full w-72 md:w-64">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 h-16">
+            <div className="flex items-center gap-2 min-w-0">
+              <Package className="text-indigo-600 shrink-0" size={20} /> 
+              <h2 className="text-xs font-black text-slate-900 whitespace-nowrap">교구 리스트</h2>
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => openCatalogModal()} className="p-1.5 bg-slate-50 hover:bg-indigo-50 rounded-lg text-indigo-600 cursor-pointer">
+                <Plus size={16} />
+              </button>
+              <button onClick={() => setIsMobileSidebarOpen(false)} className="md:hidden p-1.5 text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar bg-slate-50/50">
+            {catalog.map((item) => (
+              <div key={item.id} draggable onDragStart={(e) => handleDragStart(e, item)} onClick={() => openCatalogModal(item)} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm hover:border-indigo-400 hover:shadow-md cursor-grab transition-all group relative">
+                <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                  {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : <ImageIcon size={14} className="text-slate-300"/>}
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <h3 className="text-[12px] font-bold text-slate-700 truncate">{item.name}</h3>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">{item.category}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={(e) => handleDirectAdd(e, item)} className="p-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-lg border border-indigo-100 cursor-pointer transition-colors">
+                    <Plus size={14} />
+                  </button>
+                  <div className="w-0 overflow-hidden group-hover:w-auto opacity-0 group-hover:opacity-100 transition-all">
+                    <button onClick={(e) => item.id != null && handleDeleteCatalog(e, item.id)} className="p-1.5 bg-white text-slate-300 hover:text-red-500 rounded-lg border border-slate-100 cursor-pointer ml-1"><Trash2 size={12} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      <main className={`flex-1 flex flex-col h-full relative transition-colors ${isDraggingOver ? 'bg-indigo-50' : 'bg-[#F8FAFC]'}`} onDragOver={(e) => { e.preventDefault(); if (selectedTeacher) setIsDraggingOver(true); }} onDragLeave={() => setIsDraggingOver(false)} onDrop={handleDrop}>
+        
+        {/* 헤더: 사이드바가 닫혔을 때 절대 가려지지 않도록 로직 보호 */}
+        <header className="h-16 px-4 flex items-center justify-between sticky top-0 z-[100] bg-white border-b border-slate-200 shrink-0">
+          <div className="flex items-center gap-4 min-w-0">
+            {!isMobileSidebarOpen && (
+              <button onClick={() => setIsMobileSidebarOpen(true)} className="md:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer">
+                <Menu size={20} />
+              </button>
+            )}
+            
+            <div className="flex flex-col text-left shrink-0">
+              <p className="text-[10px] font-black text-indigo-600 leading-none tracking-tighter uppercase">SPOKEDU</p>
+              <h1 className="text-[11px] font-black text-slate-900 leading-tight">INVENTORY</h1>
+            </div>
+
+            <div className="relative z-[150] w-40 sm:w-60 ml-2">
+              <button onClick={() => setIsTeacherDropdownOpen(!isTeacherDropdownOpen)} className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white transition-all cursor-pointer w-full overflow-hidden">
+                <UserCircle2 size={16} className={`shrink-0 ${selectedTeacher ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <div className="text-left flex-1 min-w-0">
+                  <p className="text-xs font-black text-slate-800 truncate">{selectedTeacher ? selectedTeacher.name : '강사 선택'}</p>
+                </div>
+                <ChevronDown size={14} className="text-slate-400 shrink-0" />
+              </button>
+              {isTeacherDropdownOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden max-h-96 overflow-y-auto z-[200] p-2">
+                  <input type="text" placeholder="검색..." className="w-full bg-slate-50 px-3 py-2 rounded-lg text-xs font-bold outline-none border border-slate-100 mb-2" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onClick={e => e.stopPropagation()} />
+                  {filteredTeachers.map(t => (
+                    <div key={t.id} onClick={() => handleSelectTeacher(t)} className="px-4 py-2.5 hover:bg-indigo-50 cursor-pointer flex items-center justify-between rounded-lg">
+                      <span className="text-sm font-bold text-slate-700">{t.name}</span>
+                      {selectedTeacher?.id === t.id && <Check size={14} className="text-indigo-600" />}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button onClick={() => openCatalogModal()} className="md:hidden p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg cursor-pointer">
+            <Plus size={18} />
+          </button>
+        </header>
+
+        {/* 인벤토리 목록 */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
+          {!selectedTeacher ? (
+            <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-4">
+              <UserCircle2 size={60} strokeWidth={1} className="opacity-20 mb-4" />
+              <h2 className="text-lg font-bold">강사를 선택해 주세요</h2>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 pb-20">
+              {teacherInventory.map((item) => (
+                <div key={item.id} onClick={() => setDetailItem(item)} className="bg-white rounded-[24px] md:rounded-[32px] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-200 cursor-pointer">
+                  <div className="h-40 md:h-44 relative overflow-hidden bg-slate-100 flex items-center justify-center">
+                    {item.image ? <img src={item.image} alt="" className="w-full h-full object-cover" /> : <ImageIcon size={32} className="text-slate-300"/>}
+                    <div className="absolute top-3 left-3 md:top-4 md:left-4"><span className="bg-black/60 text-white text-[9px] font-black px-2 py-1 rounded-full backdrop-blur-md uppercase tracking-wider">{item.category}</span></div>
+                    <button onClick={(e) => { e.stopPropagation(); void handleReturnAll(item).catch((err) => { devLogger.error('[inventory] return all failed:', err); toast.error(err instanceof Error ? err.message : '삭제 실패'); }); }} className="absolute top-3 right-3 md:top-4 md:right-4 bg-white/20 hover:bg-rose-600 text-white p-2 rounded-full backdrop-blur-md transition-all cursor-pointer"><Trash2 size={14} /></button>
+                  </div>
+                  <div className="p-4 md:p-6" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-lg md:text-xl font-black text-slate-800 mb-3 md:mb-4 truncate leading-tight text-left">{item.name}</h3>
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-slate-50 rounded-2xl p-1 md:p-1.5 border border-slate-100 shadow-inner">
+                            <input 
+                                type="number" className="w-full bg-transparent text-center font-black text-xl md:text-2xl text-slate-800 outline-none" 
+                                value={item.id != null ? (tempQuantities[item.id] ?? '') : ''}
+                                onChange={(e) => { if (item.id != null) setTempQuantities({ ...tempQuantities, [item.id]: e.target.value }); }}
+                            />
+                        </div>
+                        {item.id != null && tempQuantities[item.id] !== (item.quantity?.toString() ?? '0') && (
+                            <button onClick={() => void commitQuantity(item).catch((err) => { devLogger.error('[inventory] commit quantity failed:', err); toast.error(err instanceof Error ? err.message : '수량 변경에 실패했습니다.'); })} className="bg-indigo-600 text-white p-3 md:p-3.5 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all animate-in zoom-in-50 cursor-pointer"><Check size={18} strokeWidth={3} /></button>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 히스토리 패널 */}
+        {selectedTeacher && (
+            <div className="h-32 md:h-48 border-t border-slate-200 bg-white flex flex-col shrink-0 z-[90]">
+                <div className="px-4 md:px-6 py-2 md:py-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                    <History size={14} className="text-slate-400" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">활동 히스토리</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-1 md:space-y-2 custom-scrollbar">
+                    {logs.map((log, idx) => (
+                        <div key={log.id ?? idx} className="flex items-center justify-between gap-3 text-xs md:text-sm group">
+                            <div className="flex items-center gap-2 md:gap-3">
+                                <span className="text-slate-400 text-[9px] font-bold whitespace-nowrap">
+                                    {new Date(log.created_at ?? 0).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                <span className={`font-bold ${log.type === 'in' ? 'text-indigo-600' : log.type === 'out' ? 'text-rose-500' : 'text-slate-700'}`}>
+                                    {log.content}
+                                </span>
+                            </div>
+                            <button onClick={async () => { if (supabase && confirm("로그를 삭제하시겠습니까?")) { await supabase.from('inventory_logs').delete().eq('id', log.id); setLogs(prev => prev.filter(l => l.id !== log.id)); } }} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 p-1 cursor-pointer transition-opacity"><X size={12}/></button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+      </main>
+
+      {/* 교구 상세 모달: 사진/포인트/활용방법 유지 */}
+      {detailItem && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-2 md:p-4 bg-black/90 backdrop-blur-sm animate-in fade-in" onClick={() => setDetailItem(null)}>
+          <div className="w-full max-w-md bg-[#121212] rounded-[24px] md:rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 text-white border border-slate-800 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="p-6 md:p-8 pb-4 md:pb-6 border-b border-slate-800 flex gap-4 md:gap-6 items-center shrink-0 text-left">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-[16px] md:rounded-[20px] bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                    {detailItem.image ? <img src={detailItem.image} alt="" className="w-full h-full object-cover" /> : <Package size={28} className="text-slate-600"/>}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <span className="text-[9px] md:text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em]">{detailItem.category}</span>
+                    <h2 className="text-2xl md:text-3xl font-black mt-1 leading-none truncate">{detailItem.name}</h2>
+                    <p className="text-xs md:text-sm text-slate-400 mt-2 line-clamp-2">{detailItem.simple_desc}</p>
+                </div>
+            </div>
+            <div className="p-6 md:p-8 space-y-6 md:space-y-8 overflow-y-auto custom-scrollbar flex-1 text-left">
+                <div className="bg-[#1a1a1a] p-4 md:p-5 rounded-2xl border border-slate-800">
+                    <h4 className="text-[10px] md:text-[11px] font-black text-emerald-400 uppercase mb-2 md:mb-3 flex items-center gap-2"><CheckSquare size={14} /> 핵심 포인트</h4>
+                    <p className="text-sm md:text-[15px] font-bold text-slate-200 whitespace-pre-line leading-relaxed">{detailItem.key_points}</p>
+                </div>
+                <div>
+                    <h4 className="text-[10px] md:text-[11px] font-black text-blue-400 uppercase mb-3 md:mb-4 flex items-center gap-2"><ListOrdered size={14} /> 활용 방법</h4>
+                    <div className="space-y-3 md:space-y-4">
+                        {detailItem.usage_examples?.split('\n').map((line: string, i: number) => (
+                            <div key={i} className="flex gap-3 md:gap-4 items-start">
+                                <span className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-lg bg-blue-900/30 text-blue-400 text-[10px] md:text-xs font-black flex items-center justify-center mt-0.5">{i+1}</span>
+                                <p className="text-sm md:text-[15px] text-slate-300 font-bold leading-snug break-all">{renderTextWithLinks(line)}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="p-4 md:p-6 bg-black/50 border-t border-slate-800 shrink-0">
+                <button onClick={() => setDetailItem(null)} className="w-full py-3 md:py-4 bg-white text-black rounded-2xl font-black text-sm hover:bg-slate-200 transition-all cursor-pointer">확인 완료</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [핵심 복구] 카탈로그 등록/수정 모달: 사진 업로드 및 모든 필드 복구 */}
+      {isCatalogModalOpen && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-2 md:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setIsCatalogModalOpen(false)}>
+          <div className="bg-white w-full max-w-xl rounded-[24px] md:rounded-[40px] p-6 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh] custom-scrollbar" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+              <h3 className="text-xl md:text-2xl font-black text-slate-900">{editingCatalogId ? '교구 정보 수정' : '새 마스터 교구 등록'}</h3>
+              <button onClick={() => setIsCatalogModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full cursor-pointer"><X size={20}/></button>
+            </div>
+            <div className="space-y-4 md:space-y-6 text-left">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">교구명</label><input className="w-full p-3 md:p-4 bg-slate-50 rounded-2xl font-black border-none outline-none focus:ring-2 focus:ring-indigo-500" value={catalogForm.name} onChange={e => setCatalogForm({...catalogForm, name: e.target.value})} /></div>
+                    <div className="sm:w-1/3"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">카테고리</label><input className="w-full p-3 md:p-4 bg-slate-50 rounded-2xl font-black border-none outline-none focus:ring-2 focus:ring-indigo-500" value={catalogForm.category} onChange={e => setCatalogForm({...catalogForm, category: e.target.value})} /></div>
+                </div>
+
+                {/* 이미지 업로드 영역 복구 */}
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">이미지 업로드</label>
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                        <label className="w-full sm:flex-1 flex flex-col items-center justify-center p-6 md:p-8 bg-slate-50 border-2 border-dashed rounded-3xl cursor-pointer hover:bg-slate-100 transition-colors">
+                            <ImageIcon className="text-slate-300 mb-2" size={32} />
+                            <span className="text-xs font-bold text-slate-400">파일 선택</span>
+                            <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => void handleImageUpload(event)} />
+                        </label>
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 border border-slate-100">
+                            {catalogForm.image ? <img src={catalogForm.image} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] font-bold text-slate-300">Preview</span>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 상세 설명 필드 복구 */}
+                <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">한 줄 설명</label><input className="w-full p-3 md:p-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-indigo-500 text-sm" value={catalogForm.simple_desc} onChange={e => setCatalogForm({...catalogForm, simple_desc: e.target.value})} /></div>
+                <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">핵심 포인트</label><textarea className="w-full p-3 md:p-4 bg-slate-50 rounded-2xl font-bold h-20 md:h-24 outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none" value={catalogForm.key_points} onChange={e => setCatalogForm({...catalogForm, key_points: e.target.value})} /></div>
+                <div className="space-y-1"><label className="text-[10px] font-black text-slate-400 uppercase ml-1">활용 방법 (링크 가능)</label><textarea className="w-full p-3 md:p-4 bg-slate-50 rounded-2xl font-bold h-32 md:h-40 outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none" value={catalogForm.usage_examples} onChange={e => setCatalogForm({...catalogForm, usage_examples: e.target.value})} /></div>
+                
+                <button disabled={isImageUploading} onClick={handleSaveCatalog} className="w-full py-4 md:py-5 bg-indigo-600 text-white rounded-[20px] md:rounded-[28px] font-black text-base md:text-lg hover:bg-indigo-700 transition-all cursor-pointer shadow-lg shadow-indigo-200 disabled:cursor-not-allowed disabled:opacity-50">{isImageUploading ? '이미지 업로드 중...' : '마스터 데이터 저장'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
