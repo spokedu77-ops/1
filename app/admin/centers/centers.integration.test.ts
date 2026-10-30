@@ -18,6 +18,7 @@ vi.mock('next/link', () => ({ default: (props: React.AnchorHTMLAttributes<HTMLAn
 vi.mock('next/dynamic', () => ({ default: (loader: () => Promise<{ default: React.ComponentType }>) => React.lazy(loader) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import CentersClient from './CentersClient';
+import { CenterDetailClient } from './[id]/CenterDetailClient';
 
 const center: Center = {
   id: '11111111-1111-4111-8111-111111111111', name: '테스트 센터', status: 'active', region_tag: '서울',
@@ -41,6 +42,7 @@ const button = (text: string) => [...document.querySelectorAll('button')].find((
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ teachers: [], fees: [] }), { status: 200 })));
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   window.confirm = vi.fn(() => true);
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
@@ -50,9 +52,47 @@ beforeEach(() => {
   api.updateCenter.mockResolvedValue({ data: { ...center, name: '수정 센터' } });
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
 });
-afterEach(async () => { await act(async () => root?.unmount()); container?.remove(); vi.restoreAllMocks(); });
+afterEach(async () => { await act(async () => root?.unmount()); container?.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('real center components with isolated action fixtures (not authenticated E2E)', () => {
+  it('updates displayed fee by selected UUID without writing a session or settlement', async () => {
+    const teacherId = '33333333-3333-4333-8333-333333333333';
+    api.getActiveTeachers.mockResolvedValue([{ id: teacherId, name: '선택 강사' }]);
+    const fetcher = vi.fn(async (url: string) => new Response(JSON.stringify(url.includes('reference') ? {
+      teachers: [{ id: teacherId, name: '선택 강사', session_count: 0, log_count: 0, fee_center_main: 62000, fee_center_assist: 26000 }],
+    } : { fees: [] })));
+    vi.stubGlobal('fetch', fetcher);
+    await act(async () => root.render(createElement(CenterDetailClient, { id: center.id })));
+    await flush(); await click(button('수정'));
+    await waitFor(() => Boolean(document.querySelector('form select option[value="' + teacherId + '"]')));
+    const select = [...document.querySelectorAll('form select')].find((node) => node.querySelector(`option[value="${teacherId}"]`)) as HTMLSelectElement;
+    await act(async () => { select.value = teacherId; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    await waitFor(() => Boolean(container.textContent?.includes('62,000원')));
+    expect(container.textContent).toContain('26,000원');
+    expect(api.updateCenter).not.toHaveBeenCalled();
+    expect(fetcher.mock.calls.every(([url]) => url.includes('/reference') || url.includes('/teacher-tier-fees'))).toBe(true);
+  });
+  it('keeps co-main role, suppresses duplicate calculation and distinguishes unselected teacher', async () => {
+    const teacherId = '33333333-3333-4333-8333-333333333333';
+    api.getCenterById.mockResolvedValue({ ...center, main_teacher_id: teacherId, main_teacher_2_id: teacherId });
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => new Response(JSON.stringify(url.includes('reference') ? {
+      teachers: [{ id: teacherId, name: 'UUID 강사', session_count: 100, log_count: 6, fee_center_main: 61000, fee_center_assist: null }],
+    } : { fees: [{ tier_id: 'gold', fee_center_main: 45000, fee_center_assist: 30000 }] }))));
+    await act(async () => root.render(createElement(CenterDetailClient, { id: center.id })));
+    await flush(); await click(button('수업·금액'));
+    await waitFor(() => Boolean(container.textContent?.includes('61,000원')));
+    expect(container.textContent?.match(/61,000원/g)).toHaveLength(1);
+    expect(container.textContent).toContain('공동 주강사 2');
+    expect(container.textContent).toContain('동일 강사 중복 배정');
+    expect(container.textContent).toContain('강사 미선택');
+  });
+  it('does not show settlement payload for an ordinary admin', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })));
+    await act(async () => root.render(createElement(CenterDetailClient, { id: center.id })));
+    await flush(); await click(button('정산'));
+    await waitFor(() => Boolean(container.textContent?.includes('정산은 MASTER 전용')));
+    expect(container.querySelector('[aria-label="센터관리 기관 검색"]')).toBeNull();
+  });
   it('inserts a created row from the action result without refetching the full list', async () => {
     api.createCenter.mockResolvedValue({ data: { ...center, id: '33333333-3333-4333-8333-333333333333', name: '새 센터' } });
     await act(async () => root.render(createElement(CentersClient, { initialCenters: [] })));

@@ -1,0 +1,101 @@
+{
+  "scope": [
+    "app/admin/centers/[id]/CenterDetailClient.tsx",
+    "app/admin/centers/components/CenterTeacherFees.tsx",
+    "app/admin/centers/components/CenterSettlementPanel.tsx",
+    "app/lib/centers/teacherFeePreview.ts",
+    "app/lib/centers/teacherFeePreview.test.ts",
+    "app/admin/centers/centers.integration.test.ts",
+    "app/api/admin/settlement-sheet/route.ts",
+    "app/api/admin/settlement-sheet/route.test.ts",
+    "scripts/qa-center-settlement-stage1.mjs"
+  ],
+  "productionDatabaseCallsExecuted": 0,
+  "productionDDLExecuted": 0,
+  "productionDMLExecuted": 0,
+  "mappingRowsActuallySaved": 0,
+  "databaseSnapshotRechecked": false,
+  "baselineSource": "Stage 0 _audit_output.json (unchanged), not a fresh production snapshot",
+  "baselineCounts": {
+    "centers": 52,
+    "settlementPolicies": 59,
+    "nameCandidates": 7,
+    "blankNames": 2
+  },
+  "tests": {
+    "files": 7,
+    "passed": 36,
+    "failed": 0,
+    "kind": "isolated unit / mocked API / component integration"
+  },
+  "renderedQA": "PASS_FIXTURE_ONLY",
+  "typeScript": {
+    "exitCode": 1,
+    "diagnostics": [
+      "app/api/spokedu-master/programs/programGetValidation.test.ts(98,32): TS2554 Expected 1 arguments, but got 0."
+    ]
+  },
+  "eslintChangedRuntimeFiles": "PASS",
+  "protectedFiles": [
+    {
+      "file": "docs/center-settlement/_audit_output.json",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "d220759efa747614ed83c6af1b0030829721a0dfec1e1ea123d7e540f23f436d"
+    },
+    {
+      "file": "app/admin/centers/actions/centers.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "b5d3d9967903aea49c8104d84a96e763608c88dad4df96248b66fb72ed4ec449"
+    },
+    {
+      "file": "app/admin/centers/actions/center-history.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "6ec642fa25577c2bb5e5f0c5caee2388065d283e2f7040e2ff03ddd0a5b5193d"
+    },
+    {
+      "file": "app/admin/classes/lib/bulkSessionDefaults.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "268eae80f04e917aa4eaaf8b091a014f38c4809a9a77315c6222beaa97f2da70"
+    },
+    {
+      "file": "app/lib/teacherTierSchedule.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "aaa4f4adb8365c9c1245b401da0a65f859e23357b205a385e8ef9e767295ff1c"
+    },
+    {
+      "file": "app/lib/server/adminAuth.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "efde127672c02deee9e45faa719959650c47dc81c2b24c3f8f70ec00e15a9ace"
+    },
+    {
+      "file": "app/api/admin/settlement-centers/route.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "4840f9c137986af5b4da408cfe09dbdde33ac1e1b80bdc69d0c126ab3a66c13b"
+    },
+    {
+      "file": "app/api/admin/class-ops/reference/route.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "99607a39878d311babbc8dc7fdec57ebba387e4db3db4871faa2015acb31b601"
+    },
+    {
+      "file": "app/api/admin/teacher-tier-fees/route.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "4675ed1da3cfad3491d578341d1e1590ac067eec7678d8a171de6a89b85b66d1"
+    },
+    {
+      "file": "app/admin/master/reports/SettlementCenterLink.tsx",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "3a326c84e78774950381a72e75fd533e4692343e59d350d7a527e81bb17b626c"
+    },
+    {
+      "file": "app/admin/master/reports/settlementSheetCore.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "e32f5bd8398c3ebd3c324b7307034a36a99c63077ac48d460d7bb32c0b4f8727"
+    },
+    {
+      "file": "app/admin/master/reports/SettlementSheet.tsx",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "b1c39c848a5408eb3e05a75f9fdbf453cfe6f9b45a87a5e8185fdf65724a4d8f"
+    }
+  ]
+}

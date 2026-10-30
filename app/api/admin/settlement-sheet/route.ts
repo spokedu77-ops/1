@@ -12,6 +12,15 @@ const json = (body: unknown, status = 200) => noStore(NextResponse.json(body, { 
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
 const isObject = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 const isSettlementMaster = (email: string | null) => email?.toLowerCase() === MASTER_EMAIL;
+const localMappingWritesAllowed = () => {
+  if (process.env.NODE_ENV === 'production') return false;
+  try { return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').hostname); }
+  catch { return false; }
+};
+const appendLinkAudit = (previous: Record<string, unknown>, to: unknown, actor: string, previousRevision: unknown, revision: string) => [
+  ...(Array.isArray(previous._centerLinkHistory) ? previous._centerLinkHistory : []),
+  { actor, at: new Date().toISOString(), from: previous.center_id ?? null, to: to ?? null, previousRevision, revision },
+];
 
 export async function GET(request: Request) {
   const auth = await requireAdmin();
@@ -60,6 +69,33 @@ export async function PUT(request: Request) {
   const service = getServiceSupabase();
   const kind = body.kind;
   try {
+    if (kind === 'center-link') {
+      // Stage 1 cannot write mappings to the operational project, even from next dev.
+      if (!localMappingWritesAllowed()) return json({ error: 'Stage 1 연결 저장은 로컬 DB에서만 허용됩니다.', code: 'LOCAL_ONLY' }, 423);
+      const parsed = z.object({ id: z.string().min(1), rev: z.string().min(1), center_id: z.string().uuid().nullable() }).strict().safeParse(body.value);
+      if (!parsed.success) return json({ error: '연결 요청 형식이 올바르지 않습니다.' }, 400);
+      const link = parsed.data;
+      const current = await service.from('admin_settlement_sheet_centers').select('payload,revision').eq('id', link.id).maybeSingle();
+      if (current.error) throw current.error;
+      if (!current.data) return json({ error: '정산 항목을 찾을 수 없습니다.' }, 404);
+      if (current.data.revision !== link.rev) return json({ error: '기관 정보가 변경됐습니다. 다시 불러와 주세요.', code: 'REVISION_CONFLICT' }, 409);
+      const previous = isObject(current.data.payload) ? current.data.payload : {};
+      if ((previous.center_id ?? null) === link.center_id) return json({ error: '이미 적용된 연결입니다.', code: 'DUPLICATE_LINK' }, 409);
+      if (link.center_id) {
+        const center = await service.from('centers').select('id').eq('id', link.center_id).maybeSingle();
+        if (center.error) throw center.error;
+        if (!center.data) return json({ error: '센터를 찾을 수 없습니다.' }, 404);
+      }
+      const revision = crypto.randomUUID();
+      const at = new Date().toISOString();
+      // Audit and link share the same revision CAS; no separate non-atomic audit insert.
+      const payload = { ...previous, center_id: link.center_id, _centerLinkHistory: appendLinkAudit(previous, link.center_id, auth.userId, link.rev, revision) };
+      const result = await service.from('admin_settlement_sheet_centers').update({ payload, revision, updated_at: at, updated_by: auth.userId })
+        .eq('id', link.id).eq('revision', link.rev).select('id').maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) return json({ error: '기관 정보가 변경됐습니다. 다시 불러와 주세요.', code: 'REVISION_CONFLICT' }, 409);
+      return json({ revision });
+    }
     if (kind === 'month') {
       const month = body.value;
       if (!isObject(month) || typeof month.key !== 'string' || !monthPattern.test(month.key) || !Array.isArray(month.rows)) {
@@ -92,6 +128,9 @@ export async function PUT(request: Request) {
       const current = await service.from('admin_settlement_sheet_centers').select('payload,revision').eq('id', center.id).maybeSingle();
       if (current.error) throw current.error;
       if (current.data && center.rev !== current.data.revision) return json({ error: '기관 정보가 변경됐습니다. 다시 불러와 주세요.', code: 'REVISION_CONFLICT' }, 409);
+      const previous = isObject(current.data?.payload) ? current.data.payload : {};
+      const mappingChanged = Object.hasOwn(center, 'center_id') && (previous.center_id ?? null) !== (center.center_id ?? null);
+      if (mappingChanged && !localMappingWritesAllowed()) return json({ error: 'Stage 1 연결 저장은 로컬 DB에서만 허용됩니다.', code: 'LOCAL_ONLY' }, 423);
       if (center.center_id != null) {
         if (!z.string().uuid().safeParse(center.center_id).success) return json({ error: '잘못된 센터 ID입니다.' }, 400);
         const linked = await service.from('centers').select('id').eq('id', center.center_id).maybeSingle();
@@ -100,6 +139,10 @@ export async function PUT(request: Request) {
       }
       const nextRevision = crypto.randomUUID();
       const payload = { ...(isObject(current.data?.payload) ? current.data.payload : {}), ...center }; delete payload.rev;
+      // Existing sheet UI must not bypass local-only mapping or forge audit history.
+      delete payload._centerLinkHistory;
+      if (previous._centerLinkHistory) payload._centerLinkHistory = previous._centerLinkHistory;
+      if (mappingChanged) payload._centerLinkHistory = appendLinkAudit(previous, center.center_id, auth.userId, current.data?.revision ?? null, nextRevision);
       const values = { payload, revision: nextRevision, updated_at: new Date().toISOString(), updated_by: auth.userId };
       const result = current.data
         ? await service.from('admin_settlement_sheet_centers').update(values).eq('id', center.id).eq('revision', current.data.revision).select('id').maybeSingle()

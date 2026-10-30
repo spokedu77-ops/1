@@ -1,6 +1,8 @@
 'use client';
 
 import { toast } from 'sonner';
+import CenterTeacherFees from '../components/CenterTeacherFees';
+import CenterSettlementPanel from '../components/CenterSettlementPanel';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -151,6 +153,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   registerCloseGuard?: (check: () => boolean) => void;
 }) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState('basic');
+  const [settlementSaving, setSettlementSaving] = useState(false);
   const [center, setCenter] = useState<Center | null>(null);
   const [loading, setLoading] = useState(true);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
@@ -185,7 +189,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const dirty = (isEditOpen && JSON.stringify(editForm) !== editSnapshot.current) ||
     Boolean(historyDraft.trim() || historyEditingId || passwordChanged || passwordDeleteRequested);
-  const busy = editSubmitting || deleteSubmitting || criminalUploading || Boolean(criminalDeletingPath) ||
+  const busy = settlementSaving || editSubmitting || deleteSubmitting || criminalUploading || Boolean(criminalDeletingPath) ||
     historySaving || historyUpdating || Boolean(historyDeletingId);
   const canLeave = () => {
     if (busy) { toast.error('진행 중인 작업이 끝난 후 닫아주세요.'); return false; }
@@ -668,9 +672,18 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
           </div>
         </div>
 
-        {/* 핵심 정보 그리드 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-
+        <div className="mb-5 grid gap-3 border-y border-slate-200 py-4 text-sm sm:grid-cols-2">
+          <p>주 담당 강사 <strong>{center.main_teacher_name ?? '미배정'}</strong></p>
+          <p>센터 회당 청구 수업료 <strong>{center.session_fee == null ? '미설정' : `${center.session_fee.toLocaleString()}원`}</strong></p>
+          <p className="text-slate-500 sm:col-span-2">금액 원본: centers.session_fee · 정산 fee 및 강사 지급 단가와 별도입니다.</p>
+        </div>
+        <nav aria-label="센터 상세 탭" className="sticky top-0 z-10 mb-6 flex overflow-x-auto border-b border-slate-200 bg-slate-50">
+          {([['basic', '기본정보'], ['fees', '수업·금액'], ['settlement', '정산'], ['history', '운영기록']] as const).map(([key, label]) => (
+            <button key={key} type="button" disabled={settlementSaving} aria-current={activeTab === key ? 'page' : undefined}
+              onClick={() => setActiveTab(key)} className={`min-h-11 shrink-0 border-b-2 px-4 text-sm font-semibold ${activeTab === key ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-600'}`}>{label}</button>
+          ))}
+        </nav>
+        <div hidden={activeTab !== 'basic'} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* 계약 기간 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
@@ -682,12 +695,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                 ? `${center.contract_start ?? '?'} ~ ${center.contract_end ?? '?'}`
                 : <span className="text-slate-400">미설정</span>}
             </p>
-            <p className="text-sm text-slate-700 mt-2">
-              회당:{' '}
-              {center.session_fee != null
-                ? <span className="font-medium">{center.session_fee.toLocaleString()}원</span>
-                : <span className="text-slate-400">미설정</span>}
-            </p>
+
           </div>
 
           {/* 담당자 */}
@@ -741,33 +749,9 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                 <AlertCircle className="h-3.5 w-3.5" />
                 특이사항
               </div>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{center.highlights}</p>
+              <details><summary className="min-h-11 cursor-pointer text-sm">특이사항 펼치기 / 접기</summary><p className="text-sm text-slate-700 whitespace-pre-wrap break-words">{center.highlights}</p></details>
             </div>
           )}
-
-          {/* 메인 강사 */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              <Users className="h-3.5 w-3.5" />
-              메인 강사
-            </div>
-            <ul className="text-sm text-slate-700 space-y-0.5">
-              <li>
-                메인 1: <span className="font-medium">{center.main_teacher_name ?? '-'}</span>
-              </li>
-              <li>
-                메인 2: <span className="font-medium">{center.main_teacher_2_name ?? '-'}</span>
-              </li>
-              <li>
-                메인 3: <span className="font-medium">{center.main_teacher_3_name ?? '-'}</span>
-              </li>
-            </ul>
-            {instructors.backup && instructors.backup.length > 0 && (
-              <p className="text-xs text-slate-400 mt-1">
-                보조/백업: {instructors.backup.join(', ')}
-              </p>
-            )}
-          </div>
 
           {/* 회보서 관련 정보 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -831,6 +815,34 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
             </div>
           </div>
 
+        </div>
+        <div hidden={activeTab !== 'fees'} className="space-y-6">
+          <section className="border-b pb-4"><h2 className="text-xl font-semibold">센터 청구 수업료</h2><p className="mt-2">{center.session_fee == null ? '미설정' : `${center.session_fee.toLocaleString()}원 / 회`}</p><p className="mt-2 text-sm text-slate-500">원본: centers.session_fee · 교구 대여비 및 정산 fee와 자동 동기화하지 않습니다.</p></section>
+          <div className="grid gap-4 sm:grid-cols-2">
+          {/* 메인 강사 */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              <Users className="h-3.5 w-3.5" />
+              메인 강사
+            </div>
+            <ul className="text-sm text-slate-700 space-y-0.5">
+              <li>
+                메인 1: <span className="font-medium">{center.main_teacher_name ?? '-'}</span>
+              </li>
+              <li>
+                메인 2: <span className="font-medium">{center.main_teacher_2_name ?? '-'}</span>
+              </li>
+              <li>
+                메인 3: <span className="font-medium">{center.main_teacher_3_name ?? '-'}</span>
+              </li>
+            </ul>
+            {instructors.backup && instructors.backup.length > 0 && (
+              <p className="text-xs text-slate-400 mt-1">
+                보조/백업: {instructors.backup.join(', ')}
+              </p>
+            )}
+          </div>
+
           {/* 주간 시간표 */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
@@ -852,8 +864,12 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
               </ul>
             )}
           </div>
+          </div>
+          {activeTab === 'fees' && <CenterTeacherFees ids={[center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]} />}
+          <p className="text-sm text-slate-600">교구 대여비는 MASTER 정산 탭의 policy / rates가 원본입니다. 센터 수업료나 강사료로 대체하지 않습니다.</p>
         </div>
-
+        {activeTab === 'settlement' && <CenterSettlementPanel key={center.id} id={center.id} name={center.name} onBusyChange={setSettlementSaving} />}
+        <div hidden={activeTab !== 'history'}>
         {/* 수업 / 운영 히스토리 */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
@@ -1034,6 +1050,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
               ))}
             </ul>
           )}
+        </div>
         </div>
       </div>
 
@@ -1233,6 +1250,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                     </div>
                   </div>
                 </fieldset>
+
+                <CenterTeacherFees ids={[editForm.main_teacher_id, editForm.main_teacher_2_id, editForm.main_teacher_3_id]} />
 
                 {/* 회보서 관련 정보 */}
                 <fieldset className="space-y-3">
