@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, createElement, StrictMode } from 'react';
+import { act, cloneElement, createElement, StrictMode, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OperationalDataProvider, useOperationalData } from './OperationalDataProvider';
@@ -11,11 +11,15 @@ const request = vi.hoisted(() => vi.fn());
 vi.mock('../lib/masterRequestError', () => ({ masterFetchJson: request, getMasterRequestErrorMessage: String }));
 let root: Root;
 let value: ReturnType<typeof useOperationalData>;
-function Consumer() { value = useOperationalData(); return createElement('span', null, value.students.map(s => s.name).join(',')); }
+function Consumer() {
+  const current = useOperationalData();
+  useEffect(() => { value = current; }, [current]);
+  return createElement('span', null, current.students.map(s => s.name).join(','));
+}
 async function render(needs = true) {
-  await act(async () => root.render(createElement(StrictMode, null, createElement(OperationalDataProvider, {
+  const provider = createElement(OperationalDataProvider, null, createElement(Consumer));
+  await act(async () => root.render(createElement(StrictMode, null, cloneElement(provider, {
     key: `${state.owner}:${state.attendance}`, syncWhenRouteNeedsData: state.attendance && needs,
-    children: createElement(Consumer),
   }))));
 }
 afterEach(async () => { await act(async () => root.unmount()); vi.restoreAllMocks(); });
