@@ -1,0 +1,96 @@
+{
+  "scope": [
+    "app/admin/master/reports/page.tsx",
+    "app/admin/master/reports/ReportVersionNav.tsx",
+    "app/admin/master/reports-lab/page.tsx",
+    "app/admin/master/reports-lab/SettlementLab.tsx",
+    "app/admin/master/reports-lab/LabSettlementSheet.tsx",
+    "app/admin/master/reports-lab/labTransport.ts",
+    "app/admin/master/reports-lab/labTransport.test.ts",
+    "app/api/admin/settlement-lab/route.ts",
+    "app/api/admin/settlement-lab/route.test.ts",
+    "app/api/spokedu-master/programs/programGetValidation.test.ts",
+    "scripts/qa-reports-lab.mjs"
+  ],
+  "tests": {
+    "files": 13,
+    "passed": 81,
+    "failed": 0
+  },
+  "typescriptExitCode": 0,
+  "productionBuildExitCode": 0,
+  "eslintExitCode": 0,
+  "centerRenderedQA": "PASS_FIXTURE_ONLY",
+  "labRenderedQA": "PASS_FIXTURE_ONLY",
+  "realAuthenticatedProductionDataE2E": false,
+  "productionWritesExecuted": 0,
+  "deploymentExecuted": false,
+  "gitPublishingExecuted": false,
+  "preservedFiles": [
+    {
+      "file": "app/admin/master/reports/SettlementSheet.tsx",
+      "sameAsStage1WorkingTree": true,
+      "sha256": "1e7605fa942c9a2a637f56f5d52fb0f9a53f2e6b03b2a37cc1bc8ceca356e907"
+    },
+    {
+      "file": "app/api/admin/settlement-sheet/route.ts",
+      "sameAsStage1WorkingTree": true,
+      "sha256": "ccf0d3fc7bc6d37a4fd431638306e3b89d75d2d1170fdfd979afda910c5f40a1"
+    },
+    {
+      "file": "app/admin/master/reports/settlementSheetCore.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "e32f5bd8398c3ebd3c324b7307034a36a99c63077ac48d460d7bb32c0b4f8727"
+    },
+    {
+      "file": "app/admin/master/reports/SettlementSheet.module.css",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "18a58d2c26d597c05329b9305ef5cfb660836cdd3eee4e65e7ef6855745088b8"
+    },
+    {
+      "file": "app/admin/master/reports/SettlementMoneyInput.tsx",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "8c289c564e4a29a4ce6630774ff6c8d62c2f3b5654dde65624722757919689bd"
+    },
+    {
+      "file": "app/admin/master/reports/TeacherSettlementReport.tsx",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "c7c09eaff21fb4ef1bec2c622e6bfb348456b15ed9df5b295d8e663412eb57a3"
+    },
+    {
+      "file": "app/admin/master/reports/SettlementCenterLink.tsx",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "3a326c84e78774950381a72e75fd533e4692343e59d350d7a527e81bb17b626c"
+    },
+    {
+      "file": "app/admin/centers/actions/centers.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "b5d3d9967903aea49c8104d84a96e763608c88dad4df96248b66fb72ed4ec449"
+    },
+    {
+      "file": "app/admin/centers/actions/center-history.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "6ec642fa25577c2bb5e5f0c5caee2388065d283e2f7040e2ff03ddd0a5b5193d"
+    },
+    {
+      "file": "app/admin/centers/CentersClient.tsx",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "b877a9478e5cc8cdc3aaa8ed444e105eecdc678cd33bb59a0829697a5d1d1623"
+    },
+    {
+      "file": "app/admin/centers/components/CenterDetailModal.tsx",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "b3eba368f11464b5fa521115eb4d1f047b455fce3ac2b2213cc17c52e04c36ba"
+    },
+    {
+      "file": "app/admin/classes/lib/bulkSessionDefaults.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "268eae80f04e917aa4eaaf8b091a014f38c4809a9a77315c6222beaa97f2da70"
+    },
+    {
+      "file": "app/lib/teacherTierSchedule.ts",
+      "sameAsHEADIgnoringCRLF": true,
+      "sha256Normalized": "aaa4f4adb8365c9c1245b401da0a65f859e23357b205a385e8ef9e767295ff1c"
+    }
+  ]
+}
