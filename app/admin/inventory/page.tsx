@@ -3,9 +3,9 @@
 import { EquipmentInventoryApp } from './EquipmentInventoryApp';
 import { LegacyInventoryClient } from './LegacyInventoryClient';
 
-/** New 3-tab UI only when explicitly enabled; default preserves legacy admin inventory. */
+/** Use the current 3-tab UI by default; legacy is an explicit rollback option. */
 function useLegacyInventoryUi() {
-  return process.env.NEXT_PUBLIC_EQUIPMENT_UI !== 'ledger';
+  return process.env.NEXT_PUBLIC_EQUIPMENT_UI === 'legacy';
 }
 
 export default function AdminInventoryPage() {
