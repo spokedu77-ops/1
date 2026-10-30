@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useViewportScrollLock } from '../lib/lockViewportScroll';
 import {
   COLOR_GATE_POSE_DEFINITIONS,
   type ColorGateCategory,
@@ -34,10 +35,9 @@ function PoseImageViewer({
   onClose: () => void;
 }) {
   const active = poses[activeIndex];
+  useViewportScrollLock(true);
 
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!['Escape', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
       event.preventDefault();
@@ -48,7 +48,6 @@ function PoseImageViewer({
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [activeIndex, onChange, onClose, poses.length]);
@@ -210,15 +209,13 @@ function PoseCatalog({ fullscreen }: { fullscreen: boolean }) {
 }
 
 function FullscreenCatalog({ onClose }: { onClose: () => void }) {
+  useViewportScrollLock(true);
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose]);
@@ -244,7 +241,7 @@ export function ColorGatePoseAppendix() {
 
   return (
     <div style={{ marginTop: 8 }}>
-      <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${open ? '#38BDF8' : '#CBD5E1'}`, background: open ? '#ECFEFF' : '#fff', color: '#0F172A', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} style={{ minHeight: 44, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${open ? '#38BDF8' : '#CBD5E1'}`, background: open ? '#ECFEFF' : '#fff', color: '#0F172A', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
         <span style={{ fontSize: 13, fontWeight: 800 }}>📎 (부록) 모션 게이트 동작 소개</span>
         <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>{open ? '▲ 닫기' : '▼ 열기'}</span>
       </button>

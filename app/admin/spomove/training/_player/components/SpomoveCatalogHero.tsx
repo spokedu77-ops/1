@@ -1,4 +1,5 @@
 'use client';
+import { useViewportScrollLock } from '../lib/lockViewportScroll';
 
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -53,27 +54,25 @@ export function SpomoveCatalogHero() {
     setActiveBannerIndex((current) => (current + 1) % SPOKEDU_PROMO_BANNERS.length);
   };
 
+  useViewportScrollLock(bannerLightboxOpen);
   useEffect(() => {
     if (!bannerLightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeBannerLightbox();
     };
     window.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     return () => {
       window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
     };
   }, [bannerLightboxOpen, closeBannerLightbox]);
 
   useEffect(() => {
-    if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
     if (typeof window !== 'undefined') localStorage.setItem('spokedu_theme', theme);
   }, [theme]);
 
   return (
     <div
+      data-theme={theme}
       style={{
         position: 'relative',
         overflow: 'hidden',

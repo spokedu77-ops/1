@@ -1,11 +1,21 @@
 import { COLORS, MEMORY_ROUNDS, MODES, catalogBasicUiLevel, catalogSpatialUiLevel, isFront3PanelLevel, isModifiedQuadrantLevel, modifiedQuadrantStage } from '../constants';
 import { GUIDE_BLOCKS } from '../trainingGuideContent';
+import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
+
+export function resolveTrainingCompletionReason(result: {
+  completionReason?: SpomoveCompletionReason;
+  stoppedEarly?: boolean;
+}): SpomoveCompletionReason {
+  return result.completionReason ?? (result.stoppedEarly ? 'stopped_early' : 'natural_complete');
+}
 
 export type TrainingSessionResult = {
   cfg: TrainingResultConfig;
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
   stoppedEarly?: boolean;
+  completionReason?: SpomoveCompletionReason;
+  stims?: number;
 };
 
 export type PadColorId = 'red' | 'blue' | 'green' | 'yellow';

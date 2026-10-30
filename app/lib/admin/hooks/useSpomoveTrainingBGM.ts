@@ -10,7 +10,8 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { uploadToStorage, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 import { spomoveTrainingBgmPath } from '@/app/lib/admin/assets/storagePaths';
 
-export const SPOMOVE_TRAINING_BGM_PACK_ID = 'spomove_training_bgm_settings';
+import { SPOMOVE_TRAINING_BGM_PACK_ID } from '@/app/lib/spomove/spomoveAssetPackIds';
+export { SPOMOVE_TRAINING_BGM_PACK_ID };
 
 export type SpomoveTrainingBgmAssetsJson = {
   bgmList?: string[];

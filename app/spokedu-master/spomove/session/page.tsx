@@ -28,7 +28,6 @@ import { EngineRouter, preloadSpomoveEngine, type EngineCompletePayload } from '
 import { SPOMOVE_SESSION_OVERLAY_LAYER } from './sessionOverlayLayer';
 import {
   lockViewportScroll,
-  unlockViewportScroll,
 } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
 import {
   findOfficialSpomovePreset,
@@ -421,6 +420,12 @@ function SpomoveSessionContent() {
   const [recoverySnapshot, setRecoverySnapshot] = useState<SpomoveActiveRunSnapshotV1 | null>(null);
   const [recoveryChecked, setRecoveryChecked] = useState(false);
   const runIdRef = useRef<string | null>(null);
+  const runtimeScrollReleaseRef = useRef<(() => void) | null>(null);
+  const unlockViewportScroll = useCallback(() => {
+    runtimeScrollReleaseRef.current?.();
+    runtimeScrollReleaseRef.current = null;
+  }, []);
+  useEffect(() => () => unlockViewportScroll(), [unlockViewportScroll]);
   const [movementState, setMovementState] = useState<SessionMovementState>(() => ({
     initialMovement: recommendedMovement,
     currentMovement: recommendedMovement,
@@ -765,7 +770,7 @@ function SpomoveSessionContent() {
     ) {
       return;
     }
-    lockViewportScroll();
+    runtimeScrollReleaseRef.current = lockViewportScroll();
     startLockedRef.current = true;
     finishLockedRef.current = false;
     stopRequestLockedRef.current = false;
@@ -858,6 +863,7 @@ function SpomoveSessionContent() {
     persistActiveRun,
     persistRecentConfig,
     stopBgm,
+    unlockViewportScroll,
   ]);
 
   const resumeSession = useCallback(() => {

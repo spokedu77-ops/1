@@ -18,6 +18,7 @@ import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import type { SpomoveCompletionReason } from './sessionResultModel';
+import { TrainingRunErrorBoundary } from '@/app/admin/spomove/training/_player/components/TrainingRunErrorBoundary';
 import {
   resolveSimonL4CamouflageConcurrent,
   resolveSimonL4CamouflagePlacementMode,
@@ -298,7 +299,7 @@ function EngineRuntime({
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       onComplete({
-        completionReason: stats.stoppedEarly ? 'stopped_early' : 'natural_complete',
+        completionReason: stats.completionReason ?? (stats.stoppedEarly ? 'stopped_early' : 'natural_complete'),
         engineMode: mode,
         engineLevel: level,
         stims: stats.stims,
@@ -312,7 +313,7 @@ function EngineRuntime({
   const handleMemoryComplete = useCallback(
     (result: TrainingSessionResult) => {
       onComplete({
-        completionReason: result.stoppedEarly ? 'stopped_early' : 'natural_complete',
+        completionReason: result.completionReason ?? (result.stoppedEarly ? 'stopped_early' : 'natural_complete'),
         engineMode: mode,
         engineLevel: level,
         elapsedMs: result.elapsedMs,
@@ -708,5 +709,11 @@ function EngineRuntime({
 }
 
 export function EngineRouter(runtimeProps: Props) {
-  return <EngineRuntime {...runtimeProps} />;
+  return (
+    <TrainingRunErrorBoundary onError={() => runtimeProps.onComplete({
+      completionReason: 'failed', engineMode: runtimeProps.mode, engineLevel: runtimeProps.level,
+    })}>
+      <EngineRuntime {...runtimeProps} />
+    </TrainingRunErrorBoundary>
+  );
 }

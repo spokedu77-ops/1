@@ -1,0 +1,8 @@
+// @vitest-environment happy-dom
+import { afterEach, expect, it, vi } from 'vitest';
+import { validateVariantImages } from './preloadVariantFruitImages';
+afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals()});
+function imageMock(){vi.stubGlobal('Image',class {onload:(()=>void)|null=null;onerror:(()=>void)|null=null;set src(value:string){if(value.includes('broken'))queueMicrotask(()=>this.onerror?.());else if(value.includes('ok'))queueMicrotask(()=>this.onload?.())}})}
+it('keeps healthy partial assets and excludes broken images',async()=>{imageMock();const result=await validateVariantImages([{imageUrl:'/ok-partial.svg',color:'red'},{imageUrl:'/broken-partial.svg',color:'blue'}],new AbortController().signal);expect(result).toEqual([{imageUrl:'/ok-partial.svg',color:'red'}])});
+it('bounds stalled images and leaves them available for retry',async()=>{vi.useFakeTimers();imageMock();const pending=validateVariantImages([{imageUrl:'/stalled.svg'}],new AbortController().signal);await vi.advanceTimersByTimeAsync(10000);expect(await pending).toEqual([]);vi.stubGlobal('Image',class {onload:(()=>void)|null=null;set src(_value:string){queueMicrotask(()=>this.onload?.())}});const retry=validateVariantImages([{imageUrl:'/stalled.svg'}],new AbortController().signal);await vi.runAllTicks();expect(await retry).toEqual([{imageUrl:'/stalled.svg'}])});
+it('aborts obsolete requests without publishing assets',async()=>{imageMock();const controller=new AbortController(),pending=validateVariantImages([{imageUrl:'/pending.svg'}],controller.signal);const assertion=expect(pending).rejects.toMatchObject({name:'AbortError'});controller.abort();await assertion});

@@ -43,10 +43,12 @@ export type ReactTrainCompleteStats = {
   maxCombo: number;
   laneCount: [number, number, number, number];
   stoppedEarly?: boolean;
+  completionReason?: import('@/app/spokedu-master/spomove/session/sessionResultModel').SpomoveCompletionReason;
 };
 
 type GameState = {
   running: boolean;
+  started: boolean;
   mode: ReactTrainVariant;
   timeLeft: number;
   spd: number;
@@ -630,9 +632,9 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
   const spName =
     variant === 'balloonSimon' ? `${Math.round(fallTimeSec)}초` : (SPD_NAMES[lv - 1] ?? '보통');
 
-  const endGame = useCallback(() => {
+  const endGame = useCallback((completionReason: ReactTrainCompleteStats['completionReason'] = 'natural_complete') => {
     const g = gRef.current;
-    if (!g) return;
+    if (!g?.running) return;
     g.running = false;
     if (g.timer) {
       clearInterval(g.timer);
@@ -647,6 +649,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
     });
     padRefs.current.forEach((p) => p?.classList.remove('lit'));
     const stats: ReactTrainCompleteStats = {
+      completionReason,
       stims: g.stims,
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
@@ -667,6 +670,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
       stoppedEarly: true,
+      completionReason: g.started ? 'stopped_early' : 'cancelled',
     });
   }, []);
 
@@ -777,6 +781,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
 
     const g: GameState = {
       running: true,
+      started: false,
       mode: variant,
       timeLeft: durationSec,
       spd: lv,
@@ -980,7 +985,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
 
     const perf = new PerfMonitor();
     let lastFrameMs = 0;
-    const loop = (now: number) => {
+    const renderFrame = (now: number) => {
       if (!gRef.current?.running) return;
       const deltaSec = lastFrameMs > 0 ? Math.min((now - lastFrameMs) / 1000, 0.05) : 1 / 60;
       lastFrameMs = now;
@@ -999,6 +1004,9 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       updateParticles(ctx2);
       drawTopFade(ctx2);
       gg.raf = requestAnimationFrame(loop);
+    };
+    const loop = (now: number) => {
+      try { renderFrame(now); } catch { endGame('failed'); }
     };
 
     const computeSpawnInt = () => {
@@ -1041,7 +1049,9 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
     };
 
     const beginGame = () => {
+      try {
       if (!gRef.current?.running) return;
+      g.started = true;
       const play = playAreaRef.current;
       if (play) {
         resizeCv(play);
@@ -1066,6 +1076,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
         }
       }, 250);
       g.raf = requestAnimationFrame(loop);
+      } catch { endGame('failed'); }
     };
 
     const stopCountdown = runReactTrainStartCountdown({
@@ -1073,7 +1084,10 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       onDone: beginGame,
     });
 
-    const unbindResize = bindViewportResize(playAreaRef.current, onWinResize);
+    const unbindResize = bindViewportResize(playAreaRef.current, () => {
+      if (!g.running) return;
+      try { onWinResize(); } catch { endGame('failed'); }
+    });
 
     return () => {
       stopCountdown();

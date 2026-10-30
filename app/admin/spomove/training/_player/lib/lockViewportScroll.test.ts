@@ -1,0 +1,15 @@
+// @vitest-environment happy-dom
+import React,{act,StrictMode} from 'react';
+import {createRoot} from 'react-dom/client';
+import {beforeEach,afterEach,describe,it,expect,vi} from 'vitest';
+import {lockViewportScroll,unlockViewportScroll,forceUnlockViewportScroll,useViewportScrollLock} from './lockViewportScroll';
+beforeEach(()=>{(globalThis as {IS_REACT_ACT_ENVIRONMENT?:boolean}).IS_REACT_ACT_ENVIRONMENT=true;document.documentElement.style.overflow='clip';document.body.style.overflow='scroll'});
+afterEach(async()=>{unlockViewportScroll();await Promise.resolve();vi.restoreAllMocks()});
+describe('owned viewport locks',()=>{
+  it('restores the original overflow rather than clearing it',async()=>{lockViewportScroll();unlockViewportScroll();await Promise.resolve();expect(document.documentElement.style.overflow).toBe('clip');expect(document.body.style.overflow).toBe('scroll')});
+  it('force cleanup cannot clear another modal owner',async()=>{const release=lockViewportScroll();forceUnlockViewportScroll();expect(document.body.style.overflow).toBe('hidden');if(typeof release==='function')release();else unlockViewportScroll();await Promise.resolve()});
+  it('releases by owner and ignores duplicate releases',async()=>{const first=lockViewportScroll() as unknown as ()=>void,second=lockViewportScroll() as unknown as ()=>void;expect(typeof first).toBe('function');first();first();await Promise.resolve();expect(document.body.style.overflow).toBe('hidden');second();await Promise.resolve();expect(document.body.style.overflow).toBe('scroll')});
+  it('handoff never writes an unlocked style between owners',async()=>{const first=lockViewportScroll() as unknown as ()=>void;first();const second=lockViewportScroll() as unknown as ()=>void;await Promise.resolve();expect(document.documentElement.style.overflow).toBe('hidden');second();await Promise.resolve();expect(document.documentElement.style.overflow).toBe('clip')});
+  it('preserves !important and independent axis declarations',async()=>{document.documentElement.style.setProperty('overflow','clip','important');document.body.style.overflowX='scroll';document.body.style.overflowY='clip';const before=[document.documentElement.style.cssText,document.body.style.cssText];const release=lockViewportScroll() as unknown as ()=>void;release();await Promise.resolve();expect([document.documentElement.style.cssText,document.body.style.cssText]).toEqual(before)});
+  it.each([3,10])('StrictMode and %i reruns leave no owner',async count=>{function Screen({active}:{active:boolean}){useViewportScrollLock(active);return null}const host=document.createElement('div'),root=createRoot(host);for(let i=0;i<count;i++){act(()=>root.render(React.createElement(StrictMode,null,React.createElement(Screen,{key:i,active:true}))));await Promise.resolve();expect(document.body.style.overflow).toBe('hidden')}act(()=>root.unmount());await Promise.resolve();expect(document.documentElement.style.overflow).toBe('clip');expect(document.body.style.overflow).toBe('scroll')});
+});

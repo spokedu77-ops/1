@@ -23,7 +23,8 @@ export const S: Record<string, CSSProperties> = {
   slabel: { fontSize: '1rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.75rem' },
 };
 
-export const CSS = `
+import { scopePlayerCss } from './lib/scopePlayerCss';
+export const CSS = scopePlayerCss(`
   :root {
     --bg: #F1F5F9; --card: #ffffff; --border: #E2E8F0;
     --text: #1E293B; --text-muted: #64748B;
@@ -135,4 +136,4 @@ export const CSS = `
   .home-fadein-1 { animation: fadeUp 0.55s 0.07s cubic-bezier(0.22,1,0.36,1) both; }
   .home-fadein-2 { animation: fadeUp 0.55s 0.14s cubic-bezier(0.22,1,0.36,1) both; }
   .home-fadein-3 { animation: fadeUp 0.55s 0.21s cubic-bezier(0.22,1,0.36,1) both; }
-`;
+`);

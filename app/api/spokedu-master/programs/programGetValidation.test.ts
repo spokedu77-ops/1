@@ -95,7 +95,7 @@ function validOverlay(overrides: Record<string, unknown> = {}) {
 
 async function getPrograms() {
   const route = await import("./route");
-  const response = await route.GET();
+  const response = await route.GET(new Request('http://localhost/api/spokedu-master/programs'));
   return {
     status: response.status,
     body: await response.json(),

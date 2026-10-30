@@ -34,7 +34,7 @@ import {
 } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
-import { forceUnlockViewportScroll } from './_player/lib/lockViewportScroll';
+import { useViewportScrollLock } from './_player/lib/lockViewportScroll';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
 import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
@@ -120,10 +120,11 @@ const TEACHER_SPOMOVE_URL = '/teacher/spomove';
 
 /** 카탈로그 배열 순서로 1번·2번… (엔진 id와 무관) */
 function levelLabel(modeId: string, levelId: number): string {
+  if (modeId === 'basic' && (levelId === 7 || levelId === 8)) return `${levelId}번`;
   const m = MODES[modeId];
   const catalogId =
     modeId === 'basic'
-      ? catalogBasicUiLevel(levelId)
+      ? levelId
       : modeId === 'spatial'
         ? catalogSpatialUiLevel(levelId)
         : levelId;
@@ -262,7 +263,7 @@ function levelNameKo(modeId: string, levelId: number): string {
   const m = MODES[modeId];
   const catalogId =
     modeId === 'basic'
-      ? catalogBasicUiLevel(levelId)
+      ? levelId
       : modeId === 'spatial'
         ? catalogSpatialUiLevel(levelId)
         : levelId;
@@ -278,7 +279,7 @@ function levelLabelKoEn(modeId: string, levelId: number): string {
   const m = MODES[modeId];
   const catalogId =
     modeId === 'basic'
-      ? catalogBasicUiLevel(levelId)
+      ? levelId
       : modeId === 'spatial'
         ? catalogSpatialUiLevel(levelId)
         : levelId;
@@ -646,7 +647,7 @@ function TrainingPortal({
   launch: LaunchSettings;
   onClose: (resume?: TrainingExitResume) => void;
 }) {
-  useEffect(() => () => forceUnlockViewportScroll(), []);
+  useViewportScrollLock(true);
 
   if (typeof document === 'undefined') return null;
 
@@ -698,7 +699,7 @@ function TrainingPortal({
     shellTrackingResponseSeconds: launch.shellTrackingResponseSeconds,
     relativeCompassDifficulty: launch.relativeCompassDifficulty,
     relativeCompassStartSeconds: launch.relativeCompassStartSeconds,
-    relativeCompassResponseSeconds: launch.relativeCompassStartSeconds,
+    relativeCompassResponseSeconds: launch.relativeCompassResponseSeconds,
     relativeCompassEnabled: launch.relativeCompassEnabled,
     shapeCompletionDifficulty: launch.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: launch.shapeCompletionResponseSeconds,
@@ -1046,9 +1047,7 @@ function SettingsScreen({
   const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId, levelId);
   const compactSettingsMenu =
     isReactTrain ||
-    (modeId === 'simon' && levelId === 3) ||
-    (modeId === 'flanker' && levelId === 3) ||
-    (isSpatial && isInstantMemoryLevel(levelId));
+    isSimon || modeId === 'flanker' || isSpatial;
 
   useEffect(() => {
     if (!isFlowOrChallenge) return;
@@ -3410,7 +3409,6 @@ function SpomoveTrainingPageContent() {
           levelId={phase.levelId}
           launch={phase.launch}
           onClose={(resume) => {
-            forceUnlockViewportScroll();
             const fallbackLaunch = phase.launch;
             setPhase({
               tag: 'settings',

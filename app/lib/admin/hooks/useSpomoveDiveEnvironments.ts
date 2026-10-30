@@ -18,7 +18,7 @@ import {
 
 export type { DiveThemeId, DiveThemeEntry };
 
-const PACK_ID   = 'spomove_dive_environment_settings';
+import { SPOMOVE_DIVE_ENVIRONMENT_PACK_ID as PACK_ID } from '@/app/lib/spomove/spomoveAssetPackIds';
 const PACK_NAME = 'SPOMOVE DIVE 환경 설정';
 
 const RATIO_TOLERANCE = 0.02; // ±2% from 2.0

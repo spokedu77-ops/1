@@ -10,6 +10,9 @@ function normalizeRoundOption(value: number, options: readonly number[], fallbac
 }
 
 export function normalizeColorTrackerRounds(value: number): number {
+  // PD-018 public volumes share this engine with authored legacy 2/3/5/10 rounds.
+  // Only exact public selections bypass the legacy nearest-option fallback.
+  if (value === 10 || value === 15 || value === 20 || value === 30) return value;
   return normalizeRoundOption(value, COLOR_TRACKER_ROUND_OPTIONS, 5);
 }
 

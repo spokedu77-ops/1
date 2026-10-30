@@ -16,7 +16,7 @@ import {
   resultLevelLabel,
   type TrainingSessionResult,
 } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
-import { lockViewportScroll, useViewportScrollLock } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
+import { useViewportScrollLock } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
 
 const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/MemoryGameApp'));
 
@@ -2214,7 +2214,6 @@ function Block({ label, children }: { label: string; children: React.ReactNode }
 
 function ScreenShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  useViewportScrollLock(true);
 
   return (
     <>
@@ -2683,6 +2682,7 @@ function GameScreen({
 
 export default function SpomovePage() {
   const [screen, setScreen] = useState('intro');
+  useViewportScrollLock(screen === 'presetRunner' || screen === 'presetComplete');
   const [step, setStep] = useState(1);
   const [tab, setTab] = useState('basic');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
@@ -3084,6 +3084,7 @@ export default function SpomovePage() {
     return createPortal(
       <TrainingResultScreen
         cfg={presetResult.cfg}
+        completionReason={presetResult.completionReason ?? (presetResult.stoppedEarly ? 'stopped_early' : 'natural_complete')}
         elapsedMs={presetResult.elapsedMs}
         colorCounts={presetResult.colorCounts}
         levelLabel={resultLevelLabel(selectedProgram.mode, selectedProgram.level)}
@@ -3093,7 +3094,6 @@ export default function SpomovePage() {
           setScreen('weekPrograms');
         }}
         onRetry={() => {
-          lockViewportScroll();
           setRunKey((k) => k + 1);
           setPresetResult(null);
           setScreen('presetRunner');

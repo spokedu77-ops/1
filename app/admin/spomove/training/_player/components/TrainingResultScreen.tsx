@@ -17,6 +17,7 @@ import {
   type TrainingResultConfig,
 } from '../lib/trainingResultSummary';
 import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
+import { resolveSpomoveCompletionPresentation } from '@/app/spokedu-master/spomove/session/sessionResultModel';
 
 type StudentBadge = { name: string; color: string };
 
@@ -29,7 +30,7 @@ export type TrainingResultSessionSettings = {
 
 type Props = {
   cfg: TrainingResultConfig;
-  /** MASTER only. Admin callers omit this and retain the existing result copy. */
+  /** Canonical terminal state shared by Admin, Teacher and MASTER/LAB. */
   completionReason?: SpomoveCompletionReason;
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
@@ -163,8 +164,8 @@ export function TrainingResultScreen({
   elapsedMs,
   colorCounts,
   levelLabel,
-  title = '훈련 완료',
-  statusBadge = null,
+  title: providedTitle,
+  statusBadge: providedStatusBadge = null,
   programTitle,
   student,
   sessionSettings = null,
@@ -175,6 +176,9 @@ export function TrainingResultScreen({
   onRetry,
   retryLabel = '다시 실행',
 }: Props) {
+  const completion = completionReason ? resolveSpomoveCompletionPresentation(completionReason) : null;
+  const title = completion?.title ?? providedTitle ?? '훈련 완료';
+  const statusBadge = completion?.statusBadge ?? providedStatusBadge;
   const mo = MODES[cfg.mode];
   const accent = mo?.accent ?? '#F97316';
   // 플랭커는 가운데 목표가 색인 활동만 색 통계를 보여준다. 화살표 활동의
@@ -216,7 +220,8 @@ export function TrainingResultScreen({
 
   return (
     <div
-      className={dive ? 'tr-result-root tr-dive-report' : 'tr-result-root'}
+      className={dive ? 'spomove-player-root tr-result-root tr-dive-report' : 'spomove-player-root tr-result-root'}
+      data-theme={typeof window !== 'undefined' && localStorage.getItem('spokedu_theme') === 'dark' ? 'dark' : 'light'}
       style={{
         position: 'fixed',
         inset: 0,

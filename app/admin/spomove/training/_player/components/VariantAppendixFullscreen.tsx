@@ -1,4 +1,5 @@
 'use client';
+import { useViewportScrollLock } from '../lib/lockViewportScroll';
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -313,16 +314,12 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
 }
 
 export function VariantAppendixFullscreen({ onClose }: { onClose: () => void }) {
+  useViewportScrollLock(true);
   const [activeTheme, setActiveTheme] = useState<AppendixTheme>('fruit');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
   }, []);
 
   useEffect(() => {

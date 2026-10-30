@@ -12,6 +12,7 @@ import { useTrainingTimer } from './hooks/useTrainingTimer';
 import { playBeep } from './lib/audio';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from './lib/runtimeClock';
 import { tts } from './lib/tts';
+import { exitFullscreenSafely } from './lib/fullscreen';
 import { StudentModal } from './components/StudentModal';
 import { StudentManageScreen } from './components/StudentManageScreen';
 import { SpeedSelector } from './components/SpeedSelector';
@@ -94,6 +95,9 @@ import {
   type TrainingSessionResult,
 } from './lib/trainingResultSummary';
 import { useViewportScrollLock } from './lib/lockViewportScroll';
+import { resolveTrainingCompletionReason } from './lib/trainingResultSummary';
+import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
+import { TrainingRunErrorBoundary } from './components/TrainingRunErrorBoundary';
 import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
 import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
 import { useSpomoveAllVariantSlidesForTraining, useSpomoveVariantSlidesForTraining } from './hooks/useSpomoveVariantFruitSlidesForTraining';
@@ -123,7 +127,7 @@ const VirusOutbreakReactionTraining = React.lazy(() => import('./components/Viru
 const FlowGameClient = React.lazy(() => import('./flow-lab/FlowGameClient'));
 const UnityDiveThemeClient = React.lazy(() => import('./flow-lab/UnityDiveThemeClient'));
 
-function runtimeSuspense(content: React.ReactNode) {
+function renderRuntimeSuspense(content: React.ReactNode) {
   return (
     <React.Suspense
       fallback={(
@@ -481,7 +485,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
   };
 }
 
-export default function MemoryGameApp({
+function MemoryGameRuntime({
   initialMode,
   initialLevel,
   autoLaunch,
@@ -493,7 +497,9 @@ export default function MemoryGameApp({
   onExit,
   onComplete,
   onUnavailable,
+  onThemeChange,
 }: {
+  onThemeChange?: (theme: 'light' | 'dark') => void;
   initialMode?: string;
   initialLevel?: number;
   /** SPOKEDU MASTER iframe ????? ???????????????????admin????????????????????????????????????????????????癲????????????釉먮폁???????????곕츥???꿔꺂????용끏???????????????????????????????????????? */
@@ -517,7 +523,8 @@ export default function MemoryGameApp({
     screen === 'training'
     || screen === 'memory'
     || screen === 'visualReaction'
-    || screen === 'flow',
+    || screen === 'flow'
+    || screen === 'result',
   );
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [pendingAutoStart, setPendingAutoStart] = useState(false);
@@ -561,11 +568,14 @@ export default function MemoryGameApp({
   const prevBgRef = useRef<string | null>(null);
   const [stats, setStats] = useState({ timeLeft: 30, repsLeft: 20, progress: 0 });
   const sessionStartMsRef = useRef<number>(0);
+  const resultDeliveredRef = useRef(false);
+  const completionFeedbackRef = useRef<number | null>(null);
   const [result, setResult] = useState<{
     cfg: Settings;
     elapsedMs: number;
     colorCounts: ColorStimulusCounts | null;
     endedEarly: boolean;
+    completionReason: SpomoveCompletionReason;
   } | null>(null);
   /** ????????????????????????????????????????????????????????????????????????????????????????????????????????????????? ???????????2-1 ????????????????????????????????????????????????????????????????????????????*/
   const countRef = useRef(0);
@@ -614,9 +624,9 @@ export default function MemoryGameApp({
 
 
   useEffect(() => {
-    if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
+    onThemeChange?.(theme === 'dark' ? 'dark' : 'light');
     if (typeof window !== 'undefined') localStorage.setItem('spokedu_theme', theme);
-  }, [theme]);
+  }, [theme, onThemeChange]);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -778,6 +788,8 @@ export default function MemoryGameApp({
         mode: normalized.mode,
         level: targetLevel,
         ...restAutoLaunch,
+        // Optional Teacher fields must not erase the color-only default.
+        variantColorTheme: restAutoLaunch.variantColorTheme ?? defaultSettings.variantColorTheme,
         stroopWordMode: legacyStroopMissing
           ? 'missing'
           : restAutoLaunch.stroopWordMode === 'missing'
@@ -896,33 +908,40 @@ export default function MemoryGameApp({
     cfg: Settings,
     elapsedMs: number,
     colorCounts: ColorStimulusCounts | null,
-    meta?: { endedEarly?: boolean },
+    meta?: { endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number },
   ) => {
+    if (resultDeliveredRef.current) return;
+    resultDeliveredRef.current = true;
+    const completionReason = resolveTrainingCompletionReason({ completionReason: meta?.completionReason, stoppedEarly: meta?.endedEarly });
     const payload: TrainingSessionResult = {
       cfg: settingsToTrainingResultConfig(cfg),
       elapsedMs,
       colorCounts,
-      stoppedEarly: meta?.endedEarly === true,
+      stoppedEarly: completionReason === 'stopped_early',
+      completionReason,
+      stims: meta?.stims,
     };
     if (embed && onComplete) {
       onComplete(payload);
       return;
     }
-    setResult({ cfg, elapsedMs, colorCounts, endedEarly: meta?.endedEarly === true });
+    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason });
     setScreen('result');
     onComplete?.(payload);
   }, [embed, onComplete]);
 
   const onFinish = useCallback((_dupStats?: DupStats | null) => {
-    if (document.fullscreenElement) document.exitFullscreen();
+    if (resultDeliveredRef.current) return;
+    if (completionFeedbackRef.current !== null) clearTimeout(completionFeedbackRef.current);
+    if (document.fullscreenElement) exitFullscreenSafely();
     sessionSlidesRef.current = undefined;
     setIsTraining(false);
     const cfg = { ...settingsRef.current };
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
     void _dupStats;
     deliverSessionResult(cfg, elapsedMs, { ...colorCountsRef.current });
-    if (cfg.audioMode === 'beep') setTimeout(() => playBeep('chord', 300), 200);
-    else if (cfg.audioMode !== 'off') setTimeout(() => tts('???????????????????????????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝??????????????????????????????????????????????????????????????????????????????????????????????????????? ??????????????????????????????????????????????????곕춴??????????椰???????????耀붾굝????????????????????????????', true), 300);
+    if (cfg.audioMode === 'beep') completionFeedbackRef.current = setTimeout(() => { completionFeedbackRef.current = null; playBeep('chord', 300); }, 200);
+    else if (cfg.audioMode !== 'off') completionFeedbackRef.current = setTimeout(() => { completionFeedbackRef.current = null; tts('훈련을 완료했습니다.', true); }, 300);
   }, [deliverSessionResult]);
 
   const { getProgress } = useTrainingTimer({
@@ -1061,6 +1080,8 @@ export default function MemoryGameApp({
 
   const startSession = useCallback(
     (cfg: Settings = settings) => {
+      if (completionFeedbackRef.current !== null) { clearTimeout(completionFeedbackRef.current); completionFeedbackRef.current = null; }
+      resultDeliveredRef.current = false;
       sessionLaunchedRef.current = true;
       // ?????????????????????????????? ???????????????????????????????????????????????????????????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲??????????????????????????????????????????????????????????????????????????????????????reactTrain) ???????????????????????????????????????????????????????????????????곕춴??????????椰???????????耀붾굝????????????????reps??????????
       if (cfg.mode !== 'reactTrain' && cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
@@ -1167,7 +1188,7 @@ export default function MemoryGameApp({
           if (nextScreen === 'training') {
             setIsTraining(true);
             if (cfg.audioMode === 'beep') playBeep('high');
-            else if (cfg.audioMode !== 'off') tts('?????????????????????????', true);
+            else if (cfg.audioMode !== 'off') tts('훈련을 시작합니다.', true);
           }
           return;
         }
@@ -1187,7 +1208,7 @@ export default function MemoryGameApp({
             if (nextScreen === 'training') {
               setIsTraining(true);
               if (cfg.audioMode === 'beep') playBeep('high');
-              else if (cfg.audioMode !== 'off') tts('?????????????????????????', true);
+              else if (cfg.audioMode !== 'off') tts('훈련을 시작합니다.', true);
             }
           } else {
             setCountdown(c);
@@ -1206,10 +1227,11 @@ export default function MemoryGameApp({
     if (!pendingAutoStart) return;
     const cfg = autoLaunchCfgRef.current;
     if (!cfg) return;
+    if (readiness.status !== 'ready') return;
     setPendingAutoStart(false);
     autoLaunchCfgRef.current = null;
     startSession(cfg);
-  }, [pendingAutoStart, startSession]);
+  }, [pendingAutoStart, startSession, readiness.status]);
 
   useEffect(() => {
     if (disableBgm) {
@@ -1270,7 +1292,7 @@ export default function MemoryGameApp({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (document.fullscreenElement) document.exitFullscreen();
+    if (document.fullscreenElement) exitFullscreenSafely();
     sessionSlidesRef.current = undefined;
     setIsTraining(false);
     if (dupFlashClearRef.current != null) {
@@ -1290,7 +1312,11 @@ export default function MemoryGameApp({
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
       const counts =
         totalColorStimulusCount(stoppedColorCounts) > 0 ? stoppedColorCounts : null;
-      deliverSessionResult(cfg, elapsedMs, counts, { endedEarly: true });
+      if (countdown !== null) {
+        deliverSessionResult(cfg, elapsedMs, counts, { completionReason: 'cancelled' });
+      } else {
+        deliverSessionResult(cfg, elapsedMs, counts, { endedEarly: true });
+      }
       return;
     }
     if (autoLaunch) {
@@ -1300,12 +1326,12 @@ export default function MemoryGameApp({
     }
     // ??????????admin/memory-game: ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????? setup???????????????????????????????????????ㅻ깹???????????????????????????????????????????????ш끽維뽳쭩?뱀땡???얩맪???????????????????轅붽틓??섑떊???⑤챷?????????????????????????嫄???????????????????????筌??????????????????????????????????????????????????????
     setScreen('setup');
-  }, [autoLaunch, deliverSessionResult, onExit, screen, settings]);
+  }, [autoLaunch, countdown, deliverSessionResult, onExit, screen, settings]);
 
   const handleFlowComplete = useCallback(() => {
     if (flowCompleteGuardRef.current) return;
     flowCompleteGuardRef.current = true;
-    if (document.fullscreenElement) document.exitFullscreen();
+    if (document.fullscreenElement) exitFullscreenSafely();
     const cfg = { ...settings, mode: 'flow', level: 1 };
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
     deliverSessionResult(cfg, elapsedMs, null);
@@ -1332,16 +1358,24 @@ export default function MemoryGameApp({
 
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
-      if (document.fullscreenElement) document.exitFullscreen();
+      if (document.fullscreenElement) exitFullscreenSafely();
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
       deliverSessionResult(
         { ...settings },
         elapsedMs,
         laneCountToColorStimulusCounts(stats.laneCount),
+        { completionReason: resolveTrainingCompletionReason(stats), stims: stats.stims },
       );
     },
     [deliverSessionResult, settings],
   );
+
+  const handleRuntimeError = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setIsTraining(false);
+    const elapsedMs = sessionStartMsRef.current > 0 ? Math.max(0, performance.now() - sessionStartMsRef.current) : 0;
+    deliverSessionResult({ ...settingsRef.current }, elapsedMs, { ...colorCountsRef.current }, { completionReason: 'failed' });
+  }, [deliverSessionResult]);
 
   useEffect(() => {
     if (screen !== 'flow') return;
@@ -1371,6 +1405,7 @@ export default function MemoryGameApp({
         /* ignore */
       }
       bgmPlayerRef.current = null;
+      if (completionFeedbackRef.current !== null) { clearTimeout(completionFeedbackRef.current); completionFeedbackRef.current = null; }
     };
   }, []);
 
@@ -1391,9 +1426,16 @@ export default function MemoryGameApp({
           alignItems: 'center',
           justifyContent: 'center',
         }}
-        aria-hidden={countdown == null}
+        aria-hidden={countdown == null && !pendingAutoStart}
       >
         <style>{CSS}</style>
+        {pendingAutoStart && readiness.status !== 'ready' && (
+          <div role={readiness.status === 'loading' ? 'status' : 'alert'} style={{ color: '#fff', padding: 24, textAlign: 'center', maxWidth: 520 }}>
+            <p>{readiness.status === 'loading' ? '훈련 이미지를 준비하고 있습니다.' : readiness.status === 'error' ? '훈련 이미지를 불러오지 못했습니다.' : `훈련 이미지가 부족합니다. 필요한 이미지: ${readiness.requirement.minimumCount}개, 사용 가능: ${readiness.usableAssets.length}개`}</p>
+            {readiness.status !== 'loading' && <button type="button" onClick={reloadVariantAssets} style={{ minHeight: 44, padding: '8px 16px', margin: 8 }}>다시 시도</button>}
+            <button type="button" onClick={() => { setPendingAutoStart(false); autoLaunchCfgRef.current = null; onExit?.(); }} style={{ minHeight: 44, padding: '8px 16px', margin: 8 }}>목록으로 돌아가기</button>
+          </div>
+        )}
         {countdown !== null ? (
           <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>
             {countdown}
@@ -2614,10 +2656,15 @@ export default function MemoryGameApp({
 
   // ???? MEMORY / TRAINING / RESULT ????
   const handleMemoryComplete = () => {
-    if (document.fullscreenElement) document.exitFullscreen();
+    if (document.fullscreenElement) exitFullscreenSafely();
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
     deliverSessionResult({ ...settings }, elapsedMs, null);
   };
+  const runtimeSuspense = (content: React.ReactNode) => (
+    <TrainingRunErrorBoundary onError={handleRuntimeError}>
+      {renderRuntimeSuspense(content)}
+    </TrainingRunErrorBoundary>
+  );
 
   if (screen === 'memory') {
     if (countdown !== null) {
@@ -2813,7 +2860,7 @@ export default function MemoryGameApp({
     const handleFlowDone = (stats?: { colorGateColorCounts?: ColorStimulusCounts }) => {
       if (flowCompleteGuardRef.current) return;
       flowCompleteGuardRef.current = true;
-      if (document.fullscreenElement) document.exitFullscreen();
+      if (document.fullscreenElement) exitFullscreenSafely();
       const cfg = { ...settings, mode: 'flow', level: 1 };
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
       const flowColorCounts = stats?.colorGateColorCounts ?? null;
@@ -3027,6 +3074,7 @@ export default function MemoryGameApp({
     return (
       <TrainingResultScreen
         cfg={settingsToTrainingResultConfig(cfg)}
+        completionReason={result.completionReason}
         elapsedMs={elapsedMs}
         colorCounts={colorCounts}
         levelLabel={resultLevelLabel(cfg.mode, cfg.level)}
@@ -3059,4 +3107,9 @@ export default function MemoryGameApp({
   }
 
   return null;
+}
+
+export default function MemoryGameApp(props: Omit<React.ComponentProps<typeof MemoryGameRuntime>, 'onThemeChange'>) {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  return <div className="spomove-player-root" data-theme={theme} style={{ height: '100%', width: '100%' }}><MemoryGameRuntime {...props} onThemeChange={setTheme} /></div>;
 }

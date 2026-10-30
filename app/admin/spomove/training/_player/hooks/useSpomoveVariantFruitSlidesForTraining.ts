@@ -16,6 +16,7 @@ import {
   type SpomoveColorThemeId,
 } from '../lib/spomoveVariantThemeConfig';
 import { type AssetLoadStatus } from '../lib/assetRequirement';
+import { validateVariantImages } from '../lib/preloadVariantFruitImages';
 
 export type { AssetLoadStatus };
 
@@ -45,9 +46,13 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
   const [status, setStatus] = useState<AssetLoadStatus>('idle');
   const [loadedTheme, setLoadedTheme] = useState<SpomoveColorThemeId | null>(null);
   const reqIdRef = useRef(0);
+  const requestRef = useRef<AbortController | null>(null);
 
   const reload = useCallback(async () => {
     const thisId = ++reqIdRef.current;
+    requestRef.current?.abort();
+    const controller = new AbortController(); requestRef.current = controller;
+    const timeout = setTimeout(() => controller.abort(), 15_000);
     setSlides([]);
     setLoadedTheme(null);
     setStatus('loading');
@@ -63,11 +68,13 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
 
       if (variantColorTheme === 'fruit') {
         const supabase = getSupabaseBrowserClient();
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('think_asset_packs')
           .select('assets_json, updated_at')
           .eq('id', SPOMOVE_VARIANT_PACK_ID)
+          .abortSignal(controller.signal)
           .maybeSingle();
+        if (error) throw error;
         if (reqIdRef.current !== thisId) return;
         const raw = data?.assets_json as SpomoveVariantAssetsJson | null;
         const paths = raw?.paths;
@@ -76,7 +83,9 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
           Array.isArray(paths) ? paths : [],
         );
         const built = fruitSlidesForTrainingFromPaths(raw?.paths, cacheBust);
-        setSlides(built);
+        const usable = await validateVariantImages(built, controller.signal);
+        if (reqIdRef.current !== thisId) return;
+        setSlides(usable);
         setLoadedTheme(variantColorTheme);
         setStatus('ready');
         return;
@@ -84,10 +93,11 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
 
       if (variantColorTheme === 'mix') {
         const supabase = getSupabaseBrowserClient();
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('think_asset_packs')
           .select('id, assets_json, updated_at')
-          .in('id', [...ALL_VARIANT_PACK_IDS]);
+          .in('id', [...ALL_VARIANT_PACK_IDS]).abortSignal(controller.signal);
+        if (error) throw error;
         if (reqIdRef.current !== thisId) return;
 
         const merged: FruitSlide[] = [];
@@ -105,7 +115,9 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
           );
         }
 
-        setSlides(uniqueSlidesByImageUrl(merged));
+        const usable = await validateVariantImages(uniqueSlidesByImageUrl(merged), controller.signal);
+        if (reqIdRef.current !== thisId) return;
+        setSlides(usable);
         setLoadedTheme(variantColorTheme);
         setStatus('ready');
         return;
@@ -113,11 +125,13 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
 
       const def = SPOMOVE_THEMED_PACK_BY_THEME[variantColorTheme];
       const supabase = getSupabaseBrowserClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('think_asset_packs')
         .select('assets_json, updated_at')
         .eq('id', def.packId)
+        .abortSignal(controller.signal)
         .maybeSingle();
+      if (error) throw error;
       if (reqIdRef.current !== thisId) return;
       const paths = normalizeThemedPaths(data?.assets_json, SPOMOVE_THEMED_SLOT_COUNT);
       const cacheBust = resolveSpomovePackCacheBust(data?.updated_at as string | undefined, paths);
@@ -130,7 +144,9 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
         }
       });
       const built = buildVariantSlidesFromThemedUrls(urls);
-      setSlides(built.length > 0 ? built : []);
+      const usable = await validateVariantImages(built, controller.signal);
+      if (reqIdRef.current !== thisId) return;
+      setSlides(usable);
       setLoadedTheme(variantColorTheme);
       setStatus('ready');
     } catch {
@@ -138,12 +154,16 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
       setSlides([]);
       setLoadedTheme(variantColorTheme);
       setStatus('error');
+    } finally {
+      clearTimeout(timeout);
     }
   }, [variantColorTheme]);
 
+  const cancelRequest = useCallback(() => { reqIdRef.current++; requestRef.current?.abort(); }, []);
   useEffect(() => {
     void reload();
-  }, [reload]);
+    return cancelRequest;
+  }, [reload, cancelRequest]);
 
   useEffect(() => {
     const onVis = () => {
@@ -199,23 +219,28 @@ export function useSpomoveAllVariantSlidesForTraining(enabled: boolean) {
   const [slides, setSlides] = useState<FruitSlide[]>([]);
   const [status, setStatus] = useState<AssetLoadStatus>('idle');
   const reqIdRef = useRef(0);
+  const requestRef = useRef<AbortController | null>(null);
 
   const reload = useCallback(async () => {
+    const thisId = ++reqIdRef.current;
+    requestRef.current?.abort();
     if (!enabled) {
       setSlides([]);
       setStatus('idle');
       return;
     }
 
-    const thisId = ++reqIdRef.current;
+    const controller = new AbortController(); requestRef.current = controller;
+    const timeout = setTimeout(() => controller.abort(), 15_000);
     setStatus('loading');
 
     try {
       const supabase = getSupabaseBrowserClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('think_asset_packs')
         .select('id, assets_json, updated_at')
-        .in('id', [...ALL_VARIANT_PACK_IDS]);
+        .in('id', [...ALL_VARIANT_PACK_IDS]).abortSignal(controller.signal);
+      if (error) throw error;
       if (reqIdRef.current !== thisId) return;
 
       const merged: FruitSlide[] = [];
@@ -233,18 +258,24 @@ export function useSpomoveAllVariantSlidesForTraining(enabled: boolean) {
         );
       }
 
-      setSlides(uniqueSlidesByImageUrl(merged));
+      const usable = await validateVariantImages(uniqueSlidesByImageUrl(merged), controller.signal);
+      if (reqIdRef.current !== thisId) return;
+      setSlides(usable);
       setStatus('ready');
     } catch {
       if (reqIdRef.current !== thisId) return;
       setSlides([]);
       setStatus('error');
+    } finally {
+      clearTimeout(timeout);
     }
   }, [enabled]);
 
+  const cancelRequest = useCallback(() => { reqIdRef.current++; requestRef.current?.abort(); }, []);
   useEffect(() => {
     void reload();
-  }, [reload]);
+    return cancelRequest;
+  }, [reload, cancelRequest]);
 
   useEffect(() => {
     if (!enabled) return;

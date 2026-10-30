@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
@@ -163,6 +163,8 @@ type GoalkeeperGame = {
   laneCount: [number, number, number, number];
   raf: number | null;
   timer: ReturnType<typeof setInterval> | null;
+  timeouts: Set<ReturnType<typeof setTimeout>>;
+  stopCountdown?: () => void;
   startedAt: number;
   nextSpawnAt: number;
   currentSpeed: number;
@@ -348,6 +350,7 @@ export function GoalkeeperReactionTraining({
   const onExitRef = useRef(onExit);
   const [warn, setWarn] = useState(false);
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
+  const [bonusActive, setBonusActive] = useState(false);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -362,15 +365,21 @@ export function GoalkeeperReactionTraining({
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
+    g.stopCountdown?.();
+    g.timeouts.forEach(clearTimeout);
+    g.timeouts.clear();
     onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
-    if (!g) return;
+    if (!g?.running) return;
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
+    g.stopCountdown?.();
+    g.timeouts.forEach(clearTimeout);
+    g.timeouts.clear();
     onCompleteRef.current({
       stims: g.stims,
       maxCombo: g.maxCombo,
@@ -385,6 +394,7 @@ export function GoalkeeperReactionTraining({
 
     const isLow = staticPerfTier === 'low';
     const duration = Math.max(12, Math.min(180, durationSec || 60));
+    const roundTarget = targetReps == null ? null : Math.max(1, Math.round(Number.isFinite(targetReps) ? targetReps : 20));
     const tier: 1 | 2 = goalkeeperTier === 1 ? 1 : 2;
     const travelSec = normalizeReactSpeedSec(speedSec);
     const baseSpeed = flightSpeedFromSec(travelSec, 1);
@@ -400,6 +410,7 @@ export function GoalkeeperReactionTraining({
       laneCount: [0, 0, 0, 0],
       raf: null,
       timer: null,
+      timeouts: new Set(),
       startedAt: 0,
       nextSpawnAt: Math.max(0.2, travelSec),
       currentSpeed: baseSpeed,
@@ -416,6 +427,11 @@ export function GoalkeeperReactionTraining({
       frameShake: 0,
     };
     gRef.current = g;
+    setBonusActive(false);
+    const scheduleEffect = (callback: () => void, delay: number) => {
+      const id = setTimeout(() => { g.timeouts.delete(id); if (g.running) callback(); }, delay);
+      g.timeouts.add(id);
+    };
 
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x02030a, 0.015);
@@ -510,7 +526,7 @@ export function GoalkeeperReactionTraining({
       el.textContent = text;
       el.style.color = color;
       el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), ms);
+      scheduleEffect(() => el.classList.remove('show'), ms);
     };
 
     const createShield = (x: number, y: number, colorHex: number) => {
@@ -557,14 +573,14 @@ export function GoalkeeperReactionTraining({
       g.projectiles.splice(index, 1);
       if (data.isBoss) {
         flashRef.current?.style.setProperty('opacity', '1');
-        setTimeout(() => flashRef.current?.style.setProperty('opacity', '0'), 90);
+        scheduleEffect(() => flashRef.current?.style.setProperty('opacity', '0'), 90);
         createShield(0, 0, 0xffffff);
       } else {
         createShield(corner.key.endsWith('L') ? -6 : 6, corner.key.startsWith('T') ? 4 : -3, corner.hex);
         const cue = cueRefs.current[corner.key];
         if (cue) {
           cue.style.opacity = '1';
-          setTimeout(() => {
+          scheduleEffect(() => {
             cue.style.opacity = '0';
           }, 260);
         }
@@ -617,7 +633,9 @@ export function GoalkeeperReactionTraining({
       const delta = Math.min(0.05, clock.getDelta());
       const nowSec = (performance.now() - g.startedAt) / 1000;
       const activeDuration = g.bonusActive ? BONUS_TIME_SEC : duration;
-      const progress = Math.max(0, Math.min(1, nowSec / activeDuration));
+      const progress = Math.max(0, Math.min(1,
+        !g.bonusActive && roundTarget != null ? g.waveCount / roundTarget : nowSec / activeDuration,
+      ));
       const phase = g.bonusActive ? bonusPhaseForProgress(progress) : phaseForProgress(phases, progress);
 
       if (phase.id !== g.phaseId) {
@@ -627,7 +645,14 @@ export function GoalkeeperReactionTraining({
       }
 
       // 후반: 보스 1회 (랜덤 코너)
-      if (nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5 && phase.id < 5) {
+      if (!g.bonusActive && roundTarget != null) {
+        // Repetition runs have no wall-time spawn cutoff, including the final phase.
+        if (g.waveCount < roundTarget && nowSec >= g.nextSpawnAt) {
+          spawnRandomWave(phase);
+          scheduleNext(nowSec, phase);
+          updateTime();
+        }
+      } else if (nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5 && phase.id < 5) {
         spawnRandomWave(phase);
         scheduleNext(nowSec, phase);
       } else if (g.bonusActive && nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5) {
@@ -726,7 +751,8 @@ export function GoalkeeperReactionTraining({
     };
 
     const updateTime = () => {
-      if (hudTimeRef.current) hudTimeRef.current.textContent = String(g.timeLeft);
+      if (hudTimeRef.current) hudTimeRef.current.textContent =
+        !g.bonusActive && roundTarget != null ? `${g.waveCount} / ${roundTarget}` : String(g.timeLeft);
     };
     updateTime();
     if (hudScoreRef.current) hudScoreRef.current.textContent = '0';
@@ -737,16 +763,20 @@ export function GoalkeeperReactionTraining({
       g.startedAt = performance.now();
       g.endsAtMs = performance.now() + duration * 1000;
       g.timer = setInterval(() => {
+        const timedPhase = roundTarget == null || g.bonusActive;
         const next = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
-        if (next !== g.timeLeft) {
+        if (timedPhase && next !== g.timeLeft) {
           g.timeLeft = next;
           updateTime();
           setWarn(next <= 10);
         }
-        if (((targetReps == null || g.bonusActive) && next <= 0) || (!g.bonusActive && targetReps != null && g.waveCount >= targetReps)) {
+        // Allow the final presented wave to arrive before completing or entering BONUS.
+        if ((timedPhase && next <= 0) || (!timedPhase && roundTarget != null && g.waveCount >= roundTarget && g.projectiles.length === 0)) {
           if (bonusTimeEnabled && !g.bonusStarted) {
             g.bonusStarted = true;
             g.bonusActive = true;
+            setBonusActive(true);
+            setWarn(false);
             g.timeLeft = BONUS_TIME_SEC;
             g.startedAt = performance.now();
             g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
@@ -754,7 +784,7 @@ export function GoalkeeperReactionTraining({
             g.phaseId = -1;
             g.bossSpawned = true;
             g.currentSpeed = baseSpeed;
-            g.projectiles.forEach((p) => scene.remove(p));
+            g.projectiles.forEach(disposeProjectile);
             g.projectiles = [];
             updateTime();
             return;
@@ -780,6 +810,7 @@ export function GoalkeeperReactionTraining({
       onTick: setCountdown,
       onDone: beginGame,
     });
+    g.stopCountdown = stopCountdown;
 
     return () => {
       stopCountdown();
@@ -787,6 +818,8 @@ export function GoalkeeperReactionTraining({
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
       if (g.timer) clearInterval(g.timer);
+      g.timeouts.forEach(clearTimeout);
+      g.timeouts.clear();
       g.projectiles.forEach((p) => disposeProjectile(p));
       g.trails.forEach((t) => {
         scene.remove(t);
@@ -818,7 +851,7 @@ export function GoalkeeperReactionTraining({
       <style>{css}</style>
       <div className="gk-hud">
         <div className="gk-hc">
-          <div className="gk-hk">Time</div>
+          <div className="gk-hk">{bonusActive ? 'Bonus' : targetReps == null ? 'Time' : 'Rounds'}</div>
           <div className={`gk-hv${warn ? ' warn' : ''}`} ref={hudTimeRef} />
         </div>
         <div className="gk-hc">
