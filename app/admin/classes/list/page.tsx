@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeStaffSessionFees } from '@/app/lib/staffTeacherFees';
+
 import { toast } from 'sonner';
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
@@ -10,7 +12,9 @@ import type { ClassGroup } from '@/app/admin/classes-shared/types';
 import { buildMemoWithExtras } from '@/app/admin/classes-shared/lib/sessionUtils';
 import { CreateScheduleFields } from './components/CreateScheduleFields';
 import { CreateSessionEditor } from './components/CreateSessionEditor';
-import { buildCreateSchedule, daySettings, localDateInput, scheduleValidation, MONDAY_FIRST_DAYS, type CreateSession, type DaySchedule } from './lib/createSchedule';
+import { buildCreateSchedule, daySettings, initialSessionStatus, localDateInput, scheduleValidation, MONDAY_FIRST_DAYS, type CreateSession, type DaySchedule } from './lib/createSchedule';
+import { assertSavedSessionRows } from '@/app/admin/classes-shared/lib/sessionSaveVerification';
+import { invalidateAdminSessionRequests } from '@/app/admin/classes-shared/lib/adminSessionsRequest';
 import {
   cloneTierFeeMap,
   HARD_CODED_TIER_FEES,
@@ -101,6 +105,7 @@ type BundleSelection = {
 };
 
 type TeacherOption = {
+  role?: string; email?: string; is_admin?: boolean;
   id: string;
   name: string;
   session_count?: number | null;
@@ -115,10 +120,12 @@ function ClassListPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const focusAppliedRef = useRef(false);
+  const groupsRequestGeneration = useRef(0);
   const [supabase] = useState(() =>
     typeof window !== 'undefined' ? getSupabaseBrowserClient() : null
   );
   const [groups, setGroups] = useState<GroupView[]>([]);
+  const [groupsLoadFailed, setGroupsLoadFailed] = useState(false);
   const [teacherMap, setTeacherMap] = useState<Record<string, string>>({});
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,12 +188,14 @@ function ClassListPageContent() {
 
   const fetchGroups = useCallback(async () => {
     if (!supabase) return;
+    const generation = ++groupsRequestGeneration.current;
+    setGroupsLoadFailed(false);
     try {
       const [sessionRows, usersRes] = await Promise.all([
         fetchAllClassListSessions(supabase as never),
         supabase
           .from('users')
-          .select('id, name, session_count, fee_private, fee_group, fee_center_main, fee_center_assist')
+          .select('id, name, role, email, is_admin, session_count, fee_private, fee_group, fee_center_main, fee_center_assist')
           .eq('is_active', true)
           .order('name', { ascending: true }),
       ]);
@@ -205,10 +214,12 @@ function ClassListPageContent() {
         list.forEach((u) => {
           map[u.id] = u.name ?? '';
         });
+        if (generation !== groupsRequestGeneration.current) return;
         setTeacherMap(map);
         setTeachers(list);
       }
       const { map: nextTierFeeMap } = await fetchTeacherTierFeeMap(supabase);
+      if (generation !== groupsRequestGeneration.current) return;
       setTierFeeMap(nextTierFeeMap);
 
       const data = sessionRows;
@@ -403,6 +414,7 @@ function ClassListPageContent() {
 
       setGroups(displayRows);
     } catch (err) {
+      if (generation !== groupsRequestGeneration.current) return;
       const msg =
         err instanceof Error
           ? err.message
@@ -410,13 +422,18 @@ function ClassListPageContent() {
             ? String((err as { message?: unknown }).message)
             : String(err);
       devLogger.error('[classes list] fetchGroups failed:', msg, err);
+      setGroups([]);
+      setGroupsLoadFailed(true);
     } finally {
-      setLoading(false);
+      if (generation === groupsRequestGeneration.current) setLoading(false);
     }
   }, [supabase]);
 
   useEffect(() => {
     fetchGroups();
+    const refresh = () => { void fetchGroups(); };
+    window.addEventListener('classes-auto-finish-completed', refresh);
+    return () => window.removeEventListener('classes-auto-finish-completed', refresh);
   }, [fetchGroups]);
 
   useEffect(() => {
@@ -630,11 +647,12 @@ function ClassListPageContent() {
           : `${roundIndex}/${totalRounds}`;
 
         sessionsToInsert.push({
+          id: crypto.randomUUID(),
           title: createForm.title,
           session_type: sessionType,
           start_at: session.startAt.toISOString(),
           end_at: session.endAt.toISOString(),
-          status: 'opened',
+          status: initialSessionStatus(session.endAt),
           group_id: commonGroupId,
           sequence_number: roundIndex,
           round_index: roundIndex,
@@ -646,8 +664,11 @@ function ClassListPageContent() {
         });
       });
 
-      const { error } = await supabase.from('sessions').insert(sessionsToInsert);
+      const payableSessions = await normalizeStaffSessionFees(supabase, sessionsToInsert);
+      const { data: inserted, error } = await supabase.from('sessions').insert(payableSessions).select('*');
       if (error) throw error;
+      invalidateAdminSessionRequests();
+      assertSavedSessionRows(inserted, payableSessions);
 
       toast.success('수업이 성공적으로 등록되었습니다!');
       setIsCreateOpen(false);
@@ -664,6 +685,7 @@ function ClassListPageContent() {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <main className="flex-1 min-w-0 px-3 sm:px-6 py-4 sm:py-6 overflow-auto">
+        {groupsLoadFailed && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">수업 목록을 조회하지 못했습니다. 이전 데이터를 현재 상태로 표시하지 않았습니다.<button type="button" className="ml-3 min-h-11 rounded border px-3 font-semibold" onClick={() => void fetchGroups()}>다시 조회</button></div>}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900">수업 목록</h1>

@@ -2,66 +2,19 @@
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp, FileText, X } from 'lucide-react';
-import { ADMIN_NAMES } from '@/app/lib/constants/admin';
 
-type TeacherRow = { id: string; name: string };
-type ExtraTeacher = { id: string; price?: number };
-type SessionRow = { id: string; created_by: string; price?: number; students_text?: string; memo?: string; start_at?: string; title?: string };
-
-/** 추가 선생님 정보는 수업 관리에서 memo에 저장됨. memo 우선, 없으면 students_text 확인 */
-function getExtraTeachersFromSession(s: { students_text?: string; memo?: string }): ExtraTeacher[] {
-  for (const raw of [s.memo, s.students_text]) {
-    if (!raw?.includes('EXTRA_TEACHERS:')) continue;
-    try {
-      const arr = JSON.parse(raw.split('EXTRA_TEACHERS:')[1].trim()) as ExtraTeacher[];
-      if (Array.isArray(arr) && arr.length > 0) return arr;
-    } catch {
-      // ignore parse error
-    }
-  }
-  return [];
-}
-
-/** 운영진(ADMIN_NAMES) — 정산 명단·수업료 합계에서 제외 */
-function buildSettlementExcludedIdSet(users: { id: string; name?: string | null }[]): Set<string> {
-  const names = new Set<string>(ADMIN_NAMES);
-  return new Set(
-    users.filter((u) => u.name && names.has(u.name)).map((u) => String(u.id))
-  );
-}
-
-function isSettlementExcluded(teacherId: string, excludedIds: Set<string>): boolean {
-  return excludedIds.has(String(teacherId));
-}
-
-/** 세션 1건의 지급 대상 수업료(운영진 주강사·보조 fee 제외) */
-function sessionPayableFees(s: SessionRow, excludedIds: Set<string>): number {
-  const mainExcluded = isSettlementExcluded(s.created_by, excludedIds);
-  const rawPrice = mainExcluded ? 0 : (Number(s.price) || 0);
-  const extras = getExtraTeachersFromSession(s);
-  const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => {
-    if (isSettlementExcluded(ex.id, excludedIds)) return eSum;
-    return eSum + (Number(ex?.price) || 0);
-  }, 0);
-  return rawPrice + extrasSum;
-}
-
-function teacherSessionFee(s: SessionRow, teacherId: string, excludedIds: Set<string>): number {
-  if (isSettlementExcluded(teacherId, excludedIds)) return 0;
-  const isMain = String(s.created_by) === String(teacherId);
-  if (isMain) return Number(s.price) || 0;
-  const extras = getExtraTeachersFromSession(s);
-  const ex = extras.find((e) => String(e.id) === String(teacherId));
-  return Number(ex?.price) || 0;
-}
-
-type SettlementRow = { id: string; teacher_id: string; amount?: number; reason?: string };
+import {
+  buildSettlementExcludedIdSet, getExtraTeachersFromSession, isSettlementExcluded,
+  sessionPayableFees, teacherSessionFee, settlementRecipients, settlementIssues,
+  settlementPeriodBounds, readAllSettlementRows,
+  type TeacherRow, type SessionRow, type SettlementRow, type SettlementIssue,
+} from './settlementReconciliation';
 
 function parseKrwInputToNumber(raw: string): number {
   const digits = raw.replace(/\D/g, '');
@@ -86,6 +39,7 @@ function computeVatBreakdown(mode: VatCalcMode, amount: number): { supply: numbe
 type ReportTeacher = {
   id: string;
   name: string;
+  is_active?: boolean | null;
   count: number;
   grossTotal: number;
   tax: number;
@@ -108,10 +62,6 @@ function displaySessionTitle(title?: string): string {
   return cleaned || raw;
 }
 
-function assertSupabaseOk(error: { message: string } | null | undefined) {
-  if (error) throw error;
-}
-
 function assertMutationRow<T>(
   data: T | null,
   error: { message: string } | null | undefined
@@ -126,7 +76,11 @@ export default function TeacherSettlementReport() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [isAdmin, setIsAdmin] = useState(false);
   const [expandedTeacher, setExpandedTeacher] = useState<string | null>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [issues, setIssues] = useState<SettlementIssue[]>([]);
+  const [loadedPeriod, setLoadedPeriod] = useState('');
+  const requestGeneration = useRef(0);
   const [reportData, setReportData] = useState<ReportTeacher[]>([]);
   const [sessionFeesTotal, setSessionFeesTotal] = useState(0); // 세션 수업료만 합계 (이중 합산 방지)
   const [totalAdjAmount, setTotalAdjAmount] = useState(0);   // 기타 정산 합계
@@ -136,9 +90,12 @@ export default function TeacherSettlementReport() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [period, setPeriod] = useState(now.getDate() >= 16 ? 'second' : 'first');
+  const reportMatchesPeriod = loadedPeriod === `${year}-${month}-${period}`;
   const [taxSummaryOpen, setTaxSummaryOpen] = useState(false);
   const [taxSummaryData, setTaxSummaryData] = useState<{ id: string; name: string; grossTotal: number; is_active?: boolean }[]>([]);
   const [taxSummaryLoading, setTaxSummaryLoading] = useState(false);
+  const [taxSummaryError, setTaxSummaryError] = useState(false);
+  const taxSummaryGeneration = useRef(0);
 
   const [vatCalcOpen, setVatCalcOpen] = useState(false);
   const [vatCalcMode, setVatCalcMode] = useState<VatCalcMode>('total');
@@ -179,14 +136,17 @@ export default function TeacherSettlementReport() {
 
   const fetchReport = useCallback(async () => {
     if (!supabase || !isAdmin) return;
+    const generation = ++requestGeneration.current;
     setLoading(true);
+    setLoadError(false);
+    setIssues([]);
     try {
       const now = new Date();
       const lastDay = new Date(year, month, 0).getDate();
       const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
       const todayDay = now.getDate();
 
-      let startDay = period === 'first' ? 1 : 16;
+      const startDay = period === 'first' ? 1 : 16;
       let endDay = period === 'first' ? 15 : lastDay;
       if (isCurrentMonth) {
         if (period === 'second' && todayDay < 16) {
@@ -195,38 +155,23 @@ export default function TeacherSettlementReport() {
           endDay = Math.min(endDay, todayDay);
         }
       }
-      const startDate = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-      const [{ data: teachers, error: teachersError }, { data: opsUsers, error: opsUsersError }] = await Promise.all([
-        supabase
-          .from('users')
-          .select('id, name')
-          .eq('role', 'teacher')
-          .eq('is_active', true),
-        supabase.from('users').select('id, name').in('name', [...ADMIN_NAMES]),
-      ]);
-      assertSupabaseOk(teachersError);
-      assertSupabaseOk(opsUsersError);
-      const excludedIds = buildSettlementExcludedIdSet(opsUsers || []);
-      const teachersFiltered = (teachers || []).filter((t: TeacherRow) => !isSettlementExcluded(t.id, excludedIds));
+      const bounds = settlementPeriodBounds(year, month, startDay, endDay);
+      const teachers = await readAllSettlementRows<TeacherRow>((from, to) => supabase
+        .from('users').select('id, name, role, email, is_admin, is_active').order('id').range(from, to));
+      const excludedIds = buildSettlementExcludedIdSet(teachers);
+      const allSessions = endDay < startDay ? [] : await readAllSettlementRows<SessionRow>((from, to) => supabase
+        .from('sessions').select('id, created_by, price, students_text, memo, start_at, end_at, title, status')
+        .gte('start_at', bounds.start).lt('start_at', bounds.end).order('start_at').order('id').range(from, to));
+      const pendingIssues = settlementIssues(teachers, allSessions, Date.now());
+      if (generation !== requestGeneration.current) return;
+      setIssues(pendingIssues);
+      const sessions = allSessions.filter(s => s.status === 'finished' || s.status === 'verified');
+      const dbAdjs = await readAllSettlementRows<SettlementRow>((from, to) => supabase
+        .from('settlements').select('*').eq('year', year).eq('month', month).eq('period', period)
+        .order('id').range(from, to));
+      const teachersFiltered = settlementRecipients(teachers, sessions, dbAdjs, excludedIds);
 
-      // 정산 대상: finished + verified (검수 승인 포함). 강사 앱·진단 SQL과 동일 기준.
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('id, created_by, price, students_text, memo, start_at, title')
-        .in('status', ['finished', 'verified'])
-        .gte('start_at', `${startDate}T00:00:00`)
-        .lte('start_at', `${endDate}T23:59:59`);
-      assertSupabaseOk(sessionsError);
-
-      const { data: dbAdjs, error: dbAdjsError } = await supabase
-        .from('settlements')
-        .select('*')
-        .eq('year', year).eq('month', month).eq('period', period);
-      assertSupabaseOk(dbAdjsError);
-
-      // 수업료 총합(지급액): 세션의 price는 주강사 지급액, EXTRA_TEACHERS 각 price는 보조 지급액 → 세션별 주+보조 합산
       const sessionsList = sessions || [];
       const rawSessionFees = sessionsList.reduce(
         (sum: number, s: SessionRow) => sum + sessionPayableFees(s, excludedIds),
@@ -236,8 +181,6 @@ export default function TeacherSettlementReport() {
         if (isSettlementExcluded(cur.teacher_id, excludedIds)) return acc;
         return acc + (Number(cur?.amount) ?? 0);
       }, 0);
-      setSessionFeesTotal(rawSessionFees);
-      setTotalAdjAmount(rawAdjTotal);
 
       const calculatedData = teachersFiltered.map((teacher: TeacherRow) => {
         const teacherSessions = (sessions || []).filter((s: SessionRow) => {
@@ -266,6 +209,7 @@ export default function TeacherSettlementReport() {
         return {
           id: teacher.id,
           name: teacher.name || 'Unknown',
+          is_active: teacher.is_active,
           count: teacherSessions.length,
           grossTotal: grossTotal || 0,
           tax: tax || 0,
@@ -276,55 +220,62 @@ export default function TeacherSettlementReport() {
       })
       .sort((a: { netPay: number; name: string }, b: { netPay: number; name: string }) => b.netPay - a.netPay || a.name.localeCompare(b.name, 'ko'));
 
+      const listedGross = calculatedData.reduce((sum, teacher) => sum + teacher.grossTotal, 0);
+      if (listedGross !== rawSessionFees + rawAdjTotal) throw new Error('정산 총액과 개인별 명세가 다릅니다. 지급 전 확인해 주세요.');
+      if (generation !== requestGeneration.current) return;
+      setSessionFeesTotal(rawSessionFees);
+      setTotalAdjAmount(rawAdjTotal);
       setReportData(calculatedData);
+      setLoadedPeriod(`${year}-${month}-${period}`);
     } catch (error) {
+      if (generation !== requestGeneration.current) return;
+      setLoadError(true);
+      setReportData([]);
+      setSessionFeesTotal(0);
+      setTotalAdjAmount(0);
       devLogger.error('Data load error:', error);
       toast.error(error instanceof Error ? error.message : '정산 데이터를 불러오지 못했습니다.');
     } finally {
-      setLoading(false);
+      if (generation === requestGeneration.current) setLoading(false);
     }
   }, [supabase, isAdmin, year, month, period]);
 
-  useEffect(() => { fetchReport(); }, [fetchReport]);
+  useEffect(() => {
+    void fetchReport();
+    const refresh = () => { void fetchReport(); };
+    const invalidate = () => { requestGeneration.current++; };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('classes-auto-finish-completed', refresh);
+    return () => {
+      invalidate();
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('classes-auto-finish-completed', refresh);
+    };
+  }, [fetchReport]);
 
   /** 세금 계산용: 선택한 연·월 한 달 전체(1일~말일) 기준 선생님별 세전 총액 */
   const fetchTaxSummary = useCallback(async () => {
     if (!supabase || !isAdmin) return;
+    const generation = ++taxSummaryGeneration.current;
     setTaxSummaryLoading(true);
     setTaxSummaryOpen(true);
+    setTaxSummaryError(false);
+    setTaxSummaryData([]);
     try {
       const lastDay = new Date(year, month, 0).getDate();
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-      const [{ data: teachers, error: teachersError }, { data: opsUsers, error: opsUsersError }] = await Promise.all([
-        supabase.from('users').select('id, name, is_active').eq('role', 'teacher'),
-        supabase.from('users').select('id, name').in('name', [...ADMIN_NAMES]),
-      ]);
-      assertSupabaseOk(teachersError);
-      assertSupabaseOk(opsUsersError);
-      const excludedIds = buildSettlementExcludedIdSet(opsUsers || []);
-      const teachersFiltered = (teachers || []).filter(
-        (t: TeacherRow & { is_active?: boolean }) => !isSettlementExcluded(t.id, excludedIds)
-      );
-
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('id, created_by, price, students_text, memo')
-        .in('status', ['finished', 'verified'])
-        .gte('start_at', `${startDate}T00:00:00`)
-        .lte('start_at', `${endDate}T23:59:59`);
-      assertSupabaseOk(sessionsError);
-
-      const { data: dbAdjs, error: dbAdjsError } = await supabase
-        .from('settlements')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month);
-      assertSupabaseOk(dbAdjsError);
-
-      const sessionsList = sessions || [];
-      const calculated = teachersFiltered.map((teacher: TeacherRow & { is_active?: boolean }) => {
+      const bounds = settlementPeriodBounds(year, month, 1, lastDay);
+      const teachers = await readAllSettlementRows<TeacherRow>((from, to) => supabase
+        .from('users').select('id, name, role, email, is_admin, is_active').order('id').range(from, to));
+      const excludedIds = buildSettlementExcludedIdSet(teachers);
+      const sessionsList = await readAllSettlementRows<SessionRow>((from, to) => supabase
+        .from('sessions').select('id, created_by, price, students_text, memo, start_at')
+        .in('status', ['finished', 'verified']).gte('start_at', bounds.start).lt('start_at', bounds.end)
+        .order('start_at').order('id').range(from, to));
+      const dbAdjs = await readAllSettlementRows<SettlementRow>((from, to) => supabase
+        .from('settlements').select('*').eq('year', year).eq('month', month).order('id').range(from, to));
+      const teachersFiltered = settlementRecipients(teachers, sessionsList, dbAdjs, excludedIds);
+      const calculated = teachersFiltered.map((teacher: TeacherRow) => {
         const teacherSessions = sessionsList.filter((s: SessionRow) => {
           const isMain = String(s.created_by) === String(teacher.id);
           const extras = getExtraTeachersFromSession(s);
@@ -340,6 +291,7 @@ export default function TeacherSettlementReport() {
         const grossTotal = sessionsTotal + adjTotal;
         return { id: teacher.id, name: teacher.name || 'Unknown', grossTotal, is_active: teacher.is_active ?? true };
       });
+      if (generation !== taxSummaryGeneration.current) return;
       setTaxSummaryData(
         calculated.sort(
           (a: { grossTotal: number; name: string }, b: { grossTotal: number; name: string }) =>
@@ -347,16 +299,19 @@ export default function TeacherSettlementReport() {
         )
       );
     } catch (e) {
+      if (generation !== taxSummaryGeneration.current) return;
+      setTaxSummaryData([]);
+      setTaxSummaryError(true);
       devLogger.error('Tax summary error:', e);
       toast.error('세금 계산용 데이터 조회 실패');
     } finally {
-      setTaxSummaryLoading(false);
+      if (generation === taxSummaryGeneration.current) setTaxSummaryLoading(false);
     }
   }, [supabase, isAdmin, year, month]);
 
   // 대시보드 합계: Total Gross = 세션 수업료 + 기타정산 (단일 기준). Net/Tax는 여기서 파생해 상단 카드가 항상 일치하도록 함
   const totalGrossFromSessions = sessionFeesTotal + totalAdjAmount;
-  const derivedTax = Math.floor(totalGrossFromSessions * 0.033);
+  const derivedTax = reportData.reduce((sum, teacher) => sum + teacher.tax, 0);
   const derivedNet = totalGrossFromSessions - derivedTax;
   const stats = {
     totalNet: derivedNet,
@@ -511,11 +466,11 @@ export default function TeacherSettlementReport() {
             부가세 계산기
           </button>
           <div className="flex bg-white p-2 rounded-3xl shadow-sm border border-slate-100 gap-2 items-center">
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="p-2 text-slate-400 outline-none bg-transparent cursor-pointer text-xs font-black uppercase">
+          <select value={year} onChange={(e) => { setYear(Number(e.target.value)); setTaxSummaryOpen(false); taxSummaryGeneration.current++; setTaxSummaryLoading(false); }} className="p-2 text-slate-400 outline-none bg-transparent cursor-pointer text-xs font-black uppercase">
             {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}Y</option>)}
           </select>
           <div className="w-[1px] h-3 bg-slate-100 mx-1"></div>
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="p-2 text-indigo-600 outline-none bg-transparent cursor-pointer text-xs font-black">
+          <select value={month} onChange={(e) => { setMonth(Number(e.target.value)); setTaxSummaryOpen(false); taxSummaryGeneration.current++; setTaxSummaryLoading(false); }} className="p-2 text-indigo-600 outline-none bg-transparent cursor-pointer text-xs font-black">
             {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
           </select>
           <div className="flex bg-slate-50 p-1 rounded-2xl gap-1">
@@ -537,6 +492,8 @@ export default function TeacherSettlementReport() {
           </div>
           {taxSummaryLoading ? (
             <p className="text-amber-700 text-xs font-bold">불러오는 중…</p>
+          ) : taxSummaryError ? (
+            <p role="alert" className="text-sm font-bold text-red-800">월별 세전 내역을 조회하지 못했습니다. 다시 조회해 주세요.</p>
           ) : (
             <div className="space-y-3">
               <div className="overflow-x-auto">
@@ -588,6 +545,23 @@ export default function TeacherSettlementReport() {
         </section>
       )}
 
+      {(loading || (!reportMatchesPeriod && !loadError)) && <p role="status" className="mb-4 text-sm font-semibold text-slate-600">정산 데이터를 대조하는 중입니다.</p>}
+      {loadError && <div role="alert" className="mb-6 rounded-2xl border border-red-300 bg-red-50 p-5 text-red-900">
+        <p className="font-bold">정산 조회 또는 합계 대조에 실패했습니다. 지급 전에 오류를 해결해 주세요.</p>
+        <button type="button" onClick={() => void fetchReport()} className="mt-3 min-h-11 rounded-lg border border-red-300 px-4 font-semibold">다시 조회</button>
+      </div>}
+      {!loading && issues.length > 0 && <section aria-label="정산 확인 필요 내역" className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950">
+        <h2 className="font-bold">정산 확인 필요 {issues.length}건</h2>
+        <p className="mt-2 font-semibold">미완료로 제외된 확인 대상 금액: {issues.filter(issue => issue.excludedFromPay).reduce((sum, issue) => sum + (issue.amount ?? 0), 0).toLocaleString()}원 · 금액 미확인 {issues.filter(issue => issue.amount === null).length}건</p>
+        <p className="mt-2 text-sm">미완료 수업은 지급액에 포함되지 않습니다. 비활성 계정의 과거 지급액은 명세에 포함됩니다. 잘못된 배정은 실제 강사와 금액을 확인해 주세요.</p>
+        <ul className="mt-3 space-y-3">{issues.map(issue => <li key={issue.id} className="text-sm">
+          <span className="font-bold">{issue.title}</span>
+          <span> · {issue.start_at ? new Date(issue.start_at).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }) : ''} · {issue.amount === null ? '금액 확인 필요' : `${issue.amount.toLocaleString()}원`}</span>
+          <p>{issue.reason}</p>
+        </li>)}</ul>
+      </section>}
+
+      {!loading && !loadError && reportMatchesPeriod && <>
       {/* [ Image of Monthly Settlement Summary Dashboard ] */}
       {/* 1. 월별 정산 총합 대시보드 (Total Summary) */}
       <section className="mb-10 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -639,7 +613,7 @@ export default function TeacherSettlementReport() {
                   {teacher.name.slice(0, 1)}
                 </div>
                 <div className="font-black">
-                  <h3 className="text-[15px] text-slate-900 leading-tight">{teacher.name} T</h3>
+                  <h3 className="text-[15px] text-slate-900 leading-tight">{teacher.name} T {teacher.is_active === false && <span className="text-xs text-amber-700">(비활성 · 과거 정산 포함)</span>}</h3>
                   <p className="text-[9px] text-slate-300 uppercase tracking-widest">{teacher.count} Sessions</p>
                 </div>
               </div>
@@ -709,6 +683,8 @@ export default function TeacherSettlementReport() {
           </p>
         </div>
       </div>
+
+      </>}
 
       {vatCalcOpen && (
         <div

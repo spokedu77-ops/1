@@ -1,5 +1,7 @@
 'use client';
 
+import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
+
 import { AssistantFields, type ScheduleTeacher } from './CreateScheduleFields';
 import { localDateInput, type CreateSession } from '../lib/createSchedule';
 
@@ -23,7 +25,7 @@ export function CreateSessionEditor({ sessions, teachers, onChange, mainDefault,
         <label className="min-w-0 text-xs font-semibold text-slate-600">시작 시간<input type="time" value={session.startAt.toTimeString().slice(0, 5)} className={control} onChange={(event) => { if (!event.target.value) return; moveStart(index, new Date(`${localDateInput(session.startAt)}T${event.target.value}`)); }} /></label>
         <label className="min-w-0 text-xs font-semibold text-slate-600">수업 길이(분)<input type="number" min="1" className={control} value={(session.endAt.getTime() - session.startAt.getTime()) / 60_000} onChange={(event) => update(index, { endAt: new Date(session.startAt.getTime() + Number(event.target.value) * 60_000) })} /></label>
         <label className="min-w-0 text-xs font-semibold text-slate-600">메인강사<select value={session.teacherId} className={control} onChange={(event) => update(index, { teacherId: event.target.value, price: mainDefault(event.target.value), assistants: session.assistants.filter((teacher) => teacher.id !== event.target.value) })}><option value="">강사 선택</option>{teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></label>
-        <label className="text-xs font-semibold text-slate-600">메인 회당 금액(원)<input type="number" min="0" value={session.price} className={`${control} tabular-nums`} onChange={(event) => update(index, { price: Number(event.target.value) })} /></label>
+        <label className="text-xs font-semibold text-slate-600">메인 회당 금액(원)<input type="number" min="0" disabled={isZeroFeeStaff(teachers.find((candidate) => candidate.id === session.teacherId))} value={isZeroFeeStaff(teachers.find((candidate) => candidate.id === session.teacherId)) ? 0 : session.price} className={`${control} tabular-nums`} onChange={(event) => update(index, { price: Number(event.target.value) })} /></label>
       </div>
       <AssistantFields value={session.assistants} teachers={teachers} mainId={session.teacherId} onChange={(assistants) => update(index, { assistants })} assistDefault={assistDefault} />
     </article>)}

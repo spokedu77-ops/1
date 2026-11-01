@@ -17,6 +17,10 @@ export type CreateScheduleForm = {
 
 export const MONDAY_FIRST_DAYS = [1, 2, 3, 4, 5, 6, 0];
 export const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+/** Use the same elapsed-end rule as automatic completion at creation time. */
+export function initialSessionStatus(endAt: Date, now = Date.now()): 'finished' | 'opened' {
+  return endAt.getTime() <= now ? 'finished' : 'opened';
+}
 export function localDateInput(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -54,9 +58,10 @@ export function scheduleValidation(sessions: CreateSession[]): string | null {
   for (const session of sessions) {
     if (!session.teacherId) return `${session.roundIndex}회차 메인강사를 선택해 주세요.`;
     if (!Number.isFinite(session.startAt.getTime()) || !Number.isFinite(session.endAt.getTime()) || session.endAt <= session.startAt) return `${session.roundIndex}회차 시간을 확인해 주세요.`;
-    const ids = [session.teacherId, ...session.assistants.map((teacher) => teacher.id)];
+    if (session.assistants.length > 2) return `${session.roundIndex}회차 보조강사는 최대 2명까지 배정할 수 있습니다.`;
+    const ids = [session.teacherId, ...session.assistants.map((teacher) => teacher.id)].map(id => id.toLowerCase());
     if (ids.some((id) => !id) || new Set(ids).size !== ids.length) return `${session.roundIndex}회차 메인·보조강사를 중복 없이 선택해 주세요.`;
-    if ([session.price, ...session.assistants.map((teacher) => teacher.price)].some((price) => !Number.isFinite(price) || price < 0)) return `${session.roundIndex}회차 수업료를 확인해 주세요.`;
+    if ([session.price, ...session.assistants.map((teacher) => teacher.price)].some((price) => !Number.isSafeInteger(price) || price < 0)) return `${session.roundIndex}회차 수업료를 확인해 주세요.`;
   }
   for (let i = 0; i < sessions.length; i++) {
     for (let j = i + 1; j < sessions.length; j++) {

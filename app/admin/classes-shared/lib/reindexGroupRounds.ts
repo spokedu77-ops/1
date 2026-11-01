@@ -1,5 +1,7 @@
 import { formatRoundDisplay } from './roundFields';
 import { resolvePlannedTotal } from './plannedRoundTotal';
+import { assertSavedSessionRows } from './sessionSaveVerification';
+import { invalidateAdminSessionRequests } from './adminSessionsRequest';
 
 export type SessionRowForReindex = {
   id: string;
@@ -109,9 +111,11 @@ export async function reindexGroupRounds(
         .from('sessions')
         .update(fields)
         .eq('id', id)
-        .select('id')
+        .select('*')
         .maybeSingle();
       assertUpdatedRow(data, error, 'REINDEX_ROUND_NOT_UPDATED');
+      invalidateAdminSessionRequests();
+      assertSavedSessionRows([data], [{ id, ...fields }], 'REINDEX_ROUND_UNVERIFIED');
     })
   );
 

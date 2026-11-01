@@ -1,10 +1,13 @@
 "use client";
 
+import { normalizeStaffSessionFees, isZeroFeeStaff, payableTeacherFee } from '@/app/lib/staffTeacherFees';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Minus, Pencil, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
 import { devLogger } from "@/app/lib/logging/devLogger";
+import { sessionDisplayStatus } from "../calendar/lib/sessionDisplayStatus";
 import {
   assertWeekdayTemplateCloneSafe,
   buildSeoulTwoWeekdayStartsFromDate,
@@ -18,7 +21,9 @@ import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/adm
 import { formatRoundDisplay } from "@/app/admin/classes-shared/lib/roundFields";
 import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
 import { findCrossGroupSlotConflicts } from "@/app/admin/classes-shared/lib/sessionRoundGuards";
-import { fetchAdminSessions } from "@/app/admin/classes-shared/lib/adminSessionsRequest";
+import { fetchAdminSessions, invalidateAdminSessionRequests } from "@/app/admin/classes-shared/lib/adminSessionsRequest";
+import { persistedSessionMatches, assertSavedSessionRows } from "@/app/admin/classes-shared/lib/sessionSaveVerification";
+import { initialSessionStatus } from "../list/lib/createSchedule";
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -48,23 +53,23 @@ const RESTART_CYCLE_ROUNDS = 8;
 
 /** 데스크톱 회차 행: DOM 순서 = 열 순서(회차·일정·강사·수업료·상태·관리·마일). */
 const SESSION_DESKTOP_ROW_GRID =
-  "grid w-full min-w-[58rem] grid-cols-[3.25rem_10rem_9rem_5rem_6rem_minmax(13rem,1fr)_4rem] items-start gap-x-3";
+  "grid w-full min-w-[56rem] grid-cols-[2.5rem_16rem_9rem_5rem_4rem_minmax(12rem,1fr)_3rem] items-start gap-x-2";
 
 const SESSION_CONTROL =
-  "box-border h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100";
+  "box-border h-10 min-[1024px]:h-8 w-full min-w-0 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100";
 
-/** 일정 열: 날짜·시간 세로 배치(가로 2분할 시 date input 이 0px 로 붕괴됨). */
-const SESSION_SCHEDULE_DATE_CONTROL = `${SESSION_CONTROL} min-w-[7.75rem]`;
-const SESSION_SCHEDULE_TIME_CONTROL = `${SESSION_CONTROL} min-w-[7.75rem] tabular-nums`;
+/** Keep explicit date/time widths when the desktop schedule shares one row. */
+const SESSION_SCHEDULE_DATE_CONTROL = `${SESSION_CONTROL} min-w-[8.5rem]`;
+const SESSION_SCHEDULE_TIME_CONTROL = `${SESSION_CONTROL} min-w-[6.5rem] tabular-nums`;
 
 const SESSION_PRICE_CONTROL =
   `${SESSION_CONTROL} [appearance:textfield] text-right tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`;
 
 const SESSION_ROW_MINI_BTN =
-  "inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 text-xs font-bold leading-none disabled:opacity-50";
+  "inline-flex h-10 min-[1024px]:h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 text-xs font-bold leading-none disabled:opacity-50";
 
 const SESSION_STATUS_BADGE =
-  "inline-flex h-10 min-w-[3.75rem] shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 text-xs font-bold leading-none";
+  "inline-flex h-10 min-[1024px]:h-8 min-w-[3rem] shrink-0 items-center justify-center whitespace-nowrap rounded-lg border px-2.5 text-xs font-bold leading-none";
 
 type Props = {
   visible: boolean;
@@ -146,6 +151,8 @@ function statusBadgeClass(label: string): string {
   switch (label) {
     case "완료":
       return "bg-slate-700 text-white ring-1 ring-slate-600/30";
+    case "종료·미처리":
+      return "bg-amber-100 text-amber-950 ring-1 ring-amber-300";
     case "예정":
       return "bg-amber-50 text-amber-900 border border-amber-200/80";
     case "진행중":
@@ -207,17 +214,7 @@ function getTimeStatusLabel(row: { start_at: string; end_at: string; status: str
   const isPostponed = row.status === "postponed";
   const isCancelled = row.status === "cancelled";
   const isDeleted = row.status === "deleted";
-  const label = isPostponed
-    ? "연기"
-    : isCancelled
-      ? "취소"
-      : isDeleted
-        ? "삭제"
-        : nowMs > end.getTime()
-          ? "완료"
-          : nowMs >= start.getTime()
-            ? "진행중"
-            : "예정";
+  const label = isDeleted ? "삭제" : sessionDisplayStatus({ status: row.status, start, end }, nowMs);
   const isCompletedByTime = !isPostponed && !isCancelled && !isDeleted && nowMs > end.getTime();
   const isActiveByTime = !isCancelled && !isDeleted && (!isCompletedByTime || isPostponed);
   return { label, isCompletedByTime, isActiveByTime };
@@ -317,7 +314,11 @@ export default function ClassBundlePanel({
     typeof window !== "undefined" ? getSupabaseBrowserClient() : null
   );
 
-  const [teachers, setTeachers] = useState<TeacherFeeRow[]>([]);
+  const [teachers, setTeachers] = useState<(TeacherFeeRow & { is_active?: boolean; role?: string; email?: string })[]>([]);
+  const selectableTeachers = teachers.filter((teacher) => teacher.is_active === true
+    && ['teacher', 'admin', 'master'].includes(teacher.role ?? '')
+    && !/spomove|qa|test|\uD14C\uC2A4\uD2B8/i.test(`${teacher.name ?? ''} ${teacher.email ?? ''}`));
+  const selectableTeacherIds = new Set(selectableTeachers.map((teacher) => teacher.id));
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const bundleBulkRef = useRef({ teacher: {} as Record<string, string>, price: {} as Record<string, string> });
   const teacherMap = useMemo(() => {
@@ -345,6 +346,8 @@ export default function ClassBundlePanel({
   const [assistantErrors, setAssistantErrors] = useState<Record<string, string>>({});
   const [savingAssistants, setSavingAssistants] = useState<Record<string, boolean>>({});
   const assistantSavesRef = useRef(new Set<string>());
+  const sessionsLoadGeneration = useRef(0);
+  const sessionSaveReadGeneration = useRef<Record<string, number>>({});
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const [restoringSessionId, setRestoringSessionId] = useState<string | null>(null);
   const [mileageModal, setMileageModal] = useState<{ gid: string; row: SessionRow } | null>(null);
@@ -424,6 +427,7 @@ export default function ClassBundlePanel({
   }, [visible]);
 
   const loadAll = useCallback(async () => {
+    const generation = ++sessionsLoadGeneration.current;
     if (!supabase) return;
     if (!visible) return;
     if (effectiveGroupIds.length === 0) {
@@ -439,15 +443,14 @@ export default function ClassBundlePanel({
         supabase
           .from("users")
           .select(
-            "id, name, session_count, fee_private, fee_group, fee_center_main, fee_center_assist"
+            "id, name, is_active, role, email, is_admin, session_count, fee_private, fee_group, fee_center_main, fee_center_assist"
           )
-          .eq("is_active", true)
           .order("name", { ascending: true }),
         fetchTeacherTierFeeMap(supabase),
       ]);
 
       if (usersRes.error) devLogger.error(usersRes.error);
-      const baseTeachers = (usersRes.data || []) as TeacherFeeRow[];
+      const baseTeachers = (usersRes.data || []) as (TeacherFeeRow & { is_active?: boolean; role?: string; email?: string })[];
       const logCountByTeacher = await fetchTeacherLogCounts(
         supabase,
         baseTeachers.map((t) => t.id),
@@ -456,6 +459,7 @@ export default function ClassBundlePanel({
         ...t,
         logCount: logCountByTeacher[t.id] ?? 0,
       }));
+      if (generation !== sessionsLoadGeneration.current) return;
       setTeachers(teacherRows);
       setTierFeeMap(tierRes.map);
 
@@ -623,15 +627,19 @@ export default function ClassBundlePanel({
         return next;
       });
     } catch (err) {
+      if (generation !== sessionsLoadGeneration.current) return;
       devLogger.error(err);
       toast.error("사이클 정보를 불러오지 못했습니다.");
     } finally {
-      setLoading(false);
+      if (generation === sessionsLoadGeneration.current) setLoading(false);
     }
   }, [supabase, visible, effectiveGroupIds]);
 
   useEffect(() => {
     void loadAll();
+    const onCompleted = () => { invalidateAdminSessionRequests(); void loadAll(); };
+    window.addEventListener('classes-auto-finish-completed', onCompleted);
+    return () => window.removeEventListener('classes-auto-finish-completed', onCompleted);
   }, [loadAll]);
 
   useEffect(() => {
@@ -673,19 +681,29 @@ export default function ClassBundlePanel({
         memo: row.memo ?? null, price: row.price, status: row.status,
       }, patch, ...(assistants ? { assistants } : {}) }),
     });
-    const result = await response.json().catch(() => ({})) as { error?: string; session?: SessionRow };
-    if (!response.ok || !result.session) throw new Error(result.error || 'SESSION_UPDATE_FAILED');
+    const result = await response.json().catch(() => ({})) as { error?: string; message?: string; session?: SessionRow };
+    if (!response.ok || !result.session) throw new Error(result.error || 'SESSION_UPDATE_FAILED', { cause: result.message });
+    sessionsLoadGeneration.current++;
+    const readGeneration = (sessionSaveReadGeneration.current[gid] ?? 0) + 1;
+    sessionSaveReadGeneration.current[gid] = readGeneration;
+    setLoading(false);
+    invalidateAdminSessionRequests();
     let rows: SessionRow[];
-    try { rows = await fetchAdminSessions<SessionRow>(new URLSearchParams({ groupIds: gid })); }
+    try { rows = await fetchAdminSessions<SessionRow>(new URLSearchParams({ groupIds: gid }), { fresh: true }); }
     catch { throw new Error('SESSION_UPDATE_RELOAD_FAILED'); }
     const actual = rows.find((candidate) => candidate.id === row.id);
-    if (!actual) throw new Error('SESSION_UPDATE_RELOAD_FAILED');
-    setSessionsByGroupId((prev) => ({ ...prev, [gid]: rows }));
+    if (!actual || !persistedSessionMatches(actual, result.session)) {
+      if (sessionSaveReadGeneration.current[gid] === readGeneration) setSessionsByGroupId((prev) => ({ ...prev, [gid]: rows }));
+      onChanged?.();
+      throw new Error('SESSION_UPDATE_RELOAD_MISMATCH', { cause: '저장 후 재조회한 DB 값이 다릅니다. 저장 완료로 처리하지 않았습니다. 현재 배정을 다시 확인해 주세요.' });
+    }
+    if (sessionSaveReadGeneration.current[gid] === readGeneration) setSessionsByGroupId((prev) => ({ ...prev, [gid]: rows }));
     onChanged?.();
     return actual;
   };
 
   const saveErrorMessage = (error: unknown) => {
+    if (error instanceof Error && typeof error.cause === 'string') return error.cause;
     const code = error instanceof Error ? error.message : String(error);
     if (code.includes('STALE')) return '다른 관리자가 수업을 수정했습니다. 다시 조회한 뒤 변경 내용을 확인해 주세요.';
     if (code.includes('TEACHER_SCHEDULE_CONFLICT')) return '메인·보조강사의 다른 수업과 시간이 겹칩니다. 입력 내용은 유지했습니다.';
@@ -707,7 +725,7 @@ export default function ClassBundlePanel({
       if (patch.start_at && patch.end_at) setScheduleDraftBySessionId((prev) => { const next = { ...prev }; delete next[sessionId]; return next; });
       return true;
     } catch (error) {
-      devLogger.error(error); toast.error(saveErrorMessage(error)); return false;
+      devLogger.warn('session update rejected', error instanceof Error ? error.message : 'unknown'); toast.error(saveErrorMessage(error)); return false;
     }
   };
 
@@ -723,8 +741,10 @@ export default function ClassBundlePanel({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ changes: checkedChanges }),
     });
-    const payload = (await response.json().catch(() => ({}))) as { error?: string };
-    if (!response.ok) throw new Error(payload.error || "SESSION_BULK_UPDATE_FAILED");
+    const payload = (await response.json().catch(() => ({}))) as { error?: string; ok?: boolean; updated?: number };
+    if (!response.ok || payload.ok !== true || payload.updated !== changes.length) throw new Error(payload.error || "SESSION_BULK_UPDATE_FAILED");
+    sessionsLoadGeneration.current++;
+    invalidateAdminSessionRequests();
   };
 
   const saveSessionSchedule = async (gid: string, r: SessionRow) => {
@@ -791,7 +811,7 @@ export default function ClassBundlePanel({
       setAssistantErrors((prev) => ({ ...prev, [row.id]: '' }));
       toast.success('보조강사 배정을 저장했습니다.');
     } catch (error) {
-      devLogger.error(error);
+      devLogger.warn('assistant save rejected', error instanceof Error ? error.message : 'unknown');
       setAssistantErrors((prev) => ({ ...prev, [row.id]: saveErrorMessage(error) }));
     } finally {
       assistantSavesRef.current.delete(row.id);
@@ -978,7 +998,7 @@ export default function ClassBundlePanel({
 
     const { data: curr, error: fetchErr } = await supabase
       .from("sessions")
-      .select("id, round_index, round_total, start_at, status")
+      .select("id, round_index, round_total, start_at, end_at, status, created_by, memo, price")
       .eq("id", sessionId)
       .maybeSingle();
     if (fetchErr) {
@@ -1018,14 +1038,20 @@ export default function ClassBundlePanel({
         cancelPatch.round_display = formatRoundDisplay(roundIndex, contractTotal);
       }
 
-      const { data: cancelledRow, error: cancelErr } = await supabase
+      let cancelQuery = supabase
         .from("sessions")
         .update(cancelPatch)
-        .eq("id", sessionId)
-        .select("id")
+        .eq("id", sessionId);
+      for (const [field, value] of Object.entries({ start_at: curr.start_at, end_at: curr.end_at, status: curr.status, created_by: curr.created_by, memo: curr.memo, price: curr.price })) {
+        cancelQuery = value == null ? cancelQuery.is(field, null) : cancelQuery.eq(field, value);
+      }
+      const { data: cancelledRow, error: cancelErr } = await cancelQuery
+        .select("id,status,round_display")
         .maybeSingle();
       if (cancelErr) throw cancelErr;
       if (!cancelledRow?.id) throw new Error("BUNDLE_SESSION_NOT_CANCELLED");
+      invalidateAdminSessionRequests();
+      assertSavedSessionRows([cancelledRow], [{ id: sessionId, ...cancelPatch }]);
       setRoundView("all"); // 방금 취소한 회차가 목록에서 사라지지 않게 합니다.
       toast.success(
         roundLabel
@@ -1048,7 +1074,7 @@ export default function ClassBundlePanel({
 
     const { data: curr, error: fetchErr } = await supabase
       .from("sessions")
-      .select("id, status, price, end_at, mileage_option")
+      .select("id, status, price, start_at, end_at, created_by, memo, mileage_option")
       .eq("id", sessionId)
       .maybeSingle();
     if (fetchErr || !curr?.id) {
@@ -1098,11 +1124,16 @@ export default function ClassBundlePanel({
       restoreQuery = curr.mileage_option == null
         ? restoreQuery.is("mileage_option", null)
         : restoreQuery.eq("mileage_option", curr.mileage_option);
+      for (const [field, value] of Object.entries({ start_at: curr.start_at, created_by: curr.created_by, memo: curr.memo, price: curr.price })) {
+        restoreQuery = value == null ? restoreQuery.is(field, null) : restoreQuery.eq(field, value);
+      }
       const { data: restored, error: restoreErr } = await restoreQuery
-        .select("id")
+        .select("id,status")
         .maybeSingle();
       if (restoreErr) throw restoreErr;
       if (!restored?.id) throw new Error("BUNDLE_CANCEL_RESTORE_STALE");
+      invalidateAdminSessionRequests();
+      assertSavedSessionRows([restored], [{ id: sessionId, status: "opened" }]);
       setRoundView("all");
       toast.success("회차가 복구되었습니다. 메인 수업료와 일정은 유지됩니다.");
       await loadAll();
@@ -1132,49 +1163,39 @@ export default function ClassBundlePanel({
     setShrinkingByGroup((prev) => ({ ...prev, [gid]: true }));
     try {
       const idsToDelete = toRemove.map((s) => s.id);
-      const { error: delErr } = await supabase.from("sessions").delete().in("id", idsToDelete);
-      if (delErr) throw delErr;
-
       const total = resolvePlannedTotalAfterDeleting(sessions, idsToDelete.length);
       const remaining = active.filter((s) => !idsToDelete.includes(s.id));
       const remainingActiveIds = new Set(remaining.map((s) => s.id));
-      const remainingTotalRows = sessions.filter(
-        (s) => !idsToDelete.includes(s.id) && !remainingActiveIds.has(s.id) && s.status !== "deleted"
-      );
-      if (remaining.length > 0) {
-        await Promise.all(
-          remaining.map((row, i) =>
-            supabase
-              .from("sessions")
-              .update({
-                round_index: i + 1,
-                round_total: total,
-                sequence_number: i + 1,
-                round_display: `${i + 1}/${total}`,
-              })
-              .eq("id", row.id)
-          )
-        );
-      }
-      if (remainingTotalRows.length > 0) {
-        await Promise.all(
-          remainingTotalRows.map((row) => {
-            const patch = {
-              round_total: total,
-              ...(typeof row.round_index === "number"
-                ? { round_display: `${Math.min(row.round_index, total)}/${total}` }
-                : {}),
-            };
-            return supabase.from("sessions").update(patch).eq("id", row.id);
-          })
-        );
-      }
+      const remainingTotalRows = sessions.filter((s) => !idsToDelete.includes(s.id) && !remainingActiveIds.has(s.id) && s.status !== "deleted");
+      const roundUpdates = [
+        ...remaining.map((row, i) => ({ id: row.id, round_index: i + 1, round_total: total, sequence_number: i + 1, round_display: `${i + 1}/${total}` })),
+        ...remainingTotalRows.map((row) => ({ id: row.id, round_total: total, ...(typeof row.round_index === "number" ? { round_display: `${Math.min(row.round_index, total)}/${total}` } : {}) })),
+      ];
+      const response = await fetch('/api/admin/classes/sessions/shrink', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupId: gid, removeIds: idsToDelete, roundUpdates, expected: sessions.map(row => ({
+          id: row.id, start_at: row.start_at, end_at: row.end_at, created_by: row.created_by, memo: row.memo ?? null,
+          price: row.price, status: row.status, round_index: row.round_index ?? null, round_total: row.round_total ?? null,
+        })) }),
+      });
+      const result = await response.json().catch(() => ({})) as { ok?: boolean; deleted?: number; error?: string };
+      if (!response.ok || !result.ok || result.deleted !== idsToDelete.length) throw new Error(result.error || 'SESSION_SHRINK_UNVERIFIED');
+      sessionsLoadGeneration.current++;
+      invalidateAdminSessionRequests();
+      const rows = await fetchAdminSessions<SessionRow>(new URLSearchParams({ groupIds: gid }), { fresh: true });
+      if (rows.some(row => idsToDelete.includes(row.id))) throw new Error('SESSION_SHRINK_UNVERIFIED');
+      const expectedIds = new Set(roundUpdates.map(row => row.id));
+      assertSavedSessionRows(rows.filter(row => expectedIds.has(row.id)), roundUpdates);
+      setSessionsByGroupId(prev => ({ ...prev, [gid]: rows }));
       toast.success("회차가 축소되었습니다.");
       void loadAll();
       onChanged?.();
     } catch (err) {
       devLogger.error(err);
-      toast.error("회차 축소에 실패했습니다.");
+      toast.error("회차 축소를 완료하지 못했습니다. 일부 변경이 적용됐을 수 있으니 재조회한 회차를 확인해 주세요.");
+      invalidateAdminSessionRequests();
+      await loadAll();
+      onChanged?.();
     } finally {
       setShrinkingByGroup((prev) => ({ ...prev, [gid]: false }));
     }
@@ -1305,9 +1326,10 @@ export default function ClassBundlePanel({
           : insertBase;
         newSessions.push({
           ...templateBase,
+          id: crypto.randomUUID(),
           group_id: nextGroupId,
           title: bundleTitle,
-          status: "opened",
+          status: initialSessionStatus(new Date(candidate.endAt)),
           start_at: candidate.startAt,
           end_at: candidate.endAt,
           students_text: null,
@@ -1323,8 +1345,11 @@ export default function ClassBundlePanel({
         });
       }
 
-      const { error } = await supabase.from("sessions").insert(newSessions);
+      const payableSessions = await normalizeStaffSessionFees(supabase, newSessions);
+      const { data: inserted, error } = await supabase.from("sessions").insert(payableSessions).select("*");
       if (error) throw error;
+      invalidateAdminSessionRequests();
+      assertSavedSessionRows(inserted, payableSessions);
       toast.success("새 사이클이 생성되었습니다.");
 
       // 모달 내부에서도 즉시 보이게 groupIds 추가 + 펼치기
@@ -1347,11 +1372,13 @@ export default function ClassBundlePanel({
     if (!confirm(`번들에 포함된 모든 사이클의 수업명을 "${nextTitle}"로 변경할까요?`)) return;
     setSavingTitle(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("sessions")
         .update({ title: nextTitle })
-        .in("group_id", effectiveGroupIds);
+        .in("group_id", effectiveGroupIds).select("id,title");
       if (error) throw error;
+      invalidateAdminSessionRequests();
+      assertSavedSessionRows(data, effectiveGroupIds.flatMap(gid => sessionsByGroupId[gid] || []).map(row => ({ id: row.id, title: nextTitle })));
       toast.success("수업명이 변경되었습니다.");
       setEditingTitle(false);
       onChanged?.();
@@ -1377,11 +1404,13 @@ export default function ClassBundlePanel({
       return;
     setSavingSessionType(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("sessions")
         .update({ session_type: next })
-        .in("group_id", effectiveGroupIds);
+        .in("group_id", effectiveGroupIds).select("id,session_type");
       if (error) throw error;
+      invalidateAdminSessionRequests();
+      assertSavedSessionRows(data, effectiveGroupIds.flatMap(gid => sessionsByGroupId[gid] || []).map(row => ({ id: row.id, session_type: next })));
       toast.success("수업 타입이 반영되었습니다.");
       setBundleSessionTypesMixed(false);
       onChanged?.();
@@ -1579,7 +1608,8 @@ export default function ClassBundlePanel({
   const bundleSummary = useMemo(() => {
     const rows = effectiveGroupIds.flatMap((gid) => sessionsByGroupId[gid] || []);
     const activeRows = rows.filter((row) => row.status !== "deleted" && row.status !== "cancelled");
-    const completedRows = activeRows.filter((row) => getTimeStatusLabel(row).isCompletedByTime);
+    const completedRows = activeRows.filter((row) => sessionDisplayStatus({ status: row.status, start: row.start_at, end: row.end_at }, Date.now()) === "완료");
+    const pendingRows = activeRows.filter((row) => sessionDisplayStatus({ status: row.status, start: row.start_at, end: row.end_at }, Date.now()) === "종료·미처리");
     const upcomingRows = activeRows
       .filter((row) => new Date(row.start_at).getTime() >= Date.now() && row.status !== "postponed")
       .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
@@ -1588,7 +1618,8 @@ export default function ClassBundlePanel({
     return {
       total: activeRows.length,
       completed: completedRows.length,
-      inProgress: Math.max(0, activeRows.length - completedRows.length),
+      inProgress: activeRows.filter((row) => ["예정", "진행중"].includes(sessionDisplayStatus({ status: row.status, start: row.start_at, end: row.end_at }, Date.now()))).length,
+      pending: pendingRows.length,
       next: upcomingRows[0] ?? null,
       mainTeacherLabel: mainTeachers.size === 0 ? "미정" : mainTeachers.size === 1 ? [...mainTeachers][0] : `${mainTeachers.size}명`,
       assistantCount,
@@ -1623,7 +1654,7 @@ export default function ClassBundlePanel({
                     <button
                       type="button"
                       onClick={() => toggleGroup(gid)}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-slate-50"
+                      className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left hover:bg-slate-50"
                     >
                       <div className="flex min-w-0 items-center gap-2">
                         {open ? <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" /> : <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />}
@@ -1639,7 +1670,7 @@ export default function ClassBundlePanel({
                     </button>
 
                     {open && (
-                      <div className="space-y-3 border-t border-slate-100 px-3 py-3">
+                      <div className="space-y-2 border-t border-slate-100 px-2 py-2">
                         {isPastCycle ? (
                           <p className="text-[11px] text-slate-500">
                             종료 사이클 · 전체 회차만 조회. 일괄 적용·도구·연기·취소는 없습니다.
@@ -1662,7 +1693,7 @@ export default function ClassBundlePanel({
                             )}
                           </button>
                           {(bulkOpenByGroup[gid] ?? false) ? (
-                            <div className="space-y-3 border-t border-slate-100 px-3 py-3">
+                            <div className="space-y-2 border-t border-slate-100 px-2 py-2">
                           <p className="text-[11px] text-slate-500">
                             목록 필터에 보이는 진행·예정 회차에만 적용됩니다.
                             {isSpecialLectureGroup
@@ -1692,7 +1723,8 @@ export default function ClassBundlePanel({
                                 }}
                               >
                                 <option value="">메인 강사 선택</option>
-                                {teachers.map((t) => (
+                                {bulkTeacherIdByGroup[gid] && !selectableTeacherIds.has(bulkTeacherIdByGroup[gid]) ? <option value={bulkTeacherIdByGroup[gid]} disabled>{teacherMap[bulkTeacherIdByGroup[gid]] || "\uAE30\uC874 \uAC15\uC0AC"}{" (\uAE30\uC874 \uBC30\uC815)"}</option> : null}
+                                {selectableTeachers.map((t) => (
                                   <option key={t.id} value={t.id}>
                                     {t.name ?? ""} T
                                   </option>
@@ -1776,7 +1808,8 @@ export default function ClassBundlePanel({
                                     }}
                                   >
                                     <option value="">보조 강사 선택 (비우면 미적용)</option>
-                                    {teachers.map((t) => (
+                                {bulkAssistTeacherIdByGroup[gid] && !selectableTeacherIds.has(bulkAssistTeacherIdByGroup[gid]) ? <option value={bulkAssistTeacherIdByGroup[gid]} disabled>{teacherMap[bulkAssistTeacherIdByGroup[gid]] || "\uAE30\uC874 \uAC15\uC0AC"}{" (\uAE30\uC874 \uBC30\uC815)"}</option> : null}
+                                    {selectableTeachers.map((t) => (
                                       <option key={t.id} value={t.id}>
                                         {t.name ?? ""} T
                                       </option>
@@ -1827,12 +1860,12 @@ export default function ClassBundlePanel({
 <div
                           className={
                             cycleMainUndecided && !isPastCycle
-                              ? "overflow-hidden rounded-lg border-2 border-red-400 bg-red-50/50"
-                              : "overflow-hidden rounded-lg border border-slate-200"
+                              ? "overflow-x-auto rounded-lg border-2 border-red-400 bg-red-50/50"
+                              : "overflow-x-auto rounded-lg border border-slate-200"
                           }
                         >
                           <div
-                            className={`${SESSION_DESKTOP_ROW_GRID} hidden border-b border-slate-100 bg-slate-50 px-2 py-2 text-[11px] font-medium text-slate-500 md:grid`}
+                            className={`${SESSION_DESKTOP_ROW_GRID} hidden border-b border-slate-100 bg-slate-50 px-2 py-2 text-[11px] font-medium text-slate-500 min-[1024px]:grid`}
                           >
                             <div>회차</div>
                             <div>일정</div>
@@ -1972,11 +2005,11 @@ export default function ClassBundlePanel({
                                     );
                                   return (
                                     <div key={r.id} className="border-t border-slate-100">
-                                      <div className={`${SESSION_DESKTOP_ROW_GRID} hidden px-2 py-2 md:grid`}>
+                                      <div className={`${SESSION_DESKTOP_ROW_GRID} hidden px-2 py-1.5 min-[1024px]:grid`}>
                                         <div className="pt-1.5 text-xs font-semibold tabular-nums text-slate-700 whitespace-nowrap">
                                           {n}/{total}
                                         </div>
-                                        <div className="flex w-full min-w-0 flex-col gap-1">
+                                        <div className="grid w-full min-w-0 grid-cols-[minmax(8.5rem,1fr)_minmax(6.5rem,0.8fr)] gap-1">
                                           <input
                                             type="date"
                                             aria-label={`${n}회차 날짜`}
@@ -2003,7 +2036,8 @@ export default function ClassBundlePanel({
                                             <option value="" disabled>
                                               강사 선택
                                             </option>
-                                            {teachers.map((t) => (
+                                            {r.created_by && !selectableTeacherIds.has(r.created_by) ? <option value={r.created_by} disabled>{teacherMap[r.created_by] || "\uAE30\uC874 \uAC15\uC0AC"} {" (\uAE30\uC874 \uBC30\uC815)"}</option> : null}
+                                            {selectableTeachers.map((t) => (
                                               <option key={t.id} value={t.id}>
                                                 {t.name}
                                               </option>
@@ -2017,7 +2051,8 @@ export default function ClassBundlePanel({
                                                 onChange={(e) => void setAssistIdAt(gid, r, aidx, e.target.value)}
                                               >
                                                 <option value="">보조 강사</option>
-                                                {teachers.map((t) => (
+                                                {ex.id && !selectableTeacherIds.has(ex.id) ? <option value={ex.id} disabled>{teacherMap[ex.id] || "\uAE30\uC874 \uAC15\uC0AC"} {" (\uAE30\uC874 \uBC30\uC815)"}</option> : null}
+                                                {selectableTeachers.map((t) => (
                                                   <option key={t.id} value={t.id}>
                                                     {t.name}
                                                   </option>
@@ -2036,7 +2071,7 @@ export default function ClassBundlePanel({
                                           {assistList.length < 2 ? (
                                             <button
                                               type="button"
-                                              className="flex h-8 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
+                                              className="flex h-5 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
                                               onClick={() => void addAssistRow(gid, r)}
                                             >
                                               <Plus size={11} strokeWidth={2.5} />
@@ -2052,7 +2087,8 @@ export default function ClassBundlePanel({
                                             aria-label={`${n}회차 수업료`}
                                             className={SESSION_PRICE_CONTROL}
                                             placeholder="수업료"
-                                            defaultValue={Number(r.price) || 0}
+                                            defaultValue={payableTeacherFee(teachers.find((teacher) => teacher.id === r.created_by), Number(r.price) || 0)}
+                                            disabled={isZeroFeeStaff(teachers.find((teacher) => teacher.id === r.created_by))}
                                             onBlur={(e) =>
                                               void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })
                                             }
@@ -2064,20 +2100,21 @@ export default function ClassBundlePanel({
                                               aria-label={`${n}회차 보조${aidx + 1} 수업료`}
                                               className={`${SESSION_PRICE_CONTROL} text-slate-600`}
                                               placeholder="수업료"
-                                              value={Number.isNaN(ex.price) ? '' : ex.price}
+                                              value={isZeroFeeStaff(teachers.find((teacher) => teacher.id === ex.id)) ? 0 : Number.isNaN(ex.price) ? '' : ex.price}
+                                              disabled={isZeroFeeStaff(teachers.find((teacher) => teacher.id === ex.id))}
                                               onChange={(e) =>
                                                 void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)
                                               }
                                             />
                                           ))}
                                         </div>
-                                        <div className="flex justify-center pt-1">
+                                        <div className="flex justify-center">
                                           <span className={`${SESSION_STATUS_BADGE} ${statusBadgeClass(s.label)}`}>
                                             {s.label}
                                           </span>
                                         </div>
-                                        <div className="min-w-0 pt-0.5">{managementBtns}</div>
-                                        <div className="flex justify-center pt-1">
+                                        <div className="min-w-0">{managementBtns}</div>
+                                        <div className="flex justify-center">
                                           <button
                                             type="button"
                                             className={`${SESSION_ROW_MINI_BTN} min-w-[2.75rem] border-amber-200/80 bg-amber-50 text-amber-900 hover:bg-amber-100`}
@@ -2088,7 +2125,7 @@ export default function ClassBundlePanel({
                                         </div>
                                       </div>
 
-                                      <div className="space-y-2 px-3 py-2 md:hidden">
+                                      <div className="space-y-2 px-3 py-2 min-[1024px]:hidden">
                                         <div className="flex items-center justify-between gap-2">
                                           <span className="text-sm font-bold tabular-nums text-slate-900">
                                             {n}/{total}
@@ -2121,7 +2158,8 @@ export default function ClassBundlePanel({
                                           <option value="" disabled>
                                             강사 선택
                                           </option>
-                                          {teachers.map((t) => (
+                                          {r.created_by && !selectableTeacherIds.has(r.created_by) ? <option value={r.created_by} disabled>{teacherMap[r.created_by] || "\uAE30\uC874 \uAC15\uC0AC"} {" (\uAE30\uC874 \uBC30\uC815)"}</option> : null}
+                                          {selectableTeachers.map((t) => (
                                             <option key={t.id} value={t.id}>
                                               {t.name}
                                             </option>
@@ -2135,7 +2173,8 @@ export default function ClassBundlePanel({
                                               onChange={(e) => void setAssistIdAt(gid, r, aidx, e.target.value)}
                                             >
                                               <option value="">보조 강사</option>
-                                              {teachers.map((t) => (
+                                              {ex.id && !selectableTeacherIds.has(ex.id) ? <option value={ex.id} disabled>{teacherMap[ex.id] || "\uAE30\uC874 \uAC15\uC0AC"} {" (\uAE30\uC874 \uBC30\uC815)"}</option> : null}
+                                              {selectableTeachers.map((t) => (
                                                 <option key={t.id} value={t.id}>
                                                   {t.name}
                                                 </option>
@@ -2154,7 +2193,7 @@ export default function ClassBundlePanel({
                                         {assistList.length < 2 ? (
                                           <button
                                             type="button"
-                                            className="flex h-8 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
+                                            className="flex h-5 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
                                             onClick={() => void addAssistRow(gid, r)}
                                           >
                                             <Plus size={11} strokeWidth={2.5} />
@@ -2168,7 +2207,8 @@ export default function ClassBundlePanel({
                                           aria-label={`${n}회차 수업료`}
                                           className={SESSION_PRICE_CONTROL}
                                           placeholder="수업료"
-                                          defaultValue={Number(r.price) || 0}
+                                          defaultValue={payableTeacherFee(teachers.find((teacher) => teacher.id === r.created_by), Number(r.price) || 0)}
+                                            disabled={isZeroFeeStaff(teachers.find((teacher) => teacher.id === r.created_by))}
                                           onBlur={(e) =>
                                             void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })
                                           }
@@ -2180,7 +2220,8 @@ export default function ClassBundlePanel({
                                             aria-label={`${n}회차 보조${aidx + 1} 수업료`}
                                             className={`${SESSION_PRICE_CONTROL} text-slate-600`}
                                             placeholder="보조 수업료"
-                                            value={Number.isNaN(ex.price) ? '' : ex.price}
+                                            value={isZeroFeeStaff(teachers.find((teacher) => teacher.id === ex.id)) ? 0 : Number.isNaN(ex.price) ? '' : ex.price}
+                                              disabled={isZeroFeeStaff(teachers.find((teacher) => teacher.id === ex.id))}
                                             onChange={(e) =>
                                               void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)
                                             }
@@ -2442,16 +2483,16 @@ export default function ClassBundlePanel({
       />
       <aside
         aria-label="수업 상세 관리"
-        className={`absolute right-0 top-0 flex h-full w-full flex-col border-l border-slate-200 bg-slate-50 shadow-2xl transition-transform min-[1100px]:max-w-[1280px] ${
+        className={`absolute right-0 top-0 flex h-full w-full flex-col border-l border-slate-200 bg-slate-50 shadow-2xl transition-transform min-[1100px]:max-w-[1120px] ${
           visible ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="sticky top-0 z-20 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-white/95 py-4 pl-14 pr-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-20 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-white/95 py-2 pl-14 pr-3 backdrop-blur sm:px-3">
           <div className="min-w-0 flex-1 space-y-2">
             {!editingTitle ? (
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{displayTitle}</h2>
+                  <h2 className="truncate text-lg font-bold tracking-tight text-slate-950 sm:text-xl">{displayTitle}</h2>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{effectiveGroupIds.length}사이클</span>
                   <button
                     type="button"
@@ -2543,13 +2584,13 @@ export default function ClassBundlePanel({
         </header>
 
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-auto p-3 sm:p-5">
+          <div className="min-h-0 flex-1 space-y-2 overflow-auto p-2 sm:p-3">
             <section aria-label="수업 운영 요약" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-extrabold text-blue-600">운영 요약</p><h3 className="mt-1 text-base font-black text-slate-950">현재 수업 진행 현황</h3></div><span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-extrabold text-blue-700">{displayTypeLabel}</span></div>
               <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-4">
                 <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">전체 회차</dt><dd className="mt-1 text-xl font-black text-slate-950">{bundleSummary.total}</dd></div>
                 <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">진행·예정</dt><dd className="mt-1 text-xl font-black text-blue-700">{bundleSummary.inProgress}</dd></div>
-                <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">완료</dt><dd className="mt-1 text-xl font-black text-emerald-700">{bundleSummary.completed}</dd></div>
+                <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">완료</dt><dd className="mt-1 text-xl font-black text-emerald-700">{bundleSummary.completed}</dd>{bundleSummary.pending > 0 && <p className="mt-1 text-xs font-semibold text-amber-700">종료·미처리 {bundleSummary.pending}건</p>}</div>
                 <div className="bg-white p-3"><dt className="text-xs font-semibold text-slate-500">담당 강사</dt><dd className="mt-1 truncate text-sm font-black text-slate-950">메인 {bundleSummary.mainTeacherLabel} · 보조 {bundleSummary.assistantCount}명</dd></div>
               </dl>
               <p className="mt-3 text-sm font-semibold text-slate-600">다음 수업: {bundleSummary.next ? new Date(bundleSummary.next.start_at).toLocaleString("ko-KR", { month: "long", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" }) : "예정된 수업 없음"}</p>
@@ -2603,17 +2644,17 @@ export default function ClassBundlePanel({
                   calendarEvents={calendarEvents}
                   calendarDataStatus={calendarDataStatus}
                 />
-                <div className="grid items-start gap-4 min-[1100px]:grid-cols-[15rem_minmax(0,1fr)]">
-                  <nav aria-label="사이클 선택" className="sticky top-0 z-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 min-[1100px]:top-2 min-[1100px]:overflow-visible">
-                    <p className="px-2 pb-2 text-xs font-extrabold text-slate-500">사이클 선택</p>
-                    <div className="flex gap-2 min-[1100px]:flex-col">
+                <div className="grid min-w-0 items-start gap-2">
+                  <nav aria-label="사이클 선택" className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 bg-white px-1 py-1">
+                    <p className="shrink-0 text-xs font-semibold text-slate-500">사이클 선택</p>
+                    <div className="flex gap-2">
                       {currentGroupIds.map((gid) => {
                         const rows = sessionsByGroupId[gid] || [];
                         const cycleNumber = sortedGroupIds.indexOf(gid) + 1;
-                        return <button key={gid} type="button" onClick={() => setOpenGroupIds((previous) => ({ ...previous, [gid]: true }))} className={`min-w-48 rounded-xl border px-3 py-3 text-left min-[1100px]:min-w-0 ${openGroupIds[gid] ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}><span className="block text-sm font-black text-slate-900">{cycleNumber}사이클</span><span className="mt-1 block text-xs text-slate-500">{formatDateRange(rows)} · {plannedTotalOfGroup(rows)}회</span></button>;
+                        return <button key={gid} type="button" onClick={() => setOpenGroupIds((previous) => ({ ...previous, [gid]: true }))} className={`shrink-0 rounded-md border px-2 py-1 text-left ${openGroupIds[gid] ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}><span className="text-xs font-bold text-slate-900">{cycleNumber}사이클</span><span className="ml-2 text-[11px] text-slate-500">{formatDateRange(rows)} · {plannedTotalOfGroup(rows)}회</span></button>;
                       })}
                     </div>
-                    {pastGroupIds.length > 0 ? <button type="button" onClick={() => setPastArchiveOpen((open) => !open)} className="mt-2 min-h-10 w-full rounded-xl bg-slate-100 px-3 text-left text-xs font-bold text-slate-700">지난 사이클 {pastGroupIds.length}개</button> : null}
+                    {pastGroupIds.length > 0 ? <button type="button" onClick={() => setPastArchiveOpen((open) => !open)} className="ml-auto min-h-8 shrink-0 rounded-md bg-slate-100 px-2 text-xs font-semibold text-slate-700">지난 사이클 {pastGroupIds.length}개</button> : null}
                   </nav>
                   <div className="min-w-0 space-y-3">
                     {currentGroupIds.map((gid) => renderCycleSection(gid))}

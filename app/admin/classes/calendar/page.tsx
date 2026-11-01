@@ -41,7 +41,6 @@ export default function ClassManagementCalendar() {
   const {
     allEvents,
     filteredEvents,
-    teacherList,
     sessionsFetchNotice,
     fetchSessions,
     filterTeacher,
@@ -101,10 +100,13 @@ export default function ClassManagementCalendar() {
   const selectedTeacherCount = selectedTeacher ? totalLessonsFromCounts(selectedTeacher.session_count, selectedTeacher.log_count) : 0;
   const selectedTeacherTier = selectedTeacher ? computeTier(selectedTeacherCount) : null;
   const selectedTeacherFees = selectedTeacher && selectedTeacherTier ? effectiveFees(selectedTeacherTier, selectedTeacher, reference.tierFeeMap) : null;
-  const filterOptions = reference.teachers.length > 0 ? reference.teachers : teacherList.map((teacher) => ({ ...teacher, is_active: true }));
+  const filterOptions = reference.filterTeachers;
 
   useEffect(() => {
     void fetchSessions({ anchor: monthAnchor });
+    const refresh = () => { void fetchSessions({ anchor: monthAnchor }); };
+    window.addEventListener('classes-auto-finish-completed', refresh);
+    return () => window.removeEventListener('classes-auto-finish-completed', refresh);
   }, [fetchSessions, monthAnchor]);
 
   const scrollDesktopToTodayWeek = useCallback(() => {
@@ -146,22 +148,22 @@ export default function ClassManagementCalendar() {
 
   return (
     <div className="min-h-screen min-w-0 bg-slate-50 text-slate-900">
-      <main className="mx-auto w-full max-w-[1480px] px-3 pb-16 pt-6 sm:px-6 min-[1200px]:px-8">
-        <header className="flex items-start justify-between gap-4">
-          <div><p className="text-xs font-extrabold tracking-wide text-blue-600">SPOKEDU CLASS OPS</p><h1 className="mt-2 text-[28px] font-bold tracking-[-0.04em] text-slate-950 sm:text-[32px]">수업 통합 운영 관리</h1><p className="mt-1 text-sm text-slate-500">일정에서 강사·운영 규칙·수업료 기준까지 한 흐름으로 확인합니다.</p></div>
+      <main className="mx-auto w-full max-w-[1480px] px-3 pb-16 pt-3 sm:px-6 min-[1200px]:px-8">
+        <header className="flex items-center justify-between gap-3">
+          <div><h1 className="text-xl font-bold tracking-tight text-slate-950 sm:text-[22px]">수업 통합 운영 관리</h1><p className="mt-0.5 text-xs text-slate-500">일정에서 강사·운영 규칙·수업료 기준까지 한 흐름으로 확인합니다.</p></div>
           <Link href="/admin/classes/list" className="hidden min-h-11 shrink-0 items-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 sm:inline-flex">수업 목록</Link>
         </header>
 
-        <section aria-labelledby="class-ops-calendar" className="mt-10">
-          <div className="flex items-end justify-between gap-4 border-b border-slate-200 pb-3"><div><p className="text-xs font-extrabold text-blue-600">01</p><h2 id="class-ops-calendar" className="mt-1 text-[22px] font-bold tracking-tight text-slate-950">수업 캘린더</h2></div><div className="hidden items-center gap-3 text-[11px] text-slate-500 sm:flex"><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-600" />예정</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-600" />완료</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-violet-600" />연기</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-600" />취소</span></div></div>
-          <nav ref={pageToolbarRef} className="mt-4 flex flex-col gap-3 min-[1024px]:flex-row min-[1024px]:items-center min-[1024px]:justify-between" aria-label="캘린더 도구">
+        <section aria-labelledby="class-ops-calendar" className="mt-3">
+          <div className="flex items-end justify-between gap-3 border-b border-slate-200 pb-2"><div><h2 id="class-ops-calendar" className="text-base font-bold tracking-tight text-slate-950">수업 캘린더</h2></div><div className="hidden items-center gap-3 text-[11px] text-slate-500 sm:flex"><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-600" />예정</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-600" />완료</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-violet-600" />연기</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-600" />취소</span></div></div>
+          <nav ref={pageToolbarRef} className="mt-2 flex flex-col gap-2 min-[1024px]:flex-row min-[1024px]:items-center min-[1024px]:justify-between" aria-label="캘린더 도구">
             <div className="flex w-full items-center gap-2 min-[1024px]:w-auto"><button type="button" aria-label="이전 기간" onClick={() => { if (window.matchMedia("(min-width: 1024px)").matches) setMonthAnchor((previous) => new Date(previous.getFullYear(), previous.getMonth() - 1, 1)); else setThreeDayCenter((previous) => addLocalDays(previous, -1)); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><ChevronLeft size={17} /></button><button type="button" onClick={goToday} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold">오늘</button><strong className="min-w-0 flex-1 text-center text-base font-extrabold tabular-nums min-[1024px]:min-w-32 min-[1024px]:flex-none">{monthInfo.monthLabel}<span className="ml-2 text-xs font-semibold text-slate-500 min-[1024px]:hidden">{mobileRangeLabel}</span></strong><button type="button" aria-label="다음 기간" onClick={() => { if (window.matchMedia("(min-width: 1024px)").matches) setMonthAnchor((previous) => new Date(previous.getFullYear(), previous.getMonth() + 1, 1)); else setThreeDayCenter((previous) => addLocalDays(previous, 1)); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><ChevronRight size={17} /></button></div>
             <div className="grid grid-cols-2 gap-2 min-[1024px]:flex"><label className="sr-only" htmlFor="class-ops-calendar-teacher">강사 필터</label><select id="class-ops-calendar-teacher" value={filterTeacher} onChange={(event) => setFilterTeacher(event.target.value)} className="h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 min-[1024px]:w-44"><option value="ALL">전체 강사</option>{filterOptions.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select><Link href="/admin/classes/list?create=1" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700"><CalendarDays className="mr-1.5 h-4 w-4" />신규 수업</Link></div>
           </nav>
           {selectedTeacher && selectedTeacherTier && selectedTeacherFees ? <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm"><strong className="text-slate-950">{selectedTeacher.name}</strong><span className="text-slate-600">{selectedTeacher.is_active ? "활동 중" : "비활성"}</span><span className="font-bold text-blue-800">인정 {selectedTeacherCount.toLocaleString("ko-KR")}회 · {tierLabelKo(selectedTeacherTier)}</span><span className="text-xs font-semibold text-slate-600">개인 {selectedTeacherFees.fee_private.toLocaleString("ko-KR")} · 그룹 {selectedTeacherFees.fee_group.toLocaleString("ko-KR")} · 센터 메인 {selectedTeacherFees.fee_center_main.toLocaleString("ko-KR")} · 보조 {selectedTeacherFees.fee_center_assist.toLocaleString("ko-KR")}원</span></div> : null}
 
           {sessionsFetchNotice ? <div role={sessionsFetchNotice.type === "error" ? "alert" : "status"} className={`mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 ${sessionsFetchNotice.type === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-amber-200 bg-amber-50 text-amber-950"}`}><p className="text-xs font-bold">{sessionsFetchNotice.type === "error" ? "수업 일정을 불러오지 못했습니다. 빈 일정이 아니라 조회 실패 상태입니다." : "일부 일정만 불러왔습니다. 뒤쪽 일정이 빠져 있을 수 있습니다."}</p><button type="button" onClick={() => void fetchSessions({ anchor: monthAnchor })} className="min-h-11 rounded-lg border border-current bg-white px-3 text-xs font-bold">다시 불러오기</button></div> : null}
-          <div ref={calendarScrollAreaRef} className="mt-3 min-w-0">
+          <div ref={calendarScrollAreaRef} className="mt-2 min-w-0">
             <MobileThreeDayView days={mobileThreeDays} eventsByDay={eventsByDay} onOpen={openBundleForEvent} now={displayNow} />
             <MonthExcelGrid weekRows={monthWeekRows} eventsByDay={eventsByDay} todayWeekRowRef={todayWeekRowRef} onOpen={openBundleForEvent} now={displayNow} />
           </div>

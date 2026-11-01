@@ -1,3 +1,4 @@
+import { isZeroFeeStaff, type FeeIdentity } from '@/app/lib/staffTeacherFees';
 import { isCenterSessionType, isRegularGroupSessionType } from "@/app/admin/classes/lib/sessionTypeCategory";
 import {
   computeTier,
@@ -6,7 +7,7 @@ import {
   type TierFeeMap,
 } from "@/app/lib/teacherTierSchedule";
 
-export type TeacherFeeRow = {
+export type TeacherFeeRow = FeeIdentity & {
   id: string;
   name?: string | null;
   session_count?: number | null;
@@ -42,6 +43,7 @@ export function resolveDefaultSessionPrice(
   sessionType: string,
   tierFeeMap: TierFeeMap
 ): number {
+  if (isZeroFeeStaff(teacher)) return 0;
   if (!teacher) return 30_000;
   const tier = computeTier(
     totalLessonsFromCounts(teacher.session_count ?? 0, teacher.logCount ?? 0)
@@ -67,6 +69,7 @@ export function resolveDefaultAssistSessionPrice(
   sessionType: string,
   tierFeeMap: TierFeeMap
 ): number {
+  if (isZeroFeeStaff(teacher)) return 0;
   if (!teacher) return 25_000;
   const tier = computeTier(
     totalLessonsFromCounts(teacher.session_count ?? 0, teacher.logCount ?? 0)

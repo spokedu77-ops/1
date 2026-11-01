@@ -1,5 +1,7 @@
 'use client';
 
+import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
+
 import { toast } from 'sonner';
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
@@ -112,6 +114,7 @@ function UserDashboardPageContent() {
       }
       const base = (data as UserData[]).map((u) => ({
         ...u,
+        ...(isZeroFeeStaff(u) ? { fee_private: 0, fee_group: 0, fee_center_main: 0, fee_center_assist: 0 } : {}),
         is_active: u.is_active ?? true,
         ending_soon: u.ending_soon ?? false,
         documents: u.documents || [],
@@ -792,6 +795,7 @@ function UserDashboardPageContent() {
                 {currentUser?.role === 'admin' && (() => {
                   const tier = computeTier(totalLessonsFromCounts(user.session_count, user.logCount));
                   const eff = effectiveFees(tier, {
+                    ...user,
                     fee_private: user.fee_private ?? null,
                     fee_group: user.fee_group ?? null,
                     fee_center_main: user.fee_center_main ?? null,

@@ -1,3 +1,4 @@
+import { isZeroFeeStaff, type FeeIdentity } from '@/app/lib/staffTeacherFees';
 /**
  * 강사 등급(수업 개수) 및 등급별 기본 수업료 표.
  * 기본 표(HARD_CODED)는 fallback 이고, 운영값은 DB teacher_tier_fees로 덮어쓸 수 있습니다.
@@ -105,7 +106,7 @@ export function tierBadgeClass(tier: TeacherTierId): string {
 /** DB 값이 없을 때 등급표 기준 금액 */
 export function effectiveFees(
   tier: TeacherTierId,
-  stored: {
+  stored: FeeIdentity & {
     fee_private: number | null;
     fee_group: number | null;
     fee_center_main: number | null;
@@ -113,6 +114,7 @@ export function effectiveFees(
   },
   feeMap?: Partial<TierFeeMap>
 ): TierDefaultFees {
+  if (isZeroFeeStaff(stored)) return { fee_private: 0, fee_group: 0, fee_center_main: 0, fee_center_assist: 0 };
   const d = getTierDefaultFees(tier, feeMap);
   return {
     fee_private: stored.fee_private ?? d.fee_private,

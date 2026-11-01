@@ -3,13 +3,7 @@
 import { X } from "lucide-react";
 import type { SessionEvent } from "@/app/admin/classes-shared/types";
 import { formatTimeShort, toDate } from "./lib/dateGrid";
-
-function statusLabel(status?: string | null) {
-  if (status === "postponed") return "연기";
-  if (status === "cancelled" || status === "deleted") return "취소";
-  if (status === "finished" || status === "verified" || status === "completed") return "완료";
-  return "예정";
-}
+import { sessionDisplayStatus } from "./lib/sessionDisplayStatus";
 
 export function DaySchedulePanel({ day, events, onClose, onOpen }: { day: Date | null; events: SessionEvent[]; onClose: () => void; onOpen: (event: SessionEvent) => void }) {
   if (!day) return null;
@@ -25,7 +19,7 @@ export function DaySchedulePanel({ day, events, onClose, onOpen }: { day: Date |
           {events.length === 0 ? <div className="grid min-h-48 place-items-center rounded-2xl bg-slate-50 text-sm font-bold text-slate-500">등록된 수업이 없습니다.</div> : events.map((event) => {
             const assistants = event.extraTeacherIds?.length ?? 0;
             const cancelled = event.status === "cancelled" || event.status === "deleted";
-            return <button key={event.id} type="button" onClick={() => onOpen(event)} className="grid w-full grid-cols-[3.75rem_minmax(0,1fr)_auto] gap-3 rounded-2xl border border-slate-200 p-3 text-left hover:border-blue-300 hover:bg-blue-50/40"><strong className="pt-0.5 text-sm tabular-nums text-slate-900">{formatTimeShort(toDate(event.start))}</strong><span className="min-w-0"><span className={`block text-sm font-extrabold text-slate-950 ${cancelled ? "line-through text-slate-500" : ""}`}>{event.title}</span><span className="mt-1 block text-xs font-semibold text-slate-600">메인 {event.teacher || "미정"}{assistants > 0 ? ` · 보조 ${assistants}명` : ""}</span><span className="mt-1 block truncate text-xs text-slate-500">{event.studentsText || "기관 정보 없음"}</span></span><span className="flex flex-col items-end gap-1"><span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-extrabold text-slate-700">{statusLabel(event.status)}</span>{event.roundInfo ? <span className="text-xs font-bold text-slate-500">{event.roundInfo}</span> : null}</span></button>;
+            return <button key={event.id} type="button" onClick={() => onOpen(event)} className="grid w-full grid-cols-[3.75rem_minmax(0,1fr)_auto] gap-3 rounded-2xl border border-slate-200 p-3 text-left hover:border-blue-300 hover:bg-blue-50/40"><strong className="pt-0.5 text-sm tabular-nums text-slate-900">{formatTimeShort(toDate(event.start))}</strong><span className="min-w-0"><span className={`block text-sm font-extrabold text-slate-950 ${cancelled ? "line-through text-slate-500" : ""}`}>{event.title}</span><span className="mt-1 block text-xs font-semibold text-slate-600">메인 {event.teacher || "미정"}{assistants > 0 ? ` · 보조 ${assistants}명` : ""}</span><span className="mt-1 block truncate text-xs text-slate-500">{event.studentsText || "기관 정보 없음"}</span></span><span className="flex flex-col items-end gap-1"><span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-extrabold text-slate-700">{sessionDisplayStatus(event, Date.now())}</span>{event.roundInfo ? <span className="text-xs font-bold text-slate-500">{event.roundInfo}</span> : null}</span></button>;
           })}
         </div>
       </aside>

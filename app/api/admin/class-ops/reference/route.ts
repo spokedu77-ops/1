@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { fetchTeacherLogCounts } from '@/app/admin/users/fetchTeacherLogCounts';
+import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
 
 const TEACHER_COLUMNS = [
   'id',
   'name',
+  'role', 'email', 'is_admin',
   'is_active',
   'session_count',
   'fee_private',
@@ -14,6 +16,7 @@ const TEACHER_COLUMNS = [
 ].join(', ');
 
 type TeacherReferenceRow = {
+  role?: string; email?: string; is_admin?: boolean;
   id: string;
   name: string;
   is_active: boolean | null;
@@ -32,7 +35,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('users')
     .select(TEACHER_COLUMNS)
-    .eq('role', 'teacher')
+    .in('role', ['teacher', 'admin', 'master'])
     .order('is_active', { ascending: false })
     .order('name', { ascending: true });
 
@@ -42,11 +45,26 @@ export async function GET() {
 
   const teachers = (data ?? []) as unknown as TeacherReferenceRow[];
   try {
+    // Calendar options are separate from the historical teacher directory.
+    const { data: candidates, error: candidatesError } = await supabase.from('users')
+      .select('id, name, email, role').eq('is_active', true)
+      .in('role', ['teacher', 'admin', 'master']).order('name', { ascending: true });
+    if (candidatesError) throw candidatesError;
+    // Class Ops uses the registered staff directory. MASTER billing/profile
+    // records and Auth lookups must not be prerequisites for selecting staff.
+    const filterTeachers = (candidates ?? [])
+      .filter((candidate) => {
+        const label = `${candidate.name ?? ''} ${candidate.email ?? ''}`;
+        return !/spomove|qa|test|\uD14C\uC2A4\uD2B8/i.test(label);
+      })
+      .map((candidate) => ({ id: candidate.id, name: candidate.name }));
     const logCounts = await fetchTeacherLogCounts(supabase, teachers.map((teacher) => String(teacher.id)));
     return NextResponse.json(
       {
+        filterTeachers,
         teachers: teachers.map((teacher) => ({
           ...teacher,
+          ...(isZeroFeeStaff(teacher) ? { fee_private: 0, fee_group: 0, fee_center_main: 0, fee_center_assist: 0 } : {}),
           is_active: teacher.is_active ?? true,
           log_count: logCounts[String(teacher.id)] ?? 0,
         })),

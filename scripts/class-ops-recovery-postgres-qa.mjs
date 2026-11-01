@@ -18,6 +18,7 @@ const snapshot = async () => (await client.query(`select jsonb_build_object(
   'sessions',(select coalesce(jsonb_agg(to_jsonb(s) order by id),'[]') from sessions s),
   'session_count_logs',(select coalesce(jsonb_agg(to_jsonb(l) order by id),'[]') from session_count_logs l),
   'mileage_logs',(select coalesce(jsonb_agg(to_jsonb(l) order by id),'[]') from mileage_logs l),
+  'schedule_slots',(select coalesce(jsonb_agg(to_jsonb(t) order by session_id,teacher_id),'[]') from private.session_teacher_schedule_slots t),
   'users.points',(select jsonb_agg(jsonb_build_object('id',id,'points',points) order by id) from users)) state`)).rows[0].state;
 async function test(name, fn) { try { await fn(); results.push({ name, pass: true }); } catch (error) { results.push({ name, pass: false, error: error.stack }); } }
 async function unchangedFailure(fn, expected) {
@@ -70,13 +71,52 @@ try {
   await client.query(await read('ops/class-ops-recovery/fixtures/production-postpone.sql'));
 
   // Reproduce audited defects using the exact read-only production function capture.
-  { const f = await fixture([0, 3]); const before = f.rows[0]; const result = await rpc(before); const moved = await ghost(before.id);
-    observedDefects.push({ name: 'production RPC leaves source assistants on destination weekday', reproduced: moved.memo === before.memo && moved.created_by === teachers[3] });
+  { const f = await fixture([0, 3]); const before = f.rows[0]; await rpc(before); const moved = await ghost(before.id);
+    observedDefects.push({ name: 'captured pre-recovery RPC leaves source assistants on destination weekday', reproduced: moved.memo === before.memo && moved.created_by === teachers[3] });
     await dispose(f.group); }
   { const f = await fixture([0], { count: 1 }); await client.query("update sessions set status='finished' where id=$1", [f.rows[0].id]);
-    const result = await rpc(f.rows[0]); observedDefects.push({ name: 'production RPC accepts finished session', reproduced: result.ok === true }); await dispose(f.group); }
+    const result = await rpc(f.rows[0]); observedDefects.push({ name: 'captured pre-recovery RPC accepts finished session', reproduced: result.ok === true }); await dispose(f.group); }
   assert.ok(observedDefects.every((defect) => defect.reproduced));
   await client.query(await read('supabase/migrations/20261029171409_classops_assistant_postpone_recovery.sql'));
+  await client.query(await read('supabase/migrations/20261031195642_classops_allow_safe_assistant_removal.sql'));
+  await client.query(await read('supabase/migrations/20261031202334_classops_status_transition_slots.sql'));
+  await client.query(await read('supabase/migrations/20261031202455_classops_restore_slot_conflict_guard.sql'));
+  await client.query(await read('supabase/migrations/20261031204127_classops_atomic_tail_shrink.sql'));
+
+  await test('historical finished INSERT creates three counts once and DELETE removes counts and slots', async () => {
+    const f = await fixture([0], { count: 1 }); const original = f.rows[0];
+    const id = randomUUID(), group = randomUUID();
+    await client.query("insert into sessions(id,group_id,title,status,created_by,start_at,end_at,price,memo) values($1,$2,'historical creation','finished',$3,'2026-10-25T05:00:00Z','2026-10-25T09:00:00Z',0,$4)", [id,group,original.created_by,original.memo]);
+    assert.equal((await client.query('select count(*)::int n from session_count_logs where session_id=$1', [id])).rows[0].n, 3);
+    await client.query("update sessions set status='verified',price=80000 where id=$1", [id]);
+    assert.equal((await client.query('select count(*)::int n from session_count_logs where session_id=$1', [id])).rows[0].n, 3);
+    await client.query('delete from sessions where id=$1', [id]);
+    assert.equal((await client.query('select count(*)::int n from session_count_logs where session_id=$1', [id])).rows[0].n, 0);
+    assert.equal((await client.query('select count(*)::int n from private.session_teacher_schedule_slots where session_id=$1', [id])).rows[0].n, 0);
+    await dispose(f.group);
+  });
+
+  await test('cancel/postpone release slots and count logs; valid restore rebuilds slots', async () => {
+    const f = await fixture([0], { count: 1 }); const id = f.rows[0].id;
+    for (const status of ['cancelled', 'postponed']) {
+      await client.query("update sessions set status='finished' where id=$1", [id]);
+      assert.equal((await client.query('select count(*)::int n from session_count_logs where session_id=$1', [id])).rows[0].n, 3);
+      await client.query('update sessions set status=$2 where id=$1', [id,status]);
+      assert.equal((await client.query('select count(*)::int n from private.session_teacher_schedule_slots where session_id=$1', [id])).rows[0].n, 0);
+      assert.equal((await client.query('select count(*)::int n from session_count_logs where session_id=$1', [id])).rows[0].n, 0);
+      await client.query("update sessions set status='opened' where id=$1", [id]);
+      assert.equal((await client.query('select count(*)::int n from private.session_teacher_schedule_slots where session_id=$1', [id])).rows[0].n, 3);
+    }
+    await dispose(f.group);
+  });
+  await test('status-only restore rejects a teacher booked while the class was cancelled', async () => {
+    const f = await fixture([0], { count: 1 }); const row = f.rows[0];
+    await client.query("update sessions set status='cancelled' where id=$1", [row.id]);
+    const otherGroup = randomUUID();
+    await client.query("insert into sessions(id,group_id,title,status,created_by,start_at,end_at,price) values($1,$2,'restore conflict','opened',$3,$4,$5,0)", [randomUUID(),otherGroup,row.created_by,row.start_at,row.end_at]);
+    await unchangedFailure(() => client.query("update sessions set status='opened' where id=$1", [row.id]), /TEACHER_SCHEDULE_CONFLICT/);
+    await dispose(otherGroup); await dispose(f.group);
+  });
 
   for (const weekdays of [[0], [0, 3]]) await test(`postpone/undo ${weekdays.length} weekday(s): dates, main, both assistants/fees, exact memo and all four areas`, async () => {
     const f = await fixture(weekdays); const before = await snapshot(); const result = await rpc(f.rows[0]);
@@ -179,6 +219,33 @@ try {
     assert.equal((await client.query('select admin_apply_session_checked_changes($1) n', [JSON.stringify(changes)])).rows[0].n, f.rows.length);
     for (const row of f.rows) assert.equal((await ghost(row.id)).price, 0);
     const privileges = (await client.query("select has_function_privilege('anon','public.admin_apply_session_checked_changes(jsonb)','execute') anon,has_function_privilege('authenticated','public.admin_apply_session_checked_changes(jsonb)','execute') authenticated,has_function_privilege('service_role','public.admin_apply_session_checked_changes(jsonb)','execute') service")).rows[0]; assert.deepEqual(privileges, { anon: false, authenticated: false, service: true }); await dispose(f.group);
+  });
+  const shrinkInput = (f) => ({ expected: f.rows.map(row => ({ ...expected(row), id: row.id, round_index: row.round_index, round_total: row.round_total })), remove: [f.rows.at(-1).id], updates: f.rows.slice(0,-1).map((row,i) => ({ id: row.id, round_index: i+1, round_total: f.rows.length-1, sequence_number: i+1, round_display: `${i+1}/${f.rows.length-1}` })) });
+  const shrink = (f, input = shrinkInput(f), connection = client) => connection.query('select public.admin_apply_session_tail_shrink($1,$2,$3,$4) n', [f.group, JSON.stringify(input.expected), input.remove, JSON.stringify(input.updates)]);
+  await test('atomic shrink deletes completed tail counts and updates all retained rounds', async () => {
+    const f = await fixture(); const id = f.rows.at(-1).id;
+    await client.query("update sessions set status='finished' where id=$1", [id]); f.rows[f.rows.length-1] = await ghost(id);
+    assert.equal((await shrink(f)).rows[0].n,1);
+    const after = (await client.query('select * from sessions where group_id=$1', [f.group])).rows;
+    assert.equal(after.length,3); assert.ok(after.every(row=>row.round_total===3));
+    assert.equal((await client.query('select count(*)::int n from session_count_logs where session_id=$1', [id])).rows[0].n,0);
+    assert.equal((await client.query('select count(*)::int n from private.session_teacher_schedule_slots where session_id=$1', [id])).rows[0].n,0);
+    await dispose(f.group);
+  });
+  await test('atomic shrink rolls back deletion if a later round write fails', async () => {
+    const f = await fixture();
+    await client.query(`create function private.qa_fail_shrink() returns trigger language plpgsql as $$ begin if new.id='${f.rows[0].id}'::uuid then raise exception 'QA_SHRINK_UPDATE_FAILURE'; end if; return new; end $$; create trigger qa_fail_shrink before update on sessions for each row execute function private.qa_fail_shrink()`);
+    await unchangedFailure(()=>shrink(f), /QA_SHRINK_UPDATE_FAILURE/);
+    await client.query('drop trigger qa_fail_shrink on sessions; drop function private.qa_fail_shrink()'); await dispose(f.group);
+  });
+  await test('atomic shrink rejects stale fee/assignment baselines without deleting anything', async () => {
+    const f = await fixture(); await client.query('update sessions set price=price+1 where id=$1',[f.rows[0].id]);
+    await unchangedFailure(()=>shrink(f), /SESSION_SHRINK_STALE/); await dispose(f.group);
+  });
+  await test('two concurrent shrinks cannot remove the tail twice', async () => {
+    const f=await fixture(); const other=new pg.Client({connectionString:url.href}); await other.connect();
+    try { await client.query('begin'); await shrink(f); const second=shrink(f,shrinkInput(f),other).then(()=>null,error=>error); await new Promise(resolve=>setTimeout(resolve,100)); await client.query('commit'); const before=await snapshot(); assert.match((await second)?.message??'', /SESSION_SHRINK_STALE/); assert.deepEqual(await snapshot(),before); }
+    finally { await client.query('rollback'); await other.end(); await dispose(f.group); }
   });
 } finally {
   await client.end().catch(() => {}); await admin.query('select pg_terminate_backend(pid) from pg_stat_activity where datname=$1 and pid<>pg_backend_pid()', [database]); await admin.query(`drop database if exists ${database}`); await admin.end();

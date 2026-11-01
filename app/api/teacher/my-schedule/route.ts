@@ -1,3 +1,4 @@
+import { normalizeStaffSessionFees } from '@/app/lib/staffTeacherFees';
 /**
  * 선생님 주간 스케줄 세션 목록 (Service Role 사용 → RLS 무관, 보조 선생님 포함)
  * GET ?from=<ISO>&to=<ISO> : 로그인한 사용자의 주강사 + 보조 강사 수업 모두 반환
@@ -5,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
+import { jsonMetadataSpan, validateSessionAssistants } from '@/app/admin/classes-shared/lib/sessionMetadata';
 import { requireTeacherMaterialsAccess } from '@/app/lib/server/teacherAuth';
 
 type ExtraTeacher = { id: string; price?: number };
@@ -13,9 +14,11 @@ type ExtraTeacher = { id: string; price?: number };
 function getExtraTeachersFromSession(s: { students_text?: string | null; memo?: string | null }): ExtraTeacher[] {
   for (const raw of [s.memo, s.students_text]) {
     if (!raw?.includes('EXTRA_TEACHERS:')) continue;
-    const { extraTeachers } = parseExtraTeachers(raw);
-    const withId = extraTeachers.filter((e) => String(e.id || '').trim());
-    if (withId.length > 0) return withId as ExtraTeacher[];
+    const span = jsonMetadataSpan(raw, 'EXTRA_TEACHERS:');
+    if (!span) continue;
+    const extras = JSON.parse(raw.slice(span.start, span.end));
+    if (!Array.isArray(extras) || validateSessionAssistants(extras, null)) throw new Error('SESSION_METADATA_INVALID');
+    return extras as ExtraTeacher[];
   }
   return [];
 }
@@ -85,7 +88,8 @@ export async function GET(req: NextRequest) {
       (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
     );
 
-    const sanitizedForTeacherView = combined.map((row) => {
+    const payableSessions = await normalizeStaffSessionFees(svc, combined);
+    const sanitizedForTeacherView = payableSessions.map((row) => {
       const status = String(row.status || '');
       if (status !== 'opened') return row;
       // 과거 복제/이관 데이터에 students_text·feedback_fields가 남아 있어도,

@@ -2,6 +2,11 @@ type SessionsPayload<T> = { sessions?: T[]; error?: string };
 
 const inFlightSessionRequests = new Map<string, Promise<unknown[]>>();
 
+/** A committed write invalidates reads that began before that write. */
+export function invalidateAdminSessionRequests() {
+  inFlightSessionRequests.clear();
+}
+
 function canonicalSessionParams(input: URLSearchParams) {
   const params = new URLSearchParams(input);
   const groupIds = params.get('groupIds');
@@ -13,8 +18,9 @@ function canonicalSessionParams(input: URLSearchParams) {
 }
 
 /** Share only concurrent identical reads. Completed reads are never cached. */
-export function fetchAdminSessions<T>(params: URLSearchParams): Promise<T[]> {
+export function fetchAdminSessions<T>(params: URLSearchParams, options: { fresh?: boolean } = {}): Promise<T[]> {
   const query = canonicalSessionParams(params);
+  if (options.fresh) inFlightSessionRequests.delete(query);
   const existing = inFlightSessionRequests.get(query);
   if (existing) return existing as Promise<T[]>;
 

@@ -1,3 +1,4 @@
+import { normalizeStaffSessionFees } from '@/app/lib/staffTeacherFees';
 import { toast } from 'sonner';
 
 import { omitSessionIdentityForInsertClone } from './sessionInsertClone';
@@ -6,6 +7,9 @@ import { formatRoundDisplay } from './roundFields';
 import { reindexGroupRounds } from './reindexGroupRounds';
 import { buildExtendedStartIsos } from './sessionIntervalPattern';
 import { parseExtraTeachers } from './sessionUtils';
+import { assertSavedSessionRows } from './sessionSaveVerification';
+import { invalidateAdminSessionRequests } from './adminSessionsRequest';
+import { initialSessionStatus } from '@/app/admin/classes/list/lib/createSchedule';
 
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
 const WEEKDAY_BY_SHORT: Record<string, number> = {
@@ -328,6 +332,7 @@ export async function extendClass(
           : insertBaseSafe),
         // 다음 회차(opened) 생성 시 이전 회차의 피드백이 그대로 이어붙지 않도록 초기화합니다.
         // (students_text / feedback_fields / 첨부파일이 복사되면 teacher 화면에서 "계속 복사된 것처럼" 보입니다.)
+        id: crypto.randomUUID(),
         students_text: null,
         feedback_fields: {},
         photo_url: [],
@@ -336,19 +341,22 @@ export async function extendClass(
         ...(template ? { created_by: template.createdBy, price: template.price } : {}),
         start_at: start.toISOString(),
         end_at: end.toISOString(),
-        status: 'opened',
+        status: initialSessionStatus(end),
         round_index: roundIndex,
         round_total: newTotal,
         round_display: roundDisplay,
       });
     }
 
+    const payableSessions = await normalizeStaffSessionFees(supabase, newSessions);
     const { data: insertedRows, error: insertError } = await supabase
       .from('sessions')
-      .insert(newSessions)
-      .select('id');
+      .insert(payableSessions)
+      .select('*');
 
     if (insertError) throw insertError;
+    invalidateAdminSessionRequests();
+    assertSavedSessionRows(insertedRows, payableSessions);
     if (!Array.isArray(insertedRows) || insertedRows.length !== newSessions.length) {
       throw new Error('EXTEND_SESSIONS_NOT_CREATED');
     }

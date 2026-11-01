@@ -6,6 +6,7 @@ import { cloneTierFeeMap, HARD_CODED_TIER_FEES, type TierFeeMap } from "@/app/li
 import { fetchTeacherTierFeeMap } from "@/app/lib/teacherTierFeesStore";
 
 export type ClassOpsTeacher = {
+  role?: string; email?: string; is_admin?: boolean;
   id: string;
   name: string;
   is_active: boolean;
@@ -17,9 +18,12 @@ export type ClassOpsTeacher = {
   fee_center_assist: number | null;
 };
 
-type ReferenceResponse = { teachers?: ClassOpsTeacher[]; error?: string };
+type FilterTeacher = { id: string; name: string };
+
+type ReferenceResponse = { filterTeachers?: FilterTeacher[]; teachers?: ClassOpsTeacher[]; error?: string };
 
 export function useClassOpsReferenceData(supabase: SupabaseClient | null) {
+  const [filterTeachers, setFilterTeachers] = useState<FilterTeacher[]>([]);
   const [teachers, setTeachers] = useState<ClassOpsTeacher[]>([]);
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const [feeSource, setFeeSource] = useState<"db" | "fallback">("fallback");
@@ -35,10 +39,12 @@ export function useClassOpsReferenceData(supabase: SupabaseClient | null) {
       const teacherPayload = (await teacherResponse.json().catch(() => ({}))) as ReferenceResponse;
       if (!teacherResponse.ok) throw new Error(teacherPayload.error || "class_ops_reference_failed");
       setTeachers(teacherPayload.teachers ?? []);
+      setFilterTeachers(teacherPayload.filterTeachers ?? []);
       setTierFeeMap(tierResult.map);
       setFeeSource(tierResult.source);
       setState("ready");
     } catch {
+      setFilterTeachers([]);
       setState("error");
     }
   }, [supabase]);
@@ -47,5 +53,5 @@ export function useClassOpsReferenceData(supabase: SupabaseClient | null) {
     void reload();
   }, [reload]);
 
-  return { teachers, tierFeeMap, feeSource, state, reload };
+  return { teachers, filterTeachers, tierFeeMap, feeSource, state, reload };
 }

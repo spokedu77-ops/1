@@ -216,6 +216,7 @@ export default function MileageDetailModal({
     if (hideAppliedFeePreview) return null;
     const tier = computeTier(totalLessonsFromCounts(teacher.session_count, teacher.logCount));
     return effectiveFees(tier, {
+      ...teacher,
       fee_private: teacher.fee_private ?? null,
       fee_group: teacher.fee_group ?? null,
       fee_center_main: teacher.fee_center_main ?? null,
@@ -223,6 +224,7 @@ export default function MileageDetailModal({
     }, tierFeeMap);
   }, [
     hideAppliedFeePreview,
+    teacher.name,
     teacher.session_count,
     teacher.logCount,
     teacher.fee_private,

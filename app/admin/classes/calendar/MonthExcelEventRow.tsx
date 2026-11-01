@@ -75,16 +75,18 @@ export function MonthExcelEventRow({
     <button
       type="button"
       onClick={() => onOpen(ev)}
-      className={`mx-1.5 mb-1.5 flex min-h-[74px] w-[calc(100%-0.75rem)] min-w-0 flex-col gap-1 rounded-xl border-l-4 px-2.5 py-2 text-left ${monthRowTone(ev)} ${isPastDay && !struck ? "opacity-80" : ""} hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
+      className={`mx-1 mb-1 flex min-h-11 w-[calc(100%-0.5rem)] min-w-0 flex-col gap-0.5 rounded-md border-l-4 px-1.5 py-1 text-left ${monthRowTone(ev)} ${isPastDay && !struck ? "opacity-80" : ""} hover:brightness-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600`}
     >
-      <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <span className="text-[10px] font-black tabular-nums text-slate-800">
-          {formatTimeShort(start)}
+      <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-0.5">
+        <span className="flex flex-wrap items-center gap-1">
+          <span className="text-[9px] font-bold tabular-nums text-slate-800">{formatTimeShort(start)}</span>
+          <span className={`shrink-0 rounded bg-white/70 px-1 py-px text-[8px] font-bold leading-3 ${strikeTitle ? "line-through text-slate-400" : "text-slate-500"}`}>{sessionDisplayStatus(ev, now)}</span>
+          {fin ? <span className={FIN_BADGE_CLASS}>FIN</span> : null}
         </span>
         <span className="shrink-0 flex flex-col items-end gap-0.5">
           {r ? (
             <span
-              className={`whitespace-nowrap text-[10px] font-bold tabular-nums ${
+              className={`whitespace-nowrap text-[9px] font-bold tabular-nums ${
                 strikeTitle ? "line-through text-slate-500" : "text-slate-600"
               }`}
             >
@@ -93,19 +95,12 @@ export function MonthExcelEventRow({
           ) : null}
         </span>
       </div>
-      <span className={`block w-full min-w-0 whitespace-normal [overflow-wrap:anywhere] text-[11px] font-extrabold leading-normal text-slate-950 ${strikeTitle ? "line-through text-slate-500" : ""}`}>
+      <span className={`block w-full min-w-0 whitespace-normal [overflow-wrap:anywhere] text-[10px] font-bold leading-tight text-slate-950 ${strikeTitle ? "line-through text-slate-500" : ""}`}>
         {ev.title}
       </span>
-      {institutionShort ? <span className="block w-full whitespace-normal [overflow-wrap:anywhere] text-[10px] leading-normal text-slate-600">{institutionShort}</span> : null}
-      {teacherShort ? <span className="block w-full whitespace-normal [overflow-wrap:anywhere] text-[10px] font-semibold leading-normal text-slate-600">{teacherShort}</span> : null}
-        <div
-          className={`flex w-full min-w-0 flex-wrap items-center gap-1.5 ${
-            strikeTitle ? "line-through text-slate-400" : "text-slate-500"
-          }`}
-        >
-          <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-extrabold">{sessionDisplayStatus(ev, now)}</span>
-          {fin ? <span className={FIN_BADGE_CLASS}>FIN</span> : null}
-        </div>
+      {institutionShort ? <span className="block w-full whitespace-normal [overflow-wrap:anywhere] text-[9px] leading-tight text-slate-600">{institutionShort}</span> : null}
+      {teacherShort ? <span className="block w-full whitespace-normal [overflow-wrap:anywhere] text-[9px] font-semibold leading-tight text-slate-600">{teacherShort}</span> : null}
+
     </button>
   );
 }

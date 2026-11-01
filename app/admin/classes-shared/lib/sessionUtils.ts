@@ -1,12 +1,5 @@
 import { MileageAction, TeacherInput } from '../types';
-
-const safeJsonParse = <T>(text: string, fallback: T): T => {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return fallback;
-  }
-};
+import { jsonMetadataSpan, validateSessionAssistants } from './sessionMetadata';
 
 export const extractMileageAction = (memo: string, mileageOption?: string) => {
   if (mileageOption) return { cleanMemo: memo, mileageAction: mileageOption };
@@ -23,51 +16,24 @@ export const extractMileageAction = (memo: string, mileageOption?: string) => {
  * `EXTRA_TEACHERS:` 직후부터 첫 번째 JSON 배열 `[...]`만 잘라 파싱합니다.
  * 뒤에 줄바꿈·MILEAGE 등 다른 필드가 붙어 있어도 동작합니다.
  */
-function extractExtraTeachersJsonArray(afterMarker: string): TeacherInput[] {
-  const t = afterMarker.trim();
-  const start = t.indexOf('[');
-  if (start < 0) return [];
-  let depth = 0;
-  let inString = false;
-  let escape = false;
-  for (let i = start; i < t.length; i++) {
-    const c = t[i]!;
-    if (escape) {
-      escape = false;
-      continue;
-    }
-    if (c === '\\' && inString) {
-      escape = true;
-      continue;
-    }
-    if (c === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (!inString) {
-      if (c === '[') depth++;
-      else if (c === ']') {
-        depth--;
-        if (depth === 0) {
-          return safeJsonParse<TeacherInput[]>(t.slice(start, i + 1), []);
-        }
-      }
-    }
-  }
-  return safeJsonParse<TeacherInput[]>(t.slice(start), []);
-}
-
 export const parseExtraTeachers = (memo: string) => {
   if (!memo.includes('EXTRA_TEACHERS:')) {
     return { cleanMemo: memo, extraTeachers: [] as TeacherInput[] };
   }
-  const parts = memo.split('EXTRA_TEACHERS:');
-  const cleanMemo = parts[0].trim();
-  const extraTeachers = extractExtraTeachersJsonArray(parts[1] || '');
-  return { cleanMemo, extraTeachers };
+  try {
+    const span = jsonMetadataSpan(memo, 'EXTRA_TEACHERS:');
+    if (!span) return { cleanMemo: memo, extraTeachers: [] as TeacherInput[] };
+    const rows = JSON.parse(memo.slice(span.start, span.end));
+    const marker = memo.lastIndexOf('EXTRA_TEACHERS:', span.start);
+    return { cleanMemo: memo.slice(0, marker).trim(), extraTeachers: Array.isArray(rows) ? rows as TeacherInput[] : [] };
+  } catch {
+    return { cleanMemo: memo.split('EXTRA_TEACHERS:')[0].trim(), extraTeachers: [] as TeacherInput[] };
+  }
 };
 
 export const buildMemoWithExtras = (memo: string, extras: TeacherInput[]) => {
+  const error = validateSessionAssistants(extras, null);
+  if (error) throw new Error(error);
   if (extras.length === 0) return memo;
   return `${memo}\nEXTRA_TEACHERS:${JSON.stringify(extras)}`;
 };

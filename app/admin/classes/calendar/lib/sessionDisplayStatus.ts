@@ -8,7 +8,7 @@ export function sessionDisplayStatus(
   if (['finished', 'verified', 'completed'].includes(event.status ?? '')) return '완료';
   const end = new Date(event.end).getTime();
   const start = new Date(event.start).getTime();
-  if (Number.isFinite(end) && now >= end) return '완료';
+  if (Number.isFinite(end) && now >= end) return '종료·미처리';
   if (Number.isFinite(start) && now >= start) return '진행중';
   return '예정';
 }

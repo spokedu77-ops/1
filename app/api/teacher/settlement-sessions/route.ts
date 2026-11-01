@@ -1,3 +1,4 @@
+import { staffTeacherIds } from '@/app/lib/staffTeacherFees';
 /**
  * 선생님 정산용 세션·기타정산 목록 (Service Role 사용 → RLS 무관, 보조 선생님 포함)
  * GET: 로그인한 사용자의 주강사 + 보조 강사 수업 + settlements(기타 정산) 반환
@@ -6,9 +7,11 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
+import { jsonMetadataSpan, validateSessionAssistants } from '@/app/admin/classes-shared/lib/sessionMetadata';
+import { readAllSettlementRows } from '@/app/admin/master/reports/settlementReconciliation';
 
 type ExtraTeacher = { id: string; price?: number };
+type AdjustmentRow = { id: string; amount: number | null; reason: string | null; year: number; month: number; period: string };
 
 type SessionRow = {
   id: string;
@@ -24,9 +27,11 @@ type SessionRow = {
 function getExtraTeachersFromSession(s: { students_text?: string | null; memo?: string | null }): ExtraTeacher[] {
   for (const raw of [s.memo, s.students_text]) {
     if (!raw?.includes('EXTRA_TEACHERS:')) continue;
-    const { extraTeachers } = parseExtraTeachers(raw);
-    const withId = extraTeachers.filter((e) => String(e.id || '').trim());
-    if (withId.length > 0) return withId as ExtraTeacher[];
+    const span = jsonMetadataSpan(raw, 'EXTRA_TEACHERS:');
+    if (!span) continue;
+    const extras = JSON.parse(raw.slice(span.start, span.end));
+    if (!Array.isArray(extras) || validateSessionAssistants(extras, null)) throw new Error('SESSION_METADATA_INVALID');
+    return extras as ExtraTeacher[];
   }
   return [];
 }
@@ -40,41 +45,42 @@ export async function GET() {
     }
 
     const svc = getServiceSupabase();
+    const staff = (await staffTeacherIds(svc)).has(user.id);
     const selectCols = 'id, title, price, start_at, status, students_text, memo';
     const statusFilter = ['finished', 'verified'] as const;
     const uid = String(user.id).trim();
 
     const [mainRes, extraMemoRes, extraStudentsRes, adjsRes] = await Promise.all([
-      svc.from('sessions').select(selectCols).eq('created_by', user.id).in('status', statusFilter).order('start_at', { ascending: false }).limit(500),
-      svc
+      readAllSettlementRows<SessionRow>((from, to) => svc.from('sessions').select(selectCols).eq('created_by', user.id).in('status', statusFilter).order('start_at', { ascending: false }).order('id').range(from, to)).then(data => ({ data })),
+      readAllSettlementRows<SessionRow>((from, to) => svc
         .from('sessions')
         .select(selectCols)
         .in('status', statusFilter)
         .ilike('memo', '%EXTRA_TEACHERS:%')
         .ilike('memo', `%${uid}%`)
         .order('start_at', { ascending: false })
-        .limit(500),
-      svc
+        .order('id').range(from, to)).then(data => ({ data })),
+      readAllSettlementRows<SessionRow>((from, to) => svc
         .from('sessions')
         .select(selectCols)
         .in('status', statusFilter)
         .ilike('students_text', '%EXTRA_TEACHERS:%')
         .ilike('students_text', `%${uid}%`)
         .order('start_at', { ascending: false })
-        .limit(500),
+        .order('id').range(from, to)).then(data => ({ data })),
       // Admin Payroll(기타 정산) — year/month/period는 클라이언트에서 필터
-      svc
+      readAllSettlementRows<AdjustmentRow>((from, to) => svc
         .from('settlements')
         .select('id, amount, reason, year, month, period')
         .eq('teacher_id', user.id)
         .order('id', { ascending: false })
-        .limit(200),
+        .range(from, to)).then(data => ({ data })),
     ]);
 
     const mainList = (mainRes.data || []).map((s) => ({
       id: s.id,
       title: s.title,
-      price: Number(s.price) || 0,
+      price: staff ? 0 : Number(s.price) || 0,
       start_at: s.start_at,
       status: s.status,
     }));
@@ -97,7 +103,7 @@ export async function GET() {
         return {
           id: s.id,
           title: s.title,
-          price: Number(me?.price) || 0,
+          price: staff ? 0 : Number(me?.price) || 0,
           start_at: s.start_at,
           status: s.status,
         };

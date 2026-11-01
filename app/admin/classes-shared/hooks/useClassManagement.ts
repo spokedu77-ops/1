@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { SessionEvent } from '../types';
 import { parseExtraTeachers } from '../lib/sessionUtils';
-import { ADMIN_NAMES } from '../constants/admins';
 import { buildGroupPlannedTotals } from '../lib/plannedRoundTotal';
 import { clampRoundIndex } from '../lib/roundFields';
 import { themeColorHexForSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
@@ -12,7 +12,7 @@ import { applySessionLinkedMileage } from '../lib/applySessionLinkedMileage';
 
 type SessionRow = {
   id?: string; title?: string; start_at?: string; end_at?: string; session_type?: string;
-  group_id?: string; users?: { name?: string; id?: string }; students_text?: string; memo?: string;
+  group_id?: string; users?: { name?: string; id?: string; role?: string; email?: string; is_admin?: boolean }; students_text?: string; memo?: string;
   round_display?: string; status?: string; price?: number; mileage_option?: string;
   round_index?: number; round_total?: number;
 };
@@ -26,6 +26,7 @@ type SessionFetchOptions = {
 };
 
 export function useClassManagement() {
+  const fetchGeneration = useRef(0);
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [allEvents, setAllEvents] = useState<SessionEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<SessionEvent[]>([]);
@@ -37,6 +38,7 @@ export function useClassManagement() {
   >(null);
 
   const fetchSessions = useCallback(async (options: SessionFetchOptions = {}) => {
+    const generation = ++fetchGeneration.current;
     // 현재 표시 월과 인접 월만 가져온다. 이전의 49개월 전체 조회는 대량 데이터에서
     // 직렬 페이지 요청을 만들었고, 화면에 보이지 않는 데이터 때문에 로딩을 지연시켰다.
     const rangeAnchor = new Date(options.anchor ?? new Date());
@@ -73,11 +75,13 @@ export function useClassManagement() {
       usersRes = resolvedUsers;
       data = resolvedSessions;
     } catch (caught) {
+      if (generation !== fetchGeneration.current) return;
       devLogger.error('fetchSessions network error:', caught);
       setSessionsFetchNotice({ type: 'error' });
       return;
     }
 
+    if (generation !== fetchGeneration.current) return;
     if (usersRes.error) {
       devLogger.error('fetchSessions users error:', usersRes.error);
     }
@@ -106,6 +110,7 @@ export function useClassManagement() {
       data = accumulated;
     }
 
+    if (generation !== fetchGeneration.current) return;
     setSessionsFetchNotice(truncated ? { type: 'truncated' } : null);
 
     {
@@ -162,10 +167,10 @@ export function useClassManagement() {
           type: s.session_type,
           status: s.status,
           groupId: s.group_id ?? undefined,
-          price: s.price ?? 0,
+          price: isZeroFeeStaff(s.users) ? 0 : s.price ?? 0,
           studentsText: s.students_text || '',
           memo: s.memo || '',
-          isAdmin: ADMIN_NAMES.some(admin => displayTeacher.includes(admin)),
+          isAdmin: isZeroFeeStaff(s.users),
           roundInfo: roundStr,
           themeColor: themeColorHexForSessionType(s.session_type),
           mileageAction: s.mileage_option || '',

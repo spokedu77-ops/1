@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { jsonMetadataSpan, replaceSessionAssistants, validateSessionAssistants, postponeRestoreAvailability } from './sessionMetadata';
+import { parseExtraTeachers } from './sessionUtils';
 const ids = [1, 2, 3].map((n) => `70000000-0000-4000-8000-${String(n).padStart(12, '0')}`);
 const first = { id: ids[1], price: 0 };
 const second = { id: ids[2], price: 35000 };
 describe('assistant metadata is a surgical replacement, not a memo reconstruction', () => {
+  it('display and inheritance never read an older nested snapshot as the current assignment', () => {
+    const snapshot = 'POSTPONE_SNAPSHOT:' + JSON.stringify([{ memo: 'EXTRA_TEACHERS:' + JSON.stringify([first]) }]);
+    expect(parseExtraTeachers(snapshot + '\nEXTRA_TEACHERS:[]').extraTeachers).toEqual([]);
+    expect(parseExtraTeachers(snapshot).extraTeachers).toEqual([]);
+    expect(parseExtraTeachers(snapshot + '\nEXTRA_TEACHERS:' + JSON.stringify([second])).extraTeachers).toEqual([second]);
+  });
   for (const newline of ['\n', '\r\n']) it(`preserves every byte around the JSON (${JSON.stringify(newline)})`, () => {
     const prefix = `  일반 메모${newline}OTHER_META:{"text":"[] \\\" escaped"}${newline}EXTRA_TEACHERS:  `;
     const suffix = `${newline}POSTPONE_SNAPSHOT:[{"memo":"EXTRA_TEACHERS:[]","nested":[{},[]]}]${newline}TAIL:plain text  `;
