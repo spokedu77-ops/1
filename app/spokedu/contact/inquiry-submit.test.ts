@@ -16,6 +16,7 @@ const basePrivatePayload: PrivateInquiryPayload = {
   childAge: '만 8세',
   preferredClassType: '1:1',
   preferredLocation: 'LAB',
+  privacyConsent: true,
 };
 
 describe('submitInquiry', () => {
@@ -36,6 +37,17 @@ describe('submitInquiry', () => {
     const result = await submitInquiry(basePrivatePayload);
     expect(result).toEqual({ ok: true, mode: 'api' });
     expect(window.localStorage.getItem(TEMP_INQUIRY_STORAGE_KEY)).toBeNull();
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body.privacy_consent).toBe(true);
+    expect(body.preferred_format).toBe('one-to-one');
+  });
+
+  it('never manufactures consent and preserves the chosen small-group format', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    await submitInquiry({ ...basePrivatePayload, privacyConsent: false, preferredClassType: '소그룹' });
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body.privacy_consent).toBe(false);
+    expect(body.preferred_format).toBe('small-group');
   });
 
   it('stores draft and returns failure when API fails', async () => {

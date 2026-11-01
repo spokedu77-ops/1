@@ -58,6 +58,26 @@ html[data-stitch-c0-active='1'] .stitch-c0-root [class*='space-y-'] > * {
   min-block-size: 2lh;
 }
 
+.stitch-c0-root a[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+/* Only the Home photo caption: keep the brand chip from squeezing the Korean copy. */
+@media (max-width: 639px) {
+  .stitch-c0-root[data-stitch-page='/'] main section:first-of-type .absolute.bottom-6 > div:first-child {
+    align-items: flex-start;
+    min-width: 0;
+  }
+  .stitch-c0-root[data-stitch-page='/'] main section:first-of-type .absolute.bottom-6 > div:first-child > span:first-child {
+    flex-shrink: 0;
+  }
+  .stitch-c0-root[data-stitch-page='/'] main section:first-of-type .absolute.bottom-6 > div:first-child > span:last-child {
+    min-width: 0;
+    line-height: 1.5;
+  }
+}
+
 @media (max-width: 767px) {
   html[data-stitch-c0-active='1'] .stitch-c0-root main h1 {
     font-size: clamp(28px, 8vw, 36px);

@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { captureAcquisitionFromLocation } from '../lib/acquisition';
 import { scrollSpokeduToTopOrHash } from '../lib/scroll';
 import { SiteFooter, SiteHeader } from './site-chrome';
+import { WebsiteChrome } from './website-chrome';
+import { isStitchC0Enabled } from '../stitch/c0/flags';
 
 function SkipToContent() {
   return (
@@ -29,6 +31,10 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
     const frame = window.requestAnimationFrame(scrollSpokeduToTopOrHash);
     return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
+
+  if (isStitchC0Enabled() && pathname === '/contact') {
+    return <WebsiteChrome><SkipToContent /><main id="main-content" className="phase-d-contact w-full min-w-0">{children}</main></WebsiteChrome>;
+  }
 
   return (
     <>

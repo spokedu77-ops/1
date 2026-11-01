@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { brandContactLinks, brandProfile, type ContactInquiryType } from '../data/site';
 import {
   CONTACT_API_FAILURE_MESSAGE,
+  CONTACT_SUBMIT_FAILURE_MESSAGE,
   CONTACT_SUCCESS_MESSAGE,
   contactPageContent,
   contactTypeOptions,
@@ -17,6 +18,7 @@ import {
   type StoredInquiryDraft,
 } from './inquiry-draft';
 import { submitInquiry } from './inquiry-submit';
+import { V0PrivacyConsent } from '../components/v0-privacy-consent';
 import { parseSpomoveOperationLabel } from '../data/commercial-routes';
 import { resolveContactInquiryType } from './resolve-contact-inquiry-type';
 import { createFormStartedTracker, trackCommercialEvent } from '../lib/commercial-events';
@@ -421,6 +423,8 @@ export default function SpokeduContactForm() {
   const markFormStartedRef = useRef(createFormStartedTracker('other', 'contact_form'));
   const [inquiryType, setInquiryType] = useState<InquiryType | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  useEffect(() => { setPrivacyConsent(false); }, [inquiryType]);
   const [notice, setNotice] = useState<SubmitNotice>(null);
   const [storedDraft, setStoredDraft] = useState<StoredInquiryDraft | null>(null);
   const [privateForm, setPrivateForm] = useState<PrivateInquiryFields>(PRIVATE_DEFAULT);
@@ -547,21 +551,24 @@ export default function SpokeduContactForm() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!inquiryType || !activeOption || submitting || submittingRef.current) return;
+    if (!inquiryType || !activeOption || submitting || submittingRef.current || !privacyConsent) return;
 
     setNotice(null);
     submittingRef.current = true;
     setSubmitting(true);
 
     try {
-      const payload = buildPayload();
+      const payload = { ...buildPayload(), privacyConsent };
       const result = await submitInquiry(payload);
 
       if (!result.ok) {
-        setStoredDraft(loadStoredInquiryDraft());
+        const savedDraft = loadStoredInquiryDraft();
+        setStoredDraft(savedDraft);
         setNotice({
           kind: 'error',
-          text: CONTACT_API_FAILURE_MESSAGE,
+          text: savedDraft?.payload.createdAt === payload.createdAt
+            ? CONTACT_API_FAILURE_MESSAGE
+            : CONTACT_SUBMIT_FAILURE_MESSAGE,
           showFallback: true,
         });
         return;
@@ -570,6 +577,7 @@ export default function SpokeduContactForm() {
       clearStoredInquiryDraft();
       setStoredDraft(null);
       resetFormForType(inquiryType);
+      setPrivacyConsent(false);
       setNotice({ kind: 'ok', text: CONTACT_SUCCESS_MESSAGE });
       const route =
         inquiryType === 'private'
@@ -590,7 +598,7 @@ export default function SpokeduContactForm() {
     } catch {
       setNotice({
         kind: 'error',
-        text: CONTACT_API_FAILURE_MESSAGE,
+        text: CONTACT_SUBMIT_FAILURE_MESSAGE,
         showFallback: true,
       });
     } finally {
@@ -696,6 +704,8 @@ export default function SpokeduContactForm() {
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#245DFF]">상담 접수</p>
               <h3 className="mt-1 text-lg font-bold text-slate-950 sm:text-xl">{activeOption.title}</h3>
             </div>
+
+            <V0PrivacyConsent id="contact-privacy-consent" checked={privacyConsent} onChange={setPrivacyConsent} />
 
             <div className="space-y-3">
               <p className="text-sm font-bold text-slate-900">기본 정보</p>

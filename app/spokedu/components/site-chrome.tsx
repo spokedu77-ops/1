@@ -133,6 +133,9 @@ export function SiteHeader() {
       return;
     }
     lockSpokeduScroll();
+    const desktop = window.matchMedia('(min-width: 1280px)');
+    const onDesktop = () => { if (desktop.matches) closeMenus(); };
+    desktop.addEventListener('change', onDesktop);
     const panel = mobilePanelRef.current;
     const focusables = panel?.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -161,6 +164,7 @@ export function SiteHeader() {
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
+      desktop.removeEventListener('change', onDesktop);
       unlockSpokeduScroll();
     };
   }, [menuOpen, closeMenus]);
@@ -456,7 +460,7 @@ export function SiteHeader() {
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ omitUnverifiedAddress = false }: { omitUnverifiedAddress?: boolean } = {}) {
   const socialLinks = getSocialLinks();
   const blogLink = socialLinks.find((c) => c.key === 'naver-blog');
   const kakaoLink = socialLinks.find((c) => c.key === 'kakao-channel');
@@ -580,7 +584,9 @@ export function SiteFooter() {
 
         <div className="mt-16 flex items-start gap-2 border-t border-slate-800 pt-7 text-xs leading-6">
           <MapPin className="mt-1 size-4 shrink-0" aria-hidden />
-          <p className={koreanText}>{getPublicFooterLegalLine()}</p>
+          <p className={koreanText}>{omitUnverifiedAddress
+            ? [brandProfile.nameKo, `대표 ${brandProfile.representative}`, `사업자등록번호 ${brandProfile.businessRegistrationNumber}`].join(' · ')
+            : getPublicFooterLegalLine()}</p>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">

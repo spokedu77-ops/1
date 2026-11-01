@@ -3,6 +3,7 @@
 import Script from 'next/script';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { STITCH_DATA_PATH_HREF } from './stitch-data-path-routes';
+import { WebsiteChrome } from '../../components/website-chrome';
 import './stitch-c0-base.css';
 
 const STITCH_BASE_LAYER = `@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}`;
@@ -19,7 +20,10 @@ function wireStitchDataPathLinks(root: HTMLElement) {
     const key = node.getAttribute('data-path');
     if (!key) return;
     const href = STITCH_DATA_PATH_HREF[key];
-    if (href) node.setAttribute('href', href);
+    if (href) {
+      const type = ({ '/education': 'dispatch', '/private': 'private', '/spomove': 'spomove' } as Record<string, string>)[window.location.pathname];
+      node.setAttribute('href', key === 'inquiry' && type && node.closest('main') ? `${href}?type=${type}` : href);
+    }
   });
 }
 
@@ -67,6 +71,9 @@ export function StitchC0Shell({ bodyHtml, bodyClass, tailwindConfigScript }: Pro
     const root = rootRef.current;
     if (!root) return;
     root.innerHTML = bodyHtml;
+    root.dataset.stitchPage = window.location.pathname;
+    root.querySelector(':scope > header')?.remove();
+    root.querySelector(':scope > footer')?.remove();
     wireStitchDataPathLinks(root);
     const disposeRecordFilters = wireStitchRecordFilters(root);
     const refresh = () => window.tailwind?.refresh?.();
@@ -103,7 +110,7 @@ export function StitchC0Shell({ bodyHtml, bodyClass, tailwindConfigScript }: Pro
         strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: tailwindConfigScript }}
       />
-      <div ref={rootRef} className={rootClass} suppressHydrationWarning />
+      <WebsiteChrome><div ref={rootRef} className={rootClass} suppressHydrationWarning /></WebsiteChrome>
     </>
   );
 }

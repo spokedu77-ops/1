@@ -1,6 +1,7 @@
 export type InquiryType = 'private' | 'dispatch' | 'spomove' | 'curriculum' | 'other';
 
 export type InquiryCommonFields = {
+  privacyConsent?: boolean;
   name: string;
   phone: string;
   email: string;
