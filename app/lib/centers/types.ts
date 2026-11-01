@@ -18,6 +18,14 @@ export interface InstructorsDefault {
   main: string | null;
   sub: string | null;
   backup: string[];
+  fees?: CenterTeacherFee[];
+}
+
+/** Center-specific agreement; never changes the teacher's global rate. */
+export interface CenterTeacherFee {
+  teacher_id: string;
+  role: 'main' | 'assist';
+  amount: number;
 }
 
 /** 범죄경력조회 첨부 파일 1건 (centers.criminal_check_files jsonb) */
@@ -52,6 +60,7 @@ export type CenterListItem = Pick<Center,
   'main_teacher_name' | 'main_teacher_2_name' | 'main_teacher_3_name'>;
 
 export interface Center {
+  settlement_defaults?: import('./settlementDefaults').CenterSettlementDefaults;
   id: string;
   name: string;
   region_tag: string | null;

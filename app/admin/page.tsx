@@ -9,6 +9,7 @@ import { clampRoundIndex } from '@/app/admin/classes-shared/lib/roundFields';
 import { BarChart3, Calendar, MessageSquare, Pin, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StorageRecompressPanel } from './StorageRecompressPanel';
+import SettlementDashboardSummary from './SettlementDashboardSummary';
 
 // --- Interfaces ---
 interface IClassSession {
@@ -221,6 +222,7 @@ function MiniCalendar({
 
 // --- 메인 대시보드 ---
 export default function SpokeduHQDashboard() {
+  const [settlementRefreshKey, setSettlementRefreshKey] = useState(0);
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [todayClasses, setTodayClasses] = useState<IClassSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -599,7 +601,7 @@ export default function SpokeduHQDashboard() {
           </div>
           <div className="flex gap-2 sm:gap-3">
             <button
-              onClick={() => { fetchData(); fetchPostponeNotices(); fetchMoveReportMetric(); fetchNoticePreviews(); fetchWeeklyBestPreviews(); fetchConsultSummary(); }}
+              onClick={() => { setSettlementRefreshKey((value) => value + 1); fetchData(); fetchPostponeNotices(); fetchMoveReportMetric(); fetchNoticePreviews(); fetchWeeklyBestPreviews(); fetchConsultSummary(); }}
               className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
               aria-label="새로고침"
             >
@@ -608,6 +610,7 @@ export default function SpokeduHQDashboard() {
           </div>
         </header>
 
+        <SettlementDashboardSummary refreshKey={settlementRefreshKey} />
         {/* 관리 홈: 패널 2개 — (1) 오늘 수업·연기·휴강 (2) 공지·상담·MOVE·안내 링크 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">
 

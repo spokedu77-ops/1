@@ -282,7 +282,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = !item.disabled && isActiveItem(item.href);
-                  const baseClass = `group flex min-h-[44px] touch-manipulation items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all ${
+                  const baseClass = `group flex min-h-[44px] touch-manipulation items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all ${pathname.startsWith('/admin') ? 'min-[1200px]:min-h-[36px] min-[1200px]:py-1.5' : ''} ${
                     item.disabled
                       ? 'pointer-events-none cursor-not-allowed text-slate-500 opacity-40'
                       : isActive

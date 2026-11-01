@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { centerSettlementDefaultsSchema } from './settlementDefaults';
 
 const weeklySlotSchema = z.object({
   day: z.string(),
@@ -16,11 +17,17 @@ const instructorsDefaultSchema = z.object({
   main: z.string().nullable(),
   sub: z.string().nullable(),
   backup: z.array(z.string()),
+  fees: z.array(z.object({
+    teacher_id: z.string().uuid(),
+    role: z.enum(['main', 'assist']),
+    amount: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  })).optional(),
 });
 
 export const centerStatusSchema = z.enum(['active', 'paused', 'ended']);
 
 export const createCenterSchema = z.object({
+  settlement_defaults: centerSettlementDefaultsSchema.optional(),
   name: z.string().min(1, '센터명 필수'),
   region_tag: z.string().optional().nullable(),
   address: z.string().optional().nullable(),

@@ -1,3 +1,4 @@
+import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
 import { computeTier, totalLessonsFromCounts, type TierFeeMap, type TeacherTierId } from '@/app/lib/teacherTierSchedule';
 import { resolveDefaultSessionPrice, resolveDefaultAssistSessionPrice, type TeacherFeeRow } from '@/app/admin/classes/lib/bulkSessionDefaults';
 
@@ -8,6 +9,7 @@ export function teacherFeePreview(id: string | null | undefined, teachers: Teach
   if (!id) return { state: 'unselected' as const, label: '강사 미선택', amount: null };
   const teacher = teachers.find((item) => item.id === id);
   if (!teacher) return { state: 'unavailable' as const, label: 'UUID 조회 결과 없음 · 단가 확인 필요', amount: null };
+  if (isZeroFeeStaff(teacher)) return { state: 'ready' as const, label: '\uC6B4\uC601\uC9C4', amount: 0 };
   const tier = computeTier(totalLessonsFromCounts(teacher.session_count, teacher.logCount));
   const key = role === 'main' ? 'fee_center_main' : 'fee_center_assist';
   const source = teacher[key] != null ? 'users' : tiers.find((item) => item.tier_id === tier)?.[key] != null ? 'teacher_tier_fees' : null;

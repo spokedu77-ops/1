@@ -309,7 +309,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
         </div>
 
         {/* 데스크탑: 테이블 뷰 */}
-        <div className="hidden sm:block rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+        <div className="hidden sm:block rounded-lg border border-slate-200 bg-white overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
@@ -318,16 +318,20 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
             <div className="py-12 text-center text-slate-500">조건에 맞는 센터가 없습니다.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-[880px] w-full divide-y divide-slate-100">
-                <thead className="bg-white border-b border-slate-200 sticky top-0 z-10">
+              <table className="min-w-[880px] w-full table-fixed divide-y divide-slate-100 text-xs">
+                <colgroup>
+                  <col className="w-[25%]" /><col className="w-[8%]" /><col className="w-[11%]" />
+                  <col className="w-[13%]" /><col className="w-[25%]" /><col className="w-[13%]" /><col className="w-[5%]" />
+                </colgroup>
+                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                   <tr>
-                    <th className="min-w-[10rem] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">센터명</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">지역</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">상태</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-36">메인 강사</th>
-                    <th className="min-w-[8rem] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">담당자</th>
-                    <th className="min-w-[10rem] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">시간표</th>
-                    <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">삭제</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">센터명</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-slate-500">지역</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-slate-500">상태</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-slate-500">메인 강사</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">담당자</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">시간표</th>
+                    <th className="whitespace-nowrap px-3 py-2 text-right text-xs font-semibold text-slate-500">삭제</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
@@ -338,7 +342,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                         key={c.id}
                         className="border-l-2 border-l-transparent hover:bg-indigo-50/40 hover:border-l-indigo-500 transition-colors"
                       >
-                        <td className="min-w-[10rem] max-w-[16rem] px-4 py-3">
+                        <td className="px-3 py-2">
                           <div className="flex flex-col gap-0.5">
                             <Link
                               href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)}
@@ -349,50 +353,50 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                               {c.name}
                             </Link>
                             {c.highlights && (
-                              <p className="text-xs text-slate-400 line-clamp-1 max-w-[240px]">{c.highlights}</p>
+                              <p className="truncate text-[11px] leading-4 text-slate-400" title={c.highlights}>{c.highlights}</p>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{c.region_tag ?? '-'}</td>
-                        <td className="px-4 py-3">
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{c.region_tag ?? '-'}</td>
+                        <td className="px-3 py-2">
                           <select
                             value={c.status}
                             onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)}
                             disabled={updatingStatusId === c.id}
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium border-0 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer disabled:opacity-50 ${STATUS_STYLES[c.status]}`}
+                            className={`h-7 w-full min-w-0 rounded-md px-2 py-0.5 text-xs font-medium border-0 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer disabled:opacity-50 ${STATUS_STYLES[c.status]}`}
                           >
                             <option value="active">{STATUS_LABELS.active}</option>
                             <option value="paused">{STATUS_LABELS.paused}</option>
                             <option value="ended">{STATUS_LABELS.ended}</option>
                           </select>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 font-medium">
+                        <td className="px-3 py-2 text-xs text-slate-700 font-medium">
                           {[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].some(Boolean) ? (
-                            <span className="text-xs leading-relaxed space-y-0.5 block">
+                            <span className="block text-xs leading-5">
                               {c.main_teacher_name && (
-                                <span className="block">1. {c.main_teacher_name}</span>
+                                <span className="block truncate" title={c.main_teacher_name}>1. {c.main_teacher_name}</span>
                               )}
                               {c.main_teacher_2_name && (
-                                <span className="block">2. {c.main_teacher_2_name}</span>
+                                <span className="block truncate" title={c.main_teacher_2_name}>2. {c.main_teacher_2_name}</span>
                               )}
                               {c.main_teacher_3_name && (
-                                <span className="block">3. {c.main_teacher_3_name}</span>
+                                <span className="block truncate" title={c.main_teacher_3_name}>3. {c.main_teacher_3_name}</span>
                               )}
                             </span>
                           ) : (
                             <span className={EMPTY_BADGE}>미배정</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600">
-                          <div className="flex flex-col gap-0.5">
-                            <span>{c.contact_name ?? '-'}</span>
-                            {c.contact_email && (
-                              <span className="text-xs text-slate-400 break-all">{c.contact_email}</span>
-                            )}
-                            {c.contact_phone && <span className="text-xs text-slate-400">{c.contact_phone}</span>}
+                        <td className="px-3 py-2 text-xs text-slate-600">
+                          <div className="min-w-0 space-y-0.5 leading-4">
+                            <div className="flex min-w-0 items-baseline gap-2" title={[c.contact_name, c.contact_phone].filter(Boolean).join(' / ')}>
+                              <span className="max-w-[45%] truncate font-medium text-slate-700">{c.contact_name ?? '-'}</span>
+                              {c.contact_phone ? <span className="truncate text-[11px] tabular-nums text-slate-500">{c.contact_phone}</span> : null}
+                            </div>
+                            {c.contact_email ? <span className="block truncate text-[11px] text-slate-400" title={c.contact_email}>{c.contact_email}</span> : null}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-500">
+                        <td className="px-3 py-2 text-xs text-slate-500">
                           {schedule.length === 0 ? (
                             <span className={EMPTY_BADGE}>미설정</span>
                           ) : (
@@ -402,12 +406,12 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-1 py-2 text-right">
                           <button
                             type="button"
                             onClick={() => handleDelete(c)}
                             disabled={deletingId === c.id}
-                            className="rounded-xl p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
                             title="삭제"
                           >
                             {deletingId === c.id ? (

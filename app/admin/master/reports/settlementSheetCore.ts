@@ -2,6 +2,8 @@ export type VatMode = 'auto' | 'none' | 'manual';
 export type CenterType = 'regular' | 'short' | 'private' | 'etc';
 
 export type SettlementRow = {
+  /** Operational center source; centerId remains a legacy settlement-policy ID. */
+  operationalCenterId?: string;
   id: string; kind: 'row' | 'section'; name: string; fee: string | number;
   sessions: string | number; total: string | number; inv: boolean; rcpt: boolean;
   rcptAmt: number | null; vatMode: VatMode; vatManual: number; cost: string | number;
@@ -16,8 +18,6 @@ export type SettlementMonth = {
 
 export type RateHistory = { id: string; from: string; instr: string | number; assist: string | number; rental: string | number; cost: string | number };
 export type SettlementCenter = {
-  /** Operational center UUID. id and monthly row.centerId remain settlement policy IDs. */
-  center_id?: string | null;
   id: string; name: string; type: CenterType; instr: string | number; assist: string | number;
   rental: string | number; fee: string | number; cost: string | number; sessions: string | number;
   vat: 'auto' | 'none'; whRate: number; status: 'active' | 'ended'; note: string; ord: number;
@@ -103,7 +103,7 @@ export function rateFor(center: SettlementCenter, monthKey: string): SettlementC
   const rate = [...(center.rates ?? [])].sort((a, b) => b.from.localeCompare(a.from)).find((item) => item.from <= monthKey);
   return rate ? { ...center, instr: rate.instr, assist: rate.assist, rental: rate.rental, cost: rate.cost } : center;
 }
-export function dueDate(monthKey: string, center: SettlementCenter) {
+export function dueDate(monthKey: string, center: Pick<SettlementCenter, 'termType' | 'termValue'>) {
   const [year, month] = monthKey.split('-').map(Number);
   const value = Number(center.termValue) || 0;
   const date = center.termType === 'day' ? new Date(year, month, value || 10)

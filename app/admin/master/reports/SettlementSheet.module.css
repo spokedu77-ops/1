@@ -75,6 +75,27 @@
 .heroLabel { font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,.76); }
 .heroValue { margin-top: 2px; font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
 .heroFoot { margin-top: 8px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 11.5px; color: rgba(255,255,255,.74); font-variant-numeric: tabular-nums; }
+.heroFoot strong { color: white; font-weight: 650; }
+.heroLoss { background: #842b36; }
+.profitSection { min-width: 0; }
+.profitExplanation { margin-top: 6px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: var(--sheet-muted); font-size: 11px; line-height: 1.5; }
+.monthHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; }
+.monthHeading h2 { color: #26332e; font-size: 15px; font-weight: 700; }
+.monthStatus { margin-top: 2px; display: block; color: var(--sheet-muted); font-size: 11px; }
+.managementMenu { position: relative; }
+.managementMenu > summary { cursor: pointer; list-style: none; }
+.managementMenu > summary::-webkit-details-marker { display: none; }
+.managementBody { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; display: grid; width: min(320px, calc(100vw - 32px)); max-height: 75dvh; gap: 3px; overflow-y: auto; border: 1px solid var(--sheet-line); border-radius: 10px; background: white; padding: 10px; box-shadow: 0 12px 32px -12px rgba(15,35,28,.3); }
+.managementBody > button { display: flex; min-height: 34px; align-items: center; gap: 8px; border-radius: 6px; padding: 6px 8px; color: #34413c; font-size: 12px; text-align: left; }
+.managementBody > button:hover:not(:disabled) { background: var(--sheet-surface-soft); }
+.managementBody > button:disabled { cursor: not-allowed; opacity: .4; }
+.managementBody > .menuDanger { margin-top: 5px; border-top: 1px solid var(--sheet-line); color: #b42318; }
+.menuLabel { margin-top: 4px; padding: 3px 8px; color: var(--sheet-muted); font-size: 11px; font-weight: 600; }
+.entryPanel { border: 1px solid var(--sheet-line); border-radius: 10px; background: white; padding: 10px 12px; }
+.entryToolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.entryToolbar > span { color: #34413c; font-size: 12px; font-weight: 650; }
+.entryPanel .selectedSource { display: inline-flex; min-height: 34px; align-items: center; gap: 6px; border: 1px solid var(--sheet-accent); border-radius: 8px; background: var(--sheet-accent-soft); padding: 6px 12px; color: var(--sheet-accent); font-size: 13px; font-weight: 600; }
+.editingTools { display: grid; gap: 8px; padding-block: 4px; }
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .metric { min-width: 0; border: 1px solid var(--sheet-line); border-radius: 12px; background: white; padding: 10px 12px; box-shadow: 0 4px 16px -14px rgba(15,35,28,.35); animation: sheetRise .28s ease-out both; }
 .metric:nth-child(2) { animation-delay: 35ms; }

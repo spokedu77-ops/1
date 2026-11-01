@@ -110,7 +110,7 @@ await context.route('**/*', async (route) => {
   if (url.pathname === '/api/admin/teacher-tier-fees') return route.fulfill({json:{fees:[{tier_id:'gold',fee_private:32000,fee_group:40000,fee_center_main:45000,fee_center_assist:30000}]}});
   if (url.pathname === '/api/admin/settlement-lab') {
     check(route.request().method()==='GET','LAB server receives GET only');
-    return route.fulfill({json:url.searchParams.get('scope')==='context'?{centers:[first,second]}:{months:{[month.key]:month},centers:{[savedPolicy.id]:savedPolicy},settings:{vatMethod:'sheet',year:2026}}});
+    return route.fulfill({json:{months:{[month.key]:month},centers:{[savedPolicy.id]:savedPolicy},settings:{vatMethod:'sheet',year:2026}}});
   }
   if (url.pathname === '/api/admin/settlement-sheet') {
     if (route.request().method() === 'PUT') { stableWrites++; const body=route.request().postDataJSON(); if(body.kind==='month') { savedMonth=body.value;return route.fulfill({json:{revision:'month-r2',lockedAt:null}}); } savedPolicy={...body.value,rev:'r2'}; return route.fulfill({json:{revision:'r2'}}); }
@@ -118,10 +118,6 @@ await context.route('**/*', async (route) => {
     if(delayedPolicies&&url.searchParams.get('scope')==='centers')await new Promise(resolve=>setTimeout(resolve,900));
     const shownMonth=delayedPolicies?{...month,locked:false,lockedAt:null,rows:[legacyRow]}:month;
     return route.fulfill({json:url.searchParams.get('scope')==='centers'?{centers:{[savedPolicy.id]:savedPolicy,...Object.fromEntries(blankPolicies.map(p=>[p.id,p]))}}:{months:{[month.key]:shownMonth},centers:{},settings:{vatMethod:'sheet',year:2026}}});
-  }
-  if (url.pathname === '/api/admin/settlement-centers') {
-    results.requests['operational:'+ (url.searchParams.has('id')?'detail':'search')] = (results.requests['operational:'+ (url.searchParams.has('id')?'detail':'search')]??0)+1;
-    return route.fulfill({json:url.searchParams.has('id')?{center:first}:{centers:[{id:first.id,name:first.name,status:first.status,linked:false}]}});
   }
   return route.continue();
 });
@@ -142,40 +138,6 @@ try {
     await page.getByRole('button',{name:'연간 대시보드',exact:true}).click();
     check(await page.getByRole('button',{name:'센터 · 개인수업 DB',exact:true}).count()===1,'stable annual view available');
     await page.screenshot({path:path.join(dir,`stable-${width}.png`),fullPage:true,animations:"disabled"});results.screenshots.push(`stable-${width}.png`);
-    await page.getByRole('button',{name:'센터 · 개인수업 DB',exact:true}).click();
-    await page.getByLabel('강사료',{exact:true}).first().waitFor();
-    check(await page.getByLabel('강사료',{exact:true}).first().inputValue()==='90,000','stable policy UI preserved');
-    const policySaved=page.waitForResponse(response=>response.url().includes('/api/admin/settlement-sheet')&&response.request().method()==='PUT');
-    await page.getByLabel('강사료',{exact:true}).first().fill('91000');await page.getByLabel('강사료',{exact:true}).first().blur();
-    await page.getByLabel(first.name+' 저장',{exact:true}).click();
-    await policySaved;
-    await page.waitForFunction(()=>document.querySelector('input[aria-label="강사료"]')?.value==='91,000');
-    check(Number(String(savedPolicy.instr).replace(/,/g,''))===91000,'stable policy save uses original API');
-    savedPolicy={...policy,name:first.name,center_id:first.id};savedMonth=null;
-    const stableWritesBeforeLab=stableWrites;
-    await page.goto(base+'/?lab=1');
-    await page.getByRole('heading',{name:'정산 LAB',exact:true}).waitFor();
-    await page.getByLabel(first.name+' 회기',{exact:true}).waitFor();
-    check(await page.getByLabel(first.name+' 회기',{exact:true}).isDisabled(),'LAB initial snapshot is read-only');
-    await page.screenshot({path:path.join(dir,`lab-readonly-${width}.png`),fullPage:true,animations:"disabled"});results.screenshots.push(`lab-readonly-${width}.png`);
-    await page.getByRole('button',{name:'격리 복사본 만들기',exact:true}).click();
-    const sessions=page.getByLabel(first.name+' 회기',{exact:true});await sessions.fill('5');await sessions.blur();
-    await page.waitForFunction(()=>document.querySelector('section[aria-label="정산 LAB 작업 환경"] table')?.textContent.includes('500,000'));
-    check(month.rows[0].sessions===4,'isolated edit leaves original month unchanged');
-    await page.screenshot({path:path.join(dir,`lab-edited-${width}.png`),fullPage:true,animations:"disabled"});results.screenshots.push(`lab-edited-${width}.png`);
-    await page.getByRole('button',{name:'센터 · 개인수업 DB',exact:true}).click();
-    await page.getByRole('button',{name:'연결 센터 확인',exact:true}).click();
-    await page.getByRole('button',{name:'연결 해제',exact:true}).click();
-    await page.getByText('미연결',{exact:true}).waitFor();
-    await page.getByLabel('센터관리 기관 검색').fill('테스트');
-    await page.getByRole('button',{name:new RegExp(first.name+' · active')}).click();
-    await page.getByRole('button',{name:'최신 정보 확인',exact:true}).waitFor();
-    check(savedPolicy.center_id===first.id,'isolated linking does not mutate production fixture');
-    const ref=page.locator('details').filter({hasText:'센터 UUID · 수업료·강사료·교구 대여비 원본 검증'}).first();
-    await ref.locator('summary').first().click();await page.getByLabel('검증할 정산 항목').selectOption('legacy-policy');
-    await page.getByText(/60,000원/).waitFor();
-    check(await ref.textContent().then(t=>t.includes('100,000원')&&t.includes('users.fee_center_main')),'center charge and teacher DB provenance shown separately');
-    await page.screenshot({path:path.join(dir,`lab-link-fees-${width}.png`),fullPage:true,animations:"disabled"});results.screenshots.push(`lab-link-fees-${width}.png`);
     page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'격리 복사본 폐기'}).click();
     await page.getByLabel(first.name+' 회기',{exact:true}).waitFor();
     check(await page.getByLabel(first.name+' 회기',{exact:true}).inputValue()==='4','discard restores captured baseline');

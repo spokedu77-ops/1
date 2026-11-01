@@ -7,16 +7,15 @@ const object = (value: unknown): value is Record<string, unknown> => value != nu
 const monthKey = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 /** No network, storage, service client or production write fallback exists in this adapter. */
-export function createLabTransport(baseline: SettlementSheetData, writable: boolean, centerIds: string[], onChange: (data: SettlementSheetData) => void = () => {}) {
+export function createLabTransport(baseline: SettlementSheetData, writable: boolean, onChange: (data: SettlementSheetData) => void = () => {}) {
   let data = copy(baseline);
   const response = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
   const fail = (error: string, status = 400) => response({ error }, status);
-  const validLink = (center: Record<string, unknown>) => center.center_id == null || (z.string().uuid().safeParse(center.center_id).success && centerIds.includes(center.center_id as string));
   const request: LabRequest = async (input, init) => {
     const url = new URL(input, 'http://lab.invalid');
     if (url.pathname !== '/api/admin/settlement-lab') return fail('LAB 경로 외 요청은 허용되지 않습니다.', 403);
     const method = init?.method ?? 'GET';
-    if (method === 'GET') return response(url.searchParams.get('scope') === 'centers' ? { centers: copy(data.centers) } : { ...copy(data), centers: {} });
+    if (method === 'GET') return response(url.searchParams.get('scope') === 'backup' ? copy(data) : url.searchParams.get('scope') === 'private' ? { centers: Object.fromEntries(Object.entries(copy(data.centers)).filter(([, center]) => center.type === 'private')) } : { ...copy(data), centers: {} });
     if (!writable) return fail('운영 스냅샷은 읽기 전용입니다. 격리 복사본을 먼저 만드세요.', 423);
     const changed = () => { onChange(copy(data)); };
     if (method === 'DELETE') {
@@ -34,7 +33,7 @@ export function createLabTransport(baseline: SettlementSheetData, writable: bool
     const value = body.value;
     if (!object(value)) return fail('데이터 형식이 잘못됐습니다.');
     if (body.kind === 'center') {
-      if (typeof value.id !== 'string' || !value.id || !validLink(value)) return fail('정산 ID 또는 센터 UUID가 잘못됐습니다.');
+      if (value.type !== 'private' || typeof value.id !== 'string' || !value.id) return fail('정산 ID가 잘못됐습니다.');
       const previous = data.centers[value.id];
       if (previous && previous.rev !== value.rev) return fail('REVISION_CONFLICT', 409);
       const revision = crypto.randomUUID();
@@ -64,7 +63,7 @@ export function createLabTransport(baseline: SettlementSheetData, writable: bool
       if (Object.values(data.months).some((month) => month.locked)) return fail('확정된 월이 있어 복원할 수 없습니다.', 423);
       if (!object(value.months) || !object(value.centers) || !object(value.settings)) return fail('백업 형식이 잘못됐습니다.');
       if (!Object.entries(value.months).every(([key, month]) => monthKey.test(key) && object(month) && Array.isArray(month.rows))) return fail('백업 월 형식이 잘못됐습니다.');
-      if (!Object.values(value.centers).every((center) => object(center) && validLink(center))) return fail('백업 UUID가 잘못됐습니다.');
+      if (!Object.values(value.centers).every((center) => object(center))) return fail('백업 UUID가 잘못됐습니다.');
       data = copy(value) as SettlementSheetData;
       changed(); return response({ ok: true });
     }

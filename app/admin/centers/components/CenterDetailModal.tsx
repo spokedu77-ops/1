@@ -35,7 +35,7 @@ export default function CenterDetailModal({ id, onClose, onSaved, onDeleted }: {
       <div className="flex h-full flex-col">
         <div className="flex shrink-0 items-center justify-between border-b bg-white px-4 py-2">
           <span className="font-semibold text-slate-900">센터 상세정보</span>
-          <button type="button" onClick={close} aria-label="센터 상세 닫기" className="rounded-full p-3 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={close} aria-label="센터 상세 닫기" className="rounded-md p-2 hover:bg-slate-100"><X className="h-5 w-5" /></button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <CenterDetailClient id={id} onClose={close} onSaved={onSaved} onDeleted={onDeleted} registerCloseGuard={registerCloseGuard} />

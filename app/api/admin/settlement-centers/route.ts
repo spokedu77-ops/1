@@ -1,7 +1,12 @@
+import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { MASTER_EMAIL } from '@/app/lib/constants/admin';
+import { fetchTeacherLogCounts } from '@/app/admin/users/fetchTeacherLogCounts';
+import { cloneTierFeeMap } from '@/app/lib/teacherTierSchedule';
+import { teacherFeePreview, type TierFeeRecord } from '@/app/lib/centers/teacherFeePreview';
+import type { InstructorsDefault } from '@/app/lib/centers/types';
+import { readCenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
 
 const json = (body: unknown, status = 200) => NextResponse.json(body, {
   status, headers: { 'Cache-Control': 'private, no-store, max-age=0' },
@@ -13,30 +18,49 @@ export async function GET(request: Request) {
   if (!auth.ok) { auth.response.headers.set('Cache-Control', 'private, no-store'); return auth.response; }
   if (auth.email?.toLowerCase() !== MASTER_EMAIL) return json({ error: 'Forbidden' }, 403);
   const params = new URL(request.url).searchParams;
-  const id = params.get('id');
   const search = (params.get('q') ?? '').trim();
-  if (id && !z.string().uuid().safeParse(id).success) return json({ error: '잘못된 센터 ID입니다.' }, 400);
+  if (params.get('scope') !== 'import') return json({ error: 'Unsupported scope' }, 400);
   if (search.length > 100) return json({ error: '검색어가 너무 깁니다.' }, 400);
   try {
     const service = getServiceSupabase();
-    if (id) {
-      const result = await service.from('centers')
-        .select('id,name,status,contract_start,contract_end,session_fee,updated_at').eq('id', id).maybeSingle();
-      if (result.error) throw result.error;
-      return result.data ? json({ center: result.data }) : json({ error: '센터를 찾을 수 없습니다.' }, 404);
-    }
     const term = search.replace(/[,%()]/g, ' ').trim();
-    if (!term) return json({ centers: [] });
-    const result = await service.from('centers').select('id,name,status').ilike('name', `%${term}%`)
-      .order('name').order('id').limit(20);
+    let query = service.from('centers')
+      .select('id,name,region_tag,status,session_fee,main_teacher_id,main_teacher_2_id,main_teacher_3_id,instructors_default,settlement_defaults')
+      .neq('status', 'ended').order('name').order('id').limit(30);
+    if (term) query = query.ilike('name', `%${term}%`);
+    const result = await query;
     if (result.error) throw result.error;
-    const ids = (result.data ?? []).map((row) => row.id);
-    // Only links for this result set, never all policy payloads or a per-center query loop.
-    const links = ids.length ? await service.from('admin_settlement_sheet_centers')
-      .select('id,center_id:payload->>center_id').in('payload->>center_id', ids) : { data: [], error: null };
-    if (links.error) throw links.error;
-    const linked = new Set((links.data ?? []).map((row) => row.center_id));
-    return json({ centers: (result.data ?? []).map((row) => ({ ...row, linked: linked.has(row.id) })) });
+    const centers = result.data ?? [];
+    const ids = [...new Set(centers.flatMap((center) => [center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]).filter((id): id is string => Boolean(id)))];
+    const [teachers, tiers, counts] = await Promise.all([
+      ids.length ? service.from('users').select('id,name,role,email,is_admin,session_count,fee_center_main,fee_center_assist').in('id', ids) : Promise.resolve({ data: [], error: null }),
+      service.from('teacher_tier_fees').select('tier_id,fee_center_main,fee_center_assist'),
+      fetchTeacherLogCounts(service, ids),
+    ]);
+    if (teachers.error || tiers.error) throw teachers.error ?? tiers.error;
+    const map = cloneTierFeeMap();
+    const tierRows = (tiers.data ?? []) as TierFeeRecord[];
+    for (const row of tierRows) if (row.tier_id in map) map[row.tier_id] = {
+      ...map[row.tier_id], fee_center_main: row.fee_center_main ?? map[row.tier_id].fee_center_main,
+      fee_center_assist: row.fee_center_assist ?? map[row.tier_id].fee_center_assist,
+    };
+    const teacherRows = (teachers.data ?? []).map((teacher) => ({ ...teacher, logCount: counts[teacher.id] ?? 0 }));
+    return json({ centers: centers.map((center) => {
+      const overrides = (center.instructors_default as InstructorsDefault | null)?.fees ?? [];
+      const fee = (id: string | null, role: 'main' | 'assist') => isZeroFeeStaff(teacherRows.find((teacher) => teacher.id === id)) ? 0 : id
+        ? overrides.find((item) => item.teacher_id === id && item.role === role)?.amount
+          ?? teacherFeePreview(id, teacherRows, tierRows, map, role).amount
+        : null;
+      const assistants = [center.main_teacher_2_id, center.main_teacher_3_id].filter((id): id is string => Boolean(id));
+      const assistantFees = assistants.map((id) => fee(id, 'assist'));
+      const assigned = [center.main_teacher_id, ...assistants].filter(Boolean);
+      return { id: center.id, name: center.name, region: center.region_tag, sessionFee: center.session_fee,
+        defaults: readCenterSettlementDefaults(center.settlement_defaults),
+        mainZeroFee: isZeroFeeStaff(teacherRows.find((teacher) => teacher.id === center.main_teacher_id)),
+        assistZeroFee: assistants.length > 0 && assistants.every((id) => isZeroFeeStaff(teacherRows.find((teacher) => teacher.id === id))),
+        mainFee: fee(center.main_teacher_id, 'main'),
+        assistFee: new Set(assigned).size !== assigned.length || assistantFees.some((amount) => amount == null) ? null : assistantFees.reduce<number>((sum, amount) => sum + (amount ?? 0), 0) };
+    }) });
   } catch {
     return json({ error: '센터정보를 불러오지 못했습니다.' }, 500);
   }

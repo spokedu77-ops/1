@@ -109,10 +109,6 @@ await context.route('**/*', async (route) => {
     const shownMonth=delayedPolicies?{...month,locked:false,lockedAt:null,rows:[legacyRow]}:month;
     return route.fulfill({json:url.searchParams.get('scope')==='centers'?{centers:{[savedPolicy.id]:savedPolicy}}:{months:{[month.key]:shownMonth},centers:{},settings:{vatMethod:'sheet',year:2026}}});
   }
-  if (url.pathname === '/api/admin/settlement-centers') {
-    results.requests['operational:'+ (url.searchParams.has('id')?'detail':'search')] = (results.requests['operational:'+ (url.searchParams.has('id')?'detail':'search')]??0)+1;
-    return route.fulfill({json:url.searchParams.has('id')?{center:first}:{centers:[{id:first.id,name:first.name,status:first.status,linked:false}]}});
-  }
   return route.continue();
 });
 const page = await context.newPage();

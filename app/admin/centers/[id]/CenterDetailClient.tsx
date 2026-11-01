@@ -1,5 +1,8 @@
 'use client';
 
+import CenterSettlementFields from '../components/CenterSettlementFields';
+import { DEFAULT_CENTER_SETTLEMENT, readCenterSettlementDefaults, type CenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
+
 import { toast } from 'sonner';
 import CenterTeacherFees from '../components/CenterTeacherFees';
 import CenterSettlementPanel from '../components/CenterSettlementPanel';
@@ -98,6 +101,7 @@ const DAY_LABELS: Record<string, string> = {
 };
 
 type EditForm = {
+  settlement_defaults: CenterSettlementDefaults;
   name: string;
   region_tag: string;
   address: string;
@@ -122,6 +126,7 @@ type EditForm = {
 };
 
 const DEFAULT_EDIT_FORM: EditForm = {
+  settlement_defaults: DEFAULT_CENTER_SETTLEMENT,
   name: '',
   region_tag: '',
   address: '',
@@ -154,7 +159,6 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('basic');
-  const [settlementSaving, setSettlementSaving] = useState(false);
   const [center, setCenter] = useState<Center | null>(null);
   const [loading, setLoading] = useState(true);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
@@ -189,7 +193,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const dirty = (isEditOpen && JSON.stringify(editForm) !== editSnapshot.current) ||
     Boolean(historyDraft.trim() || historyEditingId || passwordChanged || passwordDeleteRequested);
-  const busy = settlementSaving || editSubmitting || deleteSubmitting || criminalUploading || Boolean(criminalDeletingPath) ||
+  const busy = editSubmitting || deleteSubmitting || criminalUploading || Boolean(criminalDeletingPath) ||
     historySaving || historyUpdating || Boolean(historyDeletingId);
   const canLeave = () => {
     if (busy) { toast.error('진행 중인 작업이 끝난 후 닫아주세요.'); return false; }
@@ -323,6 +327,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
       new Set([existingSub, ...existingBackup].map((s) => (s || '').trim()).filter(Boolean))
     );
     const nextForm: EditForm = {
+      settlement_defaults: readCenterSettlementDefaults(center.settlement_defaults),
       name: center.name,
       region_tag: center.region_tag ?? '',
       address: center.address ?? '',
@@ -507,6 +512,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
       const rawFee = editForm.session_fee.trim();
       const parsedFee = rawFee !== '' ? parseInt(rawFee, 10) : null;
       const payload: Record<string, unknown> = {
+        settlement_defaults: editForm.settlement_defaults,
         name: editForm.name.trim(),
         region_tag: editForm.region_tag.trim() || null,
         address: editForm.address.trim() || null,
@@ -617,11 +623,11 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   const instructors = center.instructors_default ?? { main: null, sub: null, backup: [] };
 
   return (
-    <div className="flex-1 min-h-screen bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]">
-      <div inert={isEditOpen} className="p-4 sm:p-6 md:p-8 min-w-0 max-w-4xl mx-auto">
+    <div className={`flex-1 ${onClose ? 'min-h-0' : 'min-h-screen'} bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]`}>
+      <div inert={isEditOpen} className="p-3 sm:p-4 min-w-0 max-w-4xl mx-auto">
 
         {/* 헤더 */}
-        <div className="mb-4">
+        {!onClose && <div className="mb-2">
           <Link
             href="/admin/centers"
             onClick={(event) => { if (onClose) { event.preventDefault(); onClose(); } else if (!canLeave()) event.preventDefault(); }}
@@ -630,9 +636,9 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
             <ArrowLeft className="h-4 w-4" />
             센터 목록
           </Link>
-        </div>
+        </div>}
 
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Building2 className="h-6 w-6 text-indigo-600 shrink-0" />
             <div>
@@ -672,21 +678,16 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
           </div>
         </div>
 
-        <div className="mb-5 grid gap-3 border-y border-slate-200 py-4 text-sm sm:grid-cols-2">
-          <p>주 담당 강사 <strong>{center.main_teacher_name ?? '미배정'}</strong></p>
-          <p>센터 회당 청구 수업료 <strong>{center.session_fee == null ? '미설정' : `${center.session_fee.toLocaleString()}원`}</strong></p>
-          <p className="text-slate-500 sm:col-span-2">금액 원본: centers.session_fee · 정산 fee 및 강사 지급 단가와 별도입니다.</p>
-        </div>
-        <nav aria-label="센터 상세 탭" className="sticky top-0 z-10 mb-6 flex overflow-x-auto border-b border-slate-200 bg-slate-50">
+        <nav aria-label="센터 상세 탭" className="sticky top-0 z-10 mb-3 flex overflow-x-auto border-b border-slate-200 bg-slate-50">
           {([['basic', '기본정보'], ['fees', '수업·금액'], ['settlement', '정산'], ['history', '운영기록']] as const).map(([key, label]) => (
-            <button key={key} type="button" disabled={settlementSaving} aria-current={activeTab === key ? 'page' : undefined}
+            <button key={key} type="button" aria-current={activeTab === key ? 'page' : undefined}
               onClick={() => setActiveTab(key)} className={`min-h-11 shrink-0 border-b-2 px-4 text-sm font-semibold ${activeTab === key ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-600'}`}>{label}</button>
           ))}
         </nav>
         <div hidden={activeTab !== 'basic'} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* 계약 기간 */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
               <Calendar className="h-3.5 w-3.5" />
               계약 기간
             </div>
@@ -699,8 +700,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
           </div>
 
           {/* 담당자 */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
               <Phone className="h-3.5 w-3.5" />
               담당자
             </div>
@@ -731,8 +732,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
           </div>
 
           {/* 주소 / 출입 */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
               <MapPin className="h-3.5 w-3.5" />
               주소 / 출입
             </div>
@@ -744,8 +745,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
 
           {/* 특이사항 */}
           {center.highlights && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
                 <AlertCircle className="h-3.5 w-3.5" />
                 특이사항
               </div>
@@ -754,8 +755,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
           )}
 
           {/* 회보서 관련 정보 */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
               <FileText className="h-3.5 w-3.5" />
               회보서 관련 정보
             </div>
@@ -816,36 +817,32 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
           </div>
 
         </div>
-        <div hidden={activeTab !== 'fees'} className="space-y-6">
-          <section className="border-b pb-4"><h2 className="text-xl font-semibold">센터 청구 수업료</h2><p className="mt-2">{center.session_fee == null ? '미설정' : `${center.session_fee.toLocaleString()}원 / 회`}</p><p className="mt-2 text-sm text-slate-500">원본: centers.session_fee · 교구 대여비 및 정산 fee와 자동 동기화하지 않습니다.</p></section>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div hidden={activeTab !== 'fees'} className="space-y-2 border-b border-slate-100 pb-3">
+          <section className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3"><h2 className="text-sm font-medium text-slate-600">센터 청구 수업료</h2><p className="text-lg font-semibold tabular-nums text-slate-900">{center.session_fee == null ? '미설정' : <>{center.session_fee.toLocaleString()}원 <span className="text-xs font-normal text-slate-500">/ 회</span></>}</p></section>
+          <div className="grid gap-3 sm:grid-cols-2">
           {/* 메인 강사 */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
               <Users className="h-3.5 w-3.5" />
-              메인 강사
+              담당 강사
             </div>
             <ul className="text-sm text-slate-700 space-y-0.5">
               <li>
-                메인 1: <span className="font-medium">{center.main_teacher_name ?? '-'}</span>
+                메인 <span className="ml-2 font-medium">{center.main_teacher_name ?? '미배정'}</span>
               </li>
-              <li>
-                메인 2: <span className="font-medium">{center.main_teacher_2_name ?? '-'}</span>
-              </li>
-              <li>
-                메인 3: <span className="font-medium">{center.main_teacher_3_name ?? '-'}</span>
-              </li>
+              {center.main_teacher_2_name ? <li>보조 1 <span className="ml-2 font-medium">{center.main_teacher_2_name}</span></li> : null}
+              {center.main_teacher_3_name ? <li>보조 2 <span className="ml-2 font-medium">{center.main_teacher_3_name}</span></li> : null}
             </ul>
             {instructors.backup && instructors.backup.length > 0 && (
               <p className="text-xs text-slate-400 mt-1">
-                보조/백업: {instructors.backup.join(', ')}
+                대체 강사: {instructors.backup.join(', ')}
               </p>
             )}
           </div>
 
           {/* 주간 시간표 */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
               <Clock className="h-3.5 w-3.5" />
               주간 시간표
             </div>
@@ -865,14 +862,16 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
             )}
           </div>
           </div>
-          {activeTab === 'fees' && <CenterTeacherFees ids={[center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]} />}
-          <p className="text-sm text-slate-600">교구 대여비는 MASTER 정산 탭의 policy / rates가 원본입니다. 센터 수업료나 강사료로 대체하지 않습니다.</p>
+          {activeTab === 'fees' && <div className="space-y-1">
+            <div className="flex justify-end"><button type="button" onClick={openEditModal} className="rounded-md px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50">강사료 수정</button></div>
+            <CenterTeacherFees ids={[center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]} overrides={center.instructors_default?.fees} />
+          </div>}
         </div>
-        {activeTab === 'settlement' && <CenterSettlementPanel key={center.id} id={center.id} name={center.name} onBusyChange={setSettlementSaving} />}
+        {activeTab === 'settlement' && <CenterSettlementPanel defaults={readCenterSettlementDefaults(center.settlement_defaults)} onEdit={openEditModal} />}
         <div hidden={activeTab !== 'history'}>
         {/* 수업 / 운영 히스토리 */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-3">
             <History className="h-3.5 w-3.5" />
             수업 / 운영 히스토리
           </div>
@@ -1002,9 +1001,9 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
         </div>
 
         {/* 히스토리 하단: 관련 파일 첨부(누적) */}
-        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
               <FileText className="h-3.5 w-3.5" />
               관련 파일 첨부
             </div>
@@ -1061,13 +1060,13 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
             onKeyDown={(event) => {
               if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeEdit(); }
               if (event.key === 'Tab') {
-                const nodes = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')];
+                const nodes = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary')].filter((node) => node.getClientRects().length > 0);
                 const first = nodes[0]; const last = nodes[nodes.length - 1];
                 if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
                 else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
               }
-            }} className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-slate-200 max-h-[90dvh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+            }} className="w-full max-w-3xl rounded-xl bg-white shadow-xl border border-slate-200 max-h-[90dvh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
               <h2 id="center-edit-heading" className="text-lg font-semibold tracking-tight text-slate-900">센터 정보 수정</h2>
               <button
                 type="button"
@@ -1078,25 +1077,25 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="overflow-y-auto flex-1">
+            <form onSubmit={handleEditSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {teachersLoading && <p role="status" className="px-6 pt-4 text-sm text-slate-500">강사 목록을 불러오는 중…</p>}
               {teachersError && <button type="button" onClick={loadTeachers} className="px-6 pt-4 text-sm text-red-600">강사 목록 조회 실패 · 다시 시도</button>}
-              <div className="px-6 py-4 space-y-5">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
                 {editError && (
                   <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{editError}</p>
                 )}
 
                 {/* 기본 정보 */}
-                <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">기본 정보</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
+                  <legend className="text-xs font-semibold text-slate-500 mb-1">기본 정보</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">센터명 *</label>
                       <input
                         type="text"
                         value={editForm.name}
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                         required
                       />
                     </div>
@@ -1106,7 +1105,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         type="text"
                         value={editForm.region_tag}
                         onChange={(e) => setEditForm((f) => ({ ...f, region_tag: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -1115,7 +1114,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         type="text"
                         value={editForm.address}
                         onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -1124,22 +1123,22 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         value={editForm.access_note}
                         onChange={(e) => setEditForm((f) => ({ ...f, access_note: e.target.value }))}
                         rows={2}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                   </div>
                 </fieldset>
 
                 {/* 상태 / 계약 */}
-                <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">상태 / 계약</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
+                  <legend className="text-xs font-semibold text-slate-500 mb-1">상태 / 계약</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">상태</label>
                       <select
                         value={editForm.status}
                         onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as CenterStatus }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="active">활성</option>
                         <option value="paused">일시중지</option>
@@ -1153,7 +1152,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         placeholder="YYYY-MM-DD"
                         value={editForm.contract_start}
                         onChange={(e) => setEditForm((f) => ({ ...f, contract_start: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1163,7 +1162,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         placeholder="YYYY-MM-DD"
                         value={editForm.contract_end}
                         onChange={(e) => setEditForm((f) => ({ ...f, contract_end: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div className="sm:col-span-3">
@@ -1185,53 +1184,53 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                 </fieldset>
 
                 {/* 운영 정보 */}
-                <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">운영 정보</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
+                  <legend className="text-xs font-semibold text-slate-500 mb-1">운영 정보</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사 1</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사</label>
                       <select
                         value={editForm.main_teacher_id}
                         onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_id: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">미선택</option>
-                        {editForm.main_teacher_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_id) && <option value={editForm.main_teacher_id}>{center.main_teacher_name ?? "Existing assigned teacher"}</option>}
+                        {editForm.main_teacher_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_id) && <option value={editForm.main_teacher_id}>{center.main_teacher_name ?? "\uAE30\uC874 \uBC30\uC815 \uAC15\uC0AC"}</option>}
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사 2</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">보조 강사 1</label>
                       <select
                         value={editForm.main_teacher_2_id}
                         onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_2_id: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">미선택</option>
-                        {editForm.main_teacher_2_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_2_id) && <option value={editForm.main_teacher_2_id}>{center.main_teacher_2_name ?? "Existing assigned teacher"}</option>}
+                        {editForm.main_teacher_2_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_2_id) && <option value={editForm.main_teacher_2_id}>{center.main_teacher_2_name ?? "\uAE30\uC874 \uBC30\uC815 \uAC15\uC0AC"}</option>}
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사 3</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">보조 강사 2</label>
                       <select
                         value={editForm.main_teacher_3_id}
                         onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_3_id: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
                       >
                         <option value="">미선택</option>
-                        {editForm.main_teacher_3_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_3_id) && <option value={editForm.main_teacher_3_id}>{center.main_teacher_3_name ?? "Existing assigned teacher"}</option>}
+                        {editForm.main_teacher_3_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_3_id) && <option value={editForm.main_teacher_3_id}>{center.main_teacher_3_name ?? "\uAE30\uC874 \uBC30\uC815 \uAC15\uC0AC"}</option>}
                         {teachers.map((t) => (
                           <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">보조/백업 강사 (쉼표 구분)</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">대체 강사 (쉼표 구분)</label>
                       <input
                         type="text"
                         value={editForm.instructors_default.backup?.join(', ') ?? ''}
@@ -1245,25 +1244,28 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                             },
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                   </div>
                 </fieldset>
 
-                <CenterTeacherFees ids={[editForm.main_teacher_id, editForm.main_teacher_2_id, editForm.main_teacher_3_id]} />
+                <CenterSettlementFields value={editForm.settlement_defaults} onChange={(settlement_defaults) => setEditForm((form) => ({ ...form, settlement_defaults }))} />
+                <CenterTeacherFees ids={[editForm.main_teacher_id, editForm.main_teacher_2_id, editForm.main_teacher_3_id]}
+                  overrides={editForm.instructors_default.fees}
+                  onFeesChange={(fees) => setEditForm((form) => ({ ...form, instructors_default: { ...form.instructors_default, fees } }))} />
 
                 {/* 회보서 관련 정보 */}
-                <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">회보서 관련 정보</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <details className="rounded-lg border border-slate-200 px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-slate-600">회보서 관련 정보</summary><div className="pt-3"><fieldset className="space-y-2 border-b border-slate-100 pb-3">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">시설 아이디</label>
                       <input
                         type="text"
                         value={editForm.criminal_check_facility_id}
                         onChange={(e) => setEditForm((f) => ({ ...f, criminal_check_facility_id: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1306,19 +1308,19 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                       </label>
                     </div>
                   </div>
-                </fieldset>
+                </fieldset></div></details>
 
                 {/* 담당자 */}
-                <fieldset className="space-y-3">
-                  <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">담당자</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
+                  <legend className="text-xs font-semibold text-slate-500 mb-1">담당자</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">이름</label>
                       <input
                         type="text"
                         value={editForm.contact_name}
                         onChange={(e) => setEditForm((f) => ({ ...f, contact_name: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1327,7 +1329,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         type="text"
                         value={editForm.contact_role}
                         onChange={(e) => setEditForm((f) => ({ ...f, contact_role: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1337,7 +1339,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         autoComplete="email"
                         value={editForm.contact_email}
                         onChange={(e) => setEditForm((f) => ({ ...f, contact_email: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1347,7 +1349,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                         autoComplete="tel"
                         value={editForm.contact_phone}
                         onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1355,19 +1357,19 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
 
                 {/* 특이사항 */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">특이사항</label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">특이사항</label>
                   <textarea
                     value={editForm.highlights}
                     onChange={(e) => setEditForm((f) => ({ ...f, highlights: e.target.value }))}
                     rows={3}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
+                    className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                   />
                 </div>
 
                 {/* 주간 시간표 */}
-                <fieldset className="space-y-2">
+                <details className="rounded-lg border border-slate-200 px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-slate-600">특이사항</summary><div className="pt-3"><fieldset className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <legend className="text-xs font-semibold uppercase tracking-wider text-slate-400">주간 시간표</legend>
+
                     <button
                       type="button"
                       onClick={addScheduleSlot}
@@ -1431,10 +1433,10 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                       <p className="text-xs text-slate-400 py-1">시간표 없음</p>
                     )}
                   </div>
-                </fieldset>
+                </fieldset></div></details>
               </div>
 
-              <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 shrink-0">
+              <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
                 <button
                   type="button"
                   onClick={closeEdit}

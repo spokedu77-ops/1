@@ -1,5 +1,9 @@
 'use server';
 
+import { readCenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
+
+import { staffTeacherIds } from '@/app/lib/staffTeacherFees';
+
 import { createCenterSchema } from '@/app/lib/centers/schemas';
 import type { Center, CenterListItem, TeacherOption } from '@/app/lib/centers/types';
 import { toCenterListItem } from '@/app/lib/centers/listItem';
@@ -51,6 +55,7 @@ function normalizeCenterRow(row: CenterRowWithTeacher): Center {
     status: (baseRow.status as Center['status']) ?? 'active',
     contract_start: (baseRow.contract_start as string | null) ?? null,
     contract_end: (baseRow.contract_end as string | null) ?? null,
+    settlement_defaults: readCenterSettlementDefaults(baseRow.settlement_defaults),
     session_fee: (baseRow.session_fee as number | null) ?? null,
     main_teacher_id: (baseRow.main_teacher_id as string | null) ?? null,
     main_teacher_2_id: (baseRow.main_teacher_2_id as string | null) ?? null,
@@ -83,6 +88,7 @@ const CENTER_SELECT_WITH_TEACHERS = `
   contract_start,
   contract_end,
   session_fee,
+  settlement_defaults,
   main_teacher_id,
   main_teacher_2_id,
   main_teacher_3_id,
@@ -189,9 +195,13 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
   if (!auth.ok) return { error: ADMIN_REQUIRED };
   const parsed = createCenterSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: parsed.error.flatten().formErrors.join(', ') };
+    return { error: parsed.error.issues.map((issue) => issue.message).join(', ') };
   }
   const supabase = getServiceSupabase();
+  if (parsed.data.instructors_default.fees?.length) {
+    const staff = await staffTeacherIds(supabase);
+    parsed.data.instructors_default.fees = parsed.data.instructors_default.fees.map((fee) => staff.has(fee.teacher_id) ? { ...fee, amount: 0 } : fee);
+  }
   const { data, error } = await supabase
     .from('centers')
     .insert({
@@ -207,6 +217,7 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
       contract_start: parsed.data.contract_start ?? null,
       contract_end: parsed.data.contract_end ?? null,
       session_fee: parsed.data.session_fee ?? null,
+      settlement_defaults: parsed.data.settlement_defaults ?? {},
       main_teacher_id: parsed.data.main_teacher_id ?? null,
       main_teacher_2_id: parsed.data.main_teacher_2_id ?? null,
       main_teacher_3_id: parsed.data.main_teacher_3_id ?? null,
@@ -234,9 +245,13 @@ export async function updateCenter(
   if (!parsedId.success) return { error: CENTER_NOT_FOUND_OR_FORBIDDEN };
   const parsed = createCenterSchema.partial().safeParse(input);
   if (!parsed.success) {
-    return { error: parsed.error.flatten().formErrors.join(', ') };
+    return { error: parsed.error.issues.map((issue) => issue.message).join(', ') };
   }
   const supabase = getServiceSupabase();
+  if (parsed.data.instructors_default?.fees?.length) {
+    const staff = await staffTeacherIds(supabase);
+    parsed.data.instructors_default.fees = parsed.data.instructors_default.fees.map((fee) => staff.has(fee.teacher_id) ? { ...fee, amount: 0 } : fee);
+  }
   const payload: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) payload.name = parsed.data.name;
   if (parsed.data.region_tag !== undefined) payload.region_tag = parsed.data.region_tag;
@@ -249,6 +264,7 @@ export async function updateCenter(
   if (parsed.data.status !== undefined) payload.status = parsed.data.status;
   if (parsed.data.contract_start !== undefined) payload.contract_start = parsed.data.contract_start;
   if (parsed.data.contract_end !== undefined) payload.contract_end = parsed.data.contract_end;
+  if (parsed.data.settlement_defaults !== undefined) payload.settlement_defaults = parsed.data.settlement_defaults;
   if (parsed.data.session_fee !== undefined) payload.session_fee = parsed.data.session_fee;
   if (parsed.data.main_teacher_id !== undefined) payload.main_teacher_id = parsed.data.main_teacher_id;
   if (parsed.data.main_teacher_2_id !== undefined) payload.main_teacher_2_id = parsed.data.main_teacher_2_id;
