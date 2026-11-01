@@ -15,6 +15,7 @@ import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
 import { reportLoginUxEvent } from '@/app/lib/auth/loginUxTelemetry';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { isFullscreenPath, isPublicMarketingPath } from '@/app/lib/constants/fullscreen-paths';
+import { isStitchC0Enabled, isStitchC0Path } from '@/app/spokedu/stitch/c0/flags';
 import { AppSidebarProvider, useAppSidebar } from './providers/AppSidebarProvider';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
@@ -36,6 +37,7 @@ const fontVariables = {
 function RootLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const publicMarketing = isPublicMarketingPath(pathname ?? '');
+  const stitchPublic = isStitchC0Enabled() && isStitchC0Path(pathname ?? '');
   const hideSidebar = publicMarketing || isFullscreenPath(pathname ?? '');
   const isAdminShell = pathname?.startsWith('/admin') ?? false;
   const isTeacherShell = pathname?.startsWith('/teacher') ?? false;
@@ -84,7 +86,12 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
   const ContentRoot = publicMarketing ? 'div' : 'main';
 
   return (
-    <html lang="ko" className="font-sans" style={fontVariables}>
+    <html
+      lang="ko"
+      className="font-sans"
+      style={fontVariables}
+      data-stitch-c0-active={stitchPublic ? '1' : undefined}
+    >
       <head>
         <meta name="theme-color" content="#185FA5" />
         <meta
@@ -92,9 +99,17 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
           content={`width=device-width, initial-scale=1, viewport-fit=cover${isNoteV2Route ? ', interactive-widget=resizes-content' : ''}`}
         />
       </head>
-      <body className="bg-gray-50 font-sans text-slate-900 antialiased">
+      <body
+        className={
+          stitchPublic ? 'min-h-screen antialiased' : 'bg-gray-50 font-sans text-slate-900 antialiased'
+        }
+      >
         <QueryProvider>
           <I18nProvider>
+            {stitchPublic ? (
+              children
+            ) : (
+              <>
             <Toaster position="top-center" richColors closeButton />
             <div className={`flex ${hideSidebar ? `w-full${homeSticky ? '' : ' overflow-x-hidden'}` : 'min-h-screen'}`} style={fullscreenWrapStyle}>
               {!hideSidebar && (
@@ -125,6 +140,8 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 {children}
               </ContentRoot>
             </div>
+              </>
+            )}
           </I18nProvider>
         </QueryProvider>
       </body>

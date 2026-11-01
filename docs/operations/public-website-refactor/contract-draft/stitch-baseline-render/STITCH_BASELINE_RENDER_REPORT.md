@@ -325,3 +325,22 @@ node docs/operations/public-website-refactor/contract-draft/scripts/run-stitch-v
 **Worktree:** Not created — `main` has unrelated admin/settlement WIP; use `git worktree add ../1-stitch-c0 -b phase-c0/stitch-six-pages` when clean.
 
 **Known risk (STOP if visual drift):** Root `app/globals.css` Tailwind v4 theme may interact with Stitch CDN utilities on the same document. If fidelity gate shows systematic color/spacing drift, PO must approve root-level CSS isolation (no Stitch HTML edits).
+
+---
+
+## Phase C direct integration (2026-11-01)
+
+| Pre-check | Result |
+|-----------|--------|
+| HEAD | `986e2d46a542d8db30c736d94250cf4f2e817d51` |
+| Working tree | Clean vs `origin/main` (no auto commit/reset) |
+| C0 tree | `app/spokedu/stitch/c0/**` present |
+| ZIP `code.html` SHA-256 | 6/6 match `STITCH_HTML_SHA256_MANIFEST.json` |
+
+**Switch:** Stitch is **default on** for the six exact public paths. Rollback: `NEXT_PUBLIC_SPOKEDU_STITCH_C0=0`.
+
+**Wired (step 6 partial):** `data-path` anchors → `SPOKEDU_PATHS` (inquiry → `/contact`). Visual DOM unchanged.
+
+**Not done (awaiting approval / QA):** SPOKEDU final copy swap (step 4), approved photo swap (step 5), full fidelity gate screenshots, `STITCH_NEXTJS_FIDELITY_PASS`.
+
+**Regression guard:** `/records/[slug]`, `/spokedu-lab`, `/spomat`, `/spomove/catalog`, `/contact` — not in `isStitchC0Path` exact set.

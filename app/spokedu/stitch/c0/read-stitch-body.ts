@@ -10,5 +10,9 @@ export function readStitchC0Body(pageId: string): string {
 
 export function readStitchTailwindConfigScript(): string {
   const file = path.join(process.cwd(), 'app/spokedu/stitch/c0/tailwind-config.js');
-  return fs.readFileSync(file, 'utf8').trim();
+  let raw = fs.readFileSync(file, 'utf8').trim();
+  if (!raw.includes('important:')) {
+    raw = raw.replace('tailwind.config={', "tailwind.config={important:'.stitch-c0-root',");
+  }
+  return raw;
 }

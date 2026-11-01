@@ -18,3 +18,76 @@
 .stitch-c0-root::-webkit-scrollbar {
   display: none;
 }
+
+html[data-stitch-c0-active='1'] body {
+  background-color: #faf8ff;
+  color: #131b2e;
+}
+
+html[data-stitch-c0-active='1'] body .font-sans {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * App globals load Tailwind v4 (`@import "tailwindcss"`). Stitch pages also use the
+ * Stitch CDN config (margin-top sibling spacing). v4 space-y-* adds margin-bottom on
+ * children; CDN adds margin-top — combined gap is +24px per stack (education/about FAIL).
+ * Static code.html has CDN only. Reset bottom margins inside Stitch so CDN spacing matches ref.
+ */
+html[data-stitch-c0-active='1'] .stitch-c0-root [class*='space-y-'] > * {
+  margin-bottom: 0 !important;
+}
+
+/* Korean copy stays in word units inside the six Stitch surfaces. */
+.stitch-c0-root.font-body-md,
+.stitch-c0-root .font-body-md {
+  font-family: 'Plus Jakarta Sans';
+}
+
+.stitch-c0-root :is(h1, h2, h3, h4, p, a, button, span, label, div) {
+  word-break: keep-all;
+  line-break: strict;
+}
+
+/* Removed wrong-role copy remains an explicitly pending, reserved text slot. */
+.stitch-c0-root main p[data-stitch-copy-pending] {
+  min-block-size: 3lh;
+}
+
+.stitch-c0-root footer p[data-stitch-copy-pending] {
+  min-block-size: 2lh;
+}
+
+@media (max-width: 767px) {
+  html[data-stitch-c0-active='1'] .stitch-c0-root main h1 {
+    font-size: clamp(28px, 8vw, 36px);
+    line-height: 1.35;
+  }
+
+  html[data-stitch-c0-active='1'] .stitch-c0-root main [class~='text-display-metric'] {
+    font-size: clamp(28px, 7vw, 44px);
+    line-height: 1.15;
+  }
+
+  .stitch-c0-root main .flex:has(> .font-mono) {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    min-inline-size: 0;
+  }
+
+  .stitch-c0-root main .font-mono {
+    overflow-wrap: anywhere;
+    min-inline-size: 0;
+  }
+
+  .stitch-c0-root main .flex:has(> .flex > .font-mono) {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* The report is a graphic, not an image crop: allow its labels to fit. */
+  .stitch-c0-root main [class~='aspect-[4/3]']:has(svg) {
+    aspect-ratio: auto;
+    min-block-size: 24rem;
+  }
+}

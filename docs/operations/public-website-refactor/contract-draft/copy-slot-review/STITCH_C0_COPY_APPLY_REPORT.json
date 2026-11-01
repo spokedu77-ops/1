@@ -1,0 +1,1166 @@
+{
+  "applied": [
+    {
+      "id": "DOM-home_spomove-49",
+      "route": "/",
+      "from": "김서준 학생 종합 성장 리포트",
+      "to": "수업 기록 예시 (데모 UI — 실제 데이터 아님)"
+    },
+    {
+      "id": "DOM-home_spomove-17",
+      "route": "/",
+      "from": "SPOMOVE OS 2.4",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-home_spomove-47",
+      "route": "/",
+      "from": "리포트 예시 화면 살펴보기 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-home_spomove-77",
+      "route": "/",
+      "from": "서울 24개 초등학교 늘봄학교 스포츠 거점 협약 체결",
+      "to": "키움센터 정규 SPOMOVE 수업"
+    },
+    {
+      "id": "DOM-home_spomove-78",
+      "route": "/",
+      "from": "학부모 부담을 덜고 학생들의 방과 후 체육 신체 활동을 활성화하는 맞춤 프로그램이 정규 개강되었습니다.",
+      "to": "거점형 키움센터에서 SPOMOVE 프로그램을 정기 운영한 사례입니다."
+    },
+    {
+      "id": "DOM-home_spomove-85",
+      "route": "/",
+      "from": "AI 관절 각도 추적 기술로 유소년 선수 부상률 42% 감소",
+      "to": "PAPS·체력 중심 기관 수업"
+    },
+    {
+      "id": "DOM-home_spomove-86",
+      "route": "/",
+      "from": "무리한 스윙과 점프 착지 패턴을 실시간으로 감지하여 엘리트 유망주들의 고질적인 관절 부담을 획기적으로 개선했",
+      "to": "기관 환경에 맞춘 PAPS·체력 활동을 운영한 사례입니다."
+    },
+    {
+      "id": "DOM-home_spomove-92",
+      "route": "/",
+      "from": "국내 주요 대학 에듀테크 연구진과 모션 알고리즘 발표",
+      "to": "학교 체육 프로그램 Step Up"
+    },
+    {
+      "id": "DOM-home_spomove-93",
+      "route": "/",
+      "from": "유소년 신체 발달 지연 조기 감지 모델 연구 결과를 공유하며 공교육 현장 보급 방안을 심도 있게 모색했습니다",
+      "to": "학교 현장 조건에 맞춰 설계·운영한 체육수업 사례입니다."
+    },
+    {
+      "id": "DOM-home_spomove-19",
+      "route": "/",
+      "from": "verified 국가지원 연구개발 교육 표준 모형",
+      "to": "프로그램·운영 안내"
+    },
+    {
+      "id": "DOM-home_spomove-22",
+      "route": "/",
+      "from": "아이의 연령별 신체 발달 지표와 동작 데이터를 정밀 진단하여, 체육에 대한 흥미와 균형 잡힌 근신경 협응력을",
+      "to": "전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKED"
+    },
+    {
+      "id": "DOM-home_spomove-34",
+      "route": "/",
+      "from": "체육지도자 국가자격 및 인성 인터뷰를 통과한 전문 지도사가 직접 파견되어, 학교와 학생의 여건에 꼭 맞는 안",
+      "to": "전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKED"
+    },
+    {
+      "id": "DOM-home_spomove-42",
+      "route": "/",
+      "from": "매 수업 후 운동 능력 변화와 심리적 몰입도를 시각화한 모바일 리포트를 발송해, 학부모님께 믿음과 아이의 성",
+      "to": "전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKED"
+    },
+    {
+      "id": "DOM-home_spomove-61",
+      "route": "/",
+      "from": "500+",
+      "to": "—"
+    },
+    {
+      "id": "DOM-home_spomove-63",
+      "route": "/",
+      "from": "2,500+",
+      "to": "—"
+    },
+    {
+      "id": "DOM-home_spomove-65",
+      "route": "/",
+      "from": "98%",
+      "to": "—"
+    },
+    {
+      "id": "DOM-home_spomove-67",
+      "route": "/",
+      "from": "7일",
+      "to": "—"
+    },
+    {
+      "id": "DOM-home_spomove-70",
+      "route": "/",
+      "from": "현장에서 꽃피는 스포무브의 기록",
+      "to": "현장에서 운영한 수업 사례"
+    },
+    {
+      "id": "DOM-home_spomove-12",
+      "route": "/",
+      "from": "무료 맞춤 상담 시작하기 arrow_forward",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-home_spomove-13",
+      "route": "/",
+      "from": "교육 프로그램 보기",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-home_spomove-28",
+      "route": "/",
+      "from": "신체 협응지수 94.2% 향상",
+      "to": "—"
+    },
+    {
+      "id": "DOM-home_spomove-30",
+      "route": "/",
+      "from": "verified_user 지도사 자격 검증 완료 코치 100%",
+      "to": "지도자 현장 수업"
+    },
+    {
+      "id": "DOM-home_spomove-71",
+      "route": "/",
+      "from": "전체 기록 보기 chevron_right",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-home_spomove-97",
+      "route": "/",
+      "from": "무료 맞춤 상담 신청하기 arrow_forward",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-home_spomove-98",
+      "route": "/",
+      "from": "프로그램 제안서 다운로드",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-home_spomove-107",
+      "route": "/",
+      "from": "AI 기초 신체 밸런스",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-home_spomove-108",
+      "route": "/",
+      "from": "엘리트 전담 맞춤 코칭",
+      "to": "개인·소그룹 수업"
+    },
+    {
+      "id": "DOM-home_spomove-109",
+      "route": "/",
+      "from": "정밀 모션 추적 진단",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-home_spomove-111",
+      "route": "/",
+      "from": "모션 AI 비전 알고리즘",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-home_spomove-112",
+      "route": "/",
+      "from": "현장 분석 데이터 로그",
+      "to": "SPOKEDU LAB"
+    },
+    {
+      "id": "DOM-home_spomove-113",
+      "route": "/",
+      "from": "연구 협력 기관 (UNIST 등)",
+      "to": "SPOKEDU 소개"
+    },
+    {
+      "id": "DOM-home_spomove-114",
+      "route": "/",
+      "from": "센터 대관 및 레슨 예약",
+      "to": "문의하기"
+    },
+    {
+      "id": "DOM-home_spomove-2",
+      "route": "/",
+      "from": "교육 프로그램",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-home_spomove-10",
+      "route": "/",
+      "from": "스포츠 교육의 새로운 기준, 스포무브 하나면 충분합니다.",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-home_spomove-11",
+      "route": "/",
+      "from": "초등 늘봄 방과후부터 엘리트 맞춤형 케어까지, 데이터와 검증된 코칭으로 아이들의 건강한 성장 곡선을 입체적으",
+      "to": "전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKED"
+    },
+    {
+      "id": "DOM-home_spomove-96",
+      "route": "/",
+      "from": "복잡한 행정 서류부터 코치 파견, 성장 리포트까지 원스톱으로 지원합니다. 사전 진단 테스트 및 상담은 100",
+      "to": "대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다."
+    },
+    {
+      "id": "DOM-home_spomove-99",
+      "route": "/",
+      "from": "SSPOMOVE",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-home_spomove-100",
+      "route": "/",
+      "from": "스포츠 교육과 인공지능 모션 분석 기술의 결합. 모든 학습자의 최적 신체 움직임과 맞춤형 성장을 지원하는 차",
+      "to": "대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다."
+    },
+    {
+      "id": "DOM-home_spomove-105",
+      "route": "/",
+      "from": "교육 프로그램",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-home_spomove-116",
+      "route": "/",
+      "from": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "to": "대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다."
+    },
+    {
+      "id": "DOM-home_spomove-117",
+      "route": "/",
+      "from": "contact@spomove.ai",
+      "to": "대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다."
+    },
+    {
+      "id": "DOM-home_spomove-118",
+      "route": "/",
+      "from": "02-1588-4920",
+      "to": "대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다."
+    },
+    {
+      "id": "DOM-home_spomove-123",
+      "route": "/",
+      "from": "학술연구윤리준칙",
+      "to": "파트너·협업"
+    },
+    {
+      "id": "DOM-home_spomove-7",
+      "route": "/",
+      "from": "수업 문의하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-home_spomove-119",
+      "route": "/",
+      "from": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports",
+      "to": "대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다."
+    },
+    {
+      "id": "DOM-education_programs_spomove-107",
+      "route": "/education",
+      "from": "기관 제안서 다운로드 & 상담 신청",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-education_programs_spomove-12",
+      "route": "/education",
+      "from": "전체 프로그램 둘러보기",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-education_programs_spomove-15",
+      "route": "/education",
+      "from": "기관 특화 교육 프로그램 라인업",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-education_programs_spomove-79",
+      "route": "/education",
+      "from": "진단 프로세스 세부 가이드라인 보기 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-education_programs_spomove-93",
+      "route": "/education",
+      "from": "AI 모션 분석 시스템 원리 보기 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-education_programs_spomove-96",
+      "route": "/education",
+      "from": "500+",
+      "to": "—"
+    },
+    {
+      "id": "DOM-education_programs_spomove-100",
+      "route": "/education",
+      "from": "99.4%",
+      "to": "—"
+    },
+    {
+      "id": "DOM-education_programs_spomove-9",
+      "route": "/education",
+      "from": "SPOMOVE ACADEMIC & INSTITUTIONAL CURRICULUM",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-education_programs_spomove-117",
+      "route": "/education",
+      "from": "AI 기초 신체 밸런스",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-education_programs_spomove-118",
+      "route": "/education",
+      "from": "엘리트 전담 맞춤 코칭",
+      "to": "개인·소그룹 수업"
+    },
+    {
+      "id": "DOM-education_programs_spomove-119",
+      "route": "/education",
+      "from": "정밀 모션 추적 진단",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-education_programs_spomove-121",
+      "route": "/education",
+      "from": "모션 AI 비전 알고리즘",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-education_programs_spomove-122",
+      "route": "/education",
+      "from": "현장 분석 데이터 로그",
+      "to": "SPOKEDU LAB"
+    },
+    {
+      "id": "DOM-education_programs_spomove-123",
+      "route": "/education",
+      "from": "연구 협력 기관 (UNIST 등)",
+      "to": "SPOKEDU 소개"
+    },
+    {
+      "id": "DOM-education_programs_spomove-124",
+      "route": "/education",
+      "from": "센터 대관 및 레슨 예약",
+      "to": "문의하기"
+    },
+    {
+      "id": "DOM-education_programs_spomove-2",
+      "route": "/education",
+      "from": "교육 프로그램",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-education_programs_spomove-109",
+      "route": "/education",
+      "from": "SSPOMOVE",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-education_programs_spomove-115",
+      "route": "/education",
+      "from": "교육 프로그램",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-education_programs_spomove-126",
+      "route": "/education",
+      "from": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "to": "상담 가능 시간: 평일 09:00–18:00 (주말·공휴일은 채널 안내 기준)"
+    },
+    {
+      "id": "DOM-education_programs_spomove-127",
+      "route": "/education",
+      "from": "contact@spomove.ai",
+      "to": "spokedu77@gmail.com"
+    },
+    {
+      "id": "DOM-education_programs_spomove-128",
+      "route": "/education",
+      "from": "02-1588-4920",
+      "to": "010-4437-9294"
+    },
+    {
+      "id": "DOM-education_programs_spomove-133",
+      "route": "/education",
+      "from": "학술연구윤리준칙",
+      "to": "파트너·협업"
+    },
+    {
+      "id": "DOM-education_programs_spomove-7",
+      "route": "/education",
+      "from": "수업 문의하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-education_programs_spomove-129",
+      "route": "/education",
+      "from": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-34",
+      "route": "/private",
+      "from": "좌우 균형 지수 94.2% 안정",
+      "to": "—"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-37",
+      "route": "/private",
+      "from": "verified_user",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-30",
+      "route": "/private",
+      "from": "FMS 평가 프로세스 상세히 보기 east",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-85",
+      "route": "/private",
+      "from": "1:1 방문 상담 신청하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-84",
+      "route": "/private",
+      "from": "가까운 SPOMOVE 트레이닝 센터 방문 또는 전문 지도사 가정 방문 상담을 통해 아이의 정밀 신체 진단 결",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-13",
+      "route": "/private",
+      "from": "프로그램 차별점 알아보기",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-95",
+      "route": "/private",
+      "from": "AI 기초 신체 밸런스",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-96",
+      "route": "/private",
+      "from": "엘리트 전담 맞춤 코칭",
+      "to": "개인·소그룹 수업"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-97",
+      "route": "/private",
+      "from": "정밀 모션 추적 진단",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-99",
+      "route": "/private",
+      "from": "모션 AI 비전 알고리즘",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-100",
+      "route": "/private",
+      "from": "현장 분석 데이터 로그",
+      "to": "SPOKEDU LAB"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-101",
+      "route": "/private",
+      "from": "연구 협력 기관 (UNIST 등)",
+      "to": "SPOKEDU 소개"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-102",
+      "route": "/private",
+      "from": "센터 대관 및 레슨 예약",
+      "to": "문의하기"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-2",
+      "route": "/private",
+      "from": "교육 프로그램",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-9",
+      "route": "/private",
+      "from": "SPOMOVE Elite Private Athletics",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-11",
+      "route": "/private",
+      "from": "단편적인 동작 암기가 아닌, FMS 바이오메카닉스 분석과 국가공인 엘리트 코칭진의 밀착 설계를 통해 잠재된 ",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-87",
+      "route": "/private",
+      "from": "SSPOMOVE",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-93",
+      "route": "/private",
+      "from": "교육 프로그램",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-104",
+      "route": "/private",
+      "from": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "to": "상담 가능 시간: 평일 09:00–18:00 (주말·공휴일은 채널 안내 기준)"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-105",
+      "route": "/private",
+      "from": "contact@spomove.ai",
+      "to": "spokedu77@gmail.com"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-106",
+      "route": "/private",
+      "from": "02-1588-4920",
+      "to": "010-4437-9294"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-111",
+      "route": "/private",
+      "from": "학술연구윤리준칙",
+      "to": "파트너·협업"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-7",
+      "route": "/private",
+      "from": "수업 문의하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-private_lesson_spomove-107",
+      "route": "/private",
+      "from": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-about_spomove-37",
+      "route": "/about",
+      "from": "SPOMOVE Biomechanics Engine v2.4",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-about_spomove-38",
+      "route": "/about",
+      "from": "관절 부하율 실시간 오차범위 0.12° 이내 제어",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-about_spomove-32",
+      "route": "/about",
+      "from": "모션 AI 비전 알고리즘 자세히 보기 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-about_spomove-56",
+      "route": "/about",
+      "from": "학교·기관 단체 제휴 프로그램 안내 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-about_spomove-31",
+      "route": "/about",
+      "from": "경험과 직관에만 의존하던 기존 체육 훈련의 한계를 넘어, 초당 120프레임 정밀 키포인트 추적으로 관절 각도",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-about_spomove-70",
+      "route": "/about",
+      "from": "UNIST",
+      "to": "프로그램·운영 안내"
+    },
+    {
+      "id": "DOM-about_spomove-76",
+      "route": "/about",
+      "from": "SPOMOVE R&D",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-about_spomove-94",
+      "route": "/about",
+      "from": "제휴 및 채용 문의",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-about_spomove-95",
+      "route": "/about",
+      "from": "교육 프로그램 둘러보기",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-about_spomove-20",
+      "route": "/about",
+      "from": "14만건",
+      "to": "—"
+    },
+    {
+      "id": "DOM-about_spomove-23",
+      "route": "/about",
+      "from": "99.4%",
+      "to": "—"
+    },
+    {
+      "id": "DOM-about_spomove-65",
+      "route": "/about",
+      "from": "UNIST 인간공학 연구진과 대한체육회 공인 지도자가 원팀을 이루어 과학적 신뢰성과 현장 적합성을 완벽하게 ",
+      "to": "지도자 현장 수업"
+    },
+    {
+      "id": "DOM-about_spomove-72",
+      "route": "/about",
+      "from": "인공지능 생체신호 분석 연구실 디렉터 / IEEE AI 헬스케어 분과 상임위원",
+      "to": "프로그램·운영 안내"
+    },
+    {
+      "id": "DOM-about_spomove-84",
+      "route": "/about",
+      "from": "전 국가대표 육상팀 피지컬 트레이너 / 엘리트 모빌리티 코칭 디렉터",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-about_spomove-90",
+      "route": "/about",
+      "from": "CVPR 모션 인식 연구 발표자 / 3D 실시간 신체 랜드마크 트래커 총괄 개발",
+      "to": "프로그램·운영 안내"
+    },
+    {
+      "id": "DOM-about_spomove-91",
+      "route": "/about",
+      "from": "SPOMOVE PARTNERSHIP & CAREERS",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-about_spomove-66",
+      "route": "/about",
+      "from": "협력 연구 기관: UNIST 스포츠AI랩 · 서울대 체육교육연구소",
+      "to": "프로그램·운영 안내"
+    },
+    {
+      "id": "DOM-about_spomove-104",
+      "route": "/about",
+      "from": "AI 기초 신체 밸런스",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-about_spomove-105",
+      "route": "/about",
+      "from": "엘리트 전담 맞춤 코칭",
+      "to": "개인·소그룹 수업"
+    },
+    {
+      "id": "DOM-about_spomove-106",
+      "route": "/about",
+      "from": "정밀 모션 추적 진단",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-about_spomove-108",
+      "route": "/about",
+      "from": "모션 AI 비전 알고리즘",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-about_spomove-109",
+      "route": "/about",
+      "from": "현장 분석 데이터 로그",
+      "to": "SPOKEDU LAB"
+    },
+    {
+      "id": "DOM-about_spomove-110",
+      "route": "/about",
+      "from": "연구 협력 기관 (UNIST 등)",
+      "to": "SPOKEDU 소개"
+    },
+    {
+      "id": "DOM-about_spomove-111",
+      "route": "/about",
+      "from": "센터 대관 및 레슨 예약",
+      "to": "문의하기"
+    },
+    {
+      "id": "DOM-about_spomove-2",
+      "route": "/about",
+      "from": "교육 프로그램",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-about_spomove-11",
+      "route": "/about",
+      "from": "SPOMOVE는 정밀 바이오메카닉스와 AI 모션 비전 기술을 현장 체육 교육과 융합합니다. 단순한 기록 경쟁",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-about_spomove-96",
+      "route": "/about",
+      "from": "SSPOMOVE",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-about_spomove-102",
+      "route": "/about",
+      "from": "교육 프로그램",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-about_spomove-113",
+      "route": "/about",
+      "from": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "to": "상담 가능 시간: 평일 09:00–18:00 (주말·공휴일은 채널 안내 기준)"
+    },
+    {
+      "id": "DOM-about_spomove-114",
+      "route": "/about",
+      "from": "contact@spomove.ai",
+      "to": "spokedu77@gmail.com"
+    },
+    {
+      "id": "DOM-about_spomove-115",
+      "route": "/about",
+      "from": "02-1588-4920",
+      "to": "010-4437-9294"
+    },
+    {
+      "id": "DOM-about_spomove-120",
+      "route": "/about",
+      "from": "학술연구윤리준칙",
+      "to": "파트너·협업"
+    },
+    {
+      "id": "DOM-about_spomove-7",
+      "route": "/about",
+      "from": "수업 문의하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-about_spomove-116",
+      "route": "/about",
+      "from": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-field_records_spomove-51",
+      "route": "/records",
+      "from": "모션 트래커 기반 순간 가속도 및 착지 충격 분산 지표를 학술적으로 검증하여 교육 프로그램의 신뢰성을 강화했",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-field_records_spomove-63",
+      "route": "/records",
+      "from": "금일 수업 진행 중 14개 센터 · 데이터 취합율 99.4%",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-field_records_spomove-68",
+      "route": "/records",
+      "from": "500 +",
+      "to": "—"
+    },
+    {
+      "id": "DOM-field_records_spomove-70",
+      "route": "/records",
+      "from": "98 %",
+      "to": "—"
+    },
+    {
+      "id": "DOM-field_records_spomove-79",
+      "route": "/records",
+      "from": "수업 일정 상담하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-field_records_spomove-88",
+      "route": "/records",
+      "from": "AI 기초 신체 밸런스",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-field_records_spomove-89",
+      "route": "/records",
+      "from": "엘리트 전담 맞춤 코칭",
+      "to": "개인·소그룹 수업"
+    },
+    {
+      "id": "DOM-field_records_spomove-90",
+      "route": "/records",
+      "from": "정밀 모션 추적 진단",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-field_records_spomove-92",
+      "route": "/records",
+      "from": "모션 AI 비전 알고리즘",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-field_records_spomove-93",
+      "route": "/records",
+      "from": "현장 분석 데이터 로그",
+      "to": "SPOKEDU LAB"
+    },
+    {
+      "id": "DOM-field_records_spomove-94",
+      "route": "/records",
+      "from": "연구 협력 기관 (UNIST 등)",
+      "to": "SPOKEDU 소개"
+    },
+    {
+      "id": "DOM-field_records_spomove-95",
+      "route": "/records",
+      "from": "센터 대관 및 레슨 예약",
+      "to": "문의하기"
+    },
+    {
+      "id": "DOM-field_records_spomove-2",
+      "route": "/records",
+      "from": "교육 프로그램",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-field_records_spomove-80",
+      "route": "/records",
+      "from": "SSPOMOVE",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-field_records_spomove-86",
+      "route": "/records",
+      "from": "교육 프로그램",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-field_records_spomove-97",
+      "route": "/records",
+      "from": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "to": "상담 가능 시간: 평일 09:00–18:00 (주말·공휴일은 채널 안내 기준)"
+    },
+    {
+      "id": "DOM-field_records_spomove-98",
+      "route": "/records",
+      "from": "contact@spomove.ai",
+      "to": "spokedu77@gmail.com"
+    },
+    {
+      "id": "DOM-field_records_spomove-99",
+      "route": "/records",
+      "from": "02-1588-4920",
+      "to": "010-4437-9294"
+    },
+    {
+      "id": "DOM-field_records_spomove-104",
+      "route": "/records",
+      "from": "학술연구윤리준칙",
+      "to": "파트너·협업"
+    },
+    {
+      "id": "DOM-field_records_spomove-7",
+      "route": "/records",
+      "from": "수업 문의하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-field_records_spomove-100",
+      "route": "/records",
+      "from": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-27",
+      "route": "/spomove",
+      "from": "Tracking Confidence 99.8%",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-22",
+      "route": "/spomove",
+      "from": "알고리즘 정밀도 연구 보고서 보기 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-43",
+      "route": "/spomove",
+      "from": "#바이오메카닉스",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-54",
+      "route": "/spomove",
+      "from": "맞춤형 코칭 커리큘럼 살펴보기 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-88",
+      "route": "/spomove",
+      "from": "현장 실제 리포트 샘플 보기 arrow_forward",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-41",
+      "route": "/spomove",
+      "from": "육안으로 파악하기 힘든 미세한 보행 이상, 골반 기울기, 근력 불균형을 오차범위 1% 미만의 정량적 바이오메",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-92",
+      "route": "/spomove",
+      "from": "99.8",
+      "to": "—"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-104",
+      "route": "/spomove",
+      "from": "도입 제안서 요청하기",
+      "to": "기관 체육수업 상담하기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-13",
+      "route": "/spomove",
+      "from": "시스템 도입 문의 arrow_forward",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-102",
+      "route": "/spomove",
+      "from": "스포무브 시스템을 학교와 교육 현장에 도입하세요",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-114",
+      "route": "/spomove",
+      "from": "AI 기초 신체 밸런스",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-115",
+      "route": "/spomove",
+      "from": "엘리트 전담 맞춤 코칭",
+      "to": "개인·소그룹 수업"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-116",
+      "route": "/spomove",
+      "from": "정밀 모션 추적 진단",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-118",
+      "route": "/spomove",
+      "from": "모션 AI 비전 알고리즘",
+      "to": "SPOMOVE"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-119",
+      "route": "/spomove",
+      "from": "현장 분석 데이터 로그",
+      "to": "SPOKEDU LAB"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-120",
+      "route": "/spomove",
+      "from": "연구 협력 기관 (UNIST 등)",
+      "to": "SPOKEDU 소개"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-121",
+      "route": "/spomove",
+      "from": "센터 대관 및 레슨 예약",
+      "to": "문의하기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-2",
+      "route": "/spomove",
+      "from": "교육 프로그램",
+      "to": "수업 유형 살펴보기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-12",
+      "route": "/spomove",
+      "from": "초정밀 모션 AI 비전 인식 기술과 스포츠 바이오메카닉스 데이터를 융합하여, 아동부터 엘리트 선수까지 모든 ",
+      "to": "SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-106",
+      "route": "/spomove",
+      "from": "SSPOMOVE",
+      "to": "SPOKEDU"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-112",
+      "route": "/spomove",
+      "from": "교육 프로그램",
+      "to": "기관·학교 수업"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-123",
+      "route": "/spomove",
+      "from": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "to": "상담 가능 시간: 평일 09:00–18:00 (주말·공휴일은 채널 안내 기준)"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-124",
+      "route": "/spomove",
+      "from": "contact@spomove.ai",
+      "to": "spokedu77@gmail.com"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-125",
+      "route": "/spomove",
+      "from": "02-1588-4920",
+      "to": "010-4437-9294"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-130",
+      "route": "/spomove",
+      "from": "학술연구윤리준칙",
+      "to": "파트너·협업"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-7",
+      "route": "/spomove",
+      "from": "수업 문의하기",
+      "to": "수업 상담하기"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-126",
+      "route": "/spomove",
+      "from": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports",
+      "to": "SPOKEDU"
+    }
+  ],
+  "skipped": {
+    "unchanged": 495,
+    "image_pending": 0,
+    "image_role": 34,
+    "path_miss": 0,
+    "text_mismatch": 17,
+    "complex_dom": 0
+  },
+  "exceptions": [
+    {
+      "id": "DOM-home_spomove-16",
+      "reason": "text_mismatch",
+      "expected": "SPOMOVE OS 2.4 전국 초·중등 늘봄학교 및 아카데미 실시간 연동 중",
+      "actual": "SPOKEDU 전국 초·중등 늘봄학교 및 아카데미 실시간 연동 중"
+    },
+    {
+      "id": "DOM-home_spomove-72",
+      "reason": "text_mismatch",
+      "expected": "초등 늘봄 방과후 2025. 03. 10 서울 24개 초등학교 늘봄학교 스포츠 거점 협약 체결 학부모 부담을 덜고 학생들의 방과 후 체육 신체 ",
+      "actual": "초등 늘봄 방과후 2025. 03. 10 키움센터 정규 SPOMOVE 수업 거점형 키움센터에서 SPOMOVE 프로그램을 정기 운영한 사례입니다."
+    },
+    {
+      "id": "DOM-home_spomove-80",
+      "reason": "text_mismatch",
+      "expected": "엘리트 레슨 2025. 03. 04 AI 관절 각도 추적 기술로 유소년 선수 부상률 42% 감소 무리한 스윙과 점프 착지 패턴을 실시간으로 감지",
+      "actual": "엘리트 레슨 2025. 03. 04 PAPS·체력 중심 기관 수업 기관 환경에 맞춘 PAPS·체력 활동을 운영한 사례입니다. arrow_forw"
+    },
+    {
+      "id": "DOM-home_spomove-87",
+      "reason": "text_mismatch",
+      "expected": "학술 연구 세미나 2025. 02. 26 국내 주요 대학 에듀테크 연구진과 모션 알고리즘 발표 유소년 신체 발달 지연 조기 감지 모델 연구 결과",
+      "actual": "학술 연구 세미나 2025. 02. 26 학교 체육 프로그램 Step Up 학교 현장 조건에 맞춰 설계·운영한 체육수업 사례입니다. arrow_"
+    },
+    {
+      "id": "DOM-home_spomove-14",
+      "reason": "text_mismatch",
+      "expected": "SPOMOVE OS 2.4 전국 초·중등 늘봄학교 및 아카데미 실시간 연동 중 verified 국가지원 연구개발 교육 표준 모형",
+      "actual": "SPOKEDU 전국 초·중등 늘봄학교 및 아카데미 실시간 연동 중 프로그램·운영 안내verified"
+    },
+    {
+      "id": "DOM-about_spomove-36",
+      "reason": "text_mismatch",
+      "expected": "SPOMOVE Biomechanics Engine v2.4 관절 부하율 실시간 오차범위 0.12° 이내 제어",
+      "actual": "SPOKEDU SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-about_spomove-35",
+      "reason": "text_mismatch",
+      "expected": "analytics SPOMOVE Biomechanics Engine v2.4 관절 부하율 실시간 오차범위 0.12° 이내 제어",
+      "actual": "analytics SPOKEDU SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-about_spomove-68",
+      "reason": "text_mismatch",
+      "expected": "수석 자문교수 UNIST",
+      "actual": "수석 자문교수 프로그램·운영 안내"
+    },
+    {
+      "id": "DOM-about_spomove-74",
+      "reason": "text_mismatch",
+      "expected": "운동발달 연구원장 SPOMOVE R&D",
+      "actual": "운동발달 연구원장 SPOKEDU"
+    },
+    {
+      "id": "DOM-about_spomove-19",
+      "reason": "text_mismatch",
+      "expected": "14만건 누적 모션 분석 프레임",
+      "actual": "— 누적 모션 분석 프레임"
+    },
+    {
+      "id": "DOM-about_spomove-22",
+      "reason": "text_mismatch",
+      "expected": "99.4% 학부모 및 코치 신뢰도",
+      "actual": "— 학부모 및 코치 신뢰도"
+    },
+    {
+      "id": "DOM-about_spomove-33",
+      "reason": "text_mismatch",
+      "expected": "analytics SPOMOVE Biomechanics Engine v2.4 관절 부하율 실시간 오차범위 0.12° 이내 제어 인증 완료",
+      "actual": "analytics SPOKEDU SPOKEDU 체육교육 · SPOMOVE 프로그램 인증 완료"
+    },
+    {
+      "id": "DOM-about_spomove-12",
+      "reason": "text_mismatch",
+      "expected": "2021년 설립 및 연구 출범 48개교 초·중·고 공교육 협력 14만건 누적 모션 분석 프레임 99.4% 학부모 및 코치 신뢰도",
+      "actual": "2021년 설립 및 연구 출범 48개교 초·중·고 공교육 협력 — 누적 모션 분석 프레임 — 학부모 및 코치 신뢰도"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-25",
+      "reason": "text_mismatch",
+      "expected": "Live Feed: 120 FPS Tracking Confidence 99.8%",
+      "actual": "Live Feed: 120 FPS SPOKEDU 체육교육 · SPOMOVE 프로그램"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-42",
+      "reason": "text_mismatch",
+      "expected": "#바이오메카닉스 #밸런스측정 #정밀진단",
+      "actual": "SPOKEDU 체육교육 · SPOMOVE 프로그램 #밸런스측정 #정밀진단"
+    },
+    {
+      "id": "DOM-spomove_system_spomove-23",
+      "reason": "text_mismatch",
+      "expected": "Live Feed: 120 FPS Tracking Confidence 99.8% Pelvis & Knee Alignment 정상 범위 (0.4°",
+      "actual": "Live Feed: 120 FPS SPOKEDU 체육교육 · SPOMOVE 프로그램 Pelvis & Knee Alignment 정상 범위 (0."
+    },
+    {
+      "id": "DOM-spomove_system_spomove-91",
+      "reason": "text_mismatch",
+      "expected": "99.8 %",
+      "actual": "— %"
+    }
+  ]
+}

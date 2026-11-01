@@ -19,7 +19,7 @@ function getAttr(node, name) {
   return node.attrs?.find((a) => a.name === name)?.value ?? '';
 }
 
-function textFromNode(node) {
+export function textFromNode(node) {
   if (!node) return '';
   if (node.nodeName === '#text') return node.value ?? '';
   if (SKIP_TAGS.has(node.nodeName)) return '';
@@ -36,7 +36,7 @@ function isMaterialIconSpan(node) {
   return t.length <= 2;
 }
 
-function hasBlockTextDescendant(node) {
+export function hasBlockTextDescendant(node) {
   for (const ch of node.childNodes ?? []) {
     const t = ch.nodeName;
     if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'button', 'a', 'li'].includes(t)) return true;

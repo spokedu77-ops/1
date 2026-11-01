@@ -630,7 +630,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
         {!onClose && <div className="mb-2">
           <Link
             href="/admin/centers"
-            onClick={(event) => { if (onClose) { event.preventDefault(); onClose(); } else if (!canLeave()) event.preventDefault(); }}
+            onClick={(event) => { if (!canLeave()) event.preventDefault(); }}
             className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-indigo-600 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />

@@ -1,0 +1,66 @@
+{
+  "pass": true,
+  "baseUrl": "http://127.0.0.1:3000",
+  "results": [
+    {
+      "path": "/",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/education",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/private",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/spomove",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/records",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/about",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/contact",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/spokedu-lab",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/spomat",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    },
+    {
+      "path": "/spomove/catalog",
+      "expectStitch": false,
+      "stitchRoot": false,
+      "pass": true
+    }
+  ]
+}

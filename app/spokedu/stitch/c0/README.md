@@ -1,34 +1,38 @@
-# Stitch Phase C0 (isolated public preview)
+# Stitch Phase C — direct public integration
 
-Stitch ZIP `code.html` body is ingested into `bodies/*.html` (sources under `docs/.../stitch-unpacked` are not edited).
+Stitch ZIP `code.html` bodies live in `bodies/*.html` (ingest from `docs/.../stitch-unpacked`; ZIP sources are not edited).
 
-## Enable locally (does not change production until env is set on deploy)
+## Enable Stitch on the six public routes
+
+Set at **dev/build start** (restart required):
 
 ```env
 NEXT_PUBLIC_SPOKEDU_STITCH_C0=1
 ```
 
-Restart `next dev`, then open `/`, `/education`, `/private`, `/spomove`, `/records`, `/about`.
+Unset or `0` → legacy marketing pages (production-safe default).
 
-With the flag **unset**, public routes keep the existing SPOKEDU marketing pages.
+`/records/[slug]`, `/contact`, `/spokedu-lab`, `/spomove/catalog`, etc. are unchanged.
 
-## Re-ingest from Stitch ZIP
+## Re-ingest
 
 ```bash
 node docs/operations/public-website-refactor/contract-draft/scripts/stitch-c0-ingest-html.mjs
 ```
 
-## Fidelity QA vs static Stitch HTML
+## Fidelity QA (static HTML vs Next)
 
 ```bash
-# Terminal 1: NEXT_PUBLIC_SPOKEDU_STITCH_C0=1 npm run dev
+npm run dev
 node docs/operations/public-website-refactor/contract-draft/scripts/run-stitch-c0-fidelity-gate.mjs
 ```
 
-## Git worktree (recommended)
+## Change scope (Phase C touch set)
 
-Current `main` has unrelated WIP; create an isolated worktree when clean:
+- `app/spokedu/stitch/c0/**`
+- `app/(spokedu-public)/layout.tsx`
+- `app/(spokedu-public)/{page,education,private,spomove,records,about}/page.tsx`
+- `app/layout.tsx` (Stitch route body/html isolation only)
+- `next.config.ts` (lh3 image host)
 
-```bash
-git worktree add ../1-stitch-c0 -b phase-c0/stitch-six-pages
-```
+Legacy implementations remain under `app/spokedu/**` for rollback (`STITCH_C0=0`).

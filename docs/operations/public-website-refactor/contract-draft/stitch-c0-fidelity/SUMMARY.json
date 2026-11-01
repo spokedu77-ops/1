@@ -1,0 +1,709 @@
+{
+  "verdict": "STITCH_NEXTJS_FIDELITY_PASS",
+  "baseUrl": "http://127.0.0.1:3000",
+  "chromium": "playwright",
+  "results": [
+    {
+      "folder": "home_spomove",
+      "nextPath": "/",
+      "ref": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2358,
+        "height": 10590,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2358,
+          "height": 10590
+        }
+      },
+      "next": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2358,
+        "height": 10590,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2358,
+          "height": 10590
+        }
+      },
+      "widthDelta": 0,
+      "heightDelta": 0,
+      "refMetrics": {
+        "scrollHeight": 5295,
+        "dpr": 2
+      },
+      "nextMetrics": {
+        "scrollHeight": 5295,
+        "dpr": 2,
+        "imagesPending": 0,
+        "fontsStatus": "loaded"
+      },
+      "diff": {
+        "mismatches": 773146,
+        "pixels": 24971220,
+        "ratio": 0.030961482859067357
+      },
+      "boxDeltas": [
+        {
+          "key": "header",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "h1",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "56px",
+          "fontSizeNext": "56px",
+          "fontWeightRef": "800",
+          "fontWeightNext": "800",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "heroImg",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "footer",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        }
+      ],
+      "styleConflicts": [],
+      "missingGraphics": [],
+      "nextConsoleErrors": [],
+      "pageVerdict": "PASS"
+    },
+    {
+      "folder": "education_programs_spomove",
+      "nextPath": "/education",
+      "ref": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 9668,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 9668
+        }
+      },
+      "next": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 9668,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 9668
+        }
+      },
+      "widthDelta": 0,
+      "heightDelta": 0,
+      "refMetrics": {
+        "scrollHeight": 4834,
+        "dpr": 2
+      },
+      "nextMetrics": {
+        "scrollHeight": 4834,
+        "dpr": 2,
+        "imagesPending": 0,
+        "fontsStatus": "loaded"
+      },
+      "diff": {
+        "mismatches": 177156,
+        "pixels": 24750080,
+        "ratio": 0.007157795045510964
+      },
+      "boxDeltas": [
+        {
+          "key": "header",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "h1",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "56px",
+          "fontSizeNext": "56px",
+          "fontWeightRef": "800",
+          "fontWeightNext": "800",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "heroImg",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "footer",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        }
+      ],
+      "styleConflicts": [],
+      "missingGraphics": [],
+      "nextConsoleErrors": [],
+      "pageVerdict": "PASS"
+    },
+    {
+      "folder": "private_lesson_spomove",
+      "nextPath": "/private",
+      "ref": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 9460,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 9460
+        }
+      },
+      "next": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 9460,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 9460
+        }
+      },
+      "widthDelta": 0,
+      "heightDelta": 0,
+      "refMetrics": {
+        "scrollHeight": 4730,
+        "dpr": 2
+      },
+      "nextMetrics": {
+        "scrollHeight": 4730,
+        "dpr": 2,
+        "imagesPending": 0,
+        "fontsStatus": "loaded"
+      },
+      "diff": {
+        "mismatches": 286116,
+        "pixels": 24217600,
+        "ratio": 0.011814382928118393
+      },
+      "boxDeltas": [
+        {
+          "key": "header",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "h1",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "56px",
+          "fontSizeNext": "56px",
+          "fontWeightRef": "800",
+          "fontWeightNext": "800",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "heroImg",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "footer",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        }
+      ],
+      "styleConflicts": [],
+      "missingGraphics": [],
+      "nextConsoleErrors": [],
+      "pageVerdict": "PASS"
+    },
+    {
+      "folder": "spomove_system_spomove",
+      "nextPath": "/spomove",
+      "ref": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2464,
+        "height": 10370,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2464,
+          "height": 10370
+        }
+      },
+      "next": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2464,
+        "height": 10370,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2464,
+          "height": 10370
+        }
+      },
+      "widthDelta": 0,
+      "heightDelta": 0,
+      "refMetrics": {
+        "scrollHeight": 5185,
+        "dpr": 2
+      },
+      "nextMetrics": {
+        "scrollHeight": 5185,
+        "dpr": 2,
+        "imagesPending": 0,
+        "fontsStatus": "loaded"
+      },
+      "diff": {
+        "mismatches": 101954,
+        "pixels": 25551680,
+        "ratio": 0.003990109456599332
+      },
+      "boxDeltas": [
+        {
+          "key": "header",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "h1",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "56px",
+          "fontSizeNext": "56px",
+          "fontWeightRef": "800",
+          "fontWeightNext": "800",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "heroImg",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "footer",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        }
+      ],
+      "styleConflicts": [],
+      "missingGraphics": [],
+      "nextConsoleErrors": [],
+      "pageVerdict": "PASS"
+    },
+    {
+      "folder": "field_records_spomove",
+      "nextPath": "/records",
+      "ref": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 7044,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 7044
+        }
+      },
+      "next": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 7044,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 7044
+        }
+      },
+      "widthDelta": 0,
+      "heightDelta": 0,
+      "refMetrics": {
+        "scrollHeight": 3522,
+        "dpr": 2
+      },
+      "nextMetrics": {
+        "scrollHeight": 3522,
+        "dpr": 2,
+        "imagesPending": 0,
+        "fontsStatus": "loaded"
+      },
+      "diff": {
+        "mismatches": 29067,
+        "pixels": 18032640,
+        "ratio": 0.0016119104024701874
+      },
+      "boxDeltas": [
+        {
+          "key": "header",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "h1",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "56px",
+          "fontSizeNext": "56px",
+          "fontWeightRef": "800",
+          "fontWeightNext": "800",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "heroImg",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "footer",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        }
+      ],
+      "styleConflicts": [],
+      "missingGraphics": [],
+      "nextConsoleErrors": [],
+      "pageVerdict": "PASS"
+    },
+    {
+      "folder": "about_spomove",
+      "nextPath": "/about",
+      "ref": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 9910,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 9910
+        }
+      },
+      "next": {
+        "format": "png",
+        "mediaType": "image/png",
+        "width": 2560,
+        "height": 9910,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "density": 72,
+        "isProgressive": false,
+        "isPalette": false,
+        "bitsPerSample": 8,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 2560,
+          "height": 9910
+        }
+      },
+      "widthDelta": 0,
+      "heightDelta": 0,
+      "refMetrics": {
+        "scrollHeight": 4955,
+        "dpr": 2
+      },
+      "nextMetrics": {
+        "scrollHeight": 4955,
+        "dpr": 2,
+        "imagesPending": 0,
+        "fontsStatus": "loaded"
+      },
+      "diff": {
+        "mismatches": 269841,
+        "pixels": 25369600,
+        "ratio": 0.010636391586781029
+      },
+      "boxDeltas": [
+        {
+          "key": "header",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "h1",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "56px",
+          "fontSizeNext": "56px",
+          "fontWeightRef": "800",
+          "fontWeightNext": "800",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "heroImg",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        },
+        {
+          "key": "footer",
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "fontSizeRef": "16px",
+          "fontSizeNext": "16px",
+          "fontWeightRef": "400",
+          "fontWeightNext": "400",
+          "colorRef": "rgb(19, 27, 46)",
+          "colorNext": "rgb(19, 27, 46)"
+        }
+      ],
+      "styleConflicts": [],
+      "missingGraphics": [],
+      "nextConsoleErrors": [],
+      "pageVerdict": "PASS"
+    }
+  ]
+}
