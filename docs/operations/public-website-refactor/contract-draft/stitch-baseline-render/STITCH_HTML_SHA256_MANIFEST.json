@@ -1,0 +1,32 @@
+[
+  {
+    "folder": "home_spomove",
+    "code_html_sha256": "745e1f03b4ee27ea66678c995424b656d0a7da106d9d85b2894804ccef227b07",
+    "screen_png_sha256": "5917922a1afb553c5d2468dd636ee3040d4de3abed6d930fa480e2abbbe6b21f"
+  },
+  {
+    "folder": "education_programs_spomove",
+    "code_html_sha256": "218d15152b6297c2d4c45e408c6e52a170de7432da00e07d67d67bad62d66e2b",
+    "screen_png_sha256": "e291b7e9480c4d00826716d624911444cb8139695bbd52e5cf4c0080351b42ac"
+  },
+  {
+    "folder": "private_lesson_spomove",
+    "code_html_sha256": "cd46826d848cfea33d0b581a25aa209d88fd67d5ee7a32695e5fb367de090187",
+    "screen_png_sha256": "4d6303a0e8ab7bfb084e99651e5b419674fba79ba3e8fe4f4a960051ebbcb953"
+  },
+  {
+    "folder": "spomove_system_spomove",
+    "code_html_sha256": "c035e7178ba07a1926794a3565c7420d6c42b62740f566a65d75a65b9459d09b",
+    "screen_png_sha256": "4e6e2ea94a5114dc808c876a9c5b255133a450b46fa73cc2f5edbd77308a8722"
+  },
+  {
+    "folder": "field_records_spomove",
+    "code_html_sha256": "07750ef8f76be417b8715b941d93b688a542a8260ba8276aba4d4d62f70bf436",
+    "screen_png_sha256": "5965bcb254e4e1c909fa5aa8ba8c18faadccfdc0606bca9d1efd56106d081bd4"
+  },
+  {
+    "folder": "about_spomove",
+    "code_html_sha256": "3c01db334e3df2be8164433446a0a584d891f230cc07d59ebe7dc9c0d4159090",
+    "screen_png_sha256": "848dbc1b3b2daa3a2e65c7a0024f1adfa6f2ef4ae04e1f00b843e70eeb7cadff"
+  }
+]

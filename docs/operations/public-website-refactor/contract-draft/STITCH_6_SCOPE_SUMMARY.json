@@ -1,0 +1,12 @@
+{
+  "git_head": "2a7125fa0a5305f286ff6c816db49e5d3a360af1",
+  "scopeCounts": {
+    "IN_SCOPE_STITCH_6": 547,
+    "OUT_OF_SCOPE_RETAIN_UNCHANGED": 367
+  },
+  "inScopeRewrites": 205,
+  "ledgerRows": 135,
+  "imageMappingRows": 34,
+  "outOfScopeNewRouteRequired": 213,
+  "allNewRouteExecutionScope": "OUT_OF_SCOPE_RETAIN_UNCHANGED"
+}

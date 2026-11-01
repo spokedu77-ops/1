@@ -1,0 +1,6 @@
+import { createStitchC0Page } from '../create-stitch-page';
+
+const { Page, metadata } = createStitchC0Page('education');
+
+export default Page;
+export { metadata };

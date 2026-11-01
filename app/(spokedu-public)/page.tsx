@@ -1,2 +1,9 @@
-export { default, metadata } from '../spokedu/page';
+import * as legacy from '../spokedu/page';
+import * as stitch from '../spokedu/stitch/c0/pages/home';
+import { isStitchC0Enabled } from '../spokedu/stitch/c0/flags';
+
+const mod = isStitchC0Enabled() ? stitch : legacy;
+
+export default mod.default;
+export const metadata = mod.metadata;
 export const revalidate = 86400;

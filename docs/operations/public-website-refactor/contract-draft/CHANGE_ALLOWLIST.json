@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-10-31T20:06:13.877Z",
+  "git_head": "2a7125fa0a5305f286ff6c816db49e5d3a360af1",
+  "allowed_roots": [
+    "app/spokedu",
+    "app/(spokedu-public)",
+    "app/info",
+    "public/images/spokedu"
+  ],
+  "allowed_support_files": [
+    "app/sitemap.ts",
+    "next.config.ts",
+    "app/globals.css"
+  ],
+  "forbidden_without_explicit_approval": [
+    "app/spokedu-master/** payment/auth runtime",
+    "app/admin/**",
+    "supabase/migrations/**",
+    "deploy/**"
+  ],
+  "approval_status": "PENDING_APPROVAL"
+}

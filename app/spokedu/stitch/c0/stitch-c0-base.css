@@ -1,0 +1,20 @@
+/* Isolation: Stitch CDN Tailwind targets `.stitch-c0-root` only (see StitchC0Shell). */
+.stitch-c0-root {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.stitch-c0-root main > :first-child {
+  margin-top: 0 !important;
+}
+
+.stitch-c0-root main > :last-child {
+  margin-bottom: 0 !important;
+}
+
+.stitch-c0-root::-webkit-scrollbar {
+  display: none;
+}

@@ -1,0 +1,5 @@
+slot_id,route,stitch_excerpt,design_impact,linked_dc
+STITCH-stitch_editorial_website_redesign_about_spomove_code-li-1,/about,S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person 스포무브 기업 스토리 ,TEXT_SLOT_LOCKED;METRIC_SLOT_NEUTRALIZE,DC-002
+STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-1,/records,S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person Real Field S,TEXT_SLOT_LOCKED;METRIC_SLOT_NEUTRALIZE,DC-002
+STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1,/,S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person AI 모션 분석 &am,TEXT_SLOT_LOCKED;METRIC_SLOT_NEUTRALIZE,DC-002
+STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-1,/spomove,S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person verified Pro,TEXT_SLOT_LOCKED;METRIC_SLOT_NEUTRALIZE,DC-002

@@ -1,0 +1,47 @@
+{
+  "pages": [
+    {
+      "id": "home",
+      "folder": "home_spomove",
+      "title": "SPOMOVE - Sports & AI Education",
+      "bodyClass": "bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary",
+      "bytes": 30077
+    },
+    {
+      "id": "education",
+      "folder": "education_programs_spomove",
+      "title": "SPOMOVE - Sports & AI Education",
+      "bodyClass": "bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary",
+      "bytes": 31741
+    },
+    {
+      "id": "private",
+      "folder": "private_lesson_spomove",
+      "title": "SPOMOVE - Sports & AI Education",
+      "bodyClass": "bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary",
+      "bytes": 26790
+    },
+    {
+      "id": "spomove",
+      "folder": "spomove_system_spomove",
+      "title": "SPOMOVE - Sports & AI Education",
+      "bodyClass": "bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary",
+      "bytes": 28157
+    },
+    {
+      "id": "records",
+      "folder": "field_records_spomove",
+      "title": "SPOMOVE - Sports & AI Education",
+      "bodyClass": "bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary",
+      "bytes": 29370
+    },
+    {
+      "id": "about",
+      "folder": "about_spomove",
+      "title": "SPOMOVE - Sports & AI Education",
+      "bodyClass": "bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary",
+      "bytes": 26997
+    }
+  ],
+  "ingestedAt": "2026-11-01T01:39:09.432Z"
+}

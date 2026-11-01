@@ -1,0 +1,1221 @@
+{
+  "git_head": "2a7125fa0a5305f286ff6c816db49e5d3a360af1",
+  "count": 135,
+  "elements": [
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-1",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person 스포무브 기업 스토리 &amp; 미션 모든 아이들이 스포츠를 통해 건강한 삶의 기쁨 을 누릴 수 있도록 SPOMOVE는 정밀 바이오메카닉스와 AI 모션 비전 기술을 현장 체육 교육과 융합합니다. 단순한 기록 경쟁을 넘어, 모든 아이가 자신의 몸을 바르게 인지하고 평생 지속 가능한 운동 습관을 확립하도록 돕는 차세대 에듀테크 연구 집단입니다. 2021 년 설립 및 연구 출범 48 개교 초·중·고 공교육 협력 14 만건 누적 모션 분석 프레임 99.4 % 학부모 및 코치 신뢰도 01 #스포츠과학 #정량분석 #생체역학연구 데이터 기반의 과학적 코칭 철학 경험과 직관에만 의존하던 기존 체육 훈련의 한계를 넘어, 초당 120프레임 정밀 키포인트 추적으로 관절 각도와 무게중심 이동을 실시간 정량화합니다. 아이들 각자의 신체 특성에 부합하는 무리 없는 최적의 모션 피드백을 전달합니다. 모션 AI 비전 알고리즘 자세히 보기 arrow_forward analytics SPOMOVE Biomechanics Engine v2.4 관절 부하율 실시간 오차범위 0.12° 이내 제어 인증 완료 1:1 맞춤형 라포 형성 프로그램 운영 02 #진정성 #안전제일 #자신감향상 사람 중심의 따뜻한 교육 현장 정량화된 데이터는 목적이 아닌 수단입니다. 스포무브의 코칭 스태프는 아이들이 실패를 두려워하지 않고 스스로 도전을 즐길 수 있도록 심리적 안정감과 즐거움을 최우선으로 수업을 설계합니다. 생생한 현장 수업 스토리 확인하기 arrow_forward 03 #공교육혁신 #교육나눔 #디지털격차해소 교육 격차 해소를 위한 공교육 파트너십 지리적·경제적 여건에 구애받지 않고 모든 공립 학교 학생들이 첨단 AI 체육 커리큘럼을 무상으로 경험할 수 있도록, 교육청 및 지자체와 함께하는 스마트 스쿨 프로젝트를 지속해서 확대합니다. 학교·기관 단체 제휴 프로그램 안내 arrow_forward school 전국 48개 초·중·고 보급형 AI 모듈 공급 체육 시간 참여율 34% 증가 실증 지표 달성 verified RESEARCH &amp; FACULTY 신뢰할 수 있는 학술 연구진과 전문 코치진 UNIST 인간공학 연구진과 대한체육회 공인 지도자가 원팀을 이루어 과학적 신뢰성과 현장 적합성을 완벽하게 검증합니다. 협력 연구 기관: UNIST 스포츠AI랩 · 서울대 체육교육연구소 수석 자문교수 UNIST 강 준 석 인공지능 생체신호 분석 연구실 디렉터 / IEEE AI 헬스케어 분과 상임위원 운동발달 연구원장 SPOMOVE R&amp;D 이 혜 민 서울대학교 체육교육학 박사 / 유소년 발달단계별 신체 밸런스 커리큘럼 설계 총괄 마스터 코치 코칭 디비전 박 성 훈 전 국가대표 육상팀 피지컬 트레이너 / 엘리트 모빌리티 코칭 디렉터 비전 알고리즘 리드 Tech Lab 최 동 건 CVPR 모션 인식 연구 발표자 / 3D 실시간 신체 랜드마크 트래커 총괄 개발 SPOMOVE PARTNERSHIP &amp; CAREERS 스포무브와 함께 스포츠 교육의 새로운 미래를 만들어가세요 공교육 협력 사업 추진, 프라이빗 아카데미 가맹, 그리고 스포츠 과학 AI 연구원 채용까지—체육 교육의 혁신에 함께할 여러분을 기다립니다. 제휴 및 채용 문의 교육 프로그램 둘러보기 S SPOMOVE 스포츠 교육과 인공지능 모션 분석 기술의 결합. 모든 학습자의 최적 신체 움직임과 맞춤형 성장을 지원하는 차세대 에듀테크 플랫폼입니다. sports_soccer psychology forum 교육 프로그램 유소년 스포츠 아카데미",
+      "href": "https://fonts.googleapis.com",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-2",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "AI 기초 신체 밸런스",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-3",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "엘리트 전담 맞춤 코칭",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-4",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "정밀 모션 추적 진단",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-h4-5",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "h4",
+      "text": "연구 및 지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-6",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "모션 AI 비전 알고리즘",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-7",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "현장 분석 데이터 로그",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-8",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "연구 협력 기관 (UNIST 등)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-li-9",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "li",
+      "text": "센터 대관 및 레슨 예약",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-h4-10",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "h4",
+      "text": "고객지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-p-11",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "p",
+      "text": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-p-12",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "p",
+      "text": "contact@spomove.ai",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-p-13",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "p",
+      "text": "02-1588-4920",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-p-14",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "p",
+      "text": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports AI Portal.",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-span-15",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "span",
+      "text": "개인정보처리방침",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-span-16",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "span",
+      "text": "이용약관",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-span-17",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "span",
+      "text": "학술연구윤리준칙",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-img-18",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "img",
+      "text": "Modern sports biomechanics motion capture laboratory with high-speed cameras, dual force plates on floor, and sleek digital screens visualizing skeletal human movement in royal blue graphics. Professional academic atmosphere with minimalist equipment and clean white surfaces.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDyJlC5gpGDvaHLMgH7XxL4Jdz8BDHDS_4-csgfBOHNMB9fvXQffEReipomBymtzOur0Pwh6k0Mi1jQx4nWt5sJt_BU0cfNrSmUrWn7fpqyiAdOS4JImKt3mEewPzTsm4wySwotN9_ktq8bELGOrlt8WT8tRYqkjIwnv1gL50WFvHVYf-Yf_hu3138Hdlh5WK-uwiLuW4n__HP8kpwnUVf-HAh9ue10IbmThjsTJThI",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-img-19",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "img",
+      "text": "Warm and joyful moment in a bright modern sports gym where a friendly Korean youth athletic coach gives a high-five to a smiling child wearing a blue training vest. Sunlight streams through large glass windows, capturing authentic laughter, encouraging atmosphere, and safe soft-mat flooring.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAxrf-WMioVX88kKh32pldfgGPegWo5bsQK4H0sSGtEzz_UzrhIqQy4lIk1XIxoLZW4uaiySkNNE9tMRWLXVdhBjAUPKLFYVh48eiOwS0f9kATKphzNkM9CW3uZNjZQClCScNOBsHvprlQaK11pNVA1bOfGb35LpVkgaS8P5IdHAKlPvqZEcGLc6-k812d1U4EOA8-HXAsjca4O2h7wYIru_rayrVfJ54mH6MkMGYAn",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-img-20",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "img",
+      "text": "Spacious Korean elementary school indoor gymnasium where energetic students engage in an organized interactive agility training drill using colorful training cones and an educational tablet dashboard mounted on a sleek stand. Crisp daylight illumination, dynamic posture, organized learning structure.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAkEt6VxwZg1yOXthgk8MTazQGpl7Gt7njamOMeV7C5Hzr-Jo9GJbRF0mP-ODovGx_hajOhG7YH0tQla9Vxy7SFkWx6XFoy91mK7ZErYCJFhtSYEg3NauhEt9ZPcnuQ4XDYZUX7VjwF2IOAkjL_hq-IaAKjqxxoAFICAvzRBfm-JKPN1haNz3HhEq_rpPVnfEMlWyjmDnXI2VLku_LWfQXa3UW18t4D4eONzu6Lqkey",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-img-21",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "img",
+      "text": "Professional studio portrait of an Asian male AI sports biomechanics professor in early 40s wearing a modern tailored navy blazer with confident friendly expression, neutral grey backdrop with clean studio lighting.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuBByD6YLWuiaT4gXp5BstyrOliVFI1uE-1dLYqAiXusHSWK5G73q3AKZ_tNjYToSyNq6NYppiTEsgr-IGLNws6Rv2Zy4u8R7QsbQDQmW9GFv9K6zCncuLIMmLHdGpWRc6drDkxilQsYxu4d17x5akqhVn4T2Is3Qj7UbJZIJNCrDN2eJXNyyDMGBTd2Hm2lu6lVu9x5Cv_OoYzRLmYYzbltxV5XG5YSXwd99k628tBa",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-img-22",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "img",
+      "text": "Professional studio portrait of an Asian female youth athletic psychology researcher in late 30s wearing a crisp white collared shirt, professional, warm, intellectual appearance with soft lighting.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuBTEVV6lfz8BHJM-1alVCDM8u6OHH57dYVXhQ3oZllSLClik_nqotkTGNBycGncvwHHGFvBFDV5o5oQIHc_ejmA5paMrw4Z3OZS0qgpc8BPOi9tJYrskaRCCm9F1P3XAGzDNYhdEuQt_E427QmafT_oaOruDMGtMks2ZXNNM7mHOIP9jy5tLxbgN2XKGHB_yvaZ4mR1_4RFL8lQEfHHYZzslq769UiDd7rKYkCLG-NN",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-img-23",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "img",
+      "text": "Professional portrait of an athletic Asian male Master Coach in his 30s wearing a sharp royal blue athletic quarter-zip jacket, energetic posture, confident friendly smile, modern gym background slightly blurred.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuBslY1viBqfDkDURRXwVRoyiorJZqHtdmTsu2s6xEnK7s5ys7gYkGZA2tQkDZ_bWKvx5masD88pPUIMQP9pnwxjrh2jqpyvOc9r-I7PKZVytOiZa9EaFPc9N9y9ZnThc8ML-7499QGbPrGGuR0ia1XoaSm4LOvm3oUVnqBiQphsoyYdaXErtBjsqKCC6sqGIXuTyohweJ6UBPE3UN0xK-oMG4LkdJCRivs__p13-xEL",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_about_spomove_code-img-24",
+      "source_page": "stitch_editorial_website_redesign_about_spomove_code",
+      "route": "/about",
+      "tag": "img",
+      "text": "Professional headshot of an Asian male AI computer vision software architect in late 30s wearing casual black knitwear with spectacles, intellectual focused posture, contemporary tech office environment.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuCRZ0Mv-BHEZHSqJxYIDGJfDEInqQVivdV3WDS9Q7Y5QVBc5X3G82zeoMcf-oIke_KBGCdBloP8qn6mS69XnXBFjWWkt4_iwrKeKOzBdLZNOa3JCUIWDCROi_ZrnHy1R9DeYLj0qtDm_2gdBH4gSF3alEjjC-w5vsEiWZqKZNxQJ8WwiRCqEhJAaRuTGLyjSuPNnZtxm4FtpeO1H4t5WvTLMJs9iJB5xrbtC5sQJq1d",
+      "source_file": "stitch_editorial_website_redesign/about_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-li-1",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "li",
+      "text": "AI 기초 신체 밸런스",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-li-2",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "li",
+      "text": "엘리트 전담 맞춤 코칭",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-li-3",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "li",
+      "text": "정밀 모션 추적 진단",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-h4-4",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "h4",
+      "text": "연구 및 지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-li-5",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "li",
+      "text": "모션 AI 비전 알고리즘",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-li-6",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "li",
+      "text": "현장 분석 데이터 로그",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-li-7",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "li",
+      "text": "연구 협력 기관 (UNIST 등)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-li-8",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "li",
+      "text": "센터 대관 및 레슨 예약",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-h4-9",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "h4",
+      "text": "고객지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-p-10",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "p",
+      "text": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-p-11",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "p",
+      "text": "contact@spomove.ai",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-p-12",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "p",
+      "text": "02-1588-4920",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-p-13",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "p",
+      "text": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports AI Portal.",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-span-14",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "span",
+      "text": "개인정보처리방침",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-span-15",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "span",
+      "text": "이용약관",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-span-16",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "span",
+      "text": "학술연구윤리준칙",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-17",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Elementary students playing structured indoor basketball and fitness drills inside a bright clean Korean elementary gymnasium, warm natural sunlight through windows, clean modern equipment in blue and white, dynamic action shot with joyful focus",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAuDnOKcoXu6PRTTgUtWOaJJIpMkJSD2tC1oSJIskTvtldD3O3XHcS_aBv8UcFU9cV7dN8SgEJHYDHzYGIZbUnBVJumEQ-OAsbJdMqQ-WG01lSPsH9QsSMLeAhSk4RFNqdEXoatUEgatU9u-wa4HbnXgy_rzuyBPbCq6TfqaSw9rzM16St9vwTof7_NulDCMgvW_Ti7nzHwX9Rtv7Cvst2X9NqG58EDfHe1xK7gwCqB",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-18",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Young athletic children running agile ladder drills in a modern bright sports training center, motion capture markers visible in background, energetic sports setting, cool crisp tones and focus",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAyby9oYSenaGrJ0aQLSFjvCi7zIv1qKJnFCftVYhCQDzf9xPmWdz0_Wej_pL-ldizMn_AWe8aWLzi5fF_MfJEK4fPnudnQbWl4vzMCmx7PZGtsNcc27sE1XHRgvOktoeeVAorEAg6-BFSCGbULE69-LTvQLeJgGONPE3BHKO5N-2lf_vDdzIMwH5tZOKO_-5i9gXcLCK7FLoD9p80chU3eyrPSI06EK2k38xry0Qbx",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-19",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Toddlers and young preschool kids enthusiastically hopping over safe colorful foam blocks and soft balance beams in an airy high-ceiling kindergarten, warm pastel accents with soft diffused daylight, secure padded floor",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDtXvC2I1OAjpdr1ICUIAqEZBQSKc4M4nM7_DIEP6HSjhk_bMfZ5yFAgz5pwLc1aljU2BBZJqliMfulfuNRa04Gj6Y9HSb54glNjcx44qVwAh9p1jclhM0SMYQhDelklNtcmWIuUDmjPIE0E91qI4BBKJj7sK9lyaa5L3Jprq4L-ZdEjRu5uwVHH3-07InCohFKllSl6ncnxtmfrAuf6s2Edyup5FO-eZszqDF1Yo1c",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-20",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Professional sports coach giving instructions using a tablet to youth sports teams in a clean modern multi-purpose community recreation hall, high-tech academic sports atmosphere, crisp daylight",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDfdIJHxmR_OJ-JefjeqaP4eIkb2zEuh-CkDl5yVqvHSGppcf_J3t4t_WNMD-FY-U87qFd_gSMJWkM2pLwr17o9bYTB6KClk1yfoZAYs-TVvC4xVs2PX1LZbWZEqYoBt-ZvUhT3Wdfz8y1QKRj97aNT7CIFFZO4SrWujylHNpFocVGSxOhza2qJyVyowi7R2aeL7SoMjnP7wGC6T_r7r7V30mjO-2gtIXxFah65C29H",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-21",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Group of students wearing matching royal blue jerseys celebrating high five after a soccer match on an outdoor pristine turf field on a clear sunny afternoon, sharp photography, dynamic youth movement",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDSkSK3EUqUbrTgaXAdpS4Fx_P6t3aYT1Bg30-0ks_Xw8b8_upAW6-Xoy-Z1C-jeMe1aFYMU6aQqbsxtV006e6MN4egOpg_TIln4uR8fK5IVEDb4KNYQd5FQvauHe4ly_7-bMUk1IOr0DUTOzLc30GtVoiMUX8sNVuiGmPlkRjQM63oDcIjrDlBw50aSPE1tFgKew6p_9vmQAd3Mf5Z9o_pP4JNDLNWFpmixUBdke8R",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-22",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Young student practicing safe landing technique on blue crash mats supervised by certified instructor in gymnastics center, clean minimalist aesthetic, focus on posture and joint protection",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDifVc5S0whke2s0I9CTtpREsK2oRpTjMFU4aO6_QA-MatFiwac1Q9vp69PLeUHlASS6AparuNYtKTV_iQohFZ3oo2aGL8OFBLIof2a0l0ZMoIZP-WkD58vKQkeSiiNgw9L7Cy4E0gEFnHhdfh76lBzIh2mrs2ss8mtvWY_8SteQAFc61_2FhBKTuCYW8LHydq4dI8WD-N6mEAhT3U6WyeORXixRbyGjMSxUZk49SZd",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-23",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Technical sports curriculum planning session with coaches reviewing school gym blueprints and sports data analytics on tablet screens, clean brightly lit office environment, professional editorial style",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuC0eRfjPMGbLj1oKQjIo9dBiB6FXvLaD489_3ZvL-a2_MJ6YIyNvUz4UkeFz9xE5BwBC1VZtHwiHSFYFrY2HSw_hYFOyAEZTMM5BKIcJvDPSVRYJ9Z8ZC88aUzUUYcJf9fih004z1w2QoGINmHgkOIlB2XhIeAApnqlj7xMLABeBmL1lY5s8LfDXNfQYa9lZaDeo3IMIgkpVWBCTpNieLNJDmIUv1wagG3dwme0MQwf",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-24",
+      "source_page": "stitch_editorial_website_redesign_education_programs_spomove_code",
+      "route": "/education",
+      "tag": "img",
+      "text": "Certified sports instructor conducting dynamic movement class for active children with smart camera sensor tracking motions in real-time, academic edtech gym, high visual clarity, warm vibrant energy",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuA99-7J0-GH2BzFkf9i3p4aenWCbINBBRc7uaNpK6Pnu3lSadqIvP1ChMdmr3SBHY6FNmun2XVjcI5WGZFUu7IJdkcB07WdMyXzwfecJvCjT39j2SlOMzmeVWZ9S4ZV5eY8H45BWuVJ9EUcMPuXDwprUJdZFETpTATF5Opf7GyB-qKZQQOMs2gVS0VlG3Jm5XmJBvIttvLLIE3FrkcAyh0Ex9HMPeX6UQjioTz_EN4O",
+      "source_file": "stitch_editorial_website_redesign/education_programs_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-1",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person Real Field Stories &amp; Motion Log 전국 교육 현장에서 꽃피는 스포무브의 생생한 기록 학교 늘봄학교, 유소년 아카데미, 지자체 협력 현장의 실제 교육 스토리를 확인하세요. 전체 늘봄학교 기관위탁 프라이빗 대회/캠프 Archive Feed 현장 기록 아카이브 아이들의 신체 성장 그래프와 정량적 센서 로그가 만들어내는 신뢰도 높은 스포츠 피드백 리포트입니다. 늘봄학교 2025.02.18 서울 강남초 늘봄학교 체육 정규 수업 개시 방과후 돌봄 참여 학생 120명을 대상으로 스포무브 스마트 점프 및 균형감각 측정 세션을 성공적으로 런칭하였습니다. 강남초등학교 체육관 arrow_forward 아카데미 2025.02.14 AI 모션 분석 기반 유소년 농구 드리블 스킬 클리닉 스마트 비전 카메라를 통해 팔꿈치 각도와 볼 핸들링 릴리즈 궤적을 3차원으로 추적하여 즉각적인 시각 피드백을 제공했습니다. 스포무브 판교 센터 arrow_forward 기관위탁 2025.02.09 경기 교육청 협력 다문화 청소년 스포츠 캠프 운영 언어 장벽을 허무는 움직임 중심 게이미피케이션 프로그램으로 협동심과 기초 체력 역량을 체계적으로 증진했습니다. 수원 유스 스포츠파크 arrow_forward 프라이빗 2025.01.27 성장기 체형 비대칭 개선 1:1 맞춤 트레이닝 사례 골반 편향 6.2도 불균형을 나타내던 초등 5학년 회원의 12주 운동 후 골반 정렬도 1.4도 회복 및 보행 밸런스 개선 리포트. 송도 프라이빗 스튜디오 arrow_forward 연구협력 2025.01.19 대학 체육학과 연계 유소년 피지컬 데이터 실증 모션 트래커 기반 순간 가속도 및 착지 충격 분산 지표를 학술적으로 검증하여 교육 프로그램의 신뢰성을 강화했습니다. 스포츠 융합 연구원 arrow_forward 대회/캠프 2025.01.11 주말 가족 참여형 플레이 피트니스 페스티벌 학부모와 아동이 한 팀이 되어 센서 태그 릴레이와 민첩성 챌린지를 완주하며 가족 간 신체 소통 문화를 확산했습니다. 올림픽공원 평화의광장 arrow_forward query_stats REAL-TIME TELEMETRY • Live Active Centers 금일 수업 진행 중 14개 센터 · 데이터 취합율 99.4% 최근 분석 주기 3초 간격 패킷 동기화 sync 데이터 동기화 확인 500 + 누적 협력 교육 현장 98 % 학부모 및 교육청 참여 만족도 100 % 전문 자격 인증 코치 직영 파견 15 분 내 수업 종료 후 모바일 리포트 전송 Partnership &amp; Lesson Inquiry 우리 학교 및 센터의 현장 수업을 지금 시작하세요 늘봄학교 특별활동부터 전문 아카데미 시스템 위탁까지, 스포무브의 검증된 현장 코칭 팀이 찾아갑니다. 수업 일정 상담하기 S SPOMOVE 스포츠 교육과 인공지능 모션 분석 기술의 결합. 모든 학습자의 최적 신체 움직임과 맞춤형 성장을 지원하는 차세대 에듀테크 플랫폼입니다. sports_soccer psychology forum 교육 프로그램 유소년 스포츠 아카데미",
+      "href": "https://fonts.googleapis.com",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-2",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "AI 기초 신체 밸런스",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-3",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "엘리트 전담 맞춤 코칭",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-4",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "정밀 모션 추적 진단",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-h4-5",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "h4",
+      "text": "연구 및 지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-6",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "모션 AI 비전 알고리즘",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-7",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "현장 분석 데이터 로그",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-8",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "연구 협력 기관 (UNIST 등)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-9",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "li",
+      "text": "센터 대관 및 레슨 예약",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-h4-10",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "h4",
+      "text": "고객지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-p-11",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "p",
+      "text": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-p-12",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "p",
+      "text": "contact@spomove.ai",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-p-13",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "p",
+      "text": "02-1588-4920",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-p-14",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "p",
+      "text": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports AI Portal.",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-span-15",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "span",
+      "text": "개인정보처리방침",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-span-16",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "span",
+      "text": "이용약관",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-span-17",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "span",
+      "text": "학술연구윤리준칙",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-18",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "img",
+      "text": "Elementary students joyfully participating in an indoor physical education class inside a modern brightly lit South Korean school gymnasium, equipped with digital tracking screens, gentle natural light, educational sports setting with vibrant royal blue and clean white aesthetics.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuCUWNb-uudEiVjw-uWa-G1cUb0nTzE-S9nDdpNEQO_oWIx9NVbdvnD6jvPQDAG7h_RvUhP9otPHrVMUOyQB3xPwzcBwLr_gqEKWePUlU7Ldj1QSeJnw_hQqFRqCPGByph-TCp1lJyRa_G6WVjFlTcUl9ms92BXn6Tl-mYnYBke1k1kvsQ0hkyjrTXVF2u5P7ix4ajNIaLRNFMmS1N_EYlfBfhgTl_8UTlAPWsK71qAN",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-19",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "img",
+      "text": "Young basketball academy players practicing precision dribbling drills while an AI smart motion camera system captures joint angles on a sleek indoor hardwood basketball court, sharp lighting, athletic tech vibe.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuBS3eE2d8ZTQwZcVVvqlPf3C65kbF8rjzZpLwwQz64mTNA3zFEkqTV90Cog9ngFOMxQ5O6GtNNgH1Tom81bhX5A94lgZD1iavrzlYwcTQ1HhYMBg4AdUs3NSRcJEBrn2cAfpcodG6ucOrhJDA3CN7BmNP_KN6HnTZEUk3YjRl7jfyqiUdIGAMlxjtxKl79ba9hkBBSduiig9o4z6-W6WilnUjfj98u83a85vA1agxlg",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-20",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "img",
+      "text": "Diverse group of Korean multicultural teenagers cooperating in an energetic group sports agility camp at an expansive community athletics stadium under clear blue skies, professional coaches in athletic gear guiding with smiles.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAM8_Md2ySEIxGPFimRknQf490kSMxns65KPXps6oP1yB1gG4UTkuq2Eh0qdhoM4zN-JKO23AA6U3nRXfZqI66zf6opM9A7f45LRoARsjG2wjiEi7xRkitbPlTkw-13vijdV_64lp0ttdChGKtDHUbrIMZydNd-5-42Nsw_pyC9udepYN2VIdkNaZSK43g0QwkeIT85zei6cZfYhc5YyECS60jjuSqA55WJ6ipTXfeF",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-21",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "img",
+      "text": "A dedicated female youth athlete undergoing posture and spine alignment exercise under the careful guidance of a certified specialist in a minimalist modern private physical training clinic with clean slate tones and high-tech tablet logs.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuBa13LXRZVzGMNEI_HEUjxWRY9dgtgw1IFvr52iuvrvSm6DLby3NiPR3kqQeSvG2MeoqkXlj6tRDcBw3yVf973bYAZClNYI1gNI9KK8Tf-yUEC65S6qtxKx9x1JcyPq4gGb_-6vRQgxNGu6phcxHm2UJK78gY5EVuucOWJDjOOynBMrTrgd8GQ3aPhcAD3lQQpfLR14LybxBdGox0ZQHcjLcTkAzTHBXkqW3mQ5lfuL",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-22",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "img",
+      "text": "University researchers in clean lab coats and sports attire observing running biometric charts on laptops while testing youth sprinting mechanics inside a cutting edge biomechanics university laboratory.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAmRnOKZ3q6mDKOkNhOeWPNaZUWtw_c4PwKhyDQHXv9ukmSSYPkR0tCkYQa7a9ZftVHK8Xsk548NoBsEp3BQcI4aCl-qA-Vo3qe3V4rrPEAbXPRx2HHWoLQFU0CnbkdzT-KWLfv9TnLVfVf6QXDy5UDwZ-xmJmkK7ldHo2XPJte12MNXbbbq6r-3hGnEyJSfk8WKSGRBbRW_ARVUusK93Wk75vWeqVYv4tP0w0sbjMa",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-23",
+      "source_page": "stitch_editorial_website_redesign_field_records_spomove_code",
+      "route": "/records",
+      "tag": "img",
+      "text": "Vibrant outdoor weekend family fitness festival on a sunny open lawn with parents and young children participating in smart obstacle tag and agility relay games, festival banners in blue and white.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDKeJgDHUyV66hP9mPzH6Zj95oGJsXY_JcR5t09Jsg9PwDrbmxlpKNCJTA-sxDCKp3Ndmmt2ueq6P6UrZnwrjfgYZkoV1VY1pLbcyqC4rBYrEkov0-OjV9QxcuCK8jDXkaDho0zW1q8eJL70cp6TfvEPKRkNRvS_xhaheNjFpGmJ8VFgbpcEa51O0wocpQfym52MvRxK3iO-Rm-4y6JHd5ZVPtgVlr6046Tsqke5Sm4",
+      "source_file": "stitch_editorial_website_redesign/field_records_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person AI 모션 분석 &amp; 스포츠 에듀테크 솔루션 스포츠 교육의 새로운 기준, 스포무브 하나면 충분합니다. 초등 늘봄 방과후부터 엘리트 맞춤형 케어까지, 데이터와 검증된 코칭으로 아이들의 건강한 성장 곡선을 입체적으로 설계합니다. 무료 맞춤 상담 시작하기 arrow_forward 교육 프로그램 보기 SPOMOVE OS 2.4 전국 초·중등 늘봄학교 및 아카데미 실시간 연동 중 verified 국가지원 연구개발 교육 표준 모형 01 데이터 기반의 체계적인 스포츠 커리큘럼 아이의 연령별 신체 발달 지표와 동작 데이터를 정밀 진단하여, 체육에 대한 흥미와 균형 잡힌 근신경 협응력을 단계별로 완성합니다. #개인맞춤 #신체발달 #생체모션측정 커리큘럼 세부 로드맵 확인하기 arrow_forward 신체 협응지수 94.2% 향상 verified_user 지도사 자격 검증 완료 코치 100% 02 검증된 전문 코치진 매칭 및 전담 파견 체육지도자 국가자격 및 인성 인터뷰를 통과한 전문 지도사가 직접 파견되어, 학교와 학생의 여건에 꼭 맞는 안전한 클래스를 책임집니다. #전문지도사 #안심케어 #상시모니터링 코치진 풀 및 인증 시스템 확인 arrow_forward 03 실시간 수업 피드백 및 학부모 디지털 리포트 매 수업 후 운동 능력 변화와 심리적 몰입도를 시각화한 모바일 리포트를 발송해, 학부모님께 믿음과 아이의 성취감을 동시에 드립니다. #성장기록 #모바일알림 #투명한피드백 리포트 예시 화면 살펴보기 arrow_forward SM 김서준 학생 종합 성장 리포트 2025. 03. 14 / 초등 방과후 스포츠 모션 성장도 상위 3% 85점 유연성 및 코어 92점 순발력 및 민첩성 88점 동작 밸런스 \"좌우 체중 이동 밸런스가 지난주 대비 14% 향상되었습니다.\" insights 500 + 누적 출강 학교 및 기관 2,500 + 누적 운영 클래스 수 98 % 기관 및 학부모 재계약률 7 일 최단 맞춤 수업 세팅 기간 Field Highlights &amp; Stories 현장에서 꽃피는 스포무브의 기록 전체 기록 보기 chevron_right 초등 늘봄 방과후 2025. 03. 10 서울 24개 초등학교 늘봄학교 스포츠 거점 협약 체결 학부모 부담을 덜고 학생들의 방과 후 체육 신체 활동을 활성화하는 맞춤 프로그램이 정규 개강되었습니다. arrow_forward 엘리트 레슨 2025. 03. 04 AI 관절 각도 추적 기술로 유소년 선수 부상률 42% 감소 무리한 스윙과 점프 착지 패턴을 실시간으로 감지하여 엘리트 유망주들의 고질적인 관절 부담을 획기적으로 개선했습니다. arrow_forward 학술 연구 세미나 2025. 02. 26 국내 주요 대학 에듀테크 연구진과 모션 알고리즘 발표 유소년 신체 발달 지연 조기 감지 모델 연구 결과를 공유하며 공교육 현장 보급 방안을 심도 있게 모색했습니다. arrow_forward 전국 초·중·고 및 체육시설 맞춤 견적 지원 지금, 우리 학교와 아이를 위한 최고의 스포츠 교육을 만나보세요. 복잡한 행정 서류부터 코치 파견, 성장 리포트까지 원스톱으로 지원합니다. 사전 진단 테스트 및 상담은 100% 무료로 진행됩니다. 무료 맞춤 상담 신청하기 arrow_forward 프로그램 제안서 다운로드 S SPOMOVE 스포츠 교육과 인공지능 모션 분석 기술의 결합. 모든 학습자의 최적 신체 움직임과 맞춤형 성장을 지원하는 차세대 에듀테크 플랫폼입니다. sports_soccer psychology forum 교육 프로그램 유소년 스포츠 아카데미",
+      "href": "https://fonts.googleapis.com",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-2",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "AI 기초 신체 밸런스",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-3",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "엘리트 전담 맞춤 코칭",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-4",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "정밀 모션 추적 진단",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-h4-5",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "h4",
+      "text": "연구 및 지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-6",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "모션 AI 비전 알고리즘",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-7",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "현장 분석 데이터 로그",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-8",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "연구 협력 기관 (UNIST 등)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-li-9",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "li",
+      "text": "센터 대관 및 레슨 예약",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-h4-10",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "h4",
+      "text": "고객지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-p-11",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "p",
+      "text": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-p-12",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "p",
+      "text": "contact@spomove.ai",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-p-13",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "p",
+      "text": "02-1588-4920",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-p-14",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "p",
+      "text": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports AI Portal.",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-span-15",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "span",
+      "text": "개인정보처리방침",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-span-16",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "span",
+      "text": "이용약관",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-span-17",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "span",
+      "text": "학술연구윤리준칙",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-img-18",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "img",
+      "text": "Modern indoor sports gymnasium and EdTech training studio with high-tech sensors, children engaged in athletic conditioning under warm sunlight, clean Korean academic edtech aesthetic with soft blue lighting accents and dynamic spatial depth.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuBmRC3jEL2yozq-eTXQX4opHAd6l0tcPbGVdHMAMxP8Z3aPJuRZO9djkGcugG1lt8RKaCMDeRsD_LWQR7MI5lmyFSSF90q5aSNB6fiTxc4WVHi3zULdV2OmqALN6dqp86UNt5at16v-0HHIt78X5bwYwuMklj9JKTY82ruFH6H3VYSrb-tk-j8NH5TKOU-xOpM-8AoydS5VtGz4bjGz1T0quBc0w4hcNfDeUb5yDlom",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-img-19",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "img",
+      "text": "South Korean elementary school students joyfully learning agility and basketball fundamentals with energetic young sports trainer in a pristine, bright gym space with crisp modern visual lines.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDflEyqKnaZFs_FAUrRCi9pyxOYDxlAjVdoXYBnkcfAJPdb4Qyib7XQL6VGYk4JRjRMfucipbAiqnXs7JCvKu6W-mO1--E6figJTar5NN6EcEwblANm2OoDAS--Gj99_oFmUae9pJTrsLXUBAxTkC-MGswICHM9-2vQUasBOcYlcg7nWZo8WDcMQJ5ZedPngxhquCKDyOcRp-PkgVsQv9btTFGiLfKgi_X1kl6Ivn3r",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-img-20",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "img",
+      "text": "Professional athletic coach guiding a young student through posture adjustment and gentle stretching, showing warm mentorship, bright sunlit indoor sports training center, deep royal blue sports uniforms.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAAvMVAE22fhiGDR4BKzvicgkYihMt7Jg-vsQ_jkoBiq0jQ6QHOA4eN-IqTUPHM_vqOB5DzDNIhQKuUPd2k5QgW6rleT3UXPcuEQxl2iWHWVOsbBsqjjVZEABKmdja_A_a97Pj29MpXphcorkJQ1j6J8t7JM1gaYGw8oKILJYY9XxzY47mezcOa5aI56VE9fQDP0u-AmNMRBwLVY3k8upBENqyWUP6fJqDQe3Uakqh4",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-img-21",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "img",
+      "text": "Elementary students cheering together with colorful basketball cones on court, sunny outdoor modern Korean school ground, cheerful and vibrant mood.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuCawhAfcMhmttIO_eZ1juNjlZmeShrnnQ_-cWIUCyJKumSOW7TuG3wmOchilrdGhKANApCyfXW8nBRwMmahkNoI_dH2vBVWU8Q553cvvo5F9JYmIHYC5IbmNHYyjOMmmozQXm-kWhHcld7-RSQFLNVcbVZ8JBfjUnVH6DbIZShLRBnprnr-C2Cn7HAd1F-V_oVMbxwO5Tcb9mCuNtViyzYIaYDI6S_OcesqCnBx-GUU",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-img-22",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "img",
+      "text": "High school elite track athlete equipped with joint sensors doing speed dash test while coach checks tablet dashboard, sleek athletic biomechanics laboratory ambiance.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuA-oHXkmcn4clQUQVl4k3qBVv5cw8KzLrZFhYRxNZcAgFtXlxeIED5fW5BofJEFcAPcXHjWJmKkbBXBbO-e3DWXxLM4LG3gbGKkta4QKJtMPjgAwqzcZnMmoFGanZORwKLeToWjdDZQ6cm6P7sFJZQT1j6O4VuO_Cb7g5LhAEdgnF2SYi-sFzycRPGxq5suuhgrK4RpbdVpQ8KFc2ub5bXdx-cAF1fnBTwyjmtrOu3M",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_home_spomove_code-img-23",
+      "source_page": "stitch_editorial_website_redesign_home_spomove_code",
+      "route": "/",
+      "tag": "img",
+      "text": "Academic conference presentation room showing sports scientists discussing athletic growth chart with parents and teachers, modern auditorium with smart board.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuB2EgUFJrMlhHcfrnAHEj1xD-_2wlBtQhWx8ecm-Zu1W57zBBTYHRCkXrcKgWNSJKhVghP6An7Bct0at2xbhOMso6Le_16zk52DgyDP3mgOiF-nc38pYCn62Yo0fCamcBXNmdjrnq7PyPHjp63NVZrH3h5Vtgx3CJco4MaRpdYCVYOI-VvDfkNeHD6e6RR4zAIFWps_Z0Bpjrv5tX0XyqCBmkE0oR_i22kb7CyL3CHj",
+      "source_file": "stitch_editorial_website_redesign/home_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-1",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person SPOMOVE Elite Private Athletics 1:1 프라이빗 맞춤 레슨으로 아이의 운동 신경과 자신감 을 완성합니다. 단편적인 동작 암기가 아닌, FMS 바이오메카닉스 분석과 국가공인 엘리트 코칭진의 밀착 설계를 통해 잠재된 신체 밸런스를 이끌어냅니다. 체험 레슨 신청하기 arrow_forward 프로그램 차별점 알아보기 98.6 % 학부모 수업 만족도 1:1 Care 국가공인 전담 코치 배정 300 + 누적 모션 분석 지표 축적 01 #정밀진단 #체형분석 체계적인 FMS(기능적 움직임 검사) 기반 진단 단순 관찰이 아닌 7가지 스크리닝 지표와 AI 컴퓨터 비전을 통해 아이의 척추 정렬, 관절 가동성, 비대칭성을 정밀 수치화합니다. FMS 평가 프로세스 상세히 보기 east analytics 3D 신체 회전 및 밸런스 지수 좌우 균형 지수 94.2% 안정 진단 완료 verified_user 전문 스포츠지도사 1급 인증 유소년 전담 8년 이상 전문 경력 전담 매칭 02 #전문지도자 #밀착티칭 국가공인 자격 및 엘리트 출신 전담 코치진 1:1 매칭 체육학 석사, 선수 트레이너(AT) 자격을 겸비한 검증된 지도자가 아이의 성향과 체력 수준에 맞춰 온전히 몰입하는 전담 케어를 제공합니다. 코치진 프로필 및 자격 확인 east 03 #영상피드백 #학부모안심 매 수업 종료 후 영상 기반 성장 분석 리포트 발송 당일 진행된 핵심 트레이닝 영상과 구간별 모션 피드백, 다음 수업 목표가 담긴 모바일 분석 카카오톡 알림장을 매회 제공합니다. 샘플 레포트 확인하기 east mark_chat_unread 데일리 모션 리포트 실시간 전송 평균 15분 내 카카오 알림톡 전달 리포트 #24 Curriculum Pathways 아이 맞춤형 특화 레슨 과정 아이의 신체 발달 주기와 흥미에 최적화된 3가지 전문 트랙을 통해 신체 조절력과 성취감을 극대화합니다. 기초 신체 발달 줄넘기 &amp; 기초 체력 빌드업 급수 줄넘기, 스텝 레더 순발력 훈련, 점핑 코디네이션을 통해 심폐 지구력과 협응력을 빠르게 향상시킵니다. 대상: 초등 1학년 ~ 6학년 arrow_forward 구기 전문 스킬 구기 종목 마스터 (농구·축구) 기본기 볼 터치부터 공간 지각 및 경기 전술 감각까지, 학교 체육과 취미 엘리트를 아우르는 체계적 1:1 트레이닝입니다. 대상: 7세 ~ 중등부 전 연령 arrow_forward 신체 교정 &amp; 성장 체형 교정 &amp; 소아 비만 관리 학습 자세로 굳어진 거북목, 척추 비대칭을 교정하고 재미있는 칼로리 버닝 루틴으로 건강한 성장을 촉진합니다. 대상: 전 연령 (성장기 맞춤) arrow_forward schedule 첫 1회 무료 FMS 모션 정밀진단 지원 지금 우리 아이에게 꼭 맞는 전담 코치님을 만나보세요 가까운 SPOMOVE 트레이닝 센터 방문 또는 전문 지도사 가정 방문 상담을 통해 아이의 정밀 신체 진단 결과를 먼저 확인하실 수 있습니다. 1:1 방문 상담 신청하기 신청 즉시 24시간 내 배정 전문 코치가 맞춤 사전 전화 상담을 진행합니다. S SPOMOVE 스포츠 교육과 인공지능 모션 분석 기술의 결합. 모든 학습자의 최적 신체 움직임과 맞춤형 성장을 지원하는 차세대 에듀테크 플랫폼입니다. sports_soccer psychology forum 교육 프로그램 유소년 스포츠 아카데미",
+      "href": "https://fonts.googleapis.com",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-2",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "AI 기초 신체 밸런스",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-3",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "엘리트 전담 맞춤 코칭",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-4",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "정밀 모션 추적 진단",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-h4-5",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "h4",
+      "text": "연구 및 지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-6",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "모션 AI 비전 알고리즘",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-7",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "현장 분석 데이터 로그",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-8",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "연구 협력 기관 (UNIST 등)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-li-9",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "li",
+      "text": "센터 대관 및 레슨 예약",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-h4-10",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "h4",
+      "text": "고객지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-p-11",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "p",
+      "text": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-p-12",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "p",
+      "text": "contact@spomove.ai",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-p-13",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "p",
+      "text": "02-1588-4920",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-p-14",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "p",
+      "text": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports AI Portal.",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-span-15",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "span",
+      "text": "개인정보처리방침",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-span-16",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "span",
+      "text": "이용약관",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-span-17",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "span",
+      "text": "학술연구윤리준칙",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-18",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "img",
+      "text": "An advanced pediatric athletic assessment in a brightly lit modern sports science laboratory. A smiling Korean adolescent performs a controlled mobility test while an instructor uses a digital tablet displaying skeleton tracking and biomechanical joint angle overlays. Clean blue and pure white studio tones, soft natural lighting, high depth of field, professional editorial aesthetic.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuAL0H9R9TZG0IeOak3AJ3F2zmpT5MFle6vm3JPr63zuJYrn3lfZxjdP-2-eF9EjfZbtwHvAD9xDvVuxayN28ZAuvfENotxunXwTED-GJXV0HylShD5sjYJmMRhn4Y4th1df3VgoN7_zByv5Xuf-KVZ2MS7ZbANg7J9St96cuDuDpkvJqp6Vk9A8Xa_PuO3SSJZYnQjUmcYhrJ25EwcFN9sriwgLMjNoVRLPIPBY2Uzx",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-19",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "img",
+      "text": "A warm, engaging private one-on-one sports coaching session inside a premium indoor sports studio with polished maple wood floors and royal blue accents. A certified elite Korean youth sports coach is guiding an elementary school child through footwork ladder coordination with encouraging smiles and hands-on posture guidance. Bright natural daylight, uplifting atmosphere.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDkl9YGDosvN_6H2KhpkvtbfIRQfSh8GLXoG7BMaCC86WY4RoQy3Fx6Pxbejvmo2sfDVJ63H1x1KX5S4FWAXdh-pfSCa5_ukx_PHWZLuim_UsD1nQTamcmlEEvT80NURcCPm0JxNxs6mQv-9PZijdqaL9uwfHyZFIxKhWRfi3O7ReitQjnfIcSu01PIk1PiaHbYIGwMVuAvlFbYe8KaBnLu3hVKyfdIovLvyuffax-j",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-20",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "img",
+      "text": "A high-tech digital sports dashboard on an elegant tablet screen resting on a minimalist desk. The UI displays multi-angle video playback of a child running and jumping with AI motion angle telemetry, milestone progress charts in royal blue and soft slate tones, and a coach",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDuwn2NRF4HbAVeOwcQ_D7F-HagG2Cev_j1Pd2k1avFbMRVp3i1I-32QfzxiSm9t99mus2DgGNk6cp_gqT4jT41b984m-_ctkFTV2jlilstTHLf4enRe2asOYP_6fAE0xfvOEmJQ5HtvlHWnERw9bOhEeObZEU4_We_pjvJ8a2XHC33n68oAXd4CdI5tWsrAB0nri213awgeyZKy2tRgDQbVj-N78ZUXVhmtyWQCZC3",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-21",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "img",
+      "text": "An energetic youth fitness conditioning class indoors. A young Asian child with joyful expression is mastering jump rope rhythm with glowing form markers and light athletic equipment around. Clean gymnasium floor, natural soft light, premium sports academy setting.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuCLPOYSiof6HSthH9ccMOntXtnEcXNiFAExekaB3qCc48RUrDdmZu_T3U5fEDzruv5UsX5Ya-z8I-TRbHX3CbUpNb5iudo5uhQ9wiI0dGejzzTwX72VYtLdiXzaulCSdYIRg_SI4EdGlQQXCWvJxB8Zwjmb4wW75jH98cy4hDv67RtuTWSGuQONa_mccxzmLtsbBcq8NVC9Jhnu09-lYBvMDd6PMlg4D7TvZ8Hg1tiz",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-22",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "img",
+      "text": "A focused dynamic ball skills coaching session in an elite indoor court. A Korean child practicing basketball dribbling technique and soccer ball control under the attentive eye of a professional sports mentor. High energy, athletic apparel, clean stadium lighting, editorial clarity.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuD4w75tcO9JEx0rlxHmt96oHy27c-j_6q6U1jvwJyRsymY6WB9li1iQC0Xqy643Ugf6lweSjVDi9iduDPS4jU39lGSK1Da_XEQyRQZyVQeVOY4eRJPIoV4pfHHToFA5IHbD2k8WPyuxv88534_Dtp3z1lh1ZmSakZrbBGfBMyjyK3psL1g7JKonPIaxWSTQPHihFTR5WjkaKk1a2DJZAjU06J_cI1SoamfOH-9DY38d",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-23",
+      "source_page": "stitch_editorial_website_redesign_private_lesson_spomove_code",
+      "route": "/private",
+      "tag": "img",
+      "text": "A modern rehabilitation and posture alignment studio. A youth athlete using gentle resistance bands and spinal stabilization rollers with guidance from a certified physical therapist coach. Clean white, slate, and royal blue color scheme, scientific health atmosphere.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuCi_PjlAak5mLi6_mMC6Bfoik8319cwNoPeRCbHgAU8LfYl2yNP4QmE49_Y7TD-W1RzGVqyyU7dda6dCyCa5nZ4PLfvUJ8PnsSsU1hbrzl1nT6m2hy6E_MoMEXb0XFJz8LvmDgo7u3USEysRTCpRrUfVIHkeiOwg_f8gw_Yx3rH3qhWfv_eIKXSMeWHJ80tbMYCx18IB3NE4Y9j8v10avea837run_75ATherqzMdJ9",
+      "source_file": "stitch_editorial_website_redesign/private_lesson_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-1",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "S SPOMOVE 홈 교육 프로그램 프라이빗 레슨 스포무브 시스템 현장 스토리/기록 회사 소개 수업 문의하기 person verified Proprietary Sports AI Engine 인공지능과 스포츠 과학이 결합된 스포무브 독자적 솔루션 초정밀 모션 AI 비전 인식 기술과 스포츠 바이오메카닉스 데이터를 융합하여, 아동부터 엘리트 선수까지 모든 움직임을 실시간으로 측정하고 최적화된 맞춤 처방을 전달합니다. 시스템 도입 문의 arrow_forward 핵심 기술 확인하기 01 실시간 관절 랜드마크 모션 트래킹 웨어러블 센서 착용의 불편함 없이, 단일 카메라만으로 신체 주요 33개 관절 랜드마크의 3D 공간 좌표를 120fps 초고속으로 실시간 추적합니다. #AI비전 #동작인식 #무센서트래킹 알고리즘 정밀도 연구 보고서 보기 arrow_forward Live Feed: 120 FPS Tracking Confidence 99.8% Pelvis &amp; Knee Alignment 정상 범위 (0.4° 오차) 운동 수행역량 다면 진단 지표 Biomechanic Balance &amp; Power Index troubleshoot 민첩성 좌우 균형 순발력 유연성 지구력 가동성 코어 안정도 96.4점 좌우 비대칭률 1.8% 미만 성장 잠재력 상위 4% 02 신체 불균형 및 운동 능력 정밀 수치화 육안으로 파악하기 힘든 미세한 보행 이상, 골반 기울기, 근력 불균형을 오차범위 1% 미만의 정량적 바이오메카닉스 지표로 산출합니다. #바이오메카닉스 #밸런스측정 #정밀진단 측정 알고리즘 검증 기준 확인 arrow_forward 03 개인별 성장 단계에 맞춘 알고리즘 처방 일률적인 교육 과정을 탈피하여 학습자 개개인의 신체 발달 지연도와 강점을 머신러닝이 학습하고, 매주 동적으로 업데이트되는 전용 훈련 로드맵을 설계합니다. #맞춤커리큘럼 #동적난이도 #개인별최적화 맞춤형 코칭 커리큘럼 살펴보기 arrow_forward account_tree 동적 맞춤 플랜 로드맵 엔진 Phase Adaptive Training Flow Active Engine v4.2 1 기초 관절 가동성 회복 트레이닝 척추 기립근 활성화 및 발목 가동성 회복 (주 2회 처방) check_circle 2 순발력 및 협응력 강화 모듈 (현재 단계) 시각 반응 피드백 반응 훈련 연계 (목표 달성도 84%) trending_up 3 스포츠 종목별 전술 모션 최적화 축구/육상 스텝 에너지 전환율 극대화 루틴 lock analytics.spomove.internal Live Syncing 월간 움직임 개선율 +32.4% 전월 대비 유연성 및 하지 안정성 지표 비약적 향상 학습 세션 참여 기록 24회 / 24회 완료 출석률 100% 달성 및 모션 로그 저장 완료 mark_email_read 모바일 학부모 알림 리포트 전송 수업 직후 3분 내 고화질 분석 리포트 자동 발송 PDF 열람 04 학부모 및 교육기관 클라우드 데이터 대시보드 분석된 모든 측정 데이터는 즉시 클라우드로 동기화되어 학부모 전용 리포트와 교육 기관 관리자 시스템으로 실시간 제공됩니다. #실시간연동 #클라우드리포트 #투명한기록 현장 실제 리포트 샘플 보기 arrow_forward Proven by Quantitative Evidence 숫자로 입증되는 시스템의 신뢰성과 확장성 99.8 % 모션 인식 정확도 45,000 + 분석된 운동 세션 120 개 맞춤 운동 라이브러리 0 건 데이터 보안 사고 스포무브 시스템을 학교와 교육 현장에 도입하세요 공교육 체육 수업, 유소년 전문 아카데미, 스포츠 클럽을 위한 최적화된 하드웨어 및 소프트웨어 도입 컨설팅을 제공합니다. 도입 제안서 요청하기 파트너십 안내 S SPOMOVE 스포츠 교육과 인공지능 모션 분석 기술의 결합. 모든 학습자의 최적 신체 움직임과 맞춤형 성장을 지원하는 차세대 에듀테크 플랫폼입니다. sports_soccer psychology forum 교육 프로그램 유소년 스포츠 아카데미",
+      "href": "https://fonts.googleapis.com",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-2",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "AI 기초 신체 밸런스",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-3",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "엘리트 전담 맞춤 코칭",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-4",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "정밀 모션 추적 진단",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-h4-5",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "h4",
+      "text": "연구 및 지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-6",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "모션 AI 비전 알고리즘",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-7",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "현장 분석 데이터 로그",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-8",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "연구 협력 기관 (UNIST 등)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-9",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "li",
+      "text": "센터 대관 및 레슨 예약",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-h4-10",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "h4",
+      "text": "고객지원",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-p-11",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "p",
+      "text": "평일 09:00 - 18:00 (주말 및 공휴일 휴무)",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-p-12",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "p",
+      "text": "contact@spomove.ai",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-p-13",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "p",
+      "text": "02-1588-4920",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-p-14",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "p",
+      "text": "© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports AI Portal.",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-span-15",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "span",
+      "text": "개인정보처리방침",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-span-16",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "span",
+      "text": "이용약관",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-span-17",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "span",
+      "text": "학술연구윤리준칙",
+      "href": "",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    },
+    {
+      "stitch_element_id": "STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-img-18",
+      "source_page": "stitch_editorial_website_redesign_spomove_system_spomove_code",
+      "route": "/spomove",
+      "tag": "img",
+      "text": "Futuristic athletic motion analysis visual showing a young athletic runner overlaid with glowing blue digital skeletal joints and vector kinetic tracking vectors in a sterile laboratory environment.",
+      "href": "https://lh3.googleusercontent.com/aida-public/AB6AXuDQ-YO-vijMCf7eHv1GW_EOx-idq9nUBbwJLwrAZ-MQcfaRUzfQiyvMB_zqiV_MkCQ5vcv7GAY5vgZ_rkB2pvktlcd-MS58ElAVeSXHLus_2zYEIspnyt2Awq7z-di2YmT2jRiPq7XxqKM5Sy8VEauzNUB2_U5_uZMvDcm_OOZHBuSmSnye-C5SPrYXZ9eerEc_Je4xY9Si78FULmzGzy-ii2OoROg9yaaDyPqDmL8A",
+      "source_file": "stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+    }
+  ]
+}

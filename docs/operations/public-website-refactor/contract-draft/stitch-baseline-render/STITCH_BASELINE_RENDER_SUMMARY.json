@@ -1,0 +1,342 @@
+{
+  "verdict": "STITCH_BASELINE_RENDER_PARTIAL",
+  "captureMode": "css_viewport_dpr2_scale_device",
+  "results": [
+    {
+      "folder": "home_spomove",
+      "route": "/",
+      "ref": {
+        "w": 2358,
+        "h": 10000
+      },
+      "render": {
+        "w": 2358,
+        "h": 10590
+      },
+      "captureProfile": {
+        "cssWidth": 1179,
+        "deviceScaleFactor": 2
+      },
+      "domMetrics": {
+        "innerWidth": 1179,
+        "innerHeight": 900,
+        "devicePixelRatio": 2,
+        "scrollHeight": 5295,
+        "clientWidth": 1179,
+        "fontFaces": 18,
+        "fontsStatus": "loaded",
+        "imagesTotal": 6,
+        "imagesLoaded": 6,
+        "imagesPending": 0
+      },
+      "expectedPng": {
+        "w": 2358,
+        "h": 10590
+      },
+      "captureScale": "device",
+      "cssWidth": 1179,
+      "deviceScaleFactor": 2,
+      "cssScrollHeight": 5295,
+      "diff": {
+        "mismatches": 4107231,
+        "pixels": 23580000,
+        "mismatchRatio": 0.17418282442748093,
+        "compareWidth": 2358,
+        "compareHeight": 10000
+      },
+      "topDiff": {
+        "mismatches": 1184478,
+        "pixels": 4244400,
+        "mismatchRatio": 0.27906841956460277,
+        "compareWidth": 2358,
+        "compareHeight": 1800
+      },
+      "structural": [
+        "PNG height delta 590px (ref 10000 vs render 10590; CSS scroll 5295×DPR2≈10590)",
+        "CSS scrollHeight delta 295px (DOM 5295 vs ref-implied 5000)"
+      ],
+      "issues": [
+        "High pixel mismatch (>8%) — likely CDN images/fonts or environment drift"
+      ],
+      "htmlSha256": "745e1f03b4ee27ea66678c995424b656d0a7da106d9d85b2894804ccef227b07",
+      "screenSha256": "5917922a1afb553c5d2468dd636ee3040d4de3abed6d930fa480e2abbbe6b21f"
+    },
+    {
+      "folder": "education_programs_spomove",
+      "route": "/education",
+      "ref": {
+        "w": 2560,
+        "h": 9668
+      },
+      "render": {
+        "w": 2560,
+        "h": 9668
+      },
+      "captureProfile": {
+        "cssWidth": 1280,
+        "deviceScaleFactor": 2
+      },
+      "domMetrics": {
+        "innerWidth": 1280,
+        "innerHeight": 900,
+        "devicePixelRatio": 2,
+        "scrollHeight": 4834,
+        "clientWidth": 1280,
+        "fontFaces": 18,
+        "fontsStatus": "loaded",
+        "imagesTotal": 8,
+        "imagesLoaded": 8,
+        "imagesPending": 0
+      },
+      "expectedPng": {
+        "w": 2560,
+        "h": 9668
+      },
+      "captureScale": "device",
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2,
+      "cssScrollHeight": 4834,
+      "diff": {
+        "mismatches": 581699,
+        "pixels": 24750080,
+        "mismatchRatio": 0.023502913929975177,
+        "compareWidth": 2560,
+        "compareHeight": 9668
+      },
+      "topDiff": {
+        "mismatches": 150632,
+        "pixels": 4608000,
+        "mismatchRatio": 0.03268923611111111,
+        "compareWidth": 2560,
+        "compareHeight": 1800
+      },
+      "structural": [],
+      "issues": [],
+      "htmlSha256": "218d15152b6297c2d4c45e408c6e52a170de7432da00e07d67d67bad62d66e2b",
+      "screenSha256": "e291b7e9480c4d00826716d624911444cb8139695bbd52e5cf4c0080351b42ac"
+    },
+    {
+      "folder": "private_lesson_spomove",
+      "route": "/private",
+      "ref": {
+        "w": 2560,
+        "h": 9460
+      },
+      "render": {
+        "w": 2560,
+        "h": 9460
+      },
+      "captureProfile": {
+        "cssWidth": 1280,
+        "deviceScaleFactor": 2
+      },
+      "domMetrics": {
+        "innerWidth": 1280,
+        "innerHeight": 900,
+        "devicePixelRatio": 2,
+        "scrollHeight": 4730,
+        "clientWidth": 1280,
+        "fontFaces": 18,
+        "fontsStatus": "loaded",
+        "imagesTotal": 6,
+        "imagesLoaded": 6,
+        "imagesPending": 0
+      },
+      "expectedPng": {
+        "w": 2560,
+        "h": 9460
+      },
+      "captureScale": "device",
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2,
+      "cssScrollHeight": 4730,
+      "diff": {
+        "mismatches": 541217,
+        "pixels": 24217600,
+        "mismatchRatio": 0.022348085689746302,
+        "compareWidth": 2560,
+        "compareHeight": 9460
+      },
+      "topDiff": {
+        "mismatches": 135633,
+        "pixels": 4608000,
+        "mismatchRatio": 0.029434244791666668,
+        "compareWidth": 2560,
+        "compareHeight": 1800
+      },
+      "structural": [],
+      "issues": [],
+      "htmlSha256": "cd46826d848cfea33d0b581a25aa209d88fd67d5ee7a32695e5fb367de090187",
+      "screenSha256": "4d6303a0e8ab7bfb084e99651e5b419674fba79ba3e8fe4f4a960051ebbcb953"
+    },
+    {
+      "folder": "spomove_system_spomove",
+      "route": "/spomove",
+      "ref": {
+        "w": 2463,
+        "h": 10000
+      },
+      "render": {
+        "w": 2464,
+        "h": 10370
+      },
+      "captureProfile": {
+        "cssWidth": 1232,
+        "deviceScaleFactor": 2
+      },
+      "domMetrics": {
+        "innerWidth": 1232,
+        "innerHeight": 900,
+        "devicePixelRatio": 2,
+        "scrollHeight": 5185,
+        "clientWidth": 1232,
+        "fontFaces": 18,
+        "fontsStatus": "loaded",
+        "imagesTotal": 1,
+        "imagesLoaded": 1,
+        "imagesPending": 0
+      },
+      "expectedPng": {
+        "w": 2464,
+        "h": 10370
+      },
+      "captureScale": "device",
+      "cssWidth": 1232,
+      "deviceScaleFactor": 2,
+      "cssScrollHeight": 5185,
+      "diff": {
+        "mismatches": 2055082,
+        "pixels": 24630000,
+        "mismatchRatio": 0.08343816483962647,
+        "compareWidth": 2463,
+        "compareHeight": 10000
+      },
+      "topDiff": {
+        "mismatches": 277417,
+        "pixels": 4433400,
+        "mismatchRatio": 0.06257432219064375,
+        "compareWidth": 2463,
+        "compareHeight": 1800
+      },
+      "structural": [
+        "PNG height delta 370px (ref 10000 vs render 10370; CSS scroll 5185×DPR2≈10370)",
+        "CSS scrollHeight delta 185px (DOM 5185 vs ref-implied 5000)"
+      ],
+      "issues": [
+        "High pixel mismatch (>8%) — likely CDN images/fonts or environment drift"
+      ],
+      "htmlSha256": "c035e7178ba07a1926794a3565c7420d6c42b62740f566a65d75a65b9459d09b",
+      "screenSha256": "4e6e2ea94a5114dc808c876a9c5b255133a450b46fa73cc2f5edbd77308a8722"
+    },
+    {
+      "folder": "field_records_spomove",
+      "route": "/records",
+      "ref": {
+        "w": 2560,
+        "h": 7044
+      },
+      "render": {
+        "w": 2560,
+        "h": 7044
+      },
+      "captureProfile": {
+        "cssWidth": 1280,
+        "deviceScaleFactor": 2
+      },
+      "domMetrics": {
+        "innerWidth": 1280,
+        "innerHeight": 900,
+        "devicePixelRatio": 2,
+        "scrollHeight": 3522,
+        "clientWidth": 1280,
+        "fontFaces": 18,
+        "fontsStatus": "loaded",
+        "imagesTotal": 6,
+        "imagesLoaded": 6,
+        "imagesPending": 0
+      },
+      "expectedPng": {
+        "w": 2560,
+        "h": 7044
+      },
+      "captureScale": "device",
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2,
+      "cssScrollHeight": 3522,
+      "diff": {
+        "mismatches": 456803,
+        "pixels": 18032640,
+        "mismatchRatio": 0.025332009068001135,
+        "compareWidth": 2560,
+        "compareHeight": 7044
+      },
+      "topDiff": {
+        "mismatches": 124305,
+        "pixels": 4608000,
+        "mismatchRatio": 0.026975911458333335,
+        "compareWidth": 2560,
+        "compareHeight": 1800
+      },
+      "structural": [],
+      "issues": [],
+      "htmlSha256": "07750ef8f76be417b8715b941d93b688a542a8260ba8276aba4d4d62f70bf436",
+      "screenSha256": "5965bcb254e4e1c909fa5aa8ba8c18faadccfdc0606bca9d1efd56106d081bd4"
+    },
+    {
+      "folder": "about_spomove",
+      "route": "/about",
+      "ref": {
+        "w": 2560,
+        "h": 9866
+      },
+      "render": {
+        "w": 2560,
+        "h": 9910
+      },
+      "captureProfile": {
+        "cssWidth": 1280,
+        "deviceScaleFactor": 2
+      },
+      "domMetrics": {
+        "innerWidth": 1280,
+        "innerHeight": 900,
+        "devicePixelRatio": 2,
+        "scrollHeight": 4955,
+        "clientWidth": 1280,
+        "fontFaces": 18,
+        "fontsStatus": "loaded",
+        "imagesTotal": 7,
+        "imagesLoaded": 7,
+        "imagesPending": 0
+      },
+      "expectedPng": {
+        "w": 2560,
+        "h": 9910
+      },
+      "captureScale": "device",
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2,
+      "cssScrollHeight": 4955,
+      "diff": {
+        "mismatches": 2973681,
+        "pixels": 25256960,
+        "mismatchRatio": 0.11773709108301236,
+        "compareWidth": 2560,
+        "compareHeight": 9866
+      },
+      "topDiff": {
+        "mismatches": 146681,
+        "pixels": 4608000,
+        "mismatchRatio": 0.03183181423611111,
+        "compareWidth": 2560,
+        "compareHeight": 1800
+      },
+      "structural": [],
+      "issues": [
+        "High pixel mismatch (>8%) — likely CDN images/fonts or environment drift"
+      ],
+      "htmlSha256": "3c01db334e3df2be8164433446a0a584d891f230cc07d59ebe7dc9c0d4159090",
+      "screenSha256": "848dbc1b3b2daa3a2e65c7a0024f1adfa6f2ef4ae04e1f00b843e70eeb7cadff"
+    }
+  ]
+}

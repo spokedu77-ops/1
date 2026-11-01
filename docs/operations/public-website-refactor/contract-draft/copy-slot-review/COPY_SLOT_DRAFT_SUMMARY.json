@@ -1,0 +1,13 @@
+{
+  "verdict": "COPY_SLOT_DRAFT_PARTIAL",
+  "ledgerRows": 135,
+  "textFilled": 65,
+  "textSlots": 101,
+  "decomposed": 12,
+  "imgCandidates": 31,
+  "imgRequired": 3,
+  "factQueue": 45,
+  "designConflicts": 4,
+  "supplementalSlots": 518,
+  "supplementalWithDraft": 95
+}

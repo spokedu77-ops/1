@@ -1,0 +1,13 @@
+parent_stitch_element_id,route,section,stage7_id,stitch_fragment,draft_spokedu_copy,match_method,fact_verification_status,approval_status
+STITCH-stitch_editorial_website_redesign_field_records_spomove_code-li-1,/records,UNLABELED,RC-I005,"**2,500+**누적 운영 클래스",누적 운영 수업 회기(집계 기준 확인 후 수치 표기),aggregate_substring,METRIC_OR_CLAIM_VERIFICATION_REQUIRED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1,/,UNLABELED,HOME-007,* 서울·경기 중심 직영 운영,서울·경기 중심 자체 운영,aggregate_substring,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1,/,SECTION 1: HERO,HOME-001,AI 모션 분석,SPOKEDU · 아동·청소년 맞춤 체육교육,hero_fallback_map,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1,/,SECTION 1: HERO,HOME-002,스포츠 교육의 새로운 기준,아이와 현장의 조건에 맞춰 움직이고 싶게 만드는 체육수업을 설계합니다.,hero_fallback_map,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1,/,SECTION 1: HERO,HOME-003,초등 늘봄 방과후,학교·키움센터·복지관의 기관 수업부터 1:1·소그룹 수업까지.,hero_fallback_map,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1,/,SECTION 1: HERO,HOME-008,무료 맞춤 상담,맞춤 수업 상담하기,hero_fallback_map,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_home_spomove_code-li-1,/,SECTION 1: HERO,HOME-008,교육 프로그램 보기,수업 유형 살펴보기,hero_fallback_map,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-1,/spomove,UNLABELED,SPM-005,SPOMOVE · 수업 세션준비됨,SPOMOVE · 수업 화면 예시,aggregate_substring,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-1,/spomove,UNLABELED,SPM-036,SPOMOVE 공식 카탈로그에서 전체 모듈 보기,SPOMOVE 프로그램 구성 보기,aggregate_substring,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-1,/spomove,UNLABELED,SPM-038,### SPOMOVE 핵심 인지 과제 5종,SPOMOVE의 인지·반응 활동 예시 5가지,aggregate_substring,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-1,/spomove,UNLABELED,SPM-083,SPOMOVE 시작하기,SPOMOVE 이용 문의,aggregate_substring,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL
+STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-li-1,/spomove,UNLABELED,SEO-01,SPOMOVE | 움직임에 반응하는 시지각 놀이체육,SPOMOVE | 화면 신호에 반응하는 시지각·움직임 놀이체육,aggregate_substring,STAGE7_OR_CODE_SSOT_REFERENCED,PENDING_APPROVAL

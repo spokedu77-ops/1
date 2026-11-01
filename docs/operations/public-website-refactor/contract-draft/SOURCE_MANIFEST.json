@@ -1,0 +1,2898 @@
+{
+  "generated_at": "2026-10-31T20:06:13.841Z",
+  "git_head": "2a7125fa0a5305f286ff6c816db49e5d3a360af1",
+  "phase": "B1_CONTRACT_DRAFT",
+  "implementation_forbidden": true,
+  "historical_baseline_note": "GIT_CORRECTION_BASELINE.json is historical only; not used as this manifest HEAD.",
+  "public_surface_files": [
+    {
+      "path": "app/spokedu/about/page.tsx",
+      "sha256": "f5b9c1dc327ac10c63dd6a2f05525b4b7f765f8cc27dd8e8e79a38d320eb2e49",
+      "git_blob": "182a93816b72a65e0740bd9bfe6d5d2132028f26",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/cases/[slug]/page.tsx",
+      "sha256": "292c0ac6230f03d778fec4ccf23f25c58fb532bc8f0823cde9fa110431692798",
+      "git_blob": "a97c402793886bc36d2181012b8965bc1fb5f45d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/cases/page.tsx",
+      "sha256": "7954c19dda43f66534e43cd18c274e42a78aeb3372760c27de33b8e3e51a8cdd",
+      "git_blob": "2835dd442de8bef844ef559d4251ac1ff60b5981",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/about-founder-section.tsx",
+      "sha256": "d69bdb8d4b92b08f7bf0ffa88fd741c27b23e1feb78c2f7915eeb1b02fb8c1aa",
+      "git_blob": "a390eb8e3e138aea8048c555d591b4affa30b1d5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/about-history-section.tsx",
+      "sha256": "df18e49a2686deeeee30bb90a3561bbd88cb83a99e090b440a0221d8700f6757",
+      "git_blob": "ef76acb34a05d60b080dd895d0220efdac1f13e4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/about-landing-legacy.tsx",
+      "sha256": "a7007d9f367cb3a374d03d2638d878f4e491c7864091e33c3f3730b8ff602ee0",
+      "git_blob": "09910c41bc3c3c5bda44a69789c45444a25d7c57",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/about-landing.module.css",
+      "sha256": "8ef4db82247cdd1cce8774e97183c183f78e29ec9f1f2e696d9614673daf5f42",
+      "git_blob": "84c0bca4576df5176dfc2b7117a2e69ecbfe4abc",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/about-landing.tsx",
+      "sha256": "cd4c2682cfa82103ec376ccc9b1158498aa6c0229104fc4a36e51c11c70e5a62",
+      "git_blob": "a07c064c10ba283727b07744cca4666910acf13a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/about-v0-landing.tsx",
+      "sha256": "13ad2787f9cf4c53848450af7355989b93a756f147c7caec46f8e6b603c4e131",
+      "git_blob": "040e77e443411efc67cdf842b09ddd79abf4762a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/audience-trust-strip.tsx",
+      "sha256": "465c7655815bc6443fea50b0796c11939ab24073f0f2c9617bd0b0b465a7e493",
+      "git_blob": "a917072c4bc7f091bf5342cdf1d1839e1924d07b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/blocks.tsx",
+      "sha256": "52d6993aca131558e204b30c13e363d84266455f534e9efba3e978512092302e",
+      "git_blob": "7012b4fc06aa1560f683c5c4df032b4cfa1215ed",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/brand-logo.tsx",
+      "sha256": "a0bb180ccd2a9ce7ddb5365674c5b2dc9753e66005c87818110a4fdb84cbdb69",
+      "git_blob": "43f84c60801bcd3a348938f161a423d378073f36",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/camp-program-landing.tsx",
+      "sha256": "315a4481588e5b88300a288189b6e605f3f50011833882cfd145adc9f6e2b584",
+      "git_blob": "220ac28f22e31f7a1f71762c6f5611fba732fcb6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/case-proof-card.tsx",
+      "sha256": "34669ba0004feba14a358af259bc55241495a73f5e07168259dd980a8ce30f4f",
+      "git_blob": "42b6578c736bbff02cf62c34fcc0ce14a8a415e4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/curriculum-inquiry-form.tsx",
+      "sha256": "fc1223bb4369fb582f410ef8dbba81914b1d8ce3bd4829337520fa4393cee1cb",
+      "git_blob": "80ac85115c1568effea962ec5321e049723fd39c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/curriculum-landing.tsx",
+      "sha256": "8c7768dd14b3fceb5b364a522592917695d2da22f45a2de022df01f3fa17fff6",
+      "git_blob": "dcebe08f30f8808abc77ebfb261bc5717aed26c6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/dispatch-comparison-section.tsx",
+      "sha256": "2add5e8b327a28938142c83fca534eb8964336ffb0eaf634be24968d7421e815",
+      "git_blob": "fec9ffc0004c0f135ef6859661a7eefe86eeeeb4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/dispatch-landing.tsx",
+      "sha256": "85810acc2618e123951af982fb0197db32d8c7dc78a58676ad264db0e762006b",
+      "git_blob": "490fcca61bbfec7b7856d80fec019e761bc984fa",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/dispatch-process-one-pager.tsx",
+      "sha256": "e492f25cd671bbfefcfccf16c03a63bbca1e02e4509d01a801b3b6e55fc11a78",
+      "git_blob": "483fba07019384dfd24f5fb40d22f2f8346e1d5b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/dispatch-program-lineup.tsx",
+      "sha256": "987975a5b486aea137023ada9a5af7f98ec25bb35e6d113fa2abd2d180d330f7",
+      "git_blob": "efd9a8aeb1c9ee96235cdffa80e4f6b29fb1ed3f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/dispatch-proposal-form.tsx",
+      "sha256": "a15c93f3a3213a7222d6c8da05c2dc87b36ac105a166e5a6bc34858444eb83a2",
+      "git_blob": "9ce7961fac6e072ad4e7d4a54dedadcf55fb9b7b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/education-hub-landing.tsx",
+      "sha256": "fd7fd64beec666367ef444c4aeb669bf88fe8246f892e2b65ac33fcbb0be1a05",
+      "git_blob": "9ac3d4de77c444344737c50e65776a12c89c6c93",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/education-hub.module.css",
+      "sha256": "7ee1b1b2b277d22fcbfb6aed0bf074b847106c73a9ac95d4ee0d30969f2bbd58",
+      "git_blob": "8b1addd7c28ebb85648f166bb508ade94997f3ce",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/education-v0-landing.tsx",
+      "sha256": "4eb4100ea7e8e7913932d0b833cc3378f322e983f4c4e50e6f7ef4ed9c83d1d8",
+      "git_blob": "44af00e36a8f532bd613cdf0c900289efd398495",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/external-photo.tsx",
+      "sha256": "8577097cff46736b4731151872c0487400d6bf5364e8e5f15c2e7967ababe492",
+      "git_blob": "7f09942f36fa83c37cddd34267781c3dcb34faed",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-landing.tsx",
+      "sha256": "97b03c8d51446ddf035c2b7f05f05f79f7c1b3e6562994494c7aa6b5052663bf",
+      "git_blob": "9a505a5ad290f845f167bb5c18de17bb8ca7dece",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-section-heading.tsx",
+      "sha256": "dbce6fcc5d1d1fe6f97bec6d6cb83d0aca0922362a2fef215bda80f8e1a4781b",
+      "git_blob": "32406c9369f1fdf9d221d87a27963e635402115d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-section-rule.tsx",
+      "sha256": "1f6d6c26f925520152e18abb1f972c55ec77148ad88cadb8413be34ff43f1fcb",
+      "git_blob": "30677b6de8e9ad305fa8f30032db9ad332c5084b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-structured-data.tsx",
+      "sha256": "3198c32af9714713c5a76672a432b8ebc64df059af2108a5cf06cedb3e7a4dca",
+      "git_blob": "34a918a32f0e79f54579dce9556ddec0b9b2e797",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-v0-landing.tsx",
+      "sha256": "d5792ca20b157c83b4414a967e30a6821d13649c6f85d4d73652ecca90636661",
+      "git_blob": "b8084c9b5a01001247540492995f0ace0d77a9a5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/field-records.tsx",
+      "sha256": "898e6a3dd95ac33a48f23066fd85a0c8437dddcd44d0c018cb673d43efe11a39",
+      "git_blob": "ecd6d68600ab3306994dacc1957b68363db5b3ab",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/final-cta.tsx",
+      "sha256": "b8af7ce16fc4bdd45991c4c31751e3da11dc68d6f84b6d01a05a5f7dffc14641",
+      "git_blob": "de6a7597e460755ad30b3243da500c648e604eb3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/home-canonical.module.css",
+      "sha256": "949e3c14adc225065378656a3d0ec658138318a49341c60e2e301d5287d0d957",
+      "git_blob": "4ad1c3cc075ede259041843f4f63959ec0be61d5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/home-hero.tsx",
+      "sha256": "a7a872d8913bb581c851be7fc8465776cd792c36a8e8510dfca6de0249afbac5",
+      "git_blob": "add04883bb7745839a8a6f68653cedf6550fb7f3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/home-section03-people.ts",
+      "sha256": "6dbedad4189e6597520308c7db14146cb48d207976effb85d4923da7ccf2c210",
+      "git_blob": "bd1a198f3fa389906f36666f5d3acf7e7e42ebb9",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/home-web-assets.ts",
+      "sha256": "3ce14369ea2612c73054120020b60f78d80c431929dbee320afc45c53aaa96b7",
+      "git_blob": "13503d259eb027b5dad37d5091bbf8043f0ba22d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/home-web-landing.tsx",
+      "sha256": "3939afc0b8c32b58811c85feb777ddffde84b91747a348ee6df71e74981b6896",
+      "git_blob": "abf44013f761bf009970702aa5651a355903a32c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/home-web.module.css",
+      "sha256": "0ba8b04226fc500d3bfb193874ccb86e3ab66da742a2f9222e02d6e96c8c72ad",
+      "git_blob": "dfc82f3ddd893a587a9278ea2f7d161d223e6162",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/master-stage.tsx",
+      "sha256": "d15b46df2531b1187a70c67c7a79d38dae882ac0428190a98415477294732a36",
+      "git_blob": "cbad9a0c25439c743543a5051572c62a229100c8",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/service-gateway.tsx",
+      "sha256": "25860668087159d6a95accf880d8477412691558be8a6e0705c0586176b4b556",
+      "git_blob": "505093bcc1a88989c8dc6f14211b62ffd562df58",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/spokedu-method.tsx",
+      "sha256": "95a5cea65046f7130eeacd9fcf1b745ff43355feaceef1afc1a64d0983d06a31",
+      "git_blob": "b6516c8c42d0096ee62ec40cb03dcf5319b85e07",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home-web/spomove-stage.tsx",
+      "sha256": "e0859b334518cff1d12029ad510f299a76d4fd79637ebbd30fe8845efedb8cd2",
+      "git_blob": "49c1b23f1a9d3ad2d85605ee63803422461ec90d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home/home-chevron.tsx",
+      "sha256": "66abdf804c842ed1caf69f58f6953bc781005b6af43b7f67213ea2aedfb424f5",
+      "git_blob": "daa705f94b717eeea1a63e63c268c6d7f2d6b73a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home/home-editorial-landing.tsx",
+      "sha256": "fd4104a1368279c4c338b37a548ec8128434dc530ff1f3f4af1b5299fe4d563b",
+      "git_blob": "4c52a09d519b6f9f42b2089ad88d311dba511810",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home/home-editorial.module.css",
+      "sha256": "351a6b2be8f3a8995130342c99a47f15e4038f8d9c6afdfba9d64027e46b5b3f",
+      "git_blob": "ce22501f30b9e514e566779631d8ae1025e4f380",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home/home-partner-reviews.tsx",
+      "sha256": "f1e1c4a15d3a5a33e93bd5c7aa57906bbe560cca0cd424612fc91fb579981a9b",
+      "git_blob": "ed7ba66d644112984ad0fb611876405379f2ca5d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/home/tracked-link.tsx",
+      "sha256": "c2193996e40fe36c14167731d6ec4295c2028ef9f55bc5c9c0fa77b245b59694",
+      "git_blob": "6e5c6275101306ffca69475e5644ebf3eff4348a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/insights-landing.tsx",
+      "sha256": "064285fae6f13978b211b7b4f72dcdcbf909b6d358e11ffa9578f46c0efa0bf4",
+      "git_blob": "d45188507b4d59e4e99ee37680b258cdfdad758e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-anchor-nav.tsx",
+      "sha256": "560dc21dd58094d8cc6979d6e0a043f55cbc8c6f91a32b038cf48776da430185",
+      "git_blob": "7335796962153d139163c888469eef8ccec0c513",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-faq-list.tsx",
+      "sha256": "94f44bcbda5176f594597115fc15d1a1780f5f34f8a03abc5677af0061b01e04",
+      "git_blob": "855f5c3c0dfe3ae79b174f65c9172109bfa5faed",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-final-cta.tsx",
+      "sha256": "fb08251a90299c36f5b75c97fc550f3e35ec90da91635fabe30a768e04564072",
+      "git_blob": "85782b44a609a2fe3261758511a3a4531ab39aaa",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-floating-cta.tsx",
+      "sha256": "3b6f594d83531b6e1f276fcd04f31cc8419c77a755b6370605e2af656d7b6524",
+      "git_blob": "35b86d5f1966c198d6af7c6b49da5bb3e9e53bda",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-hero-preload.tsx",
+      "sha256": "8dfd5ad51b0d010af651671720aed32a6eb2b5eef95a1b456a030dc834c327e3",
+      "git_blob": "f3aa425af6c410cc548bc7896cc1bb761b5f109d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-hero.tsx",
+      "sha256": "1f9c4bafb61a49c0bc461dfe12268eb3f653fe9547b5f75639c78d0122ead1c5",
+      "git_blob": "9d5ddfe83f1515eb4d13fcf2be8783a39734727f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-page-root.tsx",
+      "sha256": "86c073f2734e4868a6a13a239d09c798d21ba46bbcf039c06ccb50c52a4ae813",
+      "git_blob": "03d0219b66f8e507cf14586b935f4d65be783b7f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-process-one-pager.tsx",
+      "sha256": "1b7ba14ba7e5928b8a42977646975ff7f3e7456e99f2963de62c3ff5ddd6cf7d",
+      "git_blob": "ff6709e3f6c86fbec74969f3a4e6747e951419f4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-section-heading.tsx",
+      "sha256": "927980f77686bda4b5a86048c8420d7b98e06edacbda77c27efda321e35efd88",
+      "git_blob": "f37e9391708b5b457bd4e6af182b707cb6c1071d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-section.tsx",
+      "sha256": "9b8bc7f33042b109494eba96c6fe61e613d946c47437598f1a8e096ee23c5cd4",
+      "git_blob": "e7b200b79c294af40ce2fb4b201b28af37ea1967",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/landing-step-grid.tsx",
+      "sha256": "7b1aaa135107de56b0cde2a353f128f178015acae54b9e1f195974dfa378f1d7",
+      "git_blob": "3e56a8926dafb34e6d9e056a1218844d8573e2f6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/marketing-section-frame.tsx",
+      "sha256": "865e5a4bfa498c3854ed60ec8bf1787c35fc2e1dd17fdf40e4c43368ae5ab0cd",
+      "git_blob": "5c6a74e1a71a3473f64f4011fc3f08d3a19a6e07",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/monthly-detail-landing.tsx",
+      "sha256": "315580488fe4af57cfbe8de6c5045740eac9cc46a1b82284465e3b4e7b376c7d",
+      "git_blob": "717e689882cb9fe982504757f922fd848136c87b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/monthly-landing.tsx",
+      "sha256": "122a3dfe5910974c94c734e0b6a01c7befa1c7e3b548084bd32ec42c6088678b",
+      "git_blob": "c67237d936610741b7630c062ad188f9ebe04bc8",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/monthly-newsports-program-landing.tsx",
+      "sha256": "20129093e224d1e754ff5a5593257f2d065a6a1db17cb05cd0d5df40b80359a1",
+      "git_blob": "92181ceb9c4c0823a450e85c427f2913530879e9",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/newsports-theme-grid.tsx",
+      "sha256": "5ec2d5748aa81adc0d165bf4c9d7296a210ddbc448e021b24cd0fa60c411aff3",
+      "git_blob": "cee7180e28a6dbace62fcc4445f86f214ed0786a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/oneday-event-program-landing.tsx",
+      "sha256": "dc04040cf863a74e51834ca8910cfef13f963ceeca950095af5c4948c6118376",
+      "git_blob": "e9c43a7dee1c239aab189bcaefc02a64411e256a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/paps-program-landing.tsx",
+      "sha256": "532ed5cd44906ee698cb8ee62f579e4035e2c6101049ad6506c60a266733595e",
+      "git_blob": "5c606d1d3b4dbb660b1cf12cf38a7378b75ca154",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/partners-landing.tsx",
+      "sha256": "4ad08e94c75f8c51c85c6be877951ea5417eeb77279fff00fb292bc1778a7fd6",
+      "git_blob": "bfd9aa35f6e51c8c26ca88a463d85af62fdd1d2a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/private-apply-form.tsx",
+      "sha256": "a20ccc8f4cde93fee13c10e529879b5e74dcab4d414c612c1934a298b95a0dfe",
+      "git_blob": "bb5baf53b4ad5d6f63f58a73ce7a96c08c03a7be",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/private-class-flow-gallery.tsx",
+      "sha256": "885a20344a4fcc504eba9f5bd04e43e245f4769b6cbdce2df9e2ed4f15e9084c",
+      "git_blob": "bab726b4d4dc700efc354939abda84cb09d53b53",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/private-curriculum-section.tsx",
+      "sha256": "21d8c181a16c6632603bd96681d7e1840593139b4ae10190a204beef915269d1",
+      "git_blob": "373b02bcd6593e75087fd4ae44670d8117728b9a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/private-landing.tsx",
+      "sha256": "4b86484d9928c3e697689d75faabbb277f99074313b55e4ce02c39693bf05e0e",
+      "git_blob": "234ca9e77416e4ca5775b8e96dec0dd92c36fc27",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/private-trust-metrics.tsx",
+      "sha256": "4ae9e20f51c722518b10a2962431a0d49ae15e4174f545aaf13b82ccf07b4918",
+      "git_blob": "eebdb52ce25fab6ddd41d07ebec0bc67f51af66e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/private-v0-landing.tsx",
+      "sha256": "35ad7fa720a4ea9aecff7fce13a5472037ad122332e70f0cfe5ee44720b18730",
+      "git_blob": "87f2b7031eadfdee791e83517cad3081ee3f4ff0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/product-visual-frame.tsx",
+      "sha256": "6e0229e1c643bea056ef7a3194a042d2e8673dcea4634162f5c3f07a9318c61e",
+      "git_blob": "d9a380b956401a8585458c1ddb81d9ac6aeb2afd",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/program-detail-landing.tsx",
+      "sha256": "7416c954a19d7ef999f767d0ee8f924f54843ce5ae28ecc47e3d30d824881a47",
+      "git_blob": "feb3b87a8245292f5802da6bbd766a354a7a3fe4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/program-related-proof.tsx",
+      "sha256": "8d21d594bf5dfc275885ca8241bbbbfd18d30ee2a78e4810ca2a84256943f9d2",
+      "git_blob": "39addfe06d1aed22d39e2e239eac536e7c8edaef",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/programs-landing.tsx",
+      "sha256": "1e32f30e111445b73da431e43a5b9f886d0409310776a3f46c23a50f52980b84",
+      "git_blob": "dd3fecf7903468cf95bdea7d1d30081330bcf48f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/records-case-detail.tsx",
+      "sha256": "7bb3c7a407100bb3fca2bf6d8d366b89ad91a87dc15a85f668724b5196461279",
+      "git_blob": "a2e1c6084623fd6501ca40785e6a82202ac2287d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/records-landing-legacy.tsx",
+      "sha256": "740b7131ee9ea861b14b227565d11167f9fe99ae011d62ec9916938a7b26c478",
+      "git_blob": "6728ed06879471cbffb3515668c193a1551637d0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/records-landing.module.css",
+      "sha256": "fd1cd2c1b17a12e16a1235926706e776362ba5c007cc2fd16d204401946103be",
+      "git_blob": "2b0ca1514f033761b478f1f4858d21591d064eca",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/records-landing.tsx",
+      "sha256": "c2de685c55ad990cab223c4258cb4644b7953a7829d79e9d4a0d175fc4428365",
+      "git_blob": "fe7a01d6737f7dc4730bd81fafc0c5acb47632a0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/records-v0-landing.tsx",
+      "sha256": "e373751cc97a5d2b9e19d2f3be99ebca37b75007e7883a805d29a7765b21ad0c",
+      "git_blob": "c5cd16111f7b30d0aa8d16325f5e05aaba1c81d3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/section-heading.tsx",
+      "sha256": "5499fe3080e35a372a450330216dad69ad9087bff78659b1f0ed38b5cd74bb5c",
+      "git_blob": "8f3e5a83d209ca95339d4bd0c270aa976e18de30",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/site-chrome.tsx",
+      "sha256": "97b035ad312de55ff26da91817607f92810e3426651fb644ef91acceb093ed85",
+      "git_blob": "95f03030d18f784785a032733b8eca3600a8f899",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spokedu-image.tsx",
+      "sha256": "8ac39dc07cd268800f0bba49aad01a2261bf05cda8d1d57514af3028ea2fbf60",
+      "git_blob": "113b8a30d1e0768455f99f594696bdab9474630c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spokedu-marketing-layout.tsx",
+      "sha256": "e58b8512f5a60b3379d1ebd46369299a2212e81854c5366fda5775fdc2e460c3",
+      "git_blob": "33128f4e70e73fd12625e4d746ee8b6f47379733",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spokedu-site-shell.tsx",
+      "sha256": "ca59bfad118531e8d06860fd01da3969a5c766a6951c2759a888ca085b77c03a",
+      "git_blob": "f3024ab525f745deecb30b0b6d65d8c74059b88c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomat-landing.tsx",
+      "sha256": "1826ab12a503aab1d4aceb800a6a8650a5ea26b392629c2d0e54a2ca1204fd92",
+      "git_blob": "3c44d40111d0f189c180433c232f711b58c81b96",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomat-photo.tsx",
+      "sha256": "380d7aaf65ffa9eb49ea7f18c9a5ad436ef964c2d3b441c3d35820380c2e59e3",
+      "git_blob": "c71fd1007d4366370a2180f29621e2a043964705",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomove-catalog-tabs.tsx",
+      "sha256": "12e10313c4b778031a663c849ebf6027015564ee78affb1d89207b8b3278be7c",
+      "git_blob": "814604820d6a5586432f89f45f5442cb3b279b6c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomove-program-landing-legacy.tsx",
+      "sha256": "bf815a5cf758ac70cb78e723b5eaa2d290c3d9e3d5fb237f69043df563888497",
+      "git_blob": "b1bafb7307804f08d2ad6948088ab8e100b7ecfa",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomove-program-landing.tsx",
+      "sha256": "5b024c37e6dce0cfab53222307cfed9c0220fbb9837d4bc3750d8e5ad1049f1b",
+      "git_blob": "f798263cb3d6d528f1cdd6c3995c486d722f602b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomove-program.module.css",
+      "sha256": "d7be9c8c620ecdc6e495f24b9b3b1dd6d67e6236c604b9c68103a7458a377ca5",
+      "git_blob": "091e87182a4d366d00189a2af77190e54bbfb2e3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomove-public-catalog.tsx",
+      "sha256": "cf7faab3eac8cc89330c3a49a0bbe25b14f2a8e2ae3fd82bec9666de41b260cc",
+      "git_blob": "2927e634e5aa66572f5d3a5fb083056ca9f8dbc7",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomove-signal-grid.tsx",
+      "sha256": "a44c8707953e938f60785c6696ffae0097ca8701aaeb2524b27f443ff48c90e4",
+      "git_blob": "fb21e867508f4d9ab2170fbe563fcb7c3592781c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/spomove-v0-landing.tsx",
+      "sha256": "b8a28f3676f9c09ce65b81f0c0a26b3b56bc7ae14fd37c3db05505e5b2433275",
+      "git_blob": "9e258fedd8abb8b361a70a5e923d84f9dab9098d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/subscription/subscription-sections.tsx",
+      "sha256": "e2ecfba5cfb1d52d8c01e69497797fb4d6b1b2b8684401bd844ebdaccaf957a3",
+      "git_blob": "40559f0e7f667d36dbb0098057acf09af3e24782",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/tracking-provider.tsx",
+      "sha256": "9245d33e2846527723c79f695f4afe7fbc0e98a4c9b1eaa02af0fb7560f406ab",
+      "git_blob": "4d75a45ae70523929baade90e522c7e738d99309",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/v0-privacy-consent.tsx",
+      "sha256": "0fe29ec51b82c87e0de077dd220a9efda38c50b1b5ea3272b1caded8bf5f5e00",
+      "git_blob": "e6c09d9e1ec809bb99075bb90dde0f8ba58be615",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/v0-section-header.tsx",
+      "sha256": "d02f5c4155508499b54123152409a4d6cddde9201931457d6738fbe6012c4cec",
+      "git_blob": "bfe43470df53f251d005b01dd5180ab4eb35f954",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/v0-ui.tsx",
+      "sha256": "f4fb9fb4878206f035fcefeab94a2a666c9737a06111f8aa9da9a702b24aae41",
+      "git_blob": "d663748baa29dd7843ca7544eec35c20ce69a7a9",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/brand-overlay.tsx",
+      "sha256": "8a8169ee7292855e9ae0d79d6393bed4d5597c4e43449d5a46178aefc1fe6439",
+      "git_blob": "2a0f186cf5927c51ad2dc290ebfd715142863d2f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/card-variants.ts",
+      "sha256": "89b9dc208c146ad42353e75ac0e6ae353ed27db57f806a7e5f96b132c1ce34bd",
+      "git_blob": "530a923a85dfafe0ddd0aebb27504fe5e112af26",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/gradient-visual.tsx",
+      "sha256": "2e995aad07b7725ae5379da49eceaef8e375052f18fdf1ed0905b52392d373a6",
+      "git_blob": "09a4a759005daf31a1dc84cbd571fa524769daaf",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/index.ts",
+      "sha256": "90750d122571562e042dede70fff66efefcb88f3cc7f734f3797add5da7f666d",
+      "git_blob": "1d14381fc72eabc9efc1ba46096438a3e9170846",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/media-panel.tsx",
+      "sha256": "59ed438ff3ac9a3518482eb649da6108d43d0716f5c0caf3572103417ae8fdab",
+      "git_blob": "a588026504c5c0f898610012141d53b83a07593b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/media-renderer.tsx",
+      "sha256": "98a16017c28f3721b60583bf2cee419789e38c1ed058da6f460ecd158b068101",
+      "git_blob": "cd8ad651a8db6d964eb88291f40ef0ee0aa3580e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/motion-poster.tsx",
+      "sha256": "aaaaa6193d4399014d0e5fba546fe62c5cc91371cecc665382c582240b42cb34",
+      "git_blob": "01df99b2d180242c46636311d02ff5c3fa66361c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/program-showcase-card.tsx",
+      "sha256": "b51a9f960552093e0886644fa0d30fcb81dfd060bbce596d5e7c1eca0723d86b",
+      "git_blob": "88183a3e97fc92918fb6528e9ed9b44fdb0f8365",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/program-showcase.tsx",
+      "sha256": "f7fe5987747d362f31db601d7066d052cd5a40192b3a8424066fc50102abe105",
+      "git_blob": "0ea02539a6f9bce2b22ad544bf4d4a37fdaa6447",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/proof-field-card.tsx",
+      "sha256": "b6c6953791212bf30807984dccb8ed489cf325c8f66a22f0607001e76434ea43",
+      "git_blob": "f57b323f4f6d5449b6b07fa0f95e3bae8ed4a6a4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/proof-field-wall.tsx",
+      "sha256": "c59d0ee7f347fdc41178cfca1e0154739f6331aca5b0a50496ac993b6f775aac",
+      "git_blob": "0ca0fe5bf19f5a5047c29ab4f409a2ce84cb86c4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/proof-media-card.tsx",
+      "sha256": "168490ac151415e6b16c596140626e76e92d0602a55bfb5ecda2146b6ff98d34",
+      "git_blob": "9fb928dddea6c05d8da4fb53366903693e6948ab",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/proof-media-strip.tsx",
+      "sha256": "b2a996167b73a7b33027cc21ed8ea2978af04adfb3ac876219e3f20fb40de903",
+      "git_blob": "5cbbc06d077fd8fb9aeac00a4904821f2fd09329",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/proof-summary-wall.tsx",
+      "sha256": "cfc68c193431edcfd3c937a0feb0dcd57c2f6ce120cde5da5ef443becb174257",
+      "git_blob": "3eb2167733955ea9e647e32ddf51a943486af9d5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/components/visual/visual-frame.tsx",
+      "sha256": "b783802c17a2826b63775f1a65605ce6327f8530401678918edb30bea05d4673",
+      "git_blob": "7f28733c2fdfe08d45e3815a320b161358e8eaf8",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/contact-fallback.tsx",
+      "sha256": "5f8f86b6353333efe71999d644c79428a748fc87337faacdcae5e5d44ddfa433",
+      "git_blob": "b82bfb565ad0a1998061d8711a3fec3c82608bb8",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/contact-form-shell.tsx",
+      "sha256": "a0007f2157c96d5f832f65b1a70d376ac38f8ef29998d54f429d8bd9844549aa",
+      "git_blob": "3569791298234696b1dcb1bccc9474dbff27af93",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/contact-form.tsx",
+      "sha256": "32ef47b827c055d7882aad793673cb1ca80557b4cb5ff79cc86ae168a2a27204",
+      "git_blob": "f39b7892ac088525f40c277677bc0b59715661cb",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/contact-page-data.ts",
+      "sha256": "93c92b2622021befde419bcbfff023e9d959d041d100179729f24eeb3981e946",
+      "git_blob": "f153732d49f688c87e21569d327128782fee879d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/inquiry-draft.ts",
+      "sha256": "a25a36a66c6d43e2b5b1473d8f6313b4cc57ce541a7418fd1a683ab36ba36593",
+      "git_blob": "770b96271e3ad200fb3534577bbc1ea10aa747ff",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/inquiry-submit.test.ts",
+      "sha256": "f0dd2825321d42e410f34efa661e4fad623769a749791aab4ecf85b7a4db1d1c",
+      "git_blob": "5769e8467a1a2532045b86c8414aea458a0c220c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/inquiry-submit.ts",
+      "sha256": "b4972deae5e6b0a8a8104a0e909db027b569ccf4d282147ab52d1a894485ab45",
+      "git_blob": "e43adc80ce5a199d2ae39428d94ff01957336a9b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/inquiry-types.ts",
+      "sha256": "4ddf100707828753efefca2936ffc767faab6915e8d96b91faeb305f1942e53b",
+      "git_blob": "5dfd423e1909de66e43045df994b56aeaac3c729",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/page.tsx",
+      "sha256": "63c2d957134e2b5363914156d265f5b4e1fca10ed17887733a008df27d637b0b",
+      "git_blob": "aac921bbb33983da5c50a8a4163c877e5c5db407",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/resolve-contact-inquiry-type.test.ts",
+      "sha256": "d0bb8c62a9f7a5154005684f9782328bc89385d8c0994f1b8ba132256c945a14",
+      "git_blob": "5ffd1ce7b36e1492af8a9a3583e66ce300dad07c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/contact/resolve-contact-inquiry-type.ts",
+      "sha256": "78e961e0bc65e15fffb1b5411bbcfdfb1e185119d215fd8f51f91c829ad075b8",
+      "git_blob": "e13f1ad3a97ce0a47564e46741717a3c9627ab8c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/curriculum/page.tsx",
+      "sha256": "3073e52b08cdc82487c6d205b32daf93aa1cd79f68aa94498cb6cf46696013c6",
+      "git_blob": "8eaed6c5924dbbd2574df86089060a368cd84290",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/about-founder.ts",
+      "sha256": "9bfd53ca8bc44a10f1a34154851fb136b06baf3b25ab0d2263397257868c149c",
+      "git_blob": "326ad0f7776fbc929c018734ef707af862a79fa7",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/about-history.ts",
+      "sha256": "6e7498dcbf982c2ba6778eafa3f68afaed28d9d40518c60f52b19bd9fbdbcb95",
+      "git_blob": "961b1c46b8fdf081121182a9f5e84312642cafff",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/about-page.ts",
+      "sha256": "0d0b106eb0c0f8a51d26a59f322bb699b36224641e59a5a577e380fe2f3eb194",
+      "git_blob": "051978a186357c6f5ae8ea72e8fe72926bfdf8d9",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/about-v0-media.ts",
+      "sha256": "80b0ca0b4db7686507e4bf06b83b555a10d8554270e0f613ffc1dee6ef7f9822",
+      "git_blob": "1a03f31472a5a57f915d66f73275c10e33d222d0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/acquisition-leak-closure.test.ts",
+      "sha256": "bf049411eda8021c8c4bd1e4bfa3fc0e606b0f0776a70e371ee9567fcedc3a11",
+      "git_blob": "c410a65d3fa1e0380f673afe3f15b401e1440b53",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/brand.ts",
+      "sha256": "c467f8cc40c30196636d5212228de9d07590536c738b295fd1c34c89ba87559e",
+      "git_blob": "12148ec31448f9b80400f946a5fffded515bfe43",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/camp-program-page.ts",
+      "sha256": "4a8b3e7facfdbbed70f9d646202e12e0b9c530eddf3d891f4db3f11c3dca0677",
+      "git_blob": "ab2637ec3de3c307079e00948632385a8e2b4324",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/cases-page.ts",
+      "sha256": "06fcde2ecde48235ea5b954cbe3b08ae93c9f0892ba442315534134c50d21899",
+      "git_blob": "f1b1a132bdcb99c0290f82208e139468b057536d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/cases.ts",
+      "sha256": "2cfdb14ec5c33b867804877014af24eb4ae73151bf311b8f992e979f89019428",
+      "git_blob": "2df86905290d5dc8b6f07955481a15d8815af5a5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/commercial-routes.ts",
+      "sha256": "aeb1a93a5d9e7a5554f5fa1cb9d94e1c5bea678c620528638934169a90e0f57c",
+      "git_blob": "61b2762c786ef31a72323d92dbf5f26aae86b4a0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/content.ts",
+      "sha256": "5d971f63b4c717ed6e6e67a68bb7d2d4cb2b923226a6cb497e48ca5e538a9bba",
+      "git_blob": "eade835b6b1340d92f45064c01d9eeb06ec812d2",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/conversion-evidence.ts",
+      "sha256": "0cea82f89f05c4d37ddaf80cb497511491eaf8ad2c8209b0528a2a857d0dd600",
+      "git_blob": "e335d06ec7c8b6f545ce6b37b86dfe162455b18c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/conversion-page-intent.ts",
+      "sha256": "fb7cad27fa7954d35d8ad4c91328dafe214c716bd771495ee70cb0e7c62e71f8",
+      "git_blob": "e897fb54179e567680267a45d1bf453ffbbd58c9",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/curriculum-commercial-modes.test.ts",
+      "sha256": "caeced7010bd0d3a942a1119d0dd39870f2a7eeec5f2e7fda859fd1eeeab9479",
+      "git_blob": "0e4a41a49b5c9c368e282c5d24a6c49086ce2978",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/curriculum-commercial-modes.ts",
+      "sha256": "5ed9ccb4b3bdea792b6d7e864732959ac4b12de6132d32999a6ec123f981b833",
+      "git_blob": "0f78284f04461ab34ffcb75f8d8420b6cd05bd5b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/curriculum-page.ts",
+      "sha256": "448d10ee015151e1a95ecae5d1319aaae52d2c4df853055a4cd312a79d447907",
+      "git_blob": "0b6eba440579562f993eef2b90ec9b1b2e3086eb",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/dispatch-page.ts",
+      "sha256": "5e907de54419d15c069a84c1486f9185228f74b9797871b2700f00daea53453a",
+      "git_blob": "fed6bff2dbf53b7c4b192c06724e0e357dd5d67b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/education-hub.ts",
+      "sha256": "22f5928921ae6d7fccf210031823950e4ebd535a55b61d3a8f548d56ab3520c6",
+      "git_blob": "272502375bb8421d96cffabcafa008a0fafac35c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/education-v0-media.ts",
+      "sha256": "45440229f6ae4e7cace154d1e209bc043681b50a4d5c839d55b8b392d5b7d2f3",
+      "git_blob": "9c7cc73c78677e375a2af41deac8f21153a0418f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/external-channels.ts",
+      "sha256": "4c5b0f99de648338e3fb43c29c20f2c8b045051f830e00dfedc9f68b91cd06f3",
+      "git_blob": "5e2dbd9c34e9d7baf248e928b064a1578e5abd3b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/field-evidence-align.test.ts",
+      "sha256": "2514e4d0ddfe4494ef7655908826dfbbf6e5df2aa556579ef48b226218cb55b6",
+      "git_blob": "98607d2b856a2a7f5987ebb7d7bccf1033f3da8c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/field-records-catalog.test.ts",
+      "sha256": "69ea5ae5cf580a6ac888d910fe042d409cb12201248c53ae01ce8eeff689c38e",
+      "git_blob": "1c753d8a8cc2c7419460249e05681d4386ca7781",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/field-records-catalog.ts",
+      "sha256": "3896a999c1b687e4f34d27a10054aa6b460dd190ac56ef88fc1cf612ba5e23f7",
+      "git_blob": "61ec89d7e92ecb036c2c7ae9da26216d9d4253e9",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/home-build.ts",
+      "sha256": "63433555408c17b54bb6abea62e48a136c01b966a1ef6c196fe9f6773a20a088",
+      "git_blob": "ee8106ba4e0ea12d1d502a63f6e682cee282ddfb",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/home-image-roles.ts",
+      "sha256": "3dad8628eb3ff3d988d4527eb149e8bc2b88b91ef967aa210c9e757ccebb365c",
+      "git_blob": "039a09ee866ab3542d19376ff5932aad3c4fa51f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/home-media.ts",
+      "sha256": "90d746ed0723045e0f5c31c72363142764f86728000675f4bd1823b9e18e7612",
+      "git_blob": "207a0c9fb08c650c89c0d9f2a0821f4146362af3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/home-page.ts",
+      "sha256": "9b8a4eb745c35328a39e56dce757beba150b3facddb67a23be81c5d127e83266",
+      "git_blob": "95305d09519b879d7a5e93ca7f325560b5eeb86d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/home-v0-media.ts",
+      "sha256": "c2a2fb510b78030afc523f9598f3f5dca797355bdb5b8a0d835d72abb11bf509",
+      "git_blob": "c88a06d53e87ba1e06750b17a578c6a53d7929c3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/images.ts",
+      "sha256": "2b304c823fefde23a58c2969e5e7d44a254c866fe4f59fc0276aeec391ca72ce",
+      "git_blob": "0a35adf21eca17423bbc8078137d4bdc36ca1a5e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/insights-page.ts",
+      "sha256": "cb2a90137be1adf285fad4dadbe833f76edfdea5b462b0c43559dcff5a132517",
+      "git_blob": "acc8a2776a4ef8e05e14baed9aa86f65f41d1e91",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/insights.ts",
+      "sha256": "b8ce0d7a9ffd908ae302be47c2c1538ee45e9d7eaeb09f7dc0267a763700dc9f",
+      "git_blob": "9c5915195168fc1ffb6b9bbfe40358d90082923c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/lead-envelope.test.ts",
+      "sha256": "0650cad54f1d0efabd85d42c92f01d3ad2d8fac7344b63b3be7a33695554649e",
+      "git_blob": "2b1b3c52d64a58c307bb0afd0d4cdd5b7dc4576a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/lead-envelope.ts",
+      "sha256": "e25ebb027d86c8ac5b4cabd37c85dfd1334725996dc94988557d05aad2434792",
+      "git_blob": "8e1e432139a74423d059282b670aa1647bdc868e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/marketing-public-metrics.ts",
+      "sha256": "d19f2a2c4c5bafd4fe93e69ce5ed805d583cbe72c894cf330943585beffb1387",
+      "git_blob": "89367004b34aeb3d8e9ec7ae285908dad36696c6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/monthly-newsports-program-page.ts",
+      "sha256": "f043d2202bc1dfdf1be683ce22c3c791a9a42746eca28217fa246dc3420e7a28",
+      "git_blob": "8b5f014d73897221e961a245c7f6d21fdb185d54",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/monthly-page.ts",
+      "sha256": "5c6d5e42ac92dea49320fa74f4c866623357798dc817d8ff77dfa9a6003f935c",
+      "git_blob": "7ad6f2c0e4a0e2237d65793eb0fd7af5eb1b8171",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/monthly.ts",
+      "sha256": "b473ccadaa0ade97df99407da26b9dc9ca9845df16072bb2f8d0aed23ea8ba2b",
+      "git_blob": "149bde39179aa6f3e1072d5eb4181721caab66a8",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/newsports-themes.ts",
+      "sha256": "a4475e9dca3cc20569ef3ae80980769d7baf6a70ab392c5ae1fe862168817aa1",
+      "git_blob": "ee637f75f205a190911c9e705b99e0f34e6b10c0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/oneday-event-program-page.ts",
+      "sha256": "792fa01c84a3a08c0099a72003316b51c1a594d0f434d7f58e6836f3712a6b30",
+      "git_blob": "adfd98cf178641084bf168913b3022b312ad0178",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/paps-program-page.ts",
+      "sha256": "efbdbc1d3ab24ff06a53e2c543884de82b04a6856ab818ea7be25bddee0886eb",
+      "git_blob": "fe477ce03b10b05e9605f7773626653c99c08804",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/partners-page.ts",
+      "sha256": "c9bb01f30d72fd34ef1afffd468c44933206b28c65e573f700ba42a5eb419270",
+      "git_blob": "e5462d8c48bc6a9f7d3bffbbe1e94cbaa6a26ce0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/pr7-pages.test.ts",
+      "sha256": "9c056dae77f7dce3ab1282460d2319ea1e7de4aac43ae7ac2968b6b5312d2fd1",
+      "git_blob": "864713a002116d807cd283ee6d07a8dd25466aa8",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/private-page.ts",
+      "sha256": "f4df9cc9846f1e062f0eec477290deacd42b178b35548d6337c5b9bb7198b350",
+      "git_blob": "7f303047f52be6a811c21669ffa34e629fcf5cf5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/private-v0-media.ts",
+      "sha256": "1c3e8be59e4ca5aa992f21c2dee21da53a7035604a5957d6525ec03570469d9b",
+      "git_blob": "d6b8fe5a14ec82b041ebd13513635dd6d4f209ef",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/program-details.ts",
+      "sha256": "1dd7259a6f0214f4ba5c711847dd0b13b29b7c17bc6b8f881de9b96d969a4d5d",
+      "git_blob": "be6b5b8cca241bda49f26993e2f558a8e30cb7ed",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/program-system-items.ts",
+      "sha256": "25f30abff5f1437c6bb4712c7b93b90d3f9559351931c79fb434ab2339d14e32",
+      "git_blob": "16157eeb48238a491c7adaee1bc0b594ec55ec91",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/programs-catalog.ts",
+      "sha256": "e4898ab7bd8355183ecdb102b5e0a402322abb727b6d1f0cc3dcd3b90eea33eb",
+      "git_blob": "74e03ef17976d2d7d8c61d403b7f0e5bed6331f6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/programs-page.ts",
+      "sha256": "cff2246cb9525f12d81f1eee552811ee8450d4b41cfe3007b0c79d84cecf3bcd",
+      "git_blob": "716f30f5975a48c312933eb8602fade10b32272f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/programs.ts",
+      "sha256": "316acf8905c6d2f810760638cb1f0ffe3aa91ea92410edeb7b66cb98b1e06cfd",
+      "git_blob": "55936c351596d6f39f434ef60fb758112f286358",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/public-product-contract.test.ts",
+      "sha256": "50447ed9d03ebf725ffc4e0b5708b881be7a81a4edda2b260088f1496bc987f0",
+      "git_blob": "67d150e733b234fb0746365ceba064514ed2189b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/public-product-contract.ts",
+      "sha256": "869e1106980ab4936a99793abf72a0ba53d3e0eaff3eb6a40d8c7d837d9e6101",
+      "git_blob": "0f6866b3483e6dd221e24872fb046191d6df5788",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/public-routes.ts",
+      "sha256": "cf3bae013497975d6083626e09eaaff7ca653753c868bf3ee7115ac7787583a0",
+      "git_blob": "c6e73f87808763b6a4dc5b2c9cfb78d2fe7672a0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/records-page.ts",
+      "sha256": "4674f6bc4f374d5fb95c7790a390811a15d76ff207a925270717dec6dcf2eff9",
+      "git_blob": "518f826b0f3e13f0e5739b5686e1d0c18837e8a6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/records-v0-categories.ts",
+      "sha256": "dcbcb31602f632f152781eb87146629ecbbc48f22a76ecf6c87dff38174dd37f",
+      "git_blob": "dfdc2a191addecf4f4e10570df7cbd056e3052cc",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/seo.ts",
+      "sha256": "4f479bd34127f0520e244dc417c3df40d73fdba1c77093b2e96fc9f378f91a8c",
+      "git_blob": "d4bbcb933cbac4f4b684172ce3acc27bb870e5ce",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/site-ia.test.ts",
+      "sha256": "f44f29386706bdd71dd9bdc98efe540770085900490983149257374aed667cc7",
+      "git_blob": "cd88865423368b769847432e2476a23e4f62a2a0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/site.ts",
+      "sha256": "2228b72d3d364eeefc79a3badefaf8c00ba277259776cc0bc8c41fdc2e0eb114",
+      "git_blob": "2b3035d54672be1aaa18ffb56bf495daded13ddd",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/spomat-page.ts",
+      "sha256": "55eb01028261486191d47bdd9e7bc472bcab881dbaa6a1c0ec0ac82b0184d9d6",
+      "git_blob": "18c565dfb5dc5b5559e9486310b8bc6649bbdcdf",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/spomove-program-page.ts",
+      "sha256": "bee4ead57e9264e410d7b4e6eabfcdc5125686964bc1fffc4cb4b6870e6e7507",
+      "git_blob": "7cd0570b4b5f8f99183776bd40d8fcab966efd61",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/spomove-public-catalog-page.ts",
+      "sha256": "92cde59b0d3fae34f187aa42c938eb0327363290eea504d978a86ebe281698fb",
+      "git_blob": "ac2bec9dab39dea2e2a9e2567e4800f98b61e53d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/spomove-v0-media.ts",
+      "sha256": "3340e76828c2bebac8e7a646fba5b87a7f3852eb64abe14fe0ddede8b8c289cd",
+      "git_blob": "2c4226dc2ea89ef359503096ad6ff43e441072e2",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/sponsorship-public-assets.ts",
+      "sha256": "2844a8d41e445b144f9bf9a85f5643192532a0061bbd97149bae2390dbcd63bc",
+      "git_blob": "6f536f004af0643f64cad798553da37dfe508e43",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/data/v0-korean-labels.ts",
+      "sha256": "ab601d415092a73d7811b9edbf7ec1b2f72430623ab815bba9e834c7fe7d536c",
+      "git_blob": "ba227909deb028f0463fc031c86d4bfdfb36dd25",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/dispatch/page.tsx",
+      "sha256": "a7e1c95a36db2ef88a4e03ca9c1bca926194ecae524dda236717f205ccd8e3c2",
+      "git_blob": "4bfc74b156dd6c3e5af098c472b599643ec15e1b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/docs/PUBLIC_MARKETING_DESIGN_CONTRACT.md",
+      "sha256": "96bdb526df7b9e38a1d831decffb7611fa1e6f0886b87439768afd597ff907d4",
+      "git_blob": "169071639e32beb2226770b9a2dc01f47d78aefe",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/education/page.tsx",
+      "sha256": "c5f22cad7c8436fe298da0d9f22a127036e221aa50b1ff41f1554075094795d6",
+      "git_blob": "9a7fbcb0d67798ca5390ebc568ad76cc60bcad9a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/insights/page.tsx",
+      "sha256": "2e1929cb3bd0f424886c0038227c021acc7bfdb19fede2b9c8113139ef23152f",
+      "git_blob": "8e2e4aba2c8931aa2756d414cc0b8dde2f3d80b2",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/layout.tsx",
+      "sha256": "a4e32624ab34a18ea63739eb0c9b1fd582bf99269a6bf711461797b68e250d88",
+      "git_blob": "1a03f0e29a84102b078ea824c43d63d315a48419",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/acquisition.ts",
+      "sha256": "edc5cc4410a35701c3f5a76fbdb886041b66efa327b4754ef811d7c28a032278",
+      "git_blob": "f060d09279f3b54f5da198dbfe45953d82f7ffc7",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/client-search-params.ts",
+      "sha256": "998be290764610710c20d13901bb94bb05051e2a787a2dc022e787a7b287143c",
+      "git_blob": "00914e941a8db02cfb78a53c2fbce7897fedd7c6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/commercial-events.test.ts",
+      "sha256": "1d09b132ebc90c2d08168fc75e2e0aebd1b6c7383a6e2f842cc5733881a8c0b7",
+      "git_blob": "f600988136f98064f3ea4ad8c141f865af759649",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/commercial-events.ts",
+      "sha256": "e167819bbc237c2d71b5bb80b79e86865ce0e12d96a526f51495437ddd2afd7a",
+      "git_blob": "5ff95b4449fab89c073840cd6a023b050684b7ca",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/external-link.ts",
+      "sha256": "e0c4eea57a7998d31b9863e932b16d7b1e183f3abf82420d97e1a804362da917",
+      "git_blob": "cdf285667a14f0b0a05b5ea997e084999bd5a74e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/hero-image-src.ts",
+      "sha256": "b19c8e23d6c48d8b851b590def24c3713e4cbfcea6eb89edf8501efc5ff73c25",
+      "git_blob": "ea3846a24243e6582cf5194a4a27c50c64b23a7b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/image-sizes.ts",
+      "sha256": "c620f1372ec6ffb4e00cafa5ff0b576d19cc44ee05a9dffe1a12f16f60513b67",
+      "git_blob": "cecedfc9ae8a8d2ab9ced57de108d3162b81e335",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/landingCardShell.contract.test.ts",
+      "sha256": "58bfc2dd802907b935293531cbf04a65815e42322a9a2861488becda806f64c7",
+      "git_blob": "0578c53574298565cba93e5bf8483563a7c4b66a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/legacy-info-redirects.test.ts",
+      "sha256": "fc0da2619eaacea9f918ea9ed9659a1f9b82d15a999dadbf23c8ce95d33f9476",
+      "git_blob": "ac6dffa1c8c871302d811c463effcd52f57bdc0e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/legacy-info-redirects.ts",
+      "sha256": "e7274c1a06924afa9654513ed4a549b8b496aa9701b7511d55a134e9ceb3a432",
+      "git_blob": "6dc24875f29e8c4bc3b238901c176828faae113e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/permanentRedirectToEducation.ts",
+      "sha256": "59ea632901fc53e4e9b28ac2a7b3d8e5658fe4867b6d0c371bf97cdf2cc92e18",
+      "git_blob": "0cd730865cb6b6b085690befc32f3a3c6e81e109",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/public-marketing-typography.contract.test.ts",
+      "sha256": "a48c16fd689ba83ad8f9175abfb63d60cd9ddb45619dec80bf770f893a0e15a4",
+      "git_blob": "9936b6cda4ba6149884013b7cc0101ce66565552",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/public-marketing-visual.contract.test.ts",
+      "sha256": "b64192ca9b3fb953c419e0a7c820dece8fd8b19f2c04b4b568e9b709e150bf0a",
+      "git_blob": "83facbab099a400494238f5140aa798cfcd8bca5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/resolve-field-records.ts",
+      "sha256": "2962b0d43dab0b240a26ad0b9c1bed7fcef08353a9ea1c8be19b0e9f84a4f06f",
+      "git_blob": "cbab24b760028b203aca3ca4e62791350a0f62dd",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/scroll.ts",
+      "sha256": "9913c8d5a259e81a9c281bdbf5dc661c25ee955ce71cfe8a328d14cad6a915a5",
+      "git_blob": "7215a8b63c4950ccc832d5ef6fd97c5e11bf7798",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/site-url.ts",
+      "sha256": "e1ceea68aef0f7542ba8006c9e622893ec2b8b8a822a089da01bf61a247aa52f",
+      "git_blob": "56b5b974d0bf28944688d2fdd19dc0cccf228477",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/tracking.ts",
+      "sha256": "8a22f22dbfe9a90c54b3bd215a4df062aa5c816a3715aab69c2614d5ea849c3a",
+      "git_blob": "b0c143744840822e5f2c725fab2b5909269e065a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/ui-classes.ts",
+      "sha256": "372d634b4fc32143272c54bd718d726607bf017e9c02a3a007ccd410c265cc2e",
+      "git_blob": "e32d398f4b945497925eab1de659e3c40508507f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/lib/use-marketing-motion-ready.ts",
+      "sha256": "91947da7e473f9260a08c42061ca91916ac33da97c2272f152c3ab5ff42ed5b3",
+      "git_blob": "0d293a445e75a974e47f80a84d6c27972f3a7c8e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/monthly/[slug]/page.tsx",
+      "sha256": "6e043c315e46eb65c9daf7cbe5d926191c1ff85d31b1f899cf99ff1fe6d7fb51",
+      "git_blob": "47c44e8e74e96f28a8a42e9c78dcdbe6c2b7c2a5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/monthly/page.tsx",
+      "sha256": "201543c6a601ed20087af9939a7f88f54b75367ac362a26d41759f60320e220a",
+      "git_blob": "51152240e2b9a1cecd0d86dace0b59f5f4f8eafc",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/page.tsx",
+      "sha256": "607debab0054aa89939180dea2375b8698281cf3139d4ef9f81ee0d338fa48cf",
+      "git_blob": "fdb2a570f3f1ab516ab6b8f78fd12fc26743efa3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/partners/page.tsx",
+      "sha256": "b209f27b6d6c10f48d32fa5d9990bd3f635f98d16ca249127605ca14e70e0205",
+      "git_blob": "956710d86c6baf8e129f5fe24f9979cfff09d2f6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/private/page.tsx",
+      "sha256": "811d6dc40a0ff1959122d31e948c93f019bd25f8be44783933f217408d18b63b",
+      "git_blob": "aed20577f2434bb687b2cc05dab2ccd72426df31",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/_components/program-detail-template.tsx",
+      "sha256": "401538a929140d9a1a8d75bc28dde20e231a9abb712b68bfd4a4ccdd571d87b0",
+      "git_blob": "e29e499d1312a17f9f4c253bc1df411d13feae57",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/camp/page.tsx",
+      "sha256": "52d713a86e0e89a6344ac23951677bbcd7a39b1d97b525c2235673eeb05f9f22",
+      "git_blob": "b8f401ce66f62d681625be381127e3d28f4d2322",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/monthly-newsports/page.tsx",
+      "sha256": "bda4ef5ff2256262dee8cc8b77c205c7f964aa82370275596c8b344880d29a92",
+      "git_blob": "e5306801b2da1b661939d0289c23e69a07bc4871",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/oneday-event/page.tsx",
+      "sha256": "9d28f2a28d4a7cc9eb3e65f9a2d25e53bdd4927c0ba7de726a1d27105df0b8ee",
+      "git_blob": "6b7adbef82d089eb029c686e08ae1aeb67359cb0",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/page.tsx",
+      "sha256": "7d229329e905c60d965e1257a79d920d6d51955ef2fa244526774f69895946e1",
+      "git_blob": "e58bf9e5480ccf79904546da6988a4d3f735a8cd",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/paps/page.tsx",
+      "sha256": "53ade745af87bc40e41dcc2f39354e4c3fc9c44bf51b123199242872d67efc59",
+      "git_blob": "327388d5bfb0a08b79136dd606145a266dedc2be",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/spomove/catalog/page.tsx",
+      "sha256": "e645f673d293f96edf3c0255eb1f702a71f2f468901bbf97f3501d5833132b7f",
+      "git_blob": "f4bb42af229515db7d2a062af0cea668ae3f43cc",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/programs/spomove/page.tsx",
+      "sha256": "d9a25674c24f6919b689257d61e0790ee1a04e8cee32af7f9c0aaaffd2ee7251",
+      "git_blob": "bcc7a86b2b427c0be0532b16af959def86797b34",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/publicChromeP1.contract.test.ts",
+      "sha256": "535ad1ef283ffb4a1791ecf355fb78556f863d44b57f1c9df071a627fc3e5e71",
+      "git_blob": "0a10c3fe3bc605af5f8c872501544fb18171b681",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/records/[slug]/page.tsx",
+      "sha256": "e7ccbb9d89c3b8ca64c4b6e61125fdb42603d3aa2bec79d2a57b5723aaa8f1be",
+      "git_blob": "566c81b32d02cf48a97c9190db1a7e63216987e4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/records/page.tsx",
+      "sha256": "858378108f9967d4f4d24000674a81a5460effdb8d2ffcb313b3f46df5cef617",
+      "git_blob": "a7a06a0d7eb03fd54ddcd189bbadd42fb8702bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/spokedu/spomat/page.tsx",
+      "sha256": "cf1236e9114e3a641ad7600bf17508e098b93dc0711945efc6c30b955f9f20ca",
+      "git_blob": "78c042ff58594c18290fd11568726fa6a4876eed",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/about/page.tsx",
+      "sha256": "37b95e75a5cbcfb54da8a0cd235e0c1105f1c3a4658cf9ed9c3373403961a110",
+      "git_blob": "a4e3fd8c5e676705bcd35d3f5e8e880b1a08532f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/contact/page.tsx",
+      "sha256": "8a1fe9393cfd03a01873943f97090af296af4da1dfde0400688ea772dc42c304",
+      "git_blob": "05eba8bca015d9a0dd7f501d5e9b5358019acbea",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/dispatch/page.tsx",
+      "sha256": "dcac33a8f6e275b02642e56a6728a5bda0ebc4d9858d2f07adbf3f51d8f3c1ca",
+      "git_blob": "c4c8139d9d579c7eef7c8aa39fbcd2a6f4b57bf6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/education/page.tsx",
+      "sha256": "4aaaf745c995b46cf420057315455f65dd3af4299d33ef4773f73f3e7a72bd25",
+      "git_blob": "631a7d6cc29cf17df289751ae2789ae8fac414fe",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/layout.tsx",
+      "sha256": "6efc286102a80994548e91a0a2c2b05cbc343b89dcea49587a3471e1c5eff57a",
+      "git_blob": "80a529557cd21e427b121975ea212ebe9907d5f7",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/page.tsx",
+      "sha256": "f1a7efe03c01d0bb103e46b576e4754896304c9517e9d33f010f815c5623730d",
+      "git_blob": "93a2e2de924e4e1d7afde551d53d31d6a791f540",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/partners/page.tsx",
+      "sha256": "f34fe198d5e9f0f9d7d53111c89b5cb4c1de46a7ed81b3f380391cd6e6e81545",
+      "git_blob": "03f9780a8fb65dc7ba3a9ed063df7e3f6d6f7693",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/private/page.tsx",
+      "sha256": "095a08d2d102d4b583c4360f3c1ffefa877d78d78f4731f718c6b498a52c794f",
+      "git_blob": "b16af7db586e66fb75279fd179c31030436e234b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/records/[slug]/page.tsx",
+      "sha256": "2dc15d7dc739a135b9d1eebc68227083f0eddd0c3a9138edfc43e4705c4143fd",
+      "git_blob": "b77ca2d5e366c1c603daf9d17866f1c47401ad93",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/records/page.tsx",
+      "sha256": "7f813a3cc5146b3650080f9a961d75a35e0890de2008e513e3f6307de7c78db4",
+      "git_blob": "17f2001875fddcaadc6459c35702dbd313eec21a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/spokedu-lab/page.tsx",
+      "sha256": "8d72b1cffea1ae2ee562e0271e32cc5ef2c59240d79ba7e9a7d44b1c32b09f93",
+      "git_blob": "5730405fa907cfadb6f5b13e23b4e3dfd7934c7d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/spomat/page.tsx",
+      "sha256": "1ddd209e3911e4d277fda92dd7cd405d683b965a4b48784d9327947cde0bdd24",
+      "git_blob": "49e27c4f810dc1623c515d2d714ec39a4dcb4686",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/spomove/catalog/page.tsx",
+      "sha256": "f39858a31c0cb85b25db98fa58e44efd796d3606ec98ea432e49e3bec8e07d9e",
+      "git_blob": "dbec5343fdcab62ef47e2aa576c1eef309935a14",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/spomove/page.tsx",
+      "sha256": "d400dbca9d3dd402c3616c53230b55234f2e052cd01f82b925c3fce16ed1c923",
+      "git_blob": "0b4efaa26905938287563e792665c8de29d68a14",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/subscription/SpokeduLabLanding.tsx",
+      "sha256": "f3c857c897ffde3294cf5aaba1453288448c8283106f91ae1423d7b23c660489",
+      "git_blob": "d4a39f3868f872c5cd03db09938ef2b0f42c8332",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/(spokedu-public)/subscription/page.tsx",
+      "sha256": "45f3cd1124f99afda09a5351d449f5038031f836ee476589efdd1a68077e1d8a",
+      "git_blob": "35862e5a2a8f0eac665b8822661c45efa9e5d125",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/CurriculumLandingClient.tsx",
+      "sha256": "8184969057f8bde5ee4b5185728d148c74d5303d2923f45f4f2d832fba9ae491",
+      "git_blob": "678220d0beeee43b13e44b16e99725027c07691b",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Benefits.tsx",
+      "sha256": "fa36a26ba392dd0ecb73055e9cf9e2386454f5cf6c32ca78f51c297cd12e3919",
+      "git_blob": "4b0b62c983388eff3e4e606b995021cedb9e3ea7",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Contact.tsx",
+      "sha256": "93c7c0cbae850c599219c993a6fed3d9d36ec5a19a9a6b3c7ea6c6e76977d55e",
+      "git_blob": "7e703c33e65e1d61d32f36d0bba410d7198f5091",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/CoreValues.tsx",
+      "sha256": "aef14c5c60c80126fb07e5276b128d690608aa9bcb1bfa8f534e0a3e66597353",
+      "git_blob": "6197f582935d03b9b1d329cdbc522de6813e7d1f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Footer.tsx",
+      "sha256": "0ed25be4f6d7eac3b11fb3a5193d7a60004ae85c336355298b221f41a8571817",
+      "git_blob": "7de1b48e533497755fa7040a87d62d31582a1b71",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Hero.tsx",
+      "sha256": "131c7526e8b94142f3ec395ee868d2a4c6029798639a5b6c9353c25446af4bb4",
+      "git_blob": "d310b631ee3409546074d01e2b6a385c0ffb6eeb",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Nav.tsx",
+      "sha256": "02ded80240d9888c3aefb0750a489779ad605237d499a62aac2e66901eeada6a",
+      "git_blob": "d67a76db2366a95f3ef9aef6318447bbbda4862a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Product.tsx",
+      "sha256": "9f627f26fcc26d972ca0be3bf41d504c58108cf213d1cd24306dc268d07479f7",
+      "git_blob": "6915107acc722ae229c247fb49067a7b10cc55e5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Program.tsx",
+      "sha256": "53bcf3456c4f30c688858ed8b33a039017e3d3cb519f9b6edbef7dd179619020",
+      "git_blob": "867601c2052d6f2646290e1eaec05198d89a2dca",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Stats.tsx",
+      "sha256": "52de5c9d315d3ca470dc2f2cca7a25d5e9d9f878ceefc33ad3d0ea0c6fff607b",
+      "git_blob": "01aab1344ba967cb0deaf9791166aab6578a82cd",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/components/Vision.tsx",
+      "sha256": "1e7281c55a5a05cc8e5e1d19a8910ee65fdfb7a57d94af7585a16b8d33f67d8a",
+      "git_blob": "16cc623fb036efbfd6e33185bda8ae754a6d0e68",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/data/config.ts",
+      "sha256": "df5475bf4e63a86d2e75a5b26a79912c996fd31ce5a0abb195efc073eeec101f",
+      "git_blob": "8753332c36aa39ff7839c9b634826a4c5645c3ae",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/layout.tsx",
+      "sha256": "b107df37e6197da7376b3c598af9ddb522e174b9213e88b0fadfc9c29dbd6927",
+      "git_blob": "488edaf6eca5b8eefc56cd18554b4507212eda8c",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/page.tsx",
+      "sha256": "ce956cab4b00825646fc63dbf3f8470fec9304d8fbd46639ba954b9c0d9ccafa",
+      "git_blob": "80f82155537c589e91567e7d2ce6cc745e9d7c25",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/curriculum/styles/curriculum-landing.css",
+      "sha256": "7296bd2f1b003932a38cedc30df49b90081858fa343c42f3c282515780a73627",
+      "git_blob": "b841987e1f897bc6ca13d932e0d26b8bbeef83d3",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/dispatch/page.tsx",
+      "sha256": "9ff481d4d6914468f24aa751309c64ddf4e422e28a088779702d26ee11f6c3df",
+      "git_blob": "90ec80bf259ef8d536746e236a2a3545e0ec119a",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/ContactForm.tsx",
+      "sha256": "b712ac8839509945ef384fa08e9594a44a1746d8c5fcff62a4923d21e55c1081",
+      "git_blob": "7d3866ab14903d3f8d2095eab9921098b07d51f7",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/FAQ.tsx",
+      "sha256": "a292ddb5f8aa0b46cba5defe4593c0bcfa4dc7730906a08ef139e04094209ce7",
+      "git_blob": "9bd3a751f5d50df07ff2fc3c904e8fdd106c72a5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/Footer.tsx",
+      "sha256": "423d1bc804ac9ebd5b6978f5fec1ff11fa862f7fed8132cae99d34a4b7b42bf9",
+      "git_blob": "ec7b4fa2af757a558292bc4d9c75c4b35afcd253",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/GymLandingClient.tsx",
+      "sha256": "b89ad10ef212e6b7fc8b426b3e023b6b259ac7a916e851eb235cbdbd0739cbe9",
+      "git_blob": "933dd77e4c80227623fcdf3bd566379031b92935",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/Header.tsx",
+      "sha256": "72df3ac5a70bb79d9620ad6a5566d512c7a3a4d5e8c0173223cb31ef919a157c",
+      "git_blob": "bc18d0a7bd0999bad176aff97de40d2baf9fea4d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/Hero.tsx",
+      "sha256": "7e80e149464ee89830768d6d10a0b4bc7b5a63909288b3dbe8e20eef11352e17",
+      "git_blob": "c80af39762eb58d956b231d400251d1894042710",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/Pricing.tsx",
+      "sha256": "1adfbf3bc0cf705d0a672f64c4bde895b0ff5d0480924380a5f34ff576365a6f",
+      "git_blob": "6fffbd031117fe9906db17526ae3bf7cd0a0cd4d",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/Reviews.tsx",
+      "sha256": "c0ba4545065c41085bd70497de9ab2e9879af3c2a943bcbfcd3164119577b17a",
+      "git_blob": "ec20a8b49eefcbafb3e5257c3e87ce882a3605f8",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/TargetAudience.tsx",
+      "sha256": "554edd09a5c9915fbe5e87fd7edfbe2f2ea8311404f84b73d105695d17654e5c",
+      "git_blob": "2799276cf7757d71a088a383938e014d72146cb7",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/components/TrustAssetsBar.tsx",
+      "sha256": "a9a6c91889ab291ec8249ff6d7ad672f2591317c65051783ad21c07fb5e2b569",
+      "git_blob": "b429e63b268268611d6c161053d17bbc99f689b6",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/data/config.ts",
+      "sha256": "d5d9c006b9a6f8972923abd6df3b7ab256a42f68748585a59f21801e9c376599",
+      "git_blob": "b15b8c841a17543bc3a2d64687dbc08b77e03c98",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/page.tsx",
+      "sha256": "e7946c54a61a2b183b275e394060264aa274607bd518e28fc2cb2f00921611b6",
+      "git_blob": "367ce8b2cc280fbbdf7333b4f07754cb1ffcaae1",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/privacy/page.tsx",
+      "sha256": "e30664ac45e0750103faab1a3664a17f283c5d9398c6df25f56e454a5dae0df2",
+      "git_blob": "c05cfe77600a46f25f831f7f320494af1dbdb94f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/gym/styles/gym-landing.css",
+      "sha256": "29ecd5fcc788c20db6cb4dca6be6910a67de6e9a226d36b04132ac091b51d040",
+      "git_blob": "fe72ea7df73dad0c6fd2fa8f0c8395de9ee0e102",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/layout.tsx",
+      "sha256": "9f1969d5d799adf8d7284459b98884d367cd0a2b38b5d6498ff555d0f50c5e70",
+      "git_blob": "498c19518ec3f5fa68743a9247947f729f6cde44",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/ApplyForm.tsx",
+      "sha256": "9f4670e98b1561a3787deae900f4db95d5ee6b044a5f4596d8dcab0d32cd86e2",
+      "git_blob": "6f88b299afdea7aa125192f311ce399732520e56",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/ClassFlow.tsx",
+      "sha256": "1f7e0d7f825d9379da94938b07c749a708f85ed673199f39f8f65022afa63cb7",
+      "git_blob": "6cfa9fea76d3a895b1256a817424ce3c1e99bdeb",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/Curriculum.tsx",
+      "sha256": "fffcad17129f2b0e34ec2bccbfa385b086209fcdf4e673aece28adf494cf601a",
+      "git_blob": "2ff73c74c099fa38c306a03ad4480c3ebfb180d4",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/FAQ.tsx",
+      "sha256": "11cc3a087c55e7951c3918615f0616b46d74a5a17e673d4c8317fd9f7295eaf9",
+      "git_blob": "2a0165de1dabfcc8ff6ba526fffb3ec3a3bd636e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/Footer.tsx",
+      "sha256": "9972289c577d28c0ddcfd9f3587be0499e955626177e2a3f96560211985be68b",
+      "git_blob": "5992a0ea5e90814ef64304d2ca3d15155dfc0748",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/Header.tsx",
+      "sha256": "a8b4674ab5081442dff44d72c63ab721ac7405f6300f9375d7c749b28e20237d",
+      "git_blob": "4269fd1378121295b3b5fec888245d74353ff3e5",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/Hero.tsx",
+      "sha256": "fad131efe50ebcb193d9bb7705cdc306b464e7076e9da0d1ea88cb75b3b1a91c",
+      "git_blob": "3cdc813cdc91cbccb359f26b3a210881182947cf",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/Instructors.tsx",
+      "sha256": "1b202a7a4d02d9f659220afe354dd9b7cdcaf8bec8d82c9ae831778f1de906ad",
+      "git_blob": "77580d36e778fec79b43d14b977861d15b446985",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/MoveReportPreview.tsx",
+      "sha256": "dd64424bad65901a5ca13ecb7735000836e1aa7178ea11173ea3b19b40e5dca7",
+      "git_blob": "294a9507ef9a1ab78e1548d4cff9955b4ed8882e",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/PrivateLandingClient.tsx",
+      "sha256": "4089ca938b160ef4356dee5e0b10a0ed90f4e1324a07c59d8cbc81ae6d04ae34",
+      "git_blob": "5e47d2e0f39efc1448bc94794045b3aa0ec0e982",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/Reviews.tsx",
+      "sha256": "4581ef3a10b0a3e7989a06d934eb649e2408e55d9517ff99243ec5f0885e0dc9",
+      "git_blob": "b2fe76a91437ab271e6a17e499c3be7771ba82ff",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/components/Toast.tsx",
+      "sha256": "47bcc0f42d04fb40611e672e6e86f5ae0e38753ddbf219866ce9e34244e66c0b",
+      "git_blob": "0b72a6afc3327320712469f75b7e5d755e2b8f36",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/data/config.ts",
+      "sha256": "e376c1e5d49abb6114a0fac956cf68372e4941d4b91a66d537dc47109b3b5c46",
+      "git_blob": "e7d0a48efb742ead6d653ca07bacde48d1a50d82",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/data/faq.ts",
+      "sha256": "a920e5349a522be3f339ec267f34f7be71ca55cb524820bed060cc5255ae1d99",
+      "git_blob": "e7700cdee92019e88e03b080f233ff0043fc0028",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/data/images.ts",
+      "sha256": "4b44e19247591df6426eb75b2f981898d587e849dcb0d5ca4ab7e5d0a1c5c800",
+      "git_blob": "097f553697ed8a53550ac99ad0c8f415279a9b28",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/head.tsx",
+      "sha256": "8ef978d80fdc9605ba5bd044c904dd3ba7cb892722c15bd7ecc6c4ec411f4988",
+      "git_blob": "400671d82a720d75c957b915b8b36419724163fa",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/hooks/useToast.ts",
+      "sha256": "eba31e381243611957894f048f42e09776fcf6ab7184d2660543b9c308c7b3a4",
+      "git_blob": "832812ec57c349432c19bd807dff211c9eddd222",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/page.tsx",
+      "sha256": "1a6e9487b00741fd1ff0d1e68585d3a7a333ea461f26450d5b33f373edbcea07",
+      "git_blob": "f61c7dc81c548a2cb4bab1abea0f9781bbc1a84f",
+      "role": "public_surface"
+    },
+    {
+      "path": "app/info/private/styles/private-landing.css",
+      "sha256": "8a6ecf0108a0533f91a6dd42775772d1883bfc8142850cec8fcfb7df9f9d92c2",
+      "git_blob": "3205309641fc52600dc28c2d8e74016714f774a7",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/20231008＿152307.jpg",
+      "sha256": "f378fde429c44551f742c14527f30cc9ba89d003aef568d4f7ac9be65cd7e294",
+      "git_blob": "77d069653f4e8c927fc92d6a5a5c4041ee022b54",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/2025-04-03_개인수업협찬_농구_사진1454.jpg",
+      "sha256": "1de56dd2c101d0f57fc22d9a196449037677b37396a48b8a93941a6470caf179",
+      "git_blob": "740c7b34670d068c0fc94d150ef63829d2d4f930",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/20250116_163248.jpg",
+      "sha256": "9aa8dc170601f78b24797440db5d3cdc411da2ce8f2eac728e5443ac6f1d3db0",
+      "git_blob": "6fbf428c6afb2b5eaca55e0d13b4eb9274bce28f",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/2026-08-31_체육관모크모_사진3498.JPG",
+      "sha256": "d17542a9b3a4548fea94c1cfc2c581eed1a23500eaa2a8d361c5b6092d275144",
+      "git_blob": "a95736e42747287c673d6f297f60c6c09b4d5e72",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/DSC00739.JPG",
+      "sha256": "d3114ed5905ee88677fa4d28b6ed12c7f43a03bebd4c3999521ad908b8674883",
+      "git_blob": "aba31ff1dec8b2b654395184b0142aaf61d5d06e",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/DSC06463.jpg",
+      "sha256": "8e8990edc66cf24f299b69e0e7968c2e0be76928d9b7a9cc667030584893bb03",
+      "git_blob": "51a41c9a96b20a89757e908bca06a17572909f10",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/DSC06467.jpg",
+      "sha256": "391ab74e47a51b8eca02fd72bb427bb6b57f855fb618d37e45c58a0f85187781",
+      "git_blob": "249582f8e1e0a2e1944c841db81194461919a633",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/DSC06500.jpg",
+      "sha256": "22fe2e0c986af78f7bc04739a78a5ec1717397236019e17d40880bf547727fad",
+      "git_blob": "ccf94dd55e2e55c7760c019984c098e7fcd49a69",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/IMG_0036.JPG",
+      "sha256": "512b107df439a99b8d194b95c801076cd0eb8f3307f7a4f08a50709a0d116c72",
+      "git_blob": "0952df0b2bff79fd294b153e05c7f301d5101c39",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/IMG_0045.PNG",
+      "sha256": "8393867206297b4e34b7d50df389e34c8e3a862d0547d35a3574cd39796273e4",
+      "git_blob": "5f41a6cfcf0404721e361cf2c7eca42fcdac2a79",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/KakaoTalk_20260508_135643505.jpg",
+      "sha256": "d18d205d5f021f6f0b4cb1c03a777e4b07d3939ee56966522aafaa55c0c96f99",
+      "git_blob": "28c16b0f588290743c334a2078550dfb8ab9af57",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/KakaoTalk_Photo_2024-09-03-17-34-25 021.jpeg",
+      "sha256": "403078077cd85669efd4b5ee9e541c7c4287888376463b400fcc5260adcc7616",
+      "git_blob": "df785a7464e93be42f2ecdb71b46a2c608976d9a",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/PHOTO_REQUEST.md",
+      "sha256": "f5e5e1b12d50b4c974826d6f6a9404e134543780aa6986acf88c3bc526d42ee0",
+      "git_blob": "7c4f5dd12b6c93a03f1a6fdac45c3ac4738dc0c7",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/README.md",
+      "sha256": "462e039e78367e7daae885b9ca3bad6441cfd6a358de1a3bfe2b02a93a6d943f",
+      "git_blob": "35c2c7c0bbc0c9485518447f35bb4aa244cc2126",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/SOURCES.internal.md",
+      "sha256": "1bc4dfc259cbddb8cf8e3cf563c0c99bc27b4702000670d5baca246274f9dba6",
+      "git_blob": "5eddd8a73d9661db7bf92315ab18d672f52fdcb1",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/brand.svg",
+      "sha256": "2c3d4af4bd97b1ba429137b5f21ce3599ceced49d99380b2c52c642193eb501a",
+      "git_blob": "5972925783b5efcdf5a39d68b99b0cd86d747a55",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/cases.svg",
+      "sha256": "1fb6c1f6bccb3999342313724e7048154d6a5a770f9152b04834585b4f3beadb",
+      "git_blob": "92aa430c610bc64d24da2f13303595a8e7efe520",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/curriculum.svg",
+      "sha256": "1a7d80448c70374c2b66da394bc7730b50980a3653470cbb71b43581c3b625d6",
+      "git_blob": "2abe361a85d506f8fbb72fd9f209fd32577dee8c",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/dispatch.svg",
+      "sha256": "44159489eeab738a077a4e61ff5f7cd00c1828131e29f333bbe21ab2632a06f8",
+      "git_blob": "fb53d6f13f584b1d993f2389dd794787954fe128",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/home.svg",
+      "sha256": "2c3d4af4bd97b1ba429137b5f21ce3599ceced49d99380b2c52c642193eb501a",
+      "git_blob": "5972925783b5efcdf5a39d68b99b0cd86d747a55",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/monthly.svg",
+      "sha256": "e59eb153bdbdba2f914f32741e40eb9e3e638050edd67afff94c845a7b361e40",
+      "git_blob": "37f9f53defca51defa4a59c8466fb351995102dd",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/private.svg",
+      "sha256": "851e4532596d442eede9d1406b9d39c2cc46300671bddd1bc3c226a99174e181",
+      "git_blob": "318733d24f4d8169fe602122ab7b72fb1f2dc877",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/programs.svg",
+      "sha256": "3a474cf70b2aa004469cea8e2e6ca98e51b59b8a2e1ba243aa97f1804901b6e1",
+      "git_blob": "70f8ebf25a5e39badb310783d9802901d1d1b27f",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/_fallback/records.svg",
+      "sha256": "bbe7bc9b0061376e193df0bbbc96c1311eab3637ac1cfcc4ae804eaffe5e534a",
+      "git_blob": "99ba40407c4d5a39e5111a1a9e70014fe1439c07",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/about/founder.png",
+      "sha256": "4bfb157a5ec79e380d412cbcab249cb4a7c439604eff66ef61c28eb219c9690d",
+      "git_blob": "8d11532272d8564d7f3a1d7583dfc989c0e703eb",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/brand/spokedu-logo-white.png",
+      "sha256": "5cae8bebb4e8eef7aee4c9fbbc5ed6b38987866957a7606b9eb9242c8a5658f7",
+      "git_blob": "d55a409eb2e0b9bfef180864c5dc0addccc9bc8f",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/brand/spokedu-logo.png",
+      "sha256": "3415f2cbdd27da4a51b897b256a10d63c3cdf420948b7cdc62ae04deefa9bddb",
+      "git_blob": "0ebf2154b8f8533da408eb420954b0fc0d69f003",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/brand/spomat-diamond-cutout.png",
+      "sha256": "6f7f28b894c4541e8da25fd1d1e5a1e7903cb2334f60aef0581bd728a1c900de",
+      "git_blob": "ecacf9e346e0b63ea65197ed873a16c7c4258095",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/brand/spomat-square-cutout.png",
+      "sha256": "67e0ebbfd32b51406499626f316893f4d6a17269d2f73a98d0feef4d6d4a5acd",
+      "git_blob": "12cdc67353c0751ef5365c4dd76c3bb71944cbf3",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/cases/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/cases/hero.jpg",
+      "sha256": "a5e0c9e355ca28e1371f9cd966d0f4ee2f1c54b08472b10c2b2b5ea7858e5da6",
+      "git_blob": "5f5a977d5dd1a971fd778f609d7dd564f5559fcc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/cases/representative.jpg",
+      "sha256": "93d474ba8079bc32432f1a5d810639443d5242ab9b348d4803c196fed54c035b",
+      "git_blob": "e263258a1f7823b600fc85dcd6eed8e3a6716860",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/curriculum/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/curriculum/curriculum-instructor-training.jpg",
+      "sha256": "64415da48bf3f95be5f5641d4c5520f14f95b6e9ea65de2cf5092af06944b2d8",
+      "git_blob": "bb366c97b73cfcc4add42a2a833eded8f4115c51",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/dispatch/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/dispatch/dispatch-group-class.jpg",
+      "sha256": "02bc9c55a8cb631dd393e6592dd33959f739417117f755d42a423e776e8a6a21",
+      "git_blob": "d96667b8fbf271b8d9c2cf5e84de135638c2fc88",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/dispatch/dispatch-institution-class.jpg",
+      "sha256": "93d474ba8079bc32432f1a5d810639443d5242ab9b348d4803c196fed54c035b",
+      "git_blob": "e263258a1f7823b600fc85dcd6eed8e3a6716860",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/fallback-field.png",
+      "sha256": "4bfb157a5ec79e380d412cbcab249cb4a7c439604eff66ef61c28eb219c9690d",
+      "git_blob": "8d11532272d8564d7f3a1d7583dfc989c0e703eb",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/customer-purpose/institution-group-jumprope.webp",
+      "sha256": "0828d68234b62ec47d2706c75fe98c4a0bfd7b34c344e36f9cbc88a86f8b92b2",
+      "git_blob": "6d3028bfc6786b7ed608887959505da5c7394562",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/customer-purpose/personal-mentoring.webp",
+      "sha256": "36fb9f13e0c717571844965d27268bce4aa503da42f3dcbbc94e1e6cc46be93f",
+      "git_blob": "97bae7300f0440794267c74f273f982193d66fbc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+      "sha256": "15e12f252377374f2835e17b029522e1dc6e90b857b1be9f285e57910aecc3f6",
+      "git_blob": "d8668edc328a6ca407f90d92f7e44a7f3121716f",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-case-general.webp",
+      "sha256": "125b86880fa8a0a41e41214432382ea320a5e47cc428c6d64e8a4bea8f4ff538",
+      "git_blob": "8b67c822b74fe3b1d063f5c68369a3bb7bdc6eeb",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+      "sha256": "6fb95c4fbdc95091daea1867581d0b504ffba092b0def7353926644c64e60f6a",
+      "git_blob": "bf4b1e0814326118b11a4ee3747645fcb7053a6a",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-ai-20261018.png",
+      "sha256": "be20d519befc54d8938021c86cf0ee85e6224fc508cafd7fe8727721d09f498e",
+      "git_blob": "dd535fa2a86aa3dcf4ab8734961a0ac1b9dcd584",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-coaching.jpg",
+      "sha256": "d9d9578b4dcc00814356cef2e782d41ed7d92b92b09790ac6f388d761442cb62",
+      "git_blob": "76900a20a86ec3a0b872180303270b690d34b303",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-field.webp",
+      "sha256": "288a1f9ca69f2916e7d03fad6179fac6e57788d4374b075e4dab79a92ef79bfe",
+      "git_blob": "92716099c614dea271220fb719d5fce15c0d458b",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-gym-motion.jpg",
+      "sha256": "becc21539f4df94665d11deb375e963e590b2d3213d6f0ca4dceaae2bf93a8fe",
+      "git_blob": "269d4ffc4558ff24e36aae234bf9107bcde45487",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-inclusive.webp",
+      "sha256": "3c874ec9f338adecd279d3c62df3b07ee93ee9e5991ef14922feedab91b06080",
+      "git_blob": "8cec6bd859ee67c9091a070281af396b3fc8c47c",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-lab-gym-sponsorship-13.jpg",
+      "sha256": "41e408d915ba0e6542bfab472175d21aee5e568324533ad1e81970503a31a31a",
+      "git_blob": "53c4f3cdaf3aa4d4fbf487074daf6c265714d066",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-lab-gym-sponsorship-14.jpg",
+      "sha256": "d0ea8ae4d59b6b7268d7af2d424fd669e4f270de4b44ae7c8c323efa14b0f1f8",
+      "git_blob": "0cd752546033ec4bddb2ec8436a6ee0202fe4f64",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-hero-running.webp",
+      "sha256": "a831a8117d342cb2cabc575f0cbfe84d7243c5123eac6f8d4f8cead4a45adf24",
+      "git_blob": "e92c0a406ea885c4a48d351ddbdf0c21922c556c",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-master-ui.png",
+      "sha256": "e89ba736f593c797c2bc2418de50c115c73870ecfd74f1ae48e36c6f5a0588e6",
+      "git_blob": "6b640c5fb3643fb9ca8edf3cb1594c01ecbd7c4c",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-service-institution.jpg",
+      "sha256": "a6afb651c4000345baa720192cfa631667cd565e830a3879ec16e0f166396e6c",
+      "git_blob": "cc9016cb1a4d6a480d46ea4facbc61f3016d2842",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-service-private.jpg",
+      "sha256": "d9d9578b4dcc00814356cef2e782d41ed7d92b92b09790ac6f388d761442cb62",
+      "git_blob": "76900a20a86ec3a0b872180303270b690d34b303",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-spomove-dive-field.webp",
+      "sha256": "7261f6dfb9f91ecb8e674783c569388f3c6da82987a1ade6bacb17fae2b01711",
+      "git_blob": "a1456a30d96453acec4fd87e11a254aaa199e020",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-spomove-field.webp",
+      "sha256": "8da1fe24f67d354053d62898a505a4cf30c109d23e53042b8132ee1290e38d2e",
+      "git_blob": "3cd1a0c6520537376a60adb0b204a28d01404e44",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-why-field-ed.webp",
+      "sha256": "1c6914d74ead74e09ba26d3f1d039d82dfeabc11a5bef6f6ea832ebc30381481",
+      "git_blob": "849af4536dc45ab5b911dc12fd32ff988c7abdd3",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/field-editorial/home-why-field.webp",
+      "sha256": "1c6914d74ead74e09ba26d3f1d039d82dfeabc11a5bef6f6ea832ebc30381481",
+      "git_blob": "849af4536dc45ab5b911dc12fd32ff988c7abdd3",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/hero-youtube-poster.jpg",
+      "sha256": "e38c6fb4d37c21b0d8292ce153225a83b6dbbbeeb53968db9e9cdb4c43755cd2",
+      "git_blob": "9fbc42c40c53fcfc4073329a21b42cb4d78ad8b7",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/home-cta-ai-v2.png",
+      "sha256": "bb909e7eeb08fddb0d355c9a27d34d2979337316aa11b14eb0080729f856419b",
+      "git_blob": "f1098931f43720a2d6e7238c65d2d7bed93effb8",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/home-dispatch-scene.jpg",
+      "sha256": "ed63a226caa1782d2c69b86c49edbf4babe79b3945afc11b1c27c8f7f1b90f21",
+      "git_blob": "d3c43e0b9c6fdb889e25619135dc11502011d91a",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/home-hero-ai-v2.png",
+      "sha256": "98b0d40e0392d4365f5f141063aeba6f75fdfd2494d0328c203f83f7cd90f2a6",
+      "git_blob": "6fc469c4ee1b83448958f1e5fb773dc45027453e",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/home-hero-media.jpg",
+      "sha256": "7f222d1adaf27b6ad714b36c0d26147f4154fafa69b755e328955f5cd2381066",
+      "git_blob": "3f27b97330c82a72b5ea8abb47bf268a73a11c80",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/home-hero-movement.jpg",
+      "sha256": "bd42ddfa9da46450784995b4916a93b2f8b1db02b855bd0a052408fcbf97acb4",
+      "git_blob": "d3daa147cb39bceb741ecd7f0bd8428c7076bb62",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/home-hero-spomove-class.JPG",
+      "sha256": "9c7eb56ee826226c7fab9ba154b965d1d8de72ef66ce328dc12eceb20ad58ebd",
+      "git_blob": "291716ef02c7940a5c0b793bd090a5953ae7b5ba",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/home-lab-energy.jpg",
+      "sha256": "f716073f07e3120833be21a21b7d77b2bb37e4f1bbb2ec09cb4e9fccd6ad1e99",
+      "git_blob": "11ae8c9d7c426886dee071566edf06771d105880",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/people/choi-temp-crop.jpg",
+      "sha256": "2389c708baff7f453356ebbd962ae60ab8223c0cdca89aa6f9e0656ccef23a78",
+      "git_blob": "00c943cdf2bd3b2a24b5b219c2db599051f8d21c",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/people/kim-gumin-temp.jpg",
+      "sha256": "d741c4e39edef074fffaac85c544acd48be70c7921d151b1f47c16489cced019",
+      "git_blob": "e9f9d6f0b772828b07a7b58ff635cc84f84b4f2d",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/home/people/kim-yunki-temp.jpg",
+      "sha256": "7a5b7c9b4f4b94fa1766f8db2a4f69bccf367238e764eb1ec01e9c358b08fbc0",
+      "git_blob": "9d23f3d7d45fe0af9cef8fff029e2cc5b3cdf632",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/monthly/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/monthly/hero.jpg",
+      "sha256": "a5e0c9e355ca28e1371f9cd966d0f4ee2f1c54b08472b10c2b2b5ea7858e5da6",
+      "git_blob": "5f5a977d5dd1a971fd778f609d7dd564f5559fcc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/monthly/representative.jpg",
+      "sha256": "6980563f7e1cef7ea37284d73bffb90d03f66088db8405e194123d77f0be3c0a",
+      "git_blob": "4a843cba311c191cb7f3fe6c8621607099352f9f",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/class-flow-01.jpg",
+      "sha256": "18b370572982a7ec25666a619ec298ece4405f10ca0a1afd73b01ccbb5a4bb0a",
+      "git_blob": "142413cc44fd018af168c24e6e24d235ecbe2665",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/class-flow-02.jpg",
+      "sha256": "537914ff89da0ee8d02fbd079005ff2445a2bdf75730136b800b0fc3b63ba159",
+      "git_blob": "40cd370a667eef245889884754dd67e353021d97",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/class-flow-03.jpg",
+      "sha256": "659a824e4afeed31e70f259dfea16f1bb9074955e2ae75b9bb651ed0d6d35e56",
+      "git_blob": "597ff08c73f40cf2772071a5691e756b53f24a36",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-basketball.jpg",
+      "sha256": "dfa8721df75588e1d74e5f5277d3ed35224b2a37ae6fe605b0fba7390f031a91",
+      "git_blob": "47ae758ef3863174042d5388d36894670bab626d",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-bike.jpg",
+      "sha256": "c1596aea6e88531b93aae92a05f02a640aac6f1e2d65671fb7404940aa70090e",
+      "git_blob": "2280b41f7bf0cc3715b41177c71888ab95464b76",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-inline.jpg",
+      "sha256": "481c5f367aacae851ea2ed3b1967f088906b954e3bf4f89159f5861dd352ec0c",
+      "git_blob": "0377a6b3a33c73f9b4fd2212dd5913d979088e46",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-jumprope.jpg",
+      "sha256": "8a5d363aebdc3002984aab5494b58a5c4d2273fdb32429b599c72038a8485f59",
+      "git_blob": "1d9b269361dde53d319f13c2694e7f46f514fc3c",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-paps.jpg",
+      "sha256": "efaf11373bfdfaa39c7bffc0f5d461f30943b6c1a692bbbcf5178ac92adf2c8b",
+      "git_blob": "e9fa85e66218c51dba40b9c3095da986d83c5595",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-preschool.jpg",
+      "sha256": "082882722059573a13decea8390a6cb1d073a2cde2cfb747f44c67a61c37c082",
+      "git_blob": "b18e466c0c5a5a4ab7b79ba2bb2c3743477e8a36",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-running.jpg",
+      "sha256": "c898e9063048543a5a19460484d238f8517d23118d95056739238143da5ad895",
+      "git_blob": "eb39c4fc3bdbdf59ffd714fc9bf19eb542902364",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/curriculum-soccer.jpg",
+      "sha256": "9cebf495983da97606ddfbc2819b03b31cb90c62ef89dbd8b75ecbc7fc6bfb86",
+      "git_blob": "59d20bd689febd221febc60bb117018811090f7f",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/instructor-choi.jpg",
+      "sha256": "55bcef219de785b0eaa56c1459a108a5bc312dc0b22d4d9b9440ecac5a5a868c",
+      "git_blob": "dcf150716ed2c2504176cc1b81197ac8c7a05753",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/instructor-kim-gumin.jpg",
+      "sha256": "d741c4e39edef074fffaac85c544acd48be70c7921d151b1f47c16489cced019",
+      "git_blob": "e9f9d6f0b772828b07a7b58ff635cc84f84b4f2d",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/instructor-kim-yunki.jpg",
+      "sha256": "7a5b7c9b4f4b94fa1766f8db2a4f69bccf367238e764eb1ec01e9c358b08fbc0",
+      "git_blob": "9d23f3d7d45fe0af9cef8fff029e2cc5b3cdf632",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/private-coaching.jpg",
+      "sha256": "647df8d5dfc551b8c4682e6fd301eda9ba1abcc958962de7e60b96180c0127bd",
+      "git_blob": "26f6f4bb64713f2b0dbbf09b3479b68ffbe721cc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/private-small-group.jpg",
+      "sha256": "1f378476ef87c855d79e9e2def2e025a087308dea23d3662365e3451b39bd6c9",
+      "git_blob": "8b9fc20d8884e639701a19a68ca68d0a552a1b81",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/private/private-tool-activity.jpg",
+      "sha256": "0416e687ac2ce6501fd877d2ef4659edede0f283ce546ae231e0c997fea2b446",
+      "git_blob": "48b58c32bdfef8fb73d2445619d626a0cb663999",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/flag-football.jpg",
+      "sha256": "76068b2ea03e4ff1070d0aa6e3e040996b71d39716de02b3fe9b7d6082d58e69",
+      "git_blob": "e92505f80ccfa57fd008b9b376bb3f631a227656",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/floor-curling.jpg",
+      "sha256": "a5e0c9e355ca28e1371f9cd966d0f4ee2f1c54b08472b10c2b2b5ea7858e5da6",
+      "git_blob": "5f5a977d5dd1a971fd778f609d7dd564f5559fcc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/floorball.jpg",
+      "sha256": "dbd8284ed03fa1792711e019cfc0fda1255756d808342266c63972af929ec6c8",
+      "git_blob": "68f1d2e1dd24761fb765f2e7329a1a7036c40c21",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/funstick.jpg",
+      "sha256": "f378fde429c44551f742c14527f30cc9ba89d003aef568d4f7ac9be65cd7e294",
+      "git_blob": "77d069653f4e8c927fc92d6a5a5c4041ee022b54",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/modified-ball.jpg",
+      "sha256": "93d474ba8079bc32432f1a5d810639443d5242ab9b348d4803c196fed54c035b",
+      "git_blob": "e263258a1f7823b600fc85dcd6eed8e3a6716860",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/padminton.jpg",
+      "sha256": "64415da48bf3f95be5f5641d4c5520f14f95b6e9ea65de2cf5092af06944b2d8",
+      "git_blob": "bb366c97b73cfcc4add42a2a833eded8f4115c51",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/pickleball.jpg",
+      "sha256": "d3cacd49b2bc77c947d0019ad9792b770add97aa90a88b1ac96b971a676dc4ee",
+      "git_blob": "1e560b8dc3316e5a0406ca9cc0f097895b42e307",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/play-rope.jpg",
+      "sha256": "6980563f7e1cef7ea37284d73bffb90d03f66088db8405e194123d77f0be3c0a",
+      "git_blob": "4a843cba311c191cb7f3fe6c8621607099352f9f",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/newsports/tball.jpg",
+      "sha256": "93d474ba8079bc32432f1a5d810639443d5242ab9b348d4803c196fed54c035b",
+      "git_blob": "e263258a1f7823b600fc85dcd6eed8e3a6716860",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/program-camp.jpg",
+      "sha256": "76068b2ea03e4ff1070d0aa6e3e040996b71d39716de02b3fe9b7d6082d58e69",
+      "git_blob": "e92505f80ccfa57fd008b9b376bb3f631a227656",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/program-gate-play.png",
+      "sha256": "5a2aada41203363434164ed8682fc281509f18eec5f7ff3100d55d3dffc51e2d",
+      "git_blob": "37304c7d4b3cf14fdd2f2e4abeed46593d537b4a",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/program-gate-spomove.png",
+      "sha256": "026ef08271ba9913556a6c5c1e3c1aaaa109720277ec9cb196447ee60a9e5a6a",
+      "git_blob": "91ecc6b7171d671dd7c62dd5d15af3b044a2babd",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/program-monthly-newsports.png",
+      "sha256": "ae855451b7ce7d26bd921c810fe8fbbf91f49e9ff516613463d193a89006ff63",
+      "git_blob": "2e61774e9c8f380b103b74ae40ddcd114e556f98",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/program-oneday.png",
+      "sha256": "bcf8233481b4341feab57575473ff952300ca9c7e22a28ebeb49943cea43e1f9",
+      "git_blob": "3b03341f90ba97908c4288f727cb8b8c0f6d2019",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/program-paps-running.jpg",
+      "sha256": "d3cacd49b2bc77c947d0019ad9792b770add97aa90a88b1ac96b971a676dc4ee",
+      "git_blob": "1e560b8dc3316e5a0406ca9cc0f097895b42e307",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/programs/program-spomove.jpg",
+      "sha256": "d17542a9b3a4548fea94c1cfc2c581eed1a23500eaa2a8d361c5b6092d275144",
+      "git_blob": "a95736e42747287c673d6f297f60c6c09b4d5e72",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/.gitkeep",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "git_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/dasarang-field.jpg",
+      "sha256": "8d4081a439df0c148d5273490ef708b98951393ecae4a6e8b69c6cbd4e27f064",
+      "git_blob": "a0f9ce737cf1d323ffbefeb65b41ff0b620f6719",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/dasarang-oneday-field.jpg",
+      "sha256": "a261f0f9addd6de267ff85d56b2caa61548517fcb05902756f8bc23b1a8196bf",
+      "git_blob": "12a09e40532e0b8a366f69b470bb3f42e0c70a3a",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/dasarang-oneday.jpg",
+      "sha256": "391ab74e47a51b8eca02fd72bb427bb6b57f855fb618d37e45c58a0f85187781",
+      "git_blob": "249582f8e1e0a2e1944c841db81194461919a633",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/dasarang.jpg",
+      "sha256": "8d4081a439df0c148d5273490ef708b98951393ecae4a6e8b69c6cbd4e27f064",
+      "git_blob": "a0f9ce737cf1d323ffbefeb65b41ff0b620f6719",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/donghaeng-special-pe-field.jpg",
+      "sha256": "647df8d5dfc551b8c4682e6fd301eda9ba1abcc958962de7e60b96180c0127bd",
+      "git_blob": "26f6f4bb64713f2b0dbbf09b3479b68ffbe721cc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/donghaeng-special-pe.jpg",
+      "sha256": "0ead42fe66afe8fb53a3e7587c1b466e5619098aec3b98b0ae188093bcf0fcfc",
+      "git_blob": "adecfd2fd919c315251d85fe6f4fcd654cf7b0e1",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/dongjak-spomove-field.jpg",
+      "sha256": "22fe2e0c986af78f7bc04739a78a5ec1717397236019e17d40880bf547727fad",
+      "git_blob": "ccf94dd55e2e55c7760c019984c098e7fcd49a69",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/dongjak-spomove.jpg",
+      "sha256": "d17542a9b3a4548fea94c1cfc2c581eed1a23500eaa2a8d361c5b6092d275144",
+      "git_blob": "a95736e42747287c673d6f297f60c6c09b4d5e72",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/dongjak.jpg",
+      "sha256": "a66d6cfcc0a10c422e400d609c9d86e5407b3a1d2afc62365ee8ae1c43208ccb",
+      "git_blob": "4d039dd892d17605e85c959a474b8229975f6256",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/gangdong-health-pe.jpg",
+      "sha256": "1de56dd2c101d0f57fc22d9a196449037677b37396a48b8a93941a6470caf179",
+      "git_blob": "740c7b34670d068c0fc94d150ef63829d2d4f930",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/lab.jpg",
+      "sha256": "f716073f07e3120833be21a21b7d77b2bb37e4f1bbb2ec09cb4e9fccd6ad1e99",
+      "git_blob": "11ae8c9d7c426886dee071566edf06771d105880",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/maedong-sports-stepup.jpg",
+      "sha256": "e212cbe8bbd1d3f5a77fe199fbdf980b438ee8396f295791f5b5396dc1155329",
+      "git_blob": "a6bffb698ec19e564da55e5c93f7333ee1850c24",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/playz.jpg",
+      "sha256": "215473de438ed8b1eaa8cac494a0fcf0e220f080361b234a07ecaf9a4678e3a5",
+      "git_blob": "b3f032c38ac5a3dda476494306a0b061c1133d16",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/seodaemun-event-booth.jpg",
+      "sha256": "37a4bd5ca459463a077810b3e62d902a7e26bb81651c9e6ead5dde90c659b836",
+      "git_blob": "2fa74f261759167732047be6082a75fb0aa1c43e",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/seodaemun.jpg",
+      "sha256": "a5b33435b54f3048784f6b2d50e80e4e4112dd3f5c9ff3de6964b66a0e70f9d2",
+      "git_blob": "f6a4372898372ba8d85e26c36a04aa1c6083b7c7",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/shinwol-integrated-pe.jpg",
+      "sha256": "b62a9e351bad6fb68749fa7f94321d5a8becea6cb8ccbe6f371f30cbe92043e3",
+      "git_blob": "8b27ae7d0d79be94b88da6460bb1514347b83fd8",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/yangcheon-paps.jpg",
+      "sha256": "0416e687ac2ce6501fd877d2ef4659edede0f283ce546ae231e0c997fea2b446",
+      "git_blob": "48b58c32bdfef8fb73d2445619d626a0cb663999",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/records/yangcheon.jpg",
+      "sha256": "9ac770e1d3b8e5f30fb97c94f754cb5f87df24091ee7abcd2c4385a885c8a235",
+      "git_blob": "08b0f7afcad4de09241a2daed259ea4bec9a7015",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/spomat-diamond-cutout.png",
+      "sha256": "6f7f28b894c4541e8da25fd1d1e5a1e7903cb2334f60aef0581bd728a1c900de",
+      "git_blob": "ecacf9e346e0b63ea65197ed873a16c7c4258095",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/spomat-layout.png",
+      "sha256": "06d2a575bb374163e274ccdadd9b91e094a14fdf13727cdca0a48d2e4a0cbcc2",
+      "git_blob": "321eb5e9c56ee551f8b0b1c6790147cf9feb587c",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/spomat-square-cutout.png",
+      "sha256": "67e0ebbfd32b51406499626f316893f4d6a17269d2f73a98d0feef4d6d4a5acd",
+      "git_blob": "12cdc67353c0751ef5365c4dd76c3bb71944cbf3",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/spomat.png",
+      "sha256": "4a238fd7d4a958f674a6bb33d6367988a3297936b3ec5ce27d930695065f5b22",
+      "git_blob": "ba68f60d49665b454cc192a2b88f2efd3d586806",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/subscription/library-program-cards-20261008-final.png",
+      "sha256": "4bc39537d4322c284462312d7fb5f48bd0430352fd97838db71be90740be3cfb",
+      "git_blob": "1cef6a26638fc59e8277e1540a5d6e6240c54c79",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/subscription/prepare-class-tools.png",
+      "sha256": "45bd6c4e4ea93564923395ab6eabfb16c717f3b7dc638bf792432ce3f7b3a9ce",
+      "git_blob": "e673284da9aba5cbadfe72e600d498c1b6c21524",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png",
+      "sha256": "1451d53e79884b1fe499062b7a03403fe24fa022ebbc87390943ae55c7bc3104",
+      "git_blob": "f9f011ca33fd837ab2a7ed59fec7310a5b231afe",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/개인수업협찬_스텝레더_러닝스텝_004.jpg",
+      "sha256": "647df8d5dfc551b8c4682e6fd301eda9ba1abcc958962de7e60b96180c0127bd",
+      "git_blob": "26f6f4bb64713f2b0dbbf09b3479b68ffbe721cc",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/개인수업협찬_육상_콘민첩성훈련_001.jpg",
+      "sha256": "a261f0f9addd6de267ff85d56b2caa61548517fcb05902756f8bc23b1a8196bf",
+      "git_blob": "12a09e40532e0b8a366f69b470bb3f42e0c70a3a",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/개인수업협찬_줄넘기_후프연계활동_004.jpg",
+      "sha256": "0416e687ac2ce6501fd877d2ef4659edede0f283ce546ae231e0c997fea2b446",
+      "git_blob": "48b58c32bdfef8fb73d2445619d626a0cb663999",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/등촌 체조.jpg",
+      "sha256": "215473de438ed8b1eaa8cac494a0fcf0e220f080361b234a07ecaf9a4678e3a5",
+      "git_blob": "b3f032c38ac5a3dda476494306a0b061c1133d16",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/복지관_긴줄넘기.jpg",
+      "sha256": "ec29ef9d12a72791f3935a14a9471e1847fb023e67e0d7ef39cc6fd8a57a00da",
+      "git_blob": "5f680e75d8bcb8b5616bfc61d81f2e61be43197a",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/복지관_민첩성 놀이체육.jpg",
+      "sha256": "81fcc8ad53601acca05a2f8dc985492fe5f129c39c5ca13504a761d86d68b7dc",
+      "git_blob": "f9ad0ef74733965715401bc55bfd065a762420e8",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/스포키듀 랩 체육관 협찬 13.JPG",
+      "sha256": "41e408d915ba0e6542bfab472175d21aee5e568324533ad1e81970503a31a31a",
+      "git_blob": "53c4f3cdaf3aa4d4fbf487074daf6c265714d066",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/스포키듀 랩 체육관 협찬 14.JPG",
+      "sha256": "d0ea8ae4d59b6b7268d7af2d424fd669e4f270de4b44ae7c8c323efa14b0f1f8",
+      "git_blob": "0cd752546033ec4bddb2ec8436a6ee0202fe4f64",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/스포키듀 랩 체육관 협찬 15.JPG",
+      "sha256": "b62a9e351bad6fb68749fa7f94321d5a8becea6cb8ccbe6f371f30cbe92043e3",
+      "git_blob": "8b27ae7d0d79be94b88da6460bb1514347b83fd8",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/스포키듀 랩 체육관 협찬 16.JPG",
+      "sha256": "37a4bd5ca459463a077810b3e62d902a7e26bb81651c9e6ead5dde90c659b836",
+      "git_blob": "2fa74f261759167732047be6082a75fb0aa1c43e",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/운동회 금지 논란과 학교 체육활동 감소 문제.png",
+      "sha256": "d7399f7c9dfff471a3ad0a5fc82f851c3546797490ad13e8165670c767a5e5e5",
+      "git_blob": "1427bff548091283279065f9c5d6fb7add8f1324",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/키움 센터_유연성 놀이체육.jpg",
+      "sha256": "0b78361ad157e36e97732f18a3b5ba2a8b598d7e3a7f620a250d69aebe85b325",
+      "git_blob": "9fbe0f4d22cea9433fae31c951943f52cf816c89",
+      "role": "public_surface"
+    },
+    {
+      "path": "public/images/spokedu/협찬수업_축구_볼컨트롤기초_001.jpg",
+      "sha256": "e212cbe8bbd1d3f5a77fe199fbdf980b438ee8396f295791f5b5396dc1155329",
+      "git_blob": "a6bffb698ec19e564da55e5c93f7333ee1850c24",
+      "role": "public_surface"
+    }
+  ],
+  "evidence_documents": [
+    {
+      "path": "docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md",
+      "exists": true,
+      "sha256": "b7da37a6db07180c54101484af865ac17900e3926c7a0a2cf89e45acde2f9389",
+      "git_blob": "9e0e328b46eb0bea950f92e6065d34a9fd34745b"
+    },
+    {
+      "path": "docs/operations/public-website-refactor/PUBLIC_REFACTOR_AUDIT.md",
+      "exists": true,
+      "sha256": "198b5c4ca93d7d57f9feb6da7ff7ce4719365d732a1d669c3006839424f1a57e",
+      "git_blob": "926e6a57abbfc5b65205e2f02ea36ec0873046aa"
+    },
+    {
+      "path": "docs/operations/public-website-refactor/FINAL_QA_AND_APPROVAL.md",
+      "exists": true,
+      "sha256": "ce1a6c28276aa8d8a62548f2fc4808664857f3207fdcf9ab18d40e705949d260",
+      "git_blob": "96dac3c534151c4477820b90eb763b4a3f191904"
+    },
+    {
+      "path": "docs/operations/public-website-refactor/SPOKEDU_HOME_DESIGN_CANONICAL.md",
+      "exists": true,
+      "sha256": "3e4394319e1da6c365160217b51012372f922c89b1e9c9ab889ed49c074694c2",
+      "git_blob": "6589051e0f6313b57a7b48c6711f566059f06b73"
+    },
+    {
+      "path": "docs/operations/public-website-refactor/GIT_CORRECTION_BASELINE.json",
+      "exists": true,
+      "sha256": "a76cfc2e2b60e0fa97204a9490a2f582624ab9ab8f4536dfebf3ca7003dd7c17",
+      "git_blob": "2c0ecedff608d2b919921b8447394d5da56480cb"
+    },
+    {
+      "path": "docs/operations/public-website-refactor/ACTIVE_PAGE_MAP.md",
+      "exists": true,
+      "sha256": "5c29b228f61bd4ccc88b9ad646782b3c4f0c80d99da0cefd5cbe11973561a992",
+      "git_blob": "04e1153e44ad6b72152b6ad352718951c479ca60"
+    },
+    {
+      "path": "docs/operations/public-website-refactor/MEDIA_AND_CONTENT_MATRIX.csv",
+      "exists": true,
+      "sha256": "2964cb3136e9258297586bffdc09340afbdd621105b3d577b152cecc9c3fc7f7",
+      "git_blob": "ce063411e1dfc41f33c81b4dbb4f4c828c5d0b53"
+    },
+    {
+      "path": "docs/operations/public-website-audit-remediation/04_BUSINESS_FACT_CHECK.md",
+      "exists": true,
+      "sha256": "37284e829dee2c248c5ce2051ef2f52af71882498d9311160feb6a52a7037e9d",
+      "git_blob": "e71bba2a60122455e3666d7f00ad996591bb0ed5"
+    },
+    {
+      "path": "app/spokedu/docs/PUBLIC_MARKETING_DESIGN_CONTRACT.md",
+      "exists": true,
+      "sha256": "96bdb526df7b9e38a1d831decffb7611fa1e6f0886b87439768afd597ff907d4",
+      "git_blob": "169071639e32beb2226770b9a2dc01f47d78aefe"
+    },
+    {
+      "path": ".cursor/rules/spokedu-public-website.mdc",
+      "exists": true,
+      "sha256": "c546ba3e2280443f8c497fd681126da3c419120cc380510898b265b28c584da8",
+      "git_blob": "bbf29795dbebc368f2d5fc74973f206b88158ece"
+    }
+  ],
+  "external_sources": {
+    "stage7_copy_audit": {
+      "expected_files": [
+        {
+          "expected_name": "SPOKEDU_COPY_AUDIT_STAGE7_BASELINE_914_CROSSWALK_20261031.csv",
+          "found_paths": [
+            "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_BASELINE_914_CROSSWALK_20261031.csv"
+          ]
+        },
+        {
+          "expected_name": "SPOKEDU_COPY_AUDIT_STAGE7_ALL_1289_20261031.csv",
+          "found_paths": [
+            "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_ALL_1289_20261031.csv"
+          ]
+        },
+        {
+          "expected_name": "SPOKEDU_COPY_AUDIT_STAGE7_ROOT_ISSUES_20261031.csv",
+          "found_paths": [
+            "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_ROOT_ISSUES_20261031.csv"
+          ]
+        },
+        {
+          "expected_name": "SPOKEDU_COPY_AUDIT_STAGE7_INTEGRATED_REPORT_20261031.md",
+          "found_paths": [
+            "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_INTEGRATED_REPORT_20261031.md"
+          ]
+        },
+        {
+          "expected_name": "SPOKEDU_COPY_AUDIT_STAGE7_INDEPENDENT_QA_20261031.md",
+          "found_paths": [
+            "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_INDEPENDENT_QA_20261031.md"
+          ]
+        }
+      ],
+      "baseline_id_count_expected": 914,
+      "baseline_ids_loaded": 914,
+      "all1289_rows_loaded": 1289,
+      "root_issues_loaded": 24,
+      "missing_files": [],
+      "source_file_hashes": [
+        {
+          "name": "SPOKEDU_COPY_AUDIT_STAGE7_BASELINE_914_CROSSWALK_20261031.csv",
+          "path": "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_BASELINE_914_CROSSWALK_20261031.csv",
+          "sha256": "32c6d75c5fcc12f727dc967c2227f2d192815a7574933e4dd6becb15b546a2c0",
+          "size_bytes": 442642
+        },
+        {
+          "name": "SPOKEDU_COPY_AUDIT_STAGE7_ALL_1289_20261031.csv",
+          "path": "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_ALL_1289_20261031.csv",
+          "sha256": "ae8681eda688c0abbc828503bf9899d23c051e271b0fd8f6bd4965fda72985af",
+          "size_bytes": 676923
+        },
+        {
+          "name": "SPOKEDU_COPY_AUDIT_STAGE7_ROOT_ISSUES_20261031.csv",
+          "path": "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_ROOT_ISSUES_20261031.csv",
+          "sha256": "b25a6189c2a0c8e11ab74cfe6e0540e732048d5051dd10b080a0cc5e3d0f0cb7",
+          "size_bytes": 9386
+        },
+        {
+          "name": "SPOKEDU_COPY_AUDIT_STAGE7_INTEGRATED_REPORT_20261031.md",
+          "path": "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_INTEGRATED_REPORT_20261031.md",
+          "sha256": "21a8bf1222207d8e32e57d2cc368c6f984dca5486ead6a4be5dfc7a3f022b16c",
+          "size_bytes": 10763
+        },
+        {
+          "name": "SPOKEDU_COPY_AUDIT_STAGE7_INDEPENDENT_QA_20261031.md",
+          "path": "docs/operations/public-website-refactor/contract-draft/sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_INDEPENDENT_QA_20261031.md",
+          "sha256": "50a34bd392edf37e39b90c7a85c9ce88978eaa5a4d3e8a11841cca29a8955d76",
+          "size_bytes": 1302
+        }
+      ],
+      "audit_baseline_sha_from_report": "61a3b74657ee42ea4a6694baeb09e10c83b25629",
+      "independent_qa_claim": "20/20 PASS per INDEPENDENT_QA md (not re-executed here)"
+    },
+    "b0_source_inputs": {
+      "expected_zip": "SPOKEDU_PHASE_B0_SOURCE_INPUTS.zip",
+      "zip_present": true,
+      "zip_path": "docs/operations/public-website-refactor/contract-draft/sources/SPOKEDU_PHASE_B0_SOURCE_INPUTS.zip",
+      "extract_root": "docs/operations/public-website-refactor/contract-draft/sources/b0-extracted",
+      "manifest_path": "docs/operations/public-website-refactor/contract-draft/sources/b0-extracted/SOURCE_INPUT_MANIFEST.json",
+      "manifest_valid": true,
+      "manifest_validation": {
+        "checked": 6,
+        "mismatches": [],
+        "entry_count": 6
+      }
+    },
+    "stitch_editorial_website_redesign": {
+      "expected_archive": "stitch_editorial_website_redesign.zip",
+      "present": true,
+      "html_parsed": 6,
+      "html_files": [
+        "stitch-unpacked/stitch_editorial_website_redesign/about_spomove/code.html",
+        "stitch-unpacked/stitch_editorial_website_redesign/education_programs_spomove/code.html",
+        "stitch-unpacked/stitch_editorial_website_redesign/field_records_spomove/code.html",
+        "stitch-unpacked/stitch_editorial_website_redesign/home_spomove/code.html",
+        "stitch-unpacked/stitch_editorial_website_redesign/private_lesson_spomove/code.html",
+        "stitch-unpacked/stitch_editorial_website_redesign/spomove_system_spomove/code.html"
+      ],
+      "screen_images_count": 6,
+      "screen_images": [
+        "stitch-unpacked/stitch_editorial_website_redesign/about_spomove/screen.png",
+        "stitch-unpacked/stitch_editorial_website_redesign/education_programs_spomove/screen.png",
+        "stitch-unpacked/stitch_editorial_website_redesign/field_records_spomove/screen.png",
+        "stitch-unpacked/stitch_editorial_website_redesign/home_spomove/screen.png",
+        "stitch-unpacked/stitch_editorial_website_redesign/private_lesson_spomove/screen.png",
+        "stitch-unpacked/stitch_editorial_website_redesign/spomove_system_spomove/screen.png"
+      ],
+      "design_md_present": true,
+      "element_count": 135,
+      "html_count_expected": 6,
+      "screen_images_expected": 6,
+      "design_md_expected": "DESIGN.md"
+    }
+  },
+  "tests_reference": [
+    {
+      "path": "app/spokedu/data/field-records-catalog.test.ts",
+      "exists": true
+    },
+    {
+      "path": "app/spokedu/lib/public-marketing-visual.contract.test.ts",
+      "exists": true
+    },
+    {
+      "path": "app/spokedu/lib/public-marketing-typography.contract.test.ts",
+      "exists": true
+    },
+    {
+      "path": "app/spokedu/data/site-ia.test.ts",
+      "exists": true
+    },
+    {
+      "path": "app/spokedu/data/acquisition-leak-closure.test.ts",
+      "exists": true
+    },
+    {
+      "path": "app/spokedu/data/field-evidence-align.test.ts",
+      "exists": true
+    }
+  ],
+  "route_entrypoints": [
+    "app/(spokedu-public)/about/page.tsx",
+    "app/(spokedu-public)/contact/page.tsx",
+    "app/(spokedu-public)/dispatch/page.tsx",
+    "app/(spokedu-public)/education/page.tsx",
+    "app/(spokedu-public)/page.tsx",
+    "app/(spokedu-public)/partners/page.tsx",
+    "app/(spokedu-public)/private/page.tsx",
+    "app/(spokedu-public)/records/[slug]/page.tsx",
+    "app/(spokedu-public)/records/page.tsx",
+    "app/(spokedu-public)/spokedu-lab/page.tsx",
+    "app/(spokedu-public)/spomat/page.tsx",
+    "app/(spokedu-public)/spomove/catalog/page.tsx",
+    "app/(spokedu-public)/spomove/page.tsx",
+    "app/(spokedu-public)/subscription/page.tsx"
+  ]
+}

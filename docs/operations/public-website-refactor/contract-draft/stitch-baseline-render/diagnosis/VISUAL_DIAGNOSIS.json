@@ -1,0 +1,1342 @@
+{
+  "generatedAt": "2026-11-01T01:26:57.300Z",
+  "pages": {
+    "home_spomove": {
+      "ref": {
+        "w": 2358,
+        "h": 10000
+      },
+      "render": {
+        "w": 2358,
+        "h": 10590
+      },
+      "bands": [
+        {
+          "top": 0,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 28431,
+          "pixels": 707400,
+          "ratio": 0.04019083969465649
+        },
+        {
+          "top": 300,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 46672,
+          "pixels": 707400,
+          "ratio": 0.06597681651116766
+        },
+        {
+          "top": 600,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 125691,
+          "pixels": 707400,
+          "ratio": 0.1776802374893978
+        },
+        {
+          "top": 900,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 103042,
+          "pixels": 707400,
+          "ratio": 0.14566299123551033
+        },
+        {
+          "top": 1200,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 400989,
+          "pixels": 707400,
+          "ratio": 0.5668490245971162
+        },
+        {
+          "top": 1500,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 479653,
+          "pixels": 707400,
+          "ratio": 0.6780506078597681
+        },
+        {
+          "top": 1800,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 489560,
+          "pixels": 707400,
+          "ratio": 0.6920554141928188
+        },
+        {
+          "top": 2100,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 303788,
+          "pixels": 707400,
+          "ratio": 0.42944303081707663
+        },
+        {
+          "top": 2400,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 68200,
+          "pixels": 707400,
+          "ratio": 0.09640938648572236
+        },
+        {
+          "top": 2700,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 291498,
+          "pixels": 707400,
+          "ratio": 0.412069550466497
+        },
+        {
+          "top": 3000,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 287769,
+          "pixels": 707400,
+          "ratio": 0.4067981340118745
+        },
+        {
+          "top": 3300,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 258136,
+          "pixels": 707400,
+          "ratio": 0.3649081142210913
+        },
+        {
+          "top": 3600,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 274799,
+          "pixels": 707400,
+          "ratio": 0.38846338705117334
+        },
+        {
+          "top": 3900,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 308881,
+          "pixels": 707400,
+          "ratio": 0.43664263500141365
+        },
+        {
+          "top": 4200,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 264816,
+          "pixels": 707400,
+          "ratio": 0.37435114503816797
+        },
+        {
+          "top": 4500,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 118920,
+          "pixels": 707400,
+          "ratio": 0.16810856658184903
+        },
+        {
+          "top": 4800,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 89782,
+          "pixels": 707400,
+          "ratio": 0.12691829233813967
+        },
+        {
+          "top": 5100,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 79157,
+          "pixels": 707400,
+          "ratio": 0.1118985015549901
+        },
+        {
+          "top": 5400,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 33001,
+          "pixels": 707400,
+          "ratio": 0.04665111676562058
+        },
+        {
+          "top": 5700,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 49236,
+          "pixels": 707400,
+          "ratio": 0.06960135708227311
+        },
+        {
+          "top": 6000,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 65358,
+          "pixels": 707400,
+          "ratio": 0.09239185750636132
+        },
+        {
+          "top": 6300,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 37388,
+          "pixels": 707400,
+          "ratio": 0.052852700028272546
+        },
+        {
+          "top": 6600,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 408695,
+          "pixels": 707400,
+          "ratio": 0.5777424370935821
+        },
+        {
+          "top": 6900,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 584788,
+          "pixels": 707400,
+          "ratio": 0.826672321176138
+        },
+        {
+          "top": 7200,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 500090,
+          "pixels": 707400,
+          "ratio": 0.7069409103760249
+        },
+        {
+          "top": 7500,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 57464,
+          "pixels": 707400,
+          "ratio": 0.08123268306474413
+        },
+        {
+          "top": 7800,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 425654,
+          "pixels": 707400,
+          "ratio": 0.6017161436245406
+        },
+        {
+          "top": 8100,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 464692,
+          "pixels": 707400,
+          "ratio": 0.6569013288097257
+        },
+        {
+          "top": 8400,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 90376,
+          "pixels": 707400,
+          "ratio": 0.1277579869946282
+        },
+        {
+          "top": 8700,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 89883,
+          "pixels": 707400,
+          "ratio": 0.1270610687022901
+        },
+        {
+          "top": 9000,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 617140,
+          "pixels": 707400,
+          "ratio": 0.8724059937800396
+        },
+        {
+          "top": 9300,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 529501,
+          "pixels": 707400,
+          "ratio": 0.7485171048911506
+        },
+        {
+          "top": 9600,
+          "height": 300,
+          "width": 2358,
+          "mismatches": 21818,
+          "pixels": 707400,
+          "ratio": 0.0308425219112242
+        }
+      ],
+      "heroBands200": [
+        {
+          "top": 0,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 28431,
+          "pixels": 471600,
+          "ratio": 0.06028625954198473
+        },
+        {
+          "top": 200,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 0,
+          "pixels": 471600,
+          "ratio": 0
+        },
+        {
+          "top": 400,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 46672,
+          "pixels": 471600,
+          "ratio": 0.09896522476675149
+        },
+        {
+          "top": 600,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 108724,
+          "pixels": 471600,
+          "ratio": 0.23054283290924513
+        },
+        {
+          "top": 800,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 37032,
+          "pixels": 471600,
+          "ratio": 0.07852417302798982
+        },
+        {
+          "top": 1000,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 82977,
+          "pixels": 471600,
+          "ratio": 0.17594783715012724
+        },
+        {
+          "top": 1200,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 256603,
+          "pixels": 471600,
+          "ratio": 0.5441115351993214
+        },
+        {
+          "top": 1400,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 306544,
+          "pixels": 471600,
+          "ratio": 0.650008481764207
+        },
+        {
+          "top": 1600,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 317495,
+          "pixels": 471600,
+          "ratio": 0.6732294317217982
+        },
+        {
+          "top": 1800,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 354403,
+          "pixels": 471600,
+          "ratio": 0.7514906700593723
+        },
+        {
+          "top": 2000,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 283379,
+          "pixels": 471600,
+          "ratio": 0.6008884648006786
+        },
+        {
+          "top": 2200,
+          "height": 200,
+          "width": 2358,
+          "mismatches": 155566,
+          "pixels": 471600,
+          "ratio": 0.3298685326547922
+        }
+      ],
+      "domProbe": {
+        "innerWidth": 1179,
+        "dpr": 2,
+        "scrollHeight": 5295,
+        "header": {
+          "x": 0,
+          "y": 0,
+          "w": 2358,
+          "h": 162
+        },
+        "h1": {
+          "rect": {
+            "x": 489,
+            "y": 544,
+            "w": 1380,
+            "h": 288
+          },
+          "textLines": 2,
+          "fontSize": "56px",
+          "fontWeight": "800",
+          "lineHeight": "72px",
+          "fontFamily": "\"Plus Jakarta Sans\""
+        },
+        "heroSection": {
+          "x": 0,
+          "y": 160,
+          "w": 2358,
+          "h": 2428
+        },
+        "heroImg": {
+          "rect": {
+            "x": 155,
+            "y": 1357,
+            "w": 2048,
+            "h": 975
+          },
+          "complete": true,
+          "naturalWidth": 512,
+          "naturalHeight": 279,
+          "currentSrc": "https://lh3.googleusercontent.com/aida-public/AB6AXuBmRC3jEL2yozq-eTXQX4opHAd6l0tcPbGVdHMAMxP8Z3aPJu"
+        },
+        "images": [
+          {
+            "idx": 0,
+            "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuBmRC3jEL2yozq-eTXQX4opHAd6l0",
+            "complete": true,
+            "naturalWidth": 512,
+            "naturalHeight": 279,
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1",
+            "rect": {
+              "x": 155,
+              "y": 1357,
+              "w": 2048,
+              "h": 975
+            },
+            "inViewport": true
+          },
+          {
+            "idx": 1,
+            "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuDflEyqKnaZFs_FAUrRCi9pyxOYDx",
+            "complete": true,
+            "naturalWidth": 512,
+            "naturalHeight": 279,
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1",
+            "rect": {
+              "x": 1243,
+              "y": 2844,
+              "w": 1019,
+              "h": 764
+            },
+            "inViewport": false
+          },
+          {
+            "idx": 2,
+            "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuAAvMVAE22fhiGDR4BKzvicgkYihM",
+            "complete": true,
+            "naturalWidth": 512,
+            "naturalHeight": 279,
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1",
+            "rect": {
+              "x": 96,
+              "y": 3864,
+              "w": 1019,
+              "h": 764
+            },
+            "inViewport": false
+          },
+          {
+            "idx": 3,
+            "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuCawhAfcMhmttIO_eZ1juNjlZmeSh",
+            "complete": true,
+            "naturalWidth": 512,
+            "naturalHeight": 279,
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1",
+            "rect": {
+              "x": 96,
+              "y": 7025,
+              "w": 679,
+              "h": 425
+            },
+            "inViewport": false
+          },
+          {
+            "idx": 4,
+            "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuA-oHXkmcn4clQUQVl4k3qBVv5cw8",
+            "complete": true,
+            "naturalWidth": 512,
+            "naturalHeight": 279,
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1",
+            "rect": {
+              "x": 839,
+              "y": 7025,
+              "w": 679,
+              "h": 425
+            },
+            "inViewport": false
+          },
+          {
+            "idx": 5,
+            "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuB2EgUFJrMlhHcfrnAHEj1xD-_2wl",
+            "complete": true,
+            "naturalWidth": 512,
+            "naturalHeight": 279,
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1",
+            "rect": {
+              "x": 1583,
+              "y": 7025,
+              "w": 679,
+              "h": 425
+            },
+            "inViewport": false
+          }
+        ],
+        "pulseBadge": true
+      }
+    },
+    "about_spomove": {
+      "ref": {
+        "w": 2560,
+        "h": 9866
+      },
+      "render": {
+        "w": 2560,
+        "h": 9910
+      },
+      "bands": [
+        {
+          "top": 0,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 16447,
+          "pixels": 1280000,
+          "ratio": 0.01284921875
+        },
+        {
+          "top": 500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 77382,
+          "pixels": 1280000,
+          "ratio": 0.0604546875
+        },
+        {
+          "top": 1000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 35180,
+          "pixels": 1280000,
+          "ratio": 0.027484375
+        },
+        {
+          "top": 1500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 17673,
+          "pixels": 1280000,
+          "ratio": 0.01380703125
+        },
+        {
+          "top": 2000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 12039,
+          "pixels": 1280000,
+          "ratio": 0.00940546875
+        },
+        {
+          "top": 2500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 49035,
+          "pixels": 1280000,
+          "ratio": 0.03830859375
+        },
+        {
+          "top": 3000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 8323,
+          "pixels": 1280000,
+          "ratio": 0.00650234375
+        },
+        {
+          "top": 3500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 24274,
+          "pixels": 1280000,
+          "ratio": 0.0189640625
+        },
+        {
+          "top": 4000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 31077,
+          "pixels": 1280000,
+          "ratio": 0.02427890625
+        },
+        {
+          "top": 4500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 4636,
+          "pixels": 1280000,
+          "ratio": 0.003621875
+        },
+        {
+          "top": 5000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 48290,
+          "pixels": 1280000,
+          "ratio": 0.0377265625
+        },
+        {
+          "top": 5500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 13690,
+          "pixels": 1280000,
+          "ratio": 0.0106953125
+        },
+        {
+          "top": 6000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 34864,
+          "pixels": 1280000,
+          "ratio": 0.0272375
+        },
+        {
+          "top": 6500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 11791,
+          "pixels": 1280000,
+          "ratio": 0.00921171875
+        },
+        {
+          "top": 7000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 33061,
+          "pixels": 1280000,
+          "ratio": 0.02582890625
+        },
+        {
+          "top": 7500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 140315,
+          "pixels": 1280000,
+          "ratio": 0.10962109375
+        },
+        {
+          "top": 8000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 148901,
+          "pixels": 1280000,
+          "ratio": 0.11632890625
+        },
+        {
+          "top": 8500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 204233,
+          "pixels": 1280000,
+          "ratio": 0.15955703125
+        },
+        {
+          "top": 9000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 90828,
+          "pixels": 1280000,
+          "ratio": 0.070959375
+        }
+      ],
+      "heightDeltaPx": 44,
+      "firstBandAbove4Pct": {
+        "top": 500,
+        "height": 500,
+        "width": 2560,
+        "mismatches": 77382,
+        "pixels": 1280000,
+        "ratio": 0.0604546875
+      }
+    },
+    "spomove_system_spomove": {
+      "ref": {
+        "w": 2463,
+        "h": 10000
+      },
+      "render": {
+        "w": 2464,
+        "h": 10370
+      },
+      "bands": [
+        {
+          "top": 0,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 31977,
+          "pixels": 1231500,
+          "ratio": 0.025965895249695493
+        },
+        {
+          "top": 500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 145410,
+          "pixels": 1231500,
+          "ratio": 0.11807551766138855
+        },
+        {
+          "top": 1000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 97480,
+          "pixels": 1231500,
+          "ratio": 0.07915550142103127
+        },
+        {
+          "top": 1500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 152898,
+          "pixels": 1231500,
+          "ratio": 0.12415590742996346
+        },
+        {
+          "top": 2000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 501665,
+          "pixels": 1231500,
+          "ratio": 0.4073609419407227
+        },
+        {
+          "top": 2500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 394333,
+          "pixels": 1231500,
+          "ratio": 0.3202054405196914
+        },
+        {
+          "top": 3000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 21103,
+          "pixels": 1231500,
+          "ratio": 0.01713601299228583
+        },
+        {
+          "top": 3500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 165510,
+          "pixels": 1231500,
+          "ratio": 0.13439707673568818
+        },
+        {
+          "top": 4000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 37811,
+          "pixels": 1231500,
+          "ratio": 0.03070320747056435
+        },
+        {
+          "top": 4500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 61657,
+          "pixels": 1231500,
+          "ratio": 0.05006658546488023
+        },
+        {
+          "top": 5000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 403377,
+          "pixels": 1231500,
+          "ratio": 0.3275493300852619
+        },
+        {
+          "top": 5500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 14101,
+          "pixels": 1231500,
+          "ratio": 0.011450263905805927
+        },
+        {
+          "top": 6000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 408207,
+          "pixels": 1231500,
+          "ratio": 0.3314713763702801
+        },
+        {
+          "top": 6500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 462505,
+          "pixels": 1231500,
+          "ratio": 0.37556232237109216
+        },
+        {
+          "top": 7000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 42176,
+          "pixels": 1231500,
+          "ratio": 0.03424766544863987
+        },
+        {
+          "top": 7500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 225458,
+          "pixels": 1231500,
+          "ratio": 0.18307592367032074
+        },
+        {
+          "top": 8000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 627522,
+          "pixels": 1231500,
+          "ratio": 0.5095590742996345
+        },
+        {
+          "top": 8500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 339249,
+          "pixels": 1231500,
+          "ratio": 0.2754762484774665
+        },
+        {
+          "top": 9000,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 605134,
+          "pixels": 1231500,
+          "ratio": 0.4913796183516037
+        },
+        {
+          "top": 9500,
+          "height": 500,
+          "width": 2463,
+          "mismatches": 68729,
+          "pixels": 1231500,
+          "ratio": 0.055809175801867644
+        }
+      ],
+      "commonCaptureHeight": 10000,
+      "refHeightCapNote": "ref_exactly_10000px",
+      "fullWithinCommon": {
+        "top": 0,
+        "height": 10000,
+        "width": 2463,
+        "mismatches": 4806302,
+        "pixels": 24630000,
+        "ratio": 0.19514015428339423
+      },
+      "heroWithinCommon": {
+        "top": 0,
+        "height": 2400,
+        "width": 2463,
+        "mismatches": 841196,
+        "pixels": 5911200,
+        "ratio": 0.1423054540533225
+      },
+      "widthOffsetTest": {
+        "top": 0,
+        "height": 2400,
+        "width": 2463,
+        "mismatches": 841196,
+        "pixels": 5911200,
+        "ratio": 0.1423054540533225
+      },
+      "widthDeltaPx": 1
+    },
+    "education_programs_spomove": {
+      "ref": {
+        "w": 2560,
+        "h": 9668
+      },
+      "render": {
+        "w": 2560,
+        "h": 9668
+      },
+      "bands": [
+        {
+          "top": 0,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 21536,
+          "pixels": 1280000,
+          "ratio": 0.016825
+        },
+        {
+          "top": 500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 84371,
+          "pixels": 1280000,
+          "ratio": 0.06591484375
+        },
+        {
+          "top": 1000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 5586,
+          "pixels": 1280000,
+          "ratio": 0.0043640625
+        },
+        {
+          "top": 1500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 41847,
+          "pixels": 1280000,
+          "ratio": 0.03269296875
+        },
+        {
+          "top": 2000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 30392,
+          "pixels": 1280000,
+          "ratio": 0.02374375
+        },
+        {
+          "top": 2500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 38565,
+          "pixels": 1280000,
+          "ratio": 0.03012890625
+        },
+        {
+          "top": 3000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 40302,
+          "pixels": 1280000,
+          "ratio": 0.0314859375
+        },
+        {
+          "top": 3500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 26096,
+          "pixels": 1280000,
+          "ratio": 0.0203875
+        },
+        {
+          "top": 4000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 19,
+          "pixels": 1280000,
+          "ratio": 0.00001484375
+        },
+        {
+          "top": 4500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 48934,
+          "pixels": 1280000,
+          "ratio": 0.0382296875
+        },
+        {
+          "top": 5000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 15687,
+          "pixels": 1280000,
+          "ratio": 0.01225546875
+        },
+        {
+          "top": 5500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 39592,
+          "pixels": 1280000,
+          "ratio": 0.03093125
+        },
+        {
+          "top": 6000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 28844,
+          "pixels": 1280000,
+          "ratio": 0.022534375
+        },
+        {
+          "top": 6500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 11843,
+          "pixels": 1280000,
+          "ratio": 0.00925234375
+        },
+        {
+          "top": 7000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 15822,
+          "pixels": 1280000,
+          "ratio": 0.0123609375
+        },
+        {
+          "top": 7500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 23108,
+          "pixels": 1280000,
+          "ratio": 0.018053125
+        },
+        {
+          "top": 8000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 46726,
+          "pixels": 1280000,
+          "ratio": 0.0365046875
+        },
+        {
+          "top": 8500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 5852,
+          "pixels": 1280000,
+          "ratio": 0.004571875
+        },
+        {
+          "top": 9000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 56024,
+          "pixels": 1280000,
+          "ratio": 0.04376875
+        }
+      ]
+    },
+    "private_lesson_spomove": {
+      "ref": {
+        "w": 2560,
+        "h": 9460
+      },
+      "render": {
+        "w": 2560,
+        "h": 9460
+      },
+      "bands": [
+        {
+          "top": 0,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 17675,
+          "pixels": 1280000,
+          "ratio": 0.01380859375
+        },
+        {
+          "top": 500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 79299,
+          "pixels": 1280000,
+          "ratio": 0.06195234375
+        },
+        {
+          "top": 1000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 25730,
+          "pixels": 1280000,
+          "ratio": 0.0201015625
+        },
+        {
+          "top": 1500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 12920,
+          "pixels": 1280000,
+          "ratio": 0.01009375
+        },
+        {
+          "top": 2000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 2468,
+          "pixels": 1280000,
+          "ratio": 0.001928125
+        },
+        {
+          "top": 2500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 49340,
+          "pixels": 1280000,
+          "ratio": 0.038546875
+        },
+        {
+          "top": 3000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 3278,
+          "pixels": 1280000,
+          "ratio": 0.0025609375
+        },
+        {
+          "top": 3500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 48011,
+          "pixels": 1280000,
+          "ratio": 0.03750859375
+        },
+        {
+          "top": 4000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 11609,
+          "pixels": 1280000,
+          "ratio": 0.00906953125
+        },
+        {
+          "top": 4500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 30749,
+          "pixels": 1280000,
+          "ratio": 0.02402265625
+        },
+        {
+          "top": 5000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 29255,
+          "pixels": 1280000,
+          "ratio": 0.02285546875
+        },
+        {
+          "top": 5500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 31172,
+          "pixels": 1280000,
+          "ratio": 0.024353125
+        },
+        {
+          "top": 6000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 6441,
+          "pixels": 1280000,
+          "ratio": 0.00503203125
+        },
+        {
+          "top": 6500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 65325,
+          "pixels": 1280000,
+          "ratio": 0.05103515625
+        },
+        {
+          "top": 7000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 0,
+          "pixels": 1280000,
+          "ratio": 0
+        },
+        {
+          "top": 7500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 53130,
+          "pixels": 1280000,
+          "ratio": 0.0415078125
+        },
+        {
+          "top": 8000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 12386,
+          "pixels": 1280000,
+          "ratio": 0.0096765625
+        },
+        {
+          "top": 8500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 48592,
+          "pixels": 1280000,
+          "ratio": 0.0379625
+        }
+      ]
+    },
+    "field_records_spomove": {
+      "ref": {
+        "w": 2560,
+        "h": 7044
+      },
+      "render": {
+        "w": 2560,
+        "h": 7044
+      },
+      "bands": [
+        {
+          "top": 0,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 18310,
+          "pixels": 1280000,
+          "ratio": 0.0143046875
+        },
+        {
+          "top": 500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 75831,
+          "pixels": 1280000,
+          "ratio": 0.05924296875
+        },
+        {
+          "top": 1000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 5889,
+          "pixels": 1280000,
+          "ratio": 0.00460078125
+        },
+        {
+          "top": 1500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 26998,
+          "pixels": 1280000,
+          "ratio": 0.0210921875
+        },
+        {
+          "top": 2000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 40969,
+          "pixels": 1280000,
+          "ratio": 0.03200703125
+        },
+        {
+          "top": 2500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 43105,
+          "pixels": 1280000,
+          "ratio": 0.03367578125
+        },
+        {
+          "top": 3000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 41669,
+          "pixels": 1280000,
+          "ratio": 0.03255390625
+        },
+        {
+          "top": 3500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 41709,
+          "pixels": 1280000,
+          "ratio": 0.03258515625
+        },
+        {
+          "top": 4000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 29619,
+          "pixels": 1280000,
+          "ratio": 0.02313984375
+        },
+        {
+          "top": 4500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 23716,
+          "pixels": 1280000,
+          "ratio": 0.018528125
+        },
+        {
+          "top": 5000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 42089,
+          "pixels": 1280000,
+          "ratio": 0.03288203125
+        },
+        {
+          "top": 5500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 4470,
+          "pixels": 1280000,
+          "ratio": 0.0034921875
+        },
+        {
+          "top": 6000,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 34772,
+          "pixels": 1280000,
+          "ratio": 0.027165625
+        },
+        {
+          "top": 6500,
+          "height": 500,
+          "width": 2560,
+          "mismatches": 27657,
+          "pixels": 1280000,
+          "ratio": 0.02160703125
+        }
+      ]
+    }
+  }
+}

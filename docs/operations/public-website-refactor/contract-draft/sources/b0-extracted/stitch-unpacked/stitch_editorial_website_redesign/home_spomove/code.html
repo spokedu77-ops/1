@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><title>SPOMOVE - Sports &amp; AI Education</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"secondary-container":"#2170e4","surface-container-low":"#f2f3ff","primary":"#004ac6","on-error-container":"#93000a","error-container":"#ffdad6","inverse-surface":"#283044","background":"#faf8ff","secondary-fixed-dim":"#adc6ff","on-background":"#131b2e","tertiary-container":"#3761ea","surface-variant":"#dae2fd","surface-container":"#eaedff","on-primary-fixed-variant":"#003ea8","on-tertiary-fixed-variant":"#0039b5","on-secondary-container":"#fefcff","primary-container":"#2563eb","on-error":"#ffffff","on-primary-container":"#eeefff","primary-fixed":"#dbe1ff","inverse-primary":"#b4c5ff","surface":"#faf8ff","on-tertiary-fixed":"#001551","primary-fixed-dim":"#b4c5ff","surface-container-high":"#e2e7ff","on-primary":"#ffffff","on-secondary":"#ffffff","outline-variant":"#c3c6d7","tertiary":"#0d46d1","on-surface":"#131b2e","on-primary-fixed":"#00174b","outline":"#737686","surface-container-highest":"#dae2fd","inverse-on-surface":"#eef0ff","on-tertiary":"#ffffff","on-secondary-fixed-variant":"#004395","on-surface-variant":"#434655","surface-tint":"#0053db","surface-dim":"#d2d9f4","secondary-fixed":"#d8e2ff","surface-container-lowest":"#ffffff","secondary":"#0058be","on-tertiary-container":"#efefff","surface-bright":"#faf8ff","tertiary-fixed":"#dce1ff","error":"#ba1a1a","on-secondary-fixed":"#001a42","tertiary-fixed-dim":"#b7c4ff"},"borderRadius":{"DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px"},"spacing":{"gutter-desktop":"2.5rem","margin-desktop":"3rem","space-md":"1rem","space-xs":"0.25rem","space-lg":"1.5rem","gutter":"1.5rem","margin":"1.5rem","space-4xl":"8rem","space-3xl":"5rem","space-sm":"0.5rem","space-2xl":"3rem","space-xl":"2rem"},"fontFamily":{"body-sm":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-hero-mobile":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"display-metric-mobile":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"display-metric":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"display-hero":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"watermark-number":["Plus Jakarta Sans"]},"fontSize":{"body-sm":["14px",{"lineHeight":"22px","fontWeight":"400"}],"headline-lg-mobile":["26px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"700"}],"display-hero-mobile":["36px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"800"}],"headline-lg":["36px",{"lineHeight":"46px","letterSpacing":"-0.02em","fontWeight":"700"}],"display-metric-mobile":["44px",{"lineHeight":"52px","letterSpacing":"-0.02em","fontWeight":"800"}],"label-md":["14px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-sm":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-md":["16px",{"lineHeight":"26px","fontWeight":"400"}],"display-metric":["64px",{"lineHeight":"72px","letterSpacing":"-0.03em","fontWeight":"800"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"display-hero":["56px",{"lineHeight":"72px","letterSpacing":"-0.03em","fontWeight":"800"}],"label-sm":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"watermark-number":["84px",{"lineHeight":"84px","letterSpacing":"-0.04em","fontWeight":"900"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-20 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between gap-8"><div class="flex items-center gap-12"><a class="flex items-center gap-2 group" data-path="home" href="#"><span class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container font-headline-md font-bold tracking-tight">S</span><span class="font-headline-sm text-headline-sm font-bold tracking-tighter text-on-surface group-hover:text-primary transition-colors">SPOMOVE</span></a><nav class="hidden xl:flex items-center gap-7" data-active-classes="text-primary font-bold"><a aria-current="page" class="transition-colors py-2 text-primary font-bold" data-path="home" href="#">홈</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-2" data-path="education-program" href="#">교육 프로그램</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-2" data-path="private-lesson" href="#">프라이빗 레슨</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-2" data-path="spomove-system" href="#">스포무브 시스템</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-2" data-path="field-records" href="#">현장 스토리/기록</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-2" data-path="about" href="#">회사 소개</a></nav></div><div class="flex items-center gap-4"><a class="hidden sm:inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-all shadow-[0_4px_12px_rgba(37,99,235,0.15)]" data-path="inquiry" href="#">수업 문의하기</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-surface"><div class="flex flex-col w-full">
+<!-- SECTION 1: CODLE MINIMAL HERO -->
+<section class="w-full bg-surface-container-lowest py-20 lg:py-32 flex flex-col items-center justify-center">
+<div class="max-w-7xl mx-auto px-6 lg:px-12 w-full text-center flex flex-col items-center">
+<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-low text-primary font-label-md text-label-md mb-8">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+        AI 모션 분석 &amp; 스포츠 에듀테크 솔루션
+      </div>
+<h1 class="font-display-hero text-headline-lg lg:text-display-hero text-on-surface font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-8">
+        스포츠 교육의 새로운 기준,<br/>
+<span class="text-primary-container">스포무브</span> 하나면 충분합니다.
+      </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed">
+        초등 늘봄 방과후부터 엘리트 맞춤형 케어까지, 데이터와 검증된 코칭으로 아이들의 건강한 성장 곡선을 입체적으로 설계합니다.
+      </p>
+<div class="flex flex-col sm:flex-row items-center gap-4 mb-16 lg:mb-20">
+<a class="w-full sm:w-auto px-8 py-4 rounded-full bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-all shadow-[0_8px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2" data-path="inquiry" href="#">
+          무료 맞춤 상담 시작하기
+          <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+<a class="w-full sm:w-auto px-8 py-4 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-all flex items-center justify-center" data-path="education-program" href="#">
+          교육 프로그램 보기
+        </a>
+</div>
+<!-- Hero Perspective Visual Showcase -->
+<div class="w-full max-w-5xl rounded-3xl bg-surface-container-lowest shadow-[0_20px_50px_rgba(19,27,46,0.06)] overflow-hidden">
+<div class="relative w-full aspect-[16/9] lg:aspect-[21/10] overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover transform hover:scale-[1.02] transition-transform duration-700 ease-out" data-alt="Modern indoor sports gymnasium and EdTech training studio with high-tech sensors, children engaged in athletic conditioning under warm sunlight, clean Korean academic edtech aesthetic with soft blue lighting accents and dynamic spatial depth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmRC3jEL2yozq-eTXQX4opHAd6l0tcPbGVdHMAMxP8Z3aPJuRZO9djkGcugG1lt8RKaCMDeRsD_LWQR7MI5lmyFSSF90q5aSNB6fiTxc4WVHi3zULdV2OmqALN6dqp86UNt5at16v-0HHIt78X5bwYwuMklj9JKTY82ruFH6H3VYSrb-tk-j8NH5TKOU-xOpM-8AoydS5VtGz4bjGz1T0quBc0w4hcNfDeUb5yDlom"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent pointer-events-none"></div>
+<div class="absolute bottom-6 left-6 right-6 lg:bottom-10 lg:left-12 lg:right-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pointer-events-none">
+<div class="flex items-center gap-3">
+<span class="px-3 py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-sm text-label-sm font-bold shadow-sm">SPOMOVE OS 2.4</span>
+<span class="text-on-surface font-body-sm text-body-sm font-medium">전국 초·중등 늘봄학교 및 아카데미 실시간 연동 중</span>
+</div>
+<div class="flex items-center gap-2 text-primary font-label-sm text-label-sm font-bold bg-surface-container-lowest/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+              국가지원 연구개발 교육 표준 모형
+            </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: CODLE 01-03 SHOWCASE MODULES -->
+<section class="w-full bg-surface-container-low py-24 lg:py-32">
+<div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col gap-24 lg:gap-32">
+<!-- ITEM 01 -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+<div class="lg:col-span-6 relative flex flex-col">
+<span class="font-watermark-number text-watermark-number font-black text-primary-fixed leading-none select-none -mb-6 lg:-mb-10">01</span>
+<div class="relative z-10 space-y-5">
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
+              데이터 기반의 체계적인<br/>
+<span class="text-primary-container">스포츠 커리큘럼</span>
+</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-lg leading-relaxed">
+              아이의 연령별 신체 발달 지표와 동작 데이터를 정밀 진단하여, 체육에 대한 흥미와 균형 잡힌 근신경 협응력을 단계별로 완성합니다.
+            </p>
+<div class="flex flex-wrap items-center gap-2 pt-2">
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#개인맞춤</span>
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#신체발달</span>
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#생체모션측정</span>
+</div>
+<div class="pt-4">
+<a class="inline-flex items-center gap-2 text-primary-container font-label-md text-label-md font-bold group" data-path="education-program" href="#">
+                커리큘럼 세부 로드맵 확인하기
+                <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+<div class="lg:col-span-6">
+<div class="relative w-full aspect-[4/3] rounded-3xl bg-surface-container-lowest overflow-hidden shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+<img class="w-full h-full object-cover" data-alt="South Korean elementary school students joyfully learning agility and basketball fundamentals with energetic young sports trainer in a pristine, bright gym space with crisp modern visual lines." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDflEyqKnaZFs_FAUrRCi9pyxOYDxlAjVdoXYBnkcfAJPdb4Qyib7XQL6VGYk4JRjRMfucipbAiqnXs7JCvKu6W-mO1--E6figJTar5NN6EcEwblANm2OoDAS--Gj99_oFmUae9pJTrsLXUBAxTkC-MGswICHM9-2vQUasBOcYlcg7nWZo8WDcMQJ5ZedPngxhquCKDyOcRp-PkgVsQv9btTFGiLfKgi_X1kl6Ivn3r"/>
+<div class="absolute top-4 right-4 bg-surface-container-lowest/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-on-surface font-label-sm text-label-sm font-semibold shadow-sm flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+              신체 협응지수 94.2% 향상
+            </div>
+</div>
+</div>
+</div>
+<!-- ITEM 02 (Reverse Rhythm) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+<div class="lg:col-span-6 order-2 lg:order-1">
+<div class="relative w-full aspect-[4/3] rounded-3xl bg-surface-container-lowest overflow-hidden shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+<img class="w-full h-full object-cover" data-alt="Professional athletic coach guiding a young student through posture adjustment and gentle stretching, showing warm mentorship, bright sunlit indoor sports training center, deep royal blue sports uniforms." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAvMVAE22fhiGDR4BKzvicgkYihMt7Jg-vsQ_jkoBiq0jQ6QHOA4eN-IqTUPHM_vqOB5DzDNIhQKuUPd2k5QgW6rleT3UXPcuEQxl2iWHWVOsbBsqjjVZEABKmdja_A_a97Pj29MpXphcorkJQ1j6J8t7JM1gaYGw8oKILJYY9XxzY47mezcOa5aI56VE9fQDP0u-AmNMRBwLVY3k8upBENqyWUP6fJqDQe3Uakqh4"/>
+<div class="absolute bottom-4 left-4 bg-surface-container-lowest/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-on-surface font-label-sm text-label-sm font-semibold shadow-sm flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]">verified_user</span>
+              지도사 자격 검증 완료 코치 100%
+            </div>
+</div>
+</div>
+<div class="lg:col-span-6 order-1 lg:order-2 relative flex flex-col">
+<span class="font-watermark-number text-watermark-number font-black text-primary-fixed leading-none select-none -mb-6 lg:-mb-10">02</span>
+<div class="relative z-10 space-y-5">
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
+              검증된 전문 코치진<br/>
+<span class="text-primary-container">매칭 및 전담 파견</span>
+</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-lg leading-relaxed">
+              체육지도자 국가자격 및 인성 인터뷰를 통과한 전문 지도사가 직접 파견되어, 학교와 학생의 여건에 꼭 맞는 안전한 클래스를 책임집니다.
+            </p>
+<div class="flex flex-wrap items-center gap-2 pt-2">
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#전문지도사</span>
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#안심케어</span>
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#상시모니터링</span>
+</div>
+<div class="pt-4">
+<a class="inline-flex items-center gap-2 text-primary-container font-label-md text-label-md font-bold group" data-path="private-lesson" href="#">
+                코치진 풀 및 인증 시스템 확인
+                <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- ITEM 03 -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+<div class="lg:col-span-6 relative flex flex-col">
+<span class="font-watermark-number text-watermark-number font-black text-primary-fixed leading-none select-none -mb-6 lg:-mb-10">03</span>
+<div class="relative z-10 space-y-5">
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
+              실시간 수업 피드백 및<br/>
+<span class="text-primary-container">학부모 디지털 리포트</span>
+</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-lg leading-relaxed">
+              매 수업 후 운동 능력 변화와 심리적 몰입도를 시각화한 모바일 리포트를 발송해, 학부모님께 믿음과 아이의 성취감을 동시에 드립니다.
+            </p>
+<div class="flex flex-wrap items-center gap-2 pt-2">
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#성장기록</span>
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#모바일알림</span>
+<span class="px-3.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#투명한피드백</span>
+</div>
+<div class="pt-4">
+<a class="inline-flex items-center gap-2 text-primary-container font-label-md text-label-md font-bold group" data-path="spomove-system" href="#">
+                리포트 예시 화면 살펴보기
+                <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+<div class="lg:col-span-6">
+<div class="relative w-full aspect-[4/3] rounded-3xl bg-surface-container-lowest overflow-hidden shadow-[0_16px_36px_rgba(15,23,42,0.06)] p-6 lg:p-8 flex flex-col justify-between">
+<div class="flex items-center justify-between pb-4 border-b border-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary font-bold">SM</div>
+<div>
+<h4 class="font-label-md text-label-md font-bold text-on-surface">김서준 학생 종합 성장 리포트</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">2025. 03. 14 / 초등 방과후 스포츠 모션</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm font-bold">성장도 상위 3%</span>
+</div>
+<!-- Mini Radar / Chart Visualization -->
+<div class="py-6 flex items-center justify-around">
+<div class="flex flex-col items-center">
+<svg class="w-24 h-24 transform -rotate-90">
+<circle class="text-surface-container fill-none" cx="48" cy="48" r="38" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary-container fill-none" cx="48" cy="48" r="38" stroke="currentColor" stroke-dasharray="238.76" stroke-dashoffset="35.8" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface mt-2">85점</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">유연성 및 코어</span>
+</div>
+<div class="flex flex-col items-center">
+<svg class="w-24 h-24 transform -rotate-90">
+<circle class="text-surface-container fill-none" cx="48" cy="48" r="38" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-secondary-container fill-none" cx="48" cy="48" r="38" stroke="currentColor" stroke-dasharray="238.76" stroke-dashoffset="19.1" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface mt-2">92점</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">순발력 및 민첩성</span>
+</div>
+<div class="flex flex-col items-center">
+<svg class="w-24 h-24 transform -rotate-90">
+<circle class="text-surface-container fill-none" cx="48" cy="48" r="38" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary fill-none" cx="48" cy="48" r="38" stroke="currentColor" stroke-dasharray="238.76" stroke-dashoffset="28.6" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface mt-2">88점</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">동작 밸런스</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-2xl p-4 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface">"좌우 체중 이동 밸런스가 지난주 대비 14% 향상되었습니다."</span>
+<span class="material-symbols-outlined text-primary text-[20px]">insights</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: CODLE IMPACT METRICS (PURE WHITE, NO TIGHT BOXES) -->
+<section class="w-full bg-surface-container-lowest py-20 lg:py-28">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 text-center">
+<!-- Metric 1 -->
+<div class="flex flex-col items-center">
+<div class="font-display-metric text-display-metric-mobile lg:text-display-metric font-extrabold text-on-surface tracking-tight">
+            500<span class="text-primary-container">+</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 font-medium">누적 출강 학교 및 기관</p>
+</div>
+<!-- Metric 2 -->
+<div class="flex flex-col items-center">
+<div class="font-display-metric text-display-metric-mobile lg:text-display-metric font-extrabold text-on-surface tracking-tight">
+            2,500<span class="text-primary-container">+</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 font-medium">누적 운영 클래스 수</p>
+</div>
+<!-- Metric 3 -->
+<div class="flex flex-col items-center">
+<div class="font-display-metric text-display-metric-mobile lg:text-display-metric font-extrabold text-on-surface tracking-tight">
+            98<span class="text-primary-container">%</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 font-medium">기관 및 학부모 재계약률</p>
+</div>
+<!-- Metric 4 -->
+<div class="flex flex-col items-center">
+<div class="font-display-metric text-display-metric-mobile lg:text-display-metric font-extrabold text-on-surface tracking-tight">
+            7<span class="text-primary-container">일</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 font-medium">최단 맞춤 수업 세팅 기간</p>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: UNIST EDITORIAL PHOTO GRID (RECENT HIGHLIGHTS) -->
+<section class="w-full bg-surface py-20 lg:py-28">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
+<div>
+<span class="font-label-md text-label-md text-primary font-bold tracking-wider uppercase">Field Highlights &amp; Stories</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight mt-1">
+            현장에서 꽃피는 스포무브의 기록
+          </h2>
+</div>
+<a class="inline-flex items-center gap-1.5 font-label-md text-label-md text-primary hover:text-on-surface transition-colors" data-path="field-records" href="#">
+          전체 기록 보기
+          <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Story Card 1 -->
+<a class="group flex flex-col rounded-2xl bg-surface-container-lowest overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.04)] hover:shadow-[0_16px_32px_rgba(37,99,235,0.08)] transition-all transform hover:-translate-y-1" data-path="field-records" href="#">
+<div class="relative w-full aspect-[16/10] overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Elementary students cheering together with colorful basketball cones on court, sunny outdoor modern Korean school ground, cheerful and vibrant mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCawhAfcMhmttIO_eZ1juNjlZmeShrnnQ_-cWIUCyJKumSOW7TuG3wmOchilrdGhKANApCyfXW8nBRwMmahkNoI_dH2vBVWU8Q553cvvo5F9JYmIHYC5IbmNHYyjOMmmozQXm-kWhHcld7-RSQFLNVcbVZ8JBfjUnVH6DbIZShLRBnprnr-C2Cn7HAd1F-V_oVMbxwO5Tcb9mCuNtViyzYIaYDI6S_OcesqCnBx-GUU"/>
+</div>
+<div class="p-6 flex flex-col flex-1 justify-between gap-6">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">초등 늘봄 방과후</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2025. 03. 10</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors line-clamp-1">
+                서울 24개 초등학교 늘봄학교 스포츠 거점 협약 체결
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                학부모 부담을 덜고 학생들의 방과 후 체육 신체 활동을 활성화하는 맞춤 프로그램이 정규 개강되었습니다.
+              </p>
+</div>
+<div class="flex items-center justify-end">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-on-primary transition-all">
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+<!-- Story Card 2 -->
+<a class="group flex flex-col rounded-2xl bg-surface-container-lowest overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.04)] hover:shadow-[0_16px_32px_rgba(37,99,235,0.08)] transition-all transform hover:-translate-y-1" data-path="field-records" href="#">
+<div class="relative w-full aspect-[16/10] overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="High school elite track athlete equipped with joint sensors doing speed dash test while coach checks tablet dashboard, sleek athletic biomechanics laboratory ambiance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-oHXkmcn4clQUQVl4k3qBVv5cw8KzLrZFhYRxNZcAgFtXlxeIED5fW5BofJEFcAPcXHjWJmKkbBXBbO-e3DWXxLM4LG3gbGKkta4QKJtMPjgAwqzcZnMmoFGanZORwKLeToWjdDZQ6cm6P7sFJZQT1j6O4VuO_Cb7g5LhAEdgnF2SYi-sFzycRPGxq5suuhgrK4RpbdVpQ8KFc2ub5bXdx-cAF1fnBTwyjmtrOu3M"/>
+</div>
+<div class="p-6 flex flex-col flex-1 justify-between gap-6">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">엘리트 레슨</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2025. 03. 04</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors line-clamp-1">
+                AI 관절 각도 추적 기술로 유소년 선수 부상률 42% 감소
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                무리한 스윙과 점프 착지 패턴을 실시간으로 감지하여 엘리트 유망주들의 고질적인 관절 부담을 획기적으로 개선했습니다.
+              </p>
+</div>
+<div class="flex items-center justify-end">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-on-primary transition-all">
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+<!-- Story Card 3 -->
+<a class="group flex flex-col rounded-2xl bg-surface-container-lowest overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.04)] hover:shadow-[0_16px_32px_rgba(37,99,235,0.08)] transition-all transform hover:-translate-y-1" data-path="field-records" href="#">
+<div class="relative w-full aspect-[16/10] overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Academic conference presentation room showing sports scientists discussing athletic growth chart with parents and teachers, modern auditorium with smart board." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2EgUFJrMlhHcfrnAHEj1xD-_2wlBtQhWx8ecm-Zu1W57zBBTYHRCkXrcKgWNSJKhVghP6An7Bct0at2xbhOMso6Le_16zk52DgyDP3mgOiF-nc38pYCn62Yo0fCamcBXNmdjrnq7PyPHjp63NVZrH3h5Vtgx3CJco4MaRpdYCVYOI-VvDfkNeHD6e6RR4zAIFWps_Z0Bpjrv5tX0XyqCBmkE0oR_i22kb7CyL3CHj"/>
+</div>
+<div class="p-6 flex flex-col flex-1 justify-between gap-6">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">학술 연구 세미나</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2025. 02. 26</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors line-clamp-1">
+                국내 주요 대학 에듀테크 연구진과 모션 알고리즘 발표
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                유소년 신체 발달 지연 조기 감지 모델 연구 결과를 공유하며 공교육 현장 보급 방안을 심도 있게 모색했습니다.
+              </p>
+</div>
+<div class="flex items-center justify-end">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-on-primary transition-all">
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+</div>
+</div>
+</section>
+<!-- SECTION 5: CODLE BOTTOM CTA FULL BANNER -->
+<section class="w-full py-16 lg:py-24 px-6 lg:px-12">
+<div class="max-w-7xl mx-auto rounded-3xl bg-primary-container text-on-primary py-16 lg:py-20 px-8 text-center shadow-[0_20px_50px_rgba(37,99,235,0.25)] flex flex-col items-center">
+<span class="px-3.5 py-1 rounded-full bg-surface-container-lowest/15 backdrop-blur-md text-on-primary font-label-sm text-label-sm mb-6">
+        전국 초·중·고 및 체육시설 맞춤 견적 지원
+      </span>
+<h2 class="font-headline-lg text-headline-lg lg:text-display-hero text-on-primary font-extrabold max-w-3xl leading-tight mb-6">
+        지금, 우리 학교와 아이를 위한<br class="hidden sm:inline"/>
+        최고의 스포츠 교육을 만나보세요.
+      </h2>
+<p class="font-body-md text-body-md text-on-primary-container max-w-xl mx-auto mb-10 opacity-90 leading-relaxed">
+        복잡한 행정 서류부터 코치 파견, 성장 리포트까지 원스톱으로 지원합니다. 사전 진단 테스트 및 상담은 100% 무료로 진행됩니다.
+      </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+<a class="w-full sm:w-auto bg-surface-container-lowest text-primary font-label-md text-label-md font-bold px-8 py-4 rounded-full hover:bg-surface-container-low transition-all shadow-lg flex items-center justify-center gap-2" data-path="inquiry" href="#">
+          무료 맞춤 상담 신청하기
+          <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+<a class="w-full sm:w-auto border border-on-primary/60 text-on-primary font-label-md text-label-md font-semibold px-8 py-4 rounded-full hover:bg-on-primary/10 transition-all flex items-center justify-center" data-path="education-program" href="#">
+          프로그램 제안서 다운로드
+        </a>
+</div>
+</div>
+</section>
+</div></main><footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30"><div class="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16"><div class="lg:col-span-2 space-y-4"><div class="flex items-center gap-2"><span class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container font-headline-sm font-bold">S</span><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface">SPOMOVE</span></div><p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm">스포츠 교육과 인공지능 모션 분석 기술의 결합. 모든 학습자의 최적 신체 움직임과 맞춤형 성장을 지원하는 차세대 에듀테크 플랫폼입니다.</p><div class="flex items-center gap-3 pt-2"><div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container transition-colors"><span class="material-symbols-outlined text-[18px]">sports_soccer</span></div><div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container transition-colors"><span class="material-symbols-outlined text-[18px]">psychology</span></div><div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-primary-container hover:text-on-primary-container transition-colors"><span class="material-symbols-outlined text-[18px]">forum</span></div></div></div><div class="space-y-3"><h4 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">교육 프로그램</h4><ul class="space-y-2"><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="education-program" href="#">유소년 스포츠 아카데미</a></li><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="education-program" href="#">AI 기초 신체 밸런스</a></li><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="private-lesson" href="#">엘리트 전담 맞춤 코칭</a></li><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="spomove-system" href="#">정밀 모션 추적 진단</a></li></ul></div><div class="space-y-3"><h4 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">연구 및 지원</h4><ul class="space-y-2"><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="spomove-system" href="#">모션 AI 비전 알고리즘</a></li><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="field-records" href="#">현장 분석 데이터 로그</a></li><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="about" href="#">연구 협력 기관 (UNIST 등)</a></li><li class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors"><a data-path="inquiry" href="#">센터 대관 및 레슨 예약</a></li></ul></div><div class="space-y-3"><h4 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">고객지원</h4><p class="font-body-sm text-body-sm text-on-surface-variant">평일 09:00 - 18:00 (주말 및 공휴일 휴무)</p><p class="font-body-sm text-body-sm font-bold text-on-surface">contact@spomove.ai</p><p class="font-body-sm text-body-sm text-on-surface-variant">02-1588-4920</p></div></div><div class="pt-8 border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-4"><p class="font-label-sm text-label-sm text-on-surface-variant">© 2025 SPOMOVE Inc. All rights reserved. Intellectual Sports AI Portal.</p><div class="flex items-center gap-6"><span class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface">개인정보처리방침</span><span class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface">이용약관</span><span class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface">학술연구윤리준칙</span></div></div></div></footer></body></html>

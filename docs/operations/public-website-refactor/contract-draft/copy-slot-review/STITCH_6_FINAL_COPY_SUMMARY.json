@@ -1,0 +1,40 @@
+{
+  "verdict": "COPY_DRAFT_READY_FOR_APPROVAL",
+  "domSlots": 721,
+  "emptyCopy": 0,
+  "imgRequired": 0,
+  "unverified": 75,
+  "designExceptions": 52,
+  "coverage": [
+    {
+      "route": "/",
+      "slots": 123,
+      "missingEstimate": 0
+    },
+    {
+      "route": "/education",
+      "slots": 133,
+      "missingEstimate": 2
+    },
+    {
+      "route": "/private",
+      "slots": 111,
+      "missingEstimate": 0
+    },
+    {
+      "route": "/about",
+      "slots": 120,
+      "missingEstimate": 0
+    },
+    {
+      "route": "/records",
+      "slots": 104,
+      "missingEstimate": 0
+    },
+    {
+      "route": "/spomove",
+      "slots": 130,
+      "missingEstimate": 5
+    }
+  ]
+}

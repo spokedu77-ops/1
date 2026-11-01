@@ -1,0 +1,45 @@
+{
+  "package": "SPOKEDU_PHASE_B0_SOURCE_INPUTS",
+  "purpose": "Read-only source ingest for contract draft generation; no implementation approval",
+  "files": [
+    {
+      "path": "sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_ALL_1289_20261031.csv",
+      "sha256": "ae8681eda688c0abbc828503bf9899d23c051e271b0fd8f6bd4965fda72985af",
+      "bytes": 676923,
+      "source_original_filename": "SPOKEDU_COPY_AUDIT_STAGE7_ALL_1289_20261031(1).csv",
+      "data_rows": 1289
+    },
+    {
+      "path": "sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_BASELINE_914_CROSSWALK_20261031.csv",
+      "sha256": "32c6d75c5fcc12f727dc967c2227f2d192815a7574933e4dd6becb15b546a2c0",
+      "bytes": 442642,
+      "source_original_filename": "SPOKEDU_COPY_AUDIT_STAGE7_BASELINE_914_CROSSWALK_20261031(1).csv",
+      "data_rows": 914
+    },
+    {
+      "path": "sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_ROOT_ISSUES_20261031.csv",
+      "sha256": "b25a6189c2a0c8e11ab74cfe6e0540e732048d5051dd10b080a0cc5e3d0f0cb7",
+      "bytes": 9386,
+      "source_original_filename": "SPOKEDU_COPY_AUDIT_STAGE7_ROOT_ISSUES_20261031(1).csv",
+      "data_rows": 24
+    },
+    {
+      "path": "sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_INTEGRATED_REPORT_20261031.md",
+      "sha256": "21a8bf1222207d8e32e57d2cc368c6f984dca5486ead6a4be5dfc7a3f022b16c",
+      "bytes": 10763,
+      "source_original_filename": "SPOKEDU_COPY_AUDIT_STAGE7_INTEGRATED_REPORT_20261031(1).md"
+    },
+    {
+      "path": "sources/stage7/SPOKEDU_COPY_AUDIT_STAGE7_INDEPENDENT_QA_20261031.md",
+      "sha256": "50a34bd392edf37e39b90c7a85c9ce88978eaa5a4d3e8a11841cca29a8955d76",
+      "bytes": 1302,
+      "source_original_filename": "SPOKEDU_COPY_AUDIT_STAGE7_INDEPENDENT_QA_20261031(1).md"
+    },
+    {
+      "path": "sources/stitch/stitch_editorial_website_redesign.zip",
+      "sha256": "ce680b33f0867343ca36ac30fb78182938bad94654522f6abdd967885d54c590",
+      "bytes": 26611841,
+      "source_original_filename": "stitch_editorial_website_redesign(1).zip"
+    }
+  ]
+}

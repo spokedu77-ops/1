@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
     ],
   },
   // 빌드 시 webpack 사용 (PWA 플러그인 호환, turbopack 명시적 비활성화)

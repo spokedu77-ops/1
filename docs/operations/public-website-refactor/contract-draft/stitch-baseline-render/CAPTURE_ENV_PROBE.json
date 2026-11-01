@@ -1,0 +1,176 @@
+[
+  {
+    "folder": "home_spomove",
+    "profile": {
+      "cssWidth": 1179,
+      "deviceScaleFactor": 2
+    },
+    "domMetrics": {
+      "innerWidth": 1179,
+      "innerHeight": 900,
+      "devicePixelRatio": 2,
+      "scrollHeight": 5295,
+      "clientWidth": 1179,
+      "fontFaces": 18,
+      "fontsStatus": "loaded",
+      "imagesTotal": 6,
+      "imagesLoaded": 6,
+      "imagesPending": 0
+    },
+    "expectedPng": {
+      "w": 2358,
+      "h": 10590
+    },
+    "actualPng": {
+      "w": 2358,
+      "h": 10590
+    },
+    "topDiffRatio": 0.27906841956460277,
+    "fullDiffRatio": 0.17418282442748093
+  },
+  {
+    "folder": "education_programs_spomove",
+    "profile": {
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2
+    },
+    "domMetrics": {
+      "innerWidth": 1280,
+      "innerHeight": 900,
+      "devicePixelRatio": 2,
+      "scrollHeight": 4834,
+      "clientWidth": 1280,
+      "fontFaces": 18,
+      "fontsStatus": "loaded",
+      "imagesTotal": 8,
+      "imagesLoaded": 8,
+      "imagesPending": 0
+    },
+    "expectedPng": {
+      "w": 2560,
+      "h": 9668
+    },
+    "actualPng": {
+      "w": 2560,
+      "h": 9668
+    },
+    "topDiffRatio": 0.03268923611111111,
+    "fullDiffRatio": 0.023502913929975177
+  },
+  {
+    "folder": "private_lesson_spomove",
+    "profile": {
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2
+    },
+    "domMetrics": {
+      "innerWidth": 1280,
+      "innerHeight": 900,
+      "devicePixelRatio": 2,
+      "scrollHeight": 4730,
+      "clientWidth": 1280,
+      "fontFaces": 18,
+      "fontsStatus": "loaded",
+      "imagesTotal": 6,
+      "imagesLoaded": 6,
+      "imagesPending": 0
+    },
+    "expectedPng": {
+      "w": 2560,
+      "h": 9460
+    },
+    "actualPng": {
+      "w": 2560,
+      "h": 9460
+    },
+    "topDiffRatio": 0.029434244791666668,
+    "fullDiffRatio": 0.022348085689746302
+  },
+  {
+    "folder": "spomove_system_spomove",
+    "profile": {
+      "cssWidth": 1232,
+      "deviceScaleFactor": 2
+    },
+    "domMetrics": {
+      "innerWidth": 1232,
+      "innerHeight": 900,
+      "devicePixelRatio": 2,
+      "scrollHeight": 5185,
+      "clientWidth": 1232,
+      "fontFaces": 18,
+      "fontsStatus": "loaded",
+      "imagesTotal": 1,
+      "imagesLoaded": 1,
+      "imagesPending": 0
+    },
+    "expectedPng": {
+      "w": 2464,
+      "h": 10370
+    },
+    "actualPng": {
+      "w": 2464,
+      "h": 10370
+    },
+    "topDiffRatio": 0.06257432219064375,
+    "fullDiffRatio": 0.08343816483962647
+  },
+  {
+    "folder": "field_records_spomove",
+    "profile": {
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2
+    },
+    "domMetrics": {
+      "innerWidth": 1280,
+      "innerHeight": 900,
+      "devicePixelRatio": 2,
+      "scrollHeight": 3522,
+      "clientWidth": 1280,
+      "fontFaces": 18,
+      "fontsStatus": "loaded",
+      "imagesTotal": 6,
+      "imagesLoaded": 6,
+      "imagesPending": 0
+    },
+    "expectedPng": {
+      "w": 2560,
+      "h": 7044
+    },
+    "actualPng": {
+      "w": 2560,
+      "h": 7044
+    },
+    "topDiffRatio": 0.026975911458333335,
+    "fullDiffRatio": 0.025332009068001135
+  },
+  {
+    "folder": "about_spomove",
+    "profile": {
+      "cssWidth": 1280,
+      "deviceScaleFactor": 2
+    },
+    "domMetrics": {
+      "innerWidth": 1280,
+      "innerHeight": 900,
+      "devicePixelRatio": 2,
+      "scrollHeight": 4955,
+      "clientWidth": 1280,
+      "fontFaces": 18,
+      "fontsStatus": "loaded",
+      "imagesTotal": 7,
+      "imagesLoaded": 7,
+      "imagesPending": 0
+    },
+    "expectedPng": {
+      "w": 2560,
+      "h": 9910
+    },
+    "actualPng": {
+      "w": 2560,
+      "h": 9910
+    },
+    "topDiffRatio": 0.03183181423611111,
+    "fullDiffRatio": 0.11773709108301236
+  }
+]

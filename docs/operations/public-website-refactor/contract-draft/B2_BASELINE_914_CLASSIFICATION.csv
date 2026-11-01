@@ -1,0 +1,915 @@
+baseline_text_id,archive_row_number,route,b2_state,b2_state_reason,stitch_element_id,approval_status
+HOME-001,1,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-002,2,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-003,3,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-004,4,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-005,5,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-006,6,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-007,7,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-008,8,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-009,9,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-010,10,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-011,11,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-012,12,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-013,13,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-014,14,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-015,15,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-016,16,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-017,17,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-018,18,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-019,19,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-020,20,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-021,21,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-022,22,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-023,23,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-024,24,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-025,25,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-026,26,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-027,27,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-028,28,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-029,29,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-030,30,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-031,31,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-032,32,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-033,33,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-034,34,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-035,35,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-036,36,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-037,37,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-038,38,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-039,39,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-040,40,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-041,41,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-042,42,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-043,43,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-044,44,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-045,45,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-046,46,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-047,47,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-048,48,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-049,49,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-050,50,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-051,51,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-052,52,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-053,53,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-054,54,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-055,55,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-056,56,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-057,57,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-058,58,/,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+HOME-059,59,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-META_TITLE,915,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+HOME-META_DESCRIPTION,916,/,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-001,60,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-002,61,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-003,62,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-004,63,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-005,64,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-006,65,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-007,66,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-008,67,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-009,68,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-010,69,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-011,70,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-012,71,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-013,72,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-014,73,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-015,74,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-016,75,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-017,76,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-018,77,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-019,78,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-020,79,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-021,80,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-022,81,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-023,82,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-024,83,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-025,84,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-026,85,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-027,86,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-028,87,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-029,88,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-030,89,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-031,90,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-032,91,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-033,92,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-034,93,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-035,94,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-036,95,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-037,96,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-038,97,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-039,98,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-040,99,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-041,100,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-042,101,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-043,102,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-044,103,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-045,104,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-046,105,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-047,106,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-048,107,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-049,108,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-050,109,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-051,110,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-052,111,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-053,112,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-054,113,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-055,114,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-056,115,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-057,116,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-058,117,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-059,118,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-060,119,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-061,120,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-062,121,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-063,122,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-064,123,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-065,124,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-066,125,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-067,126,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-068,127,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-069,128,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-070,129,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-071,130,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-072,131,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-073,132,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-074,133,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-075,134,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-076,135,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-077,136,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-078,137,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-079,138,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-080,139,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-081,140,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-082,141,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-083,142,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-084,143,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-085,144,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-086,145,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-087,146,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-088,147,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-089,148,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-090,149,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-091,150,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-092,151,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-093,152,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-094,153,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-095,154,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-096,155,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-097,156,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-098,157,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-099,158,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-100,159,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-101,160,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-102,161,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-103,162,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-104,163,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-105,164,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-106,165,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-107,166,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-108,167,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-109,168,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-110,169,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-111,170,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-112,171,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-113,172,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-114,173,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-115,174,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-116,175,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-117,176,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-118,177,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-119,178,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-120,179,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-121,180,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-122,181,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-123,182,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-124,183,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-125,184,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-126,185,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-127,186,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-128,187,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-129,188,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-130,189,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-131,190,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-132,191,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-133,192,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-134,193,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-135,194,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-136,195,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-137,196,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-138,197,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-139,198,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-140,199,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-141,200,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-142,201,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-143,202,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-144,203,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-145,204,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-146,205,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-147,206,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-148,207,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-149,208,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-150,209,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-151,210,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-152,211,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-153,212,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-154,213,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-155,214,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-156,215,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-157,216,/education,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+EDU-158,217,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-META-TITLE,917,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+EDU-META-DESC,918,/education,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-001,218,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-002,219,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-003,220,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-004,221,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-005,222,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-006,223,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-007,224,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-008,225,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-009,226,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-010,227,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-011,228,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-012,229,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-013,230,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-014,231,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-015,232,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-016,233,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-017,234,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-018,235,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-019,236,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-020,237,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-021,238,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-022,239,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-023,240,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-024,241,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-025,242,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-026,243,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-027,244,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-028,245,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-029,246,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-030,247,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-031,248,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-032,249,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-033,250,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-034,251,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-035,252,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-036,253,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-037,254,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-038,255,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-039,256,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-040,257,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-041,258,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-042,259,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-043,260,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-044,261,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-045,262,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-046,263,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-047,264,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-048,265,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-049,266,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-050,267,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-051,268,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-052,269,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-053,270,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-054,271,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-055,272,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-056,273,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-057,274,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-058,275,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-059,276,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-060,277,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-061,278,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-062,279,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-063,280,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-064,281,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-065,282,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-066,283,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-067,284,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-068,285,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-069,286,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-070,287,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-071,288,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-072,289,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-073,290,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-074,291,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+PRI-075,292,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-076,293,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+PRI-077,294,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+META-01,919,/private,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+META-02,920,/private,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-001,295,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-002,296,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-003,297,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-004,298,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-005,299,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-006,300,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-007,301,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-008,302,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-009,303,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-010,304,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-011,305,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-012,306,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-013,307,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-014,308,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-015,309,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-016,310,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-017,311,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-018,312,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-019,313,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-020,314,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-021,315,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-022,316,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-023,317,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-024,318,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-025,319,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-026,320,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-027,321,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-028,322,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-029,323,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-030,324,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-031,325,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-032,326,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-033,327,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-034,328,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-035,329,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-036,330,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-037,331,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-038,332,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-039,333,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-040,334,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-041,335,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-042,336,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-043,337,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-044,338,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-045,339,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-046,340,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-047,341,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-048,342,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-049,343,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-050,344,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-051,345,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-052,346,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-053,347,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-054,348,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-055,349,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-056,350,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-057,351,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-058,352,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-059,353,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-060,354,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-061,355,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-062,356,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-063,357,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-064,358,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-065,359,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-066,360,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-067,361,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-068,362,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-069,363,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-070,364,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-071,365,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-072,366,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-073,367,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-074,368,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-075,369,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-076,370,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-077,371,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-078,372,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-079,373,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-080,374,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-081,375,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-082,376,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-083,377,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SPM-084,378,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SPM-085,379,/spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+SEO-01,921,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+SEO-02,922,/spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-001,380,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-002,381,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-003,382,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-004,383,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-005,384,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-006,385,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-007,386,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-008,387,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-009,388,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-010,389,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-011,390,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-012,391,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-013,392,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-014,393,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-015,394,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-016,395,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-017,396,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-018,397,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-019,398,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-020,399,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-021,400,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-022,401,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-023,402,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-024,403,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-025,404,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-026,405,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-027,406,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-028,407,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-029,408,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-030,409,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-031,410,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-032,411,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-033,412,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-034,413,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-035,414,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-036,415,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-037,416,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-038,417,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-039,418,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-040,419,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-041,420,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-042,421,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-043,422,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-044,423,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-045,424,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+MAT-046,425,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+MAT-047,426,/spomat,RETAIN_EXISTING_ROUTE,Stitch 6-page scope 밖; LIVE route 유지,,PENDING_APPROVAL
+META-01,923,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+META-02,924,/spomat,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+LAB-001,427,/spokedu-lab,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+LAB-002,428,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-003,429,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-004,430,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-005,431,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-006,432,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-007,433,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-008,434,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-009,435,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-010,436,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-011,437,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-012,438,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-013,439,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-014,440,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-015,441,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-016,442,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-017,443,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-018,444,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-019,445,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-020,446,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-021,447,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-022,448,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-023,449,/spokedu-lab,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+LAB-024,450,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-025,451,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-026,452,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-027,453,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-028,454,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-029,455,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-030,456,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-031,457,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-032,458,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-033,459,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-034,460,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-035,461,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-036,462,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-037,463,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-038,464,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-039,465,/spokedu-lab,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+LAB-040,466,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-041,467,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-042,468,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-043,469,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-044,470,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-045,471,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-046,472,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-047,473,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-048,474,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-049,475,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-050,476,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-051,477,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-052,478,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-053,479,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-054,480,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-055,481,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-056,482,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-057,483,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-058,484,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-059,485,/spokedu-lab,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+LAB-060,486,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-061,487,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-062,488,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-063,489,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-064,490,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-065,491,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-066,492,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-067,493,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-068,494,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-069,495,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-070,496,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-071,497,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-072,498,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-073,499,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-074,500,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-075,501,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-076,502,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-077,503,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-078,504,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-079,505,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-080,506,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-081,507,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-082,508,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-083,509,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-084,510,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-085,511,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-086,512,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-087,513,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-088,514,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-089,515,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-090,516,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-091,517,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-092,518,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-093,519,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-094,520,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-095,521,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-096,522,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-097,523,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-098,524,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-099,525,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-100,526,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-101,527,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-102,528,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-103,529,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-104,530,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-105,531,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-106,532,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-107,533,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-108,534,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-109,535,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-110,536,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-111,537,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-112,538,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-113,539,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-114,540,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-115,541,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-116,542,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-117,543,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-118,544,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-119,545,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-120,546,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-121,547,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-122,548,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-123,549,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-124,550,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-125,551,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-126,552,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-127,553,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-128,554,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-129,555,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-130,556,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-131,557,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-132,558,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-133,559,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-134,560,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-135,561,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-136,562,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-137,563,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-138,564,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-139,565,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-140,566,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-141,567,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-142,568,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-143,569,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-144,570,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-145,571,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-146,572,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-147,573,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-148,574,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-149,575,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-150,576,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-151,577,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-152,578,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-153,579,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-154,580,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-155,581,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-156,582,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-157,583,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-158,584,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-159,585,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-160,586,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-161,587,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-162,588,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-163,589,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-164,590,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-165,591,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-166,592,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-167,593,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-168,594,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-169,595,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-170,596,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-171,597,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-172,598,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-173,599,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-174,600,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-175,601,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-176,602,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-177,603,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-178,604,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-SEO-01,925,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+LAB-SEO-02,926,/spokedu-lab,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+AB-L001,605,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L002,606,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L003,607,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L004,608,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L005,609,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L006,610,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L007,611,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L008,612,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L009,613,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L010,614,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L011,615,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L012,616,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L013,617,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L014,618,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L015,619,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L016,620,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L017,621,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L018,622,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L019,623,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L020,624,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L021,625,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L022,626,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L023,627,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L024,628,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L025,629,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L026,630,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L027,631,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L028,632,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L029,633,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L030,634,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L031,635,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L032,636,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L033,637,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L034,638,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L035,639,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L036,640,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L037,641,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L038,642,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L039,643,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L040,644,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L041,645,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L042,646,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L043,647,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L044,648,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L045,649,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L046,650,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L047,651,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L048,652,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L049,653,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L050,654,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L051,655,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L052,656,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L053,657,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L054,658,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L055,659,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L056,660,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L057,661,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L058,662,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L059,663,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L060,664,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L061,665,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L062,666,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L063,667,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L064,668,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L065,669,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L066,670,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L067,671,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L068,672,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L069,673,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L070,674,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L071,675,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L072,676,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L073,677,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L074,678,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L075,679,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-L076,680,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-L077,681,/about,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+AB-M001,927,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+AB-M002,928,/about,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I001,682,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I002,683,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I003,684,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I004,685,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I005,686,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I006,687,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I007,688,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I008,689,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I009,690,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I010,691,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I011,692,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I012,693,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I013,694,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I014,695,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I015,696,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I016,697,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I017,698,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I018,699,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I019,700,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I020,701,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I021,702,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I022,703,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I023,704,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I024,705,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I025,706,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I026,707,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I027,708,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I028,709,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I029,710,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I030,711,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I031,712,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I032,713,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I033,714,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I034,715,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I035,716,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I036,717,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I037,718,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I038,719,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I039,720,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I040,721,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I041,722,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I042,723,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I043,724,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I044,725,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I045,726,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I046,727,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I047,728,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I048,729,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I049,730,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I050,731,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I051,732,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I052,733,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I053,734,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I054,735,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I055,736,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I056,737,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I057,738,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I058,739,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I059,740,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I060,741,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I061,742,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I062,743,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I063,744,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I064,745,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I065,746,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I066,747,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I067,748,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I068,749,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I069,750,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I070,751,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I071,752,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I072,753,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I073,754,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I074,755,/records,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-I075,756,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I076,757,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I077,758,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I078,759,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I079,760,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I-M01,929,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-I-M02,930,/records,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+CT-001,761,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-002,762,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-003,763,/contact,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CT-004,764,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-005,765,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-006,766,/contact,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CT-007,767,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-008,768,/contact,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CT-009,769,/contact,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CT-010,770,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-011,771,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-012,772,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-013,773,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-014,774,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-015,931,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CT-016,932,/contact,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-001,803,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-002,804,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-003,805,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-004,806,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-005,807,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-006,808,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-007,809,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-008,810,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-009,811,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-010,812,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-011,813,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-012,814,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-013,815,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-014,816,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-015,817,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-016,818,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-017,819,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-018,820,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-019,821,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-020,822,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-021,823,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-022,824,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-023,825,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-024,826,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-025,827,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-026,828,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-027,829,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-028,830,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-029,831,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-030,832,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-031,833,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-032,834,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+CAT-033,835,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-034,836,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-035,837,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+CAT-036,838,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+META-01,935,/spomove/catalog,NEW_ROUTE_REQUIRED,LIVE 전용 경로; Stitch IA에 동등 화면 없음 — PO IA 결정,,PENDING_APPROVAL
+META-02,936,/spomove/catalog,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-D001,839,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D002,840,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D003,841,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D004,842,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D005,843,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D006,844,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D007,845,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D008,846,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D009,847,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D010,848,/records/dongjak-spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-D011,849,/records/dongjak-spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-D012,850,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D013,851,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D014,852,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D015,853,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D016,854,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D017,855,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D018,856,/records/dongjak-spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-D019,857,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D-M01,937,/records/dongjak-spomove,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-D-M02,938,/records/dongjak-spomove,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-Y001,858,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y002,859,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y003,860,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y004,861,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y005,862,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y006,863,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y007,864,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y008,865,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y009,866,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y010,867,/records/yangcheon-paps,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-Y011,868,/records/yangcheon-paps,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-Y012,869,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y013,870,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y014,871,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y015,872,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y016,873,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y017,874,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y018,875,/records/yangcheon-paps,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-Y019,876,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y-M01,939,/records/yangcheon-paps,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-Y-M02,940,/records/yangcheon-paps,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-A001,877,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A002,878,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A003,879,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A004,880,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A005,881,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A006,882,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A007,883,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A008,884,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A009,885,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A010,886,/records/dasarang-oneday,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-A011,887,/records/dasarang-oneday,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-A012,888,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A013,889,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A014,890,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A015,891,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A016,892,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A017,893,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A018,894,/records/dasarang-oneday,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-A019,895,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A-M01,941,/records/dasarang-oneday,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-A-M02,942,/records/dasarang-oneday,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-S001,896,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S002,897,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S003,898,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S004,899,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S005,900,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S006,901,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S007,902,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S008,903,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S009,904,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S010,905,/records/seodaemun-event-booth,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-S011,906,/records/seodaemun-event-booth,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-S012,907,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S013,908,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S014,909,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S015,910,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S016,911,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S017,912,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S018,913,/records/seodaemun-event-booth,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL
+RC-S019,914,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S-M01,943,/records/seodaemun-event-booth,UNRESOLVED,Stitch route 존재; LIVE≠Stitch 문구; exact match 금지 정책,,PENDING_APPROVAL
+RC-S-M02,944,/records/seodaemun-event-booth,REWRITE_REQUIRED,Stage7 편집 판정=수정 제안,,PENDING_APPROVAL

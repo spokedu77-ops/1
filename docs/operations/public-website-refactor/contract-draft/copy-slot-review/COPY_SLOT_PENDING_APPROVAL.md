@@ -1,0 +1,72 @@
+# Pending approval (70 tracked items)
+
+- STITCH-stitch_editorial_website_redesign_about_spomove_code-h4-5: 연구 및 지원
+- STITCH-stitch_editorial_website_redesign_about_spomove_code-h4-10: 고객지원
+- STITCH-stitch_editorial_website_redesign_about_spomove_code-p-11: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)
+- STITCH-stitch_editorial_website_redesign_about_spomove_code-span-15: 개인정보처리방침
+- STITCH-stitch_editorial_website_redesign_about_spomove_code-span-16: 이용약관
+- STITCH-stitch_editorial_website_redesign_about_spomove_code-span-17: 학술연구윤리준칙
+- IMG STITCH-stitch_editorial_website_redesign_about_spomove_code-img-18
+- IMG STITCH-stitch_editorial_website_redesign_about_spomove_code-img-19
+- IMG STITCH-stitch_editorial_website_redesign_about_spomove_code-img-20
+- IMG STITCH-stitch_editorial_website_redesign_about_spomove_code-img-21
+- IMG STITCH-stitch_editorial_website_redesign_about_spomove_code-img-22
+- IMG STITCH-stitch_editorial_website_redesign_about_spomove_code-img-23
+- IMG STITCH-stitch_editorial_website_redesign_about_spomove_code-img-24
+- STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-h4-4: 연구 및 지원
+- STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-h4-9: 고객지원
+- STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-p-10: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)
+- STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-span-14: 개인정보처리방침
+- STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-span-15: 이용약관
+- STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-span-16: 학술연구윤리준칙
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-17
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-18
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-19
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-20
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-21
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-22
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-23
+- IMG STITCH-stitch_editorial_website_redesign_education_programs_spomove_code-img-24
+- STITCH-stitch_editorial_website_redesign_field_records_spomove_code-h4-5: 연구 및 지원
+- STITCH-stitch_editorial_website_redesign_field_records_spomove_code-h4-10: 고객지원
+- STITCH-stitch_editorial_website_redesign_field_records_spomove_code-p-11: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)
+- STITCH-stitch_editorial_website_redesign_field_records_spomove_code-span-15: 개인정보처리방침
+- STITCH-stitch_editorial_website_redesign_field_records_spomove_code-span-16: 이용약관
+- STITCH-stitch_editorial_website_redesign_field_records_spomove_code-span-17: 학술연구윤리준칙
+- IMG STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-18
+- IMG STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-19
+- IMG STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-20
+- IMG STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-21
+- IMG STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-22
+- IMG STITCH-stitch_editorial_website_redesign_field_records_spomove_code-img-23
+- STITCH-stitch_editorial_website_redesign_home_spomove_code-h4-5: 연구 및 지원
+- STITCH-stitch_editorial_website_redesign_home_spomove_code-h4-10: 고객지원
+- STITCH-stitch_editorial_website_redesign_home_spomove_code-p-11: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)
+- STITCH-stitch_editorial_website_redesign_home_spomove_code-span-15: 개인정보처리방침
+- STITCH-stitch_editorial_website_redesign_home_spomove_code-span-16: 이용약관
+- STITCH-stitch_editorial_website_redesign_home_spomove_code-span-17: 학술연구윤리준칙
+- IMG STITCH-stitch_editorial_website_redesign_home_spomove_code-img-18
+- IMG STITCH-stitch_editorial_website_redesign_home_spomove_code-img-19
+- IMG STITCH-stitch_editorial_website_redesign_home_spomove_code-img-20
+- IMG STITCH-stitch_editorial_website_redesign_home_spomove_code-img-21
+- IMG STITCH-stitch_editorial_website_redesign_home_spomove_code-img-22
+- IMG STITCH-stitch_editorial_website_redesign_home_spomove_code-img-23
+- STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-h4-5: 연구 및 지원
+- STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-h4-10: 고객지원
+- STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-p-11: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)
+- STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-span-15: 개인정보처리방침
+- STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-span-16: 이용약관
+- STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-span-17: 학술연구윤리준칙
+- IMG STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-18
+- IMG STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-19
+- IMG STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-20
+- IMG STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-21
+- IMG STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-22
+- IMG STITCH-stitch_editorial_website_redesign_private_lesson_spomove_code-img-23
+- STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-h4-5: 연구 및 지원
+- STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-h4-10: 고객지원
+- STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-p-11: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)
+- STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-span-15: 개인정보처리방침
+- STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-span-16: 이용약관
+- STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-span-17: 학술연구윤리준칙
+- IMG STITCH-stitch_editorial_website_redesign_spomove_system_spomove_code-img-18
