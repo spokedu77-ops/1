@@ -7,6 +7,22 @@
   padding: 0;
 }
 
+/* Tailwind v4's global img { height: auto } must not override the source
+ * h-full image contract inside fixed-aspect Stitch frames. */
+.stitch-c0-root img.h-full {
+  height: 100%;
+}
+
+/* Actual case names and descriptions must remain readable in their original
+ * cards; source ellipsis utilities clipped the approved Korean copy. */
+.stitch-c0-root[data-stitch-page='/'] main h3,
+.stitch-c0-root[data-stitch-page='/records'] .record-card :is(h3, p) {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .stitch-c0-root main > :first-child {
   margin-top: 0 !important;
 }
@@ -63,6 +79,11 @@ html[data-stitch-c0-active='1'] .stitch-c0-root [class*='space-y-'] > * {
   opacity: .5;
 }
 
+/* Text in informational graphics must fit without implying a clipped measurement. */
+.stitch-c0-root[data-stitch-page='/spomove'] svg[role='img'] {
+  overflow: visible;
+}
+
 /* Only the Home photo caption: keep the brand chip from squeezing the Korean copy. */
 @media (max-width: 639px) {
   .stitch-c0-root[data-stitch-page='/'] main section:first-of-type .absolute.bottom-6 > div:first-child {
@@ -79,6 +100,11 @@ html[data-stitch-c0-active='1'] .stitch-c0-root [class*='space-y-'] > * {
 }
 
 @media (max-width: 767px) {
+  html[data-stitch-c0-active='1'] .stitch-c0-root[data-stitch-page='/'] main h1 {
+    font-size: clamp(22px, 6.2vw, 36px);
+    line-height: 1.4;
+  }
+
   html[data-stitch-c0-active='1'] .stitch-c0-root main h1 {
     font-size: clamp(28px, 8vw, 36px);
     line-height: 1.35;

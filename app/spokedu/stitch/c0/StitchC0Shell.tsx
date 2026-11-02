@@ -44,7 +44,8 @@ function wireStitchRecordFilters(root: HTMLElement) {
       item.setAttribute('aria-pressed', String(active));
     });
     root.querySelectorAll<HTMLElement>('.record-card[data-category]').forEach((card) => {
-      card.style.display = filter === 'all' || card.dataset.category === filter ? 'flex' : 'none';
+      const categories = card.dataset.category?.split(/\s+/) ?? [];
+      card.style.display = filter === 'all' || (filter && categories.includes(filter)) ? 'flex' : 'none';
     });
   };
   root.addEventListener('click', onClick);
