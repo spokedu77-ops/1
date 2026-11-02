@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { jsonMetadataSpan, replaceSessionAssistants, validateSessionAssistants } from '@/app/admin/classes-shared/lib/sessionMetadata';
 import { persistedSessionMatches } from '@/app/admin/classes-shared/lib/sessionSaveVerification';
+import { assertSessionSchedulePreservesFeedback } from '@/app/lib/server/sessionFeedbackGuard';
 
 const expected = z.object({
   start_at: z.string().datetime({ offset: true }), end_at: z.string().datetime({ offset: true }),
@@ -37,6 +38,14 @@ export async function POST(request: NextRequest) {
       if (error) return NextResponse.json({ error }, { status: 400 });
     }
     const supabase = getServiceSupabase();
+    if (input.patch?.start_at) {
+      const { data: current, error } = await supabase.from('sessions')
+        .select('id,start_at,status,feedback_fields,students_text,photo_url,file_url')
+        .eq('id', input.sessionId).maybeSingle();
+      if (error) return NextResponse.json({ error: 'SESSION_UPDATE_LOOKUP_FAILED' }, { status: 500 });
+      if (!current) return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+      assertSessionSchedulePreservesFeedback(current, input.patch.start_at);
+    }
     const teacherIds = [...new Set([...(input.assistants ?? []).map((teacher) => teacher.id), ...(input.patch?.created_by ? [input.patch.created_by] : [])])];
     if (teacherIds.length) {
       const teachers = await supabase.from('users').select('id').in('id', teacherIds);
@@ -70,6 +79,9 @@ export async function POST(request: NextRequest) {
     // Return the actual stored row (including trigger results), never the submitted patch.
     return NextResponse.json({ ok: true, session: data });
   } catch (error) {
+    if (error instanceof Error && error.message === 'SESSION_RECORDED_SCHEDULE_MOVE_FORBIDDEN') {
+      return NextResponse.json({ error: error.message, message: '완료 기록이나 피드백이 있는 수업을 오늘·미래 날짜로 옮길 수 없습니다. 기존 기록을 보존하고 새 수업을 생성해 주세요.' }, { status: 409 });
+    }
     console.warn('checked session update unavailable', { sessionId: input.sessionId, error: error instanceof Error ? error.name : 'unknown' });
     const metadata = error instanceof SyntaxError || (error instanceof Error && error.message.startsWith('SESSION_METADATA_'));
     return NextResponse.json({ error: metadata ? 'SESSION_METADATA_INVALID' : 'SESSION_UPDATE_FAILED' }, { status: metadata ? 400 : 500 });

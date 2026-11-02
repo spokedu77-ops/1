@@ -3,6 +3,7 @@
 import { toast } from 'sonner';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import type { EquipmentCapabilities } from '@/app/lib/equipment/capabilities';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { 
@@ -49,6 +50,7 @@ export function LegacyInventoryClient() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [serverCaps, setServerCaps] = useState<EquipmentCapabilities | null>(null);
   const assertInventoryMutation = (
     data: { id: number } | null,
     error: { message: string } | null
@@ -98,6 +100,15 @@ export function LegacyInventoryClient() {
     setIsInitialLoading(true);
     Promise.all([fetchCatalog(), fetchTeachers()]).finally(() => setIsInitialLoading(false));
   }, [fetchCatalog, fetchTeachers]);
+
+  useEffect(() => {
+    void fetch('/api/admin/equipment/capabilities', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { capabilities?: EquipmentCapabilities } | null) => {
+        if (body?.capabilities) setServerCaps(body.capabilities);
+      })
+      .catch(() => {});
+  }, []);
 
   const filteredTeachers = useMemo(() => 
     teachers.filter(t => (t.name ?? '').includes(searchQuery)),
@@ -358,7 +369,20 @@ export function LegacyInventoryClient() {
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans text-slate-900 relative">
-      
+      {serverCaps?.server_write_mode === 'ledger' && (
+        <div className="absolute top-0 left-0 right-0 z-[130] px-4 py-2 bg-indigo-950 text-indigo-100 text-xs md:text-sm border-b border-indigo-800">
+          서버 수불 원장 쓰기(<code className="mx-1">EQUIPMENT_WRITE_MODE=ledger</code>)가 활성화되어 있습니다.
+          {serverCaps.legacy_direct_writes_blocked === true ? (
+            <span className="font-bold text-amber-200"> 운영 DB 게이트에 따라 이 화면의 legacy 재고 직접 변경은 차단됩니다.</span>
+          ) : serverCaps.legacy_direct_writes_blocked === false ? (
+            <span> legacy 직접 변경은 아직 허용 상태입니다(OPS 게이트 미차단).</span>
+          ) : (
+            <span> legacy 차단 여부는 OPS DB 상태를 확인할 수 없습니다.</span>
+          )}
+          {' '}
+          신규 수불관리는 <code className="mx-1">NEXT_PUBLIC_EQUIPMENT_UI=ledger</code> 빌드 후 이용하세요.
+        </div>
+      )}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-[110] md:hidden backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)} />
       )}

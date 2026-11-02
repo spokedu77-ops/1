@@ -7,12 +7,13 @@ export function matchesCenterFilters(center: Center, filters: { status: string; 
   const term = filters.search.replace(/[,%()]/g, ' ').trim();
   if (!term) return !filters.search.trim();
   const pattern = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/_/g, '.'), 'i');
-  return [center.name, center.address, center.contact_name, center.contact_email].some((value) => value && pattern.test(value));
+  return [center.name, center.project_name ?? center.settlement_defaults?.projectName, center.address, center.contact_name, center.contact_email].some((value) => value && pattern.test(value));
 }
 
-export function toCenterListItem(row: Partial<CenterListItem>): CenterListItem {
+export function toCenterListItem(row: Partial<Center>): CenterListItem {
   return {
     id: row.id!, name: row.name!, status: row.status ?? 'active',
+    project_name: row.project_name ?? row.settlement_defaults?.projectName ?? null,
     region_tag: row.region_tag ?? null,
     contact_name: row.contact_name ?? null, contact_phone: row.contact_phone ?? null,
     contact_email: row.contact_email ?? null, contact_role: row.contact_role ?? null,

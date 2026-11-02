@@ -55,7 +55,7 @@ export interface TeacherOption {
 
 /** Fields actually rendered by the center list; never serialize detail placeholders. */
 export type CenterListItem = Pick<Center,
-  'id' | 'name' | 'region_tag' | 'status' | 'contact_name' | 'contact_phone' |
+  'id' | 'name' | 'project_name' | 'region_tag' | 'status' | 'contact_name' | 'contact_phone' |
   'contact_email' | 'contact_role' | 'weekly_schedule' | 'highlights' | 'updated_at' |
   'main_teacher_name' | 'main_teacher_2_name' | 'main_teacher_3_name'>;
 
@@ -63,6 +63,8 @@ export interface Center {
   settlement_defaults?: import('./settlementDefaults').CenterSettlementDefaults;
   id: string;
   name: string;
+  /** Project title stored in operational settings; optional for existing records. */
+  project_name?: string | null;
   region_tag: string | null;
   address: string | null;
   access_note: string | null;

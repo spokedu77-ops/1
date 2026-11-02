@@ -7,6 +7,8 @@ import { cloneTierFeeMap } from '@/app/lib/teacherTierSchedule';
 import { teacherFeePreview, type TierFeeRecord } from '@/app/lib/centers/teacherFeePreview';
 import type { InstructorsDefault } from '@/app/lib/centers/types';
 import { readCenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
+import { totalCenterFee } from '@/app/lib/centers/feeBreakdown';
+import { centerDisplayName } from '@/app/lib/centers/displayName';
 
 const json = (body: unknown, status = 200) => NextResponse.json(body, {
   status, headers: { 'Cache-Control': 'private, no-store, max-age=0' },
@@ -27,7 +29,7 @@ export async function GET(request: Request) {
     let query = service.from('centers')
       .select('id,name,region_tag,status,session_fee,main_teacher_id,main_teacher_2_id,main_teacher_3_id,instructors_default,settlement_defaults')
       .neq('status', 'ended').order('name').order('id').limit(30);
-    if (term) query = query.ilike('name', `%${term}%`);
+    if (term) query = query.or(`name.ilike.%${term}%,settlement_defaults->>projectName.ilike.%${term}%`);
     const result = await query;
     if (result.error) throw result.error;
     const centers = result.data ?? [];
@@ -54,11 +56,14 @@ export async function GET(request: Request) {
       const assistants = [center.main_teacher_2_id, center.main_teacher_3_id].filter((id): id is string => Boolean(id));
       const assistantFees = assistants.map((id) => fee(id, 'assist'));
       const assigned = [center.main_teacher_id, ...assistants].filter(Boolean);
-      return { id: center.id, name: center.name, region: center.region_tag, sessionFee: center.session_fee,
-        defaults: readCenterSettlementDefaults(center.settlement_defaults),
+      const defaults = readCenterSettlementDefaults(center.settlement_defaults);
+      const breakdown = defaults.billingBreakdown;
+      return { id: center.id, name: centerDisplayName({ name: center.name, settlement_defaults: defaults }), region: center.region_tag,
+        sessionFee: breakdown ? totalCenterFee(breakdown) : center.session_fee,
+        defaults, billingBreakdown: breakdown ?? null,
         mainZeroFee: isZeroFeeStaff(teacherRows.find((teacher) => teacher.id === center.main_teacher_id)),
         assistZeroFee: assistants.length > 0 && assistants.every((id) => isZeroFeeStaff(teacherRows.find((teacher) => teacher.id === id))),
-        mainFee: fee(center.main_teacher_id, 'main'),
+        mainFee: center.main_teacher_id ? fee(center.main_teacher_id, 'main') : 0,
         assistFee: new Set(assigned).size !== assigned.length || assistantFees.some((amount) => amount == null) ? null : assistantFees.reduce<number>((sum, amount) => sum + (amount ?? 0), 0) };
     }) });
   } catch {

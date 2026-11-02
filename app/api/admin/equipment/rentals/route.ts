@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type { EquipmentRentalRow } from '@/app/lib/equipment/types';
+import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
 import { fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
 
@@ -21,6 +22,20 @@ export async function GET(request: Request) {
       const inventoryItems = await fetchLegacyInventory(service, teacherId ?? undefined);
       return NextResponse.json({ items: [], inventory_items: inventoryItems, data_source: 'legacy' },
         { headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
+    } catch {
+      return NextResponse.json({ error: '보유 내역을 불러오지 못했습니다.' }, { status: 500 });
+    }
+  }
+  if (!(await isEquipmentLedgerSchemaReady(service))) {
+    if (catalogId) {
+      return NextResponse.json({ error: '원장 전환 전에는 교구별 대여 집계를 조회할 수 없습니다.' }, { status: 400 });
+    }
+    try {
+      const inventoryItems = await fetchLegacyInventory(service, teacherId ?? undefined);
+      return NextResponse.json(
+        { items: [], inventory_items: inventoryItems, data_source: 'legacy', warning: 'EQUIPMENT_LEDGER_SCHEMA_NOT_READY' },
+        { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
+      );
     } catch {
       return NextResponse.json({ error: '보유 내역을 불러오지 못했습니다.' }, { status: 500 });
     }

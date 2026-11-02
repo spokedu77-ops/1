@@ -14,6 +14,8 @@ export type EquipmentStockRow = {
   qty_available: number;
   opening_confirmed: boolean;
   cache_drift: boolean;
+  /** false = catalog preview only (no ledger qty; show — not 0). */
+  stock_metrics_available?: boolean;
 };
 
 export type EquipmentRentalRow = {
@@ -42,6 +44,8 @@ export type EquipmentLedgerRow = {
   note: string | null;
   occurred_at: string;
   metadata: Record<string, unknown>;
+  created_by: string | null;
+  created_by_name?: string | null;
 };
 
 export type TeacherHoldingRow = {

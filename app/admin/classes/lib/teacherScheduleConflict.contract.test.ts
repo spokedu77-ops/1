@@ -40,9 +40,9 @@ describe('Stage 2C teacher schedule conflict guard', () => {
 
   it('covers legacy and current creation, extension, single, bulk, and postpone write paths', () => {
     expect(migration).toContain('AFTER INSERT OR UPDATE OF start_at, end_at, created_by, memo, status OR DELETE');
-    expect(createPage).toContain("supabase.from('sessions').insert(sessionsToInsert)");
+    expect(createPage).toContain("supabase.from('sessions').insert(payableSessions)");
     expect(roundExtend).toContain(".from('sessions')");
-    expect(roundExtend).toContain('.insert(newSessions)');
+    expect(roundExtend).toContain('.insert(payableSessions)');
     expect(panel).toContain("fetch('/api/admin/classes/sessions/checked-update'");
     expect(checkedRoute).toContain('requireAdmin()');
     expect(checkedRoute).toContain("supabase.from('sessions').update(patch).eq('id', input.sessionId)");

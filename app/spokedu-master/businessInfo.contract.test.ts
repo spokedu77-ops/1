@@ -81,7 +81,9 @@ describe('SPOKEDU MASTER business info contract', () => {
 
     expect(page).toContain('business: MASTER_BUSINESS_INFO');
     expect(footer).toContain('getPublicFooterLegalLine');
-    expect(footer).not.toContain('brandProfile.businessRegistrationNumber');
+    expect(footer).toContain('brandProfile.businessRegistrationNumber');
+    expect(footer).toContain('omitUnverifiedAddress');
+    expect(footer).not.toContain(MASTER_BUSINESS_INFO.businessRegistrationNumber);
     expect(footer).not.toContain('brandProfile.businessAddress');
     expect(footer).toContain('brandProfile.phone');
     expect(footer).toContain('brandProfile.email');

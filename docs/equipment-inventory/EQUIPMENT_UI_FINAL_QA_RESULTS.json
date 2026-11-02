@@ -1,0 +1,135 @@
+{
+  "ran_at": "2026-11-02T06:47:12.477Z",
+  "results": [
+    {
+      "section": "env_supabase_isolated",
+      "status": "SKIP",
+      "detail": "remote — mutation blocked"
+    },
+    {
+      "section": "docker_available",
+      "status": "SKIP",
+      "detail": "Stage 2.9 DB bootstrap unavailable"
+    },
+    {
+      "section": "next_dev",
+      "status": "PASS",
+      "detail": "http://127.0.0.1:3000"
+    },
+    {
+      "section": "visual_fixture_route",
+      "status": "PASS",
+      "detail": "http://127.0.0.1:3000/dev/equipment-inventory-visual-fixture"
+    },
+    {
+      "section": "visual_fixture_normal_col_T",
+      "status": "PASS",
+      "detail": "T"
+    },
+    {
+      "section": "visual_fixture_normal_col_W",
+      "status": "PASS",
+      "detail": "W"
+    },
+    {
+      "section": "visual_fixture_normal_col_L",
+      "status": "PASS",
+      "detail": "L"
+    },
+    {
+      "section": "visual_fixture_normal_col_Q",
+      "status": "PASS",
+      "detail": "Q"
+    },
+    {
+      "section": "visual_fixture_normal_col_A",
+      "status": "PASS",
+      "detail": "A"
+    },
+    {
+      "section": "visual_fixture_opening",
+      "status": "PASS",
+      "detail": "opening"
+    },
+    {
+      "section": "visual_fixture_drift",
+      "status": "PASS",
+      "detail": "drift"
+    },
+    {
+      "section": "visual_fixture_empty",
+      "status": "PASS",
+      "detail": "empty"
+    },
+    {
+      "section": "visual_fixture_mismatch_banner",
+      "status": "PASS",
+      "detail": "mismatch"
+    },
+    {
+      "section": "visual_screenshot_desktop_1440",
+      "status": "PASS",
+      "detail": "fixture_desktop_1440.png"
+    },
+    {
+      "section": "visual_layout_table_desktop_1440",
+      "status": "PASS",
+      "detail": "tables=3"
+    },
+    {
+      "section": "visual_screenshot_width_1024",
+      "status": "PASS",
+      "detail": "fixture_width_1024.png"
+    },
+    {
+      "section": "visual_layout_table_width_1024",
+      "status": "PASS",
+      "detail": "tables=3"
+    },
+    {
+      "section": "visual_screenshot_tablet_768",
+      "status": "PASS",
+      "detail": "fixture_tablet_768.png"
+    },
+    {
+      "section": "visual_layout_cards_tablet_768",
+      "status": "PASS",
+      "detail": "cards=2"
+    },
+    {
+      "section": "visual_screenshot_mobile_375",
+      "status": "PASS",
+      "detail": "fixture_mobile_375.png"
+    },
+    {
+      "section": "visual_layout_cards_mobile_375",
+      "status": "PASS",
+      "detail": "cards=2"
+    },
+    {
+      "section": "visual_fixture_modal_rent",
+      "status": "PASS",
+      "detail": "fixture_modal_rent.png"
+    },
+    {
+      "section": "visual_fixture_modal_return",
+      "status": "PASS",
+      "detail": "multi rental select"
+    },
+    {
+      "section": "visual_visual_fixture_summary",
+      "status": "PASS",
+      "detail": "VISUAL_FIXTURE_QA_PASS"
+    },
+    {
+      "section": "visual_fixture_gate",
+      "status": "PASS",
+      "detail": "VISUAL_FIXTURE_QA_PASS"
+    },
+    {
+      "section": "integration_e2e",
+      "status": "NOT_VERIFIED",
+      "detail": "remote or no Docker — skipped"
+    }
+  ]
+}

@@ -40,7 +40,7 @@ describe('settlement preservation', () => {
   });
   it('rejects stale policy edits before writing', async () => {
     const q = query({ payload: {}, revision: 'new' }); mock.from.mockReturnValue(q);
-    expect((await PUT(request({ kind: 'center', value: { id: 'old', rev: 'stale' } }))).status).toBe(409);
+    expect((await PUT(request({ kind: 'center', value: { type: 'private', id: 'old', rev: 'stale' } }))).status).toBe(409);
     expect(mock.from).toHaveBeenCalledTimes(1); expect(q.update).not.toHaveBeenCalled();
   });
   it('does not allow confirmed month edits disguised as unlocks', async () => {

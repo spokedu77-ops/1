@@ -8,7 +8,10 @@ const changes = [{ id, price: 0, expected: { price: 25000 } }];
 const request = () => new NextRequest('http://localhost/api/admin/classes/sessions/bulk-update', { method: 'POST', body: JSON.stringify({ changes }) });
 function database(updated: unknown = 1, rows: unknown = [{ id, price: 0 }], error: unknown = null) {
   const rpc = vi.fn().mockResolvedValue({ data: updated, error });
-  mocks.service.mockReturnValue({ rpc, from: () => ({ select: () => ({ in: async () => ({ data: rows, error: null }) }) }) });
+  mocks.service.mockReturnValue({ rpc, from: (table: string) => ({ select: (columns: string) => ({
+    in: async () => ({ data: columns === '*' ? rows : [{ id, price: 25000, start_at: '2026-12-01T01:00:00Z', status: 'opened' }], error: null }),
+    order: () => ({ range: async () => ({ data: table === 'users' ? [] : rows, error: null }) }),
+  }) }) });
   return rpc;
 }
 beforeEach(() => { vi.clearAllMocks(); mocks.auth.mockResolvedValue({ ok: true }); });

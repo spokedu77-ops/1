@@ -117,8 +117,22 @@ export function rowFromCenter(center: SettlementCenter, monthKey: string): Settl
     sessions: center.sessions, vatMode: center.vat, whRate: Number(center.whRate) || 0, centerId: center.id,
     dueDate: dueDate(monthKey, center), type: center.type };
 }
+function copyRowForNextMonth(row: SettlementRow): SettlementRow {
+  return row.kind === 'section' ? { ...row, id: uid() } : { ...row, id: uid(), sessions: '', inv: false,
+    rcpt: false, rcptAmt: null, total: '', adj: 0, note: '', invDate: '', rcptDate: '' };
+}
 export function carryOver(rows: SettlementRow[]) {
-  return rows.map((row) => row.kind === 'section' ? { ...row, id: uid() } : { ...row, id: uid(), sessions: '', inv: false,
-    rcpt: false, rcptAmt: null, total: '', adj: 0, note: '', invDate: '', rcptDate: '' })
+  return rows.map(copyRowForNextMonth)
     .filter((row) => row.kind === 'section' || row.fee !== '' || row.cost !== '');
+}
+
+export function nextSettlementMonthKey(monthKeys: string[], now = new Date()): string {
+  const latest = monthKeys.filter((key) => /^\d{4}-(0[1-9]|1[0-2])$/.test(key)).sort().at(-1);
+  if (!latest) return currentSeoulMonthKey(now);
+  const [year, month] = latest.split('-').map(Number);
+  return new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 7);
+}
+
+export function carryOverRegularClasses(rows: SettlementRow[]) {
+  return rows.filter((row) => row.kind === 'row' && row.type === 'regular').map(copyRowForNextMonth);
 }

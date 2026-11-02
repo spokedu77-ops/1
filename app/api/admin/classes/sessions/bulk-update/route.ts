@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { assertSavedSessionRows } from '@/app/admin/classes-shared/lib/sessionSaveVerification';
+import { assertSessionSchedulePreservesFeedback } from '@/app/lib/server/sessionFeedbackGuard';
 
 type SessionScheduleChange = {
   id: string;
@@ -35,8 +36,20 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getServiceSupabase();
-  const assigned = await supabase.from('sessions').select('id,created_by').in('id', body.changes.map((change) => change.id));
+  const assigned = await supabase.from('sessions').select('id,created_by,start_at,status,feedback_fields,students_text,photo_url,file_url').in('id', body.changes.map((change) => change.id));
   if (assigned.error) return NextResponse.json({ error: 'SESSION_BULK_UPDATE_RELOAD_FAILED' }, { status: 500 });
+  try {
+    for (const change of body.changes) {
+      const current = assigned.data?.find(row => row.id === change.id);
+      if (!current) return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+      assertSessionSchedulePreservesFeedback(current, change.start_at);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message === 'SESSION_RECORDED_SCHEDULE_MOVE_FORBIDDEN') {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    return NextResponse.json({ error: 'SESSION_SCHEDULE_INVALID' }, { status: 400 });
+  }
   const staff = await staffTeacherIds(supabase);
   body.changes = body.changes.map((change) => {
     const teacherId = change.created_by ?? assigned.data?.find((row) => row.id === change.id)?.created_by;

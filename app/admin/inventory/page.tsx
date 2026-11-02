@@ -3,14 +3,14 @@
 import { EquipmentInventoryApp } from './EquipmentInventoryApp';
 import { LegacyInventoryClient } from './LegacyInventoryClient';
 
-/** Use the current 3-tab UI by default; legacy is an explicit rollback option. */
-function useLegacyInventoryUi() {
-  return process.env.NEXT_PUBLIC_EQUIPMENT_UI === 'legacy';
+/** Ledger UI requires an explicit build-time flag. Unset or other values use legacy. */
+function useLedgerInventoryUi() {
+  return process.env.NEXT_PUBLIC_EQUIPMENT_UI === 'ledger';
 }
 
 export default function AdminInventoryPage() {
-  if (useLegacyInventoryUi()) {
-    return <LegacyInventoryClient />;
+  if (useLedgerInventoryUi()) {
+    return <EquipmentInventoryApp />;
   }
-  return <EquipmentInventoryApp />;
+  return <LegacyInventoryClient />;
 }

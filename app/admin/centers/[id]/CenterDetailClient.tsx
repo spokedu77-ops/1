@@ -4,9 +4,11 @@ import CenterSettlementFields from '../components/CenterSettlementFields';
 import { DEFAULT_CENTER_SETTLEMENT, readCenterSettlementDefaults, type CenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
 
 import { toast } from 'sonner';
-import CenterTeacherFees from '../components/CenterTeacherFees';
+import CenterTeacherFees, { type ResolvedCenterLabor } from '../components/CenterTeacherFees';
+import { centerBillingBreakdownSchema, resolveCenterLabor, totalCenterFee } from '@/app/lib/centers/feeBreakdown';
+import { centerDisplayName } from '@/app/lib/centers/displayName';
 import CenterSettlementPanel from '../components/CenterSettlementPanel';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCenterById } from '../actions/centers';
@@ -42,20 +44,12 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { optimizeToWebP, validateImageFormat } from '@/app/lib/admin/assets/imageOptimizer';
 import {
   ArrowLeft,
-  Building2,
   Loader2,
   Pencil,
   Trash2,
   X,
   Plus,
-  MapPin,
-  Phone,
-  Mail,
-  Calendar,
   Clock,
-  Users,
-  AlertCircle,
-  BadgeJapaneseYen,
   History,
   FileUp,
   FileText,
@@ -84,17 +78,13 @@ const STATUS_STYLES: Record<CenterStatus, string> = {
 };
 
 const STATUS_LABELS: Record<CenterStatus, string> = {
-  active: '활성',
+  active: '운영 중',
   paused: '일시중지',
   ended: '종료',
 };
 
-const DAY_OPTIONS = [
-  { value: 'mon', label: '월' }, { value: 'tue', label: '화' },
-  { value: 'wed', label: '수' }, { value: 'thu', label: '목' },
-  { value: 'fri', label: '금' }, { value: 'sat', label: '토' },
-  { value: 'sun', label: '일' },
-];
+const editControl = 'mt-1 h-10 w-full min-w-0 max-w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20';
+const editField = 'grid min-w-0 grid-cols-1 items-center gap-x-3 text-sm text-slate-600 sm:grid-cols-[8rem_minmax(0,1fr)] [&>input]:sm:mt-0 [&>select]:sm:mt-0';
 
 const DAY_LABELS: Record<string, string> = {
   mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
@@ -105,15 +95,20 @@ type EditForm = {
   name: string;
   region_tag: string;
   address: string;
+  project_name: string;
   access_note: string;
   contact_name: string;
   contact_phone: string;
+  contact_phone_secondary: string;
   contact_email: string;
   contact_role: string;
   status: CenterStatus;
   contract_start: string;
   contract_end: string;
   session_fee: string;
+  main_charge: string;
+  assist_charge: string;
+  rental_charge: string;
   main_teacher_id: string;
   main_teacher_2_id: string;
   main_teacher_3_id: string;
@@ -130,15 +125,20 @@ const DEFAULT_EDIT_FORM: EditForm = {
   name: '',
   region_tag: '',
   address: '',
+  project_name: '',
   access_note: '',
   contact_name: '',
   contact_phone: '',
+  contact_phone_secondary: '',
   contact_email: '',
   contact_role: '',
   status: 'active',
   contract_start: '',
   contract_end: '',
   session_fee: '',
+  main_charge: '',
+  assist_charge: '',
+  rental_charge: '',
   main_teacher_id: '',
   main_teacher_2_id: '',
   main_teacher_3_id: '',
@@ -164,6 +164,19 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditForm>(DEFAULT_EDIT_FORM);
+  const [resolvedLabor, setResolvedLabor] = useState<ResolvedCenterLabor | null>(null);
+  const onResolvedFees = useCallback((value: ResolvedCenterLabor) => setResolvedLabor(value), []);
+  const assignmentKey = [editForm.main_teacher_id, editForm.main_teacher_2_id, editForm.main_teacher_3_id].join('|');
+  const draftLabor = resolvedLabor?.assignmentKey === assignmentKey ? resolveCenterLabor({
+    mainId: editForm.main_teacher_id, assistantIds: [editForm.main_teacher_2_id, editForm.main_teacher_3_id],
+    fees: resolvedLabor.fees,
+  }) : null;
+  const parsedBilling = centerBillingBreakdownSchema.safeParse({
+    mainCharge: editForm.main_charge.trim() === '' ? null : Number(editForm.main_charge),
+    assistCharge: editForm.assist_charge.trim() === '' ? null : Number(editForm.assist_charge),
+    rentalCharge: editForm.rental_charge.trim() === '' ? null : Number(editForm.rental_charge),
+  });
+  const draftBreakdown = parsedBilling.success ? parsedBilling.data : null;
   const [editError, setEditError] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
@@ -321,36 +334,33 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
     loadTeachers();
     setHistoryEditingId(null);
     setHistoryEditBody('');
-    const existingSub = center.instructors_default?.sub?.trim() || '';
-    const existingBackup = center.instructors_default?.backup ?? [];
-    const mergedBackup = Array.from(
-      new Set([existingSub, ...existingBackup].map((s) => (s || '').trim()).filter(Boolean))
-    );
+    const [primaryPhone, ...otherPhones] = (center.contact_phone ?? '').split(/\s*\/\s*/);
+    setResolvedLabor(null);
     const nextForm: EditForm = {
       settlement_defaults: readCenterSettlementDefaults(center.settlement_defaults),
       name: center.name,
       region_tag: center.region_tag ?? '',
       address: center.address ?? '',
+      project_name: center.settlement_defaults?.projectName ?? '',
       access_note: center.access_note ?? '',
       contact_name: center.contact_name ?? '',
-      contact_phone: center.contact_phone ?? '',
+      contact_phone: primaryPhone,
+      contact_phone_secondary: otherPhones.join(' / '),
       contact_email: center.contact_email ?? '',
       contact_role: center.contact_role ?? '',
       status: center.status,
       contract_start: center.contract_start ?? '',
       contract_end: center.contract_end ?? '',
       session_fee: center.session_fee != null ? String(center.session_fee) : '',
+      main_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.mainCharge) : '',
+      assist_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.assistCharge) : '',
+      rental_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.rentalCharge) : '',
       main_teacher_id: center.main_teacher_id ?? '',
       main_teacher_2_id: center.main_teacher_2_id ?? '',
       main_teacher_3_id: center.main_teacher_3_id ?? '',
       highlights: center.highlights ?? '',
       weekly_schedule: center.weekly_schedule ?? [],
-      // "보조/백업"이 중복이라 하나로 운영: 기존 sub+backup을 합쳐서 backup 배열에 보존
-      instructors_default: {
-        ...(center.instructors_default ?? { main: null, sub: null, backup: [] }),
-        sub: null,
-        backup: mergedBackup,
-      },
+      instructors_default: center.instructors_default ?? { main: null, sub: null, backup: [] },
       criminal_check_facility_id: center.criminal_check_facility_id ?? '',
       criminal_check_facility_password: '',
       criminal_check_files: center.criminal_check_files ?? [],
@@ -507,31 +517,32 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
       setEditError('센터명을 입력해주세요.');
       return;
     }
+    if (!draftBreakdown || !draftLabor || !resolvedLabor) {
+      setEditError('센터 청구 금액 3개와 선생님 지급 강사료를 각각 확인해 주세요. 금액이 없으면 0원을 입력해 주세요.');
+      return;
+    }
     setEditSubmitting(true);
     try {
-      const rawFee = editForm.session_fee.trim();
-      const parsedFee = rawFee !== '' ? parseInt(rawFee, 10) : null;
       const payload: Record<string, unknown> = {
-        settlement_defaults: editForm.settlement_defaults,
+        settlement_defaults: { ...editForm.settlement_defaults, projectName: editForm.project_name.trim(), billingBreakdown: draftBreakdown },
+        contract_start: editForm.contract_start || null,
+        contract_end: editForm.contract_end || null,
+        weekly_schedule: editForm.weekly_schedule,
         name: editForm.name.trim(),
-        region_tag: editForm.region_tag.trim() || null,
         address: editForm.address.trim() || null,
         access_note: editForm.access_note.trim() || null,
         contact_name: editForm.contact_name.trim() || null,
-        contact_phone: editForm.contact_phone.trim() || null,
-        contact_email: editForm.contact_email.trim() || null,
-        contact_role: editForm.contact_role.trim() || null,
+        contact_phone: [editForm.contact_phone.trim(), editForm.contact_phone_secondary.trim()].filter(Boolean).join(' / ') || null,
         status: editForm.status,
-        contract_start: editForm.contract_start.trim() || null,
-        contract_end: editForm.contract_end.trim() || null,
-        session_fee: (parsedFee != null && !isNaN(parsedFee)) ? parsedFee : null,
+        session_fee: totalCenterFee(draftBreakdown),
         main_teacher_id: editForm.main_teacher_id.trim() || null,
         main_teacher_2_id: editForm.main_teacher_2_id.trim() || null,
         main_teacher_3_id: editForm.main_teacher_3_id.trim() || null,
         highlights: editForm.highlights.trim() || null,
-        weekly_schedule: editForm.weekly_schedule,
-        // "보조/백업" 단일 운영: sub는 null 고정, backup 배열만 저장
-        instructors_default: { ...editForm.instructors_default, sub: null },
+        instructors_default: { ...editForm.instructors_default, fees: [
+          ...(editForm.instructors_default.fees ?? []).filter((fee) => !resolvedLabor.fees.some((next) => next.teacher_id === fee.teacher_id && next.role === fee.role)),
+          ...resolvedLabor.fees,
+        ] },
         criminal_check_facility_id: editForm.criminal_check_facility_id.trim() || null,
       };
       if (passwordDeleteRequested) {
@@ -574,31 +585,6 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
     }
   };
 
-  const addScheduleSlot = () => {
-    setEditForm((f) => ({
-      ...f,
-      weekly_schedule: [
-        ...f.weekly_schedule,
-        { day: 'mon', start: '09:00', end: '12:00', place: '', note: '' },
-      ],
-    }));
-  };
-
-  const updateScheduleSlot = (i: number, field: keyof WeeklyScheduleSlot, value: string) => {
-    setEditForm((f) => ({
-      ...f,
-      weekly_schedule: f.weekly_schedule.map((row, idx) =>
-        idx === i ? { ...row, [field]: value } : row
-      ),
-    }));
-  };
-
-  const removeScheduleSlot = (i: number) => {
-    setEditForm((f) => ({
-      ...f,
-      weekly_schedule: f.weekly_schedule.filter((_, idx) => idx !== i),
-    }));
-  };
 
   if (loading) {
     return (
@@ -620,10 +606,9 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   }
 
   const schedule = center.weekly_schedule ?? [];
-  const instructors = center.instructors_default ?? { main: null, sub: null, backup: [] };
 
   return (
-    <div className={`flex-1 ${onClose ? 'min-h-0' : 'min-h-screen'} bg-slate-50 w-full pb-[env(safe-area-inset-bottom,0px)]`}>
+    <div className={`min-w-0 flex-1 ${onClose ? 'min-h-0 bg-white' : 'min-h-screen bg-slate-50'} w-full pb-[env(safe-area-inset-bottom,0px)]`}>
       <div inert={isEditOpen} className="p-3 sm:p-4 min-w-0 max-w-4xl mx-auto">
 
         {/* 헤더 */}
@@ -639,11 +624,10 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
         </div>}
 
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Building2 className="h-6 w-6 text-indigo-600 shrink-0" />
+          <div className="min-w-0 flex-1">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl leading-tight">
-                {center.name}
+              <h1 className="break-words text-lg font-semibold tracking-tight text-slate-900 sm:text-xl leading-tight">
+                {centerDisplayName(center)}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[center.status]}`}>
@@ -678,88 +662,35 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
           </div>
         </div>
 
-        <nav aria-label="센터 상세 탭" className="sticky top-0 z-10 mb-3 flex overflow-x-auto border-b border-slate-200 bg-slate-50">
-          {([['basic', '기본정보'], ['fees', '수업·금액'], ['settlement', '정산'], ['history', '운영기록']] as const).map(([key, label]) => (
+        <CenterTeacherFees ids={[center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]}
+          overrides={center.instructors_default?.fees} sessionFee={center.session_fee} summary
+          billingBreakdown={center.settlement_defaults?.billingBreakdown}
+          names={[center.main_teacher_name, center.main_teacher_2_name, center.main_teacher_3_name]} />
+        <nav aria-label="센터 상세 탭" className="mt-3 mb-2 grid grid-cols-2 border-b border-slate-200">
+          {([['basic', '센터 정보'], ['history', '운영기록']] as const).map(([key, label]) => (
             <button key={key} type="button" aria-current={activeTab === key ? 'page' : undefined}
-              onClick={() => setActiveTab(key)} className={`min-h-11 shrink-0 border-b-2 px-4 text-sm font-semibold ${activeTab === key ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-600'}`}>{label}</button>
+              onClick={() => setActiveTab(key)} className={`min-h-10 border-b-2 px-3 text-sm font-semibold ${activeTab === key ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500'}`}>{label}</button>
           ))}
         </nav>
-        <div hidden={activeTab !== 'basic'} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* 계약 기간 */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
-              <Calendar className="h-3.5 w-3.5" />
-              계약 기간
-            </div>
-            <p className="text-sm text-slate-700">
-              {center.contract_start || center.contract_end
-                ? `${center.contract_start ?? '?'} ~ ${center.contract_end ?? '?'}`
-                : <span className="text-slate-400">미설정</span>}
-            </p>
-
-          </div>
-
-          {/* 담당자 */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
-              <Phone className="h-3.5 w-3.5" />
-              담당자
-            </div>
-            {center.contact_name || center.contact_email || center.contact_phone ? (
-              <div className="text-sm text-slate-700 space-y-1">
-                {center.contact_name && (
-                  <p>
-                    <span className="font-medium">{center.contact_name}</span>
-                    {center.contact_role && <span className="text-slate-500 ml-1">({center.contact_role})</span>}
-                  </p>
-                )}
-                {center.contact_email && (
-                  <p className="flex items-center gap-1.5 text-slate-600">
-                    <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    <span>{center.contact_email}</span>
-                  </p>
-                )}
-                {center.contact_phone && (
-                  <p className="flex items-center gap-1.5 text-slate-600">
-                    <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    <span>{center.contact_phone}</span>
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400">미설정</p>
-            )}
-          </div>
-
-          {/* 주소 / 출입 */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
-              <MapPin className="h-3.5 w-3.5" />
-              주소 / 출입
-            </div>
-            <p className="text-sm text-slate-700">{center.address ?? <span className="text-slate-400">-</span>}</p>
-            {center.access_note && (
-              <p className="mt-1 text-xs text-slate-500 whitespace-pre-wrap">{center.access_note}</p>
-            )}
-          </div>
-
-          {/* 특이사항 */}
-          {center.highlights && (
-            <div className="rounded-lg border border-slate-200 bg-white p-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
-                <AlertCircle className="h-3.5 w-3.5" />
-                특이사항
-              </div>
-              <details><summary className="min-h-11 cursor-pointer text-sm">특이사항 펼치기 / 접기</summary><p className="text-sm text-slate-700 whitespace-pre-wrap break-words">{center.highlights}</p></details>
-            </div>
-          )}
-
+        <div hidden={activeTab !== 'basic'} className="min-w-0 space-y-3">
+          <dl className="divide-y divide-slate-100 text-sm">
+            {[
+              ['주소', center.address || '미설정'],
+              ['수업(프로젝트)명', center.settlement_defaults?.projectName || '미설정'],
+              ['담당자', [center.contact_name, center.contact_phone, center.contact_email].filter(Boolean).join(' · ') || '미설정'],
+              ['수업', schedule.map((slot) => `${DAY_LABELS[slot.day] ?? slot.day} ${slot.start}–${slot.end}${slot.place ? ` · ${slot.place}` : ''}${slot.note ? ` (${slot.note})` : ''}`).join('\n') || '미설정'],
+              ...(center.contract_start || center.contract_end ? [['수업 기간', `${center.contract_start || '미설정'} ~ ${center.contract_end || '미설정'}`]] : []),
+              ['출입 안내', center.access_note || '미설정'],
+              ['운영 메모', center.highlights || '미설정'],
+            ].map(([label, value]) => <div key={label} className="grid min-w-0 grid-cols-[8rem_minmax(0,1fr)] gap-3 py-3">
+              <dt className="whitespace-nowrap text-slate-500">{label}</dt><dd title={value} className={label === '수업(프로젝트)명' ? 'min-w-0 truncate text-slate-800' : 'min-w-0 whitespace-pre-wrap break-words text-slate-800 [overflow-wrap:anywhere]'}>{value}</dd>
+            </div>)}
+          </dl>
           {/* 회보서 관련 정보 */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
-              <FileText className="h-3.5 w-3.5" />
-              회보서 관련 정보
-            </div>
+          <details className="min-w-0 rounded-lg border border-slate-200 bg-white p-3">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700">
+              회보서·시설 인증
+            </summary>
             <div className="text-sm text-slate-700 space-y-1">
               <p>
                 시설 ID: <span className="font-medium">{center.criminal_check_facility_id ?? '-'}</span>
@@ -814,60 +745,11 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                 <p className="text-sm text-slate-400 mt-2">첨부 없음</p>
               )}
             </div>
-          </div>
-
+          </details>
+          <details className="rounded-lg border border-slate-200 p-3"><summary className="cursor-pointer text-sm font-medium text-slate-700">정산 추가정보</summary>
+            <div className="pt-3"><CenterSettlementPanel defaults={readCenterSettlementDefaults(center.settlement_defaults)} onEdit={openEditModal} /></div>
+          </details>
         </div>
-        <div hidden={activeTab !== 'fees'} className="space-y-2 border-b border-slate-100 pb-3">
-          <section className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3"><h2 className="text-sm font-medium text-slate-600">센터 청구 수업료</h2><p className="text-lg font-semibold tabular-nums text-slate-900">{center.session_fee == null ? '미설정' : <>{center.session_fee.toLocaleString()}원 <span className="text-xs font-normal text-slate-500">/ 회</span></>}</p></section>
-          <div className="grid gap-3 sm:grid-cols-2">
-          {/* 메인 강사 */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
-              <Users className="h-3.5 w-3.5" />
-              담당 강사
-            </div>
-            <ul className="text-sm text-slate-700 space-y-0.5">
-              <li>
-                메인 <span className="ml-2 font-medium">{center.main_teacher_name ?? '미배정'}</span>
-              </li>
-              {center.main_teacher_2_name ? <li>보조 1 <span className="ml-2 font-medium">{center.main_teacher_2_name}</span></li> : null}
-              {center.main_teacher_3_name ? <li>보조 2 <span className="ml-2 font-medium">{center.main_teacher_3_name}</span></li> : null}
-            </ul>
-            {instructors.backup && instructors.backup.length > 0 && (
-              <p className="text-xs text-slate-400 mt-1">
-                대체 강사: {instructors.backup.join(', ')}
-              </p>
-            )}
-          </div>
-
-          {/* 주간 시간표 */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-2">
-              <Clock className="h-3.5 w-3.5" />
-              주간 시간표
-            </div>
-            {schedule.length === 0 ? (
-              <p className="text-sm text-slate-400">미설정</p>
-            ) : (
-              <ul className="space-y-1">
-                {schedule.map((s, i) => (
-                  <li key={i} className="text-sm text-slate-700">
-                    <span className="font-medium w-5 inline-block">{DAY_LABELS[s.day] ?? s.day}</span>
-                    {' '}{s.start}~{s.end}
-                    {s.place && <span className="text-slate-500 ml-1">{s.place}</span>}
-                    {s.note && <span className="text-xs text-slate-400 ml-1">({s.note})</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          </div>
-          {activeTab === 'fees' && <div className="space-y-1">
-            <div className="flex justify-end"><button type="button" onClick={openEditModal} className="rounded-md px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50">강사료 수정</button></div>
-            <CenterTeacherFees ids={[center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]} overrides={center.instructors_default?.fees} />
-          </div>}
-        </div>
-        {activeTab === 'settlement' && <CenterSettlementPanel defaults={readCenterSettlementDefaults(center.settlement_defaults)} onEdit={openEditModal} />}
         <div hidden={activeTab !== 'history'}>
         {/* 수업 / 운영 히스토리 */}
         <div className="rounded-lg border border-slate-200 bg-white p-3">
@@ -1055,7 +937,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
 
       {/* 수정 모달 (전체 필드) */}
       {isEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-2 sm:p-4">
           <div ref={editDialog} role="dialog" aria-modal="true" aria-labelledby="center-edit-heading"
             onKeyDown={(event) => {
               if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeEdit(); }
@@ -1065,12 +947,13 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                 if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
                 else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
               }
-            }} className="w-full max-w-3xl rounded-xl bg-white shadow-xl border border-slate-200 max-h-[90dvh] flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+            }} className="w-full max-w-2xl min-w-0 rounded-xl bg-white shadow-xl border border-slate-200 max-h-[94dvh] flex flex-col xl:max-w-6xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0 sm:px-6">
               <h2 id="center-edit-heading" className="text-lg font-semibold tracking-tight text-slate-900">센터 정보 수정</h2>
               <button
                 type="button"
                 onClick={closeEdit}
+                aria-label="센터 정보 수정 닫기"
                 className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
               >
                 <X className="h-5 w-5" />
@@ -1080,185 +963,82 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
             <form onSubmit={handleEditSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {teachersLoading && <p role="status" className="px-6 pt-4 text-sm text-slate-500">강사 목록을 불러오는 중…</p>}
               {teachersError && <button type="button" onClick={loadTeachers} className="px-6 pt-4 text-sm text-red-600">강사 목록 조회 실패 · 다시 시도</button>}
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
+              <div data-center-edit-body className="grid min-h-0 min-w-0 flex-1 grid-cols-1 content-start items-start gap-5 overflow-x-hidden overflow-y-auto px-5 py-5 sm:px-6 xl:grid-cols-2 xl:gap-x-8 [&_label]:text-[13px] [&_legend]:text-[13px]">
                 {editError && (
-                  <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{editError}</p>
+                  <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg lg:col-span-2">{editError}</p>
                 )}
 
-                {/* 기본 정보 */}
-                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
-                  <legend className="text-xs font-semibold text-slate-500 mb-1">기본 정보</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">센터명 *</label>
-                      <input
-                        type="text"
-                        value={editForm.name}
-                        onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">지역 태그</label>
-                      <input
-                        type="text"
-                        value={editForm.region_tag}
-                        onChange={(e) => setEditForm((f) => ({ ...f, region_tag: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">주소</label>
-                      <input
-                        type="text"
-                        value={editForm.address}
-                        onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">출입 안내</label>
-                      <textarea
-                        value={editForm.access_note}
-                        onChange={(e) => setEditForm((f) => ({ ...f, access_note: e.target.value }))}
-                        rows={2}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
+                <fieldset className="min-w-0 space-y-3">
+                  <legend className="mb-2 text-xs font-semibold text-slate-500">기본정보</legend>
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_6.5rem] gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+                    <label className={editField}>센터명 *<input required value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className={editControl} /></label>
+                    <label className="min-w-0 text-xs text-slate-600"><span className="sr-only">상태</span><select aria-label="상태" value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as CenterStatus }))} className={editControl + ' sm:mt-0'}><option value="active">운영 중</option><option value="paused">일시중지</option><option value="ended">종료</option></select></label>
+                  </div>
+                  <label className={editField}>주소<input value={editForm.address} onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))} className={editControl} /></label>
+                  <label className={editField}>수업(프로젝트)명<input maxLength={160} value={editForm.project_name} onChange={(e) => setEditForm((form) => ({ ...form, project_name: e.target.value }))} className={editControl + ' sm:mt-0'} /></label>
+                  <label className={editField}>담당자<input value={editForm.contact_name} onChange={(e) => setEditForm((f) => ({ ...f, contact_name: e.target.value }))} className={editControl} /></label>
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className={editField}>연락처 1<input type="tel" value={editForm.contact_phone} onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))} className={editControl} /></label>
+                    <label className={editField}>연락처 2<input type="tel" value={editForm.contact_phone_secondary} onChange={(e) => setEditForm((f) => ({ ...f, contact_phone_secondary: e.target.value }))} className={editControl} /></label>
                   </div>
                 </fieldset>
-
-                {/* 상태 / 계약 */}
-                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
-                  <legend className="text-xs font-semibold text-slate-500 mb-1">상태 / 계약</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">상태</label>
-                      <select
-                        value={editForm.status}
-                        onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as CenterStatus }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
-                      >
-                        <option value="active">활성</option>
-                        <option value="paused">일시중지</option>
-                        <option value="ended">종료</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">계약 시작일</label>
-                      <input
-                        type="text"
-                        placeholder="YYYY-MM-DD"
-                        value={editForm.contract_start}
-                        onChange={(e) => setEditForm((f) => ({ ...f, contract_start: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">계약 종료일</label>
-                      <input
-                        type="text"
-                        placeholder="YYYY-MM-DD"
-                        value={editForm.contract_end}
-                        onChange={(e) => setEditForm((f) => ({ ...f, contract_end: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div className="sm:col-span-3">
-                      <label className="block text-xs font-medium text-slate-600 mb-1">회당 수업료 (원)</label>
-                      <div className="relative">
-                        <BadgeJapaneseYen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                        <input
-                          type="number"
-                          min={0}
-                          step={1000}
-                          placeholder="예: 50000"
-                          value={editForm.session_fee}
-                          onChange={(e) => setEditForm((f) => ({ ...f, session_fee: e.target.value }))}
-                          className="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                        />
+                <fieldset className="min-w-0 space-y-3 border-t border-slate-100 pt-4">
+                  <legend className="text-xs font-semibold text-slate-500">수업 기간·스케줄</legend>
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="min-w-0 text-xs text-slate-600">수업 시작일<input type="date" value={editForm.contract_start} onChange={(e) => setEditForm((form) => ({ ...form, contract_start: e.target.value }))} className={editControl} /></label>
+                    <label className="min-w-0 text-xs text-slate-600">수업 종료일<input type="date" value={editForm.contract_end} onChange={(e) => setEditForm((form) => ({ ...form, contract_end: e.target.value }))} className={editControl} /></label>
+                  </div>
+                  <div className="space-y-3">
+                    {editForm.weekly_schedule.map((slot, index) => <div key={index} className="min-w-0 space-y-3 rounded-lg border border-slate-200 p-2">
+                      <div className="grid min-w-0 grid-cols-2 items-center gap-1.5 sm:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1fr)_2rem]">
+                        <select aria-label={`스케줄 ${index + 1} 요일`} value={slot.day} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, day: e.target.value } : row) }))} className={editControl + ' mt-0 px-1'}>{Object.entries(DAY_LABELS).map(([day, label]) => <option key={day} value={day}>{label}요일</option>)}</select>
+                        <input aria-label={`스케줄 ${index + 1} 시작`} type="time" value={slot.start} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, start: e.target.value } : row) }))} className={editControl + ' mt-0 px-1'} />
+                        <input aria-label={`스케줄 ${index + 1} 종료`} type="time" value={slot.end} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, end: e.target.value } : row) }))} className={editControl + ' mt-0 px-1'} />
+                        <button type="button" aria-label={`스케줄 ${index + 1} 삭제`} onClick={() => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.filter((_, i) => i !== index) }))} className="inline-flex h-9 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600"><X className="h-4 w-4" /></button>
                       </div>
-                    </div>
+                      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                        <input aria-label={`스케줄 ${index + 1} 장소`} placeholder="장소" value={slot.place} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, place: e.target.value } : row) }))} className={editControl + ' mt-0'} />
+                        <input aria-label={`스케줄 ${index + 1} 비고`} placeholder="스케줄 비고" value={slot.note} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, note: e.target.value } : row) }))} className={editControl + ' mt-0'} />
+                      </div>
+                    </div>)}
                   </div>
+                  <button type="button" onClick={() => setEditForm((form) => ({ ...form, weekly_schedule: [...form.weekly_schedule, { day: 'mon', start: '09:00', end: '10:00', place: '', note: '' }] }))} className="min-h-9 text-xs font-medium text-indigo-600">+ 스케줄 추가</button>
                 </fieldset>
-
-                {/* 운영 정보 */}
-                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
-                  <legend className="text-xs font-semibold text-slate-500 mb-1">운영 정보</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">메인 강사</label>
-                      <select
-                        value={editForm.main_teacher_id}
-                        onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_id: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
-                      >
-                        <option value="">미선택</option>
-                        {editForm.main_teacher_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_id) && <option value={editForm.main_teacher_id}>{center.main_teacher_name ?? "\uAE30\uC874 \uBC30\uC815 \uAC15\uC0AC"}</option>}
-                        {teachers.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">보조 강사 1</label>
-                      <select
-                        value={editForm.main_teacher_2_id}
-                        onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_2_id: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
-                      >
-                        <option value="">미선택</option>
-                        {editForm.main_teacher_2_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_2_id) && <option value={editForm.main_teacher_2_id}>{center.main_teacher_2_name ?? "\uAE30\uC874 \uBC30\uC815 \uAC15\uC0AC"}</option>}
-                        {teachers.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">보조 강사 2</label>
-                      <select
-                        value={editForm.main_teacher_3_id}
-                        onChange={(e) => setEditForm((f) => ({ ...f, main_teacher_3_id: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
-                      >
-                        <option value="">미선택</option>
-                        {editForm.main_teacher_3_id && !teachers.some((teacher) => teacher.id === editForm.main_teacher_3_id) && <option value={editForm.main_teacher_3_id}>{center.main_teacher_3_name ?? "\uAE30\uC874 \uBC30\uC815 \uAC15\uC0AC"}</option>}
-                        {teachers.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">대체 강사 (쉼표 구분)</label>
-                      <input
-                        type="text"
-                        value={editForm.instructors_default.backup?.join(', ') ?? ''}
-                        onChange={(e) =>
-                          setEditForm((f) => ({
-                            ...f,
-                            instructors_default: {
-                              ...f.instructors_default,
-                              sub: null,
-                              backup: e.target.value ? e.target.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
-                            },
-                          }))
-                        }
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
+                <fieldset className="min-w-0 space-y-3 border-t border-slate-100 pt-4">
+                  <legend className="text-xs font-semibold text-slate-500">우리가 받는 회당 수업료</legend>
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+                    {([['주강사비', 'main_charge'], ['보조강사비', 'assist_charge'], ['대여비', 'rental_charge']] as const).map(([label, field]) => <label key={field} className="min-w-0 text-xs text-slate-600">{label}
+                      <span className="flex min-w-0 items-center gap-1"><input aria-label={`청구 ${label}`} required type="number" min={0} step={1} max={Number.MAX_SAFE_INTEGER} placeholder="없으면 0 입력" value={editForm[field]} onChange={(e) => setEditForm((form) => ({ ...form, [field]: e.target.value }))} className={editControl + ' text-right tabular-nums'} /><span className="shrink-0">원</span></span>
+                    </label>)}
                   </div>
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-lg bg-indigo-50/70 px-3 py-2 text-sm font-semibold text-indigo-700"><span>총 회당 수업료</span><output aria-label="회당 수업료 합계" className="min-w-0 break-words tabular-nums">{draftBreakdown ? `${totalCenterFee(draftBreakdown).toLocaleString()}원` : '청구 금액을 입력해 주세요.'}</output></div>
+                  {!editForm.settlement_defaults.billingBreakdown && <p className="text-xs text-slate-500">기존 회당 수업료: {editForm.session_fee ? `${Number(editForm.session_fee).toLocaleString()}원` : '미설정'} · 청구 항목별 금액을 확인해 입력해 주세요.</p>}
                 </fieldset>
-
-                <CenterSettlementFields value={editForm.settlement_defaults} onChange={(settlement_defaults) => setEditForm((form) => ({ ...form, settlement_defaults }))} />
-                <CenterTeacherFees ids={[editForm.main_teacher_id, editForm.main_teacher_2_id, editForm.main_teacher_3_id]}
-                  overrides={editForm.instructors_default.fees}
-                  onFeesChange={(fees) => setEditForm((form) => ({ ...form, instructors_default: { ...form.instructors_default, fees } }))} />
-
+                <fieldset className="min-w-0 space-y-3 border-t border-slate-100 pt-4 xl:row-span-4">
+                  <legend className="text-xs font-semibold text-slate-500">선생님이 받는 강사료</legend>
+                  <CenterTeacherFees ids={[editForm.main_teacher_id, editForm.main_teacher_2_id, editForm.main_teacher_3_id]}
+                    onResolvedFees={onResolvedFees}
+                    names={[center.main_teacher_name, center.main_teacher_2_name, center.main_teacher_3_name]}
+                    teachers={teachers} onTeacherChange={(index, id) => setEditForm((form) => ({ ...form, [(['main_teacher_id', 'main_teacher_2_id', 'main_teacher_3_id'] as const)[index]]: id }))}
+                    overrides={editForm.instructors_default.fees}
+                    onFeesChange={(fees) => setEditForm((form) => ({ ...form, instructors_default: { ...form.instructors_default, fees } }))} />
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"><span>강사료 합계 (인건비 / 회)</span><output aria-label="강사료 인건비 합계" className="min-w-0 break-words tabular-nums">{draftLabor ? `${(draftLabor.mainFee + draftLabor.assistFee).toLocaleString()}원` : '강사 지급 금액 확인'}</output></div>
+                  <p className="text-xs leading-5 text-slate-500">센터 청구 수업료와 선생님 지급 인건비를 정산에 각각 반영합니다.</p>
+                </fieldset>
+                <details className="min-w-0 rounded-lg border border-slate-200 px-3 py-2 xl:col-start-1">
+                  <summary className="cursor-pointer text-xs font-semibold text-slate-600">운영 메모<span className="ml-2 font-normal text-slate-400">출입 안내·특이사항</span></summary>
+                  <div className="grid min-w-0 grid-cols-1 gap-3 pt-3 sm:grid-cols-2">
+                    <label className="min-w-0 text-xs text-slate-600">출입 안내<textarea aria-label="출입 안내" rows={5} value={editForm.access_note} onChange={(e) => setEditForm((f) => ({ ...f, access_note: e.target.value }))} className={editControl + ' h-auto min-h-28 py-2'} /></label>
+                    <label className="min-w-0 text-xs text-slate-600">특이사항<textarea aria-label="특이사항" rows={5} value={editForm.highlights} onChange={(e) => setEditForm((f) => ({ ...f, highlights: e.target.value }))} className={editControl + ' h-auto min-h-28 py-2'} /></label>
+                  </div>
+                </details>
+                <details className="min-w-0 rounded-lg border border-slate-200 px-3 py-2 xl:col-start-1"><summary className="cursor-pointer text-xs font-semibold text-slate-600">정산 추가설정</summary>
+                  <div className="pt-3"><CenterSettlementFields value={editForm.settlement_defaults} onChange={(settlement_defaults) => setEditForm((form) => ({ ...form, settlement_defaults }))} /></div>
+                </details>
                 {/* 회보서 관련 정보 */}
-                <details className="rounded-lg border border-slate-200 px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-slate-600">회보서 관련 정보</summary><div className="pt-3"><fieldset className="space-y-2 border-b border-slate-100 pb-3">
+                <details className="min-w-0 rounded-lg border border-slate-200 px-3 py-2 xl:col-start-1"><summary className="cursor-pointer text-xs font-semibold text-slate-600">회보서 관련 정보</summary><div className="pt-3"><fieldset className="space-y-3 border-b border-slate-100 pb-3">
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">시설 아이디</label>
                       <input
@@ -1310,130 +1090,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                   </div>
                 </fieldset></div></details>
 
-                {/* 담당자 */}
-                <fieldset className="space-y-2 border-b border-slate-100 pb-3">
-                  <legend className="text-xs font-semibold text-slate-500 mb-1">담당자</legend>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">이름</label>
-                      <input
-                        type="text"
-                        value={editForm.contact_name}
-                        onChange={(e) => setEditForm((f) => ({ ...f, contact_name: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">역할</label>
-                      <input
-                        type="text"
-                        value={editForm.contact_role}
-                        onChange={(e) => setEditForm((f) => ({ ...f, contact_role: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">이메일</label>
-                      <input
-                        type="email"
-                        autoComplete="email"
-                        value={editForm.contact_email}
-                        onChange={(e) => setEditForm((f) => ({ ...f, contact_email: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">전화번호</label>
-                      <input
-                        type="tel"
-                        autoComplete="tel"
-                        value={editForm.contact_phone}
-                        onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))}
-                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </fieldset>
 
-                {/* 특이사항 */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">특이사항</label>
-                  <textarea
-                    value={editForm.highlights}
-                    onChange={(e) => setEditForm((f) => ({ ...f, highlights: e.target.value }))}
-                    rows={3}
-                    className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-                  />
-                </div>
 
-                {/* 주간 시간표 */}
-                <details className="rounded-lg border border-slate-200 px-3 py-2"><summary className="cursor-pointer text-xs font-semibold text-slate-600">특이사항</summary><div className="pt-3"><fieldset className="space-y-2">
-                  <div className="flex items-center justify-between">
-
-                    <button
-                      type="button"
-                      onClick={addScheduleSlot}
-                      className="text-xs text-indigo-600 hover:underline cursor-pointer"
-                    >
-                      + 행 추가
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {editForm.weekly_schedule.map((row, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5"
-                      >
-                        <select
-                          value={row.day}
-                          onChange={(e) => updateScheduleSlot(i, 'day', e.target.value)}
-                          className="rounded border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:outline-none"
-                        >
-                          {DAY_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="time"
-                          value={row.start}
-                          onChange={(e) => updateScheduleSlot(i, 'start', e.target.value)}
-                          className="rounded border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:outline-none"
-                        />
-                        <span className="text-slate-400 text-xs">~</span>
-                        <input
-                          type="time"
-                          value={row.end}
-                          onChange={(e) => updateScheduleSlot(i, 'end', e.target.value)}
-                          className="rounded border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:outline-none"
-                        />
-                        <input
-                          type="text"
-                          placeholder="장소"
-                          value={row.place}
-                          onChange={(e) => updateScheduleSlot(i, 'place', e.target.value)}
-                          className="w-20 rounded border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:outline-none"
-                        />
-                        <input
-                          type="text"
-                          placeholder="비고"
-                          value={row.note}
-                          onChange={(e) => updateScheduleSlot(i, 'note', e.target.value)}
-                          className="flex-1 min-w-[60px] rounded border border-slate-200 px-2 py-1 text-sm focus:border-indigo-400 focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeScheduleSlot(i)}
-                          className="rounded p-1 text-red-500 hover:bg-red-50 cursor-pointer"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                    {editForm.weekly_schedule.length === 0 && (
-                      <p className="text-xs text-slate-400 py-1">시간표 없음</p>
-                    )}
-                  </div>
-                </fieldset></div></details>
               </div>
 
               <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">

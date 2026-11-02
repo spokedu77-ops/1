@@ -9,14 +9,21 @@ const assistant = '70000000-0000-4000-8000-000000000003';
 const expected = { start_at: '2026-12-01T01:00:00Z', end_at: '2026-12-01T02:00:00Z', created_by: main, price: 0, status: 'opened', memo: 'note\nEXTRA_TEACHERS:[]\nPOSTPONE_SNAPSHOT:[{"untouched":true}]' };
 const request = (body: unknown) => new NextRequest('http://localhost/api/admin/classes/sessions/checked-update', { method: 'POST', body: JSON.stringify(body) });
 const input = { sessionId: id, expected, assistants: [{ id: assistant, price: 0 }] };
-function db(result?: unknown) {
+function db(result?: unknown, storedSession: Record<string, unknown> = { id, ...expected, feedback_fields: {}, photo_url: [], file_url: [] }) {
   const update = { eq: vi.fn(), is: vi.fn(), select: vi.fn(), maybeSingle: vi.fn() };
   update.eq.mockReturnValue(update); update.is.mockReturnValue(update); update.select.mockReturnValue(update);
   const patch = vi.fn((value: Record<string, unknown>) => {
     update.maybeSingle.mockResolvedValue(result ?? { data: { id, ...expected, ...value, round_index: 7 }, error: null });
     return update;
   });
-  mocks.service.mockReturnValue({ from: vi.fn((table: string) => table === 'users' ? { select: () => ({ in: async () => ({ data: [{ id: assistant }], error: null }) }) } : { update: patch }) });
+  const read = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: storedSession, error: null }) };
+  read.eq.mockReturnValue(read);
+  mocks.service.mockReturnValue({ from: vi.fn((table: string) => table === 'users' ? {
+    select: () => ({
+      in: async () => ({ data: [{ id: assistant }], error: null }),
+      order: () => ({ range: async () => ({ data: [{ id: main, role: 'teacher' }, { id: assistant, role: 'teacher' }], error: null }) }),
+    }),
+  } : { update: patch, select: () => read }) });
   return { update, patch };
 }
 beforeEach(() => { vi.clearAllMocks(); mocks.auth.mockResolvedValue({ ok: true, userId: main }); });
@@ -57,4 +64,11 @@ describe('checked session save', () => {
   it.each([[{ id: '', price: 0 }], [{ id: main, price: 0 }], [{ id: assistant, price: 0 }, { id: assistant, price: 1 }]])('rejects incomplete or duplicate assignments without a write', async (...assistants) => { db(); const response = await POST(request({ ...input, assistants })); expect(response.status).toBe(400); });
   it('rejects a main-teacher change that duplicates an existing assistant', async () => { db(); const response = await POST(request({ sessionId: id, expected: { ...expected, memo: 'EXTRA_TEACHERS:' + JSON.stringify(input.assistants) }, patch: { created_by: assistant } })); expect(response.status).toBe(400); });
   it('does not allow arbitrary columns or an empty update', async () => { db(); expect((await POST(request({ sessionId: id, expected, patch: { status: 'verified' } }))).status).toBe(400); expect((await POST(request({ sessionId: id, expected, patch: {} }))).status).toBe(400); });
+  it('rejects moving recorded teaching history to a future date before writing', async () => {
+    const { patch } = db(undefined, { id, ...expected, start_at: '2026-09-07T05:00:00Z', status: 'verified', feedback_fields: { main_activity: 'historical activity' } });
+    const response = await POST(request({ sessionId: id, expected, patch: { start_at: '2099-12-01T05:00:00Z' } }));
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe('SESSION_RECORDED_SCHEDULE_MOVE_FORBIDDEN');
+    expect(patch).not.toHaveBeenCalled();
+  });
 });

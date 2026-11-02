@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import { getCenters, createCenter, updateCenter, deleteCenter, type GetCentersFilters } from './actions/centers';
 import type { Center, CenterListItem, CenterStatus } from '@/app/lib/centers/types';
 import { matchesCenterFilters, toCenterListItem } from '@/app/lib/centers/listItem';
+import { centerDisplayName } from '@/app/lib/centers/displayName';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Search, Plus, Loader2, X, Trash2, ChevronRight } from 'lucide-react';
 
@@ -17,12 +18,6 @@ const STATUS_OPTIONS = [
   { value: 'paused', label: '일시중지' },
   { value: 'ended', label: '종료' },
 ] as const;
-
-const STATUS_LABELS: Record<CenterStatus, string> = {
-  active: '활성',
-  paused: '일시중지',
-  ended: '종료',
-};
 
 const STATUS_STYLES: Record<CenterStatus, string> = {
   active: 'bg-indigo-100 text-indigo-800',
@@ -34,7 +29,6 @@ const DAY_LABELS: Record<string, string> = {
   mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
 };
 
-const EMPTY_BADGE = 'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500';
 const CenterDetailModal = dynamic(() => import('./components/CenterDetailModal'), { ssr: false });
 
 interface CentersClientProps {
@@ -57,8 +51,9 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
     name: string;
     region_tag: string;
     address: string;
+    project_name: string;
     status: CenterStatus;
-  }>({ name: '', region_tag: '', address: '', status: 'active' });
+  }>({ name: '', region_tag: '', address: '', project_name: '', status: 'active' });
   const [createError, setCreateError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -120,6 +115,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
         name: createForm.name.trim(),
         region_tag: createForm.region_tag.trim() || null,
         address: createForm.address.trim() || null,
+        settlement_defaults: { projectName: createForm.project_name.trim() },
         status: createForm.status,
       });
       if (result.error) {
@@ -127,7 +123,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
         return;
       }
       setIsCreateOpen(false);
-      setCreateForm({ name: '', region_tag: '', address: '', status: 'active' });
+      setCreateForm({ name: '', region_tag: '', address: '', project_name: '', status: 'active' });
       if (result.data) applySavedCenter(result.data);
     } finally {
       setSubmitting(false);
@@ -172,263 +168,74 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
       {selectedId && <CenterDetailModal key={selectedId} id={selectedId}
         onClose={() => setSelectedId(null)} onSaved={applySavedCenter}
         onDeleted={() => { setCenters((rows) => rows.filter((row) => row.id !== selectedId)); setSelectedId(null); }} />}
-      <div className="p-4 sm:p-6 md:p-8 min-w-0">
-        <div className={`flex flex-col gap-4 sm:flex-row sm:items-center ${embedded ? 'sm:justify-end mb-4' : 'sm:justify-between mb-6'}`}>
-          {!embedded ? (
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">센터 관리</h1>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setIsCreateOpen(true)}
-            className="min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all touch-manipulation cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            센터 추가
+      <div className="min-w-0 p-3 sm:p-4">
+        {!embedded && <h1 className="mb-3 text-xl font-semibold tracking-tight text-slate-900">센터 관리</h1>}
+        <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2">
+          <div className="relative min-w-0 basis-full sm:basis-auto sm:w-64">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input type="search" aria-label="센터 검색" placeholder="센터명, 프로젝트명, 주소, 담당자 검색" value={search} onChange={(e) => setSearch(e.target.value)}
+              className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20" />
+          </div>
+          <select aria-label="센터 상태 필터" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm">
+            {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+          <input aria-label="지역 필터" placeholder="지역 태그" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="h-10 w-24 min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm" />
+          <button type="button" onClick={() => setIsCreateOpen(true)} className="ml-auto inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700">
+            <Plus className="h-4 w-4" />센터 추가
           </button>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-2 p-1.5 rounded-full bg-slate-100 border border-slate-200/80 w-full sm:w-fit">
-          <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="센터명, 주소, 담당자 검색"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full min-h-[44px] rounded-full border border-slate-200 py-2 pl-9 pr-3 text-base sm:text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none bg-white touch-manipulation"
-            />
+        {isLoading ? <div role="status" className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+          : centers.length === 0 ? <p className="rounded-lg border border-slate-200 bg-white px-3 py-8 text-center text-sm text-slate-500">조건에 맞는 센터가 없습니다.</p>
+          : <>
+          <div className="space-y-2 lg:hidden">
+            {centers.map((c) => <article key={c.id} className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <Link href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)} prefetch={false} title={centerDisplayName(c)} aria-label={centerDisplayName(c)}
+                className="flex min-h-12 min-w-0 items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-indigo-600">
+                <span className="min-w-0 break-words [overflow-wrap:anywhere]">{centerDisplayName(c)}</span><ChevronRight className="h-4 w-4 shrink-0 text-indigo-500" />
+              </Link>
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 px-3 py-1.5 text-xs text-slate-500">
+                <select aria-label={`${c.name} 상태`} value={c.status} onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)} disabled={updatingStatusId === c.id}
+                  className={`h-8 min-w-0 rounded-md px-2 text-xs ${STATUS_STYLES[c.status]}`}>
+                  <option value="active">활성</option><option value="paused">일시중지</option><option value="ended">종료</option>
+                </select>
+                {c.region_tag && <span className="max-w-full break-words">{c.region_tag}</span>}
+                <span className="min-w-0 break-words">{[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].filter(Boolean).join(' · ') || '강사 미배정'}</span>
+                <button type="button" onClick={() => handleDelete(c)} disabled={deletingId === c.id} aria-label={`${c.name} 삭제`} className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600">
+                  {deletingId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                </button>
+              </div>
+            </article>)}
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-full border border-slate-200 px-3.5 py-2 text-sm bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer"
-          >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="지역 태그"
-            value={regionFilter}
-            onChange={(e) => setRegionFilter(e.target.value)}
-            className="rounded-full border border-slate-200 px-3.5 py-2 text-sm w-32 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none bg-white"
-          />
-        </div>
-
-        {/* 모바일: 카드 뷰 */}
-        <div className="block sm:hidden space-y-3">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-            </div>
-          ) : centers.length === 0 ? (
-            <div className="py-12 text-center text-slate-500 rounded-xl border border-slate-200 bg-white">
-              조건에 맞는 센터가 없습니다.
-            </div>
-          ) : (
-            centers.map((c) => {
-              const schedule = (c.weekly_schedule ?? []);
-              return (
-                <div key={c.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <Link
-                      href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)}
-                      prefetch={false}
-                      className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline text-base leading-tight"
-                    >
-                      {c.name}
+          <div className="hidden min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white lg:block">
+            <table className="w-full table-fixed text-sm">
+              <colgroup><col className="w-[31%]" /><col className="w-[11%]" /><col className="w-[15%]" /><col className="w-[24%]" /><col className="w-[13%]" /><col className="w-[6%]" /></colgroup>
+              <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs text-slate-500"><tr>
+                <th className="px-3 py-2 font-medium">센터명 · 지역</th><th className="px-2 py-2 font-medium">상태</th><th className="px-2 py-2 font-medium">강사</th><th className="px-2 py-2 font-medium">담당자 · 연락처</th><th className="px-2 py-2 font-medium">시간표</th><th className="px-2 py-2 font-medium"><span className="sr-only">삭제</span></th>
+              </tr></thead>
+              <tbody className="divide-y divide-slate-100">
+                {centers.map((c) => <tr key={c.id} className="group hover:bg-indigo-50/40">
+                  <td className="p-0">
+                    <Link href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)} prefetch={false} title={centerDisplayName(c)} aria-label={centerDisplayName(c)}
+                      className="flex min-h-12 min-w-0 items-center gap-2 px-3 py-2 font-semibold text-slate-900 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+                      <span className="min-w-0 flex-1"><span className="block truncate">{centerDisplayName(c)}</span>{c.region_tag && <span className="mt-0.5 block truncate text-xs font-normal text-slate-400">{c.region_tag}</span>}</span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-indigo-500" />
                     </Link>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Link href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)} prefetch={false} className="text-slate-400 hover:text-indigo-600">
-                        <ChevronRight className="h-4 w-4" />
-                      </Link>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    {c.region_tag && (
-                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{c.region_tag}</span>
-                    )}
-                    <select
-                      value={c.status}
-                      onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)}
-                      disabled={updatingStatusId === c.id}
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium border-0 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer disabled:opacity-50 ${STATUS_STYLES[c.status]}`}
-                    >
-                      <option value="active">활성</option>
-                      <option value="paused">일시중지</option>
-                      <option value="ended">종료</option>
-                    </select>
-                    {[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].some(Boolean) ? (
-                      <span className="text-xs text-slate-600 font-medium line-clamp-2">
-                        {[
-                          c.main_teacher_name && `1.${c.main_teacher_name}`,
-                          c.main_teacher_2_name && `2.${c.main_teacher_2_name}`,
-                          c.main_teacher_3_name && `3.${c.main_teacher_3_name}`,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    ) : (
-                      <span className={EMPTY_BADGE}>강사 미배정</span>
-                    )}
-                  </div>
-                  {(c.contact_name || c.contact_email || c.contact_phone) && (
-                    <p className="text-xs text-slate-500 mb-1">
-                      {c.contact_name ?? ''}
-                      {c.contact_role ? ` (${c.contact_role})` : ''}
-                      {c.contact_email ? ` · ${c.contact_email}` : ''}
-                      {c.contact_phone ? ` · ${c.contact_phone}` : ''}
-                    </p>
-                  )}
-                  {schedule.length > 0 ? (
-                    <p className="text-xs text-slate-500 mb-1">
-                      {schedule.slice(0, 2).map((s) => `${DAY_LABELS[s.day] ?? s.day} ${s.start}~${s.end}`).join(' / ')}
-                      {schedule.length > 2 ? ` +${schedule.length - 2}` : ''}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-amber-700 mb-1">시간표 미설정</p>
-                  )}
-                  {c.highlights && (
-                    <p className="text-xs text-slate-400 line-clamp-1">{c.highlights}</p>
-                  )}
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(c)}
-                      disabled={deletingId === c.id}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
-                    >
-                      {deletingId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+                  </td>
+                  <td className="px-2 py-1"><select aria-label={`${c.name} 상태`} value={c.status} onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)} disabled={updatingStatusId === c.id}
+                    className={`h-8 w-full min-w-0 rounded-md px-1 text-xs ${STATUS_STYLES[c.status]}`}><option value="active">활성</option><option value="paused">일시중지</option><option value="ended">종료</option></select></td>
+                  <td className="px-2 py-1 text-xs text-slate-600"><span className="block truncate" title={[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].filter(Boolean).join(', ')}>{c.main_teacher_name || '미배정'}</span>{[c.main_teacher_2_name, c.main_teacher_3_name].some(Boolean) && <span className="mt-0.5 block truncate text-slate-400">보조 {[c.main_teacher_2_name, c.main_teacher_3_name].filter(Boolean).join(', ')}</span>}</td>
+                  <td className="px-2 py-1 text-xs"><span className="block truncate text-slate-700" title={c.contact_name ?? ''}>{c.contact_name || '-'}</span><span className="mt-0.5 block truncate tabular-nums text-slate-500" title={c.contact_phone ?? ''}>{c.contact_phone || '-'}</span></td>
+                  <td className="px-2 py-1 text-xs text-slate-500"><span className="block truncate" title={(c.weekly_schedule ?? []).map((slot) => `${DAY_LABELS[slot.day] ?? slot.day} ${slot.start}–${slot.end}`).join(' / ')}>{(c.weekly_schedule ?? []).slice(0, 1).map((slot) => `${DAY_LABELS[slot.day] ?? slot.day} ${slot.start}`).join('') || '미설정'}{(c.weekly_schedule?.length ?? 0) > 1 ? ` +${c.weekly_schedule.length - 1}` : ''}</span></td>
+                  <td className="px-1 py-1 text-right"><button type="button" onClick={() => handleDelete(c)} disabled={deletingId === c.id} aria-label={`${c.name} 삭제`} title="삭제" className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600">
+                    {deletingId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </button></td>
+                </tr>)}
+              </tbody>
+            </table>
+          </div>
+        </>}
 
-        {/* 데스크탑: 테이블 뷰 */}
-        <div className="hidden sm:block rounded-lg border border-slate-200 bg-white overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-            </div>
-          ) : centers.length === 0 ? (
-            <div className="py-12 text-center text-slate-500">조건에 맞는 센터가 없습니다.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-[880px] w-full table-fixed divide-y divide-slate-100 text-xs">
-                <colgroup>
-                  <col className="w-[25%]" /><col className="w-[8%]" /><col className="w-[11%]" />
-                  <col className="w-[13%]" /><col className="w-[25%]" /><col className="w-[13%]" /><col className="w-[5%]" />
-                </colgroup>
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">센터명</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-slate-500">지역</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-slate-500">상태</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-slate-500">메인 강사</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">담당자</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">시간표</th>
-                    <th className="whitespace-nowrap px-3 py-2 text-right text-xs font-semibold text-slate-500">삭제</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {centers.map((c) => {
-                    const schedule = (c.weekly_schedule ?? []);
-                    return (
-                      <tr
-                        key={c.id}
-                        className="border-l-2 border-l-transparent hover:bg-indigo-50/40 hover:border-l-indigo-500 transition-colors"
-                      >
-                        <td className="px-3 py-2">
-                          <div className="flex flex-col gap-0.5">
-                            <Link
-                              href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)}
-                              prefetch={false}
-                              className="truncate font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
-                              title={c.name}
-                            >
-                              {c.name}
-                            </Link>
-                            {c.highlights && (
-                              <p className="truncate text-[11px] leading-4 text-slate-400" title={c.highlights}>{c.highlights}</p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{c.region_tag ?? '-'}</td>
-                        <td className="px-3 py-2">
-                          <select
-                            value={c.status}
-                            onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)}
-                            disabled={updatingStatusId === c.id}
-                            className={`h-7 w-full min-w-0 rounded-md px-2 py-0.5 text-xs font-medium border-0 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none cursor-pointer disabled:opacity-50 ${STATUS_STYLES[c.status]}`}
-                          >
-                            <option value="active">{STATUS_LABELS.active}</option>
-                            <option value="paused">{STATUS_LABELS.paused}</option>
-                            <option value="ended">{STATUS_LABELS.ended}</option>
-                          </select>
-                        </td>
-                        <td className="px-3 py-2 text-xs text-slate-700 font-medium">
-                          {[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].some(Boolean) ? (
-                            <span className="block text-xs leading-5">
-                              {c.main_teacher_name && (
-                                <span className="block truncate" title={c.main_teacher_name}>1. {c.main_teacher_name}</span>
-                              )}
-                              {c.main_teacher_2_name && (
-                                <span className="block truncate" title={c.main_teacher_2_name}>2. {c.main_teacher_2_name}</span>
-                              )}
-                              {c.main_teacher_3_name && (
-                                <span className="block truncate" title={c.main_teacher_3_name}>3. {c.main_teacher_3_name}</span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className={EMPTY_BADGE}>미배정</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-xs text-slate-600">
-                          <div className="min-w-0 space-y-0.5 leading-4">
-                            <div className="flex min-w-0 items-baseline gap-2" title={[c.contact_name, c.contact_phone].filter(Boolean).join(' / ')}>
-                              <span className="max-w-[45%] truncate font-medium text-slate-700">{c.contact_name ?? '-'}</span>
-                              {c.contact_phone ? <span className="truncate text-[11px] tabular-nums text-slate-500">{c.contact_phone}</span> : null}
-                            </div>
-                            {c.contact_email ? <span className="block truncate text-[11px] text-slate-400" title={c.contact_email}>{c.contact_email}</span> : null}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-xs text-slate-500">
-                          {schedule.length === 0 ? (
-                            <span className={EMPTY_BADGE}>미설정</span>
-                          ) : (
-                            <span>
-                              {schedule.slice(0, 2).map((s) => `${DAY_LABELS[s.day] ?? s.day} ${s.start}`).join(' / ')}
-                              {schedule.length > 2 ? ` +${schedule.length - 2}` : ''}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-1 py-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(c)}
-                            disabled={deletingId === c.id}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors cursor-pointer"
-                            title="삭제"
-                          >
-                            {deletingId === c.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
       </div>
 
       {isCreateOpen && (
@@ -476,6 +283,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
                 />
               </div>
+              <label className="mb-3 block text-sm text-slate-700">수업(프로젝트)명<input maxLength={160} value={createForm.project_name} onChange={(e) => setCreateForm((form) => ({ ...form, project_name: e.target.value }))} className="mt-1 h-10 w-full min-w-0 rounded-lg border border-slate-200 px-3 text-sm" /></label>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">상태</label>
                 <select

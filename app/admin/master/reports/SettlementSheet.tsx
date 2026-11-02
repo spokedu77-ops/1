@@ -1,16 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Download, FileDown, Lock, MoreHorizontal, Plus, Redo2, Save, Trash2, Undo2, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import SettlementCenterImport from './SettlementCenterImport';
 import SettlementProfitSummary from './SettlementProfitSummary';
 import SettlementCalculationSettings from './SettlementCalculationSettings';
 import MoneyInput from './SettlementMoneyInput';
-import { formatMoneyExpression, formatSettlementAmount } from './settlementMoney';
 import styles from './SettlementSheet.module.css';
 import {
-  calculateRow, carryOver, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize, uid,
+  calculateRow, carryOverRegularClasses, nextSettlementMonthKey, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize, uid,
   type CenterType, type SettlementCenter, type SettlementMonth, type SettlementRow,
   type SettlementSettings, type SettlementSheetData,
 } from './settlementSheetCore';
@@ -50,6 +50,8 @@ async function loadXlsx() {
 export default function SettlementSheet() {
   const [data, setData] = useState<SettlementSheetData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
+  const [creatingMonth, setCreatingMonth] = useState(false);
+  const creatingMonthRef = useRef(false);
   const [view, setView] = useState<View>('month');
   const [currentKey, setCurrentKey] = useState('');
   const [query, setQuery] = useState('');
@@ -193,14 +195,16 @@ export default function SettlementSheet() {
   };
 
   const createMonth = async () => {
-    const suggested = new Date().toISOString().slice(0, 7);
-    const key = window.prompt('새 달을 YYYY-MM 형식으로 입력하세요.', suggested);
-    if (!key || !/^\d{4}-(0[1-9]|1[0-2])$/.test(key)) return;
-    if (data.months[key]) { setCurrentKey(key); setView('month'); return; }
+    if (creatingMonthRef.current || loading) return;
+    creatingMonthRef.current = true;
+    setCreatingMonth(true);
+    const key = nextSettlementMonthKey(Object.keys(data.months));
     const previous = sortedMonths(data).filter((month) => month.key < key).at(-1);
-    const rows = previous && window.confirm('이전 달을 복사할까요?\n취소하면 빈 달로 시작합니다.') ? carryOver(previous.rows) : [];
+    const rows = previous ? carryOverRegularClasses(previous.rows) : [];
     const month: SettlementMonth = { key, label: `${Number(key.slice(5))}월 수업료`, rows, rev: '', locked: false, lockedAt: null };
-    try { await saveMonth(month, ''); setCurrentKey(key); setView('month'); toast.success('새 달을 만들었습니다.'); } catch (error) { toast.error((error as Error).message); }
+    try { await saveMonth(month, ''); setCurrentKey(key); setView('month'); toast.success('정기수업을 복사해 새 달을 만들었습니다.'); }
+    catch (error) { toast.error((error as Error).message); }
+    finally { creatingMonthRef.current = false; setCreatingMonth(false); }
   };
   const toggleLock = async () => {
     if (!current) return;
@@ -237,7 +241,7 @@ export default function SettlementSheet() {
     try {
       const xlsx = await loadXlsx(); const workbook = xlsx.utils.book_new(); const months = all ? sortedMonths(data) : current ? [current] : [];
       for (const month of months) {
-        const rows: unknown[][] = [['기관명','수업료','회기','총액','계산서 발행 여부','영수여부','부가세','경비(인건비)','정산 순수익','비고','발행일','영수일','영수금액']];
+        const rows: unknown[][] = [['기관명','수업료','회기','총액','계산서 발행 여부','영수여부','부가세','강사료(인건비)','정산 순수익','비고','발행일','영수일','영수금액']];
         month.rows.forEach((row) => { const value = calculateRow(row, data.settings); rows.push([row.name,row.fee,row.sessions,value.total,row.inv?'O':'',row.rcpt?'O':'',value.vat,row.cost,value.netAfterWh,row.note,row.invDate,row.rcptDate,row.rcptAmt ?? '']); });
         xlsx.utils.book_append_sheet(workbook, xlsx.utils.aoa_to_sheet(rows), month.label.slice(0, 31));
       }
@@ -266,8 +270,8 @@ export default function SettlementSheet() {
     </header>
     <input ref={restoreRef} hidden type="file" accept=".json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void restore(file); event.target.value=''; }}/>
     <nav className={styles.monthBar}>
-      <div className={styles.monthGroup}>{sortedMonths(data).map((month) => <button key={month.key} onClick={() => { setCurrentKey(month.key); setView('month'); }} className={`${styles.monthTab} ${view==='month'&&currentKey===month.key?styles.monthTabActive:''}`}>{month.key.replace('-', '. ')}월{month.locked?' 🔒':''}</button>)}<button onClick={createMonth} className={`${styles.monthTab} ${styles.monthAdd}`}><Plus size={13} className="inline"/> 새 달</button></div>
-      <div className={styles.monthGroup}><button onClick={() => setView('year')} className={`${styles.monthTab} ${view==='year'?styles.viewTabActive:''}`}>연간 대시보드</button><a href="/admin/centers?tab=private" className={styles.monthTab}>{'개인 수업 DB'}</a></div>
+      <div className={styles.monthGroup}>{sortedMonths(data).map((month) => <button key={month.key} onClick={() => { setCurrentKey(month.key); setView('month'); }} className={`${styles.monthTab} ${view==='month'&&currentKey===month.key?styles.monthTabActive:''}`}>{month.key.replace('-', '. ')}월{month.locked?' 🔒':''}</button>)}<button onClick={createMonth} disabled={creatingMonth || loading} className={`${styles.monthTab} ${styles.monthAdd}`}><Plus size={13} className="inline"/> {creatingMonth ? '만드는 중…' : '새 달'}</button></div>
+      <div className={styles.monthGroup}><button onClick={() => setView('year')} className={`${styles.monthTab} ${view==='year'?styles.viewTabActive:''}`}>연간 대시보드</button><Link href="/admin/centers?tab=private" className={styles.monthTab}>{'개인 수업 DB'}</Link></div>
     </nav>
     {view === 'month' ? <MonthView key={current?.key ?? 'empty'} applyPolicyByName={applyPolicyByName} loadPolicies={loadPolicies} month={current} settings={data.settings} summary={summary} centers={centers} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} updateRow={updateRow} updateRows={updateRows} persist={persistCurrent} toggleLock={toggleLock} deleteMonth={deleteMonth} undo={undo} redo={redo} canUndo={Boolean(current&&history[current.key]?.length)} canRedo={Boolean(current&&future[current.key]?.length)}/>
       : <YearView data={data} selectMonth={(key) => { setCurrentKey(key); setView('month'); }}/>}
@@ -334,7 +338,7 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
     </section>
     <div className={styles.tableWrap}><table className={styles.grid}>
       <colgroup><col style={{width:'2%'}}/><col style={{width:'15%'}}/><col style={{width:'7.5%'}}/><col style={{width:'5%'}}/><col style={{width:'8.5%'}}/><col style={{width:'5%'}}/><col style={{width:'6.5%'}}/><col style={{width:'10%'}}/><col style={{width:'9%'}}/><col style={{width:'10%'}}/><col style={{width:'12.5%'}}/><col style={{width:'9%'}}/></colgroup>
-      <thead><tr><th aria-label="순서"></th><th>기관명</th><th className={styles.numeric}>수업료</th><th className={styles.numeric}>회기</th><th className={styles.numeric}>총액</th><th>계산서</th><th>입금</th><th className={styles.numeric}>부가세</th><th className={styles.numeric}>경비(인건비)</th><th className={styles.numeric}>정산 순수익</th><th>비고</th><th aria-label="행 작업"></th></tr></thead>
+      <thead><tr><th aria-label="순서"></th><th>기관명</th><th className={styles.numeric}>수업료</th><th className={styles.numeric}>회기</th><th className={styles.numeric}>총액</th><th>계산서</th><th>입금</th><th className={styles.numeric}>부가세</th><th className={styles.numeric}>강사료(인건비)</th><th className={styles.numeric}>정산 순수익</th><th>비고</th><th aria-label="행 작업"></th></tr></thead>
       <tbody>{visible.map((row)=>{
         if(row.kind==='section') return <tr key={row.id} className={styles.sectionRow}><td colSpan={12}><div className={styles.sectionContent}><span aria-hidden="true">▸</span><input disabled={month.locked} value={row.name} aria-label="구분명" onChange={(event)=>updateRow(row.id,{name:event.target.value})}/><button className={styles.sectionDelete} aria-label={`${row.name} 삭제`} disabled={month.locked} onClick={()=>updateRows(month.rows.filter((item)=>item.id!==row.id))}><Trash2 size={14}/></button></div></td></tr>;
         const value=calculateRow(row,settings);
@@ -348,7 +352,7 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
           <td data-label="계산서" className={styles.statusCell}><button title={row.invDate||'계산서 발행'} aria-label={`${row.name} 계산서 발행`} aria-pressed={row.inv} disabled={month.locked} className={`${styles.statusButton} ${row.inv?styles.statusButtonOn:''}`} onClick={()=>updateRow(row.id,{inv:!row.inv,invDate:!row.inv?new Date().toISOString().slice(0,10):''})}>✓</button><span className={styles.cellMeta}>{row.invDate?.slice(5)}</span></td>
           <td data-label="입금" className={styles.statusCell}><button title={row.rcptDate||row.dueDate||'영수'} aria-label={`${row.name} 영수`} aria-pressed={row.rcpt} disabled={month.locked} className={`${styles.statusButton} ${row.rcpt?styles.statusButtonOn:row.rcptAmt?styles.statusButtonPending:''}`} onClick={()=>updateRow(row.id,{rcpt:!row.rcpt,rcptDate:!row.rcpt?new Date().toISOString().slice(0,10):''})}>✓</button>{!row.rcpt&&value.total>0&&<MoneyInput showSuffix={false} disabled={month.locked} className={styles.partialInput} placeholder="일부 입금" value={row.rcptAmt??''} aria-label={`${row.name} 일부 입금액`} onChange={(e)=>updateRow(row.id,{rcptAmt:e.target.value?Number(e.target.value):null})}/>}<span className={styles.cellMeta}>{row.rcpt?row.rcptDate?.slice(5):row.dueDate?`~${row.dueDate.slice(5)}`:''}</span></td>
           <td data-label="부가세"><div className={styles.vatCell}><select disabled={month.locked} value={row.vatMode} aria-label={`${row.name} 부가세 방식`} onChange={(e)=>updateRow(row.id,{vatMode:e.target.value as SettlementRow['vatMode']})}><option value="auto">자동</option><option value="none">없음</option><option value="manual">직접</option></select>{row.vatMode==='manual'?<MoneyInput disabled={month.locked} className={styles.numericInput} value={row.vatManual} aria-label={`${row.name} 부가세`} onChange={(e)=>updateRow(row.id,{vatManual:Number(e.target.value)})}/>:<span className={styles.vatValue}>{row.vatMode==='none'?'–':money(value.vat)}</span>}</div>{row.whRate>0&&<span className={styles.cellMeta}>원천 -{money(value.withholding)}</span>}</td>
-          <td data-label="경비(인건비)"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.cost} aria-label={`${row.name} 경비`} onChange={(e)=>updateRow(row.id,{cost:e.target.value})}/></td>
+          <td data-label="강사료(인건비)"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.cost} aria-label={`${row.name} 강사료(인건비)`} onChange={(e)=>updateRow(row.id,{cost:e.target.value})}/>{row.operationalCenterId && <span className={styles.cellMeta}>합계 {money(value.cost)}</span>}</td>
           <td data-label="정산 순수익"><span className={styles.netValue}>{money(value.netAfterWh)}</span><details className={styles.adjustDetails} open={row.adj!==0||undefined}><summary>{row.adj!==0?`조정 ${row.adj>0?'+':''}${money(row.adj)}`:'조정'}</summary><MoneyInput disabled={month.locked} className={styles.adjustInput} placeholder="± 금액" value={row.adj||''} aria-label={`${row.name} 정산 순수익 조정액`} onChange={(e)=>updateRow(row.id,{adj:Number(e.target.value)||0})}/></details></td>
           <td data-label="비고"><input disabled={month.locked} value={row.note} aria-label={`${row.name} 비고`} onChange={(e)=>updateRow(row.id,{note:e.target.value})}/></td>
           <td data-label="행 작업"><div className={styles.actions}><button className={styles.actionButton} disabled={month.locked} title="위로 이동" aria-label={`${row.name} 위로 이동`} onClick={()=>move(-1)}>↑</button><button className={styles.actionButton} disabled={month.locked} title="아래로 이동" aria-label={`${row.name} 아래로 이동`} onClick={()=>move(1)}>↓</button><button className={styles.actionButton} disabled={month.locked} title="행 복제" aria-label={`${row.name} 복제`} onClick={()=>{const index=month.rows.indexOf(row);const next=[...month.rows];next.splice(index+1,0,{...clone(row),id:uid(),inv:false,rcpt:false,invDate:'',rcptDate:''});updateRows(next);}}>⧉</button><button className={`${styles.actionButton} ${styles.deleteButton}`} disabled={month.locked} title="행 삭제" aria-label={`${row.name} 삭제`} onClick={()=>updateRows(month.rows.filter((item)=>item.id!==row.id))}><Trash2 size={13}/></button></div></td>

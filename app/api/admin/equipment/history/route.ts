@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type { EquipmentLedgerRow } from '@/app/lib/equipment/types';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
+import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
 
 export async function GET(request: Request) {
   const auth = await requireAdmin();
@@ -26,10 +27,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ items: [], history_items: data ?? [], data_source: 'legacy' },
       { headers: { 'Cache-Control': 'private, no-store, max-age=0' } });
   }
+  if (!(await isEquipmentLedgerSchemaReady(service))) {
+    if (catalogId) {
+      return NextResponse.json({ error: '원장 전환 전에는 교구별 이력을 조회할 수 없습니다.' }, { status: 400 });
+    }
+    let legacyQuery = service
+      .from('inventory_logs')
+      .select('id, user_id, content, type, created_at')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (teacherId) legacyQuery = legacyQuery.eq('user_id', teacherId);
+    const { data, error } = await legacyQuery;
+    if (error) return NextResponse.json({ error: '이력을 불러오지 못했습니다.' }, { status: 500 });
+    return NextResponse.json(
+      { items: [], history_items: data ?? [], data_source: 'legacy', warning: 'EQUIPMENT_LEDGER_SCHEMA_NOT_READY' },
+      { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
+    );
+  }
   let query = service
     .from('equipment_ledger')
     .select(
-      'ledger_id, event_type, catalog_id, teacher_id, rental_id, qty, note, occurred_at, metadata, catalog:catalog_id(name), teacher:teacher_id(name)',
+      'ledger_id, event_type, catalog_id, teacher_id, rental_id, qty, note, occurred_at, metadata, created_by, catalog:catalog_id(name), teacher:teacher_id(name)',
     )
     .order('occurred_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -42,11 +60,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: '이력을 불러오지 못했습니다.' }, { status: 500 });
   }
 
+  const creatorIds = [
+    ...new Set(
+      (data ?? [])
+        .map((row) => row.created_by as string | null)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const creatorNames = new Map<string, string>();
+  if (creatorIds.length > 0) {
+    const { data: creators } = await service.from('users').select('id, name').in('id', creatorIds);
+    for (const user of creators ?? []) {
+      if (user.id && user.name) creatorNames.set(user.id, user.name);
+    }
+  }
+
   const items: EquipmentLedgerRow[] = (data ?? []).map((row) => {
     const catalogJoin = row.catalog as { name?: string } | { name?: string }[] | null;
     const teacherJoin = row.teacher as { name?: string } | { name?: string }[] | null;
     const catalogName = Array.isArray(catalogJoin) ? catalogJoin[0]?.name : catalogJoin?.name;
     const teacherName = Array.isArray(teacherJoin) ? teacherJoin[0]?.name : teacherJoin?.name;
+    const createdBy = (row.created_by as string | null) ?? null;
     return {
       ledger_id: row.ledger_id,
       event_type: row.event_type,
@@ -59,6 +93,8 @@ export async function GET(request: Request) {
       note: row.note,
       occurred_at: row.occurred_at,
       metadata: (row.metadata ?? {}) as Record<string, unknown>,
+      created_by: createdBy,
+      created_by_name: createdBy ? creatorNames.get(createdBy) ?? null : null,
     };
   });
 

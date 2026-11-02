@@ -42,7 +42,9 @@ const button = (text: string) => [...document.querySelectorAll('button')].find((
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ teachers: [], fees: [] }), { status: 200 })));
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ teachers: [
+    { id: 'old-teacher', name: '기존 강사', role: 'teacher', session_count: 0, log_count: 0, fee_center_main: 30000, fee_center_assist: 20000 },
+  ], fees: [] }), { status: 200 })));
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   window.confirm = vi.fn(() => true);
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
@@ -79,18 +81,18 @@ describe('real center components with isolated action fixtures (not authenticate
       teachers: [{ id: teacherId, name: 'UUID 강사', session_count: 100, log_count: 6, fee_center_main: 61000, fee_center_assist: null }],
     } : { fees: [{ tier_id: 'gold', fee_center_main: 45000, fee_center_assist: 30000 }] }))));
     await act(async () => root.render(createElement(CenterDetailClient, { id: center.id })));
-    await flush(); await click(button('수업·금액'));
+    await flush();
     await waitFor(() => Boolean(container.textContent?.includes('61,000원')));
     expect(container.textContent?.match(/61,000원/g)).toHaveLength(1);
-    expect(container.textContent).toContain('보조 1');
+    expect(container.textContent).toContain('보조강사비');
     expect(container.textContent).toContain('중복 배정 확인');
   });
   it('opens the settlement sheet without fetching legacy mapping data', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })));
     await act(async () => root.render(createElement(CenterDetailClient, { id: center.id })));
-    await flush(); await click(button('정산'));
+    await flush();
     expect(container.querySelector('a[href="/admin/master/reports?tab=sheet"]')).not.toBeNull();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(vi.mocked(fetch).mock.calls.every(([url]) => String(url).includes('/reference') || String(url).includes('/teacher-tier-fees'))).toBe(true);
     expect(container.querySelector('[aria-label="센터관리 기관 검색"]')).toBeNull();
   });
   it('inserts a created row from the action result without refetching the full list', async () => {
@@ -137,7 +139,7 @@ describe('real center components with isolated action fixtures (not authenticate
     await waitFor(() => api.getCenterById.mock.calls.length === 1);
     expect(api.getCenterById).toHaveBeenCalledTimes(1); expect(api.getCenterById).toHaveBeenCalledWith(center.id);
     expect(api.getCenterHistory).toHaveBeenCalledTimes(1); expect(api.getActiveTeachers).not.toHaveBeenCalled();
-    expect(document.querySelector('dialog')?.textContent).toContain('계약 기간');
+    expect(document.querySelector('dialog')?.textContent).toContain('수업 기간');
     await click(document.querySelector('[aria-label="센터 상세 닫기"]')!);
     expect(document.querySelector('dialog')).toBeNull(); expect(api.getCenters).not.toHaveBeenCalled();
     await click(container.querySelector('a')!);
@@ -158,6 +160,10 @@ describe('real center components with isolated action fixtures (not authenticate
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
       setter.call(input, '수정 센터'); input.dispatchEvent(new Event('input', { bubbles: true }));
+      for (const [label, amount] of [['청구 주강사비', '60000'], ['청구 보조강사비', '20000'], ['청구 대여비', '20000']]) {
+        const charge = form.querySelector(`input[aria-label="${label}"]`)!;
+        setter.call(charge, amount); charge.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     });
     vi.mocked(window.confirm).mockReturnValue(false);
     await click(document.querySelector('[aria-label="센터 상세 닫기"]')!);

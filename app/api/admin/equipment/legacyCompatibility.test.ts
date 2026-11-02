@@ -13,7 +13,10 @@ const state = vi.hoisted(() => ({
   failTable: '',
   service: vi.fn(),
 }));
-vi.mock('@/app/lib/equipment/writeMode', () => ({ isLedgerWriteMode: () => state.ledger }));
+vi.mock('@/app/lib/equipment/writeMode', () => ({
+  isLedgerWriteMode: () => state.ledger,
+  getEquipmentWriteMode: () => (state.ledger ? 'ledger' : 'legacy'),
+}));
 vi.mock('@/app/lib/server/adminAuth', () => ({
   requireAdmin: async () => state.allowed ? { ok: true } : { ok: false, response: new Response(null, { status: 403 }) },
   getServiceSupabase: () => state.service(),
@@ -21,7 +24,10 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
 
 // Production's pre-ledger schema: no new columns, tables, views, or RPCs.
 const columns: Record<string, string[]> = {
-  catalog: ['id', 'name', 'category', 'image', 'simple_desc', 'key_points', 'usage_examples'],
+  catalog: ['id', 'name', 'category', 'image', 'simple_desc', 'key_points', 'usage_examples', 'qty_on_hand_total', 'qty_quarantine', 'mgmt_code'],
+  equipment_rentals: ['rental_id', 'catalog_id', 'qty_outstanding', 'status'],
+  equipment_ledger: ['ledger_id', 'catalog_id', 'event_type'],
+  teacher_equipment_holdings_v: ['teacher_id', 'catalog_id', 'name', 'qty_held', 'active_rental_lines'],
   users: ['id', 'name', 'role', 'is_active'],
   inventory: ['id', 'user_id', 'name', 'quantity'],
   inventory_logs: ['id', 'user_id', 'content', 'type', 'created_at'],
@@ -56,6 +62,20 @@ beforeEach(() => {
     ],
   };
   state.service.mockReset().mockReturnValue({
+    schema() {
+      return {
+        from() {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: () =>
+                  Promise.resolve({ data: { legacy_direct_writes_blocked: false }, error: null }),
+              }),
+            }),
+          };
+        },
+      };
+    },
     from(table: string) {
       state.tables.push(table);
       let invalid = !columns[table] || state.failTable === table;
@@ -72,6 +92,8 @@ beforeEach(() => {
       query.in = (key: string, values: unknown[]) => { filters.push((row) => values.includes(row[key])); return query; };
       query.order = (key: string, options?: { ascending?: boolean }) => { sortKey = key; ascending = options?.ascending !== false; return query; };
       query.range = (start: number, end: number) => { bounds = [start, end]; return query; };
+      query.limit = () => query;
+      query.gt = (key: string, value: unknown) => { filters.push((row) => Number(row[key]) > Number(value)); return query; };
       query.then = (resolve: (result: unknown) => unknown, reject: (reason: unknown) => unknown) => {
         const rows = (state.rows[table] ?? []).filter((row) => filters.every((filter) => filter(row)));
         if (sortKey) rows.sort((a, b) => String(a[sortKey]).localeCompare(String(b[sortKey]), undefined, { numeric: true }) * (ascending ? 1 : -1));
@@ -89,10 +111,9 @@ describe('existing equipment data without a ledger migration', () => {
     const body = await response.json();
     expect(body.data_source).toBe('legacy');
     expect(body.capabilities.ledger_writes).toBe(false);
+    expect(body.capabilities.server_write_mode).toBe('legacy');
     expect(body.items).toEqual([]);
-    expect(body.catalog_items.map((item: { catalog_id: number }) => item.catalog_id)).toEqual([11, 22]);
-    expect(body.catalog_items[0]).not.toHaveProperty('qty_on_hand_total');
-    expect(state.tables).toEqual(['catalog']);
+    expect(body).not.toHaveProperty('catalog_items');
     expect(response.headers.get('cache-control')).toContain('no-store');
   });
 
@@ -133,8 +154,16 @@ describe('existing equipment data without a ledger migration', () => {
     expect(state.tables).toEqual([]);
   });
 
+  it('reports a genuine ledger stock read failure instead of silently returning empty success', async () => {
+    state.ledger = true;
+    vi.spyOn(stockReader, 'fetchEquipmentStock').mockRejectedValueOnce(new Error('db down'));
+    const response = await stock();
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).not.toContain('missing relation');
+    vi.restoreAllMocks();
+  });
+
   it.each([
-    ['stock', 'catalog', () => stock()],
     ['teachers', 'inventory', () => teachers()],
     ['rentals', 'inventory', () => rentals(request('rentals?teacher_id=teacher-a'))],
     ['history', 'inventory_logs', () => history(request('history'))],
@@ -152,7 +181,7 @@ describe('existing equipment data without a ledger migration', () => {
     expect(response.status).toBe(200);
     expect((await response.json()).capabilities.ledger_writes).toBe(true);
     expect(reader).toHaveBeenCalledOnce();
-    expect(state.tables).toEqual([]);
+    expect(state.tables.slice(0, 3)).toEqual(['equipment_rentals', 'equipment_ledger', 'catalog']);
   });
 
   it.each([

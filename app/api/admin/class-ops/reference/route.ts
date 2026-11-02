@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { fetchTeacherLogCounts } from '@/app/admin/users/fetchTeacherLogCounts';
 import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
+import { isPlatformAdminFromUserRow } from '@/app/lib/auth/platformAdminIdentity';
 
 const TEACHER_COLUMNS = [
   'id',
@@ -47,13 +48,16 @@ export async function GET() {
   try {
     // Calendar options are separate from the historical teacher directory.
     const { data: candidates, error: candidatesError } = await supabase.from('users')
-      .select('id, name, email, role').eq('is_active', true)
+      .select('id, name, email, role, is_admin').eq('is_active', true)
       .in('role', ['teacher', 'admin', 'master']).order('name', { ascending: true });
     if (candidatesError) throw candidatesError;
     // Class Ops uses the registered staff directory. MASTER billing/profile
     // records and Auth lookups must not be prerequisites for selecting staff.
     const filterTeachers = (candidates ?? [])
       .filter((candidate) => {
+        if (/spomove|qa|test|\uD14C\uC2A4\uD2B8/i.test(candidate.name ?? '')) return false;
+        // Registered operators remain selectable even with a legacy test email.
+        if (isPlatformAdminFromUserRow(candidate)) return true;
         const label = `${candidate.name ?? ''} ${candidate.email ?? ''}`;
         return !/spomove|qa|test|\uD14C\uC2A4\uD2B8/i.test(label);
       })

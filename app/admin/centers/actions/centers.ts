@@ -4,7 +4,8 @@ import { readCenterSettlementDefaults } from '@/app/lib/centers/settlementDefaul
 
 import { staffTeacherIds } from '@/app/lib/staffTeacherFees';
 
-import { createCenterSchema } from '@/app/lib/centers/schemas';
+import { createCenterSchema, type CreateCenterInput } from '@/app/lib/centers/schemas';
+import { totalCenterFee } from '@/app/lib/centers/feeBreakdown';
 import type { Center, CenterListItem, TeacherOption } from '@/app/lib/centers/types';
 import { toCenterListItem } from '@/app/lib/centers/listItem';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
@@ -13,6 +14,10 @@ import { z } from 'zod';
 const CENTER_NOT_FOUND_OR_FORBIDDEN = '센터를 찾을 수 없거나 권한이 없습니다.';
 const ADMIN_REQUIRED = '관리자 권한이 필요합니다.';
 const centerIdSchema = z.string().uuid();
+function applyBillingTotal(input: Partial<CreateCenterInput>): void {
+  const agreement = input.settlement_defaults?.billingBreakdown;
+  if (agreement) input.session_fee = totalCenterFee(agreement);
+}
 const getCentersFiltersSchema = z.object({
   search: z.string().trim().max(100).optional(),
   status: z.enum(['active', 'paused', 'ended']).optional(),
@@ -56,6 +61,7 @@ function normalizeCenterRow(row: CenterRowWithTeacher): Center {
     contract_start: (baseRow.contract_start as string | null) ?? null,
     contract_end: (baseRow.contract_end as string | null) ?? null,
     settlement_defaults: readCenterSettlementDefaults(baseRow.settlement_defaults),
+    project_name: baseRow.settlement_defaults?.projectName ?? null,
     session_fee: (baseRow.session_fee as number | null) ?? null,
     main_teacher_id: (baseRow.main_teacher_id as string | null) ?? null,
     main_teacher_2_id: (baseRow.main_teacher_2_id as string | null) ?? null,
@@ -116,6 +122,7 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
       `
         id,
         name,
+        project_name:settlement_defaults->>projectName,
         region_tag,
         contact_name,
         contact_phone,
@@ -142,7 +149,7 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
     const term = parsedFilters.data.search.replace(/[,%()]/g, ' ').trim();
     if (!term) return [];
     q = q.or(
-      `name.ilike.%${term}%,address.ilike.%${term}%,contact_name.ilike.%${term}%,contact_email.ilike.%${term}%`
+      `name.ilike.%${term}%,address.ilike.%${term}%,contact_name.ilike.%${term}%,contact_email.ilike.%${term}%,settlement_defaults->>projectName.ilike.%${term}%`
     );
   }
 
@@ -202,6 +209,7 @@ export async function createCenter(input: unknown): Promise<{ data?: Center; err
     const staff = await staffTeacherIds(supabase);
     parsed.data.instructors_default.fees = parsed.data.instructors_default.fees.map((fee) => staff.has(fee.teacher_id) ? { ...fee, amount: 0 } : fee);
   }
+  applyBillingTotal(parsed.data);
   const { data, error } = await supabase
     .from('centers')
     .insert({
@@ -252,6 +260,7 @@ export async function updateCenter(
     const staff = await staffTeacherIds(supabase);
     parsed.data.instructors_default.fees = parsed.data.instructors_default.fees.map((fee) => staff.has(fee.teacher_id) ? { ...fee, amount: 0 } : fee);
   }
+  applyBillingTotal(parsed.data);
   const payload: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) payload.name = parsed.data.name;
   if (parsed.data.region_tag !== undefined) payload.region_tag = parsed.data.region_tag;

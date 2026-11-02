@@ -8,6 +8,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { canTeacherEditSession } from '@/app/lib/server/teacherSessionAccess';
 import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
+import { isFutureSessionDay } from '@/app/lib/server/sessionFeedbackGuard';
 import {
   type FeedbackFields,
   fieldsToTemplateText,
@@ -87,11 +88,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '이 수업을 수정할 권한이 없습니다.' }, { status: 403 });
     }
 
-    const sessionStart = new Date(String(row.start_at));
-    const today = new Date();
-    sessionStart.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    if (sessionStart > today) {
+    if (isFutureSessionDay(String(row.start_at))) {
       return NextResponse.json(
         { error: '수업일이 아직 지나지 않았습니다. 수업일 이후에 완료 처리해 주세요.' },
         { status: 400 }

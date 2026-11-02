@@ -10,7 +10,7 @@ const bodySchema = z.object({
   delta: z.number().int().refine((n) => n !== 0, 'delta must be non-zero'),
   kind: z.enum(['on_hand', 'quarantine']).default('on_hand'),
   request_key: z.string().optional(),
-  note: z.string().max(500).optional().nullable(),
+  note: z.string().trim().min(1, '사유는 필수입니다.').max(500),
 });
 
 export async function POST(request: Request) {
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     p_catalog_id: parsed.data.catalog_id,
     p_delta: parsed.data.delta,
     p_request_key: requestKey,
-    p_note: parsed.data.note ?? null,
+    p_note: parsed.data.note,
     p_created_by: auth.userId ?? null,
   });
   if (error) {
