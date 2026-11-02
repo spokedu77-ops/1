@@ -18,7 +18,8 @@ import {
   type CatalogTeacherHolding,
 } from './equipmentUiShared';
 import { CatalogEditorModal, type CatalogFormState } from './CatalogEditorModal';
-import { AdjustStockModal, RentEquipmentModal, ReturnEquipmentModal } from './equipmentModals';
+import { AdjustStockModal, RentEquipmentModal, ReturnEquipmentModal, StockInputModal } from './equipmentModals';
+import { LegacyDataReviewPanel } from './LegacyDataReviewPanel';
 import {
   canShowStockQty,
   EquipmentStockCards,
@@ -27,7 +28,7 @@ import {
   stockStatusLabel,
 } from './equipmentStockUi';
 
-type TabId = 'stock' | 'teachers' | 'history';
+type TabId = 'stock' | 'teachers' | 'history' | 'legacy';
 
 type TeacherRow = {
   id: string;
@@ -49,6 +50,7 @@ const defaultCapabilities: EquipmentCapabilities = {
   server_write_mode: 'legacy',
   ledger_writes: false,
   legacy_direct_writes_blocked: null,
+  opening_persist_enabled: false,
 };
 
 export function EquipmentInventoryApp() {
@@ -67,18 +69,35 @@ export function EquipmentInventoryApp() {
   const [detailHoldings, setDetailHoldings] = useState<CatalogTeacherHolding[]>([]);
   const [detailHoldingsLoading, setDetailHoldingsLoading] = useState(false);
   const [catalogEdit, setCatalogEdit] = useState<{ id: number | null; form: CatalogFormState | null } | null>(null);
-  const [rentTarget, setRentTarget] = useState<EquipmentStockRow | null>(null);
-  const [adjustTarget, setAdjustTarget] = useState<{ row: EquipmentStockRow; kind: 'on_hand' | 'quarantine' } | null>(
-    null,
-  );
+  const [rentModalOpen, setRentModalOpen] = useState(false);
+  const [rentPreset, setRentPreset] = useState<EquipmentStockRow | null>(null);
+  const [legacyConfirmedPreview, setLegacyConfirmedPreview] = useState<
+    { catalog_id: number; name: string; quantity: number }[]
+  >([]);
+  const [adjustTarget, setAdjustTarget] = useState<EquipmentStockRow | null>(null);
   const [returnTarget, setReturnTarget] = useState<CatalogHoldingGroup | null>(null);
   const [stockQuery, setStockQuery] = useState('');
+  const [stockInputTarget, setStockInputTarget] = useState<EquipmentStockRow | null>(null);
+  const [legacyImport, setLegacyImport] = useState<{
+    staged_rows: number;
+    pending_rows: number;
+    imported_rows: number;
+    pending_items: { inventory_id: number; name: string; quantity: number; reason: string }[];
+    sync?: {
+      inventory_rows: number;
+      mapped_rows: number;
+      pending_rows: number;
+      catalog_unmapped_rows: number;
+      teacher_inventory_flags: { user_id: string; name: string; count: number; note: string }[];
+      persisted: boolean;
+    };
+  } | null>(null);
   const [connectionState, setConnectionState] = useState<EquipmentInventoryConnectionState>('LOAD_ERROR');
 
   const ledgerReady = connectionState === 'LEDGER_READY';
   /** Legacy catalog (images, names) still visible while ledger DB is missing. */
-  const showCatalogStockList = connectionState === 'SCHEMA_MISSING' || connectionState === 'LEDGER_READY';
-  const catalogPreviewOnly = connectionState === 'SCHEMA_MISSING';
+  const catalogPreviewOnly = connectionState === 'SCHEMA_MISSING' || connectionState === 'LEGACY_READY';
+  const showCatalogStockList = catalogPreviewOnly || ledgerReady;
 
   const refreshStock = useCallback(async () => {
     const res = await fetch('/api/admin/equipment/stock', { cache: 'no-store' });
@@ -88,10 +107,12 @@ export function EquipmentInventoryApp() {
       data_source?: 'legacy' | 'ledger';
       capabilities?: EquipmentCapabilities;
       connection_state?: EquipmentInventoryConnectionState;
+      legacy_import?: typeof legacyImport;
     };
     const caps = body.capabilities ?? defaultCapabilities;
     const ds = body.data_source === 'ledger' ? 'ledger' : 'legacy';
     setStock(body.items ?? []);
+    setLegacyImport(body.legacy_import ?? null);
     setCapabilities(caps);
     setConnectionState(
       body.connection_state ??
@@ -111,9 +132,13 @@ export function EquipmentInventoryApp() {
     if (selectedTeacherId) params.set('teacher_id', selectedTeacherId);
     const res = await fetch(`/api/admin/equipment/history?${params}`, { cache: 'no-store' });
     if (!res.ok) throw new Error('history fetch failed');
-    const body = (await res.json()) as { items: EquipmentLedgerRow[]; history_items?: LegacyEquipmentHistoryItem[] };
+    const body = (await res.json()) as {
+      items: EquipmentLedgerRow[];
+      history_items?: LegacyEquipmentHistoryItem[];
+      data_source?: 'legacy' | 'ledger';
+    };
     setHistory(body.items ?? []);
-    setLegacyHistory(body.history_items ?? []);
+    setLegacyHistory(body.data_source === 'ledger' ? [] : (body.history_items ?? []));
   }, [selectedTeacherId]);
 
   const refreshRentals = useCallback(async (teacherId: string, signal?: AbortSignal) => {
@@ -124,10 +149,15 @@ export function EquipmentInventoryApp() {
       { cache: 'no-store', signal },
     );
     if (!res.ok) throw new Error('rentals fetch failed');
-    const body = (await res.json()) as { items: EquipmentRentalRow[]; inventory_items?: LegacyEquipmentInventoryItem[] };
+    const body = (await res.json()) as {
+      items: EquipmentRentalRow[];
+      inventory_items?: LegacyEquipmentInventoryItem[];
+      legacy_confirmed_preview?: { catalog_id: number; name: string; quantity: number }[];
+    };
     if (signal?.aborted) return;
     setRentals(body.items ?? []);
     setLegacyInventory(body.inventory_items ?? []);
+    setLegacyConfirmedPreview(body.legacy_confirmed_preview ?? []);
   }, []);
 
   useEffect(() => {
@@ -204,7 +234,7 @@ export function EquipmentInventoryApp() {
     );
   }, [stock, stockQuery]);
 
-  const legacyTeacherHoldings = useMemo(() => {
+  const unconfirmedLegacyHoldings = useMemo(() => {
     return [...legacyInventory]
       .filter((row) => (Number(row.quantity) || 0) > 0)
       .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
@@ -272,6 +302,19 @@ export function EquipmentInventoryApp() {
     });
   };
 
+  const openRent = (row?: EquipmentStockRow) => {
+    setRentPreset(row ?? null);
+    setRentModalOpen(true);
+  };
+
+  const rentCatalogOptions = useMemo(
+    () =>
+      stock
+        .filter((r) => r.opening_confirmed && canShowStockQty(r, capabilities.ledger_writes))
+        .map((r) => ({ catalog_id: r.catalog_id, name: r.name, qty_available: r.qty_available })),
+    [stock, capabilities.ledger_writes],
+  );
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center bg-slate-50">
@@ -286,7 +329,6 @@ export function EquipmentInventoryApp() {
           qty_on_hand_total: detailStock.qty_on_hand_total,
           qty_warehouse: detailStock.qty_warehouse,
           qty_lent: detailStock.qty_lent,
-          qty_quarantine: detailStock.qty_quarantine,
           qty_available: detailStock.qty_available,
           showQty: canShowStockQty(detailStock, capabilities.ledger_writes),
           statusLabel: stockStatusLabel(getStockDisplayStatus(detailStock, capabilities.ledger_writes)),
@@ -311,6 +353,7 @@ export function EquipmentInventoryApp() {
               ['stock', '교구 재고'],
               ['teachers', '강사 목록'],
               ['history', '대여·반납 이력'],
+              ['legacy', '기존 데이터 확인'],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -330,33 +373,13 @@ export function EquipmentInventoryApp() {
       </header>
 
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full space-y-4">
-        {connectionState === 'SCHEMA_MISSING' && (
-          <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950 space-y-1">
-            <p>{SCHEMA_MISSING_USER_MESSAGE}</p>
-            <p className="text-xs text-amber-900/80">기존 교구 목록·이미지와 강사 보유·이력은 아래에서 조회할 수 있습니다. (읽기 전용)</p>
-          </div>
-        )}
-        {connectionState === 'MODE_MISMATCH' && (
-          <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950 space-y-2">
-            <p className="font-black">UI와 서버 수불 모드가 일치하지 않습니다.</p>
-            <p className="text-xs">
-              신규 UI는 <code className="bg-white/80 px-1 rounded">NEXT_PUBLIC_EQUIPMENT_UI=ledger</code> 빌드이며, 서버{' '}
-              <code className="bg-white/80 px-1 rounded">EQUIPMENT_WRITE_MODE=ledger</code>와 함께 동작해야 합니다.
-            </p>
-          </div>
-        )}
         {connectionState === 'LOAD_ERROR' && (
-          <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-4 text-sm text-red-950">
+          <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-950">
             <p className="font-black">교구 데이터를 불러오지 못했습니다.</p>
             <p className="text-xs mt-1">권한·네트워크·일시적 서버 오류를 확인한 뒤 다시 시도하세요.</p>
           </div>
         )}
 
-        {ledgerReady && stock.some((r) => !r.opening_confirmed) && tab === 'stock' && (
-          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            기초재고(OPENING)가 확정되지 않은 품목은 가용 수량을 표시하지 않으며 대여할 수 없습니다.
-          </p>
-        )}
         {ledgerReady && stock.some((r) => r.cache_drift) && tab === 'stock' && (
           <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
             재고 캐시 불일치가 탐지된 품목이 있습니다. 수불 쓰기가 차단됩니다. (자동 보정 없음)
@@ -371,41 +394,50 @@ export function EquipmentInventoryApp() {
               </div>
             ) : (
               <>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {ledgerReady && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => openRent()}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold"
+                        >
+                          <Plus size={16} /> 대여 등록
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCatalogEdit({ id: null, form: null })}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-bold"
+                        >
+                          <Plus size={16} /> 교구 등록
+                        </button>
+                      </>
+                    )}
+                  </div>
                   <input
                     type="search"
                     placeholder="교구명·관리번호·카테고리 검색"
                     value={stockQuery}
                     onChange={(e) => setStockQuery(e.target.value)}
-                    className="flex-1 min-w-0 p-3 rounded-xl border border-slate-200 bg-white text-sm"
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-white text-sm"
                   />
-                  {ledgerReady && (
-                    <button
-                      type="button"
-                      onClick={() => setCatalogEdit({ id: null, form: null })}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold shrink-0"
-                    >
-                      <Plus size={16} /> 교구 등록
-                    </button>
-                  )}
                 </div>
                 <EquipmentStockTable
                   rows={filteredStock}
                   ledgerWrites={ledgerReady && capabilities.ledger_writes}
                   onDetail={openDetail}
-                  onEdit={openEdit}
-                  onRent={setRentTarget}
-                  onAdjust={(row) => setAdjustTarget({ row, kind: 'on_hand' })}
-                  onQuarantine={(row) => setAdjustTarget({ row, kind: 'quarantine' })}
+                  onRent={(row) => openRent(row)}
+                  onAdjust={(row) => setAdjustTarget(row)}
+                  onStockInput={setStockInputTarget}
                 />
                 <EquipmentStockCards
                   rows={filteredStock}
                   ledgerWrites={ledgerReady && capabilities.ledger_writes}
                   onDetail={openDetail}
-                  onEdit={openEdit}
-                  onRent={setRentTarget}
-                  onAdjust={(row) => setAdjustTarget({ row, kind: 'on_hand' })}
-                  onQuarantine={(row) => setAdjustTarget({ row, kind: 'quarantine' })}
+                  onRent={(row) => openRent(row)}
+                  onAdjust={(row) => setAdjustTarget(row)}
+                  onStockInput={setStockInputTarget}
                 />
               </>
             )}
@@ -440,58 +472,43 @@ export function EquipmentInventoryApp() {
                 </p>
               ) : !selectedTeacherId ? (
                 <p className="text-slate-400 text-sm">강사를 선택하세요.</p>
-              ) : catalogPreviewOnly ? (
-                <div className="space-y-3">
-                  <h3 className="font-black text-slate-800">보유 교구 (기존 데이터)</h3>
-                  {legacyTeacherHoldings.length === 0 ? (
+              ) : (
+                <div className="space-y-4">
+                  {catalogHoldings.length === 0 &&
+                  legacyConfirmedPreview.length === 0 &&
+                  unconfirmedLegacyHoldings.length === 0 ? (
                     <p className="text-sm text-slate-400">보유 교구가 없습니다.</p>
                   ) : (
                     <ul className="divide-y divide-slate-100">
-                      {legacyTeacherHoldings.map((row) => (
-                        <li key={row.id} className="py-3 flex justify-between gap-2 text-sm">
-                          <span className="font-bold text-slate-800">{row.name}</span>
+                      {catalogHoldings.map((group) => (
+                        <li key={group.catalog_id} className="py-3 flex items-center justify-between gap-3 text-sm">
+                          <span className="font-bold text-slate-800">{group.catalog_name}</span>
+                          <span className="tabular-nums text-slate-600 shrink-0">{group.qty_outstanding}개</span>
+                          {ledgerReady && group.qty_outstanding > 0 && (
+                            <button
+                              type="button"
+                              className="text-xs font-bold text-indigo-600 shrink-0"
+                              onClick={() => setReturnTarget(group)}
+                            >
+                              반납
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                      {legacyConfirmedPreview.map((row) => (
+                        <li key={`lc-${row.catalog_id}`} className="py-3 flex items-center justify-between gap-2 text-sm">
+                          <span className="text-slate-800">{row.name}</span>
                           <span className="tabular-nums text-slate-600">{row.quantity}개</span>
                         </li>
                       ))}
+                      {unconfirmedLegacyHoldings.map((row) => (
+                        <li key={row.id} className="py-3 flex items-center justify-between gap-2 text-sm text-slate-600">
+                          <span>{row.name}</span>
+                          <span className="text-xs text-amber-700 font-bold shrink-0">기존 기록 · 확인 전</span>
+                          <span className="tabular-nums">{row.quantity}개</span>
+                        </li>
+                      ))}
                     </ul>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <h3 className="font-black text-slate-800">보유 교구</h3>
-                  {catalogHoldings.length === 0 ? (
-                    <p className="text-sm text-slate-400">미반납 교구가 없습니다.</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-xs text-slate-500 border-b">
-                            <th className="py-2 pr-4">교구</th>
-                            <th className="py-2 pr-4 text-right">미반납</th>
-                            <th className="py-2">작업</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {catalogHoldings.map((group) => (
-                            <tr key={group.catalog_id} className="border-b border-slate-50">
-                              <td className="py-3 pr-4 font-bold">{group.catalog_name}</td>
-                              <td className="py-3 pr-4 text-right tabular-nums">{group.qty_outstanding}개</td>
-                              <td className="py-3">
-                                {ledgerReady && group.qty_outstanding > 0 && (
-                                  <button
-                                    type="button"
-                                    className="text-xs font-bold text-indigo-600"
-                                    onClick={() => setReturnTarget(group)}
-                                  >
-                                    반납
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
                   )}
                 </div>
               )}
@@ -499,13 +516,28 @@ export function EquipmentInventoryApp() {
           </div>
         )}
 
+        {tab === 'legacy' && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 space-y-4">
+            {(connectionState === 'SCHEMA_MISSING' || connectionState === 'MODE_MISMATCH' || connectionState === 'LEGACY_READY') && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                {connectionState === 'SCHEMA_MISSING' && <p>{SCHEMA_MISSING_USER_MESSAGE}</p>}
+                {connectionState === 'MODE_MISMATCH' && (
+                  <p>수불 원장 연결이 완료되면 재고 입력·대여·반납을 사용할 수 있습니다.</p>
+                )}
+                {connectionState === 'LEGACY_READY' && (
+                  <p>현재는 기존 교구·보유·이력 조회만 가능합니다.</p>
+                )}
+              </div>
+            )}
+            <LegacyDataReviewPanel legacyImport={legacyImport} />
+          </div>
+        )}
+
         {tab === 'history' && (
           <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
             <div className="px-4 py-3 border-b bg-slate-50 flex items-center gap-2">
               <History size={16} className="text-slate-400" />
-              <span className="text-xs font-black text-slate-500">
-                {!ledgerReady ? '대여·반납 이력' : '수불 원장 이력'}
-              </span>
+              <span className="text-xs font-black text-slate-500">대여·반납 이력</span>
             </div>
             {!ledgerReady ? (
               catalogPreviewOnly ? (
@@ -547,7 +579,8 @@ export function EquipmentInventoryApp() {
                     {history.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="p-6 text-center text-slate-400">
-                          이력이 없습니다.
+                          <p>아직 대여·반납 이력이 없습니다.</p>
+                          <p className="text-xs mt-1 text-slate-400">이 탭에는 앞으로 기록되는 대여·반납만 표시됩니다.</p>
                         </td>
                       </tr>
                     ) : (
@@ -573,12 +606,54 @@ export function EquipmentInventoryApp() {
         )}
       </main>
 
+      {stockInputTarget && ledgerReady && (
+        <StockInputModal
+          target={stockInputTarget}
+          onClose={() => setStockInputTarget(null)}
+          onConfirm={async ({ qtyOnHandTotal }) => {
+            try {
+              await postJson('/api/admin/equipment/opening', {
+                catalog_id: stockInputTarget.catalog_id,
+                qty_on_hand_total: qtyOnHandTotal,
+                qty_quarantine: 0,
+                note: '재고 입력 확정',
+                request_key: crypto.randomUUID(),
+              });
+              setStockInputTarget(null);
+              toast.success('재고가 확정되었습니다.');
+              await afterMutation();
+              await refreshTeachers();
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : '재고 확정 실패');
+            }
+          }}
+        />
+      )}
+
       {detailItem && (
         <CatalogDetailModal
           item={detailItem}
           stock={detailStockView}
           teacherHoldings={ledgerReady ? detailHoldings : undefined}
           holdingsLoading={detailHoldingsLoading}
+          onEdit={
+            ledgerReady && detailStock
+              ? () => {
+                  openEdit(detailStock);
+                  setDetailItem(null);
+                  setDetailStock(null);
+                }
+              : undefined
+          }
+          onAdjustStock={
+            ledgerReady && detailStock && canShowStockQty(detailStock, capabilities.ledger_writes)
+              ? () => {
+                  setAdjustTarget(detailStock);
+                  setDetailItem(null);
+                  setDetailStock(null);
+                }
+              : undefined
+          }
           onClose={() => {
             setDetailItem(null);
             setDetailStock(null);
@@ -596,21 +671,26 @@ export function EquipmentInventoryApp() {
         />
       )}
 
-      {rentTarget && ledgerReady && (
+      {rentModalOpen && ledgerReady && (
         <RentEquipmentModal
-          target={rentTarget}
+          preset={rentPreset}
+          catalogOptions={rentCatalogOptions}
           teacherOptions={teacherOptions}
-          onClose={() => setRentTarget(null)}
-          onConfirm={async (teacherId, qty) => {
+          onClose={() => {
+            setRentModalOpen(false);
+            setRentPreset(null);
+          }}
+          onConfirm={async (catalogId, teacherId, qty) => {
             try {
               await postJson('/api/admin/equipment/rent', {
-                catalog_id: rentTarget.catalog_id,
+                catalog_id: catalogId,
                 teacher_id: teacherId,
                 qty,
                 request_key: crypto.randomUUID(),
               });
               toast.success('대여가 등록되었습니다.');
-              setRentTarget(null);
+              setRentModalOpen(false);
+              setRentPreset(null);
               await afterMutation();
             } catch (e) {
               toast.error(e instanceof Error ? e.message : '대여 실패');
@@ -621,15 +701,14 @@ export function EquipmentInventoryApp() {
 
       {adjustTarget && ledgerReady && (
         <AdjustStockModal
-          target={adjustTarget.row}
-          kind={adjustTarget.kind}
+          target={adjustTarget}
           onClose={() => setAdjustTarget(null)}
           onConfirm={async (delta, note) => {
             try {
               await postJson('/api/admin/equipment/adjust', {
-                catalog_id: adjustTarget.row.catalog_id,
+                catalog_id: adjustTarget.catalog_id,
                 delta,
-                kind: adjustTarget.kind,
+                kind: 'on_hand',
                 note,
                 request_key: crypto.randomUUID(),
               });

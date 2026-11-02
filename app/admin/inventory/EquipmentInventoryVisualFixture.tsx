@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { History, Package, Plus, UserCircle2 } from 'lucide-react';
 import type { EquipmentLedgerRow, EquipmentRentalRow, EquipmentStockRow } from '@/app/lib/equipment/types';
 import { equipmentEventTypeLabel } from '@/app/lib/equipment/ledgerLabels';
-import { AdjustStockModal, RentEquipmentModal, ReturnEquipmentModal } from './equipmentModals';
+import { AdjustStockModal, RentEquipmentModal, ReturnEquipmentModal, StockInputModal } from './equipmentModals';
 import { EquipmentStockCards, EquipmentStockTable } from './equipmentStockUi';
 
 export type VisualFixtureScenario = 'normal' | 'opening' | 'drift' | 'empty' | 'mismatch' | 'modals';
@@ -37,7 +37,14 @@ function rowsForScenario(scenario: VisualFixtureScenario): EquipmentStockRow[] {
   if (scenario === 'mismatch') return [];
   if (scenario === 'opening') {
     return [
-      baseRow({ catalog_id: 9001, name: 'Fixture-미확정', opening_confirmed: false, qty_available: 0 }),
+      baseRow({
+        catalog_id: 9001,
+        name: 'Fixture-미확정',
+        opening_confirmed: false,
+        qty_available: 0,
+        legacy_qty_held: 3,
+        legacy_mapping_pending: false,
+      }),
       baseRow({ catalog_id: 9002, name: 'Fixture-정상', opening_confirmed: true }),
     ];
   }
@@ -101,8 +108,8 @@ const mockHistory: EquipmentLedgerRow[] = [
 export function EquipmentInventoryVisualFixture({ scenario }: { scenario: VisualFixtureScenario }) {
   const [showRent, setShowRent] = useState(false);
   const [showAdjust, setShowAdjust] = useState(false);
-  const [showQuarantine, setShowQuarantine] = useState(false);
   const [showReturn, setShowReturn] = useState(false);
+  const [showStockInput, setShowStockInput] = useState(false);
 
   const rows = useMemo(() => rowsForScenario(scenario), [scenario]);
   const ledgerWrites = scenario !== 'mismatch';
@@ -173,19 +180,17 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
               rows={rows}
               ledgerWrites={ledgerWrites}
               onDetail={() => {}}
-              onEdit={() => {}}
               onRent={() => setShowRent(true)}
               onAdjust={() => setShowAdjust(true)}
-              onQuarantine={() => setShowQuarantine(true)}
+              onStockInput={() => setShowStockInput(true)}
             />
             <EquipmentStockCards
               rows={rows}
               ledgerWrites={ledgerWrites}
               onDetail={() => {}}
-              onEdit={() => {}}
               onRent={() => setShowRent(true)}
               onAdjust={() => setShowAdjust(true)}
-              onQuarantine={() => setShowQuarantine(true)}
+              onStockInput={() => setShowStockInput(true)}
             />
           </>
         )}
@@ -198,11 +203,11 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
             <button type="button" className="px-3 py-2 rounded-lg border text-sm font-bold" onClick={() => setShowAdjust(true)}>
               재고 조정
             </button>
-            <button type="button" className="px-3 py-2 rounded-lg border text-sm font-bold" onClick={() => setShowQuarantine(true)}>
-              격리
-            </button>
             <button type="button" className="px-3 py-2 rounded-lg border text-sm font-bold" onClick={() => setShowReturn(true)}>
               반납
+            </button>
+            <button type="button" className="px-3 py-2 rounded-lg border text-sm font-bold" onClick={() => setShowStockInput(true)}>
+              재고 입력
             </button>
           </div>
         )}
@@ -264,7 +269,8 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
 
       {showRent && (
         <RentEquipmentModal
-          target={mockRentTarget}
+          preset={mockRentTarget}
+          catalogOptions={[{ catalog_id: mockRentTarget.catalog_id, name: mockRentTarget.name, qty_available: mockRentTarget.qty_available }]}
           teacherOptions={[{ id: 't1', name: 'FixtureTeacher' }]}
           onClose={() => setShowRent(false)}
           onConfirm={async () => setShowRent(false)}
@@ -273,17 +279,8 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
       {showAdjust && (
         <AdjustStockModal
           target={mockRentTarget}
-          kind="on_hand"
           onClose={() => setShowAdjust(false)}
           onConfirm={async () => setShowAdjust(false)}
-        />
-      )}
-      {showQuarantine && (
-        <AdjustStockModal
-          target={mockRentTarget}
-          kind="quarantine"
-          onClose={() => setShowQuarantine(false)}
-          onConfirm={async () => setShowQuarantine(false)}
         />
       )}
       {showReturn && (
@@ -292,6 +289,13 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
           rentals={mockReturnRentals}
           onClose={() => setShowReturn(false)}
           onConfirm={async () => setShowReturn(false)}
+        />
+      )}
+      {showStockInput && (
+        <StockInputModal
+          target={baseRow({ catalog_id: 9001, name: 'Fixture-농구공', opening_confirmed: false, legacy_qty_held: 2 })}
+          onClose={() => setShowStockInput(false)}
+          onConfirm={async () => setShowStockInput(false)}
         />
       )}
     </div>

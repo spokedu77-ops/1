@@ -39,7 +39,6 @@ export type CatalogStockDetail = {
   qty_on_hand_total: number;
   qty_warehouse: number;
   qty_lent: number;
-  qty_quarantine: number;
   qty_available: number;
   showQty: boolean;
   statusLabel: string;
@@ -55,12 +54,16 @@ export function CatalogDetailModal({
   stock,
   teacherHoldings,
   holdingsLoading,
+  onEdit,
+  onAdjustStock,
   onClose,
 }: {
   item: CatalogDetailShape;
   stock?: CatalogStockDetail | null;
   teacherHoldings?: CatalogTeacherHolding[];
   holdingsLoading?: boolean;
+  onEdit?: () => void;
+  onAdjustStock?: () => void;
   onClose: () => void;
 }) {
   return (
@@ -98,19 +101,20 @@ export function CatalogDetailModal({
             <div className="bg-[#1a1a1a] p-4 rounded-2xl border border-slate-800 space-y-3">
               <h4 className="text-[11px] font-black text-indigo-400 uppercase">창고 재고</h4>
               <p className="text-xs text-slate-400">상태: {stock.statusLabel}</p>
-              <div className="grid grid-cols-5 gap-2 text-center text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                 {(
                   [
-                    ['T', stock.qty_on_hand_total],
-                    ['W', stock.qty_warehouse],
-                    ['L', stock.qty_lent],
-                    ['Q', stock.qty_quarantine],
-                    ['A', stock.qty_available],
+                    ['총보유', stock.qty_on_hand_total, false],
+                    ['창고재고', stock.qty_warehouse, false],
+                    ['대여 중', stock.qty_lent, false],
+                    ['대여 가능', stock.qty_available, true],
                   ] as const
-                ).map(([label, val]) => (
-                  <div key={label} className="rounded-lg bg-slate-900/80 py-2">
+                ).map(([label, val, highlight]) => (
+                  <div key={label} className="rounded-lg bg-slate-900/80 py-2 px-1">
                     <p className="text-slate-500 font-bold">{label}</p>
-                    <p className={`tabular-nums font-bold ${label === 'A' ? 'text-indigo-400 text-lg' : 'text-slate-200'}`}>
+                    <p
+                      className={`tabular-nums font-bold ${highlight ? 'text-indigo-400 text-lg' : 'text-slate-200'}`}
+                    >
                       {stock.showQty ? val : '—'}
                     </p>
                   </div>
@@ -159,7 +163,29 @@ export function CatalogDetailModal({
             </div>
           </div>
         </div>
-        <div className="p-4 bg-black/50 border-t border-slate-800 shrink-0">
+        <div className="p-4 bg-black/50 border-t border-slate-800 shrink-0 space-y-2">
+          {(onEdit || onAdjustStock) && (
+            <div className="flex flex-wrap gap-2">
+              {onEdit ? (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="flex-1 min-w-[88px] py-2.5 rounded-xl border border-slate-600 text-slate-200 font-bold text-xs"
+                >
+                  정보 수정
+                </button>
+              ) : null}
+              {onAdjustStock ? (
+                <button
+                  type="button"
+                  onClick={onAdjustStock}
+                  className="flex-1 min-w-[88px] py-2.5 rounded-xl border border-slate-600 text-slate-200 font-bold text-xs"
+                >
+                  재고 조정
+                </button>
+              ) : null}
+            </div>
+          )}
           <button
             type="button"
             onClick={onClose}

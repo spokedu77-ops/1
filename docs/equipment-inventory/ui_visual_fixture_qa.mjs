@@ -44,12 +44,12 @@ export async function runVisualFixtureQa(log = defaultLog) {
       } else if (scenario === 'empty') {
         record(`fixture_${scenario}`, body.includes('등록된 교구가 없습니다') ? 'PASS' : 'FAIL', 'empty');
       } else if (scenario === 'opening') {
-        record(`fixture_${scenario}`, body.includes('재고 미확정') && body.includes('—') ? 'PASS' : 'FAIL', 'opening');
+        record(`fixture_${scenario}`, body.includes('미입력') && body.includes('재고 입력') ? 'PASS' : 'FAIL', 'opening');
       } else if (scenario === 'drift') {
         record(`fixture_${scenario}`, body.includes('캐시 불일치') ? 'PASS' : 'FAIL', 'drift');
       } else {
         const thead = (await page.locator('thead').first().textContent()) ?? '';
-        for (const col of ['T', 'W', 'L', 'Q', 'A']) {
+        for (const col of ['창고재고', '대여 중', '대여 가능', '관리']) {
           record(`fixture_normal_col_${col}`, thead.includes(col) ? 'PASS' : 'FAIL', col);
         }
       }
@@ -84,8 +84,15 @@ export async function runVisualFixtureQa(log = defaultLog) {
     await page.screenshot({ path: path.join(OUT_DIR, 'fixture_modal_rent.png'), fullPage: false });
     record('fixture_modal_rent', 'PASS', 'fixture_modal_rent.png');
     await page.getByRole('button', { name: '취소' }).click();
-    await page.getByRole('button', { name: '반납' }).click();
-    await page.getByText('대여 건 선택').waitFor({ timeout: 5000 });
+    await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 5000 });
+    await page.getByRole('button', { name: '재고 입력' }).click();
+    await page.getByLabel('창고에 있는 수량').waitFor({ timeout: 5000 });
+    await page.screenshot({ path: path.join(OUT_DIR, 'fixture_modal_stock_input.png'), fullPage: false });
+    record('fixture_modal_stock_input', 'PASS', 'fixture_modal_stock_input.png');
+    await page.getByRole('button', { name: '취소' }).click();
+    await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 5000 });
+    await page.getByRole('button', { name: '반납' }).first().click();
+    await page.getByText('대여 건').waitFor({ timeout: 5000 });
     await page.screenshot({ path: path.join(OUT_DIR, 'fixture_modal_return_multi.png') });
     record('fixture_modal_return', 'PASS', 'multi rental select');
 
