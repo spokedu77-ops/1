@@ -3,7 +3,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { submitInquiry } from '../contact/inquiry-submit';
 import { TEMP_INQUIRY_STORAGE_KEY } from '../contact/inquiry-draft';
-import type { PrivateInquiryPayload, SpomoveInquiryPayload } from '../contact/inquiry-types';
+import type { InquiryPayload, PrivateInquiryPayload, SpomoveInquiryPayload } from '../contact/inquiry-types';
 
 const basePrivatePayload: PrivateInquiryPayload = {
   type: 'private',
@@ -19,6 +19,14 @@ const basePrivatePayload: PrivateInquiryPayload = {
   privacyConsent: true,
 };
 
+const payloads: InquiryPayload[] = [
+  basePrivatePayload,
+  { ...basePrivatePayload, type: 'dispatch', organizationName: '로컬 검증 기관', targetAge: '초등', expectedParticipants: '20', preferredOperation: '정규수업' },
+  { ...basePrivatePayload, type: 'spomove', organizationName: '로컬 검증 기관', targetAge: '초등', expectedParticipants: '20', preferredOperation: 'SPOMOVE' },
+  { ...basePrivatePayload, type: 'curriculum', nameOrOrg: '로컬 검증 기관', inquiryPurpose: '구독시스템', utilizationTarget: '기관 도입', targetAge: '초등' },
+  { ...basePrivatePayload, type: 'other', nameOrOrg: '로컬 검증 기관', collaborationPurpose: '라이선스' },
+];
+
 describe('submitInquiry', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
@@ -27,6 +35,25 @@ describe('submitInquiry', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it.each(payloads)('blocks $type without consent before network or local storage', async (payload) => {
+    for (const privacyConsent of [false, undefined]) {
+      expect(await submitInquiry({ ...payload, privacyConsent })).toEqual({ ok: false, mode: 'consent' });
+    }
+    expect(fetch).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem(TEMP_INQUIRY_STORAGE_KEY)).toBeNull();
+  });
+
+  it.each(payloads)('handles $type server failures and a successful retry', async (payload) => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{"ok":false}', { status: 400 }));
+    expect(await submitInquiry(payload)).toEqual({ ok: false, mode: 'temp' });
+    expect(JSON.parse(window.localStorage.getItem(TEMP_INQUIRY_STORAGE_KEY)!).payload.type).toBe(payload.type);
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{"ok":true}', { status: 200 }));
+    expect(await submitInquiry(payload)).toEqual({ ok: true, mode: 'api' });
+    const expected = payload.type === 'private' ? '/api/private/leads'
+      : payload.type === 'dispatch' || payload.type === 'spomove' ? '/api/dispatch/leads' : '/api/curriculum/leads';
+    expect(vi.mocked(fetch).mock.calls[1][0]).toBe(expected);
   });
 
   it('returns ok when API succeeds', async () => {
@@ -42,11 +69,11 @@ describe('submitInquiry', () => {
     expect(body.preferred_format).toBe('one-to-one');
   });
 
-  it('never manufactures consent and preserves the chosen small-group format', async () => {
+  it('preserves the chosen small-group format', async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    await submitInquiry({ ...basePrivatePayload, privacyConsent: false, preferredClassType: '소그룹' });
+    await submitInquiry({ ...basePrivatePayload, preferredClassType: '소그룹' });
     const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
-    expect(body.privacy_consent).toBe(false);
+    expect(body.privacy_consent).toBe(true);
     expect(body.preferred_format).toBe('small-group');
   });
 
@@ -68,6 +95,7 @@ describe('submitInquiry', () => {
     );
 
     const spomovePayload: SpomoveInquiryPayload = {
+      privacyConsent: true,
       type: 'spomove',
       createdAt: '2026-07-01T00:00:00.000Z',
       name: '홍길동',
@@ -98,6 +126,7 @@ describe('submitInquiry', () => {
     );
 
     await submitInquiry({
+      privacyConsent: true,
       type: 'curriculum',
       createdAt: '2026-07-01T00:00:00.000Z',
       name: '홍길동',

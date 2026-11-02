@@ -10,7 +10,7 @@ import type {
 
 export type InquirySubmitResult =
   | { ok: true; mode: 'api' }
-  | { ok: false; mode: 'temp' };
+  | { ok: false; mode: 'temp' | 'consent' };
 
 function formatPrivateContent(payload: PrivateInquiryPayload): string {
   return [
@@ -213,6 +213,9 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
 }
 
 export async function submitInquiry(payload: InquiryPayload): Promise<InquirySubmitResult> {
+  // Recheck the user's explicit consent at the submission boundary, including
+  // restored drafts and callers other than the visible form.
+  if (payload.privacyConsent !== true) return { ok: false, mode: 'consent' };
   const request = toLegacyRequest(payload);
 
   try {
