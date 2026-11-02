@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { fetchEquipmentCapabilities } from '@/app/lib/equipment/capabilities';
 import { fetchEquipmentStock } from '@/app/lib/equipment/fetchStock';
-import { fetchLegacyCatalog, legacyCatalogToStockPreviewRows } from '@/app/lib/equipment/legacyReads';
+import { fetchLegacyCatalog, legacyCatalogToStockPreviewRows, fetchEquipmentLegacyImportStatus } from '@/app/lib/equipment/legacyReads';
+import { applyPlanToLegacyImportStatus, ensureLegacyImportSnapshot } from '@/app/lib/equipment/legacyImportSync';
 import type { EquipmentInventoryConnectionState } from '@/app/lib/equipment/inventoryConnectionState';
 import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
@@ -26,12 +27,13 @@ export async function GET() {
     const capabilities = await fetchEquipmentCapabilities(service);
     if (!isLedgerWriteMode()) {
       const caps = { ...capabilities, ledger_schema_ready: false as const };
+      const catalog = await fetchLegacyCatalog(service);
       return NextResponse.json(
         {
-          items: [],
+          items: legacyCatalogToStockPreviewRows(catalog),
           data_source: 'legacy',
           capabilities: caps,
-          connection_state: connectionState(false, false, 'legacy'),
+          connection_state: 'LEGACY_READY' satisfies EquipmentInventoryConnectionState,
         },
         { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
       );
@@ -52,10 +54,37 @@ export async function GET() {
         { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
       );
     }
+    const sync = await ensureLegacyImportSnapshot(service);
+    let legacy = await fetchEquipmentLegacyImportStatus(service).catch(() => ({
+      staged_rows: 0,
+      pending_rows: 0,
+      imported_rows: 0,
+      pending_items: [],
+      catalogs: [],
+      unmigrated_items: [],
+    }));
+    legacy = applyPlanToLegacyImportStatus(legacy, sync.plan);
     const items = await fetchEquipmentStock(service);
     return NextResponse.json(
       {
-        items,
+        items: items.map((item) => {
+          const cat = legacy.catalogs.find((c) => Number(c.catalog_id) === item.catalog_id);
+          return cat ? { ...item, ...cat } : item;
+        }),
+        legacy_import: {
+          staged_rows: legacy.staged_rows,
+          pending_rows: legacy.pending_rows,
+          imported_rows: legacy.imported_rows,
+          pending_items: legacy.pending_items,
+          sync: {
+            inventory_rows: sync.plan.inventory_rows,
+            mapped_rows: sync.plan.mapped_rows,
+            pending_rows: sync.plan.pending_rows,
+            catalog_unmapped_rows: sync.plan.catalog_unmapped_rows,
+            teacher_inventory_flags: sync.plan.teacher_inventory_flags,
+            persisted: sync.persisted,
+          },
+        },
         data_source: 'ledger',
         capabilities: { ...capabilities, ledger_schema_ready: true as const },
         connection_state: connectionState(true, true, 'ledger'),

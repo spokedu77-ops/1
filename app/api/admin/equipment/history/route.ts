@@ -49,6 +49,7 @@ export async function GET(request: Request) {
     .select(
       'ledger_id, event_type, catalog_id, teacher_id, rental_id, qty, note, occurred_at, metadata, created_by, catalog:catalog_id(name), teacher:teacher_id(name)',
     )
+    .in('event_type', ['RENT', 'RETURN'])
     .order('occurred_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -75,7 +76,14 @@ export async function GET(request: Request) {
     }
   }
 
-  const items: EquipmentLedgerRow[] = (data ?? []).map((row) => {
+  const items: EquipmentLedgerRow[] = (data ?? [])
+    .filter((row) => {
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      if (meta.source === 'LEGACY_INVENTORY_SNAPSHOT') return false;
+      if (row.event_type === 'RENT' && String(row.note ?? '').includes('스냅샷 이관')) return false;
+      return true;
+    })
+    .map((row) => {
     const catalogJoin = row.catalog as { name?: string } | { name?: string }[] | null;
     const teacherJoin = row.teacher as { name?: string } | { name?: string }[] | null;
     const catalogName = Array.isArray(catalogJoin) ? catalogJoin[0]?.name : catalogJoin?.name;
@@ -99,7 +107,7 @@ export async function GET(request: Request) {
   });
 
   return NextResponse.json(
-    { items },
+    { items, data_source: 'ledger' as const },
     { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
   );
 }

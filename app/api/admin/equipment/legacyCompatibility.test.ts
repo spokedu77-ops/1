@@ -4,6 +4,7 @@ import { GET as teachers } from './teachers/route';
 import { GET as rentals } from './rentals/route';
 import { GET as history } from './history/route';
 import * as stockReader from '@/app/lib/equipment/fetchStock';
+import { GET as teacherHoldings } from '@/app/api/teacher/equipment/holdings/route';
 
 const state = vi.hoisted(() => ({
   ledger: false,
@@ -12,6 +13,7 @@ const state = vi.hoisted(() => ({
   tables: [] as string[],
   failTable: '',
   service: vi.fn(),
+  importedIds: [] as number[],
 }));
 vi.mock('@/app/lib/equipment/writeMode', () => ({
   isLedgerWriteMode: () => state.ledger,
@@ -21,14 +23,17 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
   requireAdmin: async () => state.allowed ? { ok: true } : { ok: false, response: new Response(null, { status: 403 }) },
   getServiceSupabase: () => state.service(),
 }));
+vi.mock('@/app/lib/server/teacherAuth', () => ({
+  requireTeacherMaterialsAccess: async () => ({ ok: true, userId: 'teacher-a' }),
+}));
 
 // Production's pre-ledger schema: no new columns, tables, views, or RPCs.
 const columns: Record<string, string[]> = {
   catalog: ['id', 'name', 'category', 'image', 'simple_desc', 'key_points', 'usage_examples', 'qty_on_hand_total', 'qty_quarantine', 'mgmt_code'],
   equipment_rentals: ['rental_id', 'catalog_id', 'qty_outstanding', 'status'],
   equipment_ledger: ['ledger_id', 'catalog_id', 'event_type'],
-  teacher_equipment_holdings_v: ['teacher_id', 'catalog_id', 'name', 'qty_held', 'active_rental_lines'],
-  users: ['id', 'name', 'role', 'is_active'],
+  teacher_equipment_holdings_v: ['teacher_id', 'catalog_id', 'name', 'qty_held', 'active_rental_lines', 'category', 'image', 'earliest_opened_at', 'mgmt_code'],
+  users: ['id', 'name', 'role', 'is_active', 'is_admin'],
   inventory: ['id', 'user_id', 'name', 'quantity'],
   inventory_logs: ['id', 'user_id', 'content', 'type', 'created_at'],
 };
@@ -37,6 +42,7 @@ const request = (path: string) => new Request(`http://localhost/api/admin/equipm
 beforeEach(() => {
   vi.restoreAllMocks();
   state.ledger = false;
+  state.importedIds = [];
   state.allowed = true;
   state.failTable = '';
   state.tables = [];
@@ -46,9 +52,11 @@ beforeEach(() => {
       { id: 22, name: '같은 이름', category: 'B', image: null, simple_desc: null, key_points: null, usage_examples: null },
     ],
     users: [
-      { id: 'teacher-a', name: '강사 A', role: 'teacher', is_active: true },
-      { id: 'teacher-b', name: '강사 B', role: 'teacher', is_active: true },
-      { id: 'inactive', name: '비활성', role: 'teacher', is_active: false },
+      { id: 'teacher-a', name: '강사 A', role: 'teacher', is_active: true, is_admin: false },
+      { id: 'teacher-b', name: '강사 B', role: 'teacher', is_active: true, is_admin: false },
+      { id: 'inactive', name: '비활성', role: 'teacher', is_active: false, is_admin: false },
+      { id: 'admin', name: '관리자', role: 'admin', is_active: true, is_admin: true },
+      { id: 'teacher-admin', name: '관리 권한 강사', role: 'teacher', is_active: true, is_admin: true },
     ],
     inventory: [
       { id: 101, user_id: 'teacher-a', name: '같은 이름', quantity: 2 },
@@ -62,6 +70,11 @@ beforeEach(() => {
     ],
   };
   state.service.mockReset().mockReturnValue({
+    rpc: async (name: string, args: { p_teacher_id?: string }) => {
+      if (name !== 'equipment_legacy_import_status') return { data: null, error: { message: 'unexpected RPC' } };
+      return { data: { staged_rows: 3, pending_rows: 0, imported_rows: 0, pending_items: [], catalogs: [],
+        unmigrated_items: state.rows.inventory.filter((row) => !state.importedIds.includes(Number(row.id)) && (!args.p_teacher_id || row.user_id === args.p_teacher_id)) }, error: null };
+    },
     schema() {
       return {
         from() {
@@ -112,7 +125,9 @@ describe('existing equipment data without a ledger migration', () => {
     expect(body.data_source).toBe('legacy');
     expect(body.capabilities.ledger_writes).toBe(false);
     expect(body.capabilities.server_write_mode).toBe('legacy');
-    expect(body.items).toEqual([]);
+    expect(body.connection_state).toBe('LEGACY_READY');
+    expect(body.items.map((row: { catalog_id: number }) => row.catalog_id)).toEqual([11, 22]);
+    expect(body.items.every((row: { stock_metrics_available: boolean }) => row.stock_metrics_available === false)).toBe(true);
     expect(body).not.toHaveProperty('catalog_items');
     expect(response.headers.get('cache-control')).toContain('no-store');
   });
@@ -182,6 +197,29 @@ describe('existing equipment data without a ledger migration', () => {
     expect((await response.json()).capabilities.ledger_writes).toBe(true);
     expect(reader).toHaveBeenCalledOnce();
     expect(state.tables.slice(0, 3)).toEqual(['equipment_rentals', 'equipment_ledger', 'catalog']);
+  });
+
+  it('preserves teacher totals during a partial opening without counting imported rows twice', async () => {
+    state.ledger = true;
+    state.importedIds = [101];
+    state.rows.teacher_equipment_holdings_v = [
+      { teacher_id: 'teacher-a', catalog_id: 11, name: '같은 이름', qty_held: 2, active_rental_lines: 1 },
+    ];
+    const body = await (await teachers()).json();
+    expect(body.items.find((item: { id: string }) => item.id === 'teacher-a').ledger_total_held).toBe(5);
+    expect(body.items.find((item: { id: string }) => item.id === 'teacher-b').ledger_total_held).toBe(7);
+  });
+
+  it('keeps the teacher endpoint owner-isolated and excludes imported legacy copies', async () => {
+    state.ledger = true;
+    state.importedIds = [101];
+    state.rows.teacher_equipment_holdings_v = [
+      { teacher_id: 'teacher-a', catalog_id: 11, name: '같은 이름', qty_held: 2, active_rental_lines: 1 },
+      { teacher_id: 'teacher-b', catalog_id: 22, name: '다른 강사 교구', qty_held: 99, active_rental_lines: 1 },
+    ];
+    const body = await (await teacherHoldings()).json();
+    expect(body.items.map((item: { id: string }) => item.id)).toEqual(['ledger-11', 'legacy-102']);
+    expect(body.items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0)).toBe(5);
   });
 
   it.each([

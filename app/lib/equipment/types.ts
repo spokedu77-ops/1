@@ -16,6 +16,8 @@ export type EquipmentStockRow = {
   cache_drift: boolean;
   /** false = catalog preview only (no ledger qty; show — not 0). */
   stock_metrics_available?: boolean;
+  legacy_qty_held?: number;
+  legacy_mapping_pending?: boolean;
 };
 
 export type EquipmentRentalRow = {

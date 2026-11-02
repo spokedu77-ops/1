@@ -1,5 +1,14 @@
 export function mapEquipmentRpcError(message: string): { status: number; code: string; error: string } {
   const m = message ?? '';
+  if (m.includes('EQUIPMENT_LEGACY_MAPPING_PENDING')) {
+    return { status: 409, code: 'LEGACY_MAPPING_PENDING', error: '이 품목의 기존 보유 내역에 교구 또는 소유자 확인이 필요한 항목이 있습니다.' };
+  }
+  if (m.includes('EQUIPMENT_LEGACY_SNAPSHOT_CHANGED')) {
+    return { status: 409, code: 'LEGACY_SNAPSHOT_CHANGED', error: '기존 보유 내역이 이관 준비 이후 변경되었습니다. 매핑을 갱신한 뒤 다시 확정해 주세요.' };
+  }
+  if (m.includes('EQUIPMENT_OPENING_BELOW_LEGACY_HOLDINGS')) {
+    return { status: 409, code: 'OPENING_BELOW_HOLDINGS', error: '총보유 수량은 기존 강사 보유량과 격리 수량의 합 이상이어야 합니다.' };
+  }
   if (m.includes('EQUIPMENT_IDEMPOTENCY_CONFLICT')) {
     return { status: 409, code: 'IDEMPOTENCY_CONFLICT', error: '동일 요청 키로 다른 내용이 이미 처리되었습니다.' };
   }

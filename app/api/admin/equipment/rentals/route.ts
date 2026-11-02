@@ -3,7 +3,13 @@ import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import type { EquipmentRentalRow } from '@/app/lib/equipment/types';
 import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
-import { fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
+import { fetchLegacyCatalog, fetchLegacyInventory, fetchEquipmentLegacyImportStatus } from '@/app/lib/equipment/legacyReads';
+import {
+  applyPlanToLegacyImportStatus,
+  ensureLegacyImportSnapshot,
+  teacherMappedLegacyPreview,
+  teacherPendingLegacyItems,
+} from '@/app/lib/equipment/legacyImportSync';
 
 export async function GET(request: Request) {
   const auth = await requireAdmin();
@@ -75,8 +81,28 @@ export async function GET(request: Request) {
     };
   });
 
+  const sync = await ensureLegacyImportSnapshot(service);
+  let legacy = await fetchEquipmentLegacyImportStatus(service, teacherId ?? undefined);
+  legacy = applyPlanToLegacyImportStatus(legacy, sync.plan);
+
+  let inventory_items = catalogId ? [] : legacy.unmigrated_items;
+  let legacy_confirmed_preview: { catalog_id: number; name: string; quantity: number }[] = [];
+  if (teacherId && !catalogId) {
+    const catalog = await fetchLegacyCatalog(service);
+    const names = new Map(catalog.map((c) => [c.catalog_id, c.name]));
+    const activeCatalogIds = new Set(items.map((i) => i.catalog_id));
+    legacy_confirmed_preview = teacherMappedLegacyPreview(sync.plan, teacherId, names).filter(
+      (p) => !activeCatalogIds.has(p.catalog_id),
+    );
+    inventory_items = teacherPendingLegacyItems(sync.plan, teacherId);
+  }
+
   return NextResponse.json(
-    { items },
+    {
+      items,
+      inventory_items,
+      legacy_confirmed_preview,
+    },
     { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
   );
 }

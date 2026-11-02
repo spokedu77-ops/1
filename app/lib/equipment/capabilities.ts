@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isEquipmentOpeningPersistEnabled } from '@/app/lib/equipment/openingPersist';
 import { getEquipmentWriteMode, type EquipmentWriteMode } from '@/app/lib/equipment/writeMode';
 
 export type EquipmentCapabilities = {
@@ -8,6 +9,8 @@ export type EquipmentCapabilities = {
   ledger_schema_ready?: boolean;
   /** null when ops gate table is unavailable (pre-migration DB). */
   legacy_direct_writes_blocked: boolean | null;
+  /** true only when EQUIPMENT_OPENING_PERSIST_ENABLED=1 (operational opening writes). */
+  opening_persist_enabled?: boolean;
 };
 
 export async function fetchEquipmentCapabilities(service: SupabaseClient): Promise<EquipmentCapabilities> {
@@ -34,5 +37,6 @@ export async function fetchEquipmentCapabilities(service: SupabaseClient): Promi
     ledger_writes,
     ledger_schema_ready: undefined,
     legacy_direct_writes_blocked,
+    opening_persist_enabled: isEquipmentOpeningPersistEnabled(),
   };
 }

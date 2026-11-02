@@ -1,6 +1,7 @@
 import type { EquipmentCapabilities } from '@/app/lib/equipment/capabilities';
 
 export type EquipmentInventoryConnectionState =
+  | 'LEGACY_READY'
   | 'MODE_MISMATCH'
   | 'SCHEMA_MISSING'
   | 'LEDGER_READY'
@@ -12,7 +13,7 @@ export function resolveInventoryConnectionState(input: {
   loadFailed: boolean;
 }): EquipmentInventoryConnectionState {
   if (input.loadFailed) return 'LOAD_ERROR';
-  if (!input.capabilities.ledger_writes) return 'MODE_MISMATCH';
+  if (!input.capabilities.ledger_writes) return input.dataSource === 'legacy' ? 'LEGACY_READY' : 'MODE_MISMATCH';
   if (input.capabilities.ledger_schema_ready === false) return 'SCHEMA_MISSING';
   if (input.dataSource === 'ledger' && input.capabilities.ledger_schema_ready === true) {
     return 'LEDGER_READY';

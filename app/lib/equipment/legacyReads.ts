@@ -17,7 +17,28 @@ export type LegacyEquipmentInventoryItem = {
   user_id: string;
   name: string;
   quantity: number;
+  category?: string | null;
+  image?: string | null;
+  simple_desc?: string | null;
+  key_points?: string | null;
+  usage_examples?: string | null;
+  updated_at?: string;
 };
+
+export type EquipmentLegacyImportStatus = {
+  staged_rows: number;
+  pending_rows: number;
+  imported_rows: number;
+  pending_items: { inventory_id: number; name: string; quantity: number; reason: string }[];
+  catalogs: { catalog_id: number; legacy_qty_held: number; legacy_mapping_pending: boolean }[];
+  unmigrated_items: LegacyEquipmentInventoryItem[];
+};
+
+export async function fetchEquipmentLegacyImportStatus(service: SupabaseClient, teacherId?: string): Promise<EquipmentLegacyImportStatus> {
+  const { data, error } = await service.rpc('equipment_legacy_import_status', { p_teacher_id: teacherId ?? null });
+  if (error) throw error;
+  return data as EquipmentLegacyImportStatus;
+}
 
 export type LegacyEquipmentHistoryItem = {
   id: number;

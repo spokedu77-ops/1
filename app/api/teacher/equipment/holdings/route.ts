@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { requireTeacherMaterialsAccess } from '@/app/lib/server/teacherAuth';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
+import { fetchEquipmentLegacyImportStatus } from '@/app/lib/equipment/legacyReads';
 
 export async function GET() {
   const auth = await requireTeacherMaterialsAccess();
@@ -64,8 +65,14 @@ export async function GET() {
     };
   });
 
+  const legacy = await fetchEquipmentLegacyImportStatus(service, auth.userId);
+  const legacyItems = legacy.unmigrated_items.map((row) => ({
+    id: `legacy-${row.id}`, name: row.name, category: row.category ?? '', image: row.image ?? null,
+    quantity: row.quantity, updated_at: row.updated_at ?? '', simple_desc: row.simple_desc ?? null,
+    key_points: row.key_points ?? null, usage_examples: row.usage_examples ?? null, source: 'legacy' as const,
+  }));
   return NextResponse.json(
-    { mode: 'ledger' as const, items },
+    { mode: 'ledger' as const, items: [...items, ...legacyItems] },
     { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
   );
 }

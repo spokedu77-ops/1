@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
-import { fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
+import { fetchEquipmentLegacyImportStatus, fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
 import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
 
 export async function GET() {
@@ -11,9 +11,10 @@ export async function GET() {
 
   const { data: teachers, error: tErr } = await service
     .from('users')
-    .select('id, name, role, is_active')
+    .select('id, name, role, is_active, is_admin')
     .eq('is_active', true)
-    .in('role', ['teacher', 'admin'])
+    .eq('role', 'teacher')
+    .eq('is_admin', false)
     .order('name');
   if (tErr) {
     return NextResponse.json({ error: '강사 목록을 불러오지 못했습니다.' }, { status: 500 });
@@ -87,6 +88,17 @@ export async function GET() {
     cur.total_held += Number(row.qty_held) || 0;
     cur.lines += Number(row.active_rental_lines) || 0;
     byTeacher.set(id, cur);
+  }
+
+  try {
+    const legacy = await fetchEquipmentLegacyImportStatus(service);
+    for (const row of legacy.unmigrated_items) {
+      const cur = byTeacher.get(row.user_id) ?? { sku_count: 0, total_held: 0, lines: 0 };
+      cur.total_held += Number(row.quantity) || 0;
+      byTeacher.set(row.user_id, cur);
+    }
+  } catch {
+    return NextResponse.json({ error: '기존 보유 집계를 불러오지 못했습니다.' }, { status: 500 });
   }
 
   const items = (teachers ?? []).map((t) => ({
