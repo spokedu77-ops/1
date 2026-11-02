@@ -10,6 +10,7 @@ import {
 } from '@/app/lib/auth/adminCheckCache';
 
 const SLOW_CHECK_MS = 3000;
+const CHECK_TIMEOUT_MS = 10000;
 
 type AdminCheckResponse = {
   admin?: boolean;
@@ -23,6 +24,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAdmin, setIsAdmin] = useState(false);
   const [scopeChecked, setScopeChecked] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
+  const [checkAttempt, setCheckAttempt] = useState(0);
   const isNoteRoute = pathname != null && pathname.startsWith('/admin/note');
   const isReportRoute = pathname != null && pathname.startsWith('/admin/master/reports');
   const isFullscreenRoute =
@@ -44,6 +47,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    let requestTimer: ReturnType<typeof setTimeout> | undefined;
     const check = async () => {
       const now = Date.now();
       const mem = readAdminCheckMemoryCache(now);
@@ -70,15 +76,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       let res: Response;
       let json: AdminCheckResponse;
       try {
-        res = await fetch('/api/auth/check-admin', { credentials: 'include' });
+        requestTimer = setTimeout(() => controller.abort(), CHECK_TIMEOUT_MS);
+        res = await fetch('/api/auth/check-admin', {
+          credentials: 'include',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error('Admin check failed');
         json = (await res.json()) as AdminCheckResponse;
+        if (!json || typeof json.admin !== 'boolean') throw new Error('Invalid admin check response');
       } catch {
-        setCheckSlow(true);
+        if (!cancelled) setCheckFailed(true);
         return;
+      } finally {
+        clearTimeout(requestTimer);
       }
+      if (cancelled) return;
 
       if (json.reason === 'server-error') {
-        setCheckSlow(true);
+        setCheckFailed(true);
         return;
       }
 
@@ -103,13 +119,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     void check();
-  }, [pathname, router]);
+    return () => {
+      cancelled = true;
+      clearTimeout(requestTimer);
+      controller.abort();
+    };
+  }, [pathname, router, checkAttempt]);
 
   if (!isAdmin || !scopeChecked) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-white">
-        <p className="animate-pulse text-sm font-bold text-slate-300">권한 확인 중...</p>
-        {checkSlow && (
+        <p role={checkFailed ? 'alert' : 'status'} className={`text-sm font-bold ${checkFailed ? 'text-slate-600' : 'animate-pulse text-slate-300'}`}>
+          {checkFailed ? '접근 권한을 확인하지 못했습니다.' : '권한 확인 중...'}
+        </p>
+        {checkFailed ? (
+          <>
+            <p className="text-xs text-slate-500">연결 상태를 확인한 뒤 다시 시도해 주세요.</p>
+            <button
+              type="button"
+              className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+              onClick={() => {
+                setCheckFailed(false);
+                setCheckSlow(false);
+                setCheckAttempt((attempt) => attempt + 1);
+              }}
+            >다시 확인하기</button>
+            <a className="mt-2 text-sm text-slate-600 underline" href={`/login?type=admin&reauth=1&next=${encodeURIComponent(pathname || '/admin')}`}>다시 로그인하기</a>
+          </>
+        ) : checkSlow && (
           <p className="text-xs text-slate-400">잠시 후 다시 시도해 주세요. 로그인 상태를 확인해 주세요.</p>
         )}
       </div>
