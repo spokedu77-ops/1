@@ -78,6 +78,52 @@
 .heroFoot strong { color: white; font-weight: 650; }
 .heroLoss { background: #842b36; }
 .profitSection { min-width: 0; }
+.profitOverview { display: grid; grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.profitCard { display: flex; min-width: 0; flex-direction: column; justify-content: space-between; gap: 12px; border: 1px solid var(--sheet-line); border-radius: 12px; background: white; padding: 18px 20px; }
+.profitCardLabel { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; color: #43534b; font-size: 12px; font-weight: 650; line-height: 1.5; }
+.profitBadge { border-radius: 5px; background: #f0f4f2; padding: 2px 6px; color: #63736a; font-size: 10px; font-weight: 550; white-space: nowrap; }
+.profitCardBody { display: grid; gap: 12px; margin: 0; }
+.profitCardValue { margin: 0; color: #17251e; font-size: clamp(21px, 2.3cqi, 30px); font-weight: 750; line-height: 1.25; letter-spacing: -.025em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.profitCardHint { margin: 0; color: var(--sheet-muted); font-size: 11px; line-height: 1.5; }
+.profitTotal { border-color: var(--sheet-accent-dark); background: var(--sheet-accent-dark); }
+.profitTotal .profitCardLabel,
+.profitTotal .profitCardHint { color: #cce1d7; }
+.profitTotal .profitCardValue { color: white; }
+.profitTotal .profitBadge { background: rgba(255,255,255,.12); color: #e2f1ea; }
+.profitTotalLoss { border-color: #842b36; background: #842b36; }
+.profitTotalLoss .profitCardLabel,
+.profitTotalLoss .profitCardHint { color: #f7d9df; }
+.profitReceived .profitCardValue { color: var(--sheet-accent); }
+.profitOutstanding { border-color: #eddab3; background: #fffbf2; }
+.profitOutstanding .profitCardValue { color: #93600d; }
+.profitOutstanding .profitBadge { background: #f9ecd2; color: #81520b; }
+.profitNegative .profitCardValue { color: #b42318; }
+.profitMetrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 12px 0 0; border: 1px solid var(--sheet-line); border-radius: 12px; background: white; }
+.profitMetric { min-width: 0; padding: 14px 18px; }
+.profitMetric + .profitMetric { border-left: 1px solid var(--sheet-line); }
+.profitMetric dt { color: var(--sheet-muted); font-size: 11px; line-height: 1.5; }
+.profitMetric dd { margin: 5px 0 0; color: #26332e; font-size: clamp(15px, 1.6cqi, 20px); font-weight: 650; line-height: 1.4; letter-spacing: -.015em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+@container (max-width: 760px) {
+  .profitOverview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .profitTotal { grid-column: 1 / -1; }
+  .profitCard { gap: 10px; padding: 16px; }
+  .profitCardValue { font-size: clamp(20px, 4cqi, 28px); }
+  .profitMetrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .profitMetric { grid-column: span 2; padding: 12px; }
+  .profitMetric:nth-child(4),
+  .profitMetric:nth-child(5) { grid-column: span 3; border-top: 1px solid var(--sheet-line); }
+  .profitMetric:nth-child(4) { border-left: 0; }
+}
+@container (max-width: 440px) {
+  .profitOverview { grid-template-columns: minmax(0, 1fr); }
+  .profitCard { gap: 8px; }
+  .profitCardValue { font-size: 26px; }
+  .profitMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profitMetric:nth-child(n) { grid-column: auto; border-left: 0; border-top: 1px solid var(--sheet-line); }
+  .profitMetric:nth-child(-n+2) { border-top: 0; }
+  .profitMetric:nth-child(even) { border-left: 1px solid var(--sheet-line); }
+  .profitMetric:last-child { grid-column: 1 / -1; }
+}
 .profitExplanation { margin-top: 6px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; color: var(--sheet-muted); font-size: 11px; line-height: 1.5; }
 .monthHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; }
 .monthHeading h2 { color: #26332e; font-size: 15px; font-weight: 700; }
@@ -215,6 +261,64 @@
   .toolbarActions { width: 100%; }
   .secondaryButton,
   .primaryButton { flex: 1 1 auto; padding-inline: 9px; }
+}
+
+/* Monthly settlement: fit the available width without a horizontal scroller.
+   Scope these rules separately because LAB and policy tables share this file. */
+.settlementSurface .monthGroup { min-width: 0; max-width: 100%; flex-wrap: wrap; overflow: visible; }
+.settlementTableWrap { width: 100%; max-width: 100%; min-width: 0; overflow: visible; }
+.settlementGrid { font-size: 13px; line-height: 1.5; }
+.settlementGrid th { padding: 12px 6px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+.settlementGrid th:first-child { border-top-left-radius: 12px; }
+.settlementGrid th:last-child { border-top-right-radius: 12px; }
+.settlementGrid th.centered,
+.settlementGrid .centered { text-align: center; }
+.settlementGrid td { height: auto; padding: 10px 6px; vertical-align: top; }
+.settlementGrid th:first-child,
+.settlementGrid td:first-child { padding-left: 12px; }
+.settlementGrid input { min-height: 34px; padding: 6px 4px; }
+.settlementGrid .moneyField { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px; }
+.settlementGrid .moneyFieldInput { padding-right: 2px !important; }
+.settlementGrid .moneySuffix { position: static; transform: none; padding-right: 4px; font-size: 10px; }
+.settlementGrid .statusButton { width: 28px; height: 28px; margin-top: 3px; }
+.settlementGrid .cellMeta { margin-top: 4px; min-height: 13px; font-size: 10px; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+.settlementGrid .partialInput { min-height: 24px !important; padding-inline: 1px !important; font-size: 10px !important; text-align: center; }
+.settlementGrid .vatCell { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 4px; }
+.settlementGrid .vatCell select { align-self: flex-end; width: 64px; max-width: 100%; min-height: 24px; padding-block: 2px; }
+.settlementGrid .vatValue { display: flex; min-height: 34px; align-items: center; justify-content: flex-end; padding: 6px 4px; }
+.profitDetails { min-width: 0; }
+.profitAmount { display: block; min-height: 34px; border-radius: 6px; padding: 6px 4px; cursor: pointer; list-style: none; font-weight: 750; text-align: right; white-space: nowrap; }
+.profitAmount::-webkit-details-marker { display: none; }
+.profitAmount:hover { background: var(--sheet-accent-soft); }
+.profitAmount:focus-visible { outline: 2px solid var(--sheet-accent); outline-offset: 2px; }
+.settlementGrid .adjustInput { margin-top: 4px; min-height: 24px !important; border-color: var(--sheet-line); background: var(--sheet-surface-soft); }
+.noteInput { display: block; width: 100%; min-width: 0; min-height: 56px; resize: vertical; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 4px; color: inherit; font: inherit; line-height: 1.5; overflow-wrap: anywhere; }
+.noteInput:hover:not(:disabled) { border-color: var(--sheet-line); }
+.noteInput:focus { outline: none; border-color: var(--sheet-accent); box-shadow: 0 0 0 3px var(--sheet-accent-soft); }
+.noteInput:disabled { color: #43504b; opacity: .72; }
+.settlementGrid .actions { display: grid; width: fit-content; height: auto; margin: 3px auto 0; grid-template-columns: repeat(2, 24px); gap: 2px; }
+.settlementGrid .actionButton { width: 24px; height: 24px; }
+.settlementGrid .deleteButton { grid-column: 1 / -1; justify-self: center; }
+.settlementGrid .sectionRow td { padding: 5px 8px; }
+.settlementGrid .sectionContent { gap: 8px; }
+
+@container (max-width: 1080px) {
+  .settlementGrid tbody { gap: 12px; }
+  .settlementGrid tbody tr:not(.sectionRow) { grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; }
+  .settlementGrid tbody tr:not(.sectionRow) td:nth-child(n) { display: block; grid-column: auto; padding: 10px 12px; }
+  .settlementGrid tbody tr:not(.sectionRow) td::before { margin-bottom: 6px; font-size: 11px; }
+  .settlementGrid tbody tr:not(.sectionRow) td:first-child { grid-column: 1 / -1; border-right: 0; background: var(--sheet-surface-soft); border-radius: 12px 12px 0 0; }
+  .settlementGrid tbody tr:not(.sectionRow) td:nth-child(10) { grid-column: span 3; }
+  .settlementGrid tbody tr:not(.sectionRow) td:last-child { grid-column: auto; border-right: 0; }
+  .settlementGrid .noteInput { border-color: var(--sheet-line); background: var(--sheet-surface-soft); }
+}
+
+@container (max-width: 640px) {
+  .settlementGrid tbody tr:not(.sectionRow) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settlementGrid tbody tr:not(.sectionRow) td:nth-child(10),
+  .settlementGrid tbody tr:not(.sectionRow) td:last-child { grid-column: 1 / -1; }
+  .settlementGrid .actions { display: flex; justify-content: flex-end; width: 100%; gap: 8px; }
+  .settlementGrid .actionButton { width: 32px; height: 32px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
