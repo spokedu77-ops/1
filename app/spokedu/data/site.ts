@@ -268,7 +268,7 @@ export const AUDIENCE_TRACK_PATHS: Record<AudienceTrackId, string> = {
  * content.ts 등 레거시 import 호환용 — 글로벌 헤더와 동일한 1급 경로만 평탄화.
  */
 export const siteNavItems: SiteNavItem[] = siteNav
-  .flatMap((entry) => entry.type === 'group' ? entry.children : [entry])
+  .flatMap<SiteNavLink>((entry) => entry.type === 'group' ? entry.children : [entry])
   .map((entry) => ({
     label: entry.label,
     path: entry.href === '/' ? '/' : entry.href,
