@@ -382,6 +382,7 @@ function SpomoveSessionContent() {
         officialPreset.engine.mode,
         officialPreset.engine.level,
         isDiveActionMoveUnityTheme(diveEnvironmentTheme),
+        officialPreset.activityId,
       );
     }, 150);
     return () => window.clearTimeout(timer);
@@ -843,6 +844,7 @@ function SpomoveSessionContent() {
       completionReason,
       engineMode: payload?.engineMode ?? officialPreset.engine.mode,
       engineLevel: payload?.engineLevel ?? officialPreset.engine.level,
+      activityId: payload?.activityId ?? officialPreset.activityId,
       elapsedMs: payload?.elapsedMs ?? fallbackElapsedMs,
       colorCounts: payload?.colorCounts ?? null,
       stims: payload?.stims,
@@ -1126,6 +1128,7 @@ function SpomoveSessionContent() {
       <div className="relative h-dvh overflow-hidden bg-black">
         <EngineRouter
           runtimeState={state}
+          activityId={officialPreset.activityId}
           durationSec={
             officialPreset.engine.mode === 'reactTrain' ||
             (officialPreset.engine.mode === 'spatial' && officialPreset.engine.level === 7)
@@ -1292,6 +1295,8 @@ function SpomoveSessionContent() {
             colorCounts={sessionResult.colorCounts ?? null}
             engineMode={sessionResult.engineMode}
             engineLevel={sessionResult.engineLevel}
+            activityId={sessionResult.activityId}
+            flankerExtremeMode={officialPreset.engine.flankerExtremeMode}
             rounds={sessionRounds}
             cueSeconds={effectiveCueSeconds}
             executionVolume={executionVolume!}

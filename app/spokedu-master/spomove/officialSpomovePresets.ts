@@ -1,3 +1,4 @@
+import { resolveTrainingActivity, type TrainingActivityId } from '@/app/admin/spomove/training/_player/lib/trainingActivity';
 import { SPOMOVE_AXIS_META, type SpomoveAxis } from '@/app/lib/spomove/spomoveAxisMeta';
 import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveResolvedAudioMode } from './session/spomoveAudioMode';
@@ -47,6 +48,7 @@ export type ExecutionFact = { label: string; value: string };
 
 export type OfficialSpomovePreset = {
   id: string;
+  activityId?: TrainingActivityId;
   sortOrder: number;
   title: string;
   en?: string;
@@ -1774,7 +1776,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] =
     withPublicCatalogOrder(
       withCanonicalNamedCatalogs(withCanonicalFlankerCatalog(OFFICIAL_SPOMOVE_LIBRARY_RAW)),
     ),
-  )));
+  ))).map(preset => ({
+    ...preset,
+    activityId: resolveTrainingActivity(preset.engine.mode, preset.engine.level, { activityId: preset.activityId }),
+  }));
 
 export const OFFICIAL_SPOMOVE_LIBRARY_SIZE = OFFICIAL_SPOMOVE_LIBRARY.length;
 

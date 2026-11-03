@@ -13,7 +13,8 @@ import {
 } from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
-import { resolveTrainingEngine, type SpatialArrowColorMapping } from '../constants';
+import { resolveTrainingSelection, type TrainingActivityId } from '../lib/trainingActivity';
+import { type SpatialArrowColorMapping } from '../constants';
 import { getNextIntervalState } from '../lib/intervalTimer';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
@@ -26,6 +27,7 @@ export function useIntervalTimer({
   speed,
   mode,
   level,
+  activityId,
   audioMode,
   colors,
   fruitSlides,
@@ -54,6 +56,7 @@ export function useIntervalTimer({
   speed: number;
   mode: string;
   level: number;
+  activityId?: TrainingActivityId;
   audioMode: string;
   colors: ColorItem[];
   fruitSlides?: FruitSlide[];
@@ -107,7 +110,8 @@ export function useIntervalTimer({
       setIntervalLeft(workSec);
       return;
     }
-    const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
+    const { engineMode, engineLevel, runtime } = resolveTrainingSelection(mode, level, { activityId });
+    if (runtime !== 'signals') throw new Error(`SPOMOVE activity cannot use the signal timer: ${activityId}`);
     const effectiveArrowColorMode: 'basic' | 'color' =
       mode === 'stroop' && level === 1 ? 'color' : spatialArrowColorMode;
       const fruitOpts = {
@@ -219,7 +223,7 @@ export function useIntervalTimer({
       ttsClear();
     };
   // onSignal/onFinish는 ref로만 읽는다. 콜백 식별자가 바뀌면 세트 진행이 처음부터 다시 시작된다.
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount]);
+  }, [active, workSec, restSec, sets, speed, mode, level, activityId, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

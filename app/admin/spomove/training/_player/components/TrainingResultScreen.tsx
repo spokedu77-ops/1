@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { resolveTrainingSelection } from '../lib/trainingActivity';
 import { MODES } from '../constants';
 import { CSS, S } from '../styles';
 import { useViewportScrollLock } from '../lib/lockViewportScroll';
@@ -183,8 +184,9 @@ export function TrainingResultScreen({
   const accent = mo?.accent ?? '#F97316';
   // 플랭커는 가운데 목표가 색인 활동만 색 통계를 보여준다. 화살표 활동의
   // 방향 균형용 내부 색 매핑은 결과로 노출하지 않는다.
-  const flankerDirectionOnly = cfg.mode === 'flanker'
-    && (cfg.level === 5 || (programTitle?.includes('화살표') ?? false));
+  const selection = resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId });
+  const flankerDirectionOnly = selection.activityId === 'flanker-arrow'
+    || (selection.activityId === 'flanker-extreme' && cfg.flankerExtremeMode === 'arrow');
   const resultColorCounts = cfg.mode === 'simon' || cfg.mode === 'spatial' || flankerDirectionOnly ? null : colorCounts;
   const rich = useMemo(
     () => resolveTrainingResultRichContent(cfg, elapsedMs, resultColorCounts, { programTitle, volumeLabel, completionReason }),

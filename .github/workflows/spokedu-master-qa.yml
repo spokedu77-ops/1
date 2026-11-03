@@ -105,6 +105,14 @@ jobs:
       - name: MASTER core Vitest
         run: npm run test:spokedu-master:core
 
+      - name: SPOMOVE activity identity regressions
+        run: >
+          npm test --
+          app/admin/spomove/training/_player/lib/trainingActivity.test.ts
+          app/admin/spomove/training/_player/lib/trainingCompletion.test.ts
+          app/admin/spomove/training/_player/components/RelativeCompassReactionTraining.test.ts
+          app/spokedu-master/spomove/session/EngineRouter.identity.test.ts
+
       - name: git diff check
         run: git diff --check
 

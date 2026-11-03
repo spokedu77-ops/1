@@ -1,5 +1,7 @@
 'use client';
 
+import { catalogTrainingActivity, resolveTrainingActivity, legacyTrainingActivityFlags, trainingActivityForLevelChange, resolveTrainingSelection, resolveCatalogTrainingSelection, type TrainingActivityId } from './_player/lib/trainingActivity';
+
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
@@ -17,9 +19,6 @@ import {
   SPOMOVE_CATALOG_SLOT_IDS,
   reactTrainEngineLevelForUi,
   resolveReactTrainUiLevel,
-  catalogReactTrainUiLevel,
-  catalogBasicUiLevel,
-  catalogSpatialUiLevel,
   isModifiedQuadrantLevel,
   isFront3PanelLevel,
   isColorSequenceLevel,
@@ -32,6 +31,7 @@ import {
   type ColorSequenceOption,
   type SpomoveAxis,
 } from './_player/constants';
+import { trainingActivityGuide } from './_player/lib/trainingActivityGuide';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { useViewportScrollLock } from './_player/lib/lockViewportScroll';
@@ -119,19 +119,6 @@ type TopTab = 'training' | 'teacher' | 'app';
 const TEACHER_SPOMOVE_URL = '/teacher/spomove';
 
 /** 카탈로그 배열 순서로 1번·2번… (엔진 id와 무관) */
-function levelLabel(modeId: string, levelId: number): string {
-  if (modeId === 'basic' && (levelId === 7 || levelId === 8)) return `${levelId}번`;
-  const m = MODES[modeId];
-  const catalogId =
-    modeId === 'basic'
-      ? levelId
-      : modeId === 'spatial'
-        ? catalogSpatialUiLevel(levelId)
-        : levelId;
-  const idx = m?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
-  if (idx >= 0) return `${idx + 1}번`;
-  return `${levelId}번`;
-}
 
 function modeLabelKoEn(modeId: string): string {
   const m = MODES[modeId];
@@ -259,36 +246,6 @@ function levelNameEnDisplay(enName: string): string {
     .replace('Modified Quadrant', '(On Hold) Hand and Foot Separate Migration');
 }
 
-function levelNameKo(modeId: string, levelId: number): string {
-  const m = MODES[modeId];
-  const catalogId =
-    modeId === 'basic'
-      ? levelId
-      : modeId === 'spatial'
-        ? catalogSpatialUiLevel(levelId)
-        : levelId;
-  const lv = m?.levels.find((x) => x.id === catalogId);
-  if (lv?.enName) {
-    const byEn = LEVEL_KO_ALIAS_BY_EN[lv.enName];
-    if (byEn) return byEn;
-  }
-  return lv?.name ?? levelLabel(modeId, levelId);
-}
-
-function levelLabelKoEn(modeId: string, levelId: number): string {
-  const m = MODES[modeId];
-  const catalogId =
-    modeId === 'basic'
-      ? levelId
-      : modeId === 'spatial'
-        ? catalogSpatialUiLevel(levelId)
-        : levelId;
-  const lv = m?.levels.find((x) => x.id === catalogId);
-  if (!lv) return levelLabel(modeId, levelId);
-  const enDisplay = levelNameEnDisplay(lv.enName);
-  return `${levelLabel(modeId, levelId)} : ${levelNameKo(modeId, levelId)} (${enDisplay})`;
-}
-
 function catalogLevelLabelKoEn(modeId: string, catalogId: number): string {
   const m = MODES[modeId];
   const idx = m?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
@@ -372,10 +329,9 @@ type LaunchSettings = {
   relativeCompassDifficulty: 'easy' | 'normal' | 'hard';
   relativeCompassStartSeconds: 2 | 3 | 4 | 5 | 6;
   relativeCompassResponseSeconds: 2 | 3 | 4 | 5 | 6;
-  relativeCompassEnabled: boolean;
+  activityId: TrainingActivityId;
   shapeCompletionDifficulty: 'easy' | 'normal' | 'hard';
   shapeCompletionResponseSeconds: 2 | 3 | 4 | 5 | 6;
-  shapeCompletionEnabled: boolean;
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount: 1 | 2;
   /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
@@ -433,16 +389,15 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   relativeCompassDifficulty: 'normal',
   relativeCompassStartSeconds: 3,
   relativeCompassResponseSeconds: 3,
-  relativeCompassEnabled: false,
+  activityId: 'direction-cue',
   shapeCompletionDifficulty: 'normal',
   shapeCompletionResponseSeconds: 4,
-  shapeCompletionEnabled: false,
   simonPoleCount: 1,
   bodyLabelMode: 'easy',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
 
-function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings): LaunchSettings {
+function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings, mode: string, level: number): LaunchSettings {
   return {
     speed: auto.speed ?? fallback.speed,
     timeMode: auto.timeMode ?? fallback.timeMode,
@@ -510,10 +465,9 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     relativeCompassDifficulty: auto.relativeCompassDifficulty === 'easy' || auto.relativeCompassDifficulty === 'hard' ? auto.relativeCompassDifficulty : fallback.relativeCompassDifficulty,
     relativeCompassStartSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassStartSeconds,
     relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassResponseSeconds,
-    relativeCompassEnabled: auto.relativeCompassEnabled === true,
+    activityId: resolveTrainingActivity(mode, level, auto, fallback.activityId),
     shapeCompletionDifficulty: auto.shapeCompletionDifficulty === 'easy' || auto.shapeCompletionDifficulty === 'hard' ? auto.shapeCompletionDifficulty : fallback.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.shapeCompletionResponseSeconds,
-    shapeCompletionEnabled: auto.shapeCompletionEnabled === true,
     simonPoleCount: auto.simonPoleCount === 2 ? 2 : fallback.simonPoleCount,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
@@ -535,6 +489,7 @@ function isReactTrainRepetitionLevel(modeId: string, levelId: number): boolean {
 }
 
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
+  launch = { ...launch, activityId: trainingActivityForLevelChange(modeId, levelId, launch.activityId) };
   if (isReactTrainRepetitionLevel(modeId, levelId)) {
     return {
       ...launch,
@@ -542,7 +497,7 @@ function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchS
       targetReps: [10, 15, 20, 30].includes(launch.targetReps) ? launch.targetReps : 20,
     };
   }
-  if (modeId === 'basic' && levelId === 7) {
+  if (launch.activityId === 'relative-compass') {
     return {
       ...launch,
       timeMode: 'reps',
@@ -700,10 +655,10 @@ function TrainingPortal({
     relativeCompassDifficulty: launch.relativeCompassDifficulty,
     relativeCompassStartSeconds: launch.relativeCompassStartSeconds,
     relativeCompassResponseSeconds: launch.relativeCompassResponseSeconds,
-    relativeCompassEnabled: launch.relativeCompassEnabled,
+    activityId: launch.activityId,
+    ...legacyTrainingActivityFlags(launch.activityId),
     shapeCompletionDifficulty: launch.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: launch.shapeCompletionResponseSeconds,
-    shapeCompletionEnabled: launch.shapeCompletionEnabled,
     simonPoleCount: launch.simonPoleCount,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
@@ -716,7 +671,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.colorGateCategories.join(',')}-${launch.colorGateDifficulties.join(',')}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.relativeCompassEnabled}-${launch.shapeCompletionEnabled}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.colorGateCategories.join(',')}-${launch.colorGateDifficulties.join(',')}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.activityId}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -951,49 +906,28 @@ function SettingsScreen({
   const m = MODES[modeId];
   const accent = m?.accent ?? '#F97316';
 
-  const [levelId, setLevelId] = useState<number>(() => {
-    const candidate =
-      typeof initialLevelId === 'number' ? initialLevelId : (m?.levels?.[0]?.id ?? 1);
-    if (modeId === 'reactTrain') {
-      const normalized = catalogReactTrainUiLevel(candidate);
-      if (m?.levels?.some((lv) => lv.id === normalized)) return normalized;
-    }
-    if (modeId === 'basic') {
-      // 변형사분할·3분할은 엔진 level을 유지하고 카탈로그만 묶음
-      if (isModifiedQuadrantLevel(candidate) || isFront3PanelLevel(candidate)) return candidate;
-      const normalized = catalogBasicUiLevel(candidate);
-      if (m?.levels?.some((lv) => lv.id === normalized)) return normalized;
-    }
-    if (modeId === 'spatial') {
-      if (isColorSequenceLevel(candidate) || isColorNumberLevel(candidate) || isInstantMemoryLevel(candidate)) {
-        return candidate;
-      }
-      const normalized = catalogSpatialUiLevel(candidate);
-      if (m?.levels?.some((lv) => lv.id === normalized)) return normalized;
-    }
-    if (m?.levels?.some((lv) => lv.id === candidate)) return candidate;
-    return m?.levels?.[0]?.id ?? 1;
+  const [selection, setSelection] = useState(() => {
+    const levelId = typeof initialLevelId === 'number' ? initialLevelId : (m?.levels?.[0]?.id ?? 1);
+    const launch = initial;
+    const activityId = typeof initialLevelId === 'number'
+      ? resolveTrainingActivity(modeId, levelId, launch)
+      : catalogTrainingActivity(modeId, levelId);
+    return { levelId, launch: { ...launch, activityId } };
   });
-  const [launch, setLaunch] = useState<LaunchSettings>(() => {
-    if (modeId !== 'reactTrain' || typeof initialLevelId !== 'number') return initial;
-    const mapped = resolveReactTrainUiLevel(initialLevelId);
-    return {
-      ...initial,
-      ...(mapped.moleLookMode ? { moleLookMode: mapped.moleLookMode } : {}),
-      ...(typeof initial.moleBonusTimeEnabled === 'boolean' ? { moleBonusTimeEnabled: initial.moleBonusTimeEnabled } : {}),
-      ...(mapped.numberCartTier ? { numberCartTier: mapped.numberCartTier } : {}),
-      ...(mapped.colorTrackerTier ? { colorTrackerTier: mapped.colorTrackerTier } : {}),
-      ...(mapped.goalkeeperTier ? { goalkeeperTier: mapped.goalkeeperTier } : {}),
-      ...(typeof initial.goalkeeperBonusTimeEnabled === 'boolean' ? { goalkeeperBonusTimeEnabled: initial.goalkeeperBonusTimeEnabled } : {}),
-      ...(initial.handFootDifficulty ? { handFootDifficulty: initial.handFootDifficulty } : {}),
-      ...(mapped.camouflagePlacement ? { camouflagePlacement: mapped.camouflagePlacement } : {}),
-    };
+  const { levelId, launch } = selection;
+  const setLevelId = (update: number | ((current: number) => number)) => setSelection(current => {
+    const levelId = typeof update === 'function' ? update(current.levelId) : update;
+    return { levelId, launch: { ...current.launch, activityId: trainingActivityForLevelChange(modeId, levelId, current.launch.activityId) } };
   });
+  const setLaunch = (update: LaunchSettings | ((current: LaunchSettings) => LaunchSettings)) => setSelection(current => {
+    const launch = typeof update === 'function' ? update(current.launch) : update;
+    return { ...current, launch: { ...launch, activityId: trainingActivityForLevelChange(modeId, current.levelId, launch.activityId) } };
+  });
+  const selectedActivity = resolveTrainingSelection(modeId, levelId, { activityId: launch.activityId });
+
   const [guideOpen, setGuideOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [showVariantAppendix, setShowVariantAppendix] = useState(false);
-
-  // ── Flow 즐겨찾기 ──────────────────────────────────────────────────────────
   const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => loadFlowPresets());
   const [flowPresetError, setFlowPresetError] = useState<string | null>(null);
   const { data: diveEnvData } = useSpomoveDiveEnvironments();
@@ -1024,8 +958,8 @@ function SettingsScreen({
   }, [initialLevelId]);
 
   const guideBlock = useMemo(
-    () => GUIDE_BLOCKS.find((b) => b.id === modeId) ?? null,
-    [modeId],
+    () => GUIDE_BLOCKS.find((b) => b.id === selectedActivity.catalogMode) ?? null,
+    [selectedActivity.catalogMode],
   );
 
   const engineGuideVideoUrl = useMemo(
@@ -1033,11 +967,10 @@ function SettingsScreen({
     [modeId],
   );
 
-  const guidePhase = useMemo(() => {
-    if (!guideBlock) return null;
-    const num = levelLabel(modeId, levelId);
-    return guideBlock.phases.find((p) => p.num === num) ?? null;
-  }, [guideBlock, modeId, levelId]);
+  const guidePhase = useMemo(
+    () => trainingActivityGuide(modeId, levelId, { activityId: launch.activityId }) ?? null,
+    [modeId, levelId, launch.activityId],
+  );
 
   const isReactTrain = modeId === 'reactTrain';
   const isSpatial = modeId === 'spatial';
@@ -1151,7 +1084,7 @@ function SettingsScreen({
           ← 목록
         </button>
         <span style={{ fontSize: 12, color: T.text, fontWeight: 800 }}>
-          {m?.icon} {modeLabelKoEn(modeId)} · {levelLabelKoEn(modeId, levelId)}
+          {m?.icon} {modeLabelKoEn(modeId)} · {`${selectedActivity.number ? `${selectedActivity.number}번 : ` : ''}${selectedActivity.title}`}
         </span>
       </header>
 
@@ -1182,7 +1115,7 @@ function SettingsScreen({
                 {isFlowOrChallenge ? '활동 안내 · DIVE' : (
                   <>
                     엔진 · 난이도 안내 {guideBlock ? `· ${modeLabelKoEn(modeId)}` : ''}
-                    <span style={{ fontWeight: 600, color: T.muted }}> ({levelLabelKoEn(modeId, levelId)})</span>
+                    <span style={{ fontWeight: 600, color: T.muted }}> ({`${selectedActivity.number ? `${selectedActivity.number}번 : ` : ''}${selectedActivity.title}`})</span>
                   </>
                 )}
               </span>
@@ -1235,51 +1168,23 @@ function SettingsScreen({
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
               <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>{isFlowOrChallenge ? '활동 유형' : '세부 테마'}</label>
               <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                {levelLabelKoEn(modeId, levelId)}
+                {`${selectedActivity.number ? `${selectedActivity.number}번 : ` : ''}${selectedActivity.title}`}
               </div>
             </div>
             <div className="theme-options">
               {(m?.levels ?? []).map((lv) => {
-                const active =
-                  modeId === 'basic'
-                    ? (lv.id === 7 ? levelId === 7 && launch.relativeCompassEnabled : lv.id === 8 ? levelId === 8 && launch.shapeCompletionEnabled : catalogBasicUiLevel(levelId) === lv.id && !launch.relativeCompassEnabled && !launch.shapeCompletionEnabled)
-                    : modeId === 'spatial'
-                      ? catalogSpatialUiLevel(levelId) === lv.id
-                      : levelId === lv.id;
+                const active = selectedActivity.catalogMode === modeId && selectedActivity.catalogLevel === lv.id;
                 return (
                   <button
                     className="theme-option"
                     key={lv.id}
                     type="button"
                     onClick={() => {
-                      setLevelId((current) => {
-                        if (modeId === 'basic' && lv.id === 8) {
-                          return 8;
-                        }
-                        if (modeId === 'basic' && lv.id === 7) {
-                          return 7;
-                        }
-                        if (modeId === 'basic' && lv.id === 5) {
-                          return isFront3PanelLevel(current) ? current : 5;
-                        }
-                        if (modeId === 'spatial' && lv.id === 1) {
-                          return isColorSequenceLevel(current) ? current : 1;
-                        }
-                        if (modeId === 'spatial' && lv.id === 2) {
-                          return isColorNumberLevel(current) ? current : 4;
-                        }
-                        if (modeId === 'spatial' && lv.id === 7) {
-                          return 7;
-                        }
-                        return lv.id;
-                      });
-                      setLaunch((s) => {
-                        let next = launchSettingsForLevel(modeId, lv.id, s);
-                        if (modeId === 'basic' && lv.id === 7) next = { ...next, relativeCompassEnabled: true, shapeCompletionEnabled: false };
-                        else if (modeId === 'basic' && lv.id === 8) next = { ...next, relativeCompassEnabled: false, shapeCompletionEnabled: true };
-                        else if (modeId === 'basic') next = { ...next, relativeCompassEnabled: false, shapeCompletionEnabled: false };
+                      setSelection(current => {
+                        const chosen = resolveCatalogTrainingSelection(modeId, lv.id, { level: current.levelId, activityId: current.launch.activityId });
+                        let next = launchSettingsForLevel(modeId, chosen.level, { ...current.launch, activityId: chosen.activityId });
                         if (isReactTrain) {
-                          const mapped = resolveReactTrainUiLevel(lv.id);
+                          const mapped = chosen.optionDefaults;
                           next = {
                             ...next,
                             reactTrainConcurrent: 2,
@@ -1292,29 +1197,28 @@ function SettingsScreen({
                             goalkeeperBonusTimeEnabled: next.goalkeeperBonusTimeEnabled,
                             handFootDifficulty: next.handFootDifficulty,
                           };
-                          const engineLevel = mapped.engineLevel;
-                          if (engineLevel === 8) {
+                          if (chosen.runtime === 'number-cart') {
                             next = {
                               ...next,
                               timeMode: 'reps',
                               targetReps: [7, 10, 15, 25].includes(next.targetReps) ? next.targetReps : 10,
                             };
                           }
-                          if (engineLevel === 9) {
+                          if (chosen.runtime === 'color-tracker') {
                             next = {
                               ...next,
                               timeMode: 'reps',
                               targetReps: [2, 3, 5, 10].includes(next.targetReps) ? next.targetReps : 5,
                             };
                           }
-                          if (engineLevel === 10) {
+                          if (chosen.runtime === 'goalkeeper') {
                             next = {
                               ...next,
                               timeMode: 'time',
                               duration: [30, 60, 120, 180].includes(next.duration) ? next.duration : 120,
                             };
                           }
-                          if (engineLevel === 14) {
+                          if (chosen.runtime === 'shell-tracking') {
                             next = {
                               ...next,
                               timeMode: 'reps',
@@ -1326,7 +1230,7 @@ function SettingsScreen({
                             };
                           }
                         }
-                        if (modeId === 'spatial' && lv.id === 7) {
+                        if (chosen.runtime === 'instant-memory') {
                           next = {
                             ...next,
                             timeMode: 'time',
@@ -1338,7 +1242,7 @@ function SettingsScreen({
                             colorMemoryGridMode: next.colorMemoryGridMode === 'oneshot' ? 'oneshot' : 'flicker',
                           };
                         }
-                        return next;
+                        return { levelId: chosen.level, launch: next };
                       });
                     }}
                     style={{
@@ -2205,14 +2109,14 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {modeId === 'basic' && levelId === 8 && launch.shapeCompletionEnabled ? (
+          {modeId === 'basic' && levelId === 8 && launch.activityId === 'shape-completion' ? (
             <section style={{ marginBottom: 22 }}>
               <label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
               <div style={{ display: 'flex', gap: 8 }}>{([['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const).map(([value, label]) => { const active = launch.shapeCompletionDifficulty === value; return <button key={value} type="button" onClick={() => setLaunch((current) => ({ ...current, shapeCompletionDifficulty: value }))} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontWeight: active ? 900 : 700 }}>{label}</button>; })}</div>
               <div style={{ marginTop: 16 }}><label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>반응 시간</label><SpeedSelector value={launch.shapeCompletionResponseSeconds} min={2} max={6} step={1} compact showPresets={false} onChange={(value) => setLaunch((current) => ({ ...current, shapeCompletionResponseSeconds: Math.min(6, Math.max(2, Math.round(value))) as 2 | 3 | 4 | 5 | 6 }))} /></div>
             </section>
           ) : null}
-          {modeId === 'basic' && levelId === 7 ? (
+          {launch.activityId === 'relative-compass' ? (
             <section style={{ marginBottom: 22 }}>
               <label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
               <div style={{ display: 'flex', gap: 8 }}>{([['easy', '쉬움', '화살표'], ['normal', '보통', '색상 화살표'], ['hard', '어려움', '대각선']] as const).map(([value, label, detail]) => { const active = launch.relativeCompassDifficulty === value; return <button key={value} type="button" onClick={() => setLaunch((s) => ({ ...s, relativeCompassDifficulty: value }))} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontWeight: active ? 900 : 700, cursor: 'pointer' }}>{label}<span style={{ display: 'block', marginTop: 3, fontSize: 10, color: active ? accent : T.muted }}>{detail}</span></button>; })}</div>
@@ -2221,7 +2125,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 속도 / 순간 기억 기억 시간 */}
-          {(!isFlowOrChallenge || isColorGateTheme) && !(modeId === 'basic' && (levelId === 7 || (levelId === 8 && launch.shapeCompletionEnabled))) && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {(!isFlowOrChallenge || isColorGateTheme) && !(launch.activityId === 'relative-compass' || launch.activityId === 'shape-completion') && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: isColorGateTheme ? 10 : 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isColorGateTheme ? 6 : 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -2880,7 +2784,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 변형 사분할: 단계 1~3 */}
-          {modeId === 'basic' && isModifiedQuadrantLevel(levelId) && levelId !== 7 && !launch.shapeCompletionEnabled ? (
+          {modeId === 'basic' && isModifiedQuadrantLevel(levelId) && launch.activityId === 'hand-foot' ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>단계</label>
@@ -2895,7 +2799,7 @@ function SettingsScreen({
                     <button
                       key={stage}
                       type="button"
-                      onClick={() => { setLevelId(modifiedQuadrantLevelFromStage(stage)); setLaunch((current) => ({ ...current, shapeCompletionEnabled: false })); }}
+                      onClick={() => { setLevelId(modifiedQuadrantLevelFromStage(stage)); setLaunch((current) => ({ ...current, activityId: 'hand-foot' })); }}
                       style={{
                         flex: 1,
                         padding: '11px 8px',
@@ -3412,10 +3316,10 @@ function SpomoveTrainingPageContent() {
             const fallbackLaunch = phase.launch;
             setPhase({
               tag: 'settings',
-              modeId: phase.modeId,
+              modeId: resume?.modeId ?? phase.modeId,
               levelId: resume?.levelId ?? phase.levelId,
               launch: resume?.launch
-                ? autoLaunchToLaunchSettings(resume.launch, fallbackLaunch)
+                ? autoLaunchToLaunchSettings(resume.launch, fallbackLaunch, resume.modeId, resume.levelId)
                 : fallbackLaunch,
             });
           }}

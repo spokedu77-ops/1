@@ -171,6 +171,7 @@ The [Product Audit Baseline](./SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md) is hist
 | Visual character, tokens, type, spacing, media, CTA grammar | `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` |
 | Surface role and rendered-QA ledger | `app/spokedu-master/MASTER_SURFACE_MATRIX.md` |
 | SPOMOVE semantics | `app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md` |
+| SPOMOVE activity identity, catalog association, and runtime selection | `app/admin/spomove/training/_player/lib/trainingActivity.ts` (legacy engine addresses remain compatibility inputs) |
 | Pricing / product availability | `app/spokedu-master/lib/productCatalog.ts` |
 | Public product slice | `app/spokedu-master/lib/publicProductContract.ts` |
 | Client access / entitlement | `app/spokedu-master/lib/masterAccessModel.ts` |

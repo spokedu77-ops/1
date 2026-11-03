@@ -13,7 +13,8 @@ import {
 } from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
-import { resolveTrainingEngine, type SpatialArrowColorMapping } from '../constants';
+import { resolveTrainingSelection, type TrainingActivityId } from '../lib/trainingActivity';
+import { type SpatialArrowColorMapping } from '../constants';
 import { registerPresentedSignal, type RepsState } from '../lib/repsLogic';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
@@ -27,6 +28,7 @@ export function useTrainingTimer({
   targetReps,
   mode,
   level,
+  activityId,
   audioMode,
   colors,
   fruitSlides,
@@ -56,6 +58,7 @@ export function useTrainingTimer({
   targetReps: number;
   mode: string;
   level: number;
+  activityId?: TrainingActivityId;
   audioMode: string;
   colors: ColorItem[];
   /** basic 연상 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
@@ -107,7 +110,8 @@ export function useTrainingTimer({
 
   useEffect(() => {
     if (!active) return;
-    const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
+    const { engineMode, engineLevel, runtime } = resolveTrainingSelection(mode, level, { activityId });
+    if (runtime !== 'signals') throw new Error(`SPOMOVE activity cannot use the signal timer: ${activityId}`);
     const effectiveArrowColorMode: 'basic' | 'color' =
       mode === 'stroop' && level === 1 ? 'color' : spatialArrowColorMode;
     if (engineMode === 'basic') {
@@ -238,7 +242,7 @@ export function useTrainingTimer({
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
   // onSignal/onFinish는 ref로만 읽는다. 콜백 식별자가 바뀌면 진행 중인 신호가 0부터 다시 시작된다.
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, activityId, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

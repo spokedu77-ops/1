@@ -1,3 +1,5 @@
+import type { TrainingActivityId } from './lib/trainingActivity';
+
 /**
  * SPOMOVE 트레이닝 — 화면 가이드(상세). MemoryGameApp 가이드 탭에서 사용.
  *
@@ -5,6 +7,8 @@
  */
 
 export type GuidePhase = {
+  activityId?: TrainingActivityId;
+  activityIds?: TrainingActivityId[];
   num: string;
   name: string;
   goal: string;
@@ -65,6 +69,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     },
     phases: [
       {
+        activityId: 'direction-cue',
         num: '1번',
         name: '공간방향 자극',
         goal: '전체형 화면 중앙에 뜨는 화살표 방향을 보는 즉시, 그 방향 색 패드로 점프하거나 이동합니다.',
@@ -74,6 +79,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '색상 화살표에서도 색만 보고 움직이지 말고 항상 화살표 머리 방향을 기준으로 통일합니다. 좌우는 “내 몸 기준 왼쪽/오른쪽”으로 말해 주세요.',
       },
       {
+        activityId: 'quadrant-cue',
         num: '2번',
         name: '4분할 자극',
         goal: '2×2 그리드형 화면에서 강조된 한 칸의 색 또는 테마 이미지를 보는 즉시, 해당 색 패드 위치로 점프하거나 이동합니다.',
@@ -83,6 +89,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '이미지 테마에서도 그림 이름을 맞히는 활동이 아니라 색 패드 위치로 반응하는 활동입니다. 이미지를 오래 해석하지 않게 안내해 주세요.',
       },
       {
+        activityId: 'full-screen-cue',
         num: '3번',
         name: '전면단일 자극',
         goal: '전체형 화면 하나를 채우는 색 또는 테마 이미지를 보는 즉시, 해당 색 패드 위치로 점프하거나 이동합니다.',
@@ -92,6 +99,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '이미지 테마에서 그림 내용을 오래 해석하면 반응이 늦어집니다. 항상 목표는 이미지 이름이 아니라 색 패드 위치입니다.',
       },
       {
+        activityId: 'two-panel-cue',
         num: '4번',
         name: '2분할 자극',
         goal: '2분할 패널형 화면의 두 패널에 서로 다른 색 또는 테마 이미지가 나타나면, 목표 색을 읽어 해당 색 패드로 점프하거나 이동합니다.',
@@ -101,6 +109,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '패널 위치를 정답으로 외우면 안 됩니다. 항상 패널 안의 색 또는 이미지 대표색을 기준으로 반응하게 해 주세요.',
       },
       {
+        activityId: 'three-panel-cue',
         num: '5번',
         name: '3분할 자극',
         goal: '3분할 패널형 화면의 세 패널에 서로 다른 색 또는 서로 다른 테마 이미지가 나타나면, 목표 색을 빠르게 골라 해당 색 패드로 이동합니다.',
@@ -110,6 +119,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '세 패널을 모두 해석하려고 하면 반응이 늦어집니다. 목표는 그림 이름이 아니라 색 패드 위치입니다.',
       },
       {
+        activityId: 'random-panel-cue',
         num: '6번',
         name: '랜덤분할 자극',
         goal: '매 신호마다 전면 1개, 2패널, 3패널 중 하나가 확률로 제시되면, 표시된 색 또는 목표 색을 빠르게 읽고 해당 색 패드로 이동합니다.',
@@ -119,6 +129,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '랜덤분할은 화면 형태가 계속 바뀌는 활동입니다. 학생이 패널 수를 세느라 멈추면, 하나·둘·셋을 말하게 하기보다 색을 먼저 찾게 코칭해 주세요.',
       },
       {
+        activityId: 'relative-compass',
         num: '7번',
         name: '내 자리에서 방향 따라가기',
         goal: '시작 색 패드에 선 뒤, 중앙 화살표가 가리키는 방향으로 한 칸 이동하고 그 자리에 남아 다음 화살표를 받습니다.',
@@ -152,6 +163,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     },
     phases: [
       {
+        activityId: 'stroop-arrow',
         num: '1번',
         name: '공간 방향 · 색상',
         goal: '방향별 색이 채워진 화살표 방향을 보는 즉시, 그 방향 패드로 점프하거나 이동합니다.',
@@ -161,6 +173,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '색만 보고 다른 방향으로 가기 쉽습니다. 항상 화살표 머리 방향 기준으로 통일하세요.',
       },
       {
+        activityId: 'stroop-word',
         num: '2번',
         name: '단어 의미 / 잉크 (± 역전)',
         goal: '색 이름 글자가 잉크 색과 어긋날 때, 신호마다 「글자 뜻(의미)」 또는 「잉크 색」을 말합니다. 규칙이 뒤집히면 반대로 말합니다.',
@@ -170,6 +183,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '자동으로 읽히는 경향이 강합니다. 이전 규칙에 남지 않게 매 자극 규칙을 확인하세요.',
       },
       {
+        activityId: 'stroop-word-advanced',
         num: '3번',
         name: '단어 의미 / 잉크 (± 역전 · 전환 심화)',
         goal: '2번과 같은 단어 가족이지만 전환 부담을 더 받아, 규칙 전환을 더 자주 확인하며 말로 답합니다.',
@@ -179,6 +193,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '전환 직후 이전 규칙으로 추측 답하기 쉽습니다.',
       },
       {
+        activityId: 'stroop-background-word',
         num: '4번',
         name: '단어+배경 / 누락 색상',
         goal: '기본 옵션은 잉크 색을 말하고, 누락 옵션은 글자·잉크·배경에 없는 남은 색을 말합니다. (누락은 Admin-only / Hub hold일 수 있음)',
@@ -214,6 +229,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     },
     phases: [
       {
+        activityId: 'simon-shape',
         num: '1번',
         name: '도형 · 채움 색',
         goal: '채워진 색을 보고 같은 색 위치로 즉시 이동합니다.',
@@ -223,6 +239,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '도형이 한쪽에 치우치면 시선이 위치에 끌리기 쉽습니다. 색만 먼저 말해 보게 하면 전환이 빨라집니다.',
       },
       {
+        activityId: 'simon-arrow',
         num: '2번',
         name: '화살표 · 방향',
         goal: '화살표가 가리키는 방향 위치로 이동합니다(위·아래·왼쪽·오른쪽 모두 사용).',
@@ -232,6 +249,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '자극이 한쪽에 뜨면 몸이 그쪽으로 끌릴 수 있어요. 방향만 소리 내어 말한 뒤 발을 보냅니다.',
       },
       {
+        activityId: 'simon-theme',
         num: '3번',
         name: '믹스 갤러리',
         goal: '과일·동물·음식·자연·탈 것 이미지를 보고, 이미지가 속한 색 위치로 이동합니다.',
@@ -241,6 +259,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '그림 내용(과일 종류 등)에 끌리면 위치·색 판단이 늦어집니다. 색 테두리·패드 색만 먼저 확인합니다.',
       },
       {
+        activityId: 'simon-camouflage',
         num: '4번',
         name: '매직 아이',
         goal: '노이즈 색 블록 속에 위장된 도형이 서서히 드러날 때, 드러나는 색을 찾아 해당 색 위치를 밟습니다.',
@@ -250,6 +269,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '위치가 매 라운드 바뀌므로 중앙만 보면 놓칠 수 있습니다. 극단 쪽을 넓게 스캔하도록 안내합니다.',
       },
       {
+        activityId: 'simon-balloon',
         num: '5번',
         name: '풍선 사이먼',
         goal: '화면 어디에나 나타나는 색 풍선이 커진 뒤 터질 때 해당 색 위치로 이동합니다.',
@@ -280,6 +300,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     },
     phases: [
       {
+        activityIds: ['flanker-arrow', 'flanker-theme', 'flanker-extreme', 'flanker-nested'],
         num: 'Hub',
         name: '목표만 보기',
         goal: '가운데 목표(색 또는 화살표 방향)만 보고 해당 패드로 이동합니다.',
@@ -309,6 +330,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     },
     phases: [
       {
+        activityId: 'sequence-memory',
         num: '1번',
         name: '색 순서 기억',
         goal: '색이 순서대로 나타난 뒤 같은 순서로 재생합니다. 항 수(3/5/점증/직접 지정 10색)는 설정에서 고릅니다.',
@@ -317,6 +339,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         coach: '“첫 색을 소리 내어 반복 → 두 번째를 앞에 붙여 말하기” 식으로 청킹을 안내합니다.',
       },
       {
+        activityIds: ['color-number-memory', 'color-number-quiz'],
         num: '2번',
         name: '색·번호 기억',
         goal: '번호 1~10에 매칭된 색을 기억합니다. 퀴즈 또는 전체 공개로 확인합니다.',
@@ -325,6 +348,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         coach: '“번호를 기준으로 색을 붙여 외운다”고 규칙을 고정합니다.',
       },
       {
+        activityId: 'instant-memory',
         num: '3번',
         name: '순간 기억',
         goal: '그리드 전체 색을 잠깐 기억한 뒤, 단 한 칸만 바뀐 색을 찾아 해당 색 패드로 반응합니다.',
@@ -352,6 +376,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     },
     phases: [
       {
+        activityId: 'balloon-pop',
         num: '1번',
         name: '풍선 터뜨리기',
         goal: '난이도 쉬움. 화면 위에서 떨어지는 색 풍선이 하단 가시에 닿기 전, 풍선 색과 같은 패드 위치로 이동합니다.',
@@ -361,6 +386,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '풍선의 가로 이동이나 터지는 연출에 시선이 끌리면 다음 색 반응이 늦어집니다. 활동량은 반복 횟수로, 자극 템포는 신호 속도로 조절합니다.',
       },
       {
+        activityId: 'wave-dodge',
         num: '2번',
         name: '파도 피하기',
         goal: '난이도 쉬움. 원근 레일을 따라 다가오는 파도 색을 보고 같은 색 패드 위치로 이동합니다.',
@@ -370,6 +396,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '연속 블록 간격이 짧으면 발이 꼬이기 쉬우므로, 리듬을 조금 넓혀 정확도를 우선하도록 지도합니다. 활동량은 반복 횟수로, 자극 템포는 신호 속도로 조절합니다.',
       },
       {
+        activityId: 'falling-bricks',
         num: '3번',
         name: '떨어지는 벽돌',
         goal: '난이도 보통. 색 벽돌 2개가 동시에 떨어질 때, 각 색 위치에 한 발씩 놓습니다.',
@@ -379,6 +406,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '빠를수록 색 위치를 ‘미리’ 밟으려다 타이밍이 흐트러질 수 있어, 리듬을 말로 짚어 주면 도움이 됩니다. 활동량은 반복 횟수로, 자극 템포는 신호 속도로 조절합니다.',
       },
       {
+        activityId: 'mole',
         num: '4번',
         name: '두더지 잡기',
         goal: '난이도 쉬움/보통. 넓은 필드의 구멍에서 색 두더지가 튀어나오면, 두더지 색과 같은 패드 위치로 반응합니다.',
@@ -389,6 +417,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
           '한 구멍에 시선이 고정되면 다음 자극 전환이 늦어집니다. Admin 플레이어에서 보너스타임을 켠 경우에만 본 활동 뒤 가속 구간이 이어집니다. SPOKEDU LAB 기본 세션에는 보너스 토글이 없습니다. 활동량은 반복 횟수로, 자극 템포는 신호 속도로 조절합니다.',
       },
       {
+        activityId: 'goalkeeper',
         num: '5번',
         name: '축구 : 골키퍼',
         goal: '난이도 쉬움/보통. 멀리서 날아오는 축구공의 궤적과 색을 끝까지 보고, 도착 코너 색 패드로 반응합니다.',
@@ -401,6 +430,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
           '출발 순간만 보고 코너를 미리 밟으면 커브·동시 슛에 무너집니다. Admin 보너스타임은 MASTER 기본 세션에 없습니다. 활동량은 반복 횟수로, 자극 템포는 비행 시간으로 조절합니다.',
       },
       {
+        activityId: 'hand-foot',
         num: '6번',
         name: '손 따로, 발 따로',
         goal: '기존 변형 4분할 프로그램을 시지각 반응으로 이관한 활동입니다. 난이도 쉬움/보통/어려움에 따라 발·손 조합과 자극 수가 달라집니다.',
@@ -414,6 +444,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
           '손과 발을 뒤바꾸거나, 여러 자극 중 하나만 보고 반응하기 쉽습니다. 보통은 발이 반드시 포함되고, 쉬움에는 손이 나오지 않습니다. 활동량은 반복 횟수로, 자극 템포는 신호 속도로 조절합니다.',
       },
       {
+        activityId: 'color-tracker',
         num: '7번',
         name: '흰 공 찾기',
         goal: '잠깐 흰색으로 표시된 공을 끝까지 눈으로 추적합니다. 멈추면 빨·노·초·파 중 어디 구역인지 먼저 맞춰보고, 선생님이 정답 공개 버튼을 눌러 확인합니다.',
@@ -423,6 +454,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '충돌 순간 시선이 다른 공으로 튀기 쉽습니다. 정답을 자동으로 보여주지 않으니, 학생이 먼저 구역을 말하게 한 뒤 버튼으로 확인하세요.',
       },
       {
+        activityId: 'number-cart',
         num: '보류',
         name: '숫자 연산 기차 (보류)',
         goal: '보류 항목입니다. 숫자 또는 식 목표를 보고 같은 답이 붙은 색 문을 찾는 프로그램입니다.',
@@ -432,6 +464,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
         pitfall: '삭제가 아니라 보류입니다. 이후 난이도·시간 조절 규칙을 확정한 뒤 다시 연결합니다.',
       },
       {
+        activityId: 'virus-outbreak',
         num: '보류',
         name: '바이러스 폭증 (보류)',
         goal: '보류 항목입니다. 삭제하지 않고 어드민 확인용으로 유지합니다.',
@@ -460,6 +493,7 @@ export const GUIDE_BLOCKS: GuideBlock[] = [
     },
     phases: [
       {
+        activityId: 'action-move',
         num: '1번',
         name: 'DIVE 프로그램',
         goal: '시작부터 마지막 스테이지까지 화면이 안내하는 동작을 수행합니다.',

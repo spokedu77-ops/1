@@ -1,5 +1,10 @@
 'use client';
 
+import { catalogTrainingActivity, resolveTrainingActivity, resolveTrainingSelection, resolveCatalogTrainingSelection, trainingActivityForLevelChange, trainingActivityPresentation, type TrainingActivityId, type TrainingActivityInput } from './lib/trainingActivity';
+
+import { settingsToExitResume } from './lib/trainingLaunchSnapshot';
+export { settingsToExitResume } from './lib/trainingLaunchSnapshot';
+
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { EMBED_FIXED_VIEWPORT, EMBED_SAFE_BOTTOM, EMBED_SAFE_TOP } from './lib/embedViewport';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
@@ -61,12 +66,8 @@ import {
   MODES,
   SPOMOVE_CATALOG_SLOT_IDS,
   normalizeLegacyTrainingMode,
-  isKnownTrainingLevel,
-  resolveTrainingEngine,
   resolveReactTrainUiLevel,
   reactTrainEngineLevelForUi,
-  catalogReactTrainUiLevel,
-  catalogBasicUiLevel,
   isModifiedQuadrantLevel,
   isFront3PanelLevel,
   isColorSequenceLevel,
@@ -74,7 +75,6 @@ import {
   isInstantMemoryLevel,
   modifiedQuadrantStage,
   modifiedQuadrantLevelFromStage,
-  catalogSpatialUiLevel,
   colorSequenceOption,
   colorSequenceLevelFromOption,
   type ColorSequenceOption,
@@ -246,10 +246,9 @@ type Settings = {
   relativeCompassDifficulty: RelativeCompassDifficulty;
   relativeCompassStartSeconds: RelativeCompassSeconds;
   relativeCompassResponseSeconds: RelativeCompassSeconds;
-  relativeCompassEnabled: boolean;
+  activityId: TrainingActivityId;
   shapeCompletionDifficulty: ShapeCompletionDifficulty;
   shapeCompletionResponseSeconds: ShapeCompletionSeconds;
-  shapeCompletionEnabled: boolean;
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount: 1 | 2;
   /** ???????????????????????????????6???????????? 1~10??????????????????????????????????????????????ㅻ깹??????????????????????????????????????????*/
@@ -317,10 +316,9 @@ const defaultSettings: Settings = {
   relativeCompassDifficulty: 'normal',
   relativeCompassStartSeconds: 3,
   relativeCompassResponseSeconds: 3,
-  relativeCompassEnabled: false,
+  activityId: 'direction-cue',
   shapeCompletionDifficulty: 'normal',
   shapeCompletionResponseSeconds: 4,
-  shapeCompletionEnabled: false,
   simonPoleCount: 1,
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -400,6 +398,7 @@ export type MemoryGameAutoLaunch = {
   relativeCompassDifficulty?: RelativeCompassDifficulty;
   relativeCompassStartSeconds?: RelativeCompassSeconds;
   relativeCompassResponseSeconds?: RelativeCompassSeconds;
+  activityId?: TrainingActivityInput['activityId'];
   relativeCompassEnabled?: boolean;
   shapeCompletionDifficulty?: ShapeCompletionDifficulty;
   shapeCompletionResponseSeconds?: ShapeCompletionSeconds;
@@ -417,73 +416,11 @@ export type MemoryGameAutoLaunch = {
 
 /** Training ???????????????????????????????????ㅻ깹???????????????????????????????????????????????ш끽維뽳쭩?뱀땡???얩맪???????????????????轅붽틓??섑떊???⑤챷?????????????????????????嫄???????????????????????筌?????????????????????????????????????????????????????? ???????????????????????????????????????????????????????????????????????????????산뭐???????????????????????????됰Ŧ????????????????????????? ????????????????????????????????????*/
 export type TrainingExitResume = {
+  modeId: string;
   levelId: number;
-  launch: MemoryGameAutoLaunch;
+  launch: MemoryGameAutoLaunch & { activityId: TrainingActivityId };
 };
 
-export function settingsToExitResume(s: Settings): TrainingExitResume {
-  return {
-    levelId: s.level,
-    launch: {
-      speed: s.speed,
-      timeMode: s.timeMode as 'time' | 'reps',
-      duration: s.duration,
-      targetReps: s.targetReps,
-      warmup: s.warmup,
-      audioMode: s.audioMode,
-      accel: s.accel,
-      intervalMode: s.intervalMode,
-      intervalWork: s.intervalWork,
-      intervalRest: s.intervalRest,
-      intervalSets: s.intervalSets,
-      kidsSafeMode: s.kidsSafeMode,
-      numberRule: s.numberRule,
-      variantColorTheme: s.variantColorTheme,
-      flankerStimulusType: s.flankerStimulusType,
-      flankerNestedCircleCount: s.flankerNestedCircleCount,
-      flankerExtremeMode: s.flankerExtremeMode,
-      flankerArrowMode: s.flankerArrowMode,
-      stroopWordMode: s.stroopWordMode,
-      stroopArrowMode: s.stroopArrowMode,
-      stroopWordDifficulty: s.stroopWordDifficulty,
-      stroopArrowResponse: s.stroopArrowResponse,
-      stroopWordResponse: s.stroopWordResponse,
-      stroopWordRuleMode: s.stroopWordRuleMode,
-      flowFeatures: [...s.flowFeatures],
-      sportsArenaFeatures: [...s.sportsArenaFeatures],
-      diveEnvironmentTheme: s.diveEnvironmentTheme,
-      flowDuration: s.flowDuration,
-      flowLayout: s.flowLayout,
-      flowIncludeBonus: s.flowIncludeBonus,
-      colorGateVariant: s.colorGateVariant,
-      colorGateCategory: s.colorGateCategory,
-      colorGateCategories: s.colorGateCategories,
-      colorGateDifficulties: s.colorGateDifficulties,
-      reactTrainConcurrent: s.reactTrainConcurrent,
-      numberCartTier: s.numberCartTier,
-      colorTrackerTier: s.colorTrackerTier,
-      colorTrackerDualPanel: s.colorTrackerDualPanel,
-      moleLookMode: s.moleLookMode,
-      moleBonusTimeEnabled: s.moleBonusTimeEnabled,
-      camouflagePlacement: s.camouflagePlacement,
-      goalkeeperTier: s.goalkeeperTier,
-      goalkeeperBonusTimeEnabled: s.goalkeeperBonusTimeEnabled,
-      handFootDifficulty: s.handFootDifficulty,
-      colorMemoryGridSize: s.colorMemoryGridSize,
-      colorMemoryGridMode: s.colorMemoryGridMode,
-      virusOutbreakDifficulty: s.virusOutbreakDifficulty,
-      shellTrackingDifficulty: s.shellTrackingDifficulty,
-      shellTrackingTargetSeconds: s.shellTrackingTargetSeconds,
-      shellTrackingShuffleCount: s.shellTrackingShuffleCount,
-      shellTrackingResponseSeconds: s.shellTrackingResponseSeconds,
-      relativeCompassDifficulty: s.relativeCompassDifficulty,
-      relativeCompassStartSeconds: s.relativeCompassStartSeconds,
-      relativeCompassResponseSeconds: s.relativeCompassResponseSeconds,
-      simonPoleCount: s.simonPoleCount,
-      memoryColorSlots: [...s.memoryColorSlots],
-    },
-  };
-}
 
 function MemoryGameRuntime({
   initialMode,
@@ -767,13 +704,11 @@ function MemoryGameRuntime({
     if (!(normalized.mode in MODES)) return;
     const modeDef = MODES[normalized.mode];
     if (!modeDef) return;
-    const targetLevelRaw =
-      typeof normalized.level === 'number' && isKnownTrainingLevel(normalized.mode, normalized.level)
-        ? normalized.level
-        : modeDef.levels[0]?.id ?? 1;
-    const targetLevel = normalized.mode === 'stroop' && targetLevelRaw === 5
-      ? 4
-      : targetLevelRaw;
+    const targetLevelRaw = normalized.level;
+    // Resolve before starting. Unknown addresses must not become the first catalog activity.
+    resolveTrainingActivity(normalized.mode, targetLevelRaw, autoLaunch ?? {});
+    const targetLevel = normalized.mode === 'stroop' && targetLevelRaw === 5 ? 4 : targetLevelRaw;
+    const optionDefaults = resolveTrainingSelection(normalized.mode, targetLevel, autoLaunch ?? {}).optionDefaults;
     const legacyStroopMissing = normalized.mode === 'stroop' && targetLevelRaw === 5;
 
     if (autoLaunch) {
@@ -781,10 +716,13 @@ function MemoryGameRuntime({
         flowFeatures: flowFeaturesArr,
         sportsArenaFeatures: sportsArenaFeaturesArr,
         diveEnvironmentTheme: autoDiveTheme,
+        relativeCompassEnabled: _legacyRelativeCompass,
+        shapeCompletionEnabled: _legacyShapeCompletion,
         ...restAutoLaunch
       } = autoLaunch;
       const merged: Settings = {
         ...defaultSettings,
+        ...optionDefaults,
         mode: normalized.mode,
         level: targetLevel,
         ...restAutoLaunch,
@@ -829,12 +767,9 @@ function MemoryGameRuntime({
         relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(autoLaunch.relativeCompassResponseSeconds as RelativeCompassSeconds)
           ? autoLaunch.relativeCompassResponseSeconds as RelativeCompassSeconds
           : 3,
-        relativeCompassEnabled:
-          normalized.mode === 'basic' && targetLevel === 7 && autoLaunch.relativeCompassEnabled === true,
+        activityId: resolveTrainingActivity(normalized.mode, targetLevel, autoLaunch),
         shapeCompletionDifficulty: normalizeShapeCompletionDifficulty(autoLaunch.shapeCompletionDifficulty),
         shapeCompletionResponseSeconds: normalizeShapeCompletionSeconds(autoLaunch.shapeCompletionResponseSeconds),
-        shapeCompletionEnabled:
-          normalized.mode === 'basic' && targetLevel === 8 && autoLaunch.shapeCompletionEnabled === true,
       };
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
@@ -843,8 +778,10 @@ function MemoryGameRuntime({
     } else {
       setSettings((s) => ({
         ...s,
+        ...optionDefaults,
         mode: normalized.mode,
         level: targetLevel,
+        activityId: resolveTrainingActivity(normalized.mode, targetLevel),
         stroopWordMode: legacyStroopMissing ? 'missing' : s.stroopWordMode,
       }));
       setScreen('setup');
@@ -864,7 +801,7 @@ function MemoryGameRuntime({
         if (value === 201 && (next.handFootDifficulty !== 'easy' && next.handFootDifficulty !== 'normal' && next.handFootDifficulty !== 'hard')) next.handFootDifficulty = 'easy';
         next.reactTrainConcurrent = 2;
       }
-      if (key === 'level' && s.mode === 'basic' && value === 7) next.relativeCompassEnabled = true;
+      if (key === 'level' && typeof value === 'number') next.activityId = trainingActivityForLevelChange(s.mode, value, s.activityId);
       if (key === 'variantColorTheme' && typeof window !== 'undefined' && typeof value === 'string') {
         localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, value);
         if (value !== 'color') next.basicNumberOverlay = 'none';
@@ -899,10 +836,11 @@ function MemoryGameRuntime({
     setSignalKey((k) => k + 1);
   }, []);
 
-  const { engineMode, engineLevel } = useMemo(
-    () => resolveTrainingEngine(settings.mode, settings.level),
-    [settings.mode, settings.level],
+  const selectedActivity = useMemo(
+    () => resolveTrainingSelection(settings.mode, settings.level, { activityId: settings.activityId }),
+    [settings.mode, settings.level, settings.activityId],
   );
+  const { engineMode, engineLevel } = selectedActivity;
 
   const deliverSessionResult = useCallback((
     cfg: Settings,
@@ -945,7 +883,7 @@ function MemoryGameRuntime({
   }, [deliverSessionResult]);
 
   const { getProgress } = useTrainingTimer({
-    active: isTraining && !settings.intervalMode,
+    active: isTraining && selectedActivity.runtime === 'signals' && !settings.intervalMode,
     speed: settings.speed,
     accel: settings.accel ?? false,
     timeMode: settings.timeMode,
@@ -953,6 +891,7 @@ function MemoryGameRuntime({
     targetReps: settings.targetReps,
     mode: settings.mode,
     level: settings.level,
+    activityId: settings.activityId,
     audioMode: settings.audioMode,
     colors: COLORS,
     fruitSlides: effectiveSlides,
@@ -976,13 +915,14 @@ function MemoryGameRuntime({
   });
 
   const { intervalPhase, intervalSet, intervalLeft } = useIntervalTimer({
-    active: isTraining && !!settings.intervalMode,
+    active: isTraining && selectedActivity.runtime === 'signals' && !!settings.intervalMode,
     workSec: settings.intervalWork,
     restSec: settings.intervalRest,
     sets: settings.intervalSets,
     speed: settings.speed,
     mode: settings.mode,
     level: settings.level,
+    activityId: settings.activityId,
     audioMode: settings.audioMode,
     colors: COLORS,
     fruitSlides: effectiveSlides,
@@ -1162,20 +1102,16 @@ function MemoryGameRuntime({
         setCountdown(null);
       } else {
         // spatial(?????????????????????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲???????????????????????????????????????????????????????????????????????????????????????warmup ?????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐????????????????????????
-        const resolvedForStart = resolveTrainingEngine(cfg.mode, cfg.level);
+        const resolvedForStart = resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId });
         const nextScreen: Screen =
-          cfg.mode === 'basic' && ((cfg.level === 7 && cfg.relativeCompassEnabled) || (cfg.level === 8 && cfg.shapeCompletionEnabled))
-            ? 'visualReaction'
-            : cfg.mode === 'spatial' && isInstantMemoryLevel(cfg.level)
-            ? 'visualReaction'
-            : cfg.mode === 'spatial'
-              ? 'memory'
-              : cfg.mode === 'reactTrain' && resolvedForStart.engineMode === 'reactTrain'
-                ? 'visualReaction'
-                : 'training';
+          ['sequence-memory', 'color-number-memory', 'color-number-quiz'].includes(resolvedForStart.runtime)
+            ? 'memory'
+            : ['signals', 'simon-camouflage', 'simon-balloon'].includes(resolvedForStart.runtime)
+              ? 'training'
+              : 'visualReaction';
         // 시지각·사이먼 카모/풍선: 플레이어 내부 카운트다운만 사용 (바깥 워밍업과 이중 카운트 방지)
         const screenWarmupSec =
-          nextScreen === 'visualReaction' || (cfg.mode === 'simon' && (cfg.level === 4 || cfg.level === 5))
+          nextScreen === 'visualReaction' || resolvedForStart.runtime === 'simon-camouflage' || resolvedForStart.runtime === 'simon-balloon'
             ? 0
             : warmupSec;
         setScreen(nextScreen);
@@ -1332,7 +1268,7 @@ function MemoryGameRuntime({
     if (flowCompleteGuardRef.current) return;
     flowCompleteGuardRef.current = true;
     if (document.fullscreenElement) exitFullscreenSafely();
-    const cfg = { ...settings, mode: 'flow', level: 1 };
+    const cfg = { ...settings };
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
     deliverSessionResult(cfg, elapsedMs, null);
   }, [deliverSessionResult, settings]);
@@ -1513,6 +1449,7 @@ function MemoryGameRuntime({
                       setSettings((s) => ({
                         ...s,
                         mode: m.id,
+                        activityId: catalogTrainingActivity(m.id, m.levels[0]?.id ?? 1),
                         level: m.levels[0]?.id ?? 1,
                         ...(m.id === 'reactTrain' ? { timeMode: 'time' as const, duration: 60 } : {}),
                       }));
@@ -1590,6 +1527,7 @@ function MemoryGameRuntime({
                       setSettings((s) => ({
                         ...s,
                         mode: m.id,
+                        activityId: catalogTrainingActivity(m.id, m.levels[0]?.id ?? 1),
                         level: m.levels[0]?.id ?? 1,
                         audioMode: 'off',
                         // ??????????????????????????????????????????????????밸븶筌믩끃??獄???????멥렑???????????????????耀붾굝?????臾먮뼁?????쇨덫?????????????????????????濾???????????????????????癲??????????????????????????????????????????????????????????????????밸븶筌믩끃??獄???????멥렑???????????????????耀붾굝?????臾먮뼁?????쇨덫?????????????????????????濾???????????????????????癲?????????????????4??????????
@@ -1611,48 +1549,24 @@ function MemoryGameRuntime({
               <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv, lvIdx) => {
-                  const active =
-                    settings.mode === 'basic'
-                      ? lv.id === 8
-                        ? settings.level === 8 && settings.shapeCompletionEnabled && !settings.relativeCompassEnabled
-                        : lv.id === 7
-                          ? settings.level === 7 && settings.relativeCompassEnabled && !settings.shapeCompletionEnabled
-                          : catalogBasicUiLevel(settings.level) === lv.id && !settings.relativeCompassEnabled && !settings.shapeCompletionEnabled
-                      : settings.mode === 'spatial'
-                        ? catalogSpatialUiLevel(settings.level) === lv.id
-                        : settings.mode === 'reactTrain'
-                          ? catalogReactTrainUiLevel(settings.level) === lv.id
-                          : settings.level === lv.id;
+                  const presentation = trainingActivityPresentation(settings.activityId);
+                  const active = presentation.catalogMode === settings.mode && presentation.catalogLevel === lv.id;
                   return (
                   <button
                     key={lv.id}
                     type="button"
                     aria-pressed={active}
                     data-level-active={active ? 'true' : 'false'}
-                    onClick={() => {
-                      if (settings.mode === 'basic') {
-                        setSettings((current) => ({
-                          ...current,
-                          level: lv.id === 5 && isFront3PanelLevel(current.level) ? current.level : lv.id,
-                          relativeCompassEnabled: lv.id === 7,
-                          shapeCompletionEnabled: lv.id === 8,
-                        }));
-                        return;
-                      }
-                      if (settings.mode === 'spatial' && lv.id === 1) {
-                        set('level', isColorSequenceLevel(settings.level) ? settings.level : 1);
-                        return;
-                      }
-                      if (settings.mode === 'spatial' && lv.id === 2) {
-                        set('level', isColorNumberLevel(settings.level) ? settings.level : 4);
-                        return;
-                      }
-                      if (settings.mode === 'spatial' && lv.id === 7) {
-                        set('level', 7);
-                        return;
-                      }
-                      set('level', lv.id);
-                    }}
+                    onClick={() => setSettings(current => {
+                      const chosen = resolveCatalogTrainingSelection(current.mode, lv.id, current);
+                      return {
+                        ...current,
+                        ...chosen.optionDefaults,
+                        level: chosen.level,
+                        activityId: chosen.activityId,
+                        ...(current.mode === 'reactTrain' ? { reactTrainConcurrent: 2 as const } : {}),
+                      };
+                    })}
                     style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${active ? M.accent : 'var(--border)'}`, background: active ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
                   >
                     <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.82rem", color: active ? "#fff" : "var(--text)", background: active ? M.accent : "var(--subtle-bg)", border: active ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>{lvIdx + 1}</div>
@@ -1680,7 +1594,7 @@ function MemoryGameRuntime({
                   </button>
                 )}
               </div>
-              {settings.mode === 'basic' && isModifiedQuadrantLevel(settings.level) && !settings.relativeCompassEnabled && !settings.shapeCompletionEnabled ? (
+              {settings.mode === 'basic' && isModifiedQuadrantLevel(settings.level) && settings.activityId === 'hand-foot' ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>단계</div>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -1690,7 +1604,7 @@ function MemoryGameRuntime({
                         <button
                           key={stage}
                           type="button"
-                          onClick={() => setSettings((current) => ({ ...current, level: modifiedQuadrantLevelFromStage(stage), shapeCompletionEnabled: false }))}
+                          onClick={() => setSettings((current) => ({ ...current, level: modifiedQuadrantLevelFromStage(stage), activityId: 'hand-foot' }))}
                           style={{
                             flex: 1,
                             padding: '0.55rem 0.4rem',
@@ -2302,7 +2216,7 @@ function MemoryGameRuntime({
             )}
             {settings.mode !== 'flow' && (
               <>
-                {(settings.mode === 'basic' && ((settings.level === 7 && settings.relativeCompassEnabled) || (settings.level === 8 && settings.shapeCompletionEnabled))) || (settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9 || reactTrainEngineLevelForUi(settings.level) === 14)) ? null : spatialBasicRandomSpeed ? (
+                {((settings.activityId === 'relative-compass' || settings.activityId === 'shape-completion')) || (settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9 || reactTrainEngineLevelForUi(settings.level) === 14)) ? null : spatialBasicRandomSpeed ? (
                   <div style={S.sec}>
                     {stepNum(stepSpeed, "Signal speed")}
                     <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600 }}>
@@ -2329,14 +2243,14 @@ function MemoryGameRuntime({
                   </div>
                 )}
 
-                {settings.mode === 'basic' && settings.level === 7 && settings.relativeCompassEnabled ? (
+                {settings.activityId === 'relative-compass' ? (
                   <>
                     <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>쉬움은 흰 화살표, 보통은 색상 화살표, 어려움은 대각선이 포함됩니다. 화살표는 한 번에 하나만 나옵니다.</p><div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움', '화살표'], ['normal', '보통', '색상 화살표'], ['hard', '어려움', '대각선']] as const).map(([value, label, sub]) => <button key={value} type="button" onClick={() => set('relativeCompassDifficulty', value)} style={{ flex: 1, padding: '0.55rem 0.75rem', borderRadius: '0.75rem', border: `2px solid ${settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.relativeCompassDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}><span style={{ display: 'block', fontWeight: 800 }}>{label}</span><span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--text-muted)', fontWeight: 800 }}>{sub}</span></button>)}</div></div>
                     <div style={S.sec}>{stepNum(stepSpeed + 1, '시작 위치 확인 · 반응 시간')}<SpeedSelector value={settings.relativeCompassStartSeconds} min={2} max={6} step={1} showPresets={false} onChange={(value) => setSettings((current) => ({ ...current, relativeCompassStartSeconds: value as RelativeCompassSeconds, relativeCompassResponseSeconds: value as RelativeCompassSeconds }))} /></div>
                   </>
                 ) : null}
 
-                {settings.mode === 'basic' && settings.level === 8 && settings.shapeCompletionEnabled ? (
+                {settings.activityId === 'shape-completion' ? (
                   <>
                     <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => set('shapeCompletionDifficulty', value)} style={{ flex: 1, padding: '0.65rem', borderRadius: '0.75rem', border: `2px solid ${settings.shapeCompletionDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.shapeCompletionDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}>{label}</button>)}</div></div>
                     <div style={S.sec}>{stepNum(stepSpeed + 1, '반응 시간')}<SpeedSelector value={settings.shapeCompletionResponseSeconds} min={2} max={6} step={1} showPresets={false} onChange={(value) => set('shapeCompletionResponseSeconds', normalizeShapeCompletionSeconds(value))} /></div>
@@ -2675,9 +2589,9 @@ function MemoryGameRuntime({
         </div>
       );
     }
-    if (settings.level === 4)
+    if (selectedActivity.runtime === 'color-number-memory')
       return runtimeSuspense(<MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
-    if (settings.level === 5)
+    if (selectedActivity.runtime === 'color-number-quiz')
       return runtimeSuspense(<MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
     return runtimeSuspense(
       <MemoryGame
@@ -2701,15 +2615,15 @@ function MemoryGameRuntime({
     const safeReactSpeedSec = settings.kidsSafeMode
       ? Math.min(6, settings.speed * 1.25)
       : settings.speed;
-    const reactEngineLevel = reactTrainEngineLevelForUi(settings.level);
+    const visualRuntime = selectedActivity.runtime;
     const isInstantMemory =
       settings.mode === 'spatial' && isInstantMemoryLevel(settings.level);
     return runtimeSuspense(
       <div ref={visualReactionContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
         <style>{CSS}</style>
-        {settings.mode === 'basic' && settings.level === 8 && settings.shapeCompletionEnabled ? (
+        {settings.activityId === 'shape-completion' ? (
           <ShapeCompletionReactionTraining targetRounds={settings.targetReps} difficulty={settings.shapeCompletionDifficulty} responseSeconds={settings.shapeCompletionResponseSeconds} onExit={stop} onComplete={handleReactTrainComplete} />
-        ) : settings.mode === 'basic' && settings.level === 7 && settings.relativeCompassEnabled ? (
+        ) : settings.activityId === 'relative-compass' ? (
           <RelativeCompassReactionTraining
             targetRounds={settings.targetReps}
             difficulty={settings.relativeCompassDifficulty}
@@ -2723,7 +2637,7 @@ function MemoryGameRuntime({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
-        ) : isInstantMemory || reactEngineLevel === 12 ? (
+        ) : visualRuntime === 'instant-memory' ? (
           <ColorMemoryGridReactionTraining
             roundCount={Math.max(1, settings.targetReps ?? 10)}
             speedLevel={safeReactSpeedLevel}
@@ -2734,7 +2648,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 13 ? (
+        ) : visualRuntime === 'virus' ? (
           <VirusOutbreakReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2748,7 +2662,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 14 ? (
+        ) : visualRuntime === 'shell-tracking' ? (
           <TargetTrackingReactionTraining
             targetRounds={settings.targetReps}
             difficulty={settings.shellTrackingDifficulty}
@@ -2758,7 +2672,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 10 ? (
+        ) : visualRuntime === 'goalkeeper' ? (
           <GoalkeeperReactionTraining
             durationSec={Math.max(1, settings.duration ?? 120)}
             speedSec={safeReactSpeedSec}
@@ -2767,7 +2681,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 9 ? (
+        ) : visualRuntime === 'color-tracker' ? (
           <ColorTrackerReactionTraining
             targetRounds={normalizeColorTrackerRounds(settings.targetReps ?? 5)}
             tier={settings.colorTrackerTier}
@@ -2775,7 +2689,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 8 ? (
+        ) : visualRuntime === 'number-cart' ? (
           <NumberCartReactionTraining
             targetRounds={normalizeNumberCartRounds(settings.targetReps ?? 5)}
             speedLevel={safeReactSpeedLevel}
@@ -2784,7 +2698,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 7 ? (
+        ) : visualRuntime === 'wormhole' ? (
           <WormholeReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2792,7 +2706,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 6 ? (
+        ) : visualRuntime === 'mole' ? (
           <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2802,7 +2716,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 5 ? (
+        ) : visualRuntime === 'camouflage' ? (
           <CamouflageReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2811,7 +2725,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 4 ? (
+        ) : visualRuntime === 'beat-wave' ? (
           <BeatWaveReactionTraining
             effectsEnabled={settings.audioMode !== 'off'}
             durationSec={Math.max(1, settings.duration ?? 60)}
@@ -2820,7 +2734,7 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 1 ? (
+        ) : visualRuntime === 'rush' ? (
           <RushReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2828,16 +2742,16 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : (
+        ) : visualRuntime === 'falling-bricks' || visualRuntime === 'balloon' ? (
           <VisualReactionTraining
-            variant={reactEngineLevel === 2 ? 'flow' : 'flash'}
+            variant={visualRuntime === 'falling-bricks' ? 'flow' : 'flash'}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedSec={safeReactSpeedSec}
-            concurrent={reactEngineLevel === 2 ? 2 : undefined}
+            concurrent={visualRuntime === 'falling-bricks' ? 2 : undefined}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        )}
+        ) : (() => { throw new Error(`SPOMOVE visual runtime has no player: ${settings.activityId}`); })()}
       </div>,
     );
   }
@@ -2861,7 +2775,7 @@ function MemoryGameRuntime({
       if (flowCompleteGuardRef.current) return;
       flowCompleteGuardRef.current = true;
       if (document.fullscreenElement) exitFullscreenSafely();
-      const cfg = { ...settings, mode: 'flow', level: 1 };
+      const cfg = { ...settings };
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
       const flowColorCounts = stats?.colorGateColorCounts ?? null;
       deliverSessionResult(cfg, elapsedMs, flowColorCounts && totalColorStimulusCount(flowColorCounts) > 0 ? flowColorCounts : null);
@@ -2890,7 +2804,7 @@ function MemoryGameRuntime({
   }
 
   if (screen === 'training') {
-    if (settings.mode === 'simon' && settings.level === 4) {
+    if (selectedActivity.runtime === 'simon-camouflage') {
       const rawReactSpeedLevel = mapSpomoveSpeedToReactTrainSpd(settings.speed);
       const safeReactSpeedLevel = settings.kidsSafeMode
         ? Math.max(1, rawReactSpeedLevel - 2)
@@ -2914,7 +2828,7 @@ function MemoryGameRuntime({
         </div>,
       );
     }
-    if (settings.mode === 'simon' && settings.level === 5) {
+    if (selectedActivity.runtime === 'simon-balloon') {
       const safeReactSpeedSec = settings.kidsSafeMode
         ? Math.min(6, settings.speed * 1.25)
         : settings.speed;
@@ -3077,8 +2991,8 @@ function MemoryGameRuntime({
         completionReason={result.completionReason}
         elapsedMs={elapsedMs}
         colorCounts={colorCounts}
-        levelLabel={resultLevelLabel(cfg.mode, cfg.level)}
-        programTitle={autoLaunch?.programTitle ?? (cfg.mode === 'basic' && cfg.level === 8 && cfg.shapeCompletionEnabled ? '맞는 조각 찾아가기' : cfg.mode === 'basic' && cfg.level === 7 && cfg.relativeCompassEnabled ? '내 자리에서 방향 따라가기' : undefined)}
+        levelLabel={resultLevelLabel(cfg.mode, cfg.level, cfg.activityId)}
+        programTitle={autoLaunch?.programTitle ?? (cfg.activityId === 'shape-completion' ? '맞는 조각 찾아가기' : cfg.activityId === 'relative-compass' ? '내 자리에서 방향 따라가기' : undefined)}
         student={student ? { name: student.name, color: student.color } : null}
         onBack={goToList}
         diveActionMove={

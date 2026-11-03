@@ -1,5 +1,7 @@
 'use client';
 
+import type { TrainingActivityId } from '@/app/admin/spomove/training/_player/lib/trainingActivity';
+
 import { ClipboardList, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -24,6 +26,8 @@ export function MasterSessionResult({
   colorCounts = null,
   engineMode,
   engineLevel,
+  activityId,
+  flankerExtremeMode,
   rounds,
   executionVolume,
   diveActionMove = null,
@@ -45,6 +49,8 @@ export function MasterSessionResult({
   colorCounts?: ColorStimulusCounts | null;
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
+  activityId?: TrainingActivityId;
+  flankerExtremeMode?: 'theme' | 'arrow';
   rounds: number;
   cueSeconds: number;
   executionVolume: SpomoveExecutionVolume;
@@ -67,6 +73,8 @@ export function MasterSessionResult({
   const cfg = settingsToTrainingResultConfig({
     mode: engineMode,
     level: engineLevel,
+    activityId,
+    flankerExtremeMode,
     timeMode: executionVolume.kind === 'reps' ? 'reps' : executionVolume.kind === 'interval' ? 'interval' : 'time',
     duration: executionVolume.kind === 'time' || executionVolume.kind === 'stage' ? executionVolume.durationSec : 0,
     targetReps: executionVolume.kind === 'reps' || executionVolume.kind === 'rounds' || executionVolume.kind === 'stage' ? executionVolume.count : rounds,
@@ -80,7 +88,7 @@ export function MasterSessionResult({
       completionReason={completionReason}
       elapsedMs={elapsedMs}
       colorCounts={colorCounts}
-      levelLabel={resultLevelLabel(engineMode, engineLevel)}
+      levelLabel={resultLevelLabel(engineMode, engineLevel, activityId)}
       title={completion.title}
       statusBadge={completion.statusBadge}
       diveActionMove={diveActionMove ? { ...diveActionMove, completed: completionReason === 'natural_complete' } : null}

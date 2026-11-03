@@ -1,5 +1,6 @@
-import { COLORS, MEMORY_ROUNDS, MODES, catalogBasicUiLevel, catalogSpatialUiLevel, isFront3PanelLevel, isModifiedQuadrantLevel, modifiedQuadrantStage } from '../constants';
-import { GUIDE_BLOCKS } from '../trainingGuideContent';
+import { resolveTrainingSelection, type TrainingActivityId } from './trainingActivity';
+import { trainingActivityGuide } from './trainingActivityGuide';
+import { COLORS, MEMORY_ROUNDS, MODES } from '../constants';
 import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
 
 export function resolveTrainingCompletionReason(result: {
@@ -53,6 +54,8 @@ export function addColorIdsToCounts(counts: ColorStimulusCounts, colorIds: strin
 export type TrainingResultConfig = {
   mode: string;
   level: number;
+  activityId?: TrainingActivityId;
+  flankerExtremeMode?: 'theme' | 'arrow';
   timeMode: string;
   duration: number;
   targetReps: number;
@@ -94,16 +97,12 @@ export function formatElapsedSeconds(elapsedMs: number): string {
   return rem > 0 ? `${min}분 ${rem}초` : `${min}분`;
 }
 
-export function getTrainingEffectCopy(mode: string, level: number): { tag: string; summary: string } {
-  const mo = MODES[mode];
-  const levelMeta = mo?.levels.find((l) => l.id === level);
-  const guide = GUIDE_BLOCKS.find((b) => b.id === mode);
-  const phase = guide?.phases.find((p) => p.name === levelMeta?.name);
-
-  return {
-    tag: mo?.tag ?? guide?.tag ?? 'SPOMOVE 훈련',
-    summary: phase?.goal ?? levelMeta?.desc ?? mo?.desc ?? '색·방향·기억·반응을 연결하는 신체 인지 훈련을 진행했습니다.',
-  };
+export function getTrainingEffectCopy(mode: string, level: number, activityId?: TrainingActivityId): { tag: string; summary: string } {
+  const selection = resolveTrainingSelection(mode, level, { activityId });
+  const mo = MODES[selection.catalogMode ?? selection.mode];
+  const phase = trainingActivityGuide(mode, level, { activityId });
+  const levelMeta = mo?.levels.find(item => item.id === selection.catalogLevel);
+  return { tag: mo?.tag ?? 'SPOMOVE', summary: phase?.goal ?? levelMeta?.desc ?? selection.title };
 }
 
 export function totalColorStimulusCount(counts: ColorStimulusCounts): number {
@@ -115,33 +114,17 @@ export function colorMeta(id: PadColorId) {
 }
 
 /** 카탈로그 배열 순서로 1번·2번… (엔진 id와 무관) */
-export function resultLevelLabel(mode: string | undefined, level: number): string {
-  if (!mode) return `${level}번`;
-  if (mode === 'basic') {
-    if (isModifiedQuadrantLevel(level)) {
-      return `3번 · ${modifiedQuadrantStage(level)}단계`;
-    }
-    if (isFront3PanelLevel(level)) {
-      return level === 6 ? '6번 · 랜덤분할' : '5번 · 3분할';
-    }
-    const catalogId = catalogBasicUiLevel(level);
-    const idx = MODES.basic?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
-    if (idx >= 0) return `${idx + 1}번`;
-  }
-  if (mode === 'spatial') {
-    const catalogId = catalogSpatialUiLevel(level);
-    const idx = MODES.spatial?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
-    if (idx >= 0) return `${idx + 1}번`;
-  }
-  const m = MODES[mode];
-  const idx = m?.levels.findIndex((lv) => lv.id === level) ?? -1;
-  if (idx >= 0) return `${idx + 1}번`;
-  return `${level}번`;
+export function resultLevelLabel(mode: string | undefined, level: number, activityId?: TrainingActivityId): string {
+  if (!mode) return '';
+  const selection = resolveTrainingSelection(mode, level, { activityId });
+  return selection.number ? `${selection.number}\uBC88` : selection.title;
 }
 
 export function settingsToTrainingResultConfig(cfg: {
   mode: string;
   level: number;
+  activityId?: TrainingActivityId;
+  flankerExtremeMode?: 'theme' | 'arrow';
   timeMode: string;
   duration: number;
   targetReps: number;
@@ -153,6 +136,8 @@ export function settingsToTrainingResultConfig(cfg: {
   return {
     mode: cfg.mode,
     level: cfg.level,
+    activityId: cfg.activityId,
+    flankerExtremeMode: cfg.flankerExtremeMode,
     timeMode: cfg.timeMode,
     duration: cfg.duration,
     targetReps: cfg.targetReps,

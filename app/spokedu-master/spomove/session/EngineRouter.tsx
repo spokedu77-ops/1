@@ -12,7 +12,7 @@ import {
   normalizeColorTrackerRounds,
   normalizeNumberCartRounds,
 } from '@/app/admin/spomove/training/_player/lib/roundNormalization';
-import { resolveReactTrainUiLevel } from '@/app/admin/spomove/training/_player/constants';
+import { resolveTrainingSelection, type TrainingActivityId } from '@/app/admin/spomove/training/_player/lib/trainingActivity';
 import { StartCountdownGate } from '@/app/admin/spomove/training/_player/lib/reactTrainStartCountdown';
 import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
@@ -113,52 +113,37 @@ export function preloadSpomoveEngine(
   mode: OfficialSpomoveEngineMode,
   level: number,
   usesUnityDiveTheme = false,
+  activityId?: TrainingActivityId,
 ): Promise<unknown> {
-  if (mode === 'simon' && level === 4) {
-    return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
-  }
-  if (mode === 'simon' && level === 5) {
-    return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
-  }
-  if (mode === 'flow') {
-    return Promise.all([
+  const { runtime } = resolveTrainingSelection(mode, level, { activityId });
+  switch (runtime) {
+    case 'simon-camouflage': case 'camouflage': return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
+    case 'simon-balloon': case 'falling-bricks': case 'balloon': return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
+    case 'flow': return Promise.all([
       import('@/app/admin/spomove/training/_player/MemoryGameApp'),
-      usesUnityDiveTheme
-        ? import('@/app/admin/spomove/training/_player/flow-lab/UnityDiveThemeClient')
-        : import('@/app/admin/spomove/training/_player/flow-lab/FlowGameClient'),
+      usesUnityDiveTheme ? import('@/app/admin/spomove/training/_player/flow-lab/UnityDiveThemeClient') : import('@/app/admin/spomove/training/_player/flow-lab/FlowGameClient'),
     ]);
+    case 'signals': case 'relative-compass': case 'shape-completion': case 'virus': case 'shell-tracking':
+      return import('@/app/admin/spomove/training/_player/MemoryGameApp');
+    case 'rush': return import('@/app/admin/spomove/training/_player/components/RushReactionTraining');
+    case 'beat-wave': return import('@/app/admin/spomove/training/_player/components/BeatWaveReactionTraining');
+    case 'mole': return import('@/app/admin/spomove/training/_player/components/RobloxMoleReactionTraining');
+    case 'wormhole': return import('@/app/admin/spomove/training/_player/components/WormholeReactionTraining');
+    case 'number-cart': return import('@/app/admin/spomove/training/_player/components/NumberCartReactionTraining');
+    case 'color-tracker': return import('@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining');
+    case 'goalkeeper': return import('@/app/admin/spomove/training/_player/components/GoalkeeperReactionTraining');
+    case 'instant-memory': return import('@/app/admin/spomove/training/_player/components/ColorMemoryGridReactionTraining');
+    case 'color-number-memory': return import('@/app/admin/spomove/training/_player/components/MemoryGameLevel4');
+    case 'color-number-quiz': return import('@/app/admin/spomove/training/_player/components/MemoryGameLevel5');
+    case 'sequence-memory': return import('@/app/admin/spomove/training/_player/components/MemoryGame');
   }
-  if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
-    return import('@/app/admin/spomove/training/_player/MemoryGameApp');
-  }
-  if (mode === 'reactTrain') {
-    const engineLevel = resolveReactTrainUiLevel(level).engineLevel;
-    if (engineLevel === 1) return import('@/app/admin/spomove/training/_player/components/RushReactionTraining');
-    if (engineLevel === 2 || engineLevel === 3) {
-      return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
-    }
-    if (engineLevel === 4) return import('@/app/admin/spomove/training/_player/components/BeatWaveReactionTraining');
-    if (engineLevel === 5) return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
-    if (engineLevel === 6) return import('@/app/admin/spomove/training/_player/components/RobloxMoleReactionTraining');
-    if (engineLevel === 7) return import('@/app/admin/spomove/training/_player/components/WormholeReactionTraining');
-    if (engineLevel === 8) return import('@/app/admin/spomove/training/_player/components/NumberCartReactionTraining');
-    if (engineLevel === 9) return import('@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining');
-    if (engineLevel === 10) return import('@/app/admin/spomove/training/_player/components/GoalkeeperReactionTraining');
-    return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
-  }
-  if (mode === 'spatial') {
-    if (level === 7) return import('@/app/admin/spomove/training/_player/components/ColorMemoryGridReactionTraining');
-    if (level === 5) return import('@/app/admin/spomove/training/_player/components/MemoryGameLevel5');
-    if (level === 4) return import('@/app/admin/spomove/training/_player/components/MemoryGameLevel4');
-    return import('@/app/admin/spomove/training/_player/components/MemoryGame');
-  }
-  return Promise.resolve();
 }
 
 export type EngineCompletePayload = {
   completionReason: SpomoveCompletionReason;
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
+  activityId?: TrainingActivityId;
   elapsedMs?: number;
   colorCounts?: ColorStimulusCounts | null;
   stims?: number;
@@ -167,6 +152,7 @@ export type EngineCompletePayload = {
 
 type Props = {
   runtimeState: 'running' | 'paused';
+  activityId?: TrainingActivityId;
   mode: OfficialSpomoveEngineMode;
   level: number;
   durationSec?: number;
@@ -247,6 +233,7 @@ function mapReactSpeedLevel(speedSec: number): number {
 
 function EngineRuntime({
   runtimeState,
+  activityId,
   mode,
   level,
   durationSec,
@@ -293,6 +280,8 @@ function EngineRuntime({
   onComplete,
   onExit,
 }: Props) {
+  const selection = resolveTrainingSelection(mode, level, { activityId });
+  const { runtime } = selection;
   useEffect(() => {
     setSpomoveRuntimePaused(runtimeState === 'paused');
   }, [runtimeState]);
@@ -302,12 +291,13 @@ function EngineRuntime({
         completionReason: stats.completionReason ?? (stats.stoppedEarly ? 'stopped_early' : 'natural_complete'),
         engineMode: mode,
         engineLevel: level,
+        activityId: selection.activityId,
         stims: stats.stims,
         maxCombo: stats.maxCombo,
         colorCounts: laneCountToColorStimulusCounts(stats.laneCount),
       });
     },
-    [level, mode, onComplete],
+    [level, mode, onComplete, selection.activityId],
   );
 
   const handleMemoryComplete = useCallback(
@@ -316,14 +306,15 @@ function EngineRuntime({
         completionReason: result.completionReason ?? (result.stoppedEarly ? 'stopped_early' : 'natural_complete'),
         engineMode: mode,
         engineLevel: level,
+        activityId: selection.activityId,
         elapsedMs: result.elapsedMs,
         colorCounts: result.colorCounts,
       });
     },
-    [level, mode, onComplete],
+    [level, mode, onComplete, selection.activityId],
   );
 
-  if (mode === 'simon' && level === 4) {
+  if (runtime === 'simon-camouflage') {
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 5);
     const sp = speedSec ?? 5;
     const reactSpeedLevel = mapReactSpeedLevel(sp);
@@ -347,7 +338,7 @@ function EngineRuntime({
     );
   }
 
-  if (mode === 'simon' && level === 5) {
+  if (runtime === 'simon-balloon') {
     const sp = Math.min(6, Math.max(1, speedSec ?? 3));
     const dur = (rounds ?? Math.max(1, Math.round((durationSec ?? 60) / sp))) * sp;
     return (
@@ -365,8 +356,8 @@ function EngineRuntime({
     );
   }
 
-  if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
-    const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 10) : Math.max(level, 1);
+  if (runtime === 'signals' || runtime === 'relative-compass' || runtime === 'shape-completion' || runtime === 'virus' || runtime === 'shell-tracking') {
+    const safeLevel = level;
     const effectiveSimonPole: 1 | 2 =
       mode === 'simon' && (safeLevel === 1 || safeLevel === 2 || safeLevel === 3) && simonPoleCount === 2 ? 2 : 1;
     return (
@@ -375,6 +366,7 @@ function EngineRuntime({
           initialMode={mode}
           initialLevel={safeLevel}
           autoLaunch={{
+            activityId: selection.activityId,
             speed: speedSec ?? 3,
             timeMode: 'reps',
             targetReps: rounds ?? 20,
@@ -425,9 +417,8 @@ function EngineRuntime({
     );
   }
 
-  if (mode === 'reactTrain') {
-    const resolved = resolveReactTrainUiLevel(level);
-    const engineLevel = resolved.engineLevel;
+  if (selection.mode === 'reactTrain') {
+    const resolved = selection.optionDefaults;
     const reactSpeedLevel = mapReactSpeedLevel(speedSec ?? 3);
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
     const sp = speedSec ?? 3;
@@ -439,7 +430,7 @@ function EngineRuntime({
     const effectiveConcurrent: 1 | 2 | 3 =
       reactTrainConcurrent === 1 || reactTrainConcurrent === 3 ? reactTrainConcurrent : 2;
 
-    if (engineLevel === 1) {
+    if (runtime === 'rush') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <RushReactionTraining
@@ -453,7 +444,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 2) {
+    if (runtime === 'falling-bricks') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <VisualReactionTraining
@@ -468,7 +459,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 3) {
+    if (runtime === 'balloon') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <VisualReactionTraining
@@ -482,7 +473,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 4) {
+    if (runtime === 'beat-wave') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <BeatWaveReactionTraining
@@ -497,7 +488,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 5) {
+    if (runtime === 'camouflage') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <CamouflageReactionTraining
@@ -512,7 +503,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 6) {
+    if (runtime === 'mole') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <RobloxMoleReactionTraining
@@ -528,7 +519,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 7) {
+    if (runtime === 'wormhole') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <WormholeReactionTraining
@@ -541,7 +532,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 8) {
+    if (runtime === 'number-cart') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <NumberCartReactionTraining
@@ -555,7 +546,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 9) {
+    if (runtime === 'color-tracker') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <ColorTrackerReactionTraining
@@ -568,7 +559,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (engineLevel === 10) {
+    if (runtime === 'goalkeeper') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <GoalkeeperReactionTraining
@@ -583,26 +574,14 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    // 알 수 없는 reactTrain level → FLOW(2) 폴백
-    return (
-      <Suspense fallback={<LoadingOverlay />}>
-        <VisualReactionTraining
-          variant="flow"
-          concurrent={2}
-          durationSec={dur}
-          speedSec={sp}
-          onExit={onExit}
-          onComplete={handleReactTrainComplete}
-        />
-      </Suspense>
-    );
+    throw new Error(`SPOMOVE runtime has no player: ${selection.activityId}`);
   }
 
-  if (mode === 'spatial') {
+  if (selection.mode === 'spatial') {
     const handleSpatialComplete = () => {
-      onComplete({ completionReason: 'natural_complete', engineMode: mode, engineLevel: level, colorCounts: null });
+      onComplete({ completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null });
     };
-    if (level === 7) {
+    if (runtime === 'instant-memory') {
       const sp = speedSec ?? 3;
       return (
         <Suspense fallback={<LoadingOverlay />}>
@@ -619,8 +598,8 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    const safeLevel = Math.min(Math.max(level, 1), 6);
-    if (safeLevel === 5) {
+    const safeLevel = selection.level;
+    if (runtime === 'color-number-quiz') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <StartCountdownGate>
@@ -635,7 +614,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (safeLevel === 4) {
+    if (runtime === 'color-number-memory') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <StartCountdownGate>
@@ -667,7 +646,7 @@ function EngineRuntime({
     );
   }
 
-  if (mode === 'flow') {
+  if (runtime === 'flow') {
     const resolvedFlowFeatures =
       level === 2 && !(flowFeatures ?? []).includes('colorGate')
         ? [...(flowFeatures ?? []), 'colorGate']
@@ -679,6 +658,7 @@ function EngineRuntime({
           initialMode="flow"
           initialLevel={level}
           autoLaunch={{
+            activityId: selection.activityId,
             speed: speedSec ?? 3,
             timeMode: 'reps',
             duration: 60,
@@ -705,7 +685,7 @@ function EngineRuntime({
     );
   }
 
-  return null;
+  throw new Error(`SPOMOVE runtime has no player: ${selection.activityId}`);
 }
 
 export function EngineRouter(runtimeProps: Props) {

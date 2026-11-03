@@ -1,5 +1,6 @@
+import { resolveTrainingSelection } from './trainingActivity';
+import { trainingActivityGuide } from './trainingActivityGuide';
 import {
-  catalogBasicUiLevel,
   isFront3PanelLevel,
   isModifiedQuadrantLevel,
   modifiedQuadrantStage,
@@ -79,44 +80,7 @@ function applyMasterCompletionTruth(
 }
 
 function findGuidePhase(mode: string, level: number): GuidePhase | undefined {
-  const guide = GUIDE_BLOCKS.find((b) => b.id === mode);
-  if (!guide?.phases.length) return undefined;
-
-  if (mode === 'flanker') return guide.phases[0];
-
-  const mo = MODES[mode];
-  let displayNum = level;
-  if (mode === 'basic') {
-    // 변형사분할 7~10 → 카탈로그 3번, 전면3패널 5·6 → 카탈로그 6번
-    const catalogId = catalogBasicUiLevel(level);
-    const idx = mo?.levels.findIndex((l) => l.id === catalogId) ?? -1;
-    if (idx >= 0) displayNum = idx + 1;
-  } else if (mode === 'reactTrain') {
-    const idx = mo?.levels.findIndex((l) => l.id === level) ?? -1;
-    if (idx >= 0) displayNum = idx + 1;
-  }
-
-  const numStr = `${displayNum}번`;
-  const exact = guide.phases.find((p) => p.num === numStr);
-  if (exact) return exact;
-
-  // 전용 Target Tracking은 기존 reactTrain 가이드의 첫 단계(풍선)로 폴백하지 않는다.
-  if (mode === 'reactTrain' && level === 14) return undefined;
-  if (mode === 'basic' && level === 7) return undefined;
-
-  const prefix = guide.phases.find((p) => p.num.startsWith(String(displayNum)));
-  if (prefix) return prefix;
-
-  const range = guide.phases.find((p) => {
-    const m = p.num.match(/^(\d+)~(\d+)번$/);
-    if (!m) return false;
-    const lo = Number(m[1]);
-    const hi = Number(m[2]);
-    return displayNum >= lo && displayNum <= hi;
-  });
-  if (range) return range;
-
-  return guide.phases[0];
+  return trainingActivityGuide(mode, level);
 }
 
 function firstSentence(text: string): string {
@@ -340,30 +304,11 @@ function buildPraise(mode: string, programTitle?: string): { praise: string; pra
   };
 }
 
-function buildPhaseName(mode: string, level: number, programTitle?: string): string {
-  const phase = findGuidePhase(mode, level);
-  if (mode === 'flanker') {
-    if (level === 5 || (programTitle?.includes('화살표') ?? false)) return '가운데 화살표 · 방향 선택';
-    if (level === 3) return '크기 방해 · 가운데 색 선택';
-    if (level === 4) return '겹친 원 · 안쪽 색 선택';
-    return '주변 방해 · 가운데 색 선택';
-  }
-  if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
-    return `변형 사분할 자극 · ${modifiedQuadrantStage(level)}단계`;
-  }
-  if (mode === 'basic' && isFront3PanelLevel(level)) {
-    return level === 6 ? '랜덤분할 자극 · 확률 분할' : '3분할 자극 · 서로 다른 신호';
-  }
-  if (phase?.name) return phase.name;
-  const mo = MODES[mode];
-  const levelMeta = mo?.levels.find((l) => l.id === level);
-  return levelMeta?.name ?? '';
-}
 
-function buildProgramSummary(mode: string, level: number, programTitle?: string): string {
+function buildProgramSummary(mode: string, level: number, programTitle?: string, flankerExtremeMode?: 'theme' | 'arrow'): string {
   const mo = MODES[mode];
   if (mode === 'flanker') {
-    if (level === 5 || (programTitle?.includes('화살표') ?? false)) {
+    if (resolveTrainingSelection(mode, level).activityId === 'flanker-arrow' || (level === 3 && flankerExtremeMode === 'arrow')) {
       return '주변 화살표에 흔들리지 않고 가운데 화살표의 방향을 보고 이동하는 활동입니다.';
     }
     if (level === 3) {
@@ -535,7 +480,8 @@ export function resolveTrainingResultRichContent(
   const mo = MODES[cfg.mode];
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
   const { praise, praiseSub } = buildPraise(cfg.mode, options?.programTitle);
-  const phaseName = buildPhaseName(cfg.mode, cfg.level, options?.programTitle);
+  const selection = resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId });
+  const phaseName = selection.title;
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
   const volumeLabel = options?.volumeLabel ?? describeSessionVolume(cfg);
   const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal, elapsedMs, options?.programTitle);
@@ -581,7 +527,7 @@ export function resolveTrainingResultRichContent(
     }, options?.completionReason);
   }
   const shapeCompletionTitle = '맞는 조각 찾아가기';
-  if (cfg.mode === 'basic' && cfg.level === 8 && options?.programTitle === shapeCompletionTitle) {
+  if (cfg.activityId === 'shape-completion') {
     const shapePhaseName = '필요한 조각 추론과 공간 선택';
     const shapeFeel = pickResultCopy([
       '형태를 끝까지 완성했어요',
@@ -623,9 +569,7 @@ export function resolveTrainingResultRichContent(
   }
   const relativeCompassTitle = '내 자리에서 방향 따라가기';
   const isRelativeCompass =
-    cfg.mode === 'basic' &&
-    cfg.level === 7 &&
-    options?.programTitle === relativeCompassTitle;
+    cfg.activityId === 'relative-compass';
 
   if (isRelativeCompass) {
     const relativePhaseName = '내 자리에서 방향 따라가기';
@@ -679,7 +623,7 @@ export function resolveTrainingResultRichContent(
     colorDominantLine: colorCounts && colorTotal > 0 ? buildColorDominantLine(colorCounts, colorTotal, cfg.mode) : null,
     programTitle: options?.programTitle ?? (phaseName ? `${mo?.title ?? 'SPOMOVE'} · ${phaseName}` : mo?.title ?? 'SPOMOVE'),
     phaseName,
-    programSummary: buildProgramSummary(cfg.mode, cfg.level, options?.programTitle),
+    programSummary: buildProgramSummary(cfg.mode, cfg.level, options?.programTitle, cfg.flankerExtremeMode),
     benefitTags: defaultBenefitTags(cfg.mode),
     benefitLine: buildBenefitLine(cfg.mode, cfg.level),
     coachTip: buildCoachTip(cfg.mode, cfg.level),

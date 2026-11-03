@@ -26,7 +26,7 @@ import { SignalDisplay } from './SignalDisplay';
 
 export type { RelativeCompassDifficulty, RelativeCompassSeconds } from '../lib/relativeCompass';
 
-type Phase = 'COUNTDOWN' | 'START_POSITION' | 'RESPONSE';
+type Phase = 'COUNTDOWN' | 'START_POSITION' | 'RESPONSE' | 'ANSWER';
 
 type Props = {
   targetRounds: number;
@@ -116,7 +116,12 @@ export function RelativeCompassReactionTraining({
       animateProgress(responseSeconds * 1000, token);
       if (!(await wait(responseSeconds * 1000, token, tokenRef, timersRef.current))) return;
       completedRef.current = cueRound;
-      if (cueRound >= totalRounds) finish();
+      if (cueRound >= totalRounds) {
+        setPhase('ANSWER');
+        show(buildStartSignal(target));
+        animateProgress(startSeconds * 1000, token);
+        if (await wait(startSeconds * 1000, token, tokenRef, timersRef.current)) finish();
+      }
       else void runCue(cueRound + 1, target);
     };
     const begin = async () => {
@@ -156,6 +161,11 @@ export function RelativeCompassReactionTraining({
       <div style={{ position: 'absolute', inset: 0 }}>
         {phase === 'COUNTDOWN' ? null : <SignalDisplay signal={signal} animKey={signalKey} />}
       </div>
+      {phase === 'ANSWER' ? (
+        <div style={{ position: 'absolute', bottom: '12%', left: 0, right: 0, textAlign: 'center', zIndex: 20, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.8)', fontSize: 'clamp(24px, 5vw, 48px)', fontWeight: 800 }}>
+          마지막 정답 · {String((signal?.content as { name?: string } | undefined)?.name ?? '')}
+        </div>
+      ) : null}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 5, background: 'rgba(255,255,255,0.1)', zIndex: 20 }}>
         <div style={{ height: '100%', width: `${progress * 100}%`, background: dark ? '#F97316' : 'rgba(0,0,0,0.3)', transition: 'width 0.05s linear', borderRadius: '0 2px 2px 0' }} />
       </div>

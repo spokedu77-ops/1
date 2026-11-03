@@ -1,3 +1,4 @@
+import { resolveTrainingActivity } from '@/app/admin/spomove/training/_player/lib/trainingActivity';
 import type { TrainingResultConfig } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import { standardSpomoveDurationSec, type OfficialSpomovePreset } from '../officialSpomovePresets';
 import type { MovementChangeEvent } from './sessionMovementLifecycle';
@@ -65,10 +66,12 @@ export function resolveSpomoveCompletionPresentation(
 
 export function officialPresetToTrainingResultConfig(preset: OfficialSpomovePreset): TrainingResultConfig {
   const { mode, level } = preset.engine;
+  const identity = { activityId: resolveTrainingActivity(mode, level, { activityId: preset.activityId }), flankerExtremeMode: preset.engine.flankerExtremeMode };
 
   if (mode === 'reactTrain') {
     if (level === 8 || level === 9) {
       return {
+        ...identity,
         mode,
         level,
         timeMode: 'reps',
@@ -77,6 +80,7 @@ export function officialPresetToTrainingResultConfig(preset: OfficialSpomovePres
       };
     }
     return {
+      ...identity,
       mode,
       level,
       timeMode: 'time',
@@ -87,6 +91,7 @@ export function officialPresetToTrainingResultConfig(preset: OfficialSpomovePres
 
   if (mode === 'flow') {
     return {
+      ...identity,
       mode,
       level,
       timeMode: 'time',
@@ -97,6 +102,7 @@ export function officialPresetToTrainingResultConfig(preset: OfficialSpomovePres
   }
 
   return {
+    ...identity,
     mode,
     level,
     timeMode: 'reps',

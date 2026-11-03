@@ -1,3 +1,4 @@
+import { resolveTrainingSelection } from '@/app/admin/spomove/training/_player/lib/trainingActivity';
 import {
   getOfficialSpomovePresetGuide,
   SPOMOVE_BODY_FUNCTION_LABELS,
@@ -10,8 +11,6 @@ import {
 import type { SpomoveFocusTag, SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
 import {
   MODES,
-  catalogBasicUiLevel,
-  catalogSpatialUiLevel,
 } from '@/app/admin/spomove/training/_player/constants';
 import {
   resolveSpomoveGuideContentState,
@@ -275,14 +274,9 @@ function displayModeId(preset: OfficialSpomovePreset): keyof typeof MODES | null
   return null;
 }
 
-function catalogLevelId(preset: OfficialSpomovePreset, modeId: keyof typeof MODES): number {
-  // visual-reaction hand-foot: Admin catalog id 201 (basic L7 + handFootDifficulty)
-  if (preset.engine.handFootDifficulty) return 201;
-  if (modeId === 'basic') return catalogBasicUiLevel(preset.engine.level);
-  if (modeId === 'spatial') return catalogSpatialUiLevel(preset.engine.level);
-  if (modeId === 'flanker' && preset.engine.level === 6) return 2;
-  if (modeId === 'flow') return preset.engine.flowFeatures?.includes('colorGate') ? 2 : 1;
-  return preset.engine.level;
+function catalogLevelId(preset: OfficialSpomovePreset, modeId: keyof typeof MODES): number | undefined {
+  const selection = resolveTrainingSelection(preset.engine.mode, preset.engine.level, { activityId: preset.activityId });
+  return selection.catalogMode === modeId ? selection.catalogLevel : undefined;
 }
 
 function cleanDisplayTitle(value: string): string {

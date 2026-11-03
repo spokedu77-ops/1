@@ -115,8 +115,8 @@ describe('SPOMOVE 2C simon camouflage placement candidates', () => {
       'utf8',
     );
     expect(router).toContain('resolveSimonL4CamouflagePlacementMode');
-    expect(router).toMatch(/mode === 'simon' && level === 4/);
-    expect(router).not.toMatch(/if \(mode === 'simon' && level === 4\)[\s\S]{0,400}placementMode="variant"/);
+    expect(router).toContain("runtime === 'simon-camouflage'");
+    expect(router).not.toMatch(/if \(runtime === 'simon-camouflage'\)[\s\S]{0,400}placementMode="variant"/);
   });
 
   it('8 — Public 2개 활동은 가장자리 자극 2개로 고정', () => {
