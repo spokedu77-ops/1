@@ -13,12 +13,7 @@ import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
 
 import {
   MODES,
-  SPOMOVE_AXIS_META,
-  SPOMOVE_AXIS_ORDER,
-  SPOMOVE_BOTTOM_CATALOG_SLOT_IDS,
-  SPOMOVE_CATALOG_SLOT_IDS,
   reactTrainEngineLevelForUi,
-  resolveReactTrainUiLevel,
   isModifiedQuadrantLevel,
   isFront3PanelLevel,
   isColorSequenceLevel,
@@ -29,13 +24,12 @@ import {
   colorSequenceOption,
   colorSequenceLevelFromOption,
   type ColorSequenceOption,
-  type SpomoveAxis,
 } from './_player/constants';
 import { trainingActivityGuide } from './_player/lib/trainingActivityGuide';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { useViewportScrollLock } from './_player/lib/lockViewportScroll';
-import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
+import { TrainingDashboard } from './TrainingDashboard';
 import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
@@ -91,29 +85,6 @@ const T = {
 
 type TabCode = 'ALL' | 'response' | 'attention' | 'executive';
 
-
-const TABS: { code: TabCode; label: string; sub: string }[] = [
-  { code: 'ALL', label: '전체', sub: '6개 핵심 프로그램 전체' },
-  ...SPOMOVE_AXIS_ORDER.map((axis) => ({
-    code: axis as TabCode,
-    label: SPOMOVE_AXIS_META[axis].title,
-    sub: SPOMOVE_AXIS_META[axis].tabSub,
-  })),
-];
-
-const AXIS_GROUPS: ReadonlyArray<{
-  axisCode: SpomoveAxis;
-  title: string;
-  enTitle: string;
-  salesCopy: string;
-  desc: string;
-}> = SPOMOVE_AXIS_ORDER.map((axisCode) => ({
-  axisCode,
-  title: SPOMOVE_AXIS_META[axisCode].title,
-  enTitle: SPOMOVE_AXIS_META[axisCode].enTitle,
-  salesCopy: SPOMOVE_AXIS_META[axisCode].salesCopy,
-  desc: SPOMOVE_AXIS_META[axisCode].desc,
-}));
 
 type TopTab = 'training' | 'teacher' | 'app';
 const TEACHER_SPOMOVE_URL = '/teacher/spomove';
@@ -746,146 +717,6 @@ function AppManagementTab() {
         ))}
       </section>
     </main>
-  );
-}
-
-function CatalogModeCard({
-  modeId,
-  onPick,
-}: {
-  modeId: string;
-  onPick: (modeId: string) => void;
-}) {
-  const m = MODES[modeId];
-  if (!m || m.isHidden) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onPick(modeId)}
-      className="spmt-card"
-      style={{
-        position: 'relative',
-        border: `1px solid ${T.border}`,
-        borderRadius: 18,
-        background: T.card,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 240,
-        cursor: 'pointer',
-        textAlign: 'left',
-        fontFamily: 'inherit',
-        padding: 0,
-        boxShadow: '0 6px 20px rgba(0,0,0,0.28)',
-        transform: 'translateY(0px)',
-        transition: 'transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
-      }}>
-      <div aria-hidden style={{
-        position: 'absolute',
-        top: 0, left: 0, right: 0,
-        height: 3,
-        background: m.accent,
-        borderRadius: '18px 18px 0 0',
-      }} />
-      <div style={{ padding: '18px 18px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-          <span
-            aria-hidden
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: `${m.accent}18`,
-              border: `1px solid ${m.accent}33`,
-              fontSize: 20,
-              flexShrink: 0,
-            }}
-          >
-            {m.icon}
-          </span>
-          {m.axisTitle ? (
-            <span style={{
-              padding: '3px 9px',
-              borderRadius: 999,
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-              background: `${m.accent}18`,
-              color: m.accent,
-              border: `1px solid ${m.accent}30`,
-              flexShrink: 0,
-              whiteSpace: 'nowrap',
-            }}>
-              {m.axisTitle}
-            </span>
-          ) : null}
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <div className="spmt-title" style={{ fontWeight: 950, color: T.text, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all' }}>
-            {m.title}
-          </div>
-          <div style={{ marginTop: 3, fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: '0.05em' }}>
-            {m.en}
-          </div>
-        </div>
-        <p className="spmt-desc" style={{ margin: '10px 0 0', color: T.textDim, lineHeight: 1.62, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {m.desc}
-        </p>
-      </div>
-
-      <div style={{ marginTop: 'auto', padding: '0 18px 18px' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '10px 16px',
-          borderRadius: 12,
-          border: `1px solid ${m.accent}40`,
-          background: `${m.accent}12`,
-          color: m.accent,
-          fontSize: 12,
-          fontWeight: 900,
-          letterSpacing: '0.04em',
-        }}>
-          설정으로 →
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function CatalogBottomPrograms({ onPick }: { onPick: (modeId: string) => void }) {
-  const ids = SPOMOVE_BOTTOM_CATALOG_SLOT_IDS.filter((id) => {
-    const m = MODES[id];
-    return m && !m.isHidden;
-  });
-  if (ids.length === 0) return null;
-
-  const accent = MODES[ids[0]]?.accent ?? '#06B6D4';
-
-  return (
-    <section style={{ marginTop: 48, paddingTop: 32, borderTop: `1px solid ${T.border}` }}>
-      <div style={{ marginBottom: 16, paddingLeft: 14, borderLeft: `3px solid ${accent}` }}>
-        <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: accent, letterSpacing: '0.2em' }}>
-          IMMERSION · DIVE
-        </p>
-        <h2 style={{ margin: '4px 0 4px', fontSize: 20, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
-          3D 몰입 프로그램
-        </h2>
-        <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.55 }}>
-          4색 패드 훈련과 별도로, 화면 안에서 달리고 동작하는 몰입형 DIVE MODE입니다.
-        </p>
-      </div>
-      <div className="spmt-grid">
-        {ids.map((modeId) => (
-          <CatalogModeCard key={modeId} modeId={modeId} onPick={onPick} />
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -3249,29 +3080,6 @@ function SpomoveTrainingPageContent() {
     [router, searchParams],
   );
 
-  const modeIdsByTab = useMemo(() => {
-    const ids = SPOMOVE_CATALOG_SLOT_IDS.filter((id) => {
-      const m = MODES[id];
-      return m && !m.isHidden;
-    });
-    const byAxis = new Map<TabCode, string[]>();
-    for (const tab of TABS) byAxis.set(tab.code, []);
-    for (const id of ids) {
-      const m = MODES[id];
-      if (!m) continue;
-      byAxis.get('ALL')!.push(id);
-      const axis = m.axis as TabCode | undefined;
-      if (axis && byAxis.has(axis)) byAxis.get(axis)!.push(id);
-    }
-    return byAxis;
-  }, []);
-
-  const visibleModeIds = useMemo(() => {
-    const list = modeIdsByTab.get(activeTab) ?? [];
-    const set = new Set(list);
-    return SPOMOVE_CATALOG_SLOT_IDS.filter((id) => set.has(id));
-  }, [activeTab, modeIdsByTab]);
-
   const handlePick = useCallback((modeId: string) => {
     setPhase({ tag: 'settings', modeId });
   }, []);
@@ -3326,246 +3134,14 @@ function SpomoveTrainingPageContent() {
         />
       )}
 
-      <div style={{ background: T.bg, minHeight: '100vh', paddingBottom: 80 }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '14px 24px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
-            {([
-              { id: 'training' as const, label: '1. Training' },
-              { id: 'teacher' as const, label: '2. teacher' },
-              { id: 'app' as const, label: '3. 앱 관리' },
-            ]).map((t) => {
-              const active = topTab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => switchTopTab(t.id)}
-                  style={{
-                    borderRadius: 12,
-                    border: `1px solid ${active ? 'rgba(249,115,22,0.45)' : T.border}`,
-                    background: active ? 'rgba(249,115,22,0.14)' : 'rgba(255,255,255,0.03)',
-                    color: active ? '#F97316' : T.textDim,
-                    fontWeight: active ? 900 : 700,
-                    fontSize: 14,
-                    letterSpacing: '0.02em',
-                    padding: '10px 12px',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {topTab === 'training' ? (
-          <>
-        <SpomoveCatalogHero />
-        <header style={{
-          borderBottom: `1px solid ${T.border}`,
-          padding: '18px 24px 14px',
-        }}>
-          <div style={{ maxWidth: 1024, margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 14,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'rgba(255,255,255,0.06)',
-                      border: `1px solid ${T.border}`,
-                      color: T.text,
-                      fontWeight: 950,
-                      letterSpacing: '-0.02em',
-                      boxShadow: '0 10px 22px rgba(0,0,0,0.35)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    S
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <p style={{ fontSize: 10, letterSpacing: '0.22em', color: T.muted, fontWeight: 800, margin: 0 }}>
-                      SPOKEDU · SPOMOVE
-                    </p>
-                    <h1 style={{
-                      fontSize: 'clamp(15px, 2vw, 22px)',
-                      fontWeight: 950,
-                      color: T.text,
-                      margin: 0,
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1.15,
-                      wordBreak: 'keep-all',
-                    }}>
-                      단순·선택·복합 반응을 움직임으로 경험하는 SPOMOVE
-                    </h1>
-                    <p style={{ margin: 0, fontSize: 11, color: T.textDim, lineHeight: 1.65, maxWidth: 540 }}>
-                      SPOMOVE는 4색 패드 위에서 화면 신호를 보고, 필요한 정보를 선택하고, 기억한 규칙을 몸으로 수행하는 스크린 기반 인지운동 프로그램입니다.
-                    </p>
-                    <p style={{ margin: 0, fontSize: 10, color: T.muted, lineHeight: 1.6, maxWidth: 540 }}>
-                      6개 핵심 프로그램을 기본·심화로 반복하며 단순·선택·복합 반응력을 단계적으로 경험합니다.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-              {AXIS_GROUPS.map((group) => {
-                const gAccent = Object.values(MODES).find((m) => !m.isHidden && m.axis === group.axisCode)?.accent ?? 'rgba(255,255,255,0.65)';
-                const programs = SPOMOVE_CATALOG_SLOT_IDS
-                  .filter((id) => { const m = MODES[id]; return m && !m.isHidden && m.axis === group.axisCode; })
-                  .map((id) => MODES[id]!.title)
-                  .join(' · ');
-                return (
-                  <div
-                    key={group.axisCode}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: 12,
-                      border: `1px solid ${gAccent}30`,
-                      background: `${gAccent}08`,
-                    }}
-                  >
-                    <p style={{ margin: 0, fontSize: 9, fontWeight: 800, color: gAccent, letterSpacing: '0.2em' }}>
-                      {group.title.toUpperCase()} · {group.enTitle.toUpperCase()}
-                    </p>
-                    <p style={{ margin: '4px 0 3px', fontSize: 13, fontWeight: 900, color: T.text, lineHeight: 1.25, letterSpacing: '-0.01em', wordBreak: 'keep-all' }}>
-                      {group.salesCopy}
-                    </p>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: T.muted, letterSpacing: '0.03em' }}>
-                      {programs}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-
-            <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(148px, 1fr))', gap: 6, marginTop: 12, paddingBottom: 2 }}>
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.code;
-                const accent =
-                  tab.code === 'ALL'
-                    ? 'rgba(255,255,255,0.72)'
-                    : Object.values(MODES).find((m) => !m.isHidden && m.axis === tab.code)?.accent ?? 'rgba(255,255,255,0.65)';
-                return (
-                  <button
-                    key={tab.code}
-                    type="button"
-                    onClick={() => setActiveTab(tab.code)}
-                    style={{
-                      padding: '9px 12px',
-                      borderRadius: 14,
-                      border: `1px solid ${isActive ? `${accent}55` : T.border}`,
-                      background: isActive ? `${accent}18` : 'rgba(255,255,255,0.03)',
-                      color: isActive ? accent : T.muted,
-                      fontWeight: isActive ? 900 : 700,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      whiteSpace: 'normal',
-                      minHeight: 54,
-                      letterSpacing: '0.02em',
-                      outline: 'none',
-                      fontFamily: 'inherit',
-                      boxShadow: isActive ? `0 10px 24px ${accent}14` : 'none',
-                      transition: 'background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease',
-                    }}
-                  >
-                    <span style={{ display: 'block', lineHeight: 1.25 }}>{tab.label}</span>
-                    <span style={{ display: 'block', marginTop: 3, color: isActive ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.24)', fontSize: 10, fontWeight: 700, letterSpacing: 0 }}>
-                      {tab.sub}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </header>
-
-        <main style={{ maxWidth: 1024, margin: '0 auto', padding: '28px 24px 0' }}>
-          <style>{`
-            .spmt-card:hover { transform: translateY(-2px) !important; border-color: rgba(255,255,255,0.18) !important; box-shadow: 0 16px 36px rgba(0,0,0,0.40) !important; }
-            .spmt-card:active { transform: translateY(-1px) scale(0.99) !important; }
-            .spmt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-            .spmt-title { font-size: 1.3rem; }
-            .spmt-desc { font-size: 0.9rem; }
-            @media (max-width: 599px) {
-              .spmt-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-              .spmt-title { font-size: 1.05rem; }
-              .spmt-desc { font-size: 0.85rem; }
-            }
-            @media (prefers-reduced-motion: reduce) {
-              .spmt-card { transition: none !important; }
-              .spmt-card:hover { transform: none !important; }
-              .spmt-card:active { transform: none !important; }
-            }
-          `}</style>
-          {activeTab === 'ALL' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
-              {AXIS_GROUPS.map((group) => {
-                const groupIds = visibleModeIds.filter((id) => MODES[id]?.axis === group.axisCode);
-                if (groupIds.length === 0) return null;
-                const groupAccent = MODES[groupIds[0]]?.accent ?? 'rgba(255,255,255,0.65)';
-                return (
-                  <section key={group.axisCode}>
-                    <div style={{ marginBottom: 16, paddingLeft: 14, borderLeft: `3px solid ${groupAccent}` }}>
-                      <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: groupAccent, letterSpacing: '0.2em' }}>
-                        {group.title.toUpperCase()} · {group.enTitle.toUpperCase()}
-                      </p>
-                      <h2 style={{ margin: '4px 0 4px', fontSize: 20, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
-                        {group.salesCopy}
-                      </h2>
-                      <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.55 }}>{group.desc}</p>
-                    </div>
-                    <div className="spmt-grid">
-                      {groupIds.map((modeId) => (
-                        <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-              <CatalogBottomPrograms onPick={handlePick} />
-            </div>
-          ) : (
-            <div>
-              {(() => {
-                const group = AXIS_GROUPS.find((g) => g.axisCode === activeTab);
-                const groupAccent = Object.values(MODES).find((m) => !m.isHidden && m.axis === activeTab)?.accent ?? 'rgba(255,255,255,0.65)';
-                if (!group) return null;
-                return (
-                  <div style={{ marginBottom: 20, paddingLeft: 14, borderLeft: `3px solid ${groupAccent}` }}>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: groupAccent, letterSpacing: '0.2em' }}>
-                      {group.title.toUpperCase()} · {group.enTitle.toUpperCase()}
-                    </p>
-                    <h2 style={{ margin: '4px 0 4px', fontSize: 20, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
-                      {group.salesCopy}
-                    </h2>
-                    <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.55 }}>{group.desc}</p>
-                  </div>
-                );
-              })()}
-              <div className="spmt-grid">
-                {visibleModeIds.map((modeId) => (
-                  <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
-                ))}
-              </div>
-              <CatalogBottomPrograms onPick={handlePick} />
-            </div>
-          )}
-        </main>
-          </>
-        ) : topTab === 'app' ? (
-          <AppManagementTab />
-        ) : null}
-      </div>
+      <TrainingDashboard
+        tab={topTab}
+        filter={activeTab}
+        onTabChange={switchTopTab}
+        onFilterChange={setActiveTab}
+        onPick={handlePick}
+        appContent={<AppManagementTab />}
+      />
     </>
   );
 }

@@ -1,0 +1,1383 @@
+/* Directly extracted from the supplied mobile code.html. Scoped Tailwind v3. */
+
+.root {
+  background-color: #080C14;
+  color: #E2E8F0;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.root :global(.hide-scrollbar::-webkit-scrollbar) {
+  display: none;
+}
+.root :global(.hide-scrollbar) {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.root :global(.glow-red) {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+}
+.root :global(.glow-yellow) {
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.2);
+}
+.root :global(.glow-green) {
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+.root :global(.glow-blue) {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+}
+.root, .root *, .root::before, .root *::before, .root::after, .root *::after {
+  --spomove-mobile-tw-border-spacing-x: 0;
+  --spomove-mobile-tw-border-spacing-y: 0;
+  --spomove-mobile-tw-translate-x: 0;
+  --spomove-mobile-tw-translate-y: 0;
+  --spomove-mobile-tw-rotate: 0;
+  --spomove-mobile-tw-skew-x: 0;
+  --spomove-mobile-tw-skew-y: 0;
+  --spomove-mobile-tw-scale-x: 1;
+  --spomove-mobile-tw-scale-y: 1;
+  --spomove-mobile-tw-pan-x:  ;
+  --spomove-mobile-tw-pan-y:  ;
+  --spomove-mobile-tw-pinch-zoom:  ;
+  --spomove-mobile-tw-scroll-snap-strictness: proximity;
+  --spomove-mobile-tw-gradient-from-position:  ;
+  --spomove-mobile-tw-gradient-via-position:  ;
+  --spomove-mobile-tw-gradient-to-position:  ;
+  --spomove-mobile-tw-ordinal:  ;
+  --spomove-mobile-tw-slashed-zero:  ;
+  --spomove-mobile-tw-numeric-figure:  ;
+  --spomove-mobile-tw-numeric-spacing:  ;
+  --spomove-mobile-tw-numeric-fraction:  ;
+  --spomove-mobile-tw-ring-inset:  ;
+  --spomove-mobile-tw-ring-offset-width: 0px;
+  --spomove-mobile-tw-ring-offset-color: #fff;
+  --spomove-mobile-tw-ring-color: rgb(59 130 246 / 0.5);
+  --spomove-mobile-tw-ring-offset-shadow: 0 0 #0000;
+  --spomove-mobile-tw-ring-shadow: 0 0 #0000;
+  --spomove-mobile-tw-shadow: 0 0 #0000;
+  --spomove-mobile-tw-shadow-colored: 0 0 #0000;
+  --spomove-mobile-tw-blur:  ;
+  --spomove-mobile-tw-brightness:  ;
+  --spomove-mobile-tw-contrast:  ;
+  --spomove-mobile-tw-grayscale:  ;
+  --spomove-mobile-tw-hue-rotate:  ;
+  --spomove-mobile-tw-invert:  ;
+  --spomove-mobile-tw-saturate:  ;
+  --spomove-mobile-tw-sepia:  ;
+  --spomove-mobile-tw-drop-shadow:  ;
+  --spomove-mobile-tw-backdrop-blur:  ;
+  --spomove-mobile-tw-backdrop-brightness:  ;
+  --spomove-mobile-tw-backdrop-contrast:  ;
+  --spomove-mobile-tw-backdrop-grayscale:  ;
+  --spomove-mobile-tw-backdrop-hue-rotate:  ;
+  --spomove-mobile-tw-backdrop-invert:  ;
+  --spomove-mobile-tw-backdrop-opacity:  ;
+  --spomove-mobile-tw-backdrop-saturate:  ;
+  --spomove-mobile-tw-backdrop-sepia:  ;
+  --spomove-mobile-tw-contain-size:  ;
+  --spomove-mobile-tw-contain-layout:  ;
+  --spomove-mobile-tw-contain-paint:  ;
+  --spomove-mobile-tw-contain-style: ;
+}
+.root :global(::backdrop) {
+  --spomove-mobile-tw-border-spacing-x: 0;
+  --spomove-mobile-tw-border-spacing-y: 0;
+  --spomove-mobile-tw-translate-x: 0;
+  --spomove-mobile-tw-translate-y: 0;
+  --spomove-mobile-tw-rotate: 0;
+  --spomove-mobile-tw-skew-x: 0;
+  --spomove-mobile-tw-skew-y: 0;
+  --spomove-mobile-tw-scale-x: 1;
+  --spomove-mobile-tw-scale-y: 1;
+  --spomove-mobile-tw-pan-x:  ;
+  --spomove-mobile-tw-pan-y:  ;
+  --spomove-mobile-tw-pinch-zoom:  ;
+  --spomove-mobile-tw-scroll-snap-strictness: proximity;
+  --spomove-mobile-tw-gradient-from-position:  ;
+  --spomove-mobile-tw-gradient-via-position:  ;
+  --spomove-mobile-tw-gradient-to-position:  ;
+  --spomove-mobile-tw-ordinal:  ;
+  --spomove-mobile-tw-slashed-zero:  ;
+  --spomove-mobile-tw-numeric-figure:  ;
+  --spomove-mobile-tw-numeric-spacing:  ;
+  --spomove-mobile-tw-numeric-fraction:  ;
+  --spomove-mobile-tw-ring-inset:  ;
+  --spomove-mobile-tw-ring-offset-width: 0px;
+  --spomove-mobile-tw-ring-offset-color: #fff;
+  --spomove-mobile-tw-ring-color: rgb(59 130 246 / 0.5);
+  --spomove-mobile-tw-ring-offset-shadow: 0 0 #0000;
+  --spomove-mobile-tw-ring-shadow: 0 0 #0000;
+  --spomove-mobile-tw-shadow: 0 0 #0000;
+  --spomove-mobile-tw-shadow-colored: 0 0 #0000;
+  --spomove-mobile-tw-blur:  ;
+  --spomove-mobile-tw-brightness:  ;
+  --spomove-mobile-tw-contrast:  ;
+  --spomove-mobile-tw-grayscale:  ;
+  --spomove-mobile-tw-hue-rotate:  ;
+  --spomove-mobile-tw-invert:  ;
+  --spomove-mobile-tw-saturate:  ;
+  --spomove-mobile-tw-sepia:  ;
+  --spomove-mobile-tw-drop-shadow:  ;
+  --spomove-mobile-tw-backdrop-blur:  ;
+  --spomove-mobile-tw-backdrop-brightness:  ;
+  --spomove-mobile-tw-backdrop-contrast:  ;
+  --spomove-mobile-tw-backdrop-grayscale:  ;
+  --spomove-mobile-tw-backdrop-hue-rotate:  ;
+  --spomove-mobile-tw-backdrop-invert:  ;
+  --spomove-mobile-tw-backdrop-opacity:  ;
+  --spomove-mobile-tw-backdrop-saturate:  ;
+  --spomove-mobile-tw-backdrop-sepia:  ;
+  --spomove-mobile-tw-contain-size:  ;
+  --spomove-mobile-tw-contain-layout:  ;
+  --spomove-mobile-tw-contain-paint:  ;
+  --spomove-mobile-tw-contain-style: ;
+}/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */
+.root, .root *, .root::after, .root *::after, .root::before, .root *::before {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb
+}
+.root::after, .root *::after, .root::before, .root *::before {
+  --spomove-mobile-tw-content: ''
+}
+.root, .root {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, Helvetica Neue, Segoe UI, Apple SD Gothic Neo, Noto Sans KR, Malgun Gothic, sans-serif;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  -webkit-tap-highlight-color: transparent
+}
+.root {
+  margin: 0;
+  line-height: inherit
+}
+.root :global(hr) {
+  height: 0;
+  color: inherit;
+  border-top-width: 1px
+}
+.root :global(abbr:where([title])) {
+  -webkit-text-decoration: underline dotted;
+  text-decoration: underline dotted
+}
+.root :global(h1), .root :global(h2), .root :global(h3), .root :global(h4), .root :global(h5), .root :global(h6) {
+  font-size: inherit;
+  font-weight: inherit
+}
+.root :global(a) {
+  color: inherit;
+  text-decoration: inherit
+}
+.root :global(b), .root :global(strong) {
+  font-weight: bolder
+}
+.root :global(code), .root :global(kbd), .root :global(pre), .root :global(samp) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  font-size: 1em
+}
+.root :global(small) {
+  font-size: 80%
+}
+.root :global(sub), .root :global(sup) {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline
+}
+.root :global(sub) {
+  bottom: -.25em
+}
+.root :global(sup) {
+  top: -.5em
+}
+.root :global(table) {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse
+}
+.root :global(button), .root :global(input), .root :global(optgroup), .root :global(select), .root :global(textarea) {
+  font-family: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0
+}
+.root :global(button), .root :global(select) {
+  text-transform: none
+}
+.root :global(button), .root :global(input:where([type=button])), .root :global(input:where([type=reset])), .root :global(input:where([type=submit])) {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none
+}
+.root :global(:-moz-focusring) {
+  outline: auto
+}
+.root :global(:-moz-ui-invalid) {
+  box-shadow: none
+}
+.root :global(progress) {
+  vertical-align: baseline
+}
+.root :global(::-webkit-inner-spin-button), .root :global(::-webkit-outer-spin-button) {
+  height: auto
+}
+.root :global([type=search]) {
+  -webkit-appearance: textfield;
+  outline-offset: -2px
+}
+.root :global(::-webkit-search-decoration) {
+  -webkit-appearance: none
+}
+.root :global(::-webkit-file-upload-button) {
+  -webkit-appearance: button;
+  font: inherit
+}
+.root :global(summary) {
+  display: list-item
+}
+.root :global(blockquote), .root :global(dd), .root :global(dl), .root :global(figure), .root :global(h1), .root :global(h2), .root :global(h3), .root :global(h4), .root :global(h5), .root :global(h6), .root :global(hr), .root :global(p), .root :global(pre) {
+  margin: 0
+}
+.root :global(fieldset) {
+  margin: 0;
+  padding: 0
+}
+.root :global(legend) {
+  padding: 0
+}
+.root :global(menu), .root :global(ol), .root :global(ul) {
+  list-style: none;
+  margin: 0;
+  padding: 0
+}
+.root :global(dialog) {
+  padding: 0
+}
+.root :global(textarea) {
+  resize: vertical
+}
+.root :global(input::placeholder), .root :global(textarea::placeholder) {
+  opacity: 1;
+  color: #9ca3af
+}
+.root :global([role=button]), .root :global(button) {
+  cursor: pointer
+}
+.root :global(:disabled) {
+  cursor: default
+}
+.root :global(audio), .root :global(canvas), .root :global(embed), .root :global(iframe), .root :global(img), .root :global(object), .root :global(svg), .root :global(video) {
+  display: block;
+  vertical-align: middle
+}
+.root :global(img), .root :global(video) {
+  max-width: 100%;
+  height: auto
+}
+.root :global([hidden]:where(:not([hidden=until-found]))) {
+  display: none
+}
+.root :global([type='text']), .root :global(input:where(:not([type]))), .root :global([type='email']), .root :global([type='url']), .root :global([type='password']), .root :global([type='number']), .root :global([type='date']), .root :global([type='datetime-local']), .root :global([type='month']), .root :global([type='search']), .root :global([type='tel']), .root :global([type='time']), .root :global([type='week']), .root :global([multiple]), .root :global(textarea), .root :global(select) {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #fff;
+  border-color: #6b7280;
+  border-width: 1px;
+  border-radius: 0px;
+  padding-top: 0.5rem;
+  padding-right: 0.75rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  --spomove-mobile-tw-shadow: 0 0 #0000;
+}
+.root :global([type='text']:focus), .root :global(input:where(:not([type])):focus), .root :global([type='email']:focus), .root :global([type='url']:focus), .root :global([type='password']:focus), .root :global([type='number']:focus), .root :global([type='date']:focus), .root :global([type='datetime-local']:focus), .root :global([type='month']:focus), .root :global([type='search']:focus), .root :global([type='tel']:focus), .root :global([type='time']:focus), .root :global([type='week']:focus), .root :global([multiple]:focus), .root :global(textarea:focus), .root :global(select:focus) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  --spomove-mobile-tw-ring-inset: var(--spomove-mobile-tw-empty,/*!*/ /*!*/);
+  --spomove-mobile-tw-ring-offset-width: 0px;
+  --spomove-mobile-tw-ring-offset-color: #fff;
+  --spomove-mobile-tw-ring-color: #2563eb;
+  --spomove-mobile-tw-ring-offset-shadow: var(--spomove-mobile-tw-ring-inset) 0 0 0 var(--spomove-mobile-tw-ring-offset-width) var(--spomove-mobile-tw-ring-offset-color);
+  --spomove-mobile-tw-ring-shadow: var(--spomove-mobile-tw-ring-inset) 0 0 0 calc(1px + var(--spomove-mobile-tw-ring-offset-width)) var(--spomove-mobile-tw-ring-color);
+  box-shadow: var(--spomove-mobile-tw-ring-offset-shadow), var(--spomove-mobile-tw-ring-shadow), var(--spomove-mobile-tw-shadow);
+  border-color: #2563eb
+}
+.root :global(input::placeholder), .root :global(textarea::placeholder) {
+  color: #6b7280;
+  opacity: 1
+}
+.root :global(::-webkit-datetime-edit-fields-wrapper) {
+  padding: 0
+}
+.root :global(::-webkit-date-and-time-value) {
+  min-height: 1.5em;
+  text-align: inherit
+}
+.root :global(::-webkit-datetime-edit) {
+  display: inline-flex
+}
+.root :global(::-webkit-datetime-edit), .root :global(::-webkit-datetime-edit-year-field), .root :global(::-webkit-datetime-edit-month-field), .root :global(::-webkit-datetime-edit-day-field), .root :global(::-webkit-datetime-edit-hour-field), .root :global(::-webkit-datetime-edit-minute-field), .root :global(::-webkit-datetime-edit-second-field), .root :global(::-webkit-datetime-edit-millisecond-field), .root :global(::-webkit-datetime-edit-meridiem-field) {
+  padding-top: 0;
+  padding-bottom: 0
+}
+.root :global(select) {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  print-color-adjust: exact
+}
+.root :global([multiple]), .root :global([size]:where(select:not([size="1"]))) {
+  background-image: initial;
+  background-position: initial;
+  background-repeat: unset;
+  background-size: initial;
+  padding-right: 0.75rem;
+  print-color-adjust: unset
+}
+.root :global([type='checkbox']), .root :global([type='radio']) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0;
+  print-color-adjust: exact;
+  display: inline-block;
+  vertical-align: middle;
+  background-origin: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+  flex-shrink: 0;
+  height: 1rem;
+  width: 1rem;
+  color: #2563eb;
+  background-color: #fff;
+  border-color: #6b7280;
+  border-width: 1px;
+  --spomove-mobile-tw-shadow: 0 0 #0000
+}
+.root :global([type='checkbox']) {
+  border-radius: 0px
+}
+.root :global([type='radio']) {
+  border-radius: 100%
+}
+.root :global([type='checkbox']:focus), .root :global([type='radio']:focus) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  --spomove-mobile-tw-ring-inset: var(--spomove-mobile-tw-empty,/*!*/ /*!*/);
+  --spomove-mobile-tw-ring-offset-width: 2px;
+  --spomove-mobile-tw-ring-offset-color: #fff;
+  --spomove-mobile-tw-ring-color: #2563eb;
+  --spomove-mobile-tw-ring-offset-shadow: var(--spomove-mobile-tw-ring-inset) 0 0 0 var(--spomove-mobile-tw-ring-offset-width) var(--spomove-mobile-tw-ring-offset-color);
+  --spomove-mobile-tw-ring-shadow: var(--spomove-mobile-tw-ring-inset) 0 0 0 calc(2px + var(--spomove-mobile-tw-ring-offset-width)) var(--spomove-mobile-tw-ring-color);
+  box-shadow: var(--spomove-mobile-tw-ring-offset-shadow), var(--spomove-mobile-tw-ring-shadow), var(--spomove-mobile-tw-shadow)
+}
+.root :global([type='checkbox']:checked), .root :global([type='radio']:checked) {
+  border-color: transparent;
+  background-color: currentColor;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat
+}
+.root :global([type='checkbox']:checked) {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+}@media (forced-colors: active) {
+.root :global([type='checkbox']:checked) {
+  -webkit-appearance: auto;
+  appearance: auto
+}}
+.root :global([type='radio']:checked) {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+}@media (forced-colors: active) {
+.root :global([type='radio']:checked) {
+  -webkit-appearance: auto;
+  appearance: auto
+}}
+.root :global([type='checkbox']:checked:hover), .root :global([type='checkbox']:checked:focus), .root :global([type='radio']:checked:hover), .root :global([type='radio']:checked:focus) {
+  border-color: transparent;
+  background-color: currentColor
+}
+.root :global([type='checkbox']:indeterminate) {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");
+  border-color: transparent;
+  background-color: currentColor;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}@media (forced-colors: active) {
+.root :global([type='checkbox']:indeterminate) {
+  -webkit-appearance: auto;
+  appearance: auto
+}}
+.root :global([type='checkbox']:indeterminate:hover), .root :global([type='checkbox']:indeterminate:focus) {
+  border-color: transparent;
+  background-color: currentColor
+}
+.root :global([type='file']) {
+  background: unset;
+  border-color: inherit;
+  border-width: 0;
+  border-radius: 0;
+  padding: 0;
+  font-size: unset;
+  line-height: inherit
+}
+.root :global([type='file']:focus) {
+  outline: 1px solid ButtonText;
+  outline: 1px auto -webkit-focus-ring-color
+}
+.root :global(.pointer-events-none) {
+  pointer-events: none
+}
+.root :global(.absolute) {
+  position: absolute
+}
+.root :global(.relative) {
+  position: relative
+}
+.root :global(.sticky) {
+  position: sticky
+}
+.root :global(.-bottom-8) {
+  bottom: -2rem
+}
+.root :global(.-right-12) {
+  right: -3rem
+}
+.root :global(.-right-8) {
+  right: -2rem
+}
+.root :global(.-top-12) {
+  top: -3rem
+}
+.root :global(.top-0) {
+  top: 0px
+}
+.root :global(.z-50) {
+  z-index: 50
+}
+.root :global(.mb-2) {
+  margin-bottom: 0.5rem
+}
+.root :global(.mb-3) {
+  margin-bottom: 0.75rem
+}
+.root :global(.mr-1) {
+  margin-right: 0.25rem
+}
+.root :global(.mr-1\.5) {
+  margin-right: 0.375rem
+}
+.root :global(.mt-0\.5) {
+  margin-top: 0.125rem
+}
+.root :global(.mt-1) {
+  margin-top: 0.25rem
+}
+.root :global(.mt-2) {
+  margin-top: 0.5rem
+}
+.root :global(.mt-2\.5) {
+  margin-top: 0.625rem
+}
+.root :global(.mt-3) {
+  margin-top: 0.75rem
+}
+.root :global(.mt-4) {
+  margin-top: 1rem
+}
+.root :global(.mt-auto) {
+  margin-top: auto
+}
+.root :global(.block) {
+  display: block
+}
+.root :global(.inline-block) {
+  display: inline-block
+}
+.root :global(.flex) {
+  display: flex
+}
+.root :global(.inline-flex) {
+  display: inline-flex
+}
+.root :global(.grid) {
+  display: grid
+}
+.root :global(.hidden) {
+  display: none
+}
+.root :global(.h-1) {
+  height: 0.25rem
+}
+.root :global(.h-1\.5) {
+  height: 0.375rem
+}
+.root :global(.h-12) {
+  height: 3rem
+}
+.root :global(.h-2) {
+  height: 0.5rem
+}
+.root :global(.h-3\.5) {
+  height: 0.875rem
+}
+.root :global(.h-4) {
+  height: 1rem
+}
+.root :global(.h-40) {
+  height: 10rem
+}
+.root :global(.h-44) {
+  height: 11rem
+}
+.root :global(.h-5) {
+  height: 1.25rem
+}
+.root :global(.h-7) {
+  height: 1.75rem
+}
+.root :global(.h-9) {
+  height: 2.25rem
+}
+.root :global(.h-full) {
+  height: 100%
+}
+.root :global(.min-h-screen) {
+  min-height: 100vh
+}
+.root :global(.w-1) {
+  width: 0.25rem
+}
+.root :global(.w-1\.5) {
+  width: 0.375rem
+}
+.root :global(.w-2) {
+  width: 0.5rem
+}
+.root :global(.w-3\.5) {
+  width: 0.875rem
+}
+.root :global(.w-4) {
+  width: 1rem
+}
+.root :global(.w-40) {
+  width: 10rem
+}
+.root :global(.w-44) {
+  width: 11rem
+}
+.root :global(.w-5) {
+  width: 1.25rem
+}
+.root :global(.w-7) {
+  width: 1.75rem
+}
+.root :global(.w-9) {
+  width: 2.25rem
+}
+.root :global(.w-full) {
+  width: 100%
+}
+.root :global(.flex-1) {
+  flex: 1 1 0%
+}
+.root :global(.rotate-45) {
+  --spomove-mobile-tw-rotate: 45deg;
+  transform: translate(var(--spomove-mobile-tw-translate-x), var(--spomove-mobile-tw-translate-y)) rotate(var(--spomove-mobile-tw-rotate)) skewX(var(--spomove-mobile-tw-skew-x)) skewY(var(--spomove-mobile-tw-skew-y)) scaleX(var(--spomove-mobile-tw-scale-x)) scaleY(var(--spomove-mobile-tw-scale-y))
+}@keyframes pulse{
+50% {
+  opacity: .5
+}}
+.root :global(.animate-pulse) {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite
+}
+.root :global(.grid-cols-2) {
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+}
+.root :global(.grid-cols-3) {
+  grid-template-columns: repeat(3, minmax(0, 1fr))
+}
+.root :global(.flex-col) {
+  flex-direction: column
+}
+.root :global(.flex-wrap) {
+  flex-wrap: wrap
+}
+.root :global(.items-start) {
+  align-items: flex-start
+}
+.root :global(.items-center) {
+  align-items: center
+}
+.root :global(.justify-center) {
+  justify-content: center
+}
+.root :global(.justify-between) {
+  justify-content: space-between
+}
+.root :global(.gap-0\.5) {
+  gap: 0.125rem
+}
+.root :global(.gap-1\.5) {
+  gap: 0.375rem
+}
+.root :global(.gap-2) {
+  gap: 0.5rem
+}
+.root :global(.space-x-0\.5 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-x-reverse: 0;
+  margin-right: calc(0.125rem * var(--spomove-mobile-tw-space-x-reverse));
+  margin-left: calc(0.125rem * calc(1 - var(--spomove-mobile-tw-space-x-reverse)))
+}
+.root :global(.space-x-1 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-x-reverse: 0;
+  margin-right: calc(0.25rem * var(--spomove-mobile-tw-space-x-reverse));
+  margin-left: calc(0.25rem * calc(1 - var(--spomove-mobile-tw-space-x-reverse)))
+}
+.root :global(.space-x-1\.5 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-x-reverse: 0;
+  margin-right: calc(0.375rem * var(--spomove-mobile-tw-space-x-reverse));
+  margin-left: calc(0.375rem * calc(1 - var(--spomove-mobile-tw-space-x-reverse)))
+}
+.root :global(.space-x-2 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-x-reverse: 0;
+  margin-right: calc(0.5rem * var(--spomove-mobile-tw-space-x-reverse));
+  margin-left: calc(0.5rem * calc(1 - var(--spomove-mobile-tw-space-x-reverse)))
+}
+.root :global(.space-x-2\.5 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-x-reverse: 0;
+  margin-right: calc(0.625rem * var(--spomove-mobile-tw-space-x-reverse));
+  margin-left: calc(0.625rem * calc(1 - var(--spomove-mobile-tw-space-x-reverse)))
+}
+.root :global(.space-y-1 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-y-reverse: 0;
+  margin-top: calc(0.25rem * calc(1 - var(--spomove-mobile-tw-space-y-reverse)));
+  margin-bottom: calc(0.25rem * var(--spomove-mobile-tw-space-y-reverse))
+}
+.root :global(.space-y-1\.5 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-y-reverse: 0;
+  margin-top: calc(0.375rem * calc(1 - var(--spomove-mobile-tw-space-y-reverse)));
+  margin-bottom: calc(0.375rem * var(--spomove-mobile-tw-space-y-reverse))
+}
+.root :global(.space-y-2 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--spomove-mobile-tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--spomove-mobile-tw-space-y-reverse))
+}
+.root :global(.space-y-3 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-y-reverse: 0;
+  margin-top: calc(0.75rem * calc(1 - var(--spomove-mobile-tw-space-y-reverse)));
+  margin-bottom: calc(0.75rem * var(--spomove-mobile-tw-space-y-reverse))
+}
+.root :global(.space-y-6 > :not([hidden]) ~ :not([hidden])) {
+  --spomove-mobile-tw-space-y-reverse: 0;
+  margin-top: calc(1.5rem * calc(1 - var(--spomove-mobile-tw-space-y-reverse)));
+  margin-bottom: calc(1.5rem * var(--spomove-mobile-tw-space-y-reverse))
+}
+.root :global(.overflow-hidden) {
+  overflow: hidden
+}
+.root :global(.rounded) {
+  border-radius: 0.25rem
+}
+.root :global(.rounded-2xl) {
+  border-radius: 1rem
+}
+.root :global(.rounded-full) {
+  border-radius: 9999px
+}
+.root :global(.rounded-lg) {
+  border-radius: 0.5rem
+}
+.root :global(.rounded-md) {
+  border-radius: 0.375rem
+}
+.root :global(.rounded-sm) {
+  border-radius: 0.125rem
+}
+.root :global(.rounded-xl) {
+  border-radius: 0.75rem
+}
+.root :global(.border) {
+  border-width: 1px
+}
+.root :global(.border-2) {
+  border-width: 2px
+}
+.root :global(.border-b) {
+  border-bottom-width: 1px
+}
+.root :global(.border-t) {
+  border-top-width: 1px
+}
+.root :global(.border-amber-400\/20) {
+  border-color: rgb(251 191 36 / 0.2)
+}
+.root :global(.border-amber-500\/30) {
+  border-color: rgb(245 158 11 / 0.3)
+}
+.root :global(.border-brand-blue) {
+  --spomove-mobile-tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--spomove-mobile-tw-border-opacity, 1))
+}
+.root :global(.border-brand-blue\/20) {
+  border-color: rgb(59 130 246 / 0.2)
+}
+.root :global(.border-brand-blue\/30) {
+  border-color: rgb(59 130 246 / 0.3)
+}
+.root :global(.border-brand-blue\/40) {
+  border-color: rgb(59 130 246 / 0.4)
+}
+.root :global(.border-brand-green) {
+  --spomove-mobile-tw-border-opacity: 1;
+  border-color: rgb(34 197 94 / var(--spomove-mobile-tw-border-opacity, 1))
+}
+.root :global(.border-brand-green\/20) {
+  border-color: rgb(34 197 94 / 0.2)
+}
+.root :global(.border-brand-green\/30) {
+  border-color: rgb(34 197 94 / 0.3)
+}
+.root :global(.border-brand-green\/40) {
+  border-color: rgb(34 197 94 / 0.4)
+}
+.root :global(.border-brand-red\/30) {
+  border-color: rgb(239 68 68 / 0.3)
+}
+.root :global(.border-brand-red\/40) {
+  border-color: rgb(239 68 68 / 0.4)
+}
+.root :global(.border-brand-yellow\/20) {
+  border-color: rgb(250 204 21 / 0.2)
+}
+.root :global(.border-brand-yellow\/30) {
+  border-color: rgb(250 204 21 / 0.3)
+}
+.root :global(.border-brand-yellow\/40) {
+  border-color: rgb(250 204 21 / 0.4)
+}
+.root :global(.border-cyan-400\/20) {
+  border-color: rgb(34 211 238 / 0.2)
+}
+.root :global(.border-cyan-400\/40) {
+  border-color: rgb(34 211 238 / 0.4)
+}
+.root :global(.border-cyan-500\/40) {
+  border-color: rgb(6 182 212 / 0.4)
+}
+.root :global(.border-white\/10) {
+  border-color: rgb(255 255 255 / 0.1)
+}
+.root :global(.border-white\/20) {
+  border-color: rgb(255 255 255 / 0.2)
+}
+.root :global(.border-white\/5) {
+  border-color: rgb(255 255 255 / 0.05)
+}
+.root :global(.bg-\[\#05080E\]) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(5 8 14 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.bg-\[\#080C14\]\/90) {
+  background-color: rgb(8 12 20 / 0.9)
+}
+.root :global(.bg-\[\#0F172A\]) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(15 23 42 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.bg-amber-400\/10) {
+  background-color: rgb(251 191 36 / 0.1)
+}
+.root :global(.bg-amber-500\/20) {
+  background-color: rgb(245 158 11 / 0.2)
+}
+.root :global(.bg-amber-950\/60) {
+  background-color: rgb(69 26 3 / 0.6)
+}
+.root :global(.bg-black\/40) {
+  background-color: rgb(0 0 0 / 0.4)
+}
+.root :global(.bg-blue-950\/40) {
+  background-color: rgb(23 37 84 / 0.4)
+}
+.root :global(.bg-blue-950\/60) {
+  background-color: rgb(23 37 84 / 0.6)
+}
+.root :global(.bg-brand-blue) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(59 130 246 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.bg-brand-blue\/10) {
+  background-color: rgb(59 130 246 / 0.1)
+}
+.root :global(.bg-brand-blue\/20) {
+  background-color: rgb(59 130 246 / 0.2)
+}
+.root :global(.bg-brand-green) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(34 197 94 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.bg-brand-green\/10) {
+  background-color: rgb(34 197 94 / 0.1)
+}
+.root :global(.bg-brand-green\/20) {
+  background-color: rgb(34 197 94 / 0.2)
+}
+.root :global(.bg-brand-red) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(239 68 68 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.bg-brand-red\/10) {
+  background-color: rgb(239 68 68 / 0.1)
+}
+.root :global(.bg-brand-red\/20) {
+  background-color: rgb(239 68 68 / 0.2)
+}
+.root :global(.bg-brand-yellow) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(250 204 21 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.bg-brand-yellow\/10) {
+  background-color: rgb(250 204 21 / 0.1)
+}
+.root :global(.bg-brand-yellow\/20) {
+  background-color: rgb(250 204 21 / 0.2)
+}
+.root :global(.bg-cyan-400\/20) {
+  background-color: rgb(34 211 238 / 0.2)
+}
+.root :global(.bg-cyan-500\/10) {
+  background-color: rgb(6 182 212 / 0.1)
+}
+.root :global(.bg-cyan-500\/20) {
+  background-color: rgb(6 182 212 / 0.2)
+}
+.root :global(.bg-emerald-950\/60) {
+  background-color: rgb(2 44 34 / 0.6)
+}
+.root :global(.bg-green-950\/40) {
+  background-color: rgb(5 46 22 / 0.4)
+}
+.root :global(.bg-red-950\/40) {
+  background-color: rgb(69 10 10 / 0.4)
+}
+.root :global(.bg-white) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.bg-white\/10) {
+  background-color: rgb(255 255 255 / 0.1)
+}
+.root :global(.bg-white\/5) {
+  background-color: rgb(255 255 255 / 0.05)
+}
+.root :global(.bg-yellow-950\/40) {
+  background-color: rgb(66 32 6 / 0.4)
+}
+.root :global(.bg-gradient-to-b) {
+  background-image: linear-gradient(to bottom, var(--spomove-mobile-tw-gradient-stops))
+}
+.root :global(.bg-gradient-to-br) {
+  background-image: linear-gradient(to bottom right, var(--spomove-mobile-tw-gradient-stops))
+}
+.root :global(.bg-gradient-to-r) {
+  background-image: linear-gradient(to right, var(--spomove-mobile-tw-gradient-stops))
+}
+.root :global(.from-\[\#0c213f\]) {
+  --spomove-mobile-tw-gradient-from: #0c213f var(--spomove-mobile-tw-gradient-from-position);
+  --spomove-mobile-tw-gradient-to: rgb(12 33 63 / 0) var(--spomove-mobile-tw-gradient-to-position);
+  --spomove-mobile-tw-gradient-stops: var(--spomove-mobile-tw-gradient-from), var(--spomove-mobile-tw-gradient-to)
+}
+.root :global(.from-\[\#111827\]) {
+  --spomove-mobile-tw-gradient-from: #111827 var(--spomove-mobile-tw-gradient-from-position);
+  --spomove-mobile-tw-gradient-to: rgb(17 24 39 / 0) var(--spomove-mobile-tw-gradient-to-position);
+  --spomove-mobile-tw-gradient-stops: var(--spomove-mobile-tw-gradient-from), var(--spomove-mobile-tw-gradient-to)
+}
+.root :global(.from-cyan-500) {
+  --spomove-mobile-tw-gradient-from: #06b6d4 var(--spomove-mobile-tw-gradient-from-position);
+  --spomove-mobile-tw-gradient-to: rgb(6 182 212 / 0) var(--spomove-mobile-tw-gradient-to-position);
+  --spomove-mobile-tw-gradient-stops: var(--spomove-mobile-tw-gradient-from), var(--spomove-mobile-tw-gradient-to)
+}
+.root :global(.via-\[\#09152b\]) {
+  --spomove-mobile-tw-gradient-to: rgb(9 21 43 / 0)  var(--spomove-mobile-tw-gradient-to-position);
+  --spomove-mobile-tw-gradient-stops: var(--spomove-mobile-tw-gradient-from), #09152b var(--spomove-mobile-tw-gradient-via-position), var(--spomove-mobile-tw-gradient-to)
+}
+.root :global(.to-\[\#080c14\]) {
+  --spomove-mobile-tw-gradient-to: #080c14 var(--spomove-mobile-tw-gradient-to-position)
+}
+.root :global(.to-\[\#0B0F19\]) {
+  --spomove-mobile-tw-gradient-to: #0B0F19 var(--spomove-mobile-tw-gradient-to-position)
+}
+.root :global(.to-blue-600) {
+  --spomove-mobile-tw-gradient-to: #2563eb var(--spomove-mobile-tw-gradient-to-position)
+}
+.root :global(.p-1) {
+  padding: 0.25rem
+}
+.root :global(.p-1\.5) {
+  padding: 0.375rem
+}
+.root :global(.p-2) {
+  padding: 0.5rem
+}
+.root :global(.p-3) {
+  padding: 0.75rem
+}
+.root :global(.p-4) {
+  padding: 1rem
+}
+.root :global(.px-1) {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem
+}
+.root :global(.px-1\.5) {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem
+}
+.root :global(.px-2) {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem
+}
+.root :global(.px-3) {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem
+}
+.root :global(.px-4) {
+  padding-left: 1rem;
+  padding-right: 1rem
+}
+.root :global(.py-0\.5) {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem
+}
+.root :global(.py-1) {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem
+}
+.root :global(.py-2) {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem
+}
+.root :global(.py-2\.5) {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem
+}
+.root :global(.py-3) {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem
+}
+.root :global(.py-4) {
+  padding-top: 1rem;
+  padding-bottom: 1rem
+}
+.root :global(.py-6) {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem
+}
+.root :global(.pl-0\.5) {
+  padding-left: 0.125rem
+}
+.root :global(.pt-1) {
+  padding-top: 0.25rem
+}
+.root :global(.pt-3) {
+  padding-top: 0.75rem
+}
+.root :global(.pt-4) {
+  padding-top: 1rem
+}
+.root :global(.text-center) {
+  text-align: center
+}
+.root :global(.font-mono) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace
+}
+.root :global(.font-sans) {
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, Helvetica Neue, Segoe UI, Apple SD Gothic Neo, Noto Sans KR, Malgun Gothic, sans-serif
+}
+.root :global(.text-\[10px\]) {
+  font-size: 10px
+}
+.root :global(.text-\[11px\]) {
+  font-size: 11px
+}
+.root :global(.text-\[9px\]) {
+  font-size: 9px
+}
+.root :global(.text-base) {
+  font-size: 1rem;
+  line-height: 1.5rem
+}
+.root :global(.text-lg) {
+  font-size: 1.125rem;
+  line-height: 1.75rem
+}
+.root :global(.text-sm) {
+  font-size: 0.875rem;
+  line-height: 1.25rem
+}
+.root :global(.text-xl) {
+  font-size: 1.25rem;
+  line-height: 1.75rem
+}
+.root :global(.text-xs) {
+  font-size: 0.75rem;
+  line-height: 1rem
+}
+.root :global(.font-black) {
+  font-weight: 900
+}
+.root :global(.font-bold) {
+  font-weight: 700
+}
+.root :global(.font-extrabold) {
+  font-weight: 800
+}
+.root :global(.font-medium) {
+  font-weight: 500
+}
+.root :global(.font-semibold) {
+  font-weight: 600
+}
+.root :global(.uppercase) {
+  text-transform: uppercase
+}
+.root :global(.leading-relaxed) {
+  line-height: 1.625
+}
+.root :global(.leading-snug) {
+  line-height: 1.375
+}
+.root :global(.tracking-tight) {
+  letter-spacing: -0.025em
+}
+.root :global(.tracking-wide) {
+  letter-spacing: 0.025em
+}
+.root :global(.tracking-wider) {
+  letter-spacing: 0.05em
+}
+.root :global(.text-amber-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(252 211 77 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-amber-300\/80) {
+  color: rgb(252 211 77 / 0.8)
+}
+.root :global(.text-amber-400) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(251 191 36 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-black) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-blue-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(147 197 253 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-blue-300\/80) {
+  color: rgb(147 197 253 / 0.8)
+}
+.root :global(.text-brand-blue) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-brand-green) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(34 197 94 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-brand-red) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(239 68 68 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-brand-yellow) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(250 204 21 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-cyan-200) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(165 243 252 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-cyan-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(103 232 249 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-emerald-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(110 231 183 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-emerald-300\/80) {
+  color: rgb(110 231 183 / 0.8)
+}
+.root :global(.text-gray-200) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(229 231 235 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-gray-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(209 213 219 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-gray-400) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-gray-500) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-gray-600) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-green-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(134 239 172 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-red-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(252 165 165 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-white) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.text-yellow-300) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(253 224 71 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.shadow-lg) {
+  --spomove-mobile-tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --spomove-mobile-tw-shadow-colored: 0 10px 15px -3px var(--spomove-mobile-tw-shadow-color), 0 4px 6px -4px var(--spomove-mobile-tw-shadow-color);
+  box-shadow: var(--spomove-mobile-tw-ring-offset-shadow, 0 0 #0000), var(--spomove-mobile-tw-ring-shadow, 0 0 #0000), var(--spomove-mobile-tw-shadow)
+}
+.root :global(.shadow-md) {
+  --spomove-mobile-tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --spomove-mobile-tw-shadow-colored: 0 4px 6px -1px var(--spomove-mobile-tw-shadow-color), 0 2px 4px -2px var(--spomove-mobile-tw-shadow-color);
+  box-shadow: var(--spomove-mobile-tw-ring-offset-shadow, 0 0 #0000), var(--spomove-mobile-tw-ring-shadow, 0 0 #0000), var(--spomove-mobile-tw-shadow)
+}
+.root :global(.shadow-sm) {
+  --spomove-mobile-tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --spomove-mobile-tw-shadow-colored: 0 1px 2px 0 var(--spomove-mobile-tw-shadow-color);
+  box-shadow: var(--spomove-mobile-tw-ring-offset-shadow, 0 0 #0000), var(--spomove-mobile-tw-ring-shadow, 0 0 #0000), var(--spomove-mobile-tw-shadow)
+}
+.root :global(.shadow-cyan-900\/30) {
+  --spomove-mobile-tw-shadow-color: rgb(22 78 99 / 0.3);
+  --spomove-mobile-tw-shadow: var(--spomove-mobile-tw-shadow-colored)
+}
+.root :global(.blur-2xl) {
+  --spomove-mobile-tw-blur: blur(40px);
+  filter: var(--spomove-mobile-tw-blur) var(--spomove-mobile-tw-brightness) var(--spomove-mobile-tw-contrast) var(--spomove-mobile-tw-grayscale) var(--spomove-mobile-tw-hue-rotate) var(--spomove-mobile-tw-invert) var(--spomove-mobile-tw-saturate) var(--spomove-mobile-tw-sepia) var(--spomove-mobile-tw-drop-shadow)
+}
+.root :global(.blur-3xl) {
+  --spomove-mobile-tw-blur: blur(64px);
+  filter: var(--spomove-mobile-tw-blur) var(--spomove-mobile-tw-brightness) var(--spomove-mobile-tw-contrast) var(--spomove-mobile-tw-grayscale) var(--spomove-mobile-tw-hue-rotate) var(--spomove-mobile-tw-invert) var(--spomove-mobile-tw-saturate) var(--spomove-mobile-tw-sepia) var(--spomove-mobile-tw-drop-shadow)
+}
+.root :global(.backdrop-blur-md) {
+  --spomove-mobile-tw-backdrop-blur: blur(12px);
+  -webkit-backdrop-filter: var(--spomove-mobile-tw-backdrop-blur) var(--spomove-mobile-tw-backdrop-brightness) var(--spomove-mobile-tw-backdrop-contrast) var(--spomove-mobile-tw-backdrop-grayscale) var(--spomove-mobile-tw-backdrop-hue-rotate) var(--spomove-mobile-tw-backdrop-invert) var(--spomove-mobile-tw-backdrop-opacity) var(--spomove-mobile-tw-backdrop-saturate) var(--spomove-mobile-tw-backdrop-sepia);
+  backdrop-filter: var(--spomove-mobile-tw-backdrop-blur) var(--spomove-mobile-tw-backdrop-brightness) var(--spomove-mobile-tw-backdrop-contrast) var(--spomove-mobile-tw-backdrop-grayscale) var(--spomove-mobile-tw-backdrop-hue-rotate) var(--spomove-mobile-tw-backdrop-invert) var(--spomove-mobile-tw-backdrop-opacity) var(--spomove-mobile-tw-backdrop-saturate) var(--spomove-mobile-tw-backdrop-sepia)
+}
+.root :global(.transition-all) {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms
+}
+.root :global(.transition-colors) {
+  transition-property: color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms
+}
+.root :global(.transition-transform) {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms
+}
+.root :global(.selection\:bg-brand-blue *::selection) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(59 130 246 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.selection\:text-white *::selection) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.selection\:bg-brand-blue::selection) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(59 130 246 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.selection\:text-white::selection) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.hover\:from-cyan-400:hover) {
+  --spomove-mobile-tw-gradient-from: #22d3ee var(--spomove-mobile-tw-gradient-from-position);
+  --spomove-mobile-tw-gradient-to: rgb(34 211 238 / 0) var(--spomove-mobile-tw-gradient-to-position);
+  --spomove-mobile-tw-gradient-stops: var(--spomove-mobile-tw-gradient-from), var(--spomove-mobile-tw-gradient-to)
+}
+.root :global(.hover\:to-blue-500:hover) {
+  --spomove-mobile-tw-gradient-to: #3b82f6 var(--spomove-mobile-tw-gradient-to-position)
+}
+.root :global(.hover\:text-gray-200:hover) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(229 231 235 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.hover\:text-white:hover) {
+  --spomove-mobile-tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--spomove-mobile-tw-text-opacity, 1))
+}
+.root :global(.active\:scale-95:active) {
+  --spomove-mobile-tw-scale-x: .95;
+  --spomove-mobile-tw-scale-y: .95;
+  transform: translate(var(--spomove-mobile-tw-translate-x), var(--spomove-mobile-tw-translate-y)) rotate(var(--spomove-mobile-tw-rotate)) skewX(var(--spomove-mobile-tw-skew-x)) skewY(var(--spomove-mobile-tw-skew-y)) scaleX(var(--spomove-mobile-tw-scale-x)) scaleY(var(--spomove-mobile-tw-scale-y))
+}
+.root :global(.active\:scale-\[0\.98\]:active) {
+  --spomove-mobile-tw-scale-x: 0.98;
+  --spomove-mobile-tw-scale-y: 0.98;
+  transform: translate(var(--spomove-mobile-tw-translate-x), var(--spomove-mobile-tw-translate-y)) rotate(var(--spomove-mobile-tw-rotate)) skewX(var(--spomove-mobile-tw-skew-x)) skewY(var(--spomove-mobile-tw-skew-y)) scaleX(var(--spomove-mobile-tw-scale-x)) scaleY(var(--spomove-mobile-tw-scale-y))
+}
+.root :global(.active\:bg-blue-600:active) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(37 99 235 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.active\:bg-green-600:active) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(22 163 74 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.active\:bg-red-600:active) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(220 38 38 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root :global(.active\:bg-yellow-400:active) {
+  --spomove-mobile-tw-bg-opacity: 1;
+  background-color: rgb(250 204 21 / var(--spomove-mobile-tw-bg-opacity, 1))
+}
+.root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.root :global([class*='space-y-'] > *) {
+  margin-bottom: 0;
+}
+.root :global([class*='space-x-'] > *) {
+  margin-inline-end: 0;
+}
+.root *, .root *::before, .root *::after {
+  scale: none;
+  rotate: none;
+  translate: none;
+}
+.root :global(button) {
+  cursor: pointer;
+}
+.root :global(button:disabled) {
+  cursor: default;
+}
+.root :global(button:focus-visible) {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}
+/* rounded-xs has no v3 declaration; neutralize the v4 utility on this icon. */
+.root :global(.rounded-xs) {
+  border-radius: 0;
+}
+.root :global([data-filter][aria-pressed='true']) {
+  background: rgb(255 255 255 / .1);
+  color: white;
+  border-color: rgb(255 255 255 / .2);
+}
+.root :global([data-filter='ALL'][aria-pressed='false']) {
+  background: transparent;
+  color: #9ca3af;
+  border-color: rgb(255 255 255 / .1);
+}
+.root :global(nav button:first-child:not([aria-current='page'])) {
+  background: transparent;
+  color: #9ca3af;
+  border-color: transparent;
+  box-shadow: none;
+}
+.root :global(nav button:not(:first-child)[aria-current='page']) {
+  background: rgb(245 158 11 / .2);
+  color: #fcd34d;
+  box-shadow: inset 0 0 0 1px rgb(245 158 11 / .3);
+}
+@media (min-width: 768px) {
+.root {
+  display: none;
+} }
+@media (prefers-reduced-motion: reduce) {
+.root *, .root *::before, .root *::after {
+  animation: none;
+  transition: none;
+} }
+
+/* The mobile screen.png uses a scrolling pill bar; its HTML contains a 2x2 grid. */
+.root.root :global([data-purpose='course-filter-bar'] > :first-child) {
+  font-size: 12px;
+}
+.root.root :global([data-purpose='course-filter-bar'] > :first-child > div > span:first-child) {
+  display: none;
+}
+.root.root :global([data-purpose='course-filter-bar'] > :first-child > div > span:last-child) {
+  margin-left: 0;
+}
+.root.root :global([data-purpose='course-filter-bar'] > :first-child > span) {
+  font-size: 10px;
+  color: #6b7280;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+.root.root :global([data-purpose='course-filter-bar'] > :last-child) {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-top: 0;
+}
+.root.root :global([data-purpose='course-filter-bar'] button) {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  gap: 6px;
+  justify-content: center;
+}
+.root.root :global([data-purpose='course-filter-bar'] button > div) {
+  gap: 6px;
+}
+.root.root :global([data-purpose='course-filter-bar'] button > div > span + span) {
+  margin-left: 0;
+}
+.root.root :global([data-purpose='course-filter-bar'] button:first-child > div > span:first-child) {
+  display: none;
+}
+.root.root :global([data-purpose='course-filter-bar'] button:first-child > span) {
+  background: transparent;
+  padding: 0;
+}
+.root.root :global([data-purpose='course-filter-bar'] button:not(:first-child) > span) {
+  display: none;
+}

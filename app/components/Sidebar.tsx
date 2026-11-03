@@ -37,6 +37,7 @@ interface SidebarProps {
   isDesktopOpen?: boolean;
   onToggleDesktop?: () => void;
   overlayOnly?: boolean;
+  hideHeader?: boolean;
 }
 
 type MenuItem = {
@@ -51,7 +52,7 @@ type MenuGroup = {
   items: MenuItem[];
 };
 
-export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlayOnly = false }: SidebarProps) {
+export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlayOnly = false, hideHeader = false }: SidebarProps) {
   const pathname = usePathname();
   const { isMobileOpen, setMobileOpen, toggleMobile } = useAppSidebar();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -250,7 +251,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
 
   return (
     <>
-      <header className={`fixed inset-x-0 top-0 z-[300] flex h-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))] min-w-0 items-center justify-between gap-4 bg-[#1e293b] px-4 pt-[env(safe-area-inset-top,0px)] shadow-sm ${mobileHeaderBreakpoint}`}>
+      {!hideHeader && <header className={`fixed inset-x-0 top-0 z-[300] flex h-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))] min-w-0 items-center justify-between gap-4 bg-[#1e293b] px-4 pt-[env(safe-area-inset-top,0px)] shadow-sm ${mobileHeaderBreakpoint}`}>
         <BrandLogo onDark size="sm" className="min-h-11 min-w-0 shrink-0" />
         <button
           type="button"
@@ -262,7 +263,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
         >
           {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-      </header>
+      </header>}
 
       {isMobileOpen ? (
         <button className={`fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm ${mobileHeaderBreakpoint}`} onClick={() => setMobileOpen(false)} aria-label="메뉴 닫기" />
