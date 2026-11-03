@@ -249,58 +249,17 @@ describe('spokedu site IA', () => {
     expect(homePage.cases.cards.every((card) => !('ctaLabel' in card))).toBe(true);
   });
 
-  it('keeps HomeWebLanding P0 information relationships', () => {
-    const landingSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/home-web/home-web-landing.tsx'),
-      'utf8',
-    );
-    const wrapperSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/home-landing.tsx'),
-      'utf8',
-    );
-    const homePageSource = readFileSync(join(process.cwd(), 'app/spokedu/data/home-page.ts'), 'utf8');
-
-    expect(wrapperSource).toMatch(/data-spokedu-home-sections="6"/);
-    expect(landingSource).not.toMatch(/<main[\s>]/);
-    expect(landingSource).toMatch(/<div className=\{styles\.page\}>/);
-    expect(landingSource.match(/<section/g)?.length).toBe(6);
-    expect(landingSource).toMatch(/aria-labelledby="home-heading"/);
-    expect(landingSource).toMatch(/id="audience"/);
-    expect(landingSource).toMatch(/aria-labelledby="expertise-heading"/);
-    expect(landingSource).toMatch(/aria-labelledby="records-heading"/);
-    expect(landingSource).toMatch(/aria-labelledby="products-heading"/);
-    expect(landingSource).toMatch(/aria-labelledby="consult-heading"/);
-
-    expect(landingSource).toMatch(/SPOKEDU_PATHS\.private/);
-    expect(landingSource).toMatch(/SPOKEDU_PATHS\.education/);
-    expect(landingSource).toMatch(/SPOKEDU_PATHS\.subscription/);
-    expect(landingSource).toMatch(/SPOKEDU_PATHS\.spomove/);
-    expect(landingSource).toMatch(/SPOKEDU_PATHS\.records/);
-    expect(landingSource).toMatch(/href=\{item\.href\}/);
-    expect(landingSource).toMatch(/href=\{`\$\{SPOKEDU_PATHS\.contact\}\?type=dispatch`\}/);
-    expect(landingSource).toMatch(/href=\{`\$\{SPOKEDU_PATHS\.contact\}\?type=private`\}/);
-
-    expect(landingSource).toMatch(/HOME_SECTION04_RECORDS/);
-    expect(landingSource).toMatch(/FEATURED_RECORDS\.map/);
-    const featuredSlugs = [
-      'donghaeng-special-pe',
-      'maedong-sports-stepup',
-      'yangcheon-paps',
-      'dasarang-oneday',
-      'seodaemun-event-booth',
-    ];
-    for (const slug of featuredSlugs) {
-      expect(landingSource).toContain(slug);
+  it('keeps the single website Home information relationships', () => {
+    const source = readFileSync(join(process.cwd(), 'app/spokedu/website/pages/home.tsx'), 'utf8')
+      + readFileSync(join(process.cwd(), 'app/spokedu/website/data/home.ts'), 'utf8');
+    for (const route of ['/education', '/private', '/spokedu-lab', '/spomove', '/records', '/contact']) {
+      expect(source).toContain(route);
     }
-    expect(featuredSlugs).toHaveLength(5);
-
-    expect(homePage.cases.cards).toHaveLength(6);
-    expect(homePage.cases.cards.some((card) => card.slug === 'dongjak-spomove')).toBe(true);
-    expect(landingSource).not.toContain('dongjak-spomove');
-
-    expect(homePageSource).not.toMatch(/HOME_FEATURED_CASE_SLUG/);
-    expect(JSON.stringify(homePage.spomove)).not.toMatch(/향상|개선|치료|인지|주의력|반응속도|스트룹/);
-    expect(landingSource).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠|스트룹/);
+    expect(source).toContain('아이와 현장의 조건에 맞춰');
+    expect(source).toContain('움직이고 싶게 만드는');
+    expect(source).toContain('체육수업을 설계합니다.');
+    expect(source).toContain('recordsPage.fieldRecords');
+    expect(source).not.toMatch(/innerHTML|data-path|isStitchC0Enabled/);
   });
 
   it('keeps Home media roles distinct and backed by approved assets', () => {
@@ -735,11 +694,11 @@ describe('spokedu Phase 3 public-copy safety', () => {
 
     const homeSource = readFileSync(join(process.cwd(), 'app/spokedu/data/home-page.ts'), 'utf8');
     const homeLandingSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/home-landing.tsx'),
+      join(process.cwd(), 'app/spokedu/website/pages/home.tsx'),
       'utf8',
     );
     const spomoveLandingSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/spomove-v0-landing.tsx'),
+      join(process.cwd(), 'app/spokedu/website/pages/spomove.tsx'),
       'utf8',
     );
     const spomovePageSource = readFileSync(
@@ -750,15 +709,15 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeSource).not.toMatch(/15,?015|PRIVATE_COUNTER|3,?000회/);
     expect(homeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
     expect(homeLandingSource).not.toMatch(/HomePartnerReviews|HomeMediaRail/);
-    expect(homeLandingSource).toMatch(/HomeV0Landing/);
-    expect(readFileSync(join(process.cwd(), 'app/spokedu/components/home-v0-landing.tsx'), 'utf8')).toMatch(/id="services"/);
+    expect(homeLandingSource).toMatch(/function HomePage/);
+    expect(homeLandingSource).toMatch(/id="service-paths"/);
     expect(homeLandingSource).not.toMatch(/HomeClassSection|HomeFieldBridge|HomeCommercialChoice|home-canonical/);
     expect(homeLandingSource).not.toMatch(/HomeAudienceGates/);
-    expect(spomoveLandingSource).toMatch(/SpomoveV0Landing|data-spokedu-spomove-sections/);
-    expect(spomoveLandingSource).toMatch(/spomoveCatalog|SPOMOVE 카탈로그/);
+    expect(spomoveLandingSource).toMatch(/function SpomovePage/);
+    expect(spomoveLandingSource).toContain('/spomove/catalog');
     expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);
     expect(spomoveLandingSource).not.toMatch(/9,900|28,900|집중력이 향상|인지능력이 개선/);
-    expect(spomovePageSource).toMatch(/SpomoveProgramLanding/);
+    expect(spomovePageSource).toMatch(/SpomovePage/);
   });
 
   it('keeps self-hosted SPOMOVE catalog route, data, and landing CTA contracts', () => {

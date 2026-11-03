@@ -467,8 +467,8 @@ export function SiteFooter({ omitUnverifiedAddress = false }: { omitUnverifiedAd
   const instagramLink = socialLinks.find((c) => c.key === 'instagram');
   const youtubeLink = socialLinks.find((c) => c.key === 'youtube');
 
-  const footerLinkClass = `block py-1 text-sm text-slate-400 transition hover:text-white ${koreanText}`;
-  const footerHeadingClass = `mb-5 text-sm font-bold text-white ${koreanText}`;
+  const footerLinkClass = `block text-sm text-slate-400 transition hover:text-white ${koreanText}`;
+  const footerHeadingClass = `mb-3 text-sm font-semibold text-white ${koreanText}`;
 
   const navGroups = footerNavGroups.filter((group) => group.heading !== '문의');
 
@@ -559,11 +559,11 @@ export function SiteFooter({ omitUnverifiedAddress = false }: { omitUnverifiedAd
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 sm:gap-16">
             {navGroups.map((group) => (
               <div key={group.heading}>
                 <p className={footerHeadingClass}>{group.heading}</p>
-                <ul className="space-y-0.5">
+                <ul className="space-y-2.5">
                   {group.links.map((link) => (
                     <li key={`${group.heading}-${link.href}`}>
                       <Link

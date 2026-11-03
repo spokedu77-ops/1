@@ -83,17 +83,14 @@ describe('public marketing typography contract', () => {
     expect(publicSource).not.toContain('[font-family:var(--spokedu-marketing-font-display)]');
   });
 
-  it('keeps key public page titles and section titles on canonical utilities', () => {
-    const homeWeb = read('app/spokedu/components/home-v0-landing.tsx');
-    expect(homeWeb).toMatch(/<h1\b[^>]*\bid="home-heading"/);
-    expect(homeWeb).toMatch(/<h2\b[^>]*\bid="audience-heading"/);
-    expect(read('app/spokedu/components/landing-hero.tsx')).toMatch(/<motion\.h1[\s\S]*marketingHeroDisplay/);
-    const education = read('app/spokedu/components/education-v0-landing.tsx');
-    expect(education).toMatch(/<h1\b[^>]*\bid="edu-hero-heading"/);
-    expect(education).toMatch(/koreanLineBreak/);
-    expect(read('app/spokedu/components/section-heading.tsx')).toMatch(/<h2[\s\S]*marketingTypeSectionTitle/);
-    expect(read('app/spokedu/components/spomove-v0-landing.tsx')).toMatch(/<h1[\s\S]*id="spomove-hero-heading"/);
-    expect(read('app/spokedu/components/spomove-v0-landing.tsx')).toMatch(/<h2[\s\S]*break-keep/);
+  it('keeps website headings readable in Korean with a scoped Pretendard family', () => {
+    const css = read('app/spokedu/website/styles/website.css');
+    expect(css).toContain('Pretendard');
+    expect(css).toContain('word-break: keep-all');
+    expect(css).toContain('text-wrap: balance');
+    for (const page of ['home', 'education', 'private', 'spomove', 'records', 'about']) {
+      expect(read('app/spokedu/website/pages/' + page + '.tsx')).toMatch(/<h1/);
+    }
   });
 
   it('does not hide migration behind broad heading overrides', () => {

@@ -46,15 +46,9 @@ export const spokeduMarketingMetadata: Metadata = {
   },
 };
 
-export function SpokeduMarketingLayout({ children }: { children: ReactNode }) {
+export function SpokeduMarketingTracking() {
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
-
-  return (
-    <div className="spokedu-marketing min-h-screen bg-[var(--spokedu-marketing-color-paper)] antialiased">
-      <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
-      />
+  return <>
       {gaMeasurementId ? (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />
@@ -73,6 +67,14 @@ export function SpokeduMarketingLayout({ children }: { children: ReactNode }) {
         </>
       ) : null}
       <SpokeduTrackingProvider />
+  </>;
+}
+
+export function SpokeduMarketingLayout({ children }: { children: ReactNode }) {
+  return (
+    <div className="spokedu-marketing min-h-screen bg-[var(--spokedu-marketing-color-paper)] antialiased">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+      <SpokeduMarketingTracking />
       <SpokeduSiteShell>{children}</SpokeduSiteShell>
     </div>
   );

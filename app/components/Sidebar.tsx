@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppSidebar } from '@/app/providers/AppSidebarProvider';
+import { BrandLogo } from '@/app/spokedu/components/brand-logo';
 import {
   BookOpen,
   Box,
@@ -35,6 +36,7 @@ import {
 interface SidebarProps {
   isDesktopOpen?: boolean;
   onToggleDesktop?: () => void;
+  overlayOnly?: boolean;
 }
 
 type MenuItem = {
@@ -49,7 +51,7 @@ type MenuGroup = {
   items: MenuItem[];
 };
 
-export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: SidebarProps) {
+export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlayOnly = false }: SidebarProps) {
   const pathname = usePathname();
   const { isMobileOpen, setMobileOpen, toggleMobile } = useAppSidebar();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -184,8 +186,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
   const isSubscriber = pathname.startsWith('/billing');
   const isSpomoveAccount = userEmail?.toLowerCase() === 'spomove@spokedu.com';
-  const mobileHeaderBreakpoint = isAdminRoute ? 'min-[1200px]:hidden' : 'md:hidden';
-  const desktopSidebarTransform = isAdminRoute
+  const mobileHeaderBreakpoint = overlayOnly ? '' : isAdminRoute ? 'min-[1200px]:hidden' : 'md:hidden';
+  const desktopSidebarTransform = overlayOnly ? '' : isAdminRoute
     ? isDesktopOpen
       ? 'min-[1200px]:translate-x-0'
       : 'min-[1200px]:-translate-x-full'
@@ -193,9 +195,9 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       ? 'md:translate-x-0'
       : 'md:-translate-x-full';
   const desktopOnlyDisplay = isAdminRoute ? 'min-[1200px]:flex' : 'md:flex';
-  const desktopOnlyBlock = isAdminRoute ? 'min-[1200px]:block' : 'md:block';
-  const desktopNavPadding = isAdminRoute ? 'min-[1200px]:pt-3' : 'md:pt-3';
-  const drawerWidth = isAdminRoute ? 'w-[min(84vw,320px)] min-[1200px]:w-[var(--admin-sidebar-width)]' : 'w-64';
+  const desktopOnlyBlock = overlayOnly ? '' : isAdminRoute ? 'min-[1200px]:block' : 'md:block';
+  const desktopNavPadding = overlayOnly ? '' : isAdminRoute ? 'min-[1200px]:pt-3' : 'md:pt-3';
+  const drawerWidth = overlayOnly ? 'w-[min(84vw,320px)]' : isAdminRoute ? 'w-[min(84vw,320px)] min-[1200px]:w-[var(--admin-sidebar-width)]' : 'w-64';
 
   if (!isAdminRoute && !isSubscriber) return null;
 
@@ -248,33 +250,39 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
   return (
     <>
-      <div className={`fixed left-0 top-0 z-[300] flex h-12 w-full items-center justify-between bg-[#1e293b] px-4 pt-[env(safe-area-inset-top)] shadow-lg ${mobileHeaderBreakpoint}`}>
-        <h1 className="text-lg font-semibold uppercase italic tracking-tighter text-blue-400">SPOKEDU</h1>
+      <header className={`fixed inset-x-0 top-0 z-[300] flex h-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))] min-w-0 items-center justify-between gap-4 bg-[#1e293b] px-4 pt-[env(safe-area-inset-top,0px)] shadow-sm ${mobileHeaderBreakpoint}`}>
+        <BrandLogo onDark size="sm" className="min-h-11 min-w-0 shrink-0" />
         <button
+          type="button"
           onClick={toggleMobile}
-          className="flex min-h-[44px] min-w-[44px] touch-manipulation items-center justify-center rounded-lg bg-slate-800 p-2 text-white outline-none transition-colors hover:bg-slate-700 active:bg-slate-600"
+          className="grid h-11 w-11 shrink-0 touch-manipulation place-items-center rounded-lg p-0 text-white transition-colors hover:bg-slate-700 active:bg-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           aria-label={isMobileOpen ? '사이드바 닫기' : '사이드바 열기'}
+          aria-expanded={isMobileOpen}
+          aria-controls="app-navigation"
         >
           {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-      </div>
+      </header>
 
       {isMobileOpen ? (
         <button className={`fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm ${mobileHeaderBreakpoint}`} onClick={() => setMobileOpen(false)} aria-label="메뉴 닫기" />
       ) : null}
 
       <aside
-        data-admin-sidebar={pathname.startsWith('/admin') ? 'true' : undefined}
+        id="app-navigation"
+        aria-label={isAdminRoute ? '관리자 메뉴' : '계정 메뉴'}
+        inert={overlayOnly && !isMobileOpen}
+        data-admin-sidebar={pathname.startsWith('/admin') && !overlayOnly ? 'true' : undefined}
         className={`fixed !left-0 !top-0 z-[260] m-0 flex h-[var(--viewport-height-px,100dvh)] max-h-[var(--viewport-height-px,100dvh)] ${drawerWidth} flex-col overflow-hidden bg-[#1e293b] pb-[env(safe-area-inset-bottom,0px)] text-white transition-transform duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${desktopSidebarTransform}`}
       >
         <div className={`hidden border-b border-slate-700 px-5 py-4 text-left ${desktopOnlyBlock}`}>
-          <h1 className="text-xl font-semibold uppercase italic leading-none tracking-tighter text-blue-400">SPOKEDU</h1>
+          <BrandLogo onDark size="sm" />
           <p className="mt-1.5 text-[10px] font-medium uppercase leading-none text-slate-400">{isAdminRoute ? 'Admin Portal' : 'Warm-up Portal'}</p>
         </div>
 
-        <nav className={`scrollbar-hide min-h-0 flex-1 space-y-2 overflow-y-auto p-3 pt-[calc(3rem+env(safe-area-inset-top,0px))] text-left ${desktopNavPadding}`}>
+        <nav className={`scrollbar-hide min-h-0 flex-1 space-y-2 overflow-y-auto p-3 pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px)+0.75rem)] text-left ${desktopNavPadding}`}>
           {groups.map((group, groupIndex) => (
             <div key={group.group} className={`space-y-0.5 text-left ${groupIndex > 0 ? 'mt-2 border-t border-slate-700 pt-2' : ''}`}>
               <h3 className="px-2.5 py-0.5 text-left text-[10px] font-semibold uppercase leading-4 tracking-widest text-slate-500">{group.group}</h3>
@@ -334,7 +342,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
         </div>
       </aside>
 
-      {onToggleDesktop ? (
+      {onToggleDesktop && !overlayOnly ? (
         <button
           onClick={onToggleDesktop}
           className={`fixed bottom-4 left-4 z-[300] hidden h-11 w-11 items-center justify-center rounded-xl bg-[#1e293b] text-slate-300 shadow-lg transition-colors hover:bg-slate-700 hover:text-white ${desktopOnlyDisplay}`}

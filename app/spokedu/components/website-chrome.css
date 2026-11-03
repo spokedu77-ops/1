@@ -3,7 +3,7 @@
   --spokedu-public-header-height: 80px;
   --spokedu-marketing-color-navy: #131b2e;
   --spokedu-marketing-color-blue: #004ac6;
-  font-family: 'Plus Jakarta Sans', Pretendard, sans-serif;
+  font-family: 'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   color: #131b2e;
   background: #faf8ff;
 }
@@ -26,5 +26,3 @@
 .phase-d-preview .phase-d-contact h1 { letter-spacing: -.04em; line-height: 1.3; }
 .phase-d-preview .phase-d-contact :is(form, section > div.rounded-lg) { border-radius: 16px; }
 .phase-d-preview .phase-d-contact :is(button, a)[class*='bg-[#245DFF]'] { background: #004ac6; }
-/* The source main already reserves 80px for its fixed header. The shared header occupies flow. */
-.phase-d-preview > .stitch-c0-root > main { padding-top: 0; }

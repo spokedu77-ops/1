@@ -15,7 +15,6 @@ import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
 import { reportLoginUxEvent } from '@/app/lib/auth/loginUxTelemetry';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { isFullscreenPath, isPublicMarketingPath } from '@/app/lib/constants/fullscreen-paths';
-import { isStitchC0Enabled, isStitchC0Path } from '@/app/spokedu/stitch/c0/flags';
 import { AppSidebarProvider, useAppSidebar } from './providers/AppSidebarProvider';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
@@ -37,13 +36,13 @@ const fontVariables = {
 function RootLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const publicMarketing = isPublicMarketingPath(pathname ?? '');
-  const stitchPublic = isStitchC0Enabled() && isStitchC0Path(pathname ?? '');
   const hideSidebar = publicMarketing || isFullscreenPath(pathname ?? '');
   const isAdminShell = pathname?.startsWith('/admin') ?? false;
+  const isReportShell = pathname === '/admin/master/reports' || pathname?.startsWith('/admin/master/reports/') === true;
   const isTeacherShell = pathname?.startsWith('/teacher') ?? false;
   const isNoteV2Route = pathname?.startsWith('/admin/note-v2') ?? false;
   const homeSticky = pathname === '/' || pathname === '';
-  const { isDesktopOpen, toggleDesktop } = useAppSidebar();
+  const { isDesktopOpen, isMobileOpen, toggleDesktop } = useAppSidebar();
   const fullscreenWrapStyle = hideSidebar && !publicMarketing
     ? { minHeight: 'var(--viewport-height-px, 100dvh)', height: 'var(--viewport-height-px, 100dvh)', width: '100vw', maxWidth: '100%' }
     : undefined;
@@ -90,7 +89,6 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
       lang="ko"
       className="font-sans"
       style={fontVariables}
-      data-stitch-c0-active={stitchPublic ? '1' : undefined}
     >
       <head>
         <meta name="theme-color" content="#185FA5" />
@@ -101,32 +99,31 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
       </head>
       <body
         className={
-          stitchPublic ? 'min-h-screen antialiased' : 'bg-gray-50 font-sans text-slate-900 antialiased'
+          'bg-gray-50 font-sans text-slate-900 antialiased'
         }
       >
         <QueryProvider>
           <I18nProvider>
-            {stitchPublic ? (
-              children
-            ) : (
-              <>
-            <Toaster position="top-center" richColors closeButton />
+            <>
+            <Toaster position="top-center" richColors closeButton className={isAdminShell ? `admin-toaster${isReportShell ? ' admin-toaster-with-header' : ''}` : undefined} />
             <div className={`flex ${hideSidebar ? `w-full${homeSticky ? '' : ' overflow-x-hidden'}` : 'min-h-screen'}`} style={fullscreenWrapStyle}>
-              {!hideSidebar && (
+              {(!hideSidebar || isReportShell) && (
                 <Sidebar
                   isDesktopOpen={isDesktopOpen}
                   onToggleDesktop={toggleDesktop}
+                  overlayOnly={isReportShell}
                 />
               )}
 
               <ContentRoot
+                inert={isReportShell && isMobileOpen}
                 style={mainFullscreenStyle}
                 data-internal-shell={isAdminShell ? 'admin' : isTeacherShell ? 'teacher' : undefined}
                 data-sidebar-open={isAdminShell && !hideSidebar ? String(isDesktopOpen) : undefined}
                 className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                   hideSidebar
-                    ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0${homeSticky ? '' : ' overflow-x-hidden'}`
-                    : `${isAdminShell ? 'pt-[calc(3rem+env(safe-area-inset-top,0px))] min-[1200px]:pt-0' : ''}${
+                    ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0${homeSticky ? '' : ' overflow-x-hidden'}${isReportShell ? ' pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))]' : ''}`
+                    : `${isAdminShell ? 'pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))] min-[1200px]:pt-0' : ''}${
                         isTeacherShell
                           ? ''
                           : isAdminShell
@@ -140,8 +137,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 {children}
               </ContentRoot>
             </div>
-              </>
-            )}
+            </>
           </I18nProvider>
         </QueryProvider>
       </body>

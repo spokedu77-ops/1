@@ -4,10 +4,10 @@ import { SPOKEDU_IMAGES } from '../data/images';
 import { getSpokeduSiteUrl } from '../lib/site-url';
 
 /** Home OG·검색용 Organization / WebSite */
-export function HomeStructuredData() {
+export function HomeStructuredData({ heroSrc = SPOKEDU_IMAGES.home.hero.src }: { heroSrc?: string } = {}) {
   const siteUrl = getSpokeduSiteUrl();
   const homeUrl = `${siteUrl}/`;
-  const heroImage = `${siteUrl}${SPOKEDU_IMAGES.home.hero.src}`;
+  const heroImage = `${siteUrl}${heroSrc}`;
   const logoImage = `${siteUrl}${SPOKEDU_IMAGES.brand.logo.src}`;
   const sameAs = [...getOrganizationSameAsUrls()];
 

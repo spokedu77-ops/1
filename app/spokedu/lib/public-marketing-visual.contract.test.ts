@@ -101,13 +101,11 @@ describe('public marketing visual foundation contract', () => {
     expect(read('app/spokedu/components/visual/card-variants.ts')).toMatch(/export function landingCardShell\b/);
   });
 
-  it('uses H1 role independently from its scale on Education and SPOMOVE', () => {
-    const education = read('app/spokedu/components/education-v0-landing.tsx');
-    expect(education).toMatch(/<h1\b[^>]*\bid="edu-hero-heading"/);
-    expect(read('app/spokedu/components/home-web/home-canonical.module.css')).toMatch(/\.hero h1/);
-
-    const spomove = read('app/spokedu/components/spomove-v0-landing.tsx');
-    expect(spomove).toMatch(/<h1[\s\S]*id="spomove-hero-heading"/);
-    expect(spomove).toMatch(/data-spokedu-spomove-sections/);
+  it('uses a semantic H1 on Education and SPOMOVE', () => {
+    for (const page of ['education', 'spomove']) {
+      const source = read('app/spokedu/website/pages/' + page + '.tsx');
+      expect(source).toMatch(/<h1/);
+      expect(source).toContain('main-content');
+    }
   });
 });

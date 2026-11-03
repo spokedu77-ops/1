@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import SpomoveCatalogTabs from '../../components/spomove-catalog-tabs';
-import SpomoveProgramLanding from '../../components/spomove-program-landing';
+import SpomovePage from '../../website/pages/spomove';
 import { buildSpokeduPageMetadata, buildProgramDetailOgImage } from '../../data/seo';
 
 export const metadata = buildSpokeduPageMetadata({
@@ -42,5 +42,5 @@ export default async function SpokeduProgramSpomovePage({ searchParams }: Spomov
     );
   }
 
-  return <SpomoveProgramLanding />;
+  return <SpomovePage />;
 }
