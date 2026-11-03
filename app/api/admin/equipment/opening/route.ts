@@ -4,6 +4,7 @@ import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { mapEquipmentRpcError } from '@/app/lib/equipment/rpcMap';
 import { newEquipmentRequestKey, normalizeClientRequestKey } from '@/app/lib/equipment/requestKey';
 import { ensureLegacyImportSnapshot } from '@/app/lib/equipment/legacyImportSync';
+import { fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
 import { isEquipmentOpeningPersistEnabled } from '@/app/lib/equipment/openingPersist';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
 import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
@@ -60,7 +61,22 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
-  await ensureLegacyImportSnapshot(service);
+  const legacyInventory = await fetchLegacyInventory(service);
+  if (legacyInventory.length > 0) {
+    try {
+      await ensureLegacyImportSnapshot(service);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'unknown';
+      return NextResponse.json(
+        {
+          error: '기존 강사 보유(inventory) 이관 준비에 실패했습니다. 관리자에게 문의하세요.',
+          code: 'LEGACY_SNAPSHOT_FAILED',
+          detail: process.env.NODE_ENV === 'development' ? detail : undefined,
+        },
+        { status: 503 },
+      );
+    }
+  }
   const { data, error } = await service.rpc('admin_equipment_opening_balance', {
     p_catalog_id: parsed.data.catalog_id,
     p_qty_on_hand_total: parsed.data.qty_on_hand_total,

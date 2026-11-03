@@ -403,6 +403,8 @@ export function applyPlanToLegacyImportStatus(
 }
 
 async function persistLegacyImportPlan(plan: LegacyImportPlan): Promise<void> {
+  if (plan.inventory_rows === 0 || plan.rows.length === 0) return;
+
   const privateDb = getPrivateSchemaServiceSupabase();
   const { data: imported, error: impErr } = await privateDb
     .from('equipment_legacy_import_rows')
@@ -436,7 +438,13 @@ async function persistLegacyImportPlan(plan: LegacyImportPlan): Promise<void> {
 }
 
 export async function ensureLegacyImportSnapshot(service: SupabaseClient): Promise<LegacyImportSyncResult> {
-  const plan = await buildLegacyImportPlan(service);
+  const inventory = await fetchLegacyInventory(service);
+  const plan = await buildLegacyImportPlanFromInventory(service, inventory);
+
+  if (plan.inventory_rows === 0) {
+    return { plan, persisted: false, staging_skipped_reason: 'no_legacy_inventory' };
+  }
+
   if (!isEquipmentLegacyStagingEnabled() && !isEquipmentOpeningPersistEnabled()) {
     return { plan, persisted: false, staging_skipped_reason: 'staging flags not set' };
   }
