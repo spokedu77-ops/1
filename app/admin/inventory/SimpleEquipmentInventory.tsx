@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { Package, Plus, Search, X } from 'lucide-react';
 import type { SimpleMove, SimpleRental } from '@/app/lib/equipment/simpleMath';
@@ -24,7 +24,7 @@ const emptyEditor = (): Editor => ({ id: null, name: '', qty: '', image: '', cat
 const emptyRent = (): RentForm => ({ catalogId: '', teacherId: '', qty: '1', date: today(), requestKey: crypto.randomUUID() });
 const emptyReturn = (): ReturnForm => ({ rentalId: '', qty: '1', date: today(), requestKey: crypto.randomUUID() });
 
-function Dialog({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+function Dialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   return <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/50 p-4" onClick={onClose}>
     <div role="dialog" aria-modal="true" aria-label={title}
       onClick={(e) => e.stopPropagation()} className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
@@ -136,7 +136,7 @@ export default function SimpleEquipmentInventory() {
             <td className="p-3"><div className="flex items-center gap-2">
               {item.image ? <img src={item.image} alt="" className="h-9 w-9 rounded-md object-cover"/> :
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-100"><Package size={16}/></div>}
-              <div><div className="font-semibold">{item.name}</div><div className="text-[11px] text-slate-400">{item.mgmt_code}</div></div>
+              <div><div className="font-semibold">{item.name}</div><div className="text-[11px] text-slate-400">{item.mgmt_code ?? `PE-${String(item.id).padStart(3, '0')}`}</div></div>
             </div></td>
             <td className="p-3 text-right tabular-nums">{item.qty_total ?? '미입력'}</td>
             <td className="p-3 text-right tabular-nums">{item.lent ?? '—'}</td>
