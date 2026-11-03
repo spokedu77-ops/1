@@ -1,3 +1,5 @@
+import type { CenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
+
 export type VatMode = 'auto' | 'none' | 'manual';
 export type CenterType = 'regular' | 'short' | 'private' | 'etc';
 
@@ -48,6 +50,13 @@ export const emptyRow = (): SettlementRow => ({
   rcptAmt: null, vatMode: 'auto', vatManual: 0, cost: '', adj: 0, note: '', invDate: '',
   rcptDate: '', whRate: 0, centerId: '', dueDate: '', type: 'regular',
 });
+
+export const SETTLEMENT_GROUPS = [
+  { type: 'regular', name: '정기 수업' },
+  { type: 'short', name: '단기 수업' },
+  { type: 'private', name: '개인 수업' },
+  { type: 'etc', name: '기타' },
+] as const;
 
 export function evaluateExpression(source: string | number, sessions: string | number): number | undefined {
   if (source === '' || source == null) return undefined;
@@ -135,4 +144,19 @@ export function nextSettlementMonthKey(monthKeys: string[], now = new Date()): s
 
 export function carryOverRegularClasses(rows: SettlementRow[]) {
   return rows.filter((row) => row.kind === 'row' && row.type === 'regular').map(copyRowForNextMonth);
+}
+
+/** New months use current operational DB defaults, never historical row classifications. */
+export function rowsFromRecurringCenters(centers: {
+  id: string; name: string; defaults: CenterSettlementDefaults;
+  sessionFee: number | null; mainFee: number | null; assistFee: number | null;
+}[], monthKey: string): SettlementRow[] {
+  return centers.filter((center) => center.defaults.type === 'regular').map((center) => {
+    const labor = center.mainFee != null && center.assistFee != null ? center.mainFee + center.assistFee : null;
+    return { ...emptyRow(), operationalCenterId: center.id, name: center.name,
+      fee: center.sessionFee ?? '', sessions: '',
+      cost: labor != null && Number.isSafeInteger(labor) ? `${labor}*회기` : '',
+      type: center.defaults.type, vatMode: center.defaults.vat, whRate: center.defaults.whRate,
+      dueDate: dueDate(monthKey, center.defaults) };
+  });
 }

@@ -221,7 +221,8 @@
 .actionButton:hover:not(:disabled) { background: var(--sheet-accent-soft); color: var(--sheet-accent); }
 .deleteButton:hover:not(:disabled) { background: #fce5e2; color: #c22a1f; }
 .actionButton:disabled { opacity: .3; }
-.sectionRow td { border-bottom-color: #cfe4dc; background: #edf7f3; }
+.sectionRow td,
+.grid .sectionRow th { position: static; border-bottom-color: #cfe4dc; background: #edf7f3; color: #0b6b57; }
 .sectionContent { display: flex; align-items: center; gap: 4px; padding: 2px 4px; }
 .sectionContent input { min-height: 28px; color: #0b6b57; font-weight: 700; }
 .sectionDelete { display: grid; width: 28px; height: 28px; flex: none; place-items: center; border-radius: 6px; color: #8b9993; }
@@ -248,7 +249,8 @@
   .grid input,
   .grid select { border-color: var(--sheet-line); background: var(--sheet-surface-soft); }
   .sectionRow { display: block; overflow: hidden; border: 1px solid #cfe4dc; border-radius: 10px; }
-  .sectionRow td { display: block; height: auto; }
+  .sectionRow td,
+  .sectionRow th { display: block; height: auto; }
 }
 
 @media (max-width: 700px) {
@@ -299,7 +301,8 @@
 .settlementGrid .actions { display: grid; width: fit-content; height: auto; margin: 3px auto 0; grid-template-columns: repeat(2, 24px); gap: 2px; }
 .settlementGrid .actionButton { width: 24px; height: 24px; }
 .settlementGrid .deleteButton { grid-column: 1 / -1; justify-self: center; }
-.settlementGrid .sectionRow td { padding: 5px 8px; }
+.settlementGrid .sectionRow td,
+.settlementGrid .sectionRow th { padding: 5px 8px; }
 .settlementGrid .sectionContent { gap: 8px; }
 
 @container (max-width: 1080px) {

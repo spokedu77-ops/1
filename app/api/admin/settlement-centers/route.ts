@@ -20,19 +20,31 @@ export async function GET(request: Request) {
   if (!auth.ok) { auth.response.headers.set('Cache-Control', 'private, no-store'); return auth.response; }
   if (auth.email?.toLowerCase() !== MASTER_EMAIL) return json({ error: 'Forbidden' }, 403);
   const params = new URL(request.url).searchParams;
+  const recurring = params.get('scope') === 'recurring';
   const search = (params.get('q') ?? '').trim();
-  if (params.get('scope') !== 'import') return json({ error: 'Unsupported scope' }, 400);
+  if (!recurring && params.get('scope') !== 'import') return json({ error: 'Unsupported scope' }, 400);
   if (search.length > 100) return json({ error: '검색어가 너무 깁니다.' }, 400);
   try {
     const service = getServiceSupabase();
     const term = search.replace(/[,%()]/g, ' ').trim();
-    let query = service.from('centers')
+    const centerQuery = () => service.from('centers')
       .select('id,name,region_tag,status,session_fee,main_teacher_id,main_teacher_2_id,main_teacher_3_id,instructors_default,settlement_defaults')
-      .neq('status', 'ended').order('name').order('id').limit(30);
+      .neq('status', 'ended').order('name').order('id');
+    let query = centerQuery().limit(30);
     if (term) query = query.or(`name.ilike.%${term}%,settlement_defaults->>projectName.ilike.%${term}%`);
-    const result = await query;
+    const result = recurring ? { data: [], error: null } : await query;
     if (result.error) throw result.error;
-    const centers = result.data ?? [];
+    const centers = recurring ? [] : result.data ?? [];
+    if (recurring) {
+      // Page through the DB; the import search's 30-result limit must not omit centers.
+      for (let offset = 0; ; offset += 500) {
+        const page = await centerQuery().range(offset, offset + 499);
+        if (page.error) throw page.error;
+        const rows = page.data ?? [];
+        centers.push(...rows.filter((center) => readCenterSettlementDefaults(center.settlement_defaults).type === 'regular'));
+        if (rows.length < 500) break;
+      }
+    }
     const ids = [...new Set(centers.flatMap((center) => [center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]).filter((id): id is string => Boolean(id)))];
     const [teachers, tiers, counts] = await Promise.all([
       ids.length ? service.from('users').select('id,name,role,email,is_admin,session_count,fee_center_main,fee_center_assist').in('id', ids) : Promise.resolve({ data: [], error: null }),

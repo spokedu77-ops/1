@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calculateRow, carryOver, emptyRow, rateFor, rowFromCenter, summarize, type SettlementCenter } from './settlementSheetCore';
+import { calculateRow, carryOver, emptyRow, rateFor, rowFromCenter, rowsFromRecurringCenters, summarize, type SettlementCenter } from './settlementSheetCore';
+import { DEFAULT_CENTER_SETTLEMENT } from '@/app/lib/centers/settlementDefaults';
 
 const settings = { vatMethod: 'div11' as const, year: 2026 };
 const center: SettlementCenter = {
@@ -10,6 +11,26 @@ const center: SettlementCenter = {
 };
 
 describe('settlement sheet calculation contract', () => {
+  it('creates new monthly rows from current DB classifications and terms with no settlement evidence', () => {
+    const source = { id: 'operational-1', name: '새 정기 센터', defaults: { ...DEFAULT_CENTER_SETTLEMENT },
+      sessionFee: 120000, mainFee: 40000, assistFee: 20000 };
+    const rows = rowsFromRecurringCenters([source,
+      { ...source, id: 'short', defaults: { ...source.defaults, type: 'short' } },
+      { ...source, id: 'etc', defaults: { ...source.defaults, type: 'etc' } },
+    ], '2026-12');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ operationalCenterId: source.id, name: source.name, type: 'regular',
+      fee: 120000, cost: '60000*회기', dueDate: '2026-12-31', sessions: '', total: '',
+      inv: false, rcpt: false, rcptAmt: null, invDate: '', rcptDate: '', adj: 0 });
+  });
+
+  it('keeps missing DB prices blank rather than inventing zero amounts', () => {
+    const [row] = rowsFromRecurringCenters([{ id: 'missing', name: '단가 미설정', defaults: DEFAULT_CENTER_SETTLEMENT,
+      sessionFee: null, mainFee: null, assistFee: 0 }], '2026-12');
+    expect(row.fee).toBe('');
+    expect(row.cost).toBe('');
+  });
+
   it('keeps formula, VAT, expense, withholding, partial receipt, and adjustment semantics', () => {
     const row = { ...emptyRow(), fee: '100000+20000', sessions: 4, cost: '5000*회기', whRate: 3.3,
       rcptAmt: 240000, adj: 10000 };

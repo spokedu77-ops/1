@@ -10,7 +10,7 @@ import SettlementCalculationSettings from './SettlementCalculationSettings';
 import MoneyInput from './SettlementMoneyInput';
 import styles from './SettlementSheet.module.css';
 import {
-  calculateRow, carryOverRegularClasses, nextSettlementMonthKey, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize, uid,
+  calculateRow, SETTLEMENT_GROUPS, rowsFromRecurringCenters, nextSettlementMonthKey, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize, uid,
   type CenterType, type SettlementCenter, type SettlementMonth, type SettlementRow,
   type SettlementSettings, type SettlementSheetData,
 } from './settlementSheetCore';
@@ -199,10 +199,16 @@ export default function SettlementSheet() {
     creatingMonthRef.current = true;
     setCreatingMonth(true);
     const key = nextSettlementMonthKey(Object.keys(data.months));
-    const previous = sortedMonths(data).filter((month) => month.key < key).at(-1);
-    const rows = previous ? carryOverRegularClasses(previous.rows) : [];
-    const month: SettlementMonth = { key, label: `${Number(key.slice(5))}월 수업료`, rows, rev: '', locked: false, lockedAt: null };
-    try { await saveMonth(month, ''); setCurrentKey(key); setView('month'); toast.success('정기수업을 복사해 새 달을 만들었습니다.'); }
+    try {
+      const response = await fetch('/api/admin/settlement-centers?scope=recurring', { cache: 'no-store' });
+      if (!response.ok) throw new Error('정기 센터 정보를 불러오지 못했습니다.');
+      const result = await response.json() as { centers: Parameters<typeof rowsFromRecurringCenters>[0] };
+      const regularRows = rowsFromRecurringCenters(result.centers, key);
+      const rows = SETTLEMENT_GROUPS.flatMap((group) => [section(group.name, group.type),
+        ...(group.type === 'regular' ? regularRows : [])]);
+      const month: SettlementMonth = { key, label: `${Number(key.slice(5))}월 수업료`, rows, rev: '', locked: false, lockedAt: null };
+      await saveMonth(month, ''); setCurrentKey(key); setView('month'); toast.success('센터 DB의 정기수업으로 새 달을 만들었습니다.');
+    }
     catch (error) { toast.error((error as Error).message); }
     finally { creatingMonthRef.current = false; setCreatingMonth(false); }
   };
@@ -242,7 +248,10 @@ export default function SettlementSheet() {
       const xlsx = await loadXlsx(); const workbook = xlsx.utils.book_new(); const months = all ? sortedMonths(data) : current ? [current] : [];
       for (const month of months) {
         const rows: unknown[][] = [['기관명','수업료','회기','총액','계산서 발행 여부','영수여부','부가세','강사료(인건비)','정산 순수익','비고','발행일','영수일','영수금액']];
-        month.rows.forEach((row) => { const value = calculateRow(row, data.settings); rows.push([row.name,row.fee,row.sessions,value.total,row.inv?'O':'',row.rcpt?'O':'',value.vat,row.cost,value.netAfterWh,row.note,row.invDate,row.rcptDate,row.rcptAmt ?? '']); });
+        month.rows.forEach((row) => {
+          if (row.kind === 'section') { rows.push([row.name]); return; }
+          const value = calculateRow(row, data.settings); rows.push([row.name,row.fee,row.sessions,value.total,row.inv?'O':'',row.rcpt?'O':'',value.vat,row.cost,value.netAfterWh,row.note,row.invDate,row.rcptDate,row.rcptAmt ?? '']);
+        });
         xlsx.utils.book_append_sheet(workbook, xlsx.utils.aoa_to_sheet(rows), month.label.slice(0, 31));
       }
       xlsx.writeFile(workbook, all ? '수업료 정산.xlsx' : `수업료 정산 ${current?.label ?? ''}.xlsx`);
@@ -302,7 +311,6 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
         <button className={month.locked ? styles.secondaryButton : styles.primaryButton} onClick={toggleLock}>{month.locked ? <Unlock size={14}/> : <Lock size={14}/>} {month.locked ? '확정 해제' : '이 달 확정'}</button>
         <details className={styles.managementMenu}><summary className={styles.secondaryButton}>월 관리 <MoreHorizontal size={15}/></summary><div className={styles.managementBody}>
           <button type="button" disabled={month.locked} onClick={() => void persist()}><Save size={14}/>지금 저장</button>
-          <button type="button" disabled={month.locked} onClick={() => updateRows([...month.rows,section('[새 구분]','etc')])}><Plus size={14}/>구분 행 추가</button>
           <button type="button" disabled={month.locked} onClick={() => void deleteMonth()} className={styles.menuDanger}><Trash2 size={14}/>이 달 삭제</button>
         </div></details>
       </div>
@@ -340,7 +348,7 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
       <colgroup><col style={{width:'16%'}}/><col style={{width:'11%'}}/><col style={{width:'4%'}}/><col style={{width:'12%'}}/><col style={{width:'5%'}}/><col style={{width:'6%'}}/><col style={{width:'10%'}}/><col style={{width:'11%'}}/><col style={{width:'12%'}}/><col style={{width:'7%'}}/><col style={{width:'6%'}}/></colgroup>
       <thead><tr><th scope="col">기관명</th><th scope="col" className={styles.numeric}>수업료</th><th scope="col" className={styles.centered}>회기</th><th scope="col" className={styles.numeric}>총액</th><th scope="col" className={styles.centered}>계산서</th><th scope="col" className={styles.centered}>입금</th><th scope="col" className={styles.numeric}>부가세</th><th scope="col" className={styles.numeric}>강사료(인건비)</th><th scope="col" className={styles.numeric}>정산 순수익</th><th scope="col">비고</th><th scope="col" aria-label="행 작업"></th></tr></thead>
       <tbody>{visible.map((row)=>{
-        if(row.kind==='section') return <tr key={row.id} className={styles.sectionRow}><td colSpan={11}><div className={styles.sectionContent}><span aria-hidden="true">▸</span><input disabled={month.locked} value={row.name} aria-label="구분명" onChange={(event)=>updateRow(row.id,{name:event.target.value})}/><button className={styles.sectionDelete} aria-label={`${row.name} 삭제`} disabled={month.locked} onClick={()=>updateRows(month.rows.filter((item)=>item.id!==row.id))}><Trash2 size={14}/></button></div></td></tr>;
+        if(row.kind==='section') return <tr key={row.id} className={styles.sectionRow}><th colSpan={11} scope="rowgroup"><div className={styles.sectionContent}><span>{row.name}</span></div></th></tr>;
         const value=calculateRow(row,settings);
         const move=(direction:-1|1)=>{const index=month.rows.indexOf(row);const target=index+direction;if(target<0||target>=month.rows.length)return;const next=[...month.rows];[next[target],next[index]]=[next[index],next[target]];updateRows(next);};
         return <tr key={row.id}>
