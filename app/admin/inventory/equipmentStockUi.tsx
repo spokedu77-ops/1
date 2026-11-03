@@ -2,6 +2,7 @@
 
 import { Package } from 'lucide-react';
 import type { EquipmentStockRow } from '@/app/lib/equipment/types';
+import styles from './equipmentInventory.module.css';
 
 export type StockDisplayStatus = 'normal' | 'opening' | 'drift' | 'catalog_only';
 
@@ -28,13 +29,13 @@ export function stockStatusLabel(status: StockDisplayStatus): string {
 export function stockStatusBadgeClass(status: StockDisplayStatus): string {
   switch (status) {
     case 'opening':
-      return 'bg-amber-50 text-amber-800 border-amber-200';
+      return styles.badgeOpening;
     case 'drift':
-      return 'bg-red-50 text-red-800 border-red-200';
+      return styles.badgeDrift;
     case 'catalog_only':
-      return 'bg-slate-100 text-slate-600 border-slate-200';
+      return styles.badgeCatalogOnly;
     default:
-      return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+      return styles.badgeNormal;
   }
 }
 
@@ -67,11 +68,11 @@ export function formatTotalDisplay(row: EquipmentStockRow, ledgerWrites: boolean
 
 function StockThumb({ image }: { image: string | null; name: string }) {
   return (
-    <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+    <div className={styles.thumb}>
       {image ? (
         <img src={image} alt="" className="w-full h-full object-cover" />
       ) : (
-        <Package size={18} className="text-slate-400" />
+        <Package size={16} className="text-gray-400" />
       )}
     </div>
   );
@@ -80,122 +81,151 @@ function StockThumb({ image }: { image: string | null; name: string }) {
 type StockActionsProps = {
   row: EquipmentStockRow;
   ledgerWrites: boolean;
+  openingPersistEnabled: boolean;
   onDetail: () => void;
   onRent: () => void;
   onAdjust: () => void;
   onStockInput?: () => void;
 };
 
-function StockActions({ row, ledgerWrites, onDetail, onRent, onAdjust, onStockInput }: StockActionsProps) {
+function StockActions({
+  row,
+  ledgerWrites,
+  openingPersistEnabled,
+  onDetail,
+  onRent,
+  onAdjust,
+  onStockInput,
+}: StockActionsProps) {
   const catalogOnly = row.stock_metrics_available === false;
   const showQty = canShowStockQty(row, ledgerWrites);
+  const canRent = showQty && row.qty_available > 0;
 
   if (catalogOnly) {
     return (
-      <button type="button" className="text-xs font-bold text-indigo-600" onClick={onDetail}>
-        상세
-      </button>
+      <div className={styles.actionRow}>
+        <button type="button" className={`${styles.btnGhost} ${styles.btnSm}`} onClick={onDetail}>
+          상세
+        </button>
+      </div>
     );
   }
 
-  if (ledgerWrites && !row.opening_confirmed && onStockInput) {
+  if (ledgerWrites && !row.opening_confirmed && onStockInput && openingPersistEnabled) {
     return (
-      <button type="button" className="text-xs font-bold text-indigo-600" onClick={onStockInput}>
-        재고 입력
-      </button>
+      <div className={styles.actionRow}>
+        <button type="button" className={`${styles.btnPrimary} ${styles.btnSm}`} onClick={onStockInput}>
+          재고 입력
+        </button>
+      </div>
     );
   }
 
   if (ledgerWrites && showQty) {
     return (
-      <div className="flex flex-wrap items-center gap-1 text-xs font-bold">
-        <button type="button" className="text-indigo-600 hover:underline" onClick={onRent}>
+      <div className={styles.actionRow}>
+        <button
+          type="button"
+          className={`${styles.btnWarning} ${styles.btnSm}`}
+          onClick={onRent}
+          disabled={!canRent}
+        >
           대여
         </button>
-        <span className="text-slate-300" aria-hidden>
-          ·
-        </span>
-        <button type="button" className="text-indigo-600 hover:underline" onClick={onAdjust}>
+        <button type="button" className={`${styles.btnGhost} ${styles.btnSm}`} onClick={onAdjust}>
           재고 조정
+        </button>
+        <button type="button" className={`${styles.btnGhost} ${styles.btnSm}`} onClick={onDetail}>
+          상세
         </button>
       </div>
     );
   }
 
   return (
-    <button type="button" className="text-xs font-bold text-indigo-600" onClick={onDetail}>
-      상세
-    </button>
+    <div className={styles.actionRow}>
+      <button type="button" className={`${styles.btnGhost} ${styles.btnSm}`} onClick={onDetail}>
+        상세
+      </button>
+    </div>
   );
 }
 
 type StockListProps = {
   rows: EquipmentStockRow[];
   ledgerWrites: boolean;
+  openingPersistEnabled: boolean;
   onDetail: (row: EquipmentStockRow) => void;
   onRent: (row: EquipmentStockRow) => void;
   onAdjust: (row: EquipmentStockRow) => void;
   onStockInput?: (row: EquipmentStockRow) => void;
 };
 
-export function EquipmentStockTable({ rows, ledgerWrites, onDetail, onRent, onAdjust, onStockInput }: StockListProps) {
+export function EquipmentStockTable({
+  rows,
+  ledgerWrites,
+  openingPersistEnabled,
+  onDetail,
+  onRent,
+  onAdjust,
+  onStockInput,
+}: StockListProps) {
   return (
-    <div className="hidden lg:block overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-full text-sm text-left">
-        <thead className="bg-slate-50 text-[11px] font-bold text-slate-600">
+    <div className={`${styles.tableWrap} ${styles.desktopTable}`}>
+      <table className={styles.table}>
+        <thead>
           <tr>
-            <th className="p-3">교구</th>
-            <th className="p-3 text-right">총보유</th>
-            <th className="p-3 text-right">창고재고</th>
-            <th className="p-3 text-right">대여 중</th>
-            <th className="p-3 text-right">대여 가능</th>
-            <th className="p-3">관리</th>
+            <th className={styles.textLeft}>품명</th>
+            <th className={styles.textRight}>총보유</th>
+            <th className={styles.textRight}>창고재고</th>
+            <th className={styles.textRight}>대여 중</th>
+            <th className={styles.textRight}>현재가용</th>
+            <th>관리</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="p-8 text-center text-slate-400">
+              <td colSpan={6} className={styles.emptyState}>
                 등록된 교구가 없습니다.
               </td>
             </tr>
           ) : (
-            rows.map((row) => (
-              <tr key={row.catalog_id} className="border-t border-slate-100 align-middle">
-                <td className="p-3">
-                  <button
-                    type="button"
-                    onClick={() => onDetail(row)}
-                    className="flex items-center gap-2 min-w-[140px] text-left hover:opacity-80"
-                  >
-                    <StockThumb image={row.image} name={row.name} />
-                    <span className="font-semibold text-slate-900">{row.name}</span>
-                  </button>
-                </td>
-                <td className="p-3 text-right tabular-nums font-semibold text-slate-800">
-                  {formatTotalDisplay(row, ledgerWrites)}
-                </td>
-                <td className="p-3 text-right tabular-nums text-slate-700">
-                  {formatWarehouseDisplay(row, ledgerWrites)}
-                </td>
-                <td className="p-3 text-right tabular-nums text-slate-700">
-                  {formatMetricDisplay(row, ledgerWrites, row.qty_lent)}
-                </td>
-                <td className="p-3 text-right tabular-nums text-lg font-black text-indigo-700">
-                  {formatMetricDisplay(row, ledgerWrites, row.qty_available)}
-                </td>
-                <td className="p-3">
-                  <StockActions
-                    row={row}
-                    ledgerWrites={ledgerWrites}
-                    onDetail={() => onDetail(row)}
-                    onRent={() => onRent(row)}
-                    onAdjust={() => onAdjust(row)}
-                    onStockInput={onStockInput ? () => onStockInput(row) : undefined}
-                  />
-                </td>
-              </tr>
-            ))
+            rows.map((row) => {
+              const status = getStockDisplayStatus(row, ledgerWrites);
+              return (
+                <tr key={row.catalog_id}>
+                  <td className={styles.textLeft}>
+                    <button type="button" onClick={() => onDetail(row)} className={styles.stockNameBtn}>
+                      <StockThumb image={row.image} name={row.name} />
+                      <span>{row.name}</span>
+                      {status !== 'normal' ? (
+                        <span className={stockStatusBadgeClass(status)}>{stockStatusLabel(status)}</span>
+                      ) : null}
+                    </button>
+                  </td>
+                  <td className={styles.textRight}>{formatTotalDisplay(row, ledgerWrites)}</td>
+                  <td className={styles.textRight}>{formatWarehouseDisplay(row, ledgerWrites)}</td>
+                  <td className={`${styles.textRight} ${styles.metricLent}`}>
+                    {formatMetricDisplay(row, ledgerWrites, row.qty_lent)}
+                  </td>
+                  <td className={`${styles.textRight} ${styles.metricAvail}`}>
+                    {formatMetricDisplay(row, ledgerWrites, row.qty_available)}
+                  </td>
+                  <td>
+                    <StockActions
+                      row={row}
+                      ledgerWrites={ledgerWrites}
+                      openingPersistEnabled={openingPersistEnabled}
+                      onDetail={() => onDetail(row)}
+                      onRent={() => onRent(row)}
+                      onAdjust={() => onAdjust(row)}
+                      onStockInput={onStockInput ? () => onStockInput(row) : undefined}
+                    />
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
@@ -203,55 +233,56 @@ export function EquipmentStockTable({ rows, ledgerWrites, onDetail, onRent, onAd
   );
 }
 
-export function EquipmentStockCards({ rows, ledgerWrites, onDetail, onRent, onAdjust, onStockInput }: StockListProps) {
+export function EquipmentStockCards({
+  rows,
+  ledgerWrites,
+  openingPersistEnabled,
+  onDetail,
+  onRent,
+  onAdjust,
+  onStockInput,
+}: StockListProps) {
   if (rows.length === 0) {
-    return <p className="lg:hidden text-sm text-slate-400 text-center py-8">등록된 교구가 없습니다.</p>;
+    return <p className={styles.emptyState}>등록된 교구가 없습니다.</p>;
   }
   return (
-    <div className="lg:hidden space-y-3">
+    <div className={styles.mobileCards}>
       {rows.map((row) => {
         const status = getStockDisplayStatus(row, ledgerWrites);
-        const statusVisible = status !== 'normal';
         return (
-          <article key={row.catalog_id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
-            <button type="button" onClick={() => onDetail(row)} className="flex gap-3 items-start w-full text-left">
+          <article key={row.catalog_id} className={styles.panel}>
+            <button type="button" onClick={() => onDetail(row)} className={`${styles.stockNameBtn} w-full mb-3`}>
               <StockThumb image={row.image} name={row.name} />
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-slate-900 truncate">{row.name}</p>
-                {statusVisible ? (
-                  <span
-                    className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${stockStatusBadgeClass(status)}`}
-                  >
-                    {stockStatusLabel(status)}
-                  </span>
+                <p className="truncate">{row.name}</p>
+                {status !== 'normal' ? (
+                  <span className={`${stockStatusBadgeClass(status)} mt-1`}>{stockStatusLabel(status)}</span>
                 ) : null}
               </div>
             </button>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+            <div className="grid grid-cols-2 gap-2 text-center text-xs mb-3">
               {(
                 [
-                  ['총보유', formatTotalDisplay(row, ledgerWrites)],
-                  ['창고재고', formatWarehouseDisplay(row, ledgerWrites)],
-                  ['대여 중', formatMetricDisplay(row, ledgerWrites, row.qty_lent)],
-                  ['대여 가능', formatMetricDisplay(row, ledgerWrites, row.qty_available)],
+                  ['총보유', formatTotalDisplay(row, ledgerWrites), false],
+                  ['창고', formatWarehouseDisplay(row, ledgerWrites), false],
+                  ['대여 중', formatMetricDisplay(row, ledgerWrites, row.qty_lent), false],
+                  ['가용', formatMetricDisplay(row, ledgerWrites, row.qty_available), true],
                 ] as const
-              ).map(([label, val]) => (
+              ).map(([label, val, highlight]) => (
                 <div
                   key={label}
-                  className={`rounded-lg py-2 px-1 ${label === '대여 가능' ? 'bg-indigo-50' : 'bg-slate-50'}`}
+                  className="rounded-md py-2 px-1"
+                  style={{ background: highlight ? '#eff6ff' : '#f9fafb' }}
                 >
-                  <p className="text-slate-500 font-bold">{label}</p>
-                  <p
-                    className={`tabular-nums font-semibold ${label === '대여 가능' ? 'text-indigo-700 text-lg font-black' : 'text-slate-800'}`}
-                  >
-                    {val}
-                  </p>
+                  <p className="text-gray-500 font-semibold">{label}</p>
+                  <p className={`tabular-nums font-semibold ${highlight ? styles.metricAvail : ''}`}>{val}</p>
                 </div>
               ))}
             </div>
             <StockActions
               row={row}
               ledgerWrites={ledgerWrites}
+              openingPersistEnabled={openingPersistEnabled}
               onDetail={() => onDetail(row)}
               onRent={() => onRent(row)}
               onAdjust={() => onAdjust(row)}

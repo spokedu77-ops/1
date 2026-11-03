@@ -6,6 +6,7 @@ import type { EquipmentLedgerRow, EquipmentRentalRow, EquipmentStockRow } from '
 import { equipmentEventTypeLabel } from '@/app/lib/equipment/ledgerLabels';
 import { AdjustStockModal, RentEquipmentModal, ReturnEquipmentModal, StockInputModal } from './equipmentModals';
 import { EquipmentStockCards, EquipmentStockTable } from './equipmentStockUi';
+import styles from './equipmentInventory.module.css';
 
 export type VisualFixtureScenario = 'normal' | 'opening' | 'drift' | 'empty' | 'mismatch' | 'modals';
 
@@ -115,29 +116,29 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
   const ledgerWrites = scenario !== 'mismatch';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col" data-fixture-scenario={scenario}>
-      <header className="bg-white border-b border-slate-200 px-4 py-4 md:px-8">
-        <div className="flex items-center gap-2">
-          <Package className="text-indigo-600" size={22} />
-          <h1 className="text-lg font-black text-slate-900">교구 수불관리</h1>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Visual Fixture</span>
-        </div>
-        <p className="text-sm text-slate-500 mt-1">교구별 창고 재고와 강사 대여 현황을 관리합니다.</p>
-        <div className="mt-4 inline-flex gap-1 p-1 rounded-full bg-slate-100 border border-slate-200">
-          {['교구 재고', '강사 목록', '대여·반납 이력'].map((label) => (
+    <div className={styles.shell} data-fixture-scenario={scenario}>
+      <div className={styles.container}>
+        <header className={styles.pageHeader}>
+          <div>
+            <h1 className={styles.pageTitle}>
+              <Package size={20} style={{ color: 'var(--eq-primary)' }} />
+              교구 수불관리
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-2">Fixture</span>
+            </h1>
+            <p className={styles.pageSubtitle}>창고 재고 수불 및 강사별 대여/반납 현황을 관리합니다.</p>
+          </div>
+        </header>
+        <div className={styles.tabs}>
+          {['교구 재고(창고)', '강사 목록', '대여/반납 이력'].map((label) => (
             <span
               key={label}
-              className={`min-h-[40px] px-4 py-2 rounded-full text-sm font-semibold ${
-                label === '교구 재고' ? 'bg-indigo-600 text-white' : 'text-slate-600'
-              }`}
+              className={`${styles.tabBtn} ${label === '교구 재고(창고)' ? styles.tabBtnActive : ''}`}
             >
               {label}
             </span>
           ))}
         </div>
-      </header>
-
-      <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full space-y-4">
+        <div className={styles.tabPanel}>
         {scenario === 'mismatch' && (
           <div
             className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950"
@@ -161,24 +162,22 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
 
         {scenario !== 'mismatch' && (
           <>
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <div className={styles.toolbar}>
               <input
                 type="search"
-                placeholder="교구명·관리번호·카테고리 검색"
+                placeholder="교구명·카테고리 검색"
                 defaultValue="Fixture"
-                className="flex-1 min-w-0 p-3 rounded-xl border border-slate-200 bg-white text-sm"
+                className={styles.input}
                 readOnly
               />
-              <button
-                type="button"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold"
-              >
+              <button type="button" className={styles.btnPrimary}>
                 <Plus size={16} /> 교구 등록
               </button>
             </div>
             <EquipmentStockTable
               rows={rows}
               ledgerWrites={ledgerWrites}
+              openingPersistEnabled
               onDetail={() => {}}
               onRent={() => setShowRent(true)}
               onAdjust={() => setShowAdjust(true)}
@@ -187,6 +186,7 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
             <EquipmentStockCards
               rows={rows}
               ledgerWrites={ledgerWrites}
+              openingPersistEnabled
               onDetail={() => {}}
               onRent={() => setShowRent(true)}
               onAdjust={() => setShowAdjust(true)}
@@ -265,7 +265,8 @@ export function EquipmentInventoryVisualFixture({ scenario }: { scenario: Visual
             </tbody>
           </table>
         </section>
-      </main>
+        </div>
+      </div>
 
       {showRent && (
         <RentEquipmentModal

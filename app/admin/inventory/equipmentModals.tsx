@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { ChevronDown } from 'lucide-react';
 import { validateStockInput } from '@/app/lib/equipment/openingStockValidation';
 import type { EquipmentRentalRow, EquipmentStockRow } from '@/app/lib/equipment/types';
+import styles from './equipmentInventory.module.css';
 
 export function StockInputModal({
   target,
@@ -91,42 +94,58 @@ export function RentEquipmentModal({
   const maxQty = selectedCatalog?.qty_available ?? 0;
   const titleName = preset?.name ?? selectedCatalog?.name ?? '교구';
 
+  const catalogDropdownOptions = useMemo(
+    () =>
+      catalogOptions
+        .filter((c) => c.qty_available > 0)
+        .map((c) => ({
+          value: String(c.catalog_id),
+          label: c.name,
+          hint: `대여 가능 ${c.qty_available}개`,
+        })),
+    [catalogOptions],
+  );
+
+  const teacherDropdownOptions = useMemo(
+    () =>
+      teacherOptions.map((t) => ({
+        value: t.id,
+        label: t.name,
+        avatar: t.name.trim().charAt(0) || '?',
+      })),
+    [teacherOptions],
+  );
+
   return (
-    <ModalShell title={`${titleName} — 대여`} onClose={onClose}>
+    <ModalShell title="대여 등록" onClose={onClose} wide>
+      <div className={styles.modalFormHint}>
+        <strong className="text-gray-900">{titleName}</strong>
+        {selectedCatalog ? (
+          <span className="block mt-1">창고에서 빌릴 수 있는 수량: {maxQty}개</span>
+        ) : (
+          <span className="block mt-1">교구와 강사를 선택한 뒤 수량을 입력하세요.</span>
+        )}
+      </div>
       {!preset && (
-        <Field label="교구">
-          <select
-            className="w-full p-2.5 border border-slate-200 rounded-lg text-sm"
-            value={catalogId}
-            onChange={(e) => setCatalogId(e.target.value)}
-          >
-            <option value="">선택</option>
-            {catalogOptions
-              .filter((c) => c.qty_available > 0)
-              .map((c) => (
-                <option key={c.catalog_id} value={c.catalog_id}>
-                  {c.name} (가능 {c.qty_available})
-                </option>
-              ))}
-          </select>
-        </Field>
+        <ModalDropdownSelect
+          label="대여할 교구"
+          placeholder="교구를 선택하세요"
+          value={catalogId}
+          onChange={setCatalogId}
+          options={catalogDropdownOptions}
+          searchable={catalogDropdownOptions.length > 6}
+        />
       )}
-      <Field label="강사">
-        <select
-          className="w-full p-2.5 border border-slate-200 rounded-lg text-sm"
-          value={teacherId}
-          onChange={(e) => setTeacherId(e.target.value)}
-        >
-          <option value="">선택</option>
-          {teacherOptions.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <ModalDropdownSelect
+        label="대상 강사"
+        placeholder="강사를 선택하세요"
+        value={teacherId}
+        onChange={setTeacherId}
+        options={teacherDropdownOptions}
+        searchable
+        showAvatar
+      />
       <QtyField label="대여 수량" value={qty} onChange={setQty} min={1} max={maxQty || undefined} suffix="개" />
-      <p className="text-xs text-slate-500 mb-2">대여 가능 {maxQty}개</p>
       <ModalActions
         confirmLabel="대여 확정"
         onCancel={onClose}
@@ -157,40 +176,37 @@ export function AdjustStockModal({
   onClose: () => void;
   onConfirm: (delta: number, note: string) => void | Promise<void>;
 }) {
-  const [delta, setDelta] = useState('');
+  const [delta, setDelta] = useState('0');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const deltaNum = parseSignedInt(delta);
+  const validDelta = deltaNum !== null && deltaNum !== 0;
+
   return (
     <ModalShell title={`${target.name} — 재고 조정`} onClose={onClose}>
-      <Field label="변경 수량">
-        <input
-          className="w-full p-2.5 border border-slate-200 rounded-lg text-sm"
-          type="number"
-          placeholder="예: 3 또는 -2"
-          value={delta}
-          onChange={(e) => setDelta(e.target.value)}
-        />
-      </Field>
+      <p className="text-xs text-slate-500 mb-1">
+        현재 창고재고 {target.qty_warehouse}개 · + 늘리기 / − 줄이기
+      </p>
+      <SignedDeltaField label="변경 수량" value={delta} onChange={setDelta} autoFocus suffix="개" />
       <Field label="사유">
         <input
-          className="w-full p-2.5 border border-slate-200 rounded-lg text-sm"
+          className={`${styles.input} ${styles.inputWide}`}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="조정 사유"
+          placeholder="조정 사유 (필수)"
         />
       </Field>
       <ModalActions
         confirmLabel="저장"
         onCancel={onClose}
         busy={busy}
-        disabled={!note.trim() || !delta || parseInt(delta, 10) === 0}
+        disabled={!note.trim() || !validDelta}
         onConfirm={async () => {
-          const n = parseInt(delta, 10);
-          if (!n || n === 0 || !note.trim()) return;
+          if (deltaNum === null || deltaNum === 0 || !note.trim()) return;
           setBusy(true);
           try {
-            await onConfirm(n, note.trim());
+            await onConfirm(deltaNum, note.trim());
           } finally {
             setBusy(false);
           }
@@ -230,28 +246,32 @@ export function ReturnEquipmentModal({
   );
   const maxQty = selected?.qty_outstanding ?? 0;
 
+  const rentalDropdownOptions = useMemo(
+    () =>
+      rentals.map((r) => ({
+        value: r.rental_id,
+        label: r.teacher_name ?? '강사',
+        hint: `${new Date(r.opened_at).toLocaleDateString('ko-KR')} · 잔여 ${r.qty_outstanding}개`,
+      })),
+    [rentals],
+  );
+
   return (
-    <ModalShell title={`${catalogName} — 반납`} onClose={onClose}>
+    <ModalShell title={`${catalogName} — 반납`} onClose={onClose} wide>
       {rentals.length > 1 && (
-        <Field label="대여 건">
-          <select
-            className="w-full p-2.5 border border-slate-200 rounded-lg text-sm"
-            value={rentalId}
-            onChange={(e) => setRentalId(e.target.value)}
-          >
-            <option value="">선택</option>
-            {rentals.map((r) => (
-              <option key={r.rental_id} value={r.rental_id}>
-                {new Date(r.opened_at).toLocaleDateString('ko-KR')} · 잔여 {r.qty_outstanding}개
-              </option>
-            ))}
-          </select>
-        </Field>
+        <ModalDropdownSelect
+          label="반납할 대여 건"
+          placeholder="대여 건을 선택하세요"
+          value={rentalId}
+          onChange={setRentalId}
+          options={rentalDropdownOptions}
+          searchable={rentalDropdownOptions.length > 5}
+        />
       )}
       {selected && (
-        <p className="text-xs text-slate-600 mb-2">
-          {catalogName} · 현재 보유 {selected.qty_outstanding}개
-        </p>
+        <div className={styles.modalFormHint}>
+          {selected.teacher_name ?? '강사'} · 현재 보유 <strong>{selected.qty_outstanding}개</strong>
+        </div>
       )}
       <QtyField label="반납 수량" value={qty} onChange={setQty} min={1} max={maxQty || undefined} suffix="개" disabled={!selected} />
       <ModalActions
@@ -279,23 +299,207 @@ function ModalShell({
   title,
   children,
   onClose,
+  wide,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  wide?: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-[400] bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+    <div className={styles.modalOverlay} onClick={onClose}>
       <div
-        className="bg-white rounded-t-2xl sm:rounded-2xl p-5 w-full max-w-sm shadow-xl max-sm:max-h-[85vh] max-sm:overflow-y-auto sm:overflow-visible"
+        className={wide ? styles.modalCardWide : styles.modalCard}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        <h3 className="font-black text-base mb-3 text-slate-900">{title}</h3>
-        {children}
+        <div className={styles.modalHeader}>
+          <h3>{title}</h3>
+          <button type="button" className={`${styles.btnGhost} ${styles.btnSm}`} onClick={onClose} aria-label="닫기">
+            ✕
+          </button>
+        </div>
+        <div className={styles.modalBody}>{children}</div>
       </div>
     </div>
+  );
+}
+
+export type TeacherHoldingGroup = {
+  catalog_id: number;
+  catalog_name: string;
+  qty_outstanding: number;
+  rentals: EquipmentRentalRow[];
+};
+
+export function TeacherHoldingsModal({
+  teacherName,
+  holdings,
+  ledgerReady,
+  onClose,
+  onPartialReturn,
+  onBulkReturnFull,
+}: {
+  teacherName: string;
+  holdings: TeacherHoldingGroup[];
+  ledgerReady: boolean;
+  onClose: () => void;
+  /** 수량·대여 건을 지정하는 부분 반납 */
+  onPartialReturn: (group: TeacherHoldingGroup) => void;
+  /** 선택 품목 미반납 전량 일괄 반납 */
+  onBulkReturnFull: (groups: TeacherHoldingGroup[]) => void | Promise<void>;
+}) {
+  const returnable = useMemo(
+    () => holdings.filter((g) => g.qty_outstanding > 0),
+    [holdings],
+  );
+  const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setSelected(new Set(returnable.map((g) => g.catalog_id)));
+  }, [holdings, returnable]);
+
+  const selectedGroups = useMemo(
+    () => returnable.filter((g) => selected.has(g.catalog_id)),
+    [returnable, selected],
+  );
+  const allChecked = returnable.length > 0 && selectedGroups.length === returnable.length;
+  const someChecked = selectedGroups.length > 0 && !allChecked;
+
+  const toggleOne = (catalogId: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(catalogId)) next.delete(catalogId);
+      else next.add(catalogId);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (allChecked) setSelected(new Set());
+    else setSelected(new Set(returnable.map((g) => g.catalog_id)));
+  };
+
+  const selectedQty = selectedGroups.reduce((s, g) => s + g.qty_outstanding, 0);
+
+  return (
+    <ModalShell title={`${teacherName} 선생님 대여 현황`} onClose={onClose} wide>
+      <p className="text-xs text-gray-500">
+        반납할 교구를 선택한 뒤 <strong>선택 전량 반납</strong>을 누르세요. 일부만 돌려줄 때는 <strong>부분</strong>을
+        사용하세요.
+      </p>
+      <div className={styles.tableWrap} style={{ maxHeight: Math.min(480, typeof window !== 'undefined' ? window.innerHeight * 0.5 : 480) }}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th className={styles.checkCol}>
+                {ledgerReady && returnable.length > 0 ? (
+                  <input
+                    type="checkbox"
+                    className={styles.rowCheck}
+                    checked={allChecked}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someChecked;
+                    }}
+                    aria-label="전체 선택"
+                    onChange={toggleAll}
+                  />
+                ) : null}
+              </th>
+              <th className={styles.textLeft}>품명</th>
+              <th className={styles.textRight}>미반납</th>
+              <th>부분</th>
+            </tr>
+          </thead>
+          <tbody>
+            {holdings.length === 0 ? (
+              <tr>
+                <td colSpan={4} className={styles.emptyState} style={{ padding: 20 }}>
+                  현재 대여 중인 교구가 없습니다.
+                </td>
+              </tr>
+            ) : (
+              holdings.map((group) => {
+                const canReturn = ledgerReady && group.qty_outstanding > 0;
+                return (
+                  <tr key={group.catalog_id}>
+                    <td className={styles.checkCol}>
+                      {canReturn ? (
+                        <input
+                          type="checkbox"
+                          className={styles.rowCheck}
+                          checked={selected.has(group.catalog_id)}
+                          aria-label={`${group.catalog_name} 선택`}
+                          onChange={() => toggleOne(group.catalog_id)}
+                        />
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className={styles.textLeft}>
+                      <b>{group.catalog_name}</b>
+                    </td>
+                    <td className={styles.textRight}>{group.qty_outstanding}</td>
+                    <td>
+                      {canReturn ? (
+                        <button
+                          type="button"
+                          className={`${styles.btnGhost} ${styles.btnSm}`}
+                          onClick={() => onPartialReturn(group)}
+                        >
+                          부분
+                        </button>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className={styles.bulkActionBar}>
+        <label className={styles.bulkSelectLabel}>
+          <input
+            type="checkbox"
+            className={styles.rowCheck}
+            checked={allChecked}
+            disabled={!ledgerReady || returnable.length === 0}
+            ref={(el) => {
+              if (el) el.indeterminate = someChecked;
+            }}
+            onChange={toggleAll}
+          />
+          {selectedGroups.length}종 선택 · 총 {selectedQty}개
+        </label>
+        <div className={styles.bulkActionButtons}>
+          <button type="button" className={styles.btnGhost} onClick={onClose} disabled={busy}>
+            닫기
+          </button>
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            disabled={!ledgerReady || selectedGroups.length === 0 || busy}
+            onClick={() => {
+              void (async () => {
+                setBusy(true);
+                try {
+                  await onBulkReturnFull(selectedGroups);
+                } finally {
+                  setBusy(false);
+                }
+              })();
+            }}
+          >
+            {busy ? '반납 처리 중…' : `선택 전량 반납 (${selectedGroups.length}종)`}
+          </button>
+        </div>
+      </div>
+    </ModalShell>
   );
 }
 
@@ -305,6 +509,286 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <span className="text-xs font-bold text-slate-500">{label}</span>
       <div className="mt-1">{children}</div>
     </label>
+  );
+}
+
+type DropdownOption = {
+  value: string;
+  label: string;
+  hint?: string;
+  avatar?: string;
+};
+
+type DropdownMenuLayout = {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+};
+
+function computeDropdownMenuLayout(trigger: HTMLElement): DropdownMenuLayout {
+  const r = trigger.getBoundingClientRect();
+  const margin = 12;
+  const cap = Math.min(440, window.innerHeight * 0.55);
+  const spaceBelow = window.innerHeight - r.bottom - margin;
+  const spaceAbove = r.top - margin;
+  const openDown = spaceBelow >= 280 || spaceBelow >= spaceAbove;
+  const maxHeight = Math.min(cap, Math.max(280, openDown ? spaceBelow - 8 : spaceAbove - 8));
+  const top = openDown ? r.bottom + 6 : Math.max(margin, r.top - maxHeight - 6);
+  return { top, left: r.left, width: r.width, maxHeight };
+}
+
+function ModalDropdownSelect({
+  label,
+  placeholder,
+  value,
+  onChange,
+  options,
+  searchable = false,
+  showAvatar = false,
+  disabled = false,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: DropdownOption[];
+  searchable?: boolean;
+  showAvatar?: boolean;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [menuLayout, setMenuLayout] = useState<DropdownMenuLayout | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => o.value === value) ?? null;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(
+      (o) => o.label.toLowerCase().includes(q) || (o.hint ?? '').toLowerCase().includes(q),
+    );
+  }, [options, query]);
+
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    setQuery('');
+    setMenuLayout(null);
+  }, []);
+
+  const syncMenuLayout = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    setMenuLayout(computeDropdownMenuLayout(el));
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    syncMenuLayout();
+    const onLayout = () => syncMenuLayout();
+    window.addEventListener('resize', onLayout);
+    window.addEventListener('scroll', onLayout, true);
+    return () => {
+      window.removeEventListener('resize', onLayout);
+      window.removeEventListener('scroll', onLayout, true);
+    };
+  }, [open, syncMenuLayout]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      closeMenu();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMenu();
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, closeMenu]);
+
+  const showSearch = searchable && options.length > 2;
+
+  const menuPanel = (
+    <div
+      ref={menuRef}
+      className={styles.dropdownMenuFixed}
+      role="listbox"
+      style={
+        menuLayout
+          ? {
+              top: menuLayout.top,
+              left: menuLayout.left,
+              width: menuLayout.width,
+              maxHeight: menuLayout.maxHeight,
+            }
+          : { visibility: 'hidden' as const }
+      }
+    >
+      {showSearch ? (
+        <div className={styles.dropdownSearchWrap}>
+          <input
+            type="search"
+            className={styles.dropdownSearch}
+            placeholder="이름 검색"
+            value={query}
+            autoFocus
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      ) : null}
+      {filtered.length === 0 ? (
+        <p className={styles.dropdownEmpty}>일치하는 항목이 없습니다.</p>
+      ) : (
+        filtered.map((opt) => {
+          const active = opt.value === value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="option"
+              aria-selected={active}
+              className={`${styles.dropdownItem} ${active ? styles.dropdownItemActive : ''}`}
+              onClick={() => {
+                onChange(opt.value);
+                closeMenu();
+              }}
+            >
+              {showAvatar && opt.avatar ? (
+                <span className={styles.dropdownItemAvatar}>{opt.avatar}</span>
+              ) : null}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">
+                  {opt.label}
+                  {showAvatar ? ' 선생님' : ''}
+                </span>
+                {opt.hint ? <span className="block text-xs text-gray-500 truncate">{opt.hint}</span> : null}
+              </span>
+            </button>
+          );
+        })
+      )}
+    </div>
+  );
+
+  return (
+    <Field label={label}>
+      <div className={styles.dropdownRoot}>
+        <button
+          ref={triggerRef}
+          type="button"
+          disabled={disabled || options.length === 0}
+          className={styles.dropdownTrigger}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() => {
+            if (disabled || options.length === 0) return;
+            if (open) closeMenu();
+            else {
+              setOpen(true);
+              requestAnimationFrame(() => syncMenuLayout());
+            }
+          }}
+        >
+          <span className="flex items-center gap-2 min-w-0 flex-1">
+            {selected && showAvatar && selected.avatar ? (
+              <span className={styles.dropdownItemAvatar}>{selected.avatar}</span>
+            ) : null}
+            <span className={`truncate ${selected ? '' : styles.dropdownTriggerPlaceholder}`}>
+              {selected ? `${selected.label}${showAvatar ? ' 선생님' : ''}` : placeholder}
+            </span>
+          </span>
+          <ChevronDown size={16} className={`${styles.dropdownChevron} ${open ? styles.dropdownChevronOpen : ''}`} />
+        </button>
+        {open && typeof document !== 'undefined' ? createPortal(menuPanel, document.body) : null}
+      </div>
+    </Field>
+  );
+}
+
+function parseSignedInt(raw: string): number | null {
+  const t = raw.trim();
+  if (t === '' || t === '-') return null;
+  const n = parseInt(t, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+function SignedDeltaField({
+  label,
+  value,
+  onChange,
+  autoFocus,
+  suffix,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoFocus?: boolean;
+  suffix?: string;
+  disabled?: boolean;
+}) {
+  const n = parseSignedInt(value) ?? 0;
+
+  const bump = (step: number) => {
+    onChange(String(n + step));
+  };
+
+  return (
+    <Field label={label}>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={disabled}
+          className={`${styles.btnGhost} ${styles.btnSm}`}
+          style={{ width: 36, height: 36, padding: 0, fontSize: 18 }}
+          aria-label="1 감소"
+          onClick={() => bump(-1)}
+        >
+          −
+        </button>
+        <div
+          className="flex-1 flex items-center justify-center gap-1 rounded-md border border-gray-200 bg-white px-2"
+          style={{ minHeight: 36 }}
+        >
+          <input
+            type="text"
+            inputMode="numeric"
+            value={value}
+            disabled={disabled}
+            autoFocus={autoFocus}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === '' || v === '-' || /^-?\d*$/.test(v)) onChange(v);
+            }}
+            onBlur={() => {
+              const parsed = parseSignedInt(value);
+              if (parsed === null) onChange('0');
+            }}
+            className="w-full py-2 text-sm text-center tabular-nums border-0 focus:outline-none focus:ring-0"
+          />
+          {suffix ? <span className="text-xs text-gray-400 shrink-0">{suffix}</span> : null}
+        </div>
+        <button
+          type="button"
+          disabled={disabled}
+          className={`${styles.btnPrimary} ${styles.btnSm}`}
+          style={{ width: 36, height: 36, padding: 0, fontSize: 18 }}
+          aria-label="1 증가"
+          onClick={() => bump(1)}
+        >
+          +
+        </button>
+      </div>
+    </Field>
   );
 }
 
@@ -385,13 +869,13 @@ function ModalActions({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex gap-2 pt-1">
-      <button type="button" className="flex-1 py-2.5 rounded-xl border text-sm font-bold" onClick={onCancel}>
+    <div className={styles.modalFooter}>
+      <button type="button" className={styles.btnGhost} onClick={onCancel}>
         취소
       </button>
       <button
         type="button"
-        className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold disabled:opacity-50"
+        className={styles.btnPrimary}
         disabled={busy || disabled}
         onClick={() => void onConfirm()}
       >

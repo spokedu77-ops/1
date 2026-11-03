@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckSquare, ExternalLink, ListOrdered, Package } from 'lucide-react';
+import styles from './equipmentInventory.module.css';
 
 export function renderTextWithLinks(text: string) {
   if (!text) return '';
@@ -14,7 +15,7 @@ export function renderTextWithLinks(text: string) {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-400 underline hover:text-blue-300 inline-flex items-center gap-0.5 break-all"
+          className="text-blue-600 underline hover:text-blue-700 inline-flex items-center gap-0.5 break-all"
           onClick={(e) => e.stopPropagation()}
         >
           {part} <ExternalLink size={10} />
@@ -67,54 +68,48 @@ export function CatalogDetailModal({
   onClose: () => void;
 }) {
   return (
-    <div
-      className="fixed inset-0 z-[500] flex items-center justify-center p-2 md:p-4 bg-black/90 backdrop-blur-sm"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
+    <div className={styles.modalOverlay} onClick={onClose} role="dialog" aria-modal="true">
       <div
-        className="w-full max-w-md bg-[#121212] rounded-[24px] md:rounded-[32px] overflow-hidden shadow-2xl text-white border border-slate-800 max-h-[90vh] flex flex-col"
+        className={styles.modalCardWide}
         onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 520, maxHeight: '90vh' }}
       >
-        <div className="p-6 md:p-8 pb-4 border-b border-slate-800 flex gap-4 items-center shrink-0">
-          <div className="w-16 h-16 rounded-[16px] bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
-            {item.image ? (
-              <img src={item.image} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <Package size={28} className="text-slate-600" />
-            )}
+        <div className={styles.modalHeader}>
+          <div className="flex gap-3 items-center min-w-0 text-left">
+            <div className={styles.thumb} style={{ width: 48, height: 48 }}>
+              {item.image ? (
+                <img src={item.image} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <Package size={22} className="text-gray-400" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-500 uppercase">{item.category}</p>
+              <h3 className="truncate">{item.name}</h3>
+            </div>
           </div>
-          <div className="flex-1 min-w-0 text-left">
-            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-              {item.category}
-            </span>
-            <h2 className="text-2xl font-black mt-1 leading-none truncate">{item.name}</h2>
-            {item.mgmt_code ? (
-              <p className="text-[10px] text-slate-500 mt-1">관리번호 {item.mgmt_code}</p>
-            ) : null}
-            <p className="text-xs text-slate-400 mt-2 line-clamp-2">{item.simple_desc}</p>
-          </div>
+          <button type="button" className={`${styles.btnGhost} ${styles.btnSm}`} onClick={onClose} aria-label="닫기">
+            ✕
+          </button>
         </div>
-        <div className="p-6 space-y-6 overflow-y-auto flex-1 text-left">
+        <div className={styles.modalBody}>
+          {item.simple_desc ? <p className="text-sm text-gray-600">{item.simple_desc}</p> : null}
           {stock ? (
-            <div className="bg-[#1a1a1a] p-4 rounded-2xl border border-slate-800 space-y-3">
-              <h4 className="text-[11px] font-black text-indigo-400 uppercase">창고 재고</h4>
-              <p className="text-xs text-slate-400">상태: {stock.statusLabel}</p>
+            <div className={styles.panel} style={{ padding: 12 }}>
+              <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">창고 재고</h4>
+              <p className="text-xs text-gray-500 mb-2">상태: {stock.statusLabel}</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                 {(
                   [
-                    ['총보유', stock.qty_on_hand_total, false],
-                    ['창고재고', stock.qty_warehouse, false],
-                    ['대여 중', stock.qty_lent, false],
-                    ['대여 가능', stock.qty_available, true],
+                    ['총보유', stock.qty_on_hand_total],
+                    ['창고재고', stock.qty_warehouse],
+                    ['대여 중', stock.qty_lent],
+                    ['대여 가능', stock.qty_available],
                   ] as const
-                ).map(([label, val, highlight]) => (
-                  <div key={label} className="rounded-lg bg-slate-900/80 py-2 px-1">
-                    <p className="text-slate-500 font-bold">{label}</p>
-                    <p
-                      className={`tabular-nums font-bold ${highlight ? 'text-indigo-400 text-lg' : 'text-slate-200'}`}
-                    >
+                ).map(([label, val]) => (
+                  <div key={label} className="rounded-md bg-gray-50 py-2 px-1">
+                    <p className="text-gray-500 font-semibold">{label}</p>
+                    <p className={`tabular-nums font-bold ${label === '대여 가능' ? styles.metricAvail : ''}`}>
                       {stock.showQty ? val : '—'}
                     </p>
                   </div>
@@ -123,74 +118,64 @@ export function CatalogDetailModal({
             </div>
           ) : null}
           {stock !== undefined ? (
-            <div className="bg-[#1a1a1a] p-4 rounded-2xl border border-slate-800">
-              <h4 className="text-[11px] font-black text-amber-400 uppercase mb-2">강사별 미반납</h4>
+            <div className={styles.panel} style={{ padding: 12 }}>
+              <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">강사별 미반납</h4>
               {holdingsLoading ? (
-                <p className="text-xs text-slate-500">불러오는 중…</p>
+                <p className="text-xs text-gray-500">불러오는 중…</p>
               ) : teacherHoldings && teacherHoldings.length > 0 ? (
                 <ul className="space-y-2">
                   {teacherHoldings.map((h) => (
-                    <li key={h.teacher_name} className="flex justify-between text-sm font-bold text-slate-200">
+                    <li key={h.teacher_name} className="flex justify-between text-sm font-semibold">
                       <span>{h.teacher_name}</span>
-                      <span className="tabular-nums text-indigo-300">{h.qty_outstanding}개</span>
+                      <span className={`tabular-nums ${styles.metricAvail}`}>{h.qty_outstanding}개</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-slate-500">활성 대여 없음</p>
+                <p className="text-xs text-gray-500">활성 대여 없음</p>
               )}
             </div>
           ) : null}
-          <div className="bg-[#1a1a1a] p-4 rounded-2xl border border-slate-800">
-            <h4 className="text-[11px] font-black text-emerald-400 uppercase mb-2 flex items-center gap-2">
-              <CheckSquare size={14} /> 핵심 포인트
-            </h4>
-            <p className="text-sm font-bold text-slate-200 whitespace-pre-line">{item.key_points}</p>
-          </div>
-          <div>
-            <h4 className="text-[11px] font-black text-blue-400 uppercase mb-3 flex items-center gap-2">
-              <ListOrdered size={14} /> 활용 방법
-            </h4>
-            <div className="space-y-3">
-              {item.usage_examples?.split('\n').map((line, i) => (
-                <div key={i} className="flex gap-3 items-start">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-blue-900/30 text-blue-400 text-xs font-black flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  <p className="text-sm text-slate-300 font-bold break-all">{renderTextWithLinks(line)}</p>
-                </div>
-              ))}
+          {item.key_points ? (
+            <div className={styles.panel} style={{ padding: 12 }}>
+              <h4 className="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-2">
+                <CheckSquare size={14} /> 핵심 포인트
+              </h4>
+              <p className="text-sm whitespace-pre-line">{item.key_points}</p>
             </div>
-          </div>
+          ) : null}
+          {item.usage_examples ? (
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                <ListOrdered size={14} /> 활용 방법
+              </h4>
+              <div className="space-y-3">
+                {item.usage_examples.split('\n').map((line, i) => (
+                  <div key={i} className="flex gap-3 items-start">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-md bg-blue-50 text-blue-700 text-xs font-bold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm break-all">{renderTextWithLinks(line)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
-        <div className="p-4 bg-black/50 border-t border-slate-800 shrink-0 space-y-2">
-          {(onEdit || onAdjustStock) && (
-            <div className="flex flex-wrap gap-2">
-              {onEdit ? (
-                <button
-                  type="button"
-                  onClick={onEdit}
-                  className="flex-1 min-w-[88px] py-2.5 rounded-xl border border-slate-600 text-slate-200 font-bold text-xs"
-                >
-                  정보 수정
-                </button>
-              ) : null}
-              {onAdjustStock ? (
-                <button
-                  type="button"
-                  onClick={onAdjustStock}
-                  className="flex-1 min-w-[88px] py-2.5 rounded-xl border border-slate-600 text-slate-200 font-bold text-xs"
-                >
-                  재고 조정
-                </button>
-              ) : null}
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-3 bg-white text-black rounded-2xl font-black text-sm hover:bg-slate-200"
-          >
+        <div className={styles.modalFooter} style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div className="flex flex-wrap gap-2">
+            {onEdit ? (
+              <button type="button" className={styles.btnGhost} onClick={onEdit}>
+                정보 수정
+              </button>
+            ) : null}
+            {onAdjustStock ? (
+              <button type="button" className={styles.btnGhost} onClick={onAdjustStock}>
+                재고 조정
+              </button>
+            ) : null}
+          </div>
+          <button type="button" className={styles.btnPrimary} onClick={onClose}>
             확인
           </button>
         </div>
