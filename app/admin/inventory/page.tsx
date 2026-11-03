@@ -1,7 +1,7 @@
 'use client';
 
-import { EquipmentInventoryApp } from './EquipmentInventoryApp';
+import SimpleEquipmentInventory from './SimpleEquipmentInventory';
 
 export default function AdminInventoryPage() {
-  return <EquipmentInventoryApp />;
+  return <SimpleEquipmentInventory />;
 }
