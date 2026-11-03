@@ -19,12 +19,14 @@ describe('staff teaching is non-payable', () => {
     expect(payableTeacherFee({ name: '김구민 선생님', role: 'teacher' }, 45000)).toBe(45000);
   });
   it('zeros only staff fees in mixed assignments and preserves the original snapshot', () => {
-    const memo = '수업 메모\nEXTRA_TEACHERS:[{"id":"staff","price":25000},{"id":"teacher","price":35000}]';
-    const original = { created_by: 'staff', price: 80000, memo };
-    const payable = applyStaffSessionFees(original, new Set(['staff']));
+    const staffId = '10000000-0000-4000-8000-000000000001';
+    const teacherId = '10000000-0000-4000-8000-000000000002';
+    const memo = `수업 메모\nEXTRA_TEACHERS:${JSON.stringify([{ id: staffId, price: 25000 }, { id: teacherId, price: 35000 }])}`;
+    const original = { created_by: staffId, price: 80000, memo };
+    const payable = applyStaffSessionFees(original, new Set([staffId]));
     expect(payable.price).toBe(0);
     expect(payable.memo).toContain('"price":0');
     expect(payable.memo).toContain('35000');
-    expect(original).toEqual({ created_by: 'staff', price: 80000, memo });
+    expect(original).toEqual({ created_by: staffId, price: 80000, memo });
   });
 });

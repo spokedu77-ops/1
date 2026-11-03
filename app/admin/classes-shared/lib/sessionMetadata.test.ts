@@ -36,6 +36,9 @@ describe('assistant metadata is a surgical replacement, not a memo reconstructio
   });
 });
 describe('assistant draft validation', () => {
+  it('refuses to serialize an incomplete assignment even when a caller skips draft validation', () => {
+    expect(() => replaceSessionAssistants('note', [{ id: '', price: 0 }])).toThrow('보조강사를 선택');
+  });
   it('accepts zero, one and two unique teachers', () => { for (const rows of [[], [first], [first, second]]) expect(validateSessionAssistants(rows, ids[0])).toBeNull(); });
   it.each([[{ id: '', price: 0 }], [{ id: 'bad', price: 0 }], [first, first], [{ id: ids[0], price: 0 }], [{ ...first, price: -1 }], [{ ...first, price: NaN }], [{ ...first, price: 1.5 }], [first, second, first]])('rejects invalid or duplicate IDs/fees', (...rows) => expect(validateSessionAssistants(rows, ids[0])).not.toBeNull());
 });

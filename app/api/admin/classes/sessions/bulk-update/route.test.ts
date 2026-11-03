@@ -23,4 +23,10 @@ describe('bulk save completion requires actual stored values', () => {
   it('accepts an actual stored zero fee', async () => { const rpc = database(); const response = await POST(request()); expect(response.status).toBe(200); expect(rpc).toHaveBeenCalledWith('admin_apply_session_checked_changes', { p_changes: changes }); });
   it.each([[0, []], [1, []], [1, [{ id, price: 25000 }]]])('rejects missing writes or stale reloads (%s)', async (count, rows) => { database(count, rows); expect((await POST(request())).status).toBe(409); });
   it('returns a stale transaction failure instead of success', async () => { database(null, [], { message: 'SESSION_UPDATE_STALE' }); expect((await POST(request())).status).toBe(409); });
+  it.each(['SESSION_SCHEDULE_METADATA_INVALID', 'SESSION_COUNT_EXTRA_TEACHERS_INVALID'])('reports %s as a data problem', async (message) => {
+    database(null, [], { message });
+    const response = await POST(request());
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ error: message, message: expect.any(String) });
+  });
 });

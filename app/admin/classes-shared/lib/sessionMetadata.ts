@@ -34,6 +34,8 @@ export function jsonMetadataSpan(memo: string, tag: string): { start: number; en
 
 /** Replace only the JSON value; all other bytes, including snapshots, remain intact. */
 export function replaceSessionAssistants(memo: string | null | undefined, assistants: TeacherInput[]): string {
+  const error = validateSessionAssistants(assistants, null);
+  if (error) throw new Error(error);
   const source = memo ?? '';
   const span = jsonMetadataSpan(source, 'EXTRA_TEACHERS:');
   const value = JSON.stringify(assistants.map(({ id, price }) => ({ id, price })));

@@ -82,6 +82,57 @@ try {
   await client.query(await read('supabase/migrations/20261031202334_classops_status_transition_slots.sql'));
   await client.query(await read('supabase/migrations/20261031202455_classops_restore_slot_conflict_guard.sql'));
   await client.query(await read('supabase/migrations/20261031204127_classops_atomic_tail_shrink.sql'));
+  await client.query(await read('supabase/migrations/20261103120000_classops_schedule_metadata_isolation.sql'));
+
+  // Historical malformed rows must be seeded without executing today's guards.
+  // This harness rejects every non-local database URL before connecting.
+  async function legacyNeighbor(row, memo, startOffsetMs = 0) {
+    const id = randomUUID(), group = randomUUID();
+    await client.query('begin');
+    try {
+      await client.query('set local session_replication_role = replica');
+      await client.query("insert into sessions(id,group_id,title,status,created_by,start_at,end_at,price,memo) values($1,$2,'legacy metadata fixture','opened',$3,$4,$5,0,$6)", [
+        id, group, teachers[7], new Date(+row.start_at + startOffsetMs), new Date(+row.end_at + startOffsetMs), memo,
+      ]);
+      await client.query('commit');
+    } catch (error) { await client.query('rollback'); throw error; }
+    return { id, group };
+  }
+
+  await test('legacy blank selector allows unrelated reassignment but retains real assistant conflicts', async () => {
+    const f = await fixture([0], { count: 1, noAssist: true }); const row = f.rows[0];
+    const legacy = await legacyNeighbor(row, extras([{ id: '', price: 0 }, { id: teachers[8], price: 35000 }]));
+    try {
+      await client.query('update sessions set created_by=$2 where id=$1', [row.id, teachers[6]]);
+      assert.equal((await ghost(row.id)).created_by, teachers[6]);
+      await unchangedFailure(() => client.query('update sessions set created_by=$2 where id=$1', [row.id, teachers[8]]), /TEACHER_SCHEDULE_CONFLICT/);
+      await unchangedFailure(() => client.query('update sessions set created_by=$2 where id=$1', [row.id, teachers[7]]), /TEACHER_SCHEDULE_CONFLICT/);
+    } finally { await dispose(legacy.group); await dispose(f.group); }
+  });
+
+  await test('non-overlapping corruption is isolated; overlapping unknown identity fails as metadata', async () => {
+    const f = await fixture([0], { count: 1, noAssist: true }); const row = f.rows[0];
+    const memo = extras([{ id: 'unknown-teacher', price: 35000 }]);
+    const distant = await legacyNeighbor(row, memo, 86400000);
+    let overlapping;
+    try {
+      await client.query('update sessions set created_by=$2 where id=$1', [row.id, teachers[6]]);
+      overlapping = await legacyNeighbor(row, memo);
+      await unchangedFailure(() => client.query('update sessions set created_by=$2 where id=$1', [row.id, teachers[9]]), /SESSION_SCHEDULE_METADATA_INVALID/);
+    } finally {
+      if (overlapping) await dispose(overlapping.group);
+      await dispose(distant.group); await dispose(f.group);
+    }
+  });
+
+  await test('new incomplete assignments are rejected atomically through insert and update', async () => {
+    const f = await fixture([0], { count: 1, noAssist: true }); const row = f.rows[0];
+    const memo = extras([{ id: '', price: 0 }]);
+    try {
+      await unchangedFailure(() => client.query('update sessions set memo=$2 where id=$1', [row.id, memo]), /SESSION_COUNT_EXTRA_TEACHERS_INVALID/);
+      await unchangedFailure(() => client.query("insert into sessions(id,group_id,title,status,created_by,start_at,end_at,price,memo) values($1,$2,'invalid insertion','cancelled',$3,$4,$5,0,$6)", [randomUUID(), randomUUID(), teachers[6], row.start_at, row.end_at, memo]), /SESSION_COUNT_EXTRA_TEACHERS_INVALID/);
+    } finally { await dispose(f.group); }
+  });
 
   await test('historical finished INSERT creates three counts once and DELETE removes counts and slots', async () => {
     const f = await fixture([0], { count: 1 }); const original = f.rows[0];

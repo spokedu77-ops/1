@@ -55,6 +55,18 @@ describe('checked session save', () => {
     expect(response.status).toBe(422);
     expect(await response.json()).toMatchObject({ error: 'SESSION_UPDATE_METADATA_INVALID', message: expect.any(String) });
   });
+  it('distinguishes damaged neighboring-session metadata from a real schedule conflict', async () => {
+    db({ data: null, error: { code: '22023', message: 'SESSION_SCHEDULE_METADATA_INVALID' } });
+    const response = await POST(request(input));
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ error: 'SESSION_SCHEDULE_METADATA_INVALID', message: expect.stringContaining('같은 시간대 수업') });
+  });
+  it('does not label an unrelated exclusion violation as a teacher conflict', async () => {
+    db({ data: null, error: { code: '23P01', message: 'some_other_exclusion_constraint' } });
+    const response = await POST(request(input));
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({ error: 'SESSION_UPDATE_FAILED' });
+  });
   it('surfaces count-ledger conflicts without reporting a successful deletion', async () => {
     db({ data: null, error: { code: '23514', message: 'SESSION_COUNT_SOURCE_AUTO_LOG_AMBIGUOUS' } });
     const response = await POST(request({ ...input, assistants: [] }));

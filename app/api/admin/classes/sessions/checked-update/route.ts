@@ -5,6 +5,7 @@ import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { jsonMetadataSpan, replaceSessionAssistants, validateSessionAssistants } from '@/app/admin/classes-shared/lib/sessionMetadata';
 import { persistedSessionMatches } from '@/app/admin/classes-shared/lib/sessionSaveVerification';
 import { assertSessionSchedulePreservesFeedback } from '@/app/lib/server/sessionFeedbackGuard';
+import { sessionSaveErrorMessage } from '@/app/admin/classes-shared/lib/sessionSaveError';
 
 const expected = z.object({
   start_at: z.string().datetime({ offset: true }), end_at: z.string().datetime({ offset: true }),
@@ -62,14 +63,17 @@ export async function POST(request: NextRequest) {
     }
     const { data, error } = await update.select(COLUMNS).maybeSingle();
     if (error) {
-      console.warn('checked session update rejected', { sessionId: input.sessionId, code: error.code, reason: error.message });
+      console.warn('checked session update rejected', { sessionId: input.sessionId, code: error.code, reason: error.message, details: error.details });
+      if (error.message.includes('SESSION_SCHEDULE_METADATA_INVALID')) {
+        return NextResponse.json({ error: 'SESSION_SCHEDULE_METADATA_INVALID', message: sessionSaveErrorMessage(error.message) }, { status: 422 });
+      }
       if (error.message.includes('SESSION_COUNT_EXTRA_TEACHERS_INVALID')) {
-        return NextResponse.json({ error: 'SESSION_UPDATE_METADATA_INVALID', message: '기존 보조강사 정보 오류로 저장하지 못했습니다. 배정은 변경되지 않았습니다.' }, { status: 422 });
+        return NextResponse.json({ error: 'SESSION_UPDATE_METADATA_INVALID', message: sessionSaveErrorMessage(error.message) }, { status: 422 });
       }
       if (error.message.includes('SESSION_COUNT_')) {
         return NextResponse.json({ error: 'SESSION_UPDATE_COUNT_CONFLICT', message: '수업 배정과 연동 회차 기록이 일치하지 않아 저장을 중단했습니다. 입력 내용은 유지했습니다.' }, { status: 409 });
       }
-      const conflict = error.message.includes('TEACHER_SCHEDULE_CONFLICT') || error.code === '23P01';
+      const conflict = error.message.includes('TEACHER_SCHEDULE_CONFLICT');
       return NextResponse.json({ error: conflict ? 'TEACHER_SCHEDULE_CONFLICT' : error.code === '42501' ? 'SESSION_UPDATE_FORBIDDEN' : 'SESSION_UPDATE_FAILED' }, { status: conflict ? 409 : error.code === '42501' ? 403 : 500 });
     }
     if (!data) return NextResponse.json({ error: 'SESSION_UPDATE_STALE' }, { status: 409 });

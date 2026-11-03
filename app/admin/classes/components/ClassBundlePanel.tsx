@@ -24,6 +24,7 @@ import { findCrossGroupSlotConflicts } from "@/app/admin/classes-shared/lib/sess
 import { fetchAdminSessions, invalidateAdminSessionRequests } from "@/app/admin/classes-shared/lib/adminSessionsRequest";
 import { persistedSessionMatches, assertSavedSessionRows } from "@/app/admin/classes-shared/lib/sessionSaveVerification";
 import { initialSessionStatus } from "../list/lib/createSchedule";
+import { sessionSaveErrorMessage } from '@/app/admin/classes-shared/lib/sessionSaveError';
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -706,7 +707,8 @@ export default function ClassBundlePanel({
     if (error instanceof Error && typeof error.cause === 'string') return error.cause;
     const code = error instanceof Error ? error.message : String(error);
     if (code.includes('STALE')) return '다른 관리자가 수업을 수정했습니다. 다시 조회한 뒤 변경 내용을 확인해 주세요.';
-    if (code.includes('TEACHER_SCHEDULE_CONFLICT')) return '메인·보조강사의 다른 수업과 시간이 겹칩니다. 입력 내용은 유지했습니다.';
+    const scheduleError = sessionSaveErrorMessage(code);
+    if (scheduleError) return scheduleError;
     if (code.includes('FORBIDDEN')) return '저장 권한을 확인할 수 없습니다. 입력 내용은 유지했습니다.';
     if (code.includes('RELOAD')) return '저장은 처리됐지만 재조회에 실패했습니다. 다시 저장하기 전에 새로고침으로 확인해 주세요.';
     return '저장에 실패했습니다. 연결 상태를 확인해 주세요. 입력 내용은 유지했습니다.';

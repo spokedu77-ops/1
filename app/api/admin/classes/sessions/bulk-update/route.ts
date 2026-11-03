@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { assertSavedSessionRows } from '@/app/admin/classes-shared/lib/sessionSaveVerification';
 import { assertSessionSchedulePreservesFeedback } from '@/app/lib/server/sessionFeedbackGuard';
+import { sessionSaveErrorMessage } from '@/app/admin/classes-shared/lib/sessionSaveError';
 
 type SessionScheduleChange = {
   id: string;
@@ -62,7 +63,11 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase.rpc(rpcName, {
     p_changes: body.changes,
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 409 });
+  if (error) {
+    console.warn('bulk session update rejected', { code: error.code, reason: error.message, details: error.details });
+    const metadataInvalid = error.message.includes('METADATA_INVALID') || error.message.includes('EXTRA_TEACHERS_INVALID');
+    return NextResponse.json({ error: error.message, message: sessionSaveErrorMessage(error.message) }, { status: metadataInvalid ? 422 : 409 });
+  }
   if (data !== body.changes.length) return NextResponse.json({ error: 'SESSION_BULK_UPDATE_UNVERIFIED' }, { status: 409 });
   const stored = await supabase.from('sessions').select('*').in('id', body.changes.map(change => change.id));
   if (stored.error) return NextResponse.json({ error: 'SESSION_BULK_UPDATE_RELOAD_FAILED' }, { status: 500 });
