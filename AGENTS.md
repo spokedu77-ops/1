@@ -35,6 +35,10 @@ Existing implementation and tests are evidence of the current state, not a veto 
 - Global analysis does not authorize global refactoring. Edit only the user-requested or approved Sprint Brief scope.
 - Stop and report if implementation exposes an unapproved change to product meaning, navigation, entitlement, pricing, persistence, session lifecycle, or SPOMOVE runtime semantics.
 
+## Local development (one-shot)
+
+For `/admin/*`, rendered QA, or “로컬 켜줘” requests, start the app with **`npm run dev:local`** from this repo root (not bare `next dev`). It clears a stale port 3000 listener on Windows, checks `.env.local`, and waits until `http://127.0.0.1:3000` responds. **`npm run dev:local:check`** exits 0 if a healthy dev server is already up.
+
 ## Verification
 
 Do not run `npm`, `npx`, test, TypeScript, ESLint, or build verification commands unless the user explicitly requests them or an approved Sprint Brief explicitly requires them. Use file inspection, static reasoning, available diagnostics, link checks, and changed-file review by default.

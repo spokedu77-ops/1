@@ -1,0 +1,12 @@
+# Local dev — one-shot (Codex / Cursor agents)
+
+When the user asks to run local dev, QA in browser, or open `/admin/*`:
+
+1. **Do not** run bare `next dev` if port 3000 may be stale or `.env.local` is incomplete.
+2. From repo root `coach-app`, run **`npm run dev:local`** (background if the session needs to continue).
+3. Before browser QA, optionally **`npm run dev:local:check`** — exit 0 means `http://127.0.0.1:3000` is already healthy.
+4. Working directory must be **`c:\Users\user\Desktop\coach-app`** (or the workspace root), not another clone path.
+
+`scripts/dev-local.mjs` frees stale Windows port listeners, validates Supabase env keys, appends equipment ledger defaults if missing, and waits until Next responds.
+
+Do not commit `.env.local`.
