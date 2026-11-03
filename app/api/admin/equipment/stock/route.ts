@@ -3,7 +3,7 @@ import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { fetchEquipmentCapabilities } from '@/app/lib/equipment/capabilities';
 import { fetchEquipmentStock } from '@/app/lib/equipment/fetchStock';
 import { fetchLegacyCatalog, legacyCatalogToStockPreviewRows, fetchEquipmentLegacyImportStatus } from '@/app/lib/equipment/legacyReads';
-import { applyPlanToLegacyImportStatus, ensureLegacyImportSnapshot } from '@/app/lib/equipment/legacyImportSync';
+import { applyPlanToLegacyImportStatus, loadLegacyImportPlanForRead } from '@/app/lib/equipment/legacyImportSync';
 import type { EquipmentInventoryConnectionState } from '@/app/lib/equipment/inventoryConnectionState';
 import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
@@ -54,7 +54,7 @@ export async function GET() {
         { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
       );
     }
-    const sync = await ensureLegacyImportSnapshot(service);
+    const sync = await loadLegacyImportPlanForRead(service);
     let legacy = await fetchEquipmentLegacyImportStatus(service).catch(() => ({
       staged_rows: 0,
       pending_rows: 0,

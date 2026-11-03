@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     .select(
       'ledger_id, event_type, catalog_id, teacher_id, rental_id, qty, note, occurred_at, metadata, created_by, catalog:catalog_id(name), teacher:teacher_id(name)',
     )
-    .in('event_type', ['RENT', 'RETURN'])
+    .in('event_type', ['RENT', 'RETURN_CONFIRM'])
     .order('occurred_at', { ascending: false })
     .range(offset, offset + limit - 1);
 

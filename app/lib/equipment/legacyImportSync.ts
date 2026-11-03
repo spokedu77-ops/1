@@ -5,6 +5,8 @@ import {
   fetchLegacyCatalog,
   fetchLegacyInventory,
   type EquipmentLegacyImportStatus,
+  type LegacyEquipmentCatalogItem,
+  type LegacyEquipmentInventoryItem,
 } from '@/app/lib/equipment/legacyReads';
 import { getPrivateSchemaServiceSupabase } from '@/app/lib/equipment/privateSupabase';
 import { isEquipmentLegacyStagingEnabled } from '@/app/lib/equipment/legacyStaging';
@@ -46,6 +48,17 @@ export type LegacyImportSyncResult = {
   staging_skipped_reason?: string;
 };
 
+type StagedImportRow = {
+  inventory_id: number;
+  catalog_id: number | null;
+  owner_id: string;
+  source_name: string;
+  source_quantity: number;
+  source_hash: string;
+  resolution: 'mapped' | 'pending';
+  reason: LegacyImportReason | null;
+};
+
 function normalizeName(name: string): string {
   return name.trim().replace(/\s+/g, ' ');
 }
@@ -54,32 +67,18 @@ function inventoryHash(row: { id: number; user_id: string; name: string; quantit
   return createHash('md5').update(JSON.stringify(row)).digest('hex');
 }
 
-export async function buildLegacyImportPlan(service: SupabaseClient): Promise<LegacyImportPlan> {
-  const [inventory, catalog, teachersRes, tiRes] = await Promise.all([
-    fetchLegacyInventory(service),
-    fetchLegacyCatalog(service),
-    service.from('users').select('id').eq('role', 'teacher').eq('is_admin', false).eq('is_active', true),
-    service.from('teacher_inventory').select('user_id, name, count'),
-  ]);
-  if (teachersRes.error) throw teachersRes.error;
-
-  const teacherIds = new Set((teachersRes.data ?? []).map((t) => String(t.id)));
-  const nameToCatalog = new Map<string, number[]>();
-  for (const c of catalog) {
-    const key = normalizeName(c.name);
-    const list = nameToCatalog.get(key) ?? [];
-    list.push(c.catalog_id);
-    nameToCatalog.set(key, list);
-  }
-
+function buildTeacherInventoryFlags(
+  inventory: LegacyEquipmentInventoryItem[],
+  teacherIds: Set<string>,
+  tiRows: { user_id: string; name: string; count: number }[],
+): LegacyImportPlan['teacher_inventory_flags'] {
   const inventoryByUserName = new Map<string, number>();
   for (const inv of inventory) {
     const key = `${inv.user_id}::${normalizeName(inv.name)}`;
     inventoryByUserName.set(key, (inventoryByUserName.get(key) ?? 0) + (Number(inv.quantity) || 0));
   }
-
   const tiFlags: LegacyImportPlan['teacher_inventory_flags'] = [];
-  for (const ti of tiRes.data ?? []) {
+  for (const ti of tiRows) {
     const uid = String(ti.user_id);
     const name = normalizeName(String(ti.name ?? ''));
     const tiQty = Number(ti.count) || 0;
@@ -96,6 +95,70 @@ export async function buildLegacyImportPlan(service: SupabaseClient): Promise<Le
         note: `teacher_inventory: inventory 수량(${invQty})과 불일치`,
       });
     }
+  }
+  return tiFlags;
+}
+
+function finalizeLegacyImportPlan(
+  inventory: LegacyEquipmentInventoryItem[],
+  catalog: LegacyEquipmentCatalogItem[],
+  tiRes: { data: { user_id: string; name: string; count: number }[] | null },
+  rows: LegacyImportPlanRow[],
+  catalogUnmapped: number,
+  tiFlags: LegacyImportPlan['teacher_inventory_flags'],
+): LegacyImportPlan {
+  const catalogAggregates = new Map<number, { legacy_qty_held: number; legacy_mapping_pending: boolean }>();
+  for (const c of catalog) {
+    catalogAggregates.set(c.catalog_id, { legacy_qty_held: 0, legacy_mapping_pending: false });
+  }
+  for (const row of rows) {
+    if (row.resolution === 'mapped' && row.catalog_id != null) {
+      const cur = catalogAggregates.get(row.catalog_id)!;
+      cur.legacy_qty_held += row.source_quantity;
+    }
+    if (row.resolution === 'pending' && row.catalog_id != null) {
+      const cur = catalogAggregates.get(row.catalog_id)!;
+      cur.legacy_mapping_pending = true;
+    }
+  }
+
+  const pending_items = rows
+    .filter((r) => r.resolution === 'pending' && r.reason !== 'ZERO_QUANTITY')
+    .map((r) => ({
+      inventory_id: r.inventory_id,
+      name: r.source_name,
+      quantity: r.source_quantity,
+      reason: r.reason ?? 'PENDING',
+    }));
+
+  const mapped_rows = rows.filter((r) => r.resolution === 'mapped').length;
+  const pending_rows = rows.filter((r) => r.resolution === 'pending' && r.reason !== 'ZERO_QUANTITY').length;
+
+  return {
+    inventory_rows: inventory.length,
+    mapped_rows,
+    pending_rows,
+    catalog_unmapped_rows: catalogUnmapped,
+    teacher_inventory_rows: (tiRes.data ?? []).length,
+    teacher_inventory_flags: tiFlags,
+    rows,
+    catalog_aggregates: catalogAggregates,
+    pending_items,
+  };
+}
+
+function mapInventoryRowsToPlan(
+  inventory: LegacyEquipmentInventoryItem[],
+  catalog: LegacyEquipmentCatalogItem[],
+  teacherIds: Set<string>,
+  tiFlags: LegacyImportPlan['teacher_inventory_flags'],
+): { rows: LegacyImportPlanRow[]; catalogUnmapped: number } {
+  const nameToCatalog = new Map<string, number[]>();
+  for (const c of catalog) {
+    const key = normalizeName(c.name);
+    const list = nameToCatalog.get(key) ?? [];
+    list.push(c.catalog_id);
+    nameToCatalog.set(key, list);
   }
 
   const rows: LegacyImportPlanRow[] = [];
@@ -189,47 +252,116 @@ export async function buildLegacyImportPlan(service: SupabaseClient): Promise<Le
     });
   }
 
-  const catalogAggregates = new Map<number, { legacy_qty_held: number; legacy_mapping_pending: boolean }>();
-  for (const c of catalog) {
-    catalogAggregates.set(c.catalog_id, { legacy_qty_held: 0, legacy_mapping_pending: false });
+  return { rows, catalogUnmapped };
+}
+
+async function fetchSharedLegacyImportInputs(service: SupabaseClient, inventory: LegacyEquipmentInventoryItem[]) {
+  const [catalog, teachersRes, tiRes] = await Promise.all([
+    fetchLegacyCatalog(service),
+    service.from('users').select('id').eq('role', 'teacher').eq('is_admin', false).eq('is_active', true),
+    service.from('teacher_inventory').select('user_id, name, count'),
+  ]);
+  if (teachersRes.error) throw teachersRes.error;
+  const teacherIds = new Set((teachersRes.data ?? []).map((t) => String(t.id)));
+  const tiFlags = buildTeacherInventoryFlags(inventory, teacherIds, tiRes.data ?? []);
+  return { catalog, teachersRes, tiRes, teacherIds, tiFlags };
+}
+
+async function buildLegacyImportPlanFromInventory(
+  service: SupabaseClient,
+  inventory: LegacyEquipmentInventoryItem[],
+): Promise<LegacyImportPlan> {
+  const { catalog, tiRes, teacherIds, tiFlags } = await fetchSharedLegacyImportInputs(service, inventory);
+  const { rows, catalogUnmapped } = mapInventoryRowsToPlan(inventory, catalog, teacherIds, tiFlags);
+  return finalizeLegacyImportPlan(inventory, catalog, tiRes, rows, catalogUnmapped, tiFlags);
+}
+
+function planRowsFromStaged(staged: StagedImportRow[]): LegacyImportPlanRow[] {
+  return staged.map((s) => ({
+    inventory_id: s.inventory_id,
+    owner_id: s.owner_id,
+    source_name: s.source_name,
+    source_quantity: s.source_quantity,
+    source_hash: s.source_hash,
+    catalog_id: s.catalog_id,
+    resolution: s.resolution,
+    reason: s.reason,
+  }));
+}
+
+function isInventoryMatchingStagedSnapshot(
+  inventory: LegacyEquipmentInventoryItem[],
+  staged: StagedImportRow[],
+): boolean {
+  if (staged.length === 0 || inventory.length !== staged.length) return false;
+  const hashById = new Map(staged.map((s) => [s.inventory_id, s.source_hash]));
+  for (const row of inventory) {
+    const expected = hashById.get(row.id);
+    if (expected === undefined) return false;
+    const qty = Number(row.quantity) || 0;
+    if (inventoryHash({ id: row.id, user_id: row.user_id, name: row.name, quantity: qty }) !== expected) {
+      return false;
+    }
   }
-  for (const row of rows) {
-    if (row.resolution === 'mapped' && row.catalog_id != null) {
-      const cur = catalogAggregates.get(row.catalog_id)!;
-      cur.legacy_qty_held += row.source_quantity;
-    }
-    if (row.resolution === 'pending' && row.catalog_id != null) {
-      const cur = catalogAggregates.get(row.catalog_id)!;
-      cur.legacy_mapping_pending = true;
-    }
-    if (row.resolution === 'pending' && row.reason === 'CATALOG_UNMAPPED') {
-      // no catalog_id
-    }
+  return true;
+}
+
+async function fetchStagedImportRowsFromDb(): Promise<StagedImportRow[]> {
+  const privateDb = getPrivateSchemaServiceSupabase();
+  const { data, error } = await privateDb
+    .from('equipment_legacy_import_rows')
+    .select('inventory_id,catalog_id,owner_id,source_name,source_quantity,source_hash,resolution,reason')
+    .order('inventory_id');
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    inventory_id: Number(row.inventory_id),
+    catalog_id: row.catalog_id == null ? null : Number(row.catalog_id),
+    owner_id: String(row.owner_id),
+    source_name: String(row.source_name),
+    source_quantity: Number(row.source_quantity) || 0,
+    source_hash: String(row.source_hash),
+    resolution: row.resolution as 'mapped' | 'pending',
+    reason: (row.reason as LegacyImportReason | null) ?? null,
+  }));
+}
+
+async function buildLegacyImportPlanFromStagedSnapshot(
+  service: SupabaseClient,
+  inventory: LegacyEquipmentInventoryItem[],
+  staged: StagedImportRow[],
+): Promise<LegacyImportPlan> {
+  const { catalog, tiRes, tiFlags } = await fetchSharedLegacyImportInputs(service, inventory);
+  const rows = planRowsFromStaged(staged);
+  const catalogUnmapped = rows.filter((r) => r.reason === 'CATALOG_UNMAPPED').length;
+  return finalizeLegacyImportPlan(inventory, catalog, tiRes, rows, catalogUnmapped, tiFlags);
+}
+
+/** Read-only plan for GET routes: never writes staging; reuses DB snapshot when still fresh. */
+export async function loadLegacyImportPlanForRead(service: SupabaseClient): Promise<LegacyImportSyncResult> {
+  const inventory = await fetchLegacyInventory(service);
+  let staged: StagedImportRow[] = [];
+  try {
+    staged = await fetchStagedImportRowsFromDb();
+  } catch {
+    staged = [];
   }
 
-  const pending_items = rows
-    .filter((r) => r.resolution === 'pending' && r.reason !== 'ZERO_QUANTITY')
-    .map((r) => ({
-      inventory_id: r.inventory_id,
-      name: r.source_name,
-      quantity: r.source_quantity,
-      reason: r.reason ?? 'PENDING',
-    }));
+  if (isInventoryMatchingStagedSnapshot(inventory, staged)) {
+    const plan = await buildLegacyImportPlanFromStagedSnapshot(service, inventory, staged);
+    return { plan, persisted: false, staging_skipped_reason: 'read_staged_snapshot' };
+  }
 
-  const mapped_rows = rows.filter((r) => r.resolution === 'mapped').length;
-  const pending_rows = rows.filter((r) => r.resolution === 'pending' && r.reason !== 'ZERO_QUANTITY').length;
-
+  const plan = await buildLegacyImportPlanFromInventory(service, inventory);
   return {
-    inventory_rows: inventory.length,
-    mapped_rows,
-    pending_rows,
-    catalog_unmapped_rows: catalogUnmapped,
-    teacher_inventory_rows: (tiRes.data ?? []).length,
-    teacher_inventory_flags: tiFlags,
-    rows,
-    catalog_aggregates: catalogAggregates,
-    pending_items,
+    plan,
+    persisted: false,
+    staging_skipped_reason: staged.length > 0 ? 'stale_recomputed' : 'live_compute',
   };
+}
+
+export async function buildLegacyImportPlan(service: SupabaseClient): Promise<LegacyImportPlan> {
+  const inventory = await fetchLegacyInventory(service);
+  return buildLegacyImportPlanFromInventory(service, inventory);
 }
 
 export function applyPlanToLegacyImportStatus(

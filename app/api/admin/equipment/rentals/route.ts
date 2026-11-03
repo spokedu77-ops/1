@@ -6,7 +6,7 @@ import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
 import { fetchLegacyCatalog, fetchLegacyInventory, fetchEquipmentLegacyImportStatus } from '@/app/lib/equipment/legacyReads';
 import {
   applyPlanToLegacyImportStatus,
-  ensureLegacyImportSnapshot,
+  loadLegacyImportPlanForRead,
   teacherMappedLegacyPreview,
   teacherPendingLegacyItems,
 } from '@/app/lib/equipment/legacyImportSync';
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     };
   });
 
-  const sync = await ensureLegacyImportSnapshot(service);
+  const sync = await loadLegacyImportPlanForRead(service);
   let legacy = await fetchEquipmentLegacyImportStatus(service, teacherId ?? undefined);
   legacy = applyPlanToLegacyImportStatus(legacy, sync.plan);
 
