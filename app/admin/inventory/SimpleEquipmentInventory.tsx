@@ -11,8 +11,8 @@ type Teacher = { id: string; name: string };
 type Snapshot = { items: Item[]; teachers: Teacher[]; rentals: SimpleRental[]; moves: SimpleMove[] };
 type Tab = 'stock' | 'teachers' | 'history';
 type Editor = { id: number | null; name: string; qty: string; image: string; category: string };
-type RentForm = { catalogId: string; teacherId: string; qty: string; date: string };
-type ReturnForm = { rentalId: string; qty: string; date: string };
+type RentForm = { catalogId: string; teacherId: string; qty: string; date: string; requestKey: string };
+type ReturnForm = { rentalId: string; qty: string; date: string; requestKey: string };
 const today = () => {
   const d = new Date();
   return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
@@ -21,8 +21,8 @@ const clean = (value: string) => value.trim();
 const validQty = (value: string, allowZero = false) =>
   /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && (allowZero ? Number(value) >= 0 : Number(value) > 0);
 const emptyEditor = (): Editor => ({ id: null, name: '', qty: '', image: '', category: '' });
-const emptyRent = (): RentForm => ({ catalogId: '', teacherId: '', qty: '1', date: today() });
-const emptyReturn = (): ReturnForm => ({ rentalId: '', qty: '1', date: today() });
+const emptyRent = (): RentForm => ({ catalogId: '', teacherId: '', qty: '1', date: today(), requestKey: crypto.randomUUID() });
+const emptyReturn = (): ReturnForm => ({ rentalId: '', qty: '1', date: today(), requestKey: crypto.randomUUID() });
 
 function Dialog({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-900/50 p-4" onClick={onClose}>
@@ -77,8 +77,8 @@ export default function SimpleEquipmentInventory() {
       });
       const json = await res.json() as { error?: string };
       if (!res.ok) throw new Error(json.error ?? '저장에 실패했습니다.');
-      await refresh();
-      toast.success('정상 처리되었습니다.');
+      try { await refresh(); } catch { setError('저장은 완료되었지만 최신 데이터 조회에 실패했습니다. 다시 조회하세요.'); }
+      toast.success('저장되었습니다.');
       return true;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '처리 실패');
@@ -219,19 +219,19 @@ export default function SimpleEquipmentInventory() {
         if (!rentForm.catalogId || !rentForm.teacherId || !validQty(rentForm.qty)) return;
         void send({ action: 'rent', catalog_id: Number(rentForm.catalogId),
           teacher_id: rentForm.teacherId, qty: Number(rentForm.qty),
-          move_date: rentForm.date, request_key: crypto.randomUUID() }).then((ok) => { if (ok) setRentForm(null); }); }}>
+          move_date: rentForm.date, request_key: rentForm.requestKey }).then((ok) => { if (ok) setRentForm(null); }); }}>
         <label className="block text-xs font-semibold">강사<select required value={rentForm.teacherId}
-          onChange={(e) => setRentForm({ ...rentForm, teacherId: e.target.value })} className={inputStyle + ' mt-1'}>
+          onChange={(e) => setRentForm({ ...rentForm, teacherId: e.target.value, requestKey: crypto.randomUUID() })} className={inputStyle + ' mt-1'}>
           <option value="">강사 선택</option>{data.teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
         <label className="block text-xs font-semibold">교구<select required value={rentForm.catalogId}
-          onChange={(e) => setRentForm({ ...rentForm, catalogId: e.target.value, qty: '1' })} className={inputStyle + ' mt-1'}>
+          onChange={(e) => setRentForm({ ...rentForm, catalogId: e.target.value, qty: '1', requestKey: crypto.randomUUID() })} className={inputStyle + ' mt-1'}>
           <option value="">교구 선택</option>{data.items.filter((i) => (i.available ?? 0) > 0).map((i) =>
             <option key={i.id} value={i.id}>{i.name} (가용 {i.available}개)</option>)}</select></label>
         <label className="block text-xs font-semibold">대여 수량 (가용 {selectedItem?.available ?? 0}개)
           <input required type="number" min={1} max={selectedItem?.available ?? 0} step={1} value={rentForm.qty}
-            onChange={(e) => setRentForm({ ...rentForm, qty: e.target.value })} className={inputStyle + ' mt-1'}/></label>
+            onChange={(e) => setRentForm({ ...rentForm, qty: e.target.value, requestKey: crypto.randomUUID() })} className={inputStyle + ' mt-1'}/></label>
         <label className="block text-xs font-semibold">대여일<input required type="date" value={rentForm.date}
-          onChange={(e) => setRentForm({ ...rentForm, date: e.target.value })} className={inputStyle + ' mt-1'}/></label>
+          onChange={(e) => setRentForm({ ...rentForm, date: e.target.value, requestKey: crypto.randomUUID() })} className={inputStyle + ' mt-1'}/></label>
         <button type="submit" disabled={busy || !selectedItem || (selectedItem.available ?? 0) < Number(rentForm.qty) ||
           !rentForm.teacherId || !validQty(rentForm.qty) || !rentForm.date}
           className={primary + ' w-full'}>대여 등록</button>
@@ -240,16 +240,16 @@ export default function SimpleEquipmentInventory() {
     {returnForm && <Dialog title="교구 반납" onClose={() => setReturnForm(null)}>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (!selectedRent || !validQty(returnForm.qty)) return;
         void send({ action: 'return', rent_id: selectedRent.id, qty: Number(returnForm.qty),
-          move_date: returnForm.date, request_key: crypto.randomUUID() }).then((ok) => { if (ok) setReturnForm(null); }); }}>
+          move_date: returnForm.date, request_key: returnForm.requestKey }).then((ok) => { if (ok) setReturnForm(null); }); }}>
         <label className="block text-xs font-semibold">대여 건<select required value={returnForm.rentalId}
-          onChange={(e) => setReturnForm({ ...returnForm, rentalId: e.target.value, qty: '1' })} className={inputStyle + ' mt-1'}>
+          onChange={(e) => setReturnForm({ ...returnForm, rentalId: e.target.value, qty: '1', requestKey: crypto.randomUUID() })} className={inputStyle + ' mt-1'}>
           <option value="">대여 건 선택</option>{activeRentals.map((r) =>
             <option key={r.id} value={r.id}>{teacherName(r.teacher_id)} · {itemName(r.catalog_id)} · 잔여 {r.remaining}개 ({r.move_date})</option>)}</select></label>
         <label className="block text-xs font-semibold">반납 수량 (잔여 {selectedRent?.remaining ?? 0}개)
           <input required type="number" min={1} max={selectedRent?.remaining ?? 0} step={1} value={returnForm.qty}
-            onChange={(e) => setReturnForm({ ...returnForm, qty: e.target.value })} className={inputStyle + ' mt-1'}/></label>
+            onChange={(e) => setReturnForm({ ...returnForm, qty: e.target.value, requestKey: crypto.randomUUID() })} className={inputStyle + ' mt-1'}/></label>
         <label className="block text-xs font-semibold">반납일<input required type="date" value={returnForm.date}
-          onChange={(e) => setReturnForm({ ...returnForm, date: e.target.value })} className={inputStyle + ' mt-1'}/></label>
+          onChange={(e) => setReturnForm({ ...returnForm, date: e.target.value, requestKey: crypto.randomUUID() })} className={inputStyle + ' mt-1'}/></label>
         <button type="submit" disabled={busy || !selectedRent || !validQty(returnForm.qty) ||
           Number(returnForm.qty) > selectedRent.remaining || !returnForm.date}
           className={primary + ' w-full'}>반납 확정</button>
