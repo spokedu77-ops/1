@@ -1,0 +1,143 @@
+{
+  "at": "2026-11-04T18:12:41.423Z",
+  "overallStatus": "LOCAL_N8N_RUNTIME_E2E_PASS",
+  "productionApproval": "PRODUCTION_APPROVAL_PENDING",
+  "results": [
+    {
+      "name": "n8n import (CLI array bundle)",
+      "status": "PASS",
+      "evidence": {
+        "rootCause": "단일 workflow 객체 → `workflows.map is not a function`; `[workflow]` 배열로 해결"
+      }
+    },
+    {
+      "name": "n8n workflow import + activate",
+      "status": "PASS",
+      "evidence": {
+        "workflowId": "wlQZJD4VmHU1CDTR"
+      }
+    },
+    {
+      "name": "Next 3099 integration app",
+      "status": "PASS",
+      "evidence": {
+        "appBase": "http://127.0.0.1:3099"
+      }
+    },
+    {
+      "name": "n8n: 0 pending → idle exit",
+      "status": "PASS",
+      "evidence": {
+        "logSnippet": "User settings loaded from: /home/node/.n8n/config\nExecution was successful:\n====================================\n{\n  \"data\": {\n    \"startData\": {},\n    \"resultData\": {\n      \"runData\": {\n        \"Manual test run\": [\n          {\n            \"hints\": [],\n            \"startTime\": 1793815692454,\n            \"executionTime\": 1,\n            \"source\": [],\n            \"executionStatus\": \"success\",\n       "
+      }
+    },
+    {
+      "name": "n8n: 1 job → LM → complete",
+      "status": "PASS",
+      "evidence": {
+        "exec1": "User settings loaded from: /home/node/.n8n/config\nExecution was successful:\n====================================\n{\n  \"data\": {\n    \"startData\": {},\n    \"resultData\": {\n      \"runData\": {\n        \"Manual test run\": [\n          {\n            \"hints\": [],\n            \"startTime\": 1793815693871,\n       ",
+        "row1": {
+          "status": "completed",
+          "correction_draft": {
+            "strengths": "가상 학생 A 집중도 90%",
+            "next_goals": "2대1 패스 연습",
+            "improvements": "패스 정확도 보완",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호"
+          },
+          "error_code": null,
+          "worker_id": "n8n-local",
+          "lease_until": null
+        }
+      }
+    },
+    {
+      "name": "HTTP consume after n8n complete",
+      "status": "PASS",
+      "evidence": 200
+    },
+    {
+      "name": "sessions data invariant (after 1-job path)",
+      "status": "PASS",
+      "evidence": {
+        "before": {
+          "status": "finished",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 패스 연습",
+            "improvements": "패스 정확도 보완",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호"
+          }
+        },
+        "after": {
+          "status": "finished",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 패스 연습",
+            "improvements": "패스 정확도 보완",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호"
+          }
+        }
+      }
+    },
+    {
+      "name": "n8n: multi jobs without duplicate complete",
+      "status": "PASS",
+      "evidence": {
+        "c": 3
+      }
+    },
+    {
+      "name": "fail path → pending retry (simulated LLM down)",
+      "status": "PASS",
+      "evidence": {
+        "status": "pending",
+        "correction_draft": null,
+        "error_code": "llm_unreachable",
+        "worker_id": null,
+        "lease_until": null
+      }
+    },
+    {
+      "name": "invalid draft → 422 (sessions unchanged)",
+      "status": "PASS",
+      "evidence": 422
+    },
+    {
+      "name": "n8n re-run with 0 pending (idempotent)",
+      "status": "PASS",
+      "evidence": "no duplicate completes"
+    },
+    {
+      "name": "lease expired → requeue → n8n reclaim",
+      "status": "PASS",
+      "evidence": {
+        "status": "completed",
+        "correction_draft": {
+          "strengths": "가상 학생 A 집중도 90%",
+          "next_goals": "2대1 패스 연습",
+          "improvements": "패스 정확도 보완",
+          "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+          "condition_notes": "15:30 종료 · 컨디션 양호"
+        },
+        "error_code": null,
+        "worker_id": "n8n-local",
+        "lease_until": null
+      }
+    },
+    {
+      "name": "n8n container restart → pending processed",
+      "status": "PASS",
+      "evidence": {
+        "status": "completed"
+      }
+    },
+    {
+      "name": "PC full power-off reboot",
+      "status": "NOT_TESTED",
+      "evidence": "agent environment cannot power off host"
+    }
+  ]
+}

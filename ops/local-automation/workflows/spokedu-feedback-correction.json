@@ -1,0 +1,343 @@
+{
+  "name": "SPOKEDU Feedback Correction Pull",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1000000-0000-4000-8000-000000000099",
+      "name": "Manual test run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 240]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 10 }]
+        }
+      },
+      "id": "a1000001-0001-4001-8001-000000000001",
+      "name": "Every 10 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SPOKEDU_APP_BASE_URL}}/api/automation/worker/claim",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + ($env.SPOKEDU_AUTOMATION_WORKER_SECRET || '') }}"
+            },
+            {
+              "name": "X-Automation-Worker-Id",
+              "value": "={{$env.SPOKEDU_AUTOMATION_WORKER_ID || 'n8n-local'}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"limit\": 5, \"leaseSeconds\": 900}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "a1000002-0002-4002-8002-000000000002",
+      "name": "Claim jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const claim = $input.first().json;\nif (claim.ok !== true) {\n  throw new Error('claim_not_ok');\n}\nconst jobs = Array.isArray(claim.jobs) ? claim.jobs : [];\nif (jobs.length === 0) {\n  return [{ json: { idle: true, outcome: 'no_pending_jobs' } }];\n}\nreturn jobs.map((job) => ({\n  json: {\n    idle: false,\n    job_id: job.job_id,\n    session_id: job.session_id,\n    attempt_count: job.attempt_count,\n    max_attempts: job.max_attempts,\n    context: job.context,\n  },\n}));\n"
+      },
+      "id": "a1000003-0003-4003-8003-000000000003",
+      "name": "Expand or idle",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-has-job",
+              "leftValue": "={{ $json.idle }}",
+              "rightValue": false,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1000004-0004-4004-8004-000000000004",
+      "name": "Has pending job?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [860, 400]
+    },
+    {
+      "parameters": {},
+      "id": "a1000005-0005-4005-8005-000000000005",
+      "name": "No pending jobs",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1080, 560]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst ctx = item.context || {};\nconst source = ctx.source_feedback || {};\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nreturn [{\n  json: {\n    job_id: item.job_id,\n    session_id: item.session_id,\n    attempt_count: item.attempt_count,\n    max_attempts: item.max_attempts,\n    source_feedback: source,\n    llmBody: {\n      model: $env.LM_STUDIO_MODEL || 'qwen3.5-9b',\n      temperature: 0.1,\n      messages: [\n        {\n          role: 'system',\n          content: 'Correct Korean teacher feedback field-by-field. For EACH key in source_feedback, fix spelling/grammar only for THAT field. Do not swap or copy content between fields. Do not invent facts, scores, or behaviors. Keep SPOMOVE literals unchanged. Return JSON with EXACTLY keys: main_activity, strengths, improvements, next_goals, condition_notes (strings only). No nested objects or extra keys.',\n        },\n        {\n          role: 'user',\n          content: JSON.stringify({ source_feedback: source, required_keys: keys }),\n        },\n      ],\n    },\n  },\n}];\n"
+      },
+      "id": "a1000006-0006-4006-8006-000000000006",
+      "name": "Build LLM request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.LM_STUDIO_BASE_URL || 'http://host.docker.internal:1234') + '/v1/chat/completions' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.llmBody }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "a1000007-0007-4007-8007-000000000007",
+      "name": "LM Studio chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 280],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-llm-choices",
+              "leftValue": "={{ $json.choices?.[0]?.message?.content }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1000008-0008-4008-8008-000000000008",
+      "name": "LLM response OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1520, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "const job = $('Build LLM request').item.json;\nreturn [{\n  json: {\n    job_id: job.job_id,\n    errorCode: 'llm_unreachable',\n    errorDetail: 'lm_studio_empty_or_error',\n  },\n}];\n"
+      },
+      "id": "a1000009-0009-4009-8009-000000000009",
+      "name": "Fail LLM unreachable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1740, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "const job = $('Build LLM request').item.json;\nconst llm = $input.item.json;\nconst source = job.source_feedback || {};\nconst content = llm?.choices?.[0]?.message?.content ?? '';\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nfunction fieldTokens(text) {\n  const found = new Set();\n  for (const m of String(text).matchAll(/SPOMOVE[\\w-]*|\\d{1,2}:\\d{2}|\\d+(?:\\.\\d+)?%|[가-힣A-Za-z]{2,}/g)) {\n    if (m[0] && m[0].length >= 2) found.add(m[0]);\n  }\n  return [...found];\n}\ntry {\n  const trimmed = content.trim().replace(/^```json\\s*/i, '').replace(/```\\s*$/i, '');\n  const parsed = JSON.parse(trimmed);\n  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not_object');\n  if ('feedback_fields' in parsed) throw new Error('nested_feedback_fields');\n  for (const k of Object.keys(parsed)) {\n    if (!keys.includes(k)) throw new Error('extra_key_' + k);\n  }\n  const draft = {};\n  for (const k of keys) {\n    if (typeof parsed[k] !== 'string' || !parsed[k].trim()) throw new Error('missing_field_' + k);\n    draft[k] = parsed[k].trim();\n  }\n  for (const k of keys) {\n    const src = String(source[k] || '').trim();\n    if (!src) continue;\n    const tokens = fieldTokens(src);\n    if (tokens.length && !tokens.some((t) => draft[k].includes(t))) {\n      throw new Error('field_mismatch_' + k);\n    }\n    const spomove = [...src.matchAll(/SPOMOVE[\\w-]*/gi)].map((m) => m[0]);\n    for (const lit of [...new Set(spomove)]) {\n      if (!draft[k].includes(lit)) throw new Error('spomove_lost_' + k);\n    }\n  }\n  return [{ json: { job_id: job.job_id, parseOk: true, correctionDraft: draft } }];\n} catch (e) {\n  return [{\n    json: {\n      job_id: job.job_id,\n      parseOk: false,\n      errorCode: 'llm_json_invalid',\n      errorDetail: String(e?.message || 'parse_failed').slice(0, 120),\n    },\n  }];\n}\n"
+      },
+      "id": "a1000010-0010-4010-8010-000000000010",
+      "name": "Parse correction JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1740, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-parse-ok",
+              "leftValue": "={{ $json.parseOk }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1000011-0011-4011-8011-000000000011",
+      "name": "Parse OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1960, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SPOKEDU_APP_BASE_URL + '/api/automation/worker/jobs/' + $json.job_id + '/complete' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + ($env.SPOKEDU_AUTOMATION_WORKER_SECRET || '') }}"
+            },
+            {
+              "name": "X-Automation-Worker-Id",
+              "value": "={{$env.SPOKEDU_AUTOMATION_WORKER_ID || 'n8n-local'}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ correctionDraft: $json.correctionDraft }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "a1000012-0012-4012-8012-000000000012",
+      "name": "Complete job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2180, 120],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "cond-complete-ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1000013-0013-4013-8013-000000000013",
+      "name": "Complete OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2400, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobId = $('Parse correction JSON').item.json.job_id;\nreturn [{\n  json: {\n    job_id: jobId,\n    errorCode: 'complete_rejected',\n    errorDetail: 'api_complete_failed',\n  },\n}];\n"
+      },
+      "id": "a1000014-0014-4014-8014-000000000014",
+      "name": "Fail complete rejected",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2620, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SPOKEDU_APP_BASE_URL + '/api/automation/worker/jobs/' + $json.job_id + '/fail' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + ($env.SPOKEDU_AUTOMATION_WORKER_SECRET || '') }}"
+            },
+            {
+              "name": "X-Automation-Worker-Id",
+              "value": "={{$env.SPOKEDU_AUTOMATION_WORKER_ID || 'n8n-local'}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ errorCode: $json.errorCode, errorDetail: ($json.errorDetail || '').slice(0, 200) }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "a1000015-0015-4015-8015-000000000015",
+      "name": "Mark job failed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2840, 360]
+    },
+    {
+      "parameters": {},
+      "id": "a1000016-0016-4016-8016-000000000016",
+      "name": "Job done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2620, 40]
+    }
+  ],
+  "connections": {
+    "Manual test run": {
+      "main": [[{ "node": "Claim jobs", "type": "main", "index": 0 }]]
+    },
+    "Every 10 minutes": {
+      "main": [[{ "node": "Claim jobs", "type": "main", "index": 0 }]]
+    },
+    "Claim jobs": {
+      "main": [[{ "node": "Expand or idle", "type": "main", "index": 0 }]]
+    },
+    "Expand or idle": {
+      "main": [[{ "node": "Has pending job?", "type": "main", "index": 0 }]]
+    },
+    "Has pending job?": {
+      "main": [
+        [{ "node": "Build LLM request", "type": "main", "index": 0 }],
+        [{ "node": "No pending jobs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build LLM request": {
+      "main": [[{ "node": "LM Studio chat", "type": "main", "index": 0 }]]
+    },
+    "LM Studio chat": {
+      "main": [[{ "node": "LLM response OK?", "type": "main", "index": 0 }]]
+    },
+    "LLM response OK?": {
+      "main": [
+        [{ "node": "Parse correction JSON", "type": "main", "index": 0 }],
+        [{ "node": "Fail LLM unreachable", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse correction JSON": {
+      "main": [[{ "node": "Parse OK?", "type": "main", "index": 0 }]]
+    },
+    "Parse OK?": {
+      "main": [
+        [{ "node": "Complete job", "type": "main", "index": 0 }],
+        [{ "node": "Mark job failed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Complete job": {
+      "main": [[{ "node": "Complete OK?", "type": "main", "index": 0 }]]
+    },
+    "Complete OK?": {
+      "main": [
+        [{ "node": "Job done", "type": "main", "index": 0 }],
+        [{ "node": "Fail complete rejected", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fail LLM unreachable": {
+      "main": [[{ "node": "Mark job failed", "type": "main", "index": 0 }]]
+    },
+    "Fail complete rejected": {
+      "main": [[{ "node": "Mark job failed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

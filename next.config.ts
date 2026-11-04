@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Different Supabase environments must never share compiled client bundles.
+  distDir: process.env.SPOKEDU_LOCAL_INTEGRATION === '1' ? '.next-local-integration' : '.next',
   // Playwright·loopback QA uses 127.0.0.1; without this, Next dev blocks HMR/dev
   // chunks cross-host and client components never hydrate (localhost-only works).
   allowedDevOrigins: ["127.0.0.1"],

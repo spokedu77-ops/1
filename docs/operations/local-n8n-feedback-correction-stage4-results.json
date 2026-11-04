@@ -1,0 +1,287 @@
+{
+  "at": "2026-11-04T17:48:56.148Z",
+  "overallStatus": "LOCAL_INTEGRATION_E2E_PASS",
+  "productionApproval": "PRODUCTION_APPROVAL_PENDING",
+  "results": [
+    {
+      "name": "precheck: local Postgres reachable",
+      "status": "PASS",
+      "evidence": {
+        "pgUrl": "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+      }
+    },
+    {
+      "name": "local DB stub + queue migrations",
+      "status": "PASS",
+      "evidence": [
+        "20261105120000_admin_feedback_correction_queue.sql",
+        "20261105140000_admin_feedback_correction_queue_hardening.sql"
+      ]
+    },
+    {
+      "name": "local platform admin user (Docker auth only)",
+      "status": "PASS",
+      "evidence": {
+        "email": "choijihoon@spokedu.com",
+        "note": "로컬 Supabase 전용; 운영 계정 아님"
+      }
+    },
+    {
+      "name": "Next.js local integration server",
+      "status": "PASS",
+      "evidence": {
+        "appBase": "http://127.0.0.1:3099"
+      }
+    },
+    {
+      "name": "HTTP worker claim without Bearer → 401",
+      "status": "PASS",
+      "evidence": 401
+    },
+    {
+      "name": "HTTP enqueue without admin session → 401",
+      "status": "PASS",
+      "evidence": 401
+    },
+    {
+      "name": "HTTP enqueue with local platform admin",
+      "status": "PASS",
+      "evidence": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "job": {
+            "id": "f2aa0eb8-d56e-4b56-9021-ef702158aa3b",
+            "session_id": "e2e30000-0000-4000-8000-000000009001",
+            "status": "pending",
+            "created_at": "2026-11-04T17:48:49.946281+00:00"
+          }
+        }
+      }
+    },
+    {
+      "name": "HTTP duplicate enqueue → 409",
+      "status": "PASS",
+      "evidence": 409
+    },
+    {
+      "name": "HTTP claim with Bearer",
+      "status": "PASS",
+      "evidence": {
+        "status": 200,
+        "jobs": 1
+      }
+    },
+    {
+      "name": "HTTP claim 0 pending after drain",
+      "status": "PASS",
+      "evidence": {
+        "ok": true,
+        "workerId": "stage4-http-worker",
+        "jobs": []
+      }
+    },
+    {
+      "name": "HTTP complete wrong Bearer → 401",
+      "status": "PASS",
+      "evidence": 401
+    },
+    {
+      "name": "HTTP complete quality guard → 422",
+      "status": "PASS",
+      "evidence": {
+        "status": 422,
+        "error": "교정 초안 형식이 올바르지 않습니다."
+      }
+    },
+    {
+      "name": "HTTP claim → complete",
+      "status": "PASS",
+      "evidence": {
+        "ok": true,
+        "job": {
+          "id": "f2aa0eb8-d56e-4b56-9021-ef702158aa3b",
+          "session_id": "e2e30000-0000-4000-8000-000000009001",
+          "status": "completed",
+          "completed_at": "2026-11-04T17:48:50.746843+00:00"
+        }
+      }
+    },
+    {
+      "name": "HTTP complete idempotent",
+      "status": "PASS",
+      "evidence": {
+        "ok": true,
+        "idempotent": true,
+        "job": {
+          "id": "f2aa0eb8-d56e-4b56-9021-ef702158aa3b",
+          "session_id": "e2e30000-0000-4000-8000-000000009001",
+          "status": "completed",
+          "completed_at": "2026-11-04T17:48:50.746843+00:00"
+        }
+      }
+    },
+    {
+      "name": "HTTP consume with admin session",
+      "status": "PASS",
+      "evidence": {
+        "status": 200,
+        "sessionId": "e2e30000-0000-4000-8000-000000009001"
+      }
+    },
+    {
+      "name": "sessions.status / mileage / feedback_fields unchanged",
+      "status": "PASS",
+      "evidence": {
+        "before": {
+          "status": "finished",
+          "mileage_option": "",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 패스 연습",
+            "improvements": "패스 정확도 보완",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호"
+          }
+        },
+        "after": {
+          "status": "finished",
+          "mileage_option": "",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 패스 연습",
+            "improvements": "패스 정확도 보완",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호"
+          }
+        }
+      }
+    },
+    {
+      "name": "recovery: pending job claimed after re-connect",
+      "status": "PASS",
+      "evidence": {
+        "ok": true,
+        "workerId": "stage4-http-worker",
+        "jobs": [
+          {
+            "job_id": "3fc90148-7289-452b-aa70-7d138475ce4a",
+            "session_id": "e2e30000-0000-4000-8000-000000009002",
+            "attempt_count": 1,
+            "max_attempts": 3,
+            "context": {
+              "job_id": "3fc90148-7289-452b-aa70-7d138475ce4a",
+              "session_id": "e2e30000-0000-4000-8000-000000009002",
+              "session": {
+                "title": "E2E 가상 수업",
+                "start_at": "2026-10-01T05:00:00.000Z",
+                "session_type": "regular_private"
+              },
+              "source_feedback": {
+                "strengths": "가상학생 A 집중 90%",
+                "next_goals": "2대1 패스 연습",
+                "improvements": "패스 정확도 보완",
+                "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+                "condition_notes": "15:30 종료 · 컨디션 양호"
+              },
+              "lesson_plan_excerpt": null,
+              "rules": [
+                "맞춤법·문장만 교정한다.",
+                "관찰 사실·활동·시간·수치는 추가·삭제·왜곡하지 않는다.",
+                "존재하지 않는 행동·성과·평가를 만들지 않는다.",
+                "SPOMOVE 등 사용자가 적은 고유명사/항목명은 그대로 둔다.",
+                "학생 실명·연락처 등 개인정보를 새로 넣지 않는다.",
+                "SPOKEDU 수업 기록 형식(5개 항목)을 유지한다."
+              ],
+              "expected_field_keys": [
+                "main_activity",
+                "strengths",
+                "improvements",
+                "next_goals",
+                "condition_notes"
+              ],
+              "output_format": "JSON object with keys main_activity, strengths, improvements, next_goals, condition_notes only"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "LM Studio models list",
+      "status": "PASS",
+      "evidence": {
+        "models": [
+          "qwen3.5-9b",
+          "qwen3.5-9b-abliterated",
+          "text-embedding-qwen3-embedding-0.6b",
+          "gemma-4-26b-a4b-it-qat",
+          "text-embedding-nomic-embed-text-v1.5"
+        ]
+      }
+    },
+    {
+      "name": "LM Studio 3 sample corrections + JSON parse",
+      "status": "PASS",
+      "evidence": [
+        {
+          "index": 1,
+          "ok": true,
+          "draft": {
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "strengths": "가상학생 A 집중도 90%",
+            "improvements": "패스 정확도 보완 필요",
+            "next_goals": "2 대 1 패스 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호",
+            "feedback_fields": {
+              "main_activity": "15:00 SPOMOVE-CORE3 패스",
+              "strengths": "가상학생 B 호흡 안정적",
+              "improvements": "왼발 패스 정확도 향상 필요",
+              "next_goals": "3m 패스 거리 확대",
+              "condition_notes": "16:00 종료"
+            }
+          },
+          "spomoveOk": true,
+          "timeOk": true
+        },
+        {
+          "index": 2,
+          "ok": true,
+          "draft": {
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "strengths": "가상학생 A 집중 90%",
+            "improvements": "패스 정확도 보완",
+            "next_goals": "2 대 1 패스 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호",
+            "feedback_fields": {
+              "main_activity": "SPOMOVE-FUN2 반응놀이",
+              "strengths": "집중 85%",
+              "improvements": "방향 전환",
+              "next_goals": "콘 드리블",
+              "condition_notes": "피로 낮음"
+            }
+          },
+          "spomoveOk": true,
+          "timeOk": true
+        },
+        {
+          "index": 3,
+          "ok": true,
+          "draft": {
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "strengths": "가상학생 A 집중 90%",
+            "improvements": "패스 정확도 보완",
+            "next_goals": "2 대 1 패스 연습",
+            "condition_notes": "15:30 종료 · 컨디션 양호"
+          },
+          "spomoveOk": true,
+          "timeOk": true
+        }
+      ]
+    },
+    {
+      "name": "n8n Docker healthz",
+      "status": "PASS",
+      "evidence": 200
+    }
+  ]
+}

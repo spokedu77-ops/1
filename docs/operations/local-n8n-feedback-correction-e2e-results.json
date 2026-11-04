@@ -1,0 +1,239 @@
+{
+  "at": "2026-11-04T17:37:52.459Z",
+  "overallStatus": "LOCAL_DB_E2E_PASS",
+  "results": [
+    {
+      "name": "docker/supabase reachable",
+      "pass": true,
+      "evidence": {
+        "pgUrl": "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+      }
+    },
+    {
+      "name": "local DB: queue migrations on isolated stub",
+      "pass": true,
+      "evidence": {
+        "mode": "minimal_sessions_stub",
+        "migrations": [
+          "20261105120000_admin_feedback_correction_queue.sql",
+          "20261105140000_admin_feedback_correction_queue_hardening.sql"
+        ]
+      }
+    },
+    {
+      "name": "migration: admin_feedback_correction_jobs",
+      "pass": true,
+      "evidence": {
+        "t": "admin_feedback_correction_jobs"
+      }
+    },
+    {
+      "name": "scenario: 0 pending jobs",
+      "pass": true,
+      "evidence": {
+        "error": null,
+        "data": [],
+        "count": null,
+        "status": 200,
+        "statusText": "OK"
+      }
+    },
+    {
+      "name": "scenario: 1 job enqueue→claim→complete",
+      "pass": true,
+      "evidence": {
+        "claim": 1,
+        "complete": "completed"
+      }
+    },
+    {
+      "name": "sessions.status unchanged after complete",
+      "pass": true,
+      "evidence": {
+        "status": "finished"
+      }
+    },
+    {
+      "name": "scenario: multiple pending claimed",
+      "pass": true,
+      "evidence": {
+        "count": 3
+      }
+    },
+    {
+      "name": "scenario: duplicate active session insert blocked",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "message": "duplicate key value violates unique constraint \"idx_admin_feedback_correction_jobs_one_active_per_session\""
+      }
+    },
+    {
+      "name": "scenario: lease expired → requeue → new worker claim",
+      "pass": true,
+      "evidence": {
+        "id": "e2e30000-0000-4000-8000-000000000401",
+        "session_id": "e2e30000-0000-4000-8000-000000000002",
+        "status": "processing",
+        "idempotency_key": "e2e-key-e2e30000-0000-4000-8000-000000000401",
+        "input_snapshot": {
+          "title": "E2E 가상 수업",
+          "start_at": "2026-10-01T05:00:00.000Z",
+          "session_type": "regular_private",
+          "students_text": "",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 연습",
+            "improvements": "패스 정확도",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료"
+          }
+        },
+        "correction_draft": null,
+        "worker_id": "worker-new",
+        "lease_until": "2026-11-04T17:47:52.438983+00:00",
+        "attempt_count": 2,
+        "error_code": null,
+        "error_detail": null,
+        "requested_by": "e2e20000-0000-4000-8000-000000000001",
+        "consumed_at": null,
+        "created_at": "2026-11-04T17:37:52.433699+00:00",
+        "updated_at": "2026-11-04T17:37:52.438983+00:00",
+        "started_at": "2026-11-04T17:37:52.438983+00:00",
+        "completed_at": null
+      }
+    },
+    {
+      "name": "scenario: stale worker complete rejected",
+      "pass": true,
+      "evidence": {
+        "ok": true,
+        "message": "JOB_WORKER_MISMATCH"
+      }
+    },
+    {
+      "name": "scenario: completed job re-complete idempotent",
+      "pass": true,
+      "evidence": {
+        "id": "e2e30000-0000-4000-8000-000000000101",
+        "session_id": "e2e30000-0000-4000-8000-000000000001",
+        "status": "completed",
+        "idempotency_key": "e2e-key-e2e30000-0000-4000-8000-000000000101",
+        "input_snapshot": {
+          "title": "E2E 가상 수업",
+          "start_at": "2026-10-01T05:00:00.000Z",
+          "session_type": "regular_private",
+          "students_text": "",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 연습",
+            "improvements": "패스 정확도",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료"
+          }
+        },
+        "correction_draft": {
+          "strengths": "가상학생 A 집중 90%",
+          "next_goals": "2대1 연습",
+          "improvements": "패스 정확도",
+          "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+          "condition_notes": "15:30 종료"
+        },
+        "worker_id": "worker-a",
+        "lease_until": null,
+        "attempt_count": 1,
+        "error_code": null,
+        "error_detail": null,
+        "requested_by": "e2e20000-0000-4000-8000-000000000001",
+        "consumed_at": null,
+        "created_at": "2026-11-04T17:37:52.409464+00:00",
+        "updated_at": "2026-11-04T17:37:52.417715+00:00",
+        "started_at": "2026-11-04T17:37:52.412552+00:00",
+        "completed_at": "2026-11-04T17:37:52.417715+00:00"
+      }
+    },
+    {
+      "name": "scenario: max attempts → failed permanent",
+      "pass": true,
+      "evidence": {
+        "id": "e2e30000-0000-4000-8000-000000000501",
+        "session_id": "e2e30000-0000-4000-8000-000000000003",
+        "status": "failed",
+        "idempotency_key": "e2e-key-e2e30000-0000-4000-8000-000000000501",
+        "input_snapshot": {
+          "title": "E2E 가상 수업",
+          "start_at": "2026-10-01T05:00:00.000Z",
+          "session_type": "regular_private",
+          "students_text": "",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 연습",
+            "improvements": "패스 정확도",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료"
+          }
+        },
+        "correction_draft": null,
+        "worker_id": "worker-f",
+        "lease_until": null,
+        "attempt_count": 3,
+        "error_code": "max_attempts_exceeded",
+        "error_detail": "e2e",
+        "requested_by": "e2e20000-0000-4000-8000-000000000001",
+        "consumed_at": null,
+        "created_at": "2026-11-04T17:37:52.446084+00:00",
+        "updated_at": "2026-11-04T17:37:52.447924+00:00",
+        "started_at": null,
+        "completed_at": "2026-11-04T17:37:52.447924+00:00"
+      }
+    },
+    {
+      "name": "scenario: fail below max → pending retry",
+      "pass": true,
+      "evidence": {
+        "id": "e2e30000-0000-4000-8000-000000000502",
+        "session_id": "e2e30000-0000-4000-8000-000000000003",
+        "status": "pending",
+        "idempotency_key": "e2e-key-e2e30000-0000-4000-8000-000000000502",
+        "input_snapshot": {
+          "title": "E2E 가상 수업",
+          "start_at": "2026-10-01T05:00:00.000Z",
+          "session_type": "regular_private",
+          "students_text": "",
+          "feedback_fields": {
+            "strengths": "가상학생 A 집중 90%",
+            "next_goals": "2대1 연습",
+            "improvements": "패스 정확도",
+            "main_activity": "14:00 SPOMOVE-CORE5 드리블 연습",
+            "condition_notes": "15:30 종료"
+          }
+        },
+        "correction_draft": null,
+        "worker_id": null,
+        "lease_until": null,
+        "attempt_count": 1,
+        "error_code": "llm_error",
+        "error_detail": "e2e",
+        "requested_by": "e2e20000-0000-4000-8000-000000000001",
+        "consumed_at": null,
+        "created_at": "2026-11-04T17:37:52.450445+00:00",
+        "updated_at": "2026-11-04T17:37:52.452519+00:00",
+        "started_at": null,
+        "completed_at": null
+      }
+    },
+    {
+      "name": "HTTP enqueue→consume chain",
+      "pass": true,
+      "evidence": "NOT_TESTED (Next server not running)"
+    },
+    {
+      "name": "scenario: consume marks consumed_at",
+      "pass": true,
+      "evidence": {
+        "id": "e2e30000-0000-4000-8000-000000000101",
+        "consumed_at": "2026-11-04T17:37:52.456Z"
+      }
+    }
+  ]
+}

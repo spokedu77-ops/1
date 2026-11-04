@@ -86,6 +86,7 @@ scripts/pdf-pages/page-*.png
 
 # next.js
 /.next/
+/.next-local-integration/
 /out/
 
 # production

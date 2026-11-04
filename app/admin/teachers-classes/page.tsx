@@ -505,8 +505,29 @@ function FeedbackReviewTab({
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [duplicateCheck, setDuplicateCheck] = useState<{ isDuplicate: boolean; similarity?: number; matchedSession?: { title?: string; start_at?: string }; duplicate?: boolean; message?: string } | null>(null);
+  const [correctionJobActive, setCorrectionJobActive] = useState<{ id: string; status: string } | null>(null);
+  const [correctionJobReadyId, setCorrectionJobReadyId] = useState<string | null>(null);
+  const [correctionActionLoading, setCorrectionActionLoading] = useState(false);
   const [selectedCenterWeekday, setSelectedCenterWeekday] = useState<number | 'all'>('all');
   const feedbackDateInputRef = useRef<HTMLInputElement>(null);
+
+  const refreshCorrectionJobState = useCallback(async (sessionId: string) => {
+    try {
+      const res = await fetch(
+        `/api/admin/automation/feedback-correction?sessionId=${encodeURIComponent(sessionId)}`,
+        { credentials: 'include', cache: 'no-store' },
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        active?: { id: string; status: string } | null;
+        latestCompleted?: { id: string; status: string } | null;
+      };
+      if (!res.ok) return;
+      setCorrectionJobActive(data.active ?? null);
+      setCorrectionJobReadyId(data.latestCompleted?.id ?? null);
+    } catch {
+      /* non-blocking */
+    }
+  }, []);
 
   const fetchListData = useCallback(async () => {
     setLoading(true);
@@ -796,8 +817,65 @@ function FeedbackReviewTab({
     // 중복 체크
     const check = await checkDuplicateFeedback(session);
     setDuplicateCheck(check);
+    setCorrectionJobActive(null);
+    setCorrectionJobReadyId(null);
+    void refreshCorrectionJobState(session.id);
     
     setIsModalOpen(true);
+  };
+
+  const handleRequestAiCorrection = async () => {
+    if (!selectedEvent) return;
+    setCorrectionActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/automation/feedback-correction/enqueue', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: selectedEvent.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; job?: { id: string; status: string } };
+      if (!res.ok) throw new Error(data.error ?? 'enqueue_failed');
+      toast.success('AI 교정 요청을 대기열에 등록했습니다. PC가 켜지면 자동 처리됩니다.');
+      setCorrectionJobActive(data.job ? { id: data.job.id, status: data.job.status } : { id: '', status: 'pending' });
+      setCorrectionJobReadyId(null);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'AI 교정 요청에 실패했습니다.');
+    } finally {
+      setCorrectionActionLoading(false);
+    }
+  };
+
+  const handleLoadAiCorrectionDraft = async () => {
+    if (!correctionJobReadyId) return;
+    setCorrectionActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/automation/feedback-correction/consume', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: correctionJobReadyId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        correctionDraft?: FeedbackFields;
+      };
+      if (!res.ok) throw new Error(data.error ?? 'consume_failed');
+      if (data.correctionDraft) {
+        setFeedbackFields((prev) => ({
+          ...prev,
+          ...data.correctionDraft,
+          center_document_names: prev.center_document_names ?? data.correctionDraft?.center_document_names,
+        }));
+      }
+      toast.success('AI 교정안을 편집창에 불러왔습니다. 내용 확인 후 기존 저장 버튼으로 승인해 주세요.');
+      setCorrectionJobReadyId(null);
+      if (selectedEvent) void refreshCorrectionJobState(selectedEvent.id);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : '교정안 불러오기에 실패했습니다.');
+    } finally {
+      setCorrectionActionLoading(false);
+    }
   };
 
   const handleSave = async (newStatus = 'verified') => {
@@ -1178,6 +1256,53 @@ function FeedbackReviewTab({
               </div>
 
               {/* 중복 경고 */}
+              {(correctionJobActive || correctionJobReadyId) && (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-4 space-y-3">
+                  <p className="text-sm font-bold text-indigo-900">AI 피드백 교정</p>
+                  {correctionJobActive && (
+                    <p className="text-xs text-indigo-800">
+                      상태: {correctionJobActive.status === 'processing' ? '처리 중' : '대기 중'} — 로컬 n8n이 가져가면 완료됩니다.
+                    </p>
+                  )}
+                  {correctionJobReadyId && (
+                    <p className="text-xs text-emerald-800 font-semibold">교정 초안이 준비되었습니다. 불러온 뒤 검수 저장을 진행하세요.</p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={correctionActionLoading || Boolean(correctionJobActive)}
+                      onClick={() => void handleRequestAiCorrection()}
+                      className="min-h-10 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      AI 교정 요청
+                    </button>
+                    {correctionJobReadyId && (
+                      <button
+                        type="button"
+                        disabled={correctionActionLoading}
+                        onClick={() => void handleLoadAiCorrectionDraft()}
+                        className="min-h-10 rounded-xl border border-emerald-600 bg-white px-4 py-2 text-xs font-bold text-emerald-800 disabled:opacity-50"
+                      >
+                        교정안 불러오기
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!correctionJobActive && !correctionJobReadyId && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={correctionActionLoading}
+                    onClick={() => void handleRequestAiCorrection()}
+                    className="min-h-10 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 disabled:opacity-50"
+                  >
+                    AI 교정 요청
+                  </button>
+                </div>
+              )}
+
               {duplicateCheck?.isDuplicate && (
                 <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">

@@ -36,7 +36,9 @@
     "**/*.mts",
     ".next/dev/types/**/*.ts",
     ".next-phase6/types/**/*.ts",
-    ".next-phase6/dev/types/**/*.ts"
+    ".next-phase6/dev/types/**/*.ts",
+    ".next-local-integration/types/**/*.ts",
+    ".next-local-integration/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
