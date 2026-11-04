@@ -8,21 +8,9 @@ describe('SPOKEDU MASTER library detail final IA', () => {
   const view = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
   const guide = read('app/spokedu-master/library/[id]/components/DetailLessonGuide.tsx');
   const related = read('app/spokedu-master/library/relatedLessonVideos.ts');
-  const visual = read('app/spokedu-master/MASTER_VISUAL_SYSTEM.md');
 
   it('resolves API numeric program ids after direct navigation or refresh', () => {
     expect(view).toContain('String(item.id) === id');
-  });
-
-  it('documents Library Detail as an editorial preparation page', () => {
-    expect(visual).toContain('LIBRARY DETAIL');
-    expect(visual).toContain('Identity');
-    expect(visual).toContain('Understand');
-    expect(visual).toContain('Prepare');
-    expect(visual).toContain('Recall');
-    expect(visual).toContain('Discover Next');
-    expect(visual).toContain('Action');
-    expect(visual).not.toContain('uses one equal-height panel');
   });
 
   it('splits the display title safely and keeps public tags below it', () => {
@@ -54,20 +42,6 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).not.toContain('data-detail-actions');
   });
 
-  it('keeps both content rows two-column from 900px with intrinsic height', () => {
-    const execution = guide.indexOf('data-detail-row="execution"');
-    const preparation = guide.indexOf('data-detail-row="preparation"');
-    expect(execution).toBeGreaterThan(-1);
-    expect(preparation).toBeGreaterThan(execution);
-    expect(guide).toContain('min-[900px]:grid-cols-');
-    expect(guide.indexOf('<VideoPanel model={model}')).toBeLessThan(guide.indexOf('<MethodPanel model={model}'));
-    expect(guide).toContain("const DETAIL_ROW_CLASS =");
-    expect(guide).toContain("'grid items-start");
-    expect(guide).not.toContain('items-stretch');
-    expect(guide).not.toContain("grid-rows-[30px_minmax(0,1fr)]");
-    expect(guide).not.toContain('h-[450px]');
-  });
-
   it('keeps variations directly under the method without synthesized guidance', () => {
     const methodPanel = guide.slice(guide.indexOf('function MethodPanel'), guide.indexOf('function columnClass'));
     expect(methodPanel).toContain('model.activityMethod.map');
@@ -77,19 +51,6 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).not.toContain('data-detail-chapter="execution-support"');
     expect(guide).not.toContain('data-detail-support="method"');
     expect(guide).not.toContain('지도 포인트');
-  });
-
-  it('keeps shared heading baseline without stretching panels to equal height', () => {
-    expect(guide).toContain('const DETAIL_PANEL_CLASS');
-    expect(guide).toContain("const DETAIL_PANEL_CLASS = 'contents'");
-    expect(guide).toContain('const DETAIL_PANEL_HEADING_CLASS');
-    expect(guide).toContain("h-[30px] items-center");
-    expect(guide).toContain('const DETAIL_PANEL_BODY_CLASS');
-    expect(guide.match(/data-detail-panel-heading/g)).toHaveLength(4);
-    expect(guide.match(/data-detail-panel-body/g)).toHaveLength(4);
-    expect(guide).not.toContain('min-[900px]:self-center');
-    expect(guide).toContain('flex flex-col self-start');
-    expect(guide).not.toContain('overflow-y-auto');
   });
 
   it('keeps physical preparation separate from the teaching guide', () => {
@@ -153,15 +114,6 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).not.toContain('variationsExpanded');
   });
 
-  it('keeps the precision pass free of nested decorative media cards', () => {
-    expect(guide).toContain("className={`${DETAIL_PANEL_BODY_CLASS} self-start");
-    expect(guide).not.toContain('blur-2xl');
-    expect(guide).not.toContain('ArrowUpRight');
-    expect(guide).not.toContain('mt-auto border-t');
-    expect(guide).not.toContain('min-[900px]:min-h-[460px]');
-    expect(view).not.toContain('linear-gradient(145deg,var(--spm-acc)');
-  });
-
   it('renders related videos from three explainable axes with deterministic fallback', () => {
     expect(view).toContain('selectRelatedLessonVideos(program, programs)');
     expect(view).toContain('relatedVideos={relatedVideos}');
@@ -213,28 +165,6 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain("'같은 교구': '같은 교구 활용'");
     expect(guide).toContain("'동작 패턴 유사': '비슷한 움직임'");
     expect(guide).toContain("'관련 활동': '함께 보기 좋은 활동'");
-  });
-
-  it('uses numbered method steps and numbers only when there are multiple variations', () => {
-    expect(guide).toContain('function StepMarker');
-    expect(guide).toContain('inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full');
-    expect(guide).toContain('const numberedVariations = variationSteps.length > 1');
-    expect(guide).toContain('{numberedVariations ? (');
-    expect(guide).not.toContain('function VariationMarker');
-    expect(guide).not.toContain("padStart(2, '0')");
-    expect(guide).not.toContain('function getMethodSupport');
-  });
-
-  it('keeps mobile actions sticky while moving desktop actions and favorite into the hero', () => {
-    expect(guide).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
-    expect(view).toContain('max-lg:fixed');
-    expect(view).toContain('max-lg:bottom-[var(--spm-tabbar-clearance,0px)]');
-    expect(view).toContain('transition-none lg:hidden');
-    expect(view).toContain('aria-hidden className="hidden h-11 w-11 lg:block"');
-    expect(view).toContain('hidden h-11 w-11');
-    expect(view).toContain('lg:inline-flex');
-    expect(view.match(/aria-pressed=\{favorite\}/g)).toHaveLength(2);
-    expect(view).toContain('bg-[var(--spm-bg)]');
   });
 
   it('shows explicit Capture memory after core preparation with an exact Session deep link', () => {

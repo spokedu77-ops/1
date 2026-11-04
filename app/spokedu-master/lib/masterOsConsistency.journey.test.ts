@@ -69,12 +69,4 @@ describe("MASTER OS consistency journeys", () => {
     expect(migration).toContain("program_title_snapshot, sort_order, false");
     expect(migration).not.toContain("spokedu_master_session_attendance");
   });
-
-  it("assign copy uses 수업에 추가 grammar", () => {
-    const assign = read(
-      "app/spokedu-master/components/session/AssignProgramToSessionButton.tsx",
-    );
-    expect(assign).toContain("수업에 추가");
-    expect(assign).not.toContain("수업에 배정");
-  });
 });

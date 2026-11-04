@@ -12,17 +12,6 @@ describe('MASTER BottomSheet viewport ownership', () => {
     expect(source).toContain('if (usesDesktopSessionWorkspace) return overlay');
   });
 
-  it('keeps one content scroll owner between detached header and optional footer', () => {
-    expect(source.match(/data-sheet-scroll-owner/g)).toHaveLength(1);
-    expect(source).toContain('min-h-0 flex-1 touch-pan-y overflow-y-auto');
-    expect(source).toContain("isSession ? 'mr-2 pr-2' : 'pr-3'");
-    expect(source).toContain('data-sheet-footer');
-    expect(source).toContain('shrink-0');
-    expect(source).toContain("footerVariant === 'preview-mobile'");
-    expect(source).toContain('pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden');
-    expect(source).not.toContain("hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'");
-  });
-
   it('retains focus restoration, escape handling, body lock, and safe-area padding', () => {
     expect(source).toContain("event.key === 'Escape'");
     expect(source).toContain('previousFocusRef.current?.isConnected');

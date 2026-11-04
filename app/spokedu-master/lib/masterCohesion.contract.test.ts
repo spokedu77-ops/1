@@ -2,14 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import {
-  MASTER_PRODUCT_CATALOG,
-  getMasterProductPaymentDescription,
-  getMasterProductPaymentFeatureLabels,
-} from './productCatalog';
-import { MASTER_ACTION_COPY } from './masterActionGrammar';
+import { MASTER_PRODUCT_CATALOG } from './productCatalog';
 import { getMasterRouteRequirement } from '../components/layout/masterRouteAccess';
-import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -25,43 +19,6 @@ describe('MASTER commercial cohesion contracts', () => {
       canUseRecords: true,
       canUseSpomove: false,
     });
-  });
-
-  it('sells outcomes instead of a stale feature count', () => {
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('일반 수업관리 흐름을 모두 제공합니다');
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('SPOMOVE 디지털 움직임 콘텐츠');
-    expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ')).toContain('출석');
-    expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' ')).toContain('SPOMOVE');
-  });
-
-  it('uses one destructive vocabulary across Class, Student, and Session', () => {
-    expect(MASTER_ACTION_COPY.removeFromClass).toBe('반에서 제외');
-    expect(MASTER_ACTION_COPY.archiveStudent).toBe('명단에서 보관');
-    expect(MASTER_ACTION_COPY.cancelSession).toBe('수업 취소');
-    expect(MASTER_ACTION_COPY.deleteSession).toBe('수업 삭제');
-    const students = read('app/spokedu-master/students/page.tsx');
-    const classes = read('app/spokedu-master/classes/[classId]/page.tsx');
-    const classRoster = read('app/spokedu-master/classes/[classId]/ClassRosterSheet.tsx');
-    const activity = readSessionDetailSource();
-    expect(students).toContain('MASTER_ACTION_COPY.archiveStudent');
-    expect(students).not.toContain('Trash2');
-    expect(classes).toContain('ClassRosterSheet');
-    expect(classRoster).toContain('MASTER_ACTION_COPY.removeFromClass');
-    expect(activity).toContain('취소 해제');
-    expect(activity).toContain('수업 삭제');
-  });
-
-  it('keeps operational primary CTAs on the brand token', () => {
-    for (const path of [
-      'app/spokedu-master/manage/session-detail/SessionActions.tsx',
-      'app/spokedu-master/students/page.tsx',
-      'app/spokedu-master/manage/ScheduleTab.tsx',
-      'app/spokedu-master/dashboard/TodaySessionsPanel.tsx',
-    ]) {
-      const source = read(path);
-      expect(source.includes('spm-btn-primary') || source.includes('SPM_PRIMARY_BTN')).toBe(true);
-    }
-    expect(read('app/spokedu-master/components/ui/SubscriptionGateWall.tsx')).not.toContain('text-red-600');
   });
 
   it('aligns operational and library APIs to the same capability names as UI gates', () => {

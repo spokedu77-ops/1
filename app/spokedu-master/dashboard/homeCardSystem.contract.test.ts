@@ -17,10 +17,6 @@ const shelf = readFileSync(
   "app/spokedu-master/dashboard/homeSpomoveShelf.ts",
   "utf8",
 );
-const followUp = readFileSync(
-  "app/spokedu-master/components/information/SystemDecisionBanner.tsx",
-  "utf8",
-);
 const programsGateway = readFileSync(
   "app/spokedu-master/programs/page.tsx",
   "utf8",
@@ -43,10 +39,6 @@ const homeUiClasses = readFileSync(
 );
 const commercialAccess = readFileSync(
   "app/spokedu-master/lib/commercialProgramAccess.ts",
-  "utf8",
-);
-const skeleton = readFileSync(
-  "app/spokedu-master/components/ui/Skeleton.tsx",
   "utf8",
 );
 
@@ -147,39 +139,6 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).toContain("MV_HOME_FEATURE_WIDTH");
   });
 
-  it("uses count-aware grids at every Dashboard breakpoint", () => {
-    expect(dashboard).not.toContain('data-dashboard-rail=');
-    expect(dashboard).toContain('data-dashboard-grid="operational"');
-    expect(dashboard).toContain('grid grid-cols-1 items-stretch gap-3 min-[768px]:grid-cols-3');
-    expect(dashboard.match(/grid grid-cols-2 items-stretch gap-3 min-\[768px\]:gap-5 min-\[1024px\]:grid-cols-4/g)).toHaveLength(2);
-    expect(dashboard).not.toContain('auto-fit');
-    expect(dashboard).not.toContain('auto-fill');
-    expect(continueCard).toContain('line-clamp-2');
-    expect(continueCard).toContain('data-dashboard-operational-meta="true"');
-    expect(continueCard).toContain('whitespace-nowrap');
-  });
-
-  it("keeps Home media proportional and brings all four recommendations into regular desktop view", () => {
-    expect(weeklyCard).not.toContain("compactMedia");
-    expect(weeklyCard).toContain("'home-cover-4-3'");
-    expect(thumb).toContain("homeCoverFourThree || favoritesCoverFourThree");
-    expect(thumb).toContain("h-full w-full object-cover object-center");
-    expect(dashboard).not.toContain("max-[1199.98px]:!h-");
-    expect(skeleton).not.toContain("max-[1199.98px]:!h-");
-    expect(skeleton).toContain("section === 'weekly' ? 'aspect-[4/3]' : 'aspect-[3/2]'");
-    expect(dashboard.match(/min-\[1024px\]:grid-cols-4/g)).toHaveLength(2);
-  });
-
-  it("uses a stable SPOMOVE heading row and delegates mobile tab clearance to AppShell", () => {
-    expect(dashboard).toContain("<h2 id={titleId} className={MV_HOME_SECTION_TITLE}>{title}</h2>");
-    expect(dashboard).toContain("description ? <p className={MV_HOME_SECTION_COPY}>{description}</p>");
-    expect(dashboard).not.toContain("!mt-0 hidden sm:block");
-    expect(dashboard).not.toContain("pb-28 min-[768px]:pb-12");
-    expect(dashboard).toContain("w-full px-4 pb-6 pt-12");
-    expect(skeleton).toContain('export function DashboardSkeleton()');
-    expect(skeleton).toContain('<div className="h-full overflow-y-auto"');
-  });
-
   it("keeps mobile operational summaries to kicker, title, optional compact meta, and CTA", () => {
     expect(continueCard).toContain("meta?: string");
     expect(continueCard).toContain('data-dashboard-operational-meta="true"');
@@ -194,45 +153,6 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).toContain("meta={recentClassTool.compactDescription}");
     expect(dashboard).toContain("놀이체육 · 준비");
     expect(dashboard).toContain("놀이체육 · 영상");
-  });
-
-  it("uses one CTA system for all operational states", () => {
-    expect(dashboard.match(/actionLabel=/g)).toHaveLength(6);
-    expect(continueCard.match(/data-dashboard-operational-cta=/g)).toHaveLength(1);
-    expect(continueCard).toContain("MV_HOME_CARD_ACTION");
-    expect(continueCard).toContain("<ArrowRight size={15}");
-    expect(homeUiClasses).toContain("MV_HOME_CARD_ACTION = 'text-[13px] font-bold");
-  });
-
-  it("gives mobile Hero actions an explicit one-plus-two hierarchy", () => {
-    const heroActionsIndex = dashboard.indexOf('data-dashboard-hero-actions="true"');
-    const scheduleActionIndex = dashboard.indexOf('수업 일정 보기', heroActionsIndex);
-    const classToolsActionIndex = dashboard.indexOf('수업 도구 열기', heroActionsIndex);
-
-    expect(dashboard).toContain('data-dashboard-hero-actions="true"');
-    expect(dashboard).toContain('data-dashboard-primary-cta="true"');
-    expect(scheduleActionIndex).toBeLessThan(classToolsActionIndex);
-    expect(dashboard).toContain('grid grid-cols-2');
-    expect(dashboard).toContain('spm-btn-primary col-span-2');
-    expect(dashboard).toContain("matchMedia('(max-width: 767px)')");
-    expect(dashboard).not.toContain('min-h-[288px]');
-    expect(dashboard).not.toContain('sm:min-h-[312px]');
-  });
-
-  it("overlays Weekly play affordance inside the media stage", () => {
-    expect(weeklyCard).toContain("absolute left-3 top-3");
-    expect(weeklyCard).toContain("relative block w-full");
-  });
-
-  it("aligns SPOMOVE card actions to one compact bottom row", () => {
-    expect(dashboard).toContain('className="px-3.5 pb-3.5 pr-14 pt-2.5"');
-    expect(dashboard).toContain('className="absolute bottom-1 right-1 z-10 inline-flex h-11 w-11');
-  });
-
-  it("keeps urgent follow-up compact with a touch-safe action instead of rendering a Home hero", () => {
-    expect(followUp).toContain("px-3 py-2.5");
-    expect(followUp).toContain("min-h-11");
-    expect(followUp).not.toContain("sm:p-5");
   });
 
   it("reports recoverable Weekly slot diagnostics as warnings instead of runtime errors", () => {

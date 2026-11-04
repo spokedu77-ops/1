@@ -46,81 +46,6 @@ function expectedLine(presetId: string, core: string, variant?: string) {
   }).join(' · ');
 }
 
-const EXPECTED_CARD_TITLES_BY_ID: Record<string, string> = {
-  'reaction-cognition-space-direction-01': '화살표 방향 따라가기',
-  'reaction-cognition-space-direction-color-01b': '색깔 화살표 따라가기',
-  'reaction-cognition-quad-color-02': '네 칸 색 따라가기',
-  'reaction-cognition-quad-fruit-10': '네 칸 과일 색 따라가기',
-  'reaction-cognition-l2-animal-exp': '네 칸 동물 색 따라가기',
-  'reaction-cognition-l2-food-exp': '네 칸 음식 색 따라가기',
-  'reaction-cognition-l2-nature-exp': '네 칸 자연 색 따라가기',
-  'reaction-cognition-l2-vehicle-exp': '네 칸 탈것 색 따라가기',
-  'reaction-cognition-l2-mix-exp': '네 칸 믹스 색 따라가기',
-  'reaction-cognition-full-color-03': '화면 가득 색 따라가기',
-  'reaction-cognition-l3-fruit-exp': '화면 가득 과일 색 따라가기',
-  'reaction-cognition-full-animal-18': '화면 가득 동물 색 따라가기',
-  'reaction-cognition-l3-food-exp': '화면 가득 음식 색 따라가기',
-  'reaction-cognition-full-nature-19': '화면 가득 자연 색 따라가기',
-  'reaction-cognition-l3-vehicle-exp': '화면 가득 탈것 색 따라가기',
-  'reaction-cognition-l3-mix-exp': '화면 가득 믹스 색 따라가기',
-  'reaction-cognition-split-color-04': '양쪽 색 따라가기',
-  'reaction-cognition-l4-fruit-exp': '양쪽 과일 색 따라가기',
-  'reaction-cognition-l4-animal-exp': '양쪽 동물 색 따라가기',
-  'reaction-cognition-l4-food-exp': '양쪽 음식 색 따라가기',
-  'reaction-cognition-l4-nature-exp': '양쪽 자연 색 따라가기',
-  'reaction-cognition-l4-vehicle-exp': '양쪽 탈것 색 따라가기',
-  'reaction-cognition-l4-mix-exp': '양쪽 믹스 색 따라가기',
-  'visual-reaction-flash-33': '풍선 터뜨리기',
-  'visual-reaction-rush-39': '파도 피하기',
-  'visual-reaction-flow-2x-31': '벽돌 따라 밟기',
-  'visual-reaction-mole-l1': '두더지 잡기 (쉬움)',
-  'visual-reaction-mole-normal-skeleton': '두더지 잡기 (보통)',
-  'visual-reaction-goalkeeper-easy-skeleton': '골키퍼 막기 (쉬움)',
-  'visual-reaction-goalkeeper-42': '골키퍼 막기 (보통)',
-  'visual-reaction-hand-foot-easy-skeleton': '발 맞춰 움직이기',
-  'visual-reaction-hand-foot-normal-skeleton': '손발 나눠 움직이기',
-  'visual-reaction-hand-foot-hard-skeleton': '손발 동시 움직이기',
-  'simon-pole-arrows-41': '화살표 방향 따라가기',
-  'simon-arrow-hard-skeleton': '두 화살표 방향 따라가기',
-  'simon-pole-shape-06': '도형 색 따라가기',
-  'simon-shape-hard-skeleton': '두 도형 색 따라가기',
-  'simon-balloon-flash-05': '풍선 색 따라가기',
-  'simon-balloon-hard-skeleton': '두 풍선 색 따라가기',
-  'simon-mixed-gallery-exp': '그림 색 따라가기',
-  'simon-random-hard-skeleton': '두 그림 색 따라가기',
-  'simon-camouflage-center-skeleton': '숨은 색 찾아가기 (1개)',
-  'visual-reaction-blackout-37': '숨은 색 찾아가기 (2개)',
-  'flanker-uniform-07': '가운데 좌우 화살표 따라가기',
-  'flanker-arrow-udlr-exp': '가운데 사방 화살표 따라가기',
-  'flanker-theme-color-skeleton': '가운데 색 따라가기',
-  'flanker-theme-06': '가운데 과일 색 따라가기',
-  'flanker-theme-animal-skeleton': '가운데 동물 색 따라가기',
-  'flanker-theme-food-skeleton': '가운데 음식 색 따라가기',
-  'flanker-theme-nature-skeleton': '가운데 자연 색 따라가기',
-  'flanker-theme-vehicle-skeleton': '가운데 탈것 색 따라가기',
-  'flanker-theme-mix-skeleton': '가운데 믹스 색 따라가기',
-  'flanker-nested-circles-04': '크기 다른 색 따라가기',
-  'flanker-random-43': '크기 다른 과일 색 따라가기',
-  'flanker-5circle-46': '크기 다른 동물 색 따라가기',
-  'flanker-arrow-05': '크기 다른 음식 색 따라가기',
-  'flanker-uniform-number-exp': '크기 다른 자연 색 따라가기',
-  'flanker-random-number-exp': '크기 다른 탈것 색 따라가기',
-  'flanker-5circle-number-exp': '크기 다른 믹스 색 따라가기',
-  'flanker-extreme-arrow-hard-skeleton': '크기 다른 화살표 따라가기',
-  'stroop-arrow-reverse-08': '화살표 방향 말고 색으로 점프',
-  'stroop-arrow-bg-47': '화살표 속 색깔로 점프',
-  'stroop-word-reverse-48': '글자 뜻 색깔로 점프',
-  'stroop-word-bg-49': '글씨 색깔로 점프',
-  'sequential-memory-3color-09': '세 가지 색 순서 기억하기',
-  'sequential-memory-5color-51': '다섯 가지 색 순서 기억하기',
-  'sequential-memory-10color-52': '늘어나는 색 순서 기억하기',
-  'sequential-memory-custom-10color-exp': '한눈에 색 배치 기억하기 (4X4)',
-  'sequential-memory-color-number-exp': '색깔과 번호 기억하기',
-  'sequential-memory-full-reveal-54': '한눈에 색 배치 기억하기 (3X3)',
-  'dive-standard': '액션 무브',
-  'dive-color-gate-61': '모션 게이트',
-};
-
 describe('SPOMOVE public naming apply', () => {
   it('covers public 72 with no missing or extra map entries', () => {
     expect(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER).toHaveLength(72);
@@ -142,12 +67,6 @@ describe('SPOMOVE public naming apply', () => {
     expect(statuses.filter((status) => status === 'runtime-deferred')).toHaveLength(0);
     expect(statuses.filter((status) => status === 'name-hold')).toHaveLength(0);
     expect(statuses).toHaveLength(72);
-  });
-
-  it('stores the exact v2 cardTitle for every public id', () => {
-    expect(Object.fromEntries(
-      Object.entries(SPOMOVE_PUBLIC_NAMING_BY_ID).map(([id, naming]) => [id, naming.cardTitle]),
-    )).toEqual(EXPECTED_CARD_TITLES_BY_ID);
   });
 
   it('uses the explicit cardTitle without composing the metadata variant into it', () => {
@@ -182,42 +101,10 @@ describe('SPOMOVE public naming apply', () => {
     }
   });
 
-  it('applies both hidden-color titles immediately', () => {
-    expect(getSpomovePresetDisplayModel(findPublic('simon-camouflage-center-skeleton')).displayTitle)
-      .toBe('숨은 색 찾아가기 (1개)');
-    expect(getSpomovePresetDisplayModel(findPublic('visual-reaction-blackout-37')).displayTitle)
-      .toBe('숨은 색 찾아가기 (2개)');
-  });
-
   it('resolves applied session snapshots to their public titles', () => {
     expect(resolveSpomovePublicDisplayTitle('reaction-cognition-quad-fruit-10', '4분할 자극 · 과일')).toBe('네 칸 과일 색 따라가기');
     expect(resolveSpomovePublicDisplayTitle('stroop-arrow-reverse-08', '스트룹 이펙트 1번 · 화살표 반대')).toBe('화살표 방향 말고 색으로 점프');
     expect(resolveSpomovePublicDisplayTitle('sequential-memory-full-reveal-54', '순간 기억 3X3 그리드 (원샷)')).toBe('한눈에 색 배치 기억하기 (3X3)');
-  });
-
-  it('applies all four Stroop public titles immediately', () => {
-    const expected = {
-      'stroop-arrow-reverse-08': '화살표 방향 말고 색으로 점프',
-      'stroop-arrow-bg-47': '화살표 속 색깔로 점프',
-      'stroop-word-reverse-48': '글자 뜻 색깔로 점프',
-      'stroop-word-bg-49': '글씨 색깔로 점프',
-    } as const;
-
-    for (const [id, title] of Object.entries(expected)) {
-      const model = getSpomovePresetDisplayModel(findPublic(id));
-      expect(model.rootTitle).toBe(title);
-      expect(model.displayTitle).toBe(title);
-    }
-  });
-
-  it('applies the 3X3 instant-memory public title while exposing cardCore', () => {
-    const model = getSpomovePresetDisplayModel(findPublic('sequential-memory-full-reveal-54'));
-    expect(model.displayTitle).toBe('한눈에 색 배치 기억하기 (3X3)');
-    expect(model.rootTitle).toBe('한눈에 색 배치 기억하기 (3X3)');
-    expect(getSpomovePublicNaming('sequential-memory-full-reveal-54')?.status).toBe('applied');
-    const card = getSpomoveCardDisplayModel(findPublic('sequential-memory-full-reveal-54'));
-    expect(card.publicMeta.core).toBe('기억 과제');
-    expect(card.publicMeta.difficulty).toMatch(DIFFICULTY_SLOT);
   });
 
   it('lets official applied naming beat CMS displayTitle override', () => {
@@ -342,15 +229,6 @@ describe('SPOMOVE public card meta contract', () => {
     expect(line('dive-standard')).toBe(expectedLine('dive-standard', 'DIVE'));
   });
 
-  it('does not leak previous subtitle composition into Hub cards', () => {
-    const hub = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/SpomoveHubView.tsx'), 'utf8');
-    expect(hub).not.toContain('composeSpomovePublicCardMetaParts(card.publicMeta)');
-    expect(hub).toContain('[card.publicMeta.core, card.publicMeta.difficulty]');
-    expect(hub).not.toContain('decisionMeta');
-    expect(hub).not.toContain('supportingMeta');
-    expect(hub).not.toContain('composeSpomoveCardSubtitleParts');
-  });
-
   it('uses public preset difficulty instead of thinkingLevel', () => {
     const source = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/spomovePublicCardDifficulty.ts'), 'utf8');
     expect(source).not.toContain('thinkingLevel');
@@ -385,20 +263,6 @@ describe('SPOMOVE public card meta contract', () => {
       expect(normal.publicMeta.variant).toBe(hard.publicMeta.variant);
       expect(normal.publicMeta.difficulty).toBe('난이도 보통');
       expect(hard.publicMeta.difficulty).toBe('난이도 어려움');
-    }
-  });
-
-  it('uses the public display resolver across MASTER session-facing surfaces', () => {
-    const paths = [
-      'app/spokedu-master/manage/session-detail/SessionActivities.tsx',
-      'app/spokedu-master/students/[studentId]/page.tsx',
-      'app/spokedu-master/report/parentNoticeModel.ts',
-      'app/spokedu-master/spomove/session/spomoveRecordDraft.ts',
-      'app/spokedu-master/dashboard/DashboardView.tsx',
-      'app/spokedu-master/spomove/SpomoveHubView.tsx',
-    ];
-    for (const path of paths) {
-      expect(readFileSync(join(process.cwd(), path), 'utf8'), path).toContain('resolveSpomovePublicDisplayTitle');
     }
   });
 

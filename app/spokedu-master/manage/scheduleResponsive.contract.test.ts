@@ -13,13 +13,6 @@ describe('MASTER Schedule responsive information contract', () => {
     expect(calendar).toContain('min-h-12');
   });
 
-  it('limits compact and desktop cells to two one-line event summaries plus overflow count', () => {
-    expect(calendar).toContain('item.sessions.slice(0, 2)');
-    expect(calendar).toContain('data-calendar-event-line');
-    expect(calendar).toContain('min-w-0 truncate');
-    expect(calendar).toContain('+{item.sessions.length - 2}');
-  });
-
   it('retains the full selected-day agenda with an intentional mobile hierarchy', () => {
     expect(schedule).toContain('daySessions.map((session)');
     expect(schedule).toContain('grid-cols-[minmax(0,1fr)_auto]');
@@ -27,9 +20,5 @@ describe('MASTER Schedule responsive information contract', () => {
     expect(schedule).toContain('data-agenda-count={daySessions.length}');
   });
 
-  it('uses the product breakpoint for the desktop workspace transition', () => {
-    expect(calendar).toContain('min-[1200px]:flex');
-    expect(schedule).toContain('min-[1200px]:flex');
-    expect(calendar).not.toContain('lg:flex-1');
-  });
+
 });

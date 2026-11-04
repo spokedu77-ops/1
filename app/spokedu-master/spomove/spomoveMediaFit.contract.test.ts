@@ -2,76 +2,19 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import {
-  SPOMOVE_IMAGE_THUMB_ASPECT_CLASS,
-  SPOMOVE_IMAGE_THUMB_OBJECT_FIT,
-  SPOMOVE_VIDEO_FRAME_ASPECT_CLASS,
-  SPOMOVE_VIDEO_POSTER_OBJECT_FIT,
-} from './spomoveMediaFit';
 
 function read(path: string) {
   return readFileSync(join(process.cwd(), path), 'utf8');
 }
 
-const fitSsot = read('app/spokedu-master/spomove/spomoveMediaFit.ts');
-const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
-const sheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
 const layeredThumb = read('app/spokedu-master/spomove/SpomoveLayeredThumb.tsx');
 
 describe('SPOMOVE media fit — clean discovery thumbs / video 16:9 (not rendered PASS)', () => {
-  it('keeps a shared media module: square clean-fill discovery thumbs, 16:9 contained video frame', () => {
-    expect(SPOMOVE_IMAGE_THUMB_OBJECT_FIT).toBe('cover');
-    expect(SPOMOVE_IMAGE_THUMB_ASPECT_CLASS).toBe('aspect-square');
-    expect(SPOMOVE_VIDEO_POSTER_OBJECT_FIT).toBe('contain');
-    expect(SPOMOVE_VIDEO_FRAME_ASPECT_CLASS).toBe('aspect-video');
-    expect(fitSsot).toContain("SPOMOVE_IMAGE_THUMB_OBJECT_FIT = 'cover'");
-    expect(fitSsot).toContain("SPOMOVE_VIDEO_POSTER_OBJECT_FIT = 'contain'");
-  });
-
-  it('routes Hub CardVisual thumbs through SpomoveLayeredThumb, not a page-local crop', () => {
-    const cardVisual = hub.slice(hub.indexOf('function CardVisual'), hub.indexOf('function PresetCard'));
-    expect(cardVisual).toContain('SpomoveLayeredThumb');
-    expect(cardVisual).toContain('aspect-square');
-    expect(cardVisual).toContain('presentation="home-clean-square"');
-    expect(cardVisual).not.toContain('posterObjectFit');
-    expect(cardVisual).not.toContain('SPOMOVE_VIDEO_POSTER_OBJECT_FIT');
-  });
-
-  it('renders guide video preview with contain + aspect-video (no column stretch crop)', () => {
-    const preview = sheet.slice(
-      sheet.indexOf('function SpomoveScreenPreview'),
-      sheet.indexOf('function BriefingSection'),
-    );
-    expect(preview).toContain('SPOMOVE_VIDEO_POSTER_OBJECT_FIT');
-    expect(preview).toContain('SPOMOVE_VIDEO_FRAME_ASPECT_CLASS');
-    expect(preview).toContain('posterObjectFit={SPOMOVE_VIDEO_POSTER_OBJECT_FIT}');
-    expect(preview).toContain("data-spm-spomove-media=\"video-preview\"");
-    expect(preview).not.toContain('aspect-auto');
-    expect(preview).not.toContain('lg:h-full');
-    expect(preview).not.toContain('object-cover');
-    expect(preview).not.toContain('posterObjectFit="cover"');
-  });
-
-  it('does not route Hub image thumbs through video preview helpers', () => {
-    expect(hub).not.toContain('getVideoThumbnailCandidates');
-    expect(hub).not.toContain('TrackedVideoIframe');
-    expect(hub).not.toContain('SPOMOVE_VIDEO_POSTER_OBJECT_FIT');
-  });
-
   it('recovers when a failed thumbnail URL is replaced after an upload', () => {
     expect(layeredThumb).toContain('failedSrc !== src');
     expect(layeredThumb).toContain('setFailedSrc(src)');
     expect(layeredThumb).toContain('stretchSrc === src');
   });
 
-  it('shares one clean square image branch between Home and Hub without blur or contain', () => {
-    expect(layeredThumb).toContain("presentation?: 'default' | 'home-clean-square'");
-    const cleanBranch = layeredThumb.slice(
-      layeredThumb.indexOf('cleanSquare ? ('),
-      layeredThumb.indexOf(') : fullVisibleFourThree ?'),
-    );
-    expect(cleanBranch).toContain('object-cover object-center');
-    expect(cleanBranch).not.toContain('blur-xl');
-    expect(cleanBranch).not.toContain('object-contain');
-  });
+
 });

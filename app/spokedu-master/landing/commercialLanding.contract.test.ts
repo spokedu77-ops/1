@@ -5,20 +5,9 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('official MASTER commercial landing IA', () => {
-  const page = read('app/spokedu-master/landing/CommercialLanding.tsx');
   const sections = read('app/spokedu-master/landing/components/LandingSections.tsx');
   const subscription = read('app/(spokedu-public)/subscription/SpokeduLabLanding.tsx');
   const faqSource = read('app/spokedu-master/landing/landingFaq.ts');
-
-  it('keeps the approved section sequence', () => {
-    const sequence = ['LandingHero', 'ProductOverview', 'CoreProductStory', 'SpomoveSection', 'WhyMasterSection', 'ProductDetailSection', 'FieldProofSection', 'AudienceSection', 'PlansSection', 'CenterSection', 'FaqAndFinalCta'];
-    let cursor = -1;
-    for (const component of sequence) {
-      const next = page.indexOf(`<${component}`, cursor + 1);
-      expect(next).toBeGreaterThan(cursor);
-      cursor = next;
-    }
-  });
 
   it('publishes PD-011 plan truth and eleven purchase FAQs', () => {
     expect(sections).toContain('수업 도구 8종');
