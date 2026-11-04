@@ -1,4 +1,5 @@
 import { getPublicProductContract } from './public-product-contract';
+import { PUBLIC_PROGRAM_COPY } from './public-brand-copy';
 import { SPOKEDU_PATHS } from './site';
 import type { HomeMediaKey } from './home-media';
 
@@ -23,8 +24,7 @@ export const spomatPage = {
     id: 'definition',
     eyebrow: 'SPOMAT',
     title: 'SPOMAT은 SPOMOVE를 실행하는 물리적 도구입니다',
-    lead:
-      'SPOMOVE 수업에서 화면의 색·위치 신호를 바닥 2×2 매트 위 움직임으로 이어 주는 실행 교구입니다. 네 칸의 색 위치가 화면 자극과 맞물립니다.',
+    lead: PUBLIC_PROGRAM_COPY.spomat,
     mediaKey: 'spomovePadSystem' as HomeMediaKey,
   },
 
@@ -104,6 +104,11 @@ export const spomatPage = {
       trackLabel: 'spomat-purchase-guide',
     },
     secondary: [
+      {
+        label: 'SPOMAT 구매·견적 상담',
+        href: '/contact?type=spomove&operation=equipment',
+        trackLabel: 'spomat-consult',
+      },
       {
         label: 'SPOMOVE 알아보기',
         href: `${SPOKEDU_PATHS.spomove}`,

@@ -33,11 +33,11 @@ function allowsVisualFallback(requirement: object): boolean {
 describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
     expect(siteNav.map((entry) => entry.label)).toEqual([
+      'SPOKEDU 소개',
       '기관·학교 수업',
       '개인·소그룹 수업',
       'SPOMOVE',
       '수업사례',
-      'SPOKEDU 소개',
     ]);
     expect(siteNav).toHaveLength(5);
     expect(JSON.stringify(siteNav)).not.toMatch(/문의·협업/);
@@ -252,13 +252,13 @@ describe('spokedu site IA', () => {
   it('keeps the single website Home information relationships', () => {
     const source = readFileSync(join(process.cwd(), 'app/spokedu/website/pages/home.tsx'), 'utf8')
       + readFileSync(join(process.cwd(), 'app/spokedu/website/data/home.ts'), 'utf8');
-    for (const route of ['/education', '/private', '/spokedu-lab', '/spomove', '/records', '/contact']) {
-      expect(source).toContain(route);
+    for (const route of ['education', 'private', 'subscription', 'spomove', 'records', 'contact']) {
+      expect(source).toMatch(new RegExp(`(?:paths|SPOKEDU_PATHS)\\.${route}`));
     }
     expect(source).toContain('아이와 현장의 조건에 맞춰');
     expect(source).toContain('움직이고 싶게 만드는');
     expect(source).toContain('체육수업을 설계합니다.');
-    expect(source).toContain('recordsPage.fieldRecords');
+    expect(source).toContain('getFieldRecordCatalogItem');
     expect(source).not.toMatch(/innerHTML|data-path|isStitchC0Enabled/);
   });
 
@@ -486,8 +486,8 @@ describe('spokedu site IA', () => {
       'master',
       'catalogFinal',
     ]);
-    expect(spomoveProgramPage.hero.lines.join(' ')).toMatch(/움직임|시지각/);
-    expect(spomoveProgramPage.flow.steps.map((step) => step.label)).toEqual(['SEE', 'DECIDE', 'MOVE']);
+    expect(spomoveProgramPage.hero.lines.join(' ')).toBe('화면을 보고 판단하고 움직이는 체육활동');
+    expect(spomoveProgramPage.flow.steps.map((step) => step.label)).toEqual(['SEE', 'THINK', 'MOVE']);
     expect(spomoveProgramPage.variation.tracks.map((track) => track.label)).toEqual([
       '자극 시간',
       '과제 구조',

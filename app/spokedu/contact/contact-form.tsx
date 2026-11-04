@@ -212,10 +212,12 @@ function ContactSidebar() {
 function CommonFields({
   values,
   inquiryTypeLabel,
+  minimal = false,
   onChange,
 }: {
   values: InquiryCommonFields;
   inquiryTypeLabel: string;
+  minimal?: boolean;
   onChange: (patch: Partial<InquiryCommonFields>) => void;
 }) {
   return (
@@ -250,9 +252,9 @@ function CommonFields({
           className={inputClass}
         />
       </Field>
-      <Field label="희망 지역" required>
+      <Field label="희망 지역" required={!minimal}>
         <input
-          required
+          required={!minimal}
           placeholder="예: 서울 강남, 경기 성남"
           value={values.preferredRegion}
           onChange={(e) => onChange({ preferredRegion: e.target.value })}
@@ -283,10 +285,12 @@ function InstitutionFields({
   values,
   onChange,
   title,
+  minimal = false,
 }: {
   values: DispatchInquiryFields | SpomoveInquiryFields;
   onChange: (patch: Partial<DispatchInquiryFields>) => void;
   title: string;
+  minimal?: boolean;
 }) {
   return (
     <div className="space-y-3 border-t border-slate-100 pt-4">
@@ -302,6 +306,7 @@ function InstitutionFields({
             />
           </Field>
         </div>
+        {!minimal ? <>
         <Field label="대상 연령" required>
           <input
             required
@@ -336,6 +341,7 @@ function InstitutionFields({
             </select>
           </Field>
         </div>
+        </> : null}
       </div>
     </div>
   );
@@ -415,13 +421,13 @@ function applyPayloadToForms(payload: InquiryPayload, handlers: {
   });
 }
 
-export default function SpokeduContactForm() {
+export default function SpokeduContactForm({ inlineType }: { inlineType?: InquiryType } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
   const markFormStartedRef = useRef(createFormStartedTracker('other', 'contact_form'));
-  const [inquiryType, setInquiryType] = useState<InquiryType | null>(null);
+  const [inquiryType, setInquiryType] = useState<InquiryType | null>(inlineType ?? null);
   const [submitting, setSubmitting] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
   useEffect(() => { setPrivacyConsent(false); }, [inquiryType]);
@@ -444,7 +450,7 @@ export default function SpokeduContactForm() {
   useEffect(() => {
     migrateLegacyInquiryStorage();
     const draft = loadStoredInquiryDraft();
-    if (draft) setStoredDraft(draft);
+    if (draft && (!inlineType || draft.payload.type === inlineType)) setStoredDraft(draft);
     // Move Report 잔여 자동삽입 키 제거 (문의 메시지에 진단 요약이 붙던 경로)
     try {
       window.localStorage.removeItem('private.moveReport.summary');
@@ -452,12 +458,12 @@ export default function SpokeduContactForm() {
     } catch {
       // ignore
     }
-  }, []);
+  }, [inlineType]);
 
   useEffect(() => {
     const requestedType = searchParams.get('type');
     const wantsProposal = searchParams.get('proposal') === 'true';
-    const resolvedType = resolveContactInquiryType(requestedType, searchParams.get('proposal'));
+    const resolvedType = inlineType ?? resolveContactInquiryType(requestedType, searchParams.get('proposal'));
 
     setInquiryType(resolvedType);
 
@@ -496,7 +502,7 @@ export default function SpokeduContactForm() {
             : 'SPOMOVE 도입·운영 상담을 요청합니다.'),
       }));
     }
-  }, [searchParams]);
+  }, [searchParams, inlineType]);
 
   const activeOption = useMemo(
     () => contactTypeOptions.find((option) => option.id === inquiryType) ?? null,
@@ -533,7 +539,11 @@ export default function SpokeduContactForm() {
   function restoreDraft() {
     if (!storedDraft) return;
     setInquiryType(storedDraft.payload.type);
-    router.replace(`/contact?type=${storedDraft.payload.type}`, { scroll: false });
+    if (!inlineType) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('type', storedDraft.payload.type);
+      router.replace(`/contact?${params.toString()}`, { scroll: false });
+    }
     applyPayloadToForms(storedDraft.payload, {
       setPrivateForm,
       setDispatchForm,
@@ -629,7 +639,7 @@ export default function SpokeduContactForm() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
+    <div className={inlineType ? 'w-full' : 'grid gap-8 lg:grid-cols-12 lg:items-start'}>
       <div className="space-y-6 lg:col-span-8">
         {storedDraft ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-950">
@@ -652,7 +662,7 @@ export default function SpokeduContactForm() {
           </div>
         ) : null}
 
-        <section id="contact-type-select" className="space-y-4">
+        {!inlineType ? <section id="contact-type-select" className="space-y-4">
           <div>
             <h2 className="text-lg font-bold tracking-tight text-slate-950 sm:text-xl">목적에 맞는 상담 흐름</h2>
             <p className="mt-1 text-sm text-slate-600 [word-break:keep-all]">
@@ -695,7 +705,7 @@ export default function SpokeduContactForm() {
               );
             })}
           </div>
-        </section>
+        </section> : null}
 
         <div ref={formRef}>
           {inquiryType && activeOption ? (
@@ -709,7 +719,7 @@ export default function SpokeduContactForm() {
 
             <div className="space-y-3">
               <p className="text-sm font-bold text-slate-900">기본 정보</p>
-              <CommonFields values={commonValues} inquiryTypeLabel={inquiryTypeLabel} onChange={onCommonChange} />
+              <CommonFields minimal={!!inlineType && inquiryType === 'spomove'} values={commonValues} inquiryTypeLabel={inquiryTypeLabel} onChange={onCommonChange} />
             </div>
 
             {inquiryType === 'private' ? (
@@ -776,6 +786,7 @@ export default function SpokeduContactForm() {
                   markFormStartedRef.current();
                   setSpomoveForm((p) => ({ ...p, ...patch }));
                 }}
+                minimal={!!inlineType}
                 title="지도자 교육·SPOMOVE 정보"
               />
             ) : null}
@@ -892,7 +903,7 @@ export default function SpokeduContactForm() {
                 }`}
               >
                 <p className="whitespace-pre-line leading-6 [word-break:keep-all]">{notice.text}</p>
-                {notice.kind === 'ok' ? (
+                {notice.kind === 'ok' && !inlineType ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -939,9 +950,9 @@ export default function SpokeduContactForm() {
         </div>
       </div>
 
-      <div className="lg:col-span-4">
+      {!inlineType ? <div className="lg:col-span-4">
         <ContactSidebar />
-      </div>
+      </div> : null}
     </div>
   );
 }

@@ -54,6 +54,9 @@ describe('submitInquiry', () => {
     const expected = payload.type === 'private' ? '/api/private/leads'
       : payload.type === 'dispatch' || payload.type === 'spomove' ? '/api/dispatch/leads' : '/api/curriculum/leads';
     expect(vi.mocked(fetch).mock.calls[1][0]).toBe(expected);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[1][1]?.body));
+    expect(body.privacy_consent).toBe(true);
+    expect(body.acquisition.submitPath).toBe(`${window.location.pathname}${window.location.search}`);
   });
 
   it('returns ok when API succeeds', async () => {

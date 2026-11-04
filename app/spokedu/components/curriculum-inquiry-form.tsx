@@ -1,5 +1,7 @@
 'use client';
 
+import { V0PrivacyConsent } from './v0-privacy-consent';
+
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import {
@@ -87,6 +89,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
   const [extra, setExtra] = useState('');
   const [conversionEvidenceSlug, setConversionEvidenceSlug] = useState<FieldRecordSlug | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
 
   useEffect(() => {
@@ -118,6 +121,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
   );
 
   const reset = useCallback(() => {
+    setPrivacyConsent(false);
     setNameOrOrg('');
     setPhone('');
     setTargetAge('');
@@ -135,7 +139,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
   const handleSubmit = useCallback(
     async (event: FormEvent) => {
       event.preventDefault();
-      if (!canSubmit) {
+      if (!canSubmit || !privacyConsent) {
         setStatus({ tone: 'error', message: '필수 항목을 모두 선택·입력해 주세요.' });
         return;
       }
@@ -151,6 +155,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            privacy_consent: privacyConsent,
             type: 'curriculum',
             lead_mode: leadMode,
             name_or_org: nameOrOrg.trim(),
@@ -203,6 +208,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
     },
     [
       canSubmit,
+      privacyConsent,
       leadMode,
       nameOrOrg,
       phone,
@@ -344,6 +350,8 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
           />
         </div>
 
+        <V0PrivacyConsent id="curriculum-privacy-consent" checked={privacyConsent} onChange={setPrivacyConsent} />
+
         {status.message ? (
           <p
             className={`mt-4 rounded-2xl px-4 py-3 text-sm font-medium ${
@@ -360,7 +368,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
         ) : null}
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <button type="submit" disabled={submitting || !canSubmit} className={`${marketingButtonPrimary} disabled:opacity-60`}>
+          <button type="submit" disabled={submitting || !canSubmit || !privacyConsent} className={`${marketingButtonPrimary} disabled:opacity-60`}>
             {submitting ? '접수 중…' : curriculumSubmitLabel(leadMode)}
           </button>
           <a href={brandContactLinks.phone} className={marketingButtonSecondary}>

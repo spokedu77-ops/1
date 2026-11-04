@@ -1,4 +1,5 @@
 import { storeInquiryDraft } from './inquiry-draft';
+import { getAcquisitionContext } from '../lib/acquisition';
 import type {
   CurriculumInquiryPayload,
   DispatchInquiryPayload,
@@ -222,7 +223,11 @@ export async function submitInquiry(payload: InquiryPayload): Promise<InquirySub
     const response = await fetch(request.endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request.body),
+      body: JSON.stringify({
+        ...request.body,
+        privacy_consent: payload.privacyConsent === true,
+        acquisition: getAcquisitionContext(),
+      }),
     });
     const result = (await response.json().catch(() => null)) as { ok?: boolean; message?: string; error?: string } | null;
 

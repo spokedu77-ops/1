@@ -79,6 +79,13 @@ export type SiteNavEntry =
 export const siteNav: SiteNavEntry[] = [
   {
     type: 'link',
+    label: 'SPOKEDU 소개',
+    href: SPOKEDU_PATHS.about,
+    trackLabel: 'nav-about',
+    matchPrefix: '/about',
+  },
+  {
+    type: 'link',
     label: '기관·학교 수업',
     href: SPOKEDU_PATHS.education,
     trackLabel: 'nav-education',
@@ -104,13 +111,6 @@ export const siteNav: SiteNavEntry[] = [
     href: SPOKEDU_PATHS.records,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
-  },
-  {
-    type: 'link',
-    label: 'SPOKEDU 소개',
-    href: SPOKEDU_PATHS.about,
-    trackLabel: 'nav-about',
-    matchPrefix: '/about',
   },
 ];
 

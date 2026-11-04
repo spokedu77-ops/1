@@ -1,4 +1,5 @@
 import { HOME_SECTION03_PEOPLE } from '../components/home-web/home-section03-people';
+import { PUBLIC_PROGRAM_COPY, PUBLIC_TEAM_ROLES } from './public-brand-copy';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
@@ -44,14 +45,14 @@ export const aboutPage = {
       {
         id: 'spomove',
         title: 'SPOMOVE',
-        body: '시각정보와 신체 움직임을 연결하는 스크린 기반 체육 프로그램입니다.',
+        body: PUBLIC_PROGRAM_COPY.spomove,
         href: `${SPOKEDU_PATHS.spomove}`,
         trackLabel: 'about-what-spomove',
       },
       {
         id: 'subscription',
         title: 'SPOKEDU LAB',
-        body: '체육 지도자를 위한 수업 콘텐츠와 운영 플랫폼입니다.',
+        body: PUBLIC_PROGRAM_COPY.lab,
         href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'about-what-curriculum',
       },
@@ -86,7 +87,7 @@ export const aboutPage = {
       {
         id: 'choi',
         name: HOME_SECTION03_PEOPLE[0]!.name,
-        role: '대표',
+        role: PUBLIC_TEAM_ROLES.choi,
         photo: HOME_SECTION03_PEOPLE[0]!.photo,
         photoObjectPosition: '50% top',
         credentials: [...HOME_SECTION03_PEOPLE[0]!.credentials],
@@ -94,7 +95,7 @@ export const aboutPage = {
       {
         id: 'kim-yunki',
         name: HOME_SECTION03_PEOPLE[1]!.name,
-        role: '운영총괄',
+        role: PUBLIC_TEAM_ROLES['kim-yunki'],
         photo: HOME_SECTION03_PEOPLE[1]!.photo,
         photoObjectPosition: '50% top',
         credentials: [...HOME_SECTION03_PEOPLE[1]!.credentials],
@@ -102,7 +103,7 @@ export const aboutPage = {
       {
         id: 'kim-gumin',
         name: HOME_SECTION03_PEOPLE[2]!.name,
-        role: '팀장',
+        role: PUBLIC_TEAM_ROLES['kim-gumin'],
         photo: HOME_SECTION03_PEOPLE[2]!.photo,
         photoObjectPosition: '50% top',
         credentials: [...HOME_SECTION03_PEOPLE[2]!.credentials],

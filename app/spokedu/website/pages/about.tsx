@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PUBLIC_LEADERSHIP_INTRO } from '../../data/public-brand-copy';
 import { WebsiteIcon } from '../components/WebsiteIcon';
 import { AboutHistory, AboutPeople, AboutIntroduction, AboutFacts } from '../components/content-sections';
 import { PageCTA } from '../components/content-sections';
@@ -135,10 +136,10 @@ export default function AboutPage() {
 <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
 <div>
 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold mb-4">
-<span>RESEARCH &amp; FACULTY</span>
+<span>OUR PEOPLE</span>
 </div>
 <h2 className="font-headline-lg text-headline-lg text-on-surface">교육을 설계하고 현장을 움직이는 사람들</h2>
-<p className="font-body-md text-body-md text-on-surface-variant mt-2 max-w-xl">스포키듀는 아동·청소년 전문 체육교육 브랜드입니다.</p>
+<p className="font-body-md text-body-md text-on-surface-variant mt-2 max-w-xl">{PUBLIC_LEADERSHIP_INTRO}</p>
 </div>
 <div className="flex items-center gap-3">프로그램·운영 안내<span className="font-label-sm text-label-sm text-on-surface-variant"></span></div>
 </div>

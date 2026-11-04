@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -49,7 +49,7 @@ describe('field-records-catalog', () => {
       expect(catalog.href.startsWith('/records/')).toBe(true);
       expect(catalog.blogHref).toMatch(/^https:\/\/blog\.naver\.com\//);
       expect(catalog.onsite!.composition.length).toBeGreaterThanOrEqual(2);
-      expect(catalog.thumbnailSrc).toMatch(/^\/images\/spokedu\/records\//);
+      expect(catalog.thumbnailSrc).toMatch(/^\/images\/spokedu\//);
     }
   });
 
@@ -105,8 +105,8 @@ describe('field-records-catalog', () => {
   it('pins local thumbnailSrc for every catalog item (no runtime Naver fetch)', () => {
     for (const item of FIELD_RECORD_CATALOG) {
       expect(item.thumbnailSrc).toBeTruthy();
-      expect(item.thumbnailSrc).toMatch(/^\/images\/spokedu\/records\/[a-z0-9-]+\.(jpe?g|png|webp)$/i);
-      expect(item.thumbnailSrc).toContain(item.slug);
+      expect(item.thumbnailSrc).toMatch(/^\/images\/spokedu\/[a-z0-9\-/]+\.(jpe?g|png|webp)$/i);
+      expect(existsSync(join(process.cwd(), 'public', item.thumbnailSrc))).toBe(true);
       expect(item.thumbnailSrc).not.toMatch(REMOTE_MEDIA_RE);
     }
   });

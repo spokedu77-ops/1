@@ -1,4 +1,5 @@
 import type { HomeMediaKey } from './home-media';
+import { PUBLIC_LEADERSHIP_INTRO } from './public-brand-copy';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
 import { getPublicProductContract } from './public-product-contract';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
@@ -218,7 +219,7 @@ export const curriculumPage = {
       eyebrow: 'FIELD-BUILT',
       title: '현장 체육교육에서 시작한\n수업 운영 시스템',
       lead: '스포키듀는 현장 수업과 기관 운영, 지도자 교육에서 정리한 기준을 콘텐츠와 제품으로 연결합니다.',
-      details: ['2020년 설립 및 출강 시작', '연세대학교 체육교육학과 출신 운영진', '현장 수업·기관 운영·지도자 교육'] as const,
+      details: ['2020년 설립 및 출강 시작', PUBLIC_LEADERSHIP_INTRO, '현장 수업·기관 운영·지도자 교육'] as const,
     },
     plans: {
       id: 'plans',

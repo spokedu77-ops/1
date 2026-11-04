@@ -1,6 +1,7 @@
 import Link from 'next/link';
+import { InlineConsultForm } from '../../contact/inline-consult-form';
 import { WebsiteIcon } from '../components/WebsiteIcon';
-import { EducationPrograms, EducationDetails, EducationFAQ, EducationCases, ClassConditions } from '../components/content-sections';
+import { EducationPrograms, EducationDetails, EducationFAQ, EducationCases, EducationSystem, ClassConditions } from '../components/content-sections';
 import { PageCTA } from '../components/content-sections';
 
 export default function EducationPage() {
@@ -133,6 +134,7 @@ export default function EducationPage() {
 <EducationDetails /></div>
 </section>
 
-<EducationCases /><EducationFAQ /><PageCTA page="education" />
+<EducationSystem /><EducationCases /><EducationFAQ /><InlineConsultForm type="dispatch" />
+<PageCTA page="education" />
 </div></main>);
 }

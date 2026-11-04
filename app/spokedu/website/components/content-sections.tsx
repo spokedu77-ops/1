@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { educationSystem } from '../../data/education-system';
 import { educationHubPage as education } from '../../data/education-hub';
 import { aboutPage } from '../../data/about-page';
 import { aboutFounder } from '../../data/about-founder';
@@ -12,6 +13,10 @@ import { recordsPage } from '../../data/records-page';
 import { MapPin, Users, HeartHandshake, CalendarDays } from 'lucide-react';
 
 const conditionIcons = [MapPin, Users, HeartHandshake, CalendarDays];
+
+export function EducationSystem() {
+  return <Section id="education-system"><SectionHeading eyebrow="4MOVE" title={educationSystem.title}>{educationSystem.body}</SectionHeading><div className="web-small-grid">{educationSystem.areas.map(area => <article key={area.name}><h3>{area.name}</h3><p>{area.description}</p></article>)}</div><p className="web-lead">운영 형태와 교육 목적에 따라 활동의 구성과 적용 방식을 조정합니다.</p></Section>;
+}
 
 export function PageCTA({ page }: { page: 'education' | 'private' | 'about' | 'spomove' }) {
   const actions = {

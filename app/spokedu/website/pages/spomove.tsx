@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { InlineConsultForm } from '../../contact/inline-consult-form';
+import { PUBLIC_PROGRAM_COPY } from '../../data/public-brand-copy';
 import { spomoveProgramPage } from '../../data/spomove-program-page';
 import { WebsiteIcon } from '../components/WebsiteIcon';
 import { SpomoveFieldPhoto, SpomatProductPhoto, SpomoveProcessingFlow } from '../components/SpomoveVisual';
@@ -13,9 +15,9 @@ export default function SpomovePage() {
 <WebsiteIcon name="verified" className="text-[18px]" />
 <span className="font-label-sm text-label-sm uppercase tracking-wider">SPOMOVE</span>
 </div>
-<h1 className="font-display-hero text-headline-lg lg:text-display-hero text-on-surface font-bold tracking-tight max-w-4xl whitespace-pre-line leading-tight">움직임에 반응하는 <span className="text-primary-container">시지각 놀이체육</span>
+<h1 className="font-display-hero text-headline-lg lg:text-display-hero text-on-surface font-bold tracking-tight max-w-4xl whitespace-pre-line leading-tight">화면을 보고 판단하고 <span className="text-primary-container">움직이는 체육활동</span>
 </h1>
-<p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mt-8 leading-relaxed">화면의 자극을 보고 판단하고 움직이는 SPOKEDU의 디지털 움직임 프로그램입니다.</p>
+<p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mt-8 leading-relaxed">{PUBLIC_PROGRAM_COPY.spomove}</p>
 <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
 <Link className="inline-flex items-center justify-center px-9 py-4 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-[0_12px_28px_rgba(37,99,235,0.24)] hover:bg-primary transition-all duration-200" href="/contact?type=spomove">SPOMOVE 도입 상담하기</Link>
 <a className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-all duration-200" href="#showcase">SPOMOVE 수업 구조 보기</a>
@@ -59,7 +61,7 @@ export default function SpomovePage() {
 <span className="font-watermark-number text-watermark-number text-primary-fixed block select-none pointer-events-none -mb-4 lg:-mb-8 opacity-70">02</span>
 <h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">네 가지 색으로 구분하는 <span className="text-primary-container">SPOMAT</span>
 </h2>
-<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">빨강·노랑·초록·파랑의 2×2 매트입니다. 화면의 자극과 수업 규칙에 따라 이동할 위치를 선택하고 움직임을 수행합니다.</p>
+<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">{PUBLIC_PROGRAM_COPY.spomat}</p>
 <div className="flex flex-wrap gap-2 mt-8">
 <span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#4색매트</span>
 <span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#2×2배치</span>
@@ -105,7 +107,7 @@ export default function SpomovePage() {
 <div className="lg:col-span-5 order-1 lg:order-2 relative">
 <span className="font-watermark-number text-watermark-number text-primary-fixed block select-none pointer-events-none -mb-4 lg:-mb-8 opacity-70">04</span>
 <h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">화면 신호는 실제 움직임 수행으로 이어집니다</h2>
-<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">화면의 색과 길을 보고 바닥에서 움직여 반응하는 콘텐츠입니다. 기관 수업에서 활용하고, 지도자는 구독서비스에서 이용할 수 있습니다.</p><p className="font-body-sm text-body-sm text-on-surface-variant mt-4">SPOKEDU LAB · 체육 지도자를 위한 수업 콘텐츠와 운영 플랫폼입니다.</p>
+<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">화면의 색과 길을 보고 바닥에서 움직여 반응하는 콘텐츠입니다. 기관 수업에서 활용하고, 지도자는 SPOKEDU LAB에서 이용 조건을 확인할 수 있습니다.</p><p className="font-body-sm text-body-sm text-on-surface-variant mt-4">SPOKEDU LAB · {PUBLIC_PROGRAM_COPY.lab}</p>
 <div className="flex flex-wrap gap-2 mt-8">
 <span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#화면신호</span>
 <span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#반응선택</span>
@@ -139,6 +141,7 @@ export default function SpomovePage() {
 </div>
 </section>
 
+<InlineConsultForm type="spomove" />
 <PageCTA page="spomove" />
 </div></main>);
 }

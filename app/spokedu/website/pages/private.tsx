@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { InlineConsultForm } from '../../contact/inline-consult-form';
 import { WebsiteIcon } from '../components/WebsiteIcon';
 import { PrivateSupport, PrivatePracticalInfo, PrivateSummary } from '../components/content-sections';
 import { PageCTA } from '../components/content-sections';
@@ -214,6 +215,7 @@ export default function PrivatePage() {
 
 <PrivateSupport /><PrivatePracticalInfo />
 <span id="booking-form" aria-hidden="true" />
-<div id="apply"><PageCTA page="private" /></div>
+<div id="apply"><InlineConsultForm type="private" />
+<PageCTA page="private" /></div>
 </div></main>);
 }

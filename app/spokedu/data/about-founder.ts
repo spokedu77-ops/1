@@ -1,3 +1,5 @@
+import { PUBLIC_TEAM_ROLES } from './public-brand-copy';
+
 /** 간단 소개서 — 대표 소개 (PDF p.3) */
 
 export const ABOUT_FOUNDER_IMAGE = '/images/spokedu/about/founder.png';
@@ -6,7 +8,7 @@ export const aboutFounder = {
   id: 'founder',
   eyebrow: '대표 소개',
   title: '최지훈',
-  role: '아동청소년 체육교육브랜드 스포키듀 운영대표',
+  role: `SPOKEDU ${PUBLIC_TEAM_ROLES.choi}`,
   credentials: [
     '연세대학교 체육교육학과 졸업',
     '2급 교원자격증',

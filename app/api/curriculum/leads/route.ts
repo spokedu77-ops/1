@@ -19,6 +19,7 @@ import {
 } from '@/app/spokedu/data/curriculum-commercial-modes';
 
 type LeadBody = {
+  privacy_consent?: unknown;
   type?: unknown;
   lead_mode?: unknown;
   name_or_org?: unknown;
@@ -64,6 +65,10 @@ export async function POST(req: NextRequest) {
     const rate = await evaluatePublicLeadRateLimit(req, 'curriculum-leads');
     const rateRes = rateLimitToResponse(rate);
     if (rateRes) return rateRes;
+
+    if (body.privacy_consent !== true) {
+      return NextResponse.json({ ok: false, message: '개인정보 수집·이용에 동의해 주세요.' }, { status: 400 });
+    }
 
     const nameOrOrg = normalize(body.name_or_org);
     const rawType = normalize(body.type);

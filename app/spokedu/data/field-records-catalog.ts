@@ -1,4 +1,5 @@
 import type { HomeMediaKey } from './home-media';
+import { SPOKEDU_IMAGES } from './images';
 import { SPOKEDU_BASE_PATH } from './site';
 
 /** 현장 수업 사례 — 홈·records 공통 원천 */
@@ -115,7 +116,7 @@ export type FieldRecordCatalogItem = {
   /** 해당 주장에 대한 증거 강도 */
   strength: FieldRecordEvidenceStrength;
   blogImageIndex?: number;
-  thumbnailSrc?: string;
+  thumbnailSrc: string;
   /** 온사이트 요약이 있을 때 후기 원문(네이버 블로그) */
   blogHref?: string;
   /** 상위 사례 온사이트 1페이지용 요약 */
@@ -162,7 +163,7 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     proves: ['기관 정규 운영', '에듀테크 운영'],
     relevantRoutes: ['dispatch', 'curriculum'],
     strength: 'primary',
-    thumbnailSrc: recordsThumb('dongjak-spomove', 'jpg'),
+    thumbnailSrc: SPOKEDU_IMAGES.home.fieldEditorialCaseSpomove.src,
     onsite: {
       purpose: '스크린 신호를 보고 판단·반응하며 움직이는 SPOMOVE 놀이체육으로 거점센터 정규 참여를 안정화',
       audience: '초등학생 · 거점형 키움센터 집단 수업',
@@ -225,7 +226,7 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     proves: ['학교·늘봄', '기관 정규 운영'],
     relevantRoutes: ['dispatch'],
     strength: 'supporting',
-    thumbnailSrc: recordsThumb('maedong-sports-stepup', 'jpg'),
+    thumbnailSrc: SPOKEDU_IMAGES.home.fieldEditorialCaseGeneral.src,
   },
   {
     slug: 'dasarang-oneday',
@@ -309,7 +310,7 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     proves: ['특수체육', '기관 정규 운영'],
     relevantRoutes: ['dispatch'],
     strength: 'supporting',
-    thumbnailSrc: recordsThumb('donghaeng-special-pe-field', 'jpg'),
+    thumbnailSrc: SPOKEDU_IMAGES.home.fieldEditorialCaseAdapted.src,
   },
   {
     slug: 'gangdong-health-pe',

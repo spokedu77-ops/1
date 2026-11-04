@@ -1,12 +1,13 @@
 import { educationHubPage } from '../../data/education-hub';
+import { SPOKEDU_IMAGES } from '../../data/images';
 
 const lineup = educationHubPage.operating.lineup;
 const program = (id: string) => lineup.find(item => item.id === id)!;
 
 /** Six operating categories; constituent activities stay inside the custom class. */
 export const educationPrograms = [
-  { ...program('spomove'), image: '/images/spokedu/dispatch/dispatch-group-class.jpg' },
-  { ...program('monthly-sports'), image: '/images/spokedu/home/field-editorial/home-hero-field.webp' },
+  { ...program('spomove'), image: SPOKEDU_IMAGES.programs.spomoveClassConnected.src },
+  { ...program('monthly-sports'), image: SPOKEDU_IMAGES.home.fieldEditorialCaseGeneral.src },
   {
     id: 'inclusive', name: '특수·포용 체육',
     description: educationHubPage.operating.formats[3].body,

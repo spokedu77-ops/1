@@ -416,10 +416,16 @@ function summarizeDispatch(row: SummarizeInput, route: LeadRoute): LeadSummaryVi
       ? trimLeadLine(special!)
       : undefined;
 
+  const serviceTitle = programs?.includes('SPOMOVE/교구 도입')
+    ? 'SPOMAT · 교구 문의'
+    : content.includes('유입 경로: spokedu-contact-spomove')
+      ? 'SPOMOVE · 도입 문의'
+      : undefined;
+
   return {
     route,
-    title: subtitle ? `기관수업 · ${subtitle}` : '기관수업',
-    subtitle,
+    title: serviceTitle ?? (subtitle ? `기관수업 · ${subtitle}` : '기관수업'),
+    subtitle: serviceTitle ?? subtitle,
     facts: {
       organization: isMeaningfulLeadValue(organization) ? organization : undefined,
       programs,

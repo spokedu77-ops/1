@@ -272,6 +272,7 @@
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (!form.reportValidity()) return;
       var submitButton = form.querySelector('button[type="submit"]');
       var originalLabel = submitButton ? submitButton.innerHTML : '';
       if (submitButton) {
@@ -299,7 +300,8 @@
         specialNeeds: formData.get('specialNeeds') || '',
         inquiry: formData.get('inquiry') || '',
         createdAt: new Date().toISOString(),
-        source: 'dispatch-page'
+        source: 'dispatch-page',
+        privacy_consent: formData.get('privacy_consent') === 'on'
       };
 
       // 서버 검증과 동일한 방식으로 phone을 숫자만 남겨서(예: 010-1234-5678 -> 01012345678)

@@ -1,3 +1,5 @@
+import { PUBLIC_TEAM_ROLES } from '../../data/public-brand-copy';
+
 export type HomeSection03Person = {
   readonly photo: string;
   readonly objectPosition: string;
@@ -18,7 +20,7 @@ export const HOME_SECTION03_PEOPLE: readonly HomeSection03Person[] = [
     objectPosition: '50% 22%',
     name: '최지훈',
     nameEn: 'JIHOON CHOI',
-    role: 'SPOKEDU 대표',
+    role: `SPOKEDU ${PUBLIC_TEAM_ROLES.choi}`,
     credentials: ['연세대학교 체육교육학과'],
   },
   {
@@ -26,7 +28,7 @@ export const HOME_SECTION03_PEOPLE: readonly HomeSection03Person[] = [
     objectPosition: '50% 30%',
     name: '김윤기',
     nameEn: 'KIM YUNKI',
-    role: 'SPOKEDU 총괄',
+    role: `SPOKEDU ${PUBLIC_TEAM_ROLES['kim-yunki']}`,
     credentials: ['연세대학교 체육교육학과', '중등 2급 정교사 자격'],
   },
   {
@@ -34,7 +36,7 @@ export const HOME_SECTION03_PEOPLE: readonly HomeSection03Person[] = [
     objectPosition: '50% 30%',
     name: '김구민',
     nameEn: 'KIM GUMIN',
-    role: 'SPOKEDU 수업팀장',
+    role: `SPOKEDU ${PUBLIC_TEAM_ROLES['kim-gumin']}`,
     credentials: ['강원대학교 레저스포츠학과', '생활스포츠지도사 2급(배드민턴)'],
   },
 ] as const;

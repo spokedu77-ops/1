@@ -67,6 +67,7 @@ function NavAnchor({
   children,
   onNavigate,
   role,
+  active,
 }: {
   href: string;
   trackLabel: string;
@@ -75,6 +76,7 @@ function NavAnchor({
   children: ReactNode;
   onNavigate?: () => void;
   role?: string;
+  active?: boolean;
 }) {
   const external = isExternalHref(href);
   const props = {
@@ -83,6 +85,7 @@ function NavAnchor({
     className,
     style,
     role,
+    'aria-current': active ? 'page' as const : undefined,
     onClick: () => {
       // 해시 앵커가 아니면 네비 클릭 시 항상 맨 위부터 (fullscreen 스크롤 잔여 방지)
       if (!href.includes('#')) {
@@ -216,6 +219,7 @@ export function SiteHeader() {
           trackLabel={entry.trackLabel}
           className={linkClass(active)}
           role={active ? 'link' : undefined}
+          active={active}
         >
           <span {...(active ? { 'aria-current': 'page' as const } : {})}>{entry.label}</span>
         </NavAnchor>
@@ -304,9 +308,10 @@ export function SiteHeader() {
           href={entry.href}
           trackLabel={`mobile-${entry.trackLabel}`}
           className={`flex min-h-12 items-center border-b border-white/10 text-base font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-            active ? 'text-white' : 'text-white/90'
+            active ? 'text-white underline decoration-[#adc6ff] underline-offset-8' : 'text-white/90'
           }`}
           onNavigate={closeMenus}
+          active={active}
         >
           {entry.label}
         </NavAnchor>
@@ -360,6 +365,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderLabCta.href}
               trackLabel={siteHeaderLabCta.trackLabel}
+              active={labActive}
               className={`hidden h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
@@ -375,6 +381,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
+              active={ctaActive}
               className={`hidden h-10 items-center justify-center rounded-full px-5 text-sm font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
@@ -439,6 +446,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderLabCta.href}
               trackLabel={`mobile-${siteHeaderLabCta.trackLabel}`}
+              active={labActive}
               className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/30 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               onNavigate={closeMenus}
             >
@@ -447,6 +455,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={`mobile-${siteHeaderCta.trackLabel}`}
+              active={ctaActive}
               className="inline-flex min-h-12 items-center justify-center rounded-full px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               style={{ backgroundColor: ATHLETIC_BLUE }}
               onNavigate={closeMenus}

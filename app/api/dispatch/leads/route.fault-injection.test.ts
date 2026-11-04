@@ -70,6 +70,7 @@ describe('FAULT_INJECTION_TEST dispatch/leads E09', () => {
         programs: ['SPOMOVE'],
         targetAge: ['초등'],
         source: 'fault-injection',
+        privacy_consent: true,
         cta_intent_id: 'dispatch_proposal',
         acquisition: { entrySurface: 'direct' },
       }),

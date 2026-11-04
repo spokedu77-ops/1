@@ -1,4 +1,5 @@
 import { dispatchInquiryHref } from './commercial-routes';
+import { PUBLIC_PROGRAM_COPY } from './public-brand-copy';
 import {
   getFieldRecordCatalogItem,
   type FieldRecordSlug,
@@ -77,8 +78,8 @@ export const spomoveProgramPage = {
   hero: {
     id: 'hero',
     kicker: 'SPOMOVE',
-    lines: ['움직임에 반응하는', '시지각 놀이체육'] as const,
-    subtitle: '화면의 자극을 보고 판단하고 움직이는 SPOKEDU의 디지털 움직임 프로그램입니다.',
+    lines: ['화면을 보고 판단하고', '움직이는 체육활동'] as const,
+    subtitle: PUBLIC_PROGRAM_COPY.spomove,
     mediaKey: 'spomoveClassConnected' as HomeMediaKey,
     mediaRequirement: spomoveMediaRequirement('field-photo'),
     primaryCta: {
@@ -114,7 +115,7 @@ export const spomoveProgramPage = {
         body: '화면에서 색상·방향·형태·동작 자극을 확인합니다.',
       },
       {
-        label: 'DECIDE',
+        label: 'THINK',
         axis: 'DECISION',
         body: '자극을 구분하고 어떤 움직임을 할지 판단합니다.',
       },

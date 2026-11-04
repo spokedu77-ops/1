@@ -1,6 +1,7 @@
 # SPOKEDU Public Website SSOT
 
 STATUS: SSOT
+REVISION: Public V2.1 Before design restoration (2026-11-05), preserving V2 approved facts and navigation. Production publishing is not authorized.
 SCOPE: SPOKEDU public website
 APPLIES TO: Home / Education / Private / SPOMOVE / Subscription / Records / Record Detail / Contact / About / SPOMAT / Partners
 
@@ -38,7 +39,7 @@ SPOKEDU
 └─ EXECUTION TOOL     SPOMAT     → SPOMOVE 실행 도구
 ```
 
-체육교육 / 구독시스템 = 두 개의 핵심 구매축.
+현장 교육 → 교육 콘텐츠 개발 → 디지털 플랫폼 및 지도자 전문성 확장이라는 관계를 설명한다. 기관·학교와 개인·소그룹은 구분된 서비스 진입점이다. LAB의 공개 정의는 지도자를 위한 웹 기반 체육교육 콘텐츠·수업 운영 플랫폼이며, 구독·결제 방식은 실행 코드 계약을 따른다.
 SPOMOVE = 제3의 사업축이 아니라 자체 콘텐츠/IP.
 SPOMAT = 독립 핵심 사업이 아니라 실행 도구.
 
@@ -77,17 +78,17 @@ Public은 판매를 설득하고, 로그인·결제·실행은 LAB 앱(내부 MA
 
 SPOMOVE: 기관수업에서 활용 → `/education`. 지도자가 활용 → `/subscription`.
 RECORDS → record detail → 사례 맥락에 맞는 next action.
-개인·소그룹: Home / Education secondary → `/private` → `/contact?type=private`.
+개인·소그룹: Home Quick Entry / GNB → `/private` → `/contact?type=private`.
 
 ---
 
 ## 05. Global navigation
 
-PRIMARY HEADER: 체육교육 · SPOKEDU LAB · SPOMOVE · 운영 사례 · `[상담하기]`
+PRIMARY HEADER: SPOKEDU 소개 · 기관·학교 수업 · 개인·소그룹 수업 · SPOMOVE · 수업사례 · 우측 SPOKEDU LAB · `[문의하기]`. 실행 원본은 `app/spokedu/data/site.ts`.
 
-Header에 올리지 않는 것: About, SPOMAT, Partners, 개인·소그룹, 기타 협업 안내. Footer 또는 contextual link.
+Header에 독립 메뉴로 올리지 않는 것: SPOMOVE catalog, SPOMAT, Partners. Footer 또는 contextual link로 연결한다.
 
-순서 의미: 핵심 사업 1 → 핵심 사업 2 → 고유 콘텐츠 → 증거.
+순서 의미: 기업 이해 → 대상별 수업 선택 → 자체 콘텐츠 → 사례. 모바일도 동일 순서이며 LAB과 문의는 보조 액션으로 구분한다.
 
 ---
 
@@ -104,7 +105,7 @@ INPUT / QUESTION / EVIDENCE / OUTPUT / HANDOFF를 페이지 작업 전에 정의
 
 | Page | Question | Handoff / role |
 |---|---|---|
-| Home | SPOKEDU는 무엇을 하는 브랜드인가? | Brand orchestration. 체육수업 또는 구독시스템. |
+| Home | SPOKEDU는 무엇을 하는 브랜드인가? | Before Hero → 아이콘 Quick Entry → 지그재그 Why SPOKEDU → 신규 SPOMOVE Experience → 대형 실적·기존 사례 카드 통합 → Before 파란 CTA. 4MOVE는 Why에서 언급하고 `/education`에서 상세 제공. 활성 원본 `website/pages/home.tsx`, `website/data/home.ts`. |
 | `/education` | 우리 기관에서 체육수업을 맡길 수 있는가? | Structure = legacy `/info/dispatch`. Visual = Home. Program lineup = one SSOT; card + detail modal is progressive disclosure (not a third product catalog). → `/contact?type=dispatch` |
 | `/private` | 개인·소그룹에서는 어떤 방식으로 수업하는가? | Human / calm / personal → `/contact?type=private` |
 | `/spomove` | SPOMOVE는 무엇이며 어떻게 움직이는가? | SEE → RESPOND → EXPERIENCE → ADAPT → APPLY → PROVE → CONNECT → START. Catalog, 기관 → `/education?program=spomove`, 지도자 → `/subscription`, 도구 → `/spomat`, 증거 → `/records` |
@@ -112,7 +113,7 @@ INPUT / QUESTION / EVIDENCE / OUTPUT / HANDOFF를 페이지 작업 전에 정의
 | `/records` | 실제 어디에서 무엇을 운영했는가? | Editorial evidence archive. |
 | `/records/[slug]` | 이 프로젝트에서는 실제로 무엇을 했는가? | `/education` / `/subscription` / `/contact` by type |
 | `/contact` | 하려던 행동을 최소 마찰로 완료하는가? | Keep `?type=` intent. |
-| `/about` | 브랜드 신뢰 심화 | Header primary 아님 |
+| `/about` | 브랜드 신뢰 심화 | GNB 첫 진입; 공식 운영진 소개와 연혁 |
 | `/spomat` | SPOMOVE execution tool | 독립 사업축 아님 |
 | `/partners` | Secondary collaboration | Header primary 아님 |
 
@@ -148,8 +149,8 @@ HOME 이미지 역할:
 
 | Role | 사용 | AI / directed visual |
 |---|---|---|
-| BRAND | Hero | 가능. 브랜드 첫 장면 |
-| SERVICE | Service Explorer 컨셉 visual | 가능. 서비스 성격 설명 |
+| BRAND | Hero | 이번 V2 홈은 기존 실제 SPOKEDU 현장 이미지 사용 |
+| SERVICE | Quick Entry | 이번 V2 홈은 실제 수업 사진·실제 LAB UI 사용 |
 | PROOF | FIELD RECORDS, Built FIELD | 금지. 실제 현장 사진만 |
 | PRODUCT | MASTER / 실제 제품 화면 | 금지. 실제 UI만 |
 
@@ -214,7 +215,9 @@ PRIMARY STORY / SUPPORTING INFORMATION / PROOF / ACTION.
 
 ## 16. Claim / trust
 
-사용 금지: 검증되지 않은 기관 수, 수업 횟수, 재계약률, 만족도, 강사 수, 보장되지 않는 운영 속도.
+사용 금지: 검증되지 않은 추가 기관 수, 수업 횟수, 재계약률, 만족도, 강사 수, 보장되지 않는 운영 속도. 사용자가 검증 완료·확정한 공식 실적은 `data/marketing-public-metrics.ts`의 4개 지표를 그대로 사용한다. 2026-11-04 승인일을 집계 기준일·집계 기간으로 창작하지 않는다. 예전 병행 수치와 index 기반 직영 의미 확대는 사용하지 않는다.
+
+운영진 공통 문구와 직함은 `data/public-brand-copy.ts`를 따른다. 공통 소개가 개별 인물의 학력·자격을 동일하게 만든다는 의미는 아니다. 개별 프로필은 기존 자격을 보존한다. 4MOVE는 `data/education-system.ts`의 자체 교육 프로그램 체계이며 공인 발달분류·의학 평가로 설명하지 않는다. SPOMOVE·SPOMAT·LAB 공통 정의는 `data/public-brand-copy.ts`를 소비한다. 실행·결제·권한은 MASTER 코드 계약을 유지한다.
 
 효과성 causal claim (신체기능 향상, 집중력 향상, 두뇌 자극, 발달 개선, 치료 효과)은 검증 없이 사용하지 않는다.
 
