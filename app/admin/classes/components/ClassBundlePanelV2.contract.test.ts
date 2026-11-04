@@ -18,6 +18,11 @@ describe("ClassBundlePanel V2 UI contract", () => {
     ]) expect(source).toContain(handler);
   });
 
+  it("uses the shared class ops teacher selection helper for main and assist dropdowns", () => {
+    expect(source).toContain('isClassOpsSelectableTeacher');
+    expect(source).not.toMatch(/spomove\|qa\|test/);
+  });
+
   it("adds the V2 fixed identity, operational summary and cycle navigation", () => {
     expect(source).toContain('aria-label="수업 상세 관리"');
     expect(source).toContain('aria-label="수업 운영 요약"');

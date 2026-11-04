@@ -1,6 +1,7 @@
 "use client";
 
 import { normalizeStaffSessionFees, isZeroFeeStaff, payableTeacherFee } from '@/app/lib/staffTeacherFees';
+import { isClassOpsSelectableTeacher } from '@/app/admin/classes/lib/classOpsTeacherSelection';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Minus, Pencil, Plus, X } from "lucide-react";
@@ -316,9 +317,7 @@ export default function ClassBundlePanel({
   );
 
   const [teachers, setTeachers] = useState<(TeacherFeeRow & { is_active?: boolean; role?: string; email?: string })[]>([]);
-  const selectableTeachers = teachers.filter((teacher) => teacher.is_active === true
-    && ['teacher', 'admin', 'master'].includes(teacher.role ?? '')
-    && !/spomove|qa|test|\uD14C\uC2A4\uD2B8/i.test(`${teacher.name ?? ''} ${teacher.email ?? ''}`));
+  const selectableTeachers = teachers.filter((teacher) => isClassOpsSelectableTeacher(teacher));
   const selectableTeacherIds = new Set(selectableTeachers.map((teacher) => teacher.id));
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const bundleBulkRef = useRef({ teacher: {} as Record<string, string>, price: {} as Record<string, string> });

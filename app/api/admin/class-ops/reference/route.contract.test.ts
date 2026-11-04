@@ -16,13 +16,8 @@ describe("Class Ops reference API contract", () => {
     expect(source).toContain("fetchTeacherLogCounts");
   });
 
-  it("keeps registered operators selectable before excluding test labels", () => {
+  it("delegates filter teacher labels to the shared class ops selection helper", () => {
     expect(source).toContain(".select('id, name, email, role, is_admin')");
-    const operatorCheck = source.indexOf('if (isPlatformAdminFromUserRow(candidate)) return true;');
-    expect(operatorCheck).toBeGreaterThan(-1);
-    const nameExclusion = source.indexOf(".test(candidate.name ?? '')");
-    expect(nameExclusion).toBeGreaterThan(-1);
-    expect(nameExclusion).toBeLessThan(operatorCheck);
-    expect(operatorCheck).toBeLessThan(source.indexOf('const label ='));
+    expect(source).toContain('isClassOpsTeacherOptionLabel(candidate)');
   });
 });
