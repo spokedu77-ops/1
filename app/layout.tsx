@@ -39,7 +39,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
   const hideSidebar = publicMarketing || isFullscreenPath(pathname ?? '');
   const isAdminShell = pathname?.startsWith('/admin') ?? false;
   const isReportShell = pathname === '/admin/master/reports' || pathname?.startsWith('/admin/master/reports/') === true;
-  const isTrainingDashboard = pathname === '/admin/spomove/training';
+  const isSpomoveWorkspace = pathname === '/admin/spomove/training' || pathname === '/admin/iiwarmup/assets';
   const isTeacherShell = pathname?.startsWith('/teacher') ?? false;
   const isNoteV2Route = pathname?.startsWith('/admin/note-v2') ?? false;
   const homeSticky = pathname === '/' || pathname === '';
@@ -112,8 +112,8 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 <Sidebar
                   isDesktopOpen={isDesktopOpen}
                   onToggleDesktop={toggleDesktop}
-                  overlayOnly={isReportShell || isTrainingDashboard}
-                  hideHeader={isTrainingDashboard}
+                  overlayOnly={isReportShell || isSpomoveWorkspace}
+                  hideHeader={isSpomoveWorkspace}
                 />
               )}
 
@@ -121,11 +121,11 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 inert={isReportShell && isMobileOpen}
                 style={mainFullscreenStyle}
                 data-internal-shell={isAdminShell ? 'admin' : isTeacherShell ? 'teacher' : undefined}
-                data-sidebar-open={isAdminShell && !hideSidebar && !isTrainingDashboard ? String(isDesktopOpen) : undefined}
+                data-sidebar-open={isAdminShell && !hideSidebar && !isSpomoveWorkspace ? String(isDesktopOpen) : undefined}
                 className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                   hideSidebar
                     ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0${homeSticky ? '' : ' overflow-x-hidden'}${isReportShell ? ' pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))]' : ''}`
-                    : `${isAdminShell && !isTrainingDashboard ? 'pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))] min-[1200px]:pt-0' : ''}${
+                    : `${isAdminShell && !isSpomoveWorkspace ? 'pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px))] min-[1200px]:pt-0' : ''}${
                         isTeacherShell
                           ? ''
                           : isAdminShell

@@ -182,7 +182,7 @@ function PoseCatalog({ fullscreen }: { fullscreen: boolean }) {
         {poses.map(({ pose, number }, index) => (
           <button type="button" onClick={() => setViewerIndex(index)} key={pose.key} data-pose-number={number} aria-label={`${pose.label} 크게 보기`} style={{ overflow: 'hidden', padding: 0, border: '1px solid var(--border, #E2E8F0)', borderRadius: fullscreen ? 14 : 10, background: 'var(--subtle-bg, #F8FAFC)', color: 'inherit', cursor: 'zoom-in', fontFamily: 'inherit' }}>
             <div style={{ position: 'relative', aspectRatio: '1 / 1', background: '#fff' }}>
-              <Image src={pose.image} alt={`${pose.label} 동작`} fill unoptimized sizes={fullscreen ? '(max-width: 640px) 45vw, 190px' : '(max-width: 640px) 22vw, 120px'} style={{ objectFit: 'contain', padding: fullscreen ? 9 : 5 }} />
+              <Image src={pose.image} alt={`${pose.label} 동작`} fill unoptimized sizes={fullscreen ? '(max-width: 640px) 45vw, 190px' : '(max-width: 640px) 22vw, 120px'} style={{ objectFit: 'contain', padding: pose.key === 'partner-shoulder-balance' ? '15%' : fullscreen ? 9 : 5 }} />
               <span style={{ position: 'absolute', top: 7, left: 7, minWidth: fullscreen ? 28 : 20, height: fullscreen ? 28 : 20, padding: '0 5px', borderRadius: 7, background: '#0F172A', color: '#fff', display: 'grid', placeItems: 'center', fontSize: fullscreen ? 14 : 11, fontWeight: 800 }}>
                 {number}
               </span>

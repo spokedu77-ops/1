@@ -16,7 +16,7 @@ export type FullThemeSeed = {
 
 /** Theme → 대표 움직임·운영 (전면 l3만) */
 export const FULL_THEME_SEEDS: Record<
-  Exclude<SpomoveColorThemeId, 'emotion'>,
+  Exclude<SpomoveColorThemeId, 'emotion' | 'dinosaur'>,
   FullThemeSeed
 > = {
   color: {
@@ -111,7 +111,7 @@ export const FULL_THEME_SEED_PRESET_IDS = [
 
 export type FullThemeSeedPresetId = (typeof FULL_THEME_SEED_PRESET_IDS)[number];
 
-const PRESET_THEME: Record<FullThemeSeedPresetId, Exclude<SpomoveColorThemeId, 'emotion'>> = {
+const PRESET_THEME: Record<FullThemeSeedPresetId, Exclude<SpomoveColorThemeId, 'emotion' | 'dinosaur'>> = {
   'reaction-cognition-full-color-03': 'color',
   'reaction-cognition-l3-fruit-exp': 'fruit',
   'reaction-cognition-full-animal-18': 'animal',

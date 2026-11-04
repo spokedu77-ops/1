@@ -12,6 +12,7 @@ import {
 import { buildVariantSlidesFromThemedUrls, uniqueSlidesByImageUrl, type FruitSlide } from '../lib/signals';
 import {
   SPOMOVE_THEMED_PACK_BY_THEME,
+  SPOMOVE_DINOSAUR_IMAGE_URLS,
   SPOMOVE_THEMED_SLOT_COUNT,
   type SpomoveColorThemeId,
 } from '../lib/spomoveVariantThemeConfig';
@@ -61,6 +62,17 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
       if (variantColorTheme === 'color') {
         if (reqIdRef.current !== thisId) return;
         setSlides([]);
+        setLoadedTheme(variantColorTheme);
+        setStatus('ready');
+        return;
+      }
+
+      if (variantColorTheme === 'dinosaur') {
+        const usable = await validateVariantImages(
+          buildVariantSlidesFromThemedUrls(SPOMOVE_DINOSAUR_IMAGE_URLS), controller.signal,
+        );
+        if (reqIdRef.current !== thisId) return;
+        setSlides(usable);
         setLoadedTheme(variantColorTheme);
         setStatus('ready');
         return;

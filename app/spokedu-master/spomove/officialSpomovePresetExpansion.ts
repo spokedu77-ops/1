@@ -7,6 +7,7 @@ import {
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 
 const THEMED_BASIC_LEVELS = [2, 3, 4, 5, 6] as const;
+// Lab catalog themes are published explicitly; admin theme additions do not opt in.
 const ALL_THEMES: SpomoveColorThemeId[] = ['fruit', 'animal', 'color', 'food', 'nature', 'vehicle', 'mix'];
 
 const EXISTING_BASIC_THEME_KEYS = new Set([

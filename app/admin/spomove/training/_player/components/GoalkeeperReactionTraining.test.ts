@@ -91,8 +91,12 @@ describe('Goalkeeper real engine schedule with a virtual clock', () => {
   });
   it('enters BONUS once after the final wave arrives and ends after the existing 15 seconds', () => {
     const complete = mount(10, 2, true);
-    advance(24900);
-    expect(host.querySelector('.gk-hk')?.textContent).toBe('Rounds');
+    expect(host.querySelector('.gk-hk')?.textContent).toBe('Time');
+    expect(host.querySelector('.gk-hv')?.textContent).toBe('20');
+    advance(4000);
+    expect(host.querySelector('.gk-hv')?.textContent).toBe('19');
+    advance(20900);
+    expect(host.querySelector('.gk-hk')?.textContent).toBe('Time');
     expect(complete).not.toHaveBeenCalled();
     advance(400);
     expect(host.querySelector('.gk-hk')?.textContent).toBe('Bonus');

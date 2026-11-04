@@ -844,9 +844,6 @@ function SettingsScreen({
         .settings-body.compact-menu .settings-divider { margin: 8px 0 10px !important; }
         .settings-body.compact-menu .settings-columns { gap: 14px; }
         .settings-body.compact-menu .settings-column > section { margin-bottom: 11px !important; }
-        .settings-body.compact-menu .theme-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
-        .settings-body.compact-menu .theme-option { min-height: 31px; padding: 5px 8px !important; border-radius: 9px !important; }
-        .settings-body.compact-menu .theme-option span { font-size: 11px !important; line-height: 1.2; }
         .settings-body.compact-menu .settings-column section button { padding-top: 7px !important; padding-bottom: 7px !important; border-radius: 9px !important; }
         .settings-body.compact-menu .settings-column section p { line-height: 1.35 !important; }
         .settings-shell {
@@ -863,9 +860,12 @@ function SettingsScreen({
           min-width: 0;
         }
         .theme-options {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 5px;
+        }
+        .theme-option span {
+          line-height: 20px;
         }
         .settings-body button {
           min-height: 44px !important;
@@ -881,18 +881,6 @@ function SettingsScreen({
           .settings-body button { min-height: 44px; }
           .settings-body.compact-menu,
           .settings-body.dive-fit { padding: 14px 12px calc(20px + env(safe-area-inset-bottom)); }
-          .theme-options {
-            gap: 8px;
-          }
-          .theme-option {
-            min-height: 44px;
-            padding: 6px 8px !important;
-            border-radius: 9px !important;
-          }
-          .theme-option span {
-            font-size: 11px !important;
-            line-height: 1.25;
-          }
         }
         @media (max-height: 520px) and (orientation: landscape) {
           .settings-body { padding-top: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
@@ -1045,8 +1033,8 @@ function SettingsScreen({
                           if (chosen.runtime === 'goalkeeper') {
                             next = {
                               ...next,
-                              timeMode: 'time',
-                              duration: [30, 60, 120, 180].includes(next.duration) ? next.duration : 120,
+                              timeMode: 'reps',
+                              targetReps: [10, 15, 20, 30].includes(next.targetReps) ? next.targetReps : 20,
                             };
                           }
                           if (chosen.runtime === 'shell-tracking') {
@@ -1077,15 +1065,15 @@ function SettingsScreen({
                       });
                     }}
                     style={{
-                      padding: '10px 12px',
-                      borderRadius: 12,
-                      border: `1.5px solid ${active ? accent : T.border}`,
+                      padding: '7px 12px',
+                      borderRadius: 9,
+                      border: `1px solid ${active ? accent : T.border}`,
                       background: active ? `${accent}16` : T.card,
                       fontFamily: 'inherit',
                       cursor: 'pointer',
                       textAlign: 'left',
                       display: 'flex',
-                      alignItems: 'baseline',
+                      alignItems: 'center',
                       justifyContent: 'space-between',
                       gap: 10,
                     }}
@@ -1103,15 +1091,15 @@ function SettingsScreen({
                   type="button"
                   onClick={() => setShowVariantAppendix((v) => !v)}
                   style={{
-                    padding: '10px 12px',
-                    borderRadius: 12,
-                    border: `1.5px solid ${showVariantAppendix ? accent : T.border}`,
+                    padding: '7px 12px',
+                    borderRadius: 9,
+                    border: `1px solid ${showVariantAppendix ? accent : T.border}`,
                     background: showVariantAppendix ? `${accent}16` : T.card,
                     fontFamily: 'inherit',
                     cursor: 'pointer',
                     textAlign: 'left',
                     display: 'flex',
-                    alignItems: 'baseline',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 10,
                   }}
@@ -1306,7 +1294,7 @@ function SettingsScreen({
                 </div>
               </div>
               <p style={{ margin: '0 0 10px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
-                연상 색지각과 동일한 7가지입니다. 색상이 기본값이며, 선택한 테마 이미지가 다섯 원 안에 나오고 가운데 원 색으로 반응합니다. 믹스는 색상을 제외한 5개 이미지 테마를 섞습니다.
+                연상 색지각과 동일한 8가지입니다. 색상이 기본값이며, 선택한 테마 이미지가 다섯 원 안에 나오고 가운데 원 색으로 반응합니다. 믹스는 과일·동물·음식·자연·탈 것 5개 이미지 테마를 섞습니다.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {SPOMOVE_COLOR_THEME_ORDER.map((tid) => {

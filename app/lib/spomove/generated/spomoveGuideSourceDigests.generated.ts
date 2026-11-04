@@ -6,8 +6,8 @@ export const SPOMOVE_GUIDE_SOURCE_DIGESTS: SpomoveGuideSourceDigestMap = {
   reactionCognitionBasic: 'eb21f59df7945a1f',
   visualRush: '360eacec6707bb2d',
   visualFlowFlash: 'f11c132bd58df91c',
-  visualMole: '9721464dd42db6ab',
-  visualGoalkeeper: '2d4820ac1001c5e3',
+  visualMole: 'd5de6405f76d98fb',
+  visualGoalkeeper: 'b56bbed1a79ec9c4',
   handFootBasicL7: 'ecd0ad7ceacca525',
   simonPoles: '6641444f56477f69',
   simonCamouflage: '5c884517ff6285ac',
@@ -18,5 +18,5 @@ export const SPOMOVE_GUIDE_SOURCE_DIGESTS: SpomoveGuideSourceDigestMap = {
   sequentialMemoryL4: 'b45a74e01141f3ea',
   sequentialMemoryL5: '8e2b7cedcb70a1fb',
   diveFlow: '764b18d621b91bf0',
-  engineRouter: '9671cf551017cf24',
+  engineRouter: 'a9c4175fe100b578',
 };

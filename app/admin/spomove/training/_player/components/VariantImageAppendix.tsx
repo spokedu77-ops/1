@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSpomoveVariantSlidesForTraining } from '../hooks/useSpomoveVariantFruitSlidesForTraining';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
+  SPOMOVE_DINOSAUR_LABELS,
   SPOMOVE_THEMED_PACK_BY_THEME,
   type SpomoveColorThemeId,
 } from '../lib/spomoveVariantThemeConfig';
@@ -11,10 +12,11 @@ import { VARIANT_FRUIT_SLOT_LABELS } from '../lib/variantFruitAssets';
 
 type AppendixTheme = Exclude<SpomoveColorThemeId, 'color' | 'mix'>;
 
-const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'animal', 'food', 'nature', 'vehicle'];
+const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'animal', 'food', 'nature', 'vehicle', 'dinosaur'];
 
 function getSlotLabels(theme: AppendixTheme): readonly string[] {
   if (theme === 'fruit') return VARIANT_FRUIT_SLOT_LABELS;
+  if (theme === 'dinosaur') return SPOMOVE_DINOSAUR_LABELS;
   return SPOMOVE_THEMED_PACK_BY_THEME[theme].slotLabels;
 }
 

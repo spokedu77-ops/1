@@ -252,6 +252,7 @@ function EngineRuntime({
   numberCartTier,
   colorTrackerTier,
   goalkeeperTier,
+  goalkeeperBonusTimeEnabled,
   simonPoleCount,
   colorTrackerDualPanel,
   camouflagePlacement,
@@ -563,11 +564,11 @@ function EngineRuntime({
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <GoalkeeperReactionTraining
-            durationSec={60}
+            durationSec={dur}
             targetReps={rounds ?? 20}
             speedSec={sp}
             goalkeeperTier={effectiveGoalkeeperTier}
-            bonusTimeEnabled
+            bonusTimeEnabled={goalkeeperBonusTimeEnabled ?? true}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />

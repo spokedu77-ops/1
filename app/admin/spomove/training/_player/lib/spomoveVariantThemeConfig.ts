@@ -4,9 +4,9 @@
 
 export const SPOMOVE_VARIANT_THEME_LS_KEY = 'spomove_variant_training_theme';
 
-export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal' | 'nature' | 'food' | 'mix';
+export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal' | 'nature' | 'food' | 'dinosaur' | 'mix';
 
-export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['fruit', 'animal', 'color', 'food', 'nature', 'vehicle', 'mix'];
+export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['fruit', 'animal', 'color', 'food', 'nature', 'vehicle', 'dinosaur', 'mix'];
 
 export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   color: '색상',
@@ -16,6 +16,7 @@ export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   animal: '동물',
   nature: '자연',
   food: '음식',
+  dinosaur: '공룡',
   mix: '믹스',
 };
 
@@ -43,7 +44,7 @@ export type SpomoveThemedPackDef = {
 };
 
 export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
-  Exclude<SpomoveColorThemeId, 'color' | 'fruit' | 'mix'>,
+  Exclude<SpomoveColorThemeId, 'color' | 'fruit' | 'dinosaur' | 'mix'>,
   SpomoveThemedPackDef
 > = {
   vehicle: {
@@ -143,6 +144,20 @@ export const SPOMOVE_COLOR_HUB_SECTIONS: {
 ];
 
 export function parseStoredVariantTheme(raw: string | null): SpomoveColorThemeId {
-  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'animal' || raw === 'nature' || raw === 'food' || raw === 'mix') return raw;
+  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'animal' || raw === 'nature' || raw === 'food' || raw === 'mix' || raw === 'dinosaur') return raw;
   return 'color';
 }
+
+/** 기본 제공 공룡 이미지 — 빨강, 노랑, 초록, 파랑 순서. */
+export const SPOMOVE_DINOSAUR_IMAGE_URLS = [
+  '/spomove/variant/dinosaur/tyrannosaurus-red.png',
+  '/spomove/variant/dinosaur/quetzalcoatlus-yellow.png',
+  '/spomove/variant/dinosaur/brachiosaurus-green.png',
+  '/spomove/variant/dinosaur/triceratops-blue.png',
+] as const;
+export const SPOMOVE_DINOSAUR_LABELS = [
+  '1. 티라노사우르스 (빨강)',
+  '2. 케차코아틀루스 (노랑)',
+  '3. 브라키오사우르스 (초록)',
+  '4. 트리케라톱스 (파랑)',
+] as const;

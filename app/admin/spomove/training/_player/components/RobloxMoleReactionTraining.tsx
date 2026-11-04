@@ -227,8 +227,7 @@ export function RobloxMoleReactionTraining({
     nextTimer: ReturnType<typeof setTimeout> | null;
   } | null>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
-  const hudStimsRef = useRef<HTMLDivElement>(null);
-  const hudMaxRef = useRef<HTMLDivElement>(null);
+  const hudTimeLabelRef = useRef<HTMLDivElement>(null);
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
@@ -300,9 +299,10 @@ export function RobloxMoleReactionTraining({
       Math.min(1100, Math.round(stepDur * 0.95), Math.round(cadenceMs * 0.75)),
     );
     const exposeMs = Math.min(1650, Math.round(baseExposeMs * 1.5));
+    const duration = targetReps == null ? Math.max(1, durationSec) : Math.ceil(targetReps * normalizedSpeedSec);
     const g = {
       running: true,
-      timeLeft: Math.max(1, durationSec),
+      timeLeft: duration,
       exposeMs,
       cadenceMs,
       stims: 0,
@@ -326,9 +326,8 @@ export function RobloxMoleReactionTraining({
     const setHud = () => {
       const m = String(Math.floor(g.timeLeft / 60)).padStart(2, '0');
       const s = String(g.timeLeft % 60).padStart(2, '0');
+      if (hudTimeLabelRef.current) hudTimeLabelRef.current.textContent = g.bonusActive ? 'Bonus' : 'Time';
       if (hudTimeRef.current) hudTimeRef.current.textContent = `${m}:${s}`;
-      if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
-      if (hudMaxRef.current) hudMaxRef.current.textContent = String(g.maxCombo);
       setWarn(g.timeLeft <= 10);
     };
 
@@ -349,9 +348,9 @@ export function RobloxMoleReactionTraining({
 
     const getBonusDelayMs = () => {
       const progress = getBonusProgress();
-      // Fever is quicker than the base round, but still leaves a visible reaction window.
-      const startDelay = Math.min(820, Math.max(620, Math.round(g.cadenceMs * 0.82)));
-      const endDelay = 500;
+      // Accelerate relative to the selected pace while preserving a reaction window.
+      const startDelay = Math.max(1200, Math.round(g.cadenceMs * 0.85));
+      const endDelay = Math.max(1200, Math.round(g.cadenceMs * 0.7));
       return Math.round(startDelay + (endDelay - startDelay) * progress);
     };
 
@@ -390,21 +389,28 @@ export function RobloxMoleReactionTraining({
 
     const triggerMole = () => {
       if (!g.running) return;
+      if (g.hideTimer) {
+        clearTimeout(g.hideTimer);
+        g.hideTimer = null;
+      }
       if (g.bonusActive) {
-        const progress = getBonusProgress();
-        g.exposeMs = Math.max(600, Math.round(900 - progress * 300));
+        g.exposeMs = Math.max(900, getBonusDelayMs() - 250);
       }
       triggerMixed();
-      g.hideTimer = setTimeout(() => setActiveMap(new Map()), g.exposeMs);
+      g.hideTimer = setTimeout(() => {
+        g.hideTimer = null;
+        setActiveMap(new Map());
+      }, g.exposeMs);
     };
 
     const scheduleNext = (delayMs: number) => {
       if (!g.running) return;
       g.nextTimer = setTimeout(() => {
         if (!g.running) return;
+        if (!g.bonusActive && targetReps != null && g.spawnCount >= targetReps) return;
         triggerMole();
         const nextDelay = g.bonusActive
-          ? getBonusDelayMs()
+          ? Math.round(getBonusDelayMs() * (g.lastSpawnDualBoth ? 1.2 : 1))
           : g.lastSpawnDualBoth
             ? Math.round(g.cadenceMs * 1.2)
             : g.cadenceMs;
@@ -416,33 +422,29 @@ export function RobloxMoleReactionTraining({
 
     const beginGame = () => {
       if (!gRef.current?.running) return;
-      g.endsAtMs = performance.now() + durationSec * 1000;
+      g.endsAtMs = performance.now() + duration * 1000;
       setActiveMap(new Map());
       setHud();
-      // The countdown already provides the ready interval. Show the first cue
-      // immediately instead of adding one more full cadence after "GO".
-      triggerMole();
-      scheduleNext(g.lastSpawnDualBoth ? Math.round(g.cadenceMs * 1.2) : g.cadenceMs);
+      // Leave the configured preparation interval before the first stimulus.
+      scheduleNext(g.cadenceMs);
       g.timer = setInterval(() => {
         const newLeft = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
         if (g.timeLeft !== newLeft) {
           g.timeLeft = newLeft;
           setHud();
         }
-        if (((targetReps == null || g.bonusActive) && g.timeLeft <= 0) || (!g.bonusActive && targetReps != null && g.spawnCount >= targetReps)) {
+        if (((targetReps == null || g.bonusActive) && g.timeLeft <= 0) || (!g.bonusActive && targetReps != null && g.spawnCount >= targetReps && g.hideTimer == null)) {
           if (bonusTimeEnabled && !g.bonusStarted) {
             g.bonusStarted = true;
             g.bonusActive = true;
             g.timeLeft = BONUS_TIME_SEC;
-            g.exposeMs = 900;
-            g.cadenceMs = Math.min(1100, Math.max(760, Math.round(g.cadenceMs * 0.86)));
             g.spawnCount = 0;
             g.lastSpawnDualBoth = false;
             g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
             clearSpawnTimers();
             setActiveMap(new Map());
             setHud();
-            scheduleNext(520);
+            scheduleNext(getBonusDelayMs());
             return;
           }
           if (g.timer) clearInterval(g.timer);
@@ -477,18 +479,10 @@ export function RobloxMoleReactionTraining({
 
       <div className="rmt-hud">
         <div className="rmt-hc">
-          <div className="rmt-hk">Time</div>
+          <div ref={hudTimeLabelRef} className="rmt-hk">Time</div>
           <div ref={hudTimeRef} className={`rmt-hv${warn ? ' warn' : ''}`} />
         </div>
-        <div className="rmt-hc">
-          <div className="rmt-hk">Stims</div>
-          <div ref={hudStimsRef} className="rmt-hv" />
-        </div>
-        <div className="rmt-hc grow">
-          <div className="rmt-hk">Max Streak</div>
-          <div ref={hudMaxRef} className="rmt-hv" />
-        </div>
-        <div className="rmt-hc" style={{ borderRight: 'none', borderLeft: '1px solid rgba(255,255,255,.06)' }}>
+        <div className="rmt-hc" style={{ marginLeft: 'auto', borderRight: 'none', borderLeft: '1px solid rgba(255,255,255,.06)' }}>
           <button type="button" className="rmt-stop" onClick={stopGame}>
             STOP
           </button>

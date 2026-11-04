@@ -1,5 +1,7 @@
 'use client';
 
+import styles from './AssetHubUi.module.css';
+
 import { useEffect, useRef, useState } from 'react';
 import {
   useSpomoveDiveEnvironments,
@@ -71,16 +73,16 @@ export function SpomoveDiveEnvironmentPanel() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-neutral-400">
+      <p className="text-sm text-slate-400">
         DIVE 게임(SPOMOVE) 배경 파노라마를 관리합니다.
         <br />
-        <span className="text-neutral-500">
+        <span className="text-slate-400">
           PNG / JPG / WebP · 정확한 2:1 비율 · 최소 2048×1024 · 업로드 시 WebP로 자동 변환
           (4096×2048 이상이면 고해상도·저해상도 두 파일 생성)
         </span>
       </p>
 
-      <p className="font-mono text-[0.65rem] text-neutral-600">
+      <p className="font-mono text-[0.65rem] text-slate-500">
         DB: think_asset_packs.id = spomove_dive_environment_settings
       </p>
 
@@ -89,7 +91,7 @@ export function SpomoveDiveEnvironmentPanel() {
       )}
 
       {loading ? (
-        <div className="text-sm text-neutral-500">불러오는 중…</div>
+        <div className="text-sm text-slate-400">불러오는 중…</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {DIVE_THEMES.map(({ id, label }) => {
@@ -98,12 +100,12 @@ export function SpomoveDiveEnvironmentPanel() {
             const yaw = yawValues[id] ?? 0;
 
             return (
-              <div key={id} className="rounded-xl border border-neutral-700 bg-neutral-900/60 p-4">
-                <div className="mb-2 text-xs font-bold text-neutral-400">{label} 파노라마</div>
+              <div key={id} className={styles.assetCard}>
+                <div className="mb-2 text-xs font-bold text-slate-400">{label} 파노라마</div>
 
                 {/* 2:1 비율 프리뷰 */}
                 <div
-                  className="relative mb-3 w-full overflow-hidden rounded-lg bg-black"
+                  className={styles.assetPreview}
                   style={{ aspectRatio: '2/1' }}
                 >
                   {previewUrl ? (
@@ -114,7 +116,7 @@ export function SpomoveDiveEnvironmentPanel() {
                       draggable={false}
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-neutral-600">
+                    <div className="flex h-full items-center justify-center text-xs text-slate-500">
                       없음
                     </div>
                   )}
@@ -122,23 +124,23 @@ export function SpomoveDiveEnvironmentPanel() {
 
                 {/* 메타 정보 */}
                 {entry && (
-                  <div className="mb-3 space-y-1 text-xs text-neutral-500">
+                  <div className="mb-3 space-y-1 text-xs text-slate-400">
                     <div>
                       해상도:{' '}
-                      <span className="text-neutral-300">
+                      <span className="text-slate-300">
                         {entry.width} × {entry.height}
                         {entry.hasHighRes ? ' (고해상도)' : ''}
                       </span>
                     </div>
                     <div>
-                      비율: <span className="text-neutral-300">2:1</span>
+                      비율: <span className="text-slate-300">2:1</span>
                     </div>
                     <div>
-                      용량: <span className="text-neutral-300">{formatBytes(entry.fileSize)}</span>
+                      용량: <span className="text-slate-300">{formatBytes(entry.fileSize)}</span>
                     </div>
                     <div>
                       수정:{' '}
-                      <span className="text-neutral-300">{formatDate(entry.updatedAt)}</span>
+                      <span className="text-slate-300">{formatDate(entry.updatedAt)}</span>
                     </div>
                   </div>
                 )}
@@ -147,18 +149,18 @@ export function SpomoveDiveEnvironmentPanel() {
                 {entry && (
                   <div className="mb-3">
                     <div className="mb-1 flex items-center justify-between">
-                      <label className="text-xs font-semibold text-neutral-400">
+                      <label className="text-xs font-semibold text-slate-400">
                         배경 정면 방향
                       </label>
                       <div className="flex items-center gap-2">
-                        <span className="min-w-[3rem] text-right font-mono text-xs text-neutral-300">
+                        <span className="min-w-[3rem] text-right font-mono text-xs text-slate-300">
                           {yaw > 0 ? `+${yaw}` : yaw}°
                         </span>
                         <button
                           type="button"
                           disabled={saving || yaw === 0}
                           onClick={() => handleYawChange(id, 0)}
-                          className="rounded px-1.5 py-0.5 text-[0.6rem] font-semibold text-neutral-500 hover:text-neutral-300 disabled:opacity-30"
+                          className="rounded px-1.5 py-0.5 text-[0.6rem] font-semibold text-slate-400 hover:text-slate-300 disabled:opacity-30"
                         >
                           초기화
                         </button>
@@ -172,9 +174,9 @@ export function SpomoveDiveEnvironmentPanel() {
                       value={yaw}
                       disabled={saving}
                       onChange={(e) => handleYawChange(id, Number(e.target.value))}
-                      className="w-full accent-violet-500 disabled:opacity-50"
+                      className="w-full accent-cyan-500 disabled:opacity-50"
                     />
-                    <div className="mt-0.5 flex justify-between text-[0.6rem] text-neutral-600">
+                    <div className="mt-0.5 flex justify-between text-[0.6rem] text-slate-500">
                       <span>-180°</span>
                       <span>0°</span>
                       <span>+180°</span>
@@ -203,7 +205,7 @@ export function SpomoveDiveEnvironmentPanel() {
                   <button
                     type="button"
                     disabled={saving}
-                    className="rounded-lg bg-neutral-700 px-3 py-1.5 text-xs font-semibold hover:bg-neutral-600 disabled:opacity-50"
+                    className={styles.uploadButton}
                     onClick={() => fileRefs.current[id]?.click()}
                   >
                     {entry ? '교체' : '업로드'}
@@ -212,7 +214,7 @@ export function SpomoveDiveEnvironmentPanel() {
                     <button
                       type="button"
                       disabled={saving}
-                      className="rounded-lg border border-red-800/60 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900/30 disabled:opacity-50"
+                      className={styles.dangerButton}
                       onClick={() => void handleRemove(id)}
                     >
                       삭제

@@ -19,7 +19,7 @@ const TEXT = 'rgba(255,255,255,0.88)';
 const MUTED = 'rgba(255,255,255,0.38)';
 const ACCENT = '#3B82F6';
 
-type AppendixTheme = Exclude<SpomoveColorThemeId, 'color' | 'mix'>;
+type AppendixTheme = Exclude<SpomoveColorThemeId, 'color' | 'mix' | 'dinosaur'>;
 const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'animal', 'food', 'nature', 'vehicle'];
 
 function getDefaultLabels(theme: AppendixTheme): string[] {

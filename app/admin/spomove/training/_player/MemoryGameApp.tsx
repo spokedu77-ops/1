@@ -1878,7 +1878,7 @@ function MemoryGameRuntime({
                   </div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
                     {flankerThemeLevel
-                      ? '연상 색지각과 동일한 7가지 테마를 고릅니다. 색상은 이미지 없이 원만 사용합니다.'
+                      ? '연상 색지각과 동일한 8가지 테마를 고릅니다. 색상은 이미지 없이 원만 사용합니다.'
                       : 'Select the Asset Hub theme used for associative color-perception signals.'}
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
@@ -2675,6 +2675,7 @@ function MemoryGameRuntime({
         ) : visualRuntime === 'goalkeeper' ? (
           <GoalkeeperReactionTraining
             durationSec={Math.max(1, settings.duration ?? 120)}
+            targetReps={settings.timeMode === 'reps' ? settings.targetReps : undefined}
             speedSec={safeReactSpeedSec}
             goalkeeperTier={settings.goalkeeperTier === 1 ? 1 : 2}
             bonusTimeEnabled={settings.goalkeeperBonusTimeEnabled}
@@ -2709,6 +2710,7 @@ function MemoryGameRuntime({
         ) : visualRuntime === 'mole' ? (
           <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
+            targetReps={settings.timeMode === 'reps' ? settings.targetReps : undefined}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
             lookMode={settings.moleLookMode}

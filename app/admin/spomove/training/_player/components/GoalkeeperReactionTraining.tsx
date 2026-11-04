@@ -393,10 +393,12 @@ export function GoalkeeperReactionTraining({
     if (!cv || !play) return;
 
     const isLow = staticPerfTier === 'low';
-    const duration = Math.max(12, Math.min(180, durationSec || 60));
     const roundTarget = targetReps == null ? null : Math.max(1, Math.round(Number.isFinite(targetReps) ? targetReps : 20));
     const tier: 1 | 2 = goalkeeperTier === 1 ? 1 : 2;
     const travelSec = normalizeReactSpeedSec(speedSec);
+    const duration = roundTarget == null
+      ? Math.max(12, Math.min(180, durationSec || 60))
+      : Math.ceil(roundTarget * travelSec);
     const baseSpeed = flightSpeedFromSec(travelSec, 1);
     const phases = buildPhases(tier >= 2);
     const g: GoalkeeperGame = {
@@ -751,8 +753,7 @@ export function GoalkeeperReactionTraining({
     };
 
     const updateTime = () => {
-      if (hudTimeRef.current) hudTimeRef.current.textContent =
-        !g.bonusActive && roundTarget != null ? `${g.waveCount} / ${roundTarget}` : String(g.timeLeft);
+      if (hudTimeRef.current) hudTimeRef.current.textContent = String(g.timeLeft);
     };
     updateTime();
     if (hudScoreRef.current) hudScoreRef.current.textContent = '0';
@@ -765,7 +766,7 @@ export function GoalkeeperReactionTraining({
       g.timer = setInterval(() => {
         const timedPhase = roundTarget == null || g.bonusActive;
         const next = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
-        if (timedPhase && next !== g.timeLeft) {
+        if (next !== g.timeLeft) {
           g.timeLeft = next;
           updateTime();
           setWarn(next <= 10);
@@ -851,7 +852,7 @@ export function GoalkeeperReactionTraining({
       <style>{css}</style>
       <div className="gk-hud">
         <div className="gk-hc">
-          <div className="gk-hk">{bonusActive ? 'Bonus' : targetReps == null ? 'Time' : 'Rounds'}</div>
+          <div className="gk-hk">{bonusActive ? 'Bonus' : 'Time'}</div>
           <div className={`gk-hv${warn ? ' warn' : ''}`} ref={hudTimeRef} />
         </div>
         <div className="gk-hc">
