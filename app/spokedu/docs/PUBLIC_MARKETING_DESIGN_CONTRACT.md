@@ -1,37 +1,53 @@
-# SPOKEDU Public Website — V2.1 contract
+# SPOKEDU Public Marketing Design Contract
 
-This contract records the user's V2.1 Before restoration directive (2026-11-05). The visual reference is Home at `225a9111149da052db5fe6728f05df950f98b4a9`; V2 approved data, GNB, leadership and subpage consistency remain. Scope: public marketing routes only. MASTER authentication, pricing, entitlements and runtime are outside this refactor. Local implementation and QA are approved; commit, push, production deployment and operating DB writes are not.
+Status: implementation authorized by the user's canonical Stitch restoration request on 2026-11-06. Git publishing and production deployment are not authorized.
 
-## Customer journey
+## Reference and scope
 
-The site connects understanding → service choice → actual process → evidence → action. Each landing page must also work for direct entry. Links must match destination content and preserve relevant inquiry intent.
+The approved visual reference is the original code.html AND screen.png in
+docs/operations/public-website-refactor/contract-draft/sources/b0-extracted/stitch-unpacked/stitch_editorial_website_redesign/.
+Use home_spomove, private_lesson_spomove, education_programs_spomove, about_spomove and spomove_system_spomove for the five public pages. academic_royal_blueprint/DESIGN.md supplies roles; actual HTML values resolve differences with its explanatory prose. stitch/c0/bodies is an intermediate reference, not visual authority.
 
-## Brand and navigation
+This contract records the approved reference and exceptions; it does not establish another design system. Existing public navigation, routing, SEO, acquisition, contact API/storage/consent, LAB entitlements, payment, authentication and admin behavior remain unchanged.
 
-SPOKEDU directly designs and operates youth PE and creates teaching content and tools used in the field. Institutional and private lessons are distinct entry points. Subscription supports instructors; SPOMOVE is content used across both service paths. MASTER is a separate product.
+## Approved page compositions
 
-Navigation labels and routes are owned by `app/spokedu/data/site.ts`. No public login or My Classes navigation. Subscription introductions may hand off to the verified existing MASTER destination. Never invent access or pricing claims.
+- Home: Hero; alternating 01–03 capabilities; four official operating metrics; three real field cases; one blue consultation CTA.
+- Private: Hero/service summary; 01–03 process; three existing lesson cards; one consultation CTA. Retain /private#apply and the existing 2–4-person condition.
+- Education: Hero; six real program cards; exactly two alternating process rows; four official operating metrics; one consultation CTA. Steps are “기관 환경과 교육 목표 파악” and “수업 운영 및 결과 공유”. Preserve observation, feedback, next-session adjustment and prior agreement on administrative support in step 02.
+- About: Hero/official facts; 01–03 capabilities; three real operators; one consultation/collaboration CTA.
+- SPOMOVE: Hero; four alternating feature rows; the existing four-slot information region; one consultation CTA. That region shows examples—사이먼 효과, 플랭커, 스트룹 과제, DIVE—not the total feature count and not outcome metrics.
 
-## Visual system
+The former service hub, independent dark SPOMOVE Experience and appended legacy sections are superseded. Tests must not reinstate them. Preserve their important destinations in the appropriate original slots and shared navigation/footer.
 
-Use bright white/neutral surfaces, existing action blue, readable navy text and actual field photography. Separate copy from the subjects' faces and movements. Reserve dark surfaces and activity colors for meaningful emphasis. Keep common button, radius, spacing and type roles across pages; composition can differ by task.
+## Content ownership
 
-Retain the Before token roles and actual shared CSS loaded by the public shell. The current type family is Pretendard. Use the existing public button family and focus language. Do not change global tokens or MASTER tokens to perform Home restoration.
+marketing-public-metrics.ts owns the four user-confirmed values AND labels. Public case/category counts do not represent company operating metrics. About may show 2020 plus the approved institutions, instructors and renewal metrics.
+public-brand-copy.ts owns common product descriptions and team roles. field-records-catalog.ts owns cases and their existing destinations. Preserve program/conditions, private-service and history data even when their standalone rendering is removed.
 
-Active Home is `app/spokedu/website/pages/home.tsx` with display content in `website/data/home.ts`. Order: Hero, icon Quick Entry, alternating Why SPOKEDU, SPOMOVE Experience, Proven in the Field, blue Contact CTA. The independent 4MOVE card section is removed from Home; mention the framework in Why and retain details at `/education`. Legacy `home-page.ts` is not the active order authority and remains for existing consumers. Keep the original large background numbers and hashtag pills. Keep four official metrics in the original four-column large blue typography above three existing CaseCards within one section. Render official labels verbatim without expanding instructor figures into a direct-employment claim.
+SPOMAT is an optional physical four-color mat without electronic sensors or pressure detection. Never add fabricated motion analysis, diagnoses, medical outcomes, certainty of improvement, fictional staff, ratings or service guarantees from the source mockup.
 
-The clean public shell loads `website/styles/website.css` and `home-spomove.css`. Reuse their Before classes and existing shared components; the V2 whole-Home `home.module.css` is removed. Hero retains the Before frame and two original CTAs. Restore icon cards and the large rounded blue closing CTA. Only SPOMOVE Experience introduces a new composition, via narrowly scoped `website/styles/spomove-experience.css`: full-width dark background, existing content rail, actual screen and field images, connected SEE/THINK/MOVE process and existing button grammar. That stylesheet also contains only the minimal gap needed to join original metrics and CaseCards. No generated proof photography or fabricated product screen. Preserve source aspect ratios or inspect focal crop for faces, hands, feet, mats and screens.
+## Typography and styles
 
-Shared facts are owned by `data/marketing-public-metrics.ts`, `public-brand-copy.ts`, `education-system.ts` and `field-records-catalog.ts`, each for its own domain. User confirmation of operating figures is sufficient authorization; do not reopen verification for those four figures. Individual qualifications are not normalized into the common leadership introduction.
+Use Plus Jakarta Sans for Latin/numerals and Pretendard for Hangul, with platform fallbacks. Keep actual reference type size, weight, line height, tracking, layout and utility modifiers. Do not clamp 800/900 roles to 700 or force all tracking to one value.
+Limit restored typography/composition to the five web-stitch pages. Preserve other public surfaces and the global header/footer.
+Generate website-utilities.css using node scripts/build-website-styles.mjs; never edit it by hand.
 
-## Content
+## Approved exceptions and unresolved images
 
-Keep customer decision information; reduce redundant presentation rather than targeting a deletion percentage. Remove production instructions from public copy. Ratings, testimonials, conditions and prices must have verified provenance. Never invent outcomes or product capabilities.
+- Three real operators—최지훈, 김윤기, 김구민—replace the four fictional source profiles. Keep consistent card treatment; do not invent a fourth person.
+- Real existing photos and product UI replace the mockup's generated evidence. Keep current photo mappings pending explicit image approval.
+- P1/P4/P6 replacements are withheld; the proposed P5 replacement is prohibited. Keep the existing 2–4-person condition.
+- The representative's broadcast capture remains unresolved until an approved non-broadcast original exists. Cropping it is not a replacement.
+- Private process 03 lacks approved real feedback media. Existing repeated activity photos are unresolved evidence, not a completed image fix.
+- SPOMOVE's four examples replace unverified numerical claims inside the same information region. Report any increased height or wrapping.
+- Consultation CTAs use /contact?type=private, dispatch or spomove; reuse the existing full form rather than source alert() or a mock phone form. Verify the extra navigation step and preserved acquisition/selection context.
+- Keep the full-subject contain rule for the adapted case and shared case spacing after removing spomove-experience.css.
 
-## Acceptance
+## Acceptance and publishing
 
-Inspect desktop and mobile rendering: intended crop, natural Korean wrapping, no clipping, functional focus and menus, correct destination, no blank image or placeholder. Static inspection does not establish a rendered visual pass. Follow repository verification and publishing restrictions.
+Rendered responsive exception for final visual review: the approved 10,000+ figure clips at narrow widths when the source HTML's 64px metric size is applied literally. Existing Stitch type roles therefore render metrics at 36px at 390px, 44px at 768/1024px and 64px at 1440/1920px. Values, labels, two/four-column placement and the desktop hierarchy remain unchanged. This is reported as a source difference, not an exact visual match.
 
-## Current implementation slice
-
-V2.1 changes only Home presentation/copy and its relevant presentation test, preserving V2 shared data and subpage changes. Verify design using section screenshots, DOM roles, computed styles and bounding boxes at 375/768/1024/1440/1920px. Run only relevant contract tests, not a broad Public/MASTER test filter. Verification results are recorded separately in `docs/operations/public-website-refactor/v21-qa/REPORT.md`; this contract is not a claim of test or rendered QA results.
+Compare populated local pages with the original at 390/768/1024/1440/1920px. Record source/content differences, actual font loading, crop, clipping, horizontal overflow, keyboard focus, menu operation, contact success/failure and non-target regressions.
+Static/source tests are not a rendered visual PASS. Withheld photos, duplicates and missing feedback media must remain explicit QA exceptions. Separate mocked contact-flow validation from real DB persistence.
+Keep changes uncommitted. Commit, push, deployment and production-data writes each require separate authorization.

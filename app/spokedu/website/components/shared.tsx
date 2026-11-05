@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
@@ -23,7 +24,7 @@ export function CaseCard({ record }: { record: FieldRecordItem }) {
   const external = record.href.startsWith('https://');
   return <article className="web-case-card" data-record-slug={record.slug}>
     <Link href={record.href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="web-case-image" tabIndex={-1} aria-hidden="true">
-      <img src={record.thumbnailSrc} alt="" loading="lazy" width={720} height={480} />
+      {record.thumbnailSrc && <Image unoptimized src={record.thumbnailSrc} alt="" loading="lazy" width={720} height={480} />}
     </Link>
     <div className="web-case-body"><span className="web-tag">{record.operationType} · {record.programLabel}</span><h3><Link href={record.href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{record.venue}</Link></h3><p className="web-case-meta">{record.meta}</p><p>{record.description}</p><Link className="web-text-link" href={record.href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{record.ctaLabel}<ArrowRight size={17} aria-hidden="true" /></Link></div>
   </article>;

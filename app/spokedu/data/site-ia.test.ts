@@ -252,8 +252,14 @@ describe('spokedu site IA', () => {
   it('keeps the single website Home information relationships', () => {
     const source = readFileSync(join(process.cwd(), 'app/spokedu/website/pages/home.tsx'), 'utf8')
       + readFileSync(join(process.cwd(), 'app/spokedu/website/data/home.ts'), 'utf8');
-    for (const route of ['education', 'private', 'subscription', 'spomove', 'records', 'contact']) {
+    for (const route of ['education', 'records', 'contact']) {
       expect(source).toMatch(new RegExp(`(?:paths|SPOKEDU_PATHS)\\.${route}`));
+    }
+    // Product entry points also belong to the retained shared header/footer,
+    // rather than forcing extra service links back into the Stitch body.
+    const sharedNavigation = JSON.stringify([siteNav, footerNavGroups]);
+    for (const destination of ['/private', '/spokedu-lab', '/spomove', '/spomat']) {
+      expect(sharedNavigation).toContain(destination);
     }
     expect(source).toContain('아이와 현장의 조건에 맞춰');
     expect(source).toContain('움직이고 싶게 만드는');
@@ -710,7 +716,9 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
     expect(homeLandingSource).not.toMatch(/HomePartnerReviews|HomeMediaRail/);
     expect(homeLandingSource).toMatch(/function HomePage/);
-    expect(homeLandingSource).toMatch(/id="service-paths"/);
+    expect(homeLandingSource).toMatch(/id="showcase"/);
+    expect(homeLandingSource).toMatch(/id="operating-metrics"/);
+    expect(homeLandingSource).not.toMatch(/id="service-paths"|id="spomove-experience"/);
     expect(homeLandingSource).not.toMatch(/HomeClassSection|HomeFieldBridge|HomeCommercialChoice|home-canonical/);
     expect(homeLandingSource).not.toMatch(/HomeAudienceGates/);
     expect(spomoveLandingSource).toMatch(/function SpomovePage/);

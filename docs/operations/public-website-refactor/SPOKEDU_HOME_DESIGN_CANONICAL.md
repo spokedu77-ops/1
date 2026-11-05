@@ -21,26 +21,25 @@ Mobile presents the same destinations in a menu. SPOMAT and Partners remain avai
 
 ## Home composition
 
-The home consists of five core content regions and one final consultation region:
+The user-approved original Stitch home_spomove/code.html and screen.png supersede earlier six-region compositions within Home:
+1. Hero.
+2. Alternating 01–03 capabilities.
+3. Four official operating metrics.
+4. Three real editorial field cases.
+5. One blue consultation CTA.
 
-1. **Hero / Full Bleed** — direct statement of professionally operated child and youth physical education, representative field visual, service and consultation actions.
-2. **Customer purpose / Contained** — exactly three paths: 개인·소그룹 수업, 기관·학교 수업, SPOKEDU LAB.
-3. **Expertise and trust / Asymmetric** — three verified operators, an editorial portrait hierarchy, and only source-backed qualifications and operating history.
-4. **Field records / Editorial Grid** — one dominant case and four supporting cases, linked to `/records` or their existing detail destinations.
-5. **SPOMOVE + SPOKEDU LAB / Mixed** — movement-led SPOMOVE composition and UI-led LAB composition in intentionally different proportions; SPOMAT remains contextual to SPOMOVE.
-6. **Consultation / Narrow** — 기관 체육수업 문의, 개인·소그룹 수업 문의, 카카오톡 간편 문의.
+Keep real approved business copy, current field photos and actual LAB UI inside the source slots. Do not restore the separate service hub or independent dark SPOMOVE Experience to satisfy old tests. Existing LAB, SPOMOVE, catalog, SPOMAT, private-class and case destinations remain available in relevant slots and shared navigation/footer.
 
-## Visual rules
+## Visual rules and approved exceptions
 
-- Use a shared content start line without forcing every section to the same width.
-- Alternate Full Bleed, Contained, Asymmetric, Editorial Grid, Mixed, and Narrow compositions.
-- Do not turn every section into equal cards or equal-height image tiles.
-- At 390px, asymmetric layouts become a natural single-column sequence.
-- At 1024px, preserve hierarchy without dead space or clipped content.
-- Preserve product names, routes, subscription truth, authentication, payment, and service behavior.
-- Do not create performance claims, testimonials, careers, or counts.
-- Do not attach a new child image without confirmed publication rights. Existing public assets may remain while rights review stays explicit.
+Use the source HTML colors, grid, rhythm, radii and typography roles. Latin/numerals use Plus Jakarta Sans; Hangul uses Pretendard. Report actual rendered differences instead of silently changing the reference.
+The source mockup's unverified numbers, fictional staff, generated evidence and dummy submission behavior are not real product facts. Use the official metric SSOT and existing contact system.
+Approved public subpage compositions and three-real-operator exception are recorded in app/spokedu/docs/PUBLIC_MARKETING_DESIGN_CONTRACT.md.
 
 ## Image approval state
 
-Gate B currently records field-photo rights as pending. The implementation may retain assets already connected to public pages, but this document does not grant publication rights or approve a new external photo. Final asset approval remains unresolved.
+Do not change or delete existing images before specific approval. P1/P4/P6 candidate replacements are withheld; the proposed P5 is prohibited. Broadcast replacement and private feedback media remain unavailable. Existing duplicates remain unresolved QA items. Cropping a broadcast capture is not an approved replacement.
+
+## Verification and publishing
+
+Use local populated rendering at 390/768/1024/1440/1920px and compare with the original. Record image exceptions and content-driven layout differences. Functional, technical, visual and production verdicts are separate. No commit, push or deployment is authorized.

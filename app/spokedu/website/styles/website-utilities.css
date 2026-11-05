@@ -2,23 +2,29 @@
 /*! tailwindcss v4.1.18 | MIT License | https://tailwindcss.com */
 @layer properties;
 .website-content {
+  --color-white: #fff;
   --spacing: 0.25rem;
   --container-md: 28rem;
   --container-xl: 36rem;
   --container-2xl: 42rem;
   --container-3xl: 48rem;
   --container-4xl: 56rem;
+  --container-5xl: 64rem;
   --container-7xl: 80rem;
   --text-base: 1rem;
   --text-base--line-height: calc(1.5 / 1);
   --text-xl: 1.25rem;
   --text-xl--line-height: calc(1.75 / 1.25);
+  --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
   --tracking-tight: -0.025em;
   --tracking-wider: 0.05em;
   --tracking-widest: 0.1em;
   --leading-tight: 1.25;
+  --leading-snug: 1.375;
   --leading-relaxed: 1.625;
   --radius-xl: 3rem;
   --radius-2xl: 1rem;
@@ -54,10 +60,18 @@
   --text-body-sm: 14px;
   --text-body-sm--line-height: 22px;
   --text-body-sm--font-weight: 400;
+  --text-display-hero-mobile: 36px;
+  --text-display-hero-mobile--line-height: 48px;
+  --text-display-hero-mobile--font-weight: 700;
+  --text-display-hero-mobile--letter-spacing: -0.015em;
   --text-headline-lg: 36px;
   --text-headline-lg--line-height: 46px;
   --text-headline-lg--font-weight: 700;
   --text-headline-lg--letter-spacing: -0.015em;
+  --text-display-metric-mobile: 44px;
+  --text-display-metric-mobile--line-height: 52px;
+  --text-display-metric-mobile--font-weight: 700;
+  --text-display-metric-mobile--letter-spacing: -0.015em;
   --text-label-md: 14px;
   --text-label-md--line-height: 20px;
   --text-label-md--font-weight: 600;
@@ -69,6 +83,10 @@
   --text-body-md: 16px;
   --text-body-md--line-height: 26px;
   --text-body-md--font-weight: 400;
+  --text-display-metric: 64px;
+  --text-display-metric--line-height: 72px;
+  --text-display-metric--font-weight: 700;
+  --text-display-metric--letter-spacing: -0.015em;
   --text-headline-md: 24px;
   --text-headline-md--line-height: 32px;
   --text-headline-md--font-weight: 700;
@@ -93,6 +111,7 @@
   --font-label-md: "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --font-headline-sm: "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --font-body-md: "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-display-metric: "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --font-headline-md: "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --font-body-lg: "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --font-display-hero: "Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -168,6 +187,9 @@
 .website-content .mt-12 {
   margin-top: calc(var(--spacing) * 12);
 }
+.website-content :where(.web-stitch) .mt-16 {
+  margin-top: calc(var(--spacing) * 16);
+}
 .website-content .-mb-4 {
   margin-bottom: calc(var(--spacing) * -4);
 }
@@ -185,6 +207,9 @@
 }
 .website-content .mb-8 {
   margin-bottom: calc(var(--spacing) * 8);
+}
+.website-content :where(.web-stitch) .mb-10 {
+  margin-bottom: calc(var(--spacing) * 10);
 }
 .website-content .mb-12 {
   margin-bottom: calc(var(--spacing) * 12);
@@ -216,11 +241,11 @@
 .website-content .inline-flex {
   display: inline-flex;
 }
-.website-content .table {
-  display: table;
-}
 .website-content .aspect-\[4\/3\] {
   aspect-ratio: 4/3;
+}
+.website-content :where(.web-stitch) .aspect-\[16\/9\] {
+  aspect-ratio: 16/9;
 }
 .website-content .aspect-\[16\/10\] {
   aspect-ratio: 16/10;
@@ -267,6 +292,9 @@
 .website-content .max-w-4xl {
   max-width: var(--container-4xl);
 }
+.website-content :where(.web-stitch) .max-w-5xl {
+  max-width: var(--container-5xl);
+}
 .website-content .max-w-7xl {
   max-width: var(--container-7xl);
 }
@@ -282,11 +310,17 @@
 .website-content .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }
+.website-content :where(.web-stitch) .grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .website-content .flex-col {
   flex-direction: column;
 }
 .website-content .flex-wrap {
   flex-wrap: wrap;
+}
+.website-content :where(.web-stitch) .items-baseline {
+  align-items: baseline;
 }
 .website-content .items-center {
   align-items: center;
@@ -329,6 +363,13 @@
     margin-block-end: calc(calc(var(--spacing) * 6) * calc(1 - var(--website-tw-space-y-reverse)));
   }
 }
+.website-content :where(.web-stitch) .space-y-24 {
+  :where(& > :not(:last-child)) {
+    --website-tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 24) * var(--website-tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 24) * calc(1 - var(--website-tw-space-y-reverse)));
+  }
+}
 .website-content .space-y-28 {
   :where(& > :not(:last-child)) {
     --website-tw-space-y-reverse: 0;
@@ -351,14 +392,34 @@
 .website-content .rounded-xl {
   border-radius: var(--radius-xl);
 }
+.website-content :where(.web-stitch) .border {
+  border-style: var(--website-tw-border-style);
+  border-width: 1px;
+}
 .website-content .border-y {
   border-block-style: var(--website-tw-border-style);
   border-block-width: 1px;
+}
+.website-content :where(.web-stitch) .border-t {
+  border-top-style: var(--website-tw-border-style);
+  border-top-width: 1px;
+}
+.website-content :where(.web-stitch) .border-on-primary\/60 {
+  border-color: color-mix(in srgb, #ffffff 60%, transparent);
+  @supports (color: color-mix(in lab, red, red)) {
+    border-color: color-mix(in oklab, var(--color-on-primary) 60%, transparent);
+  }
 }
 .website-content .border-outline-variant\/20 {
   border-color: color-mix(in srgb, #c3c6d7 20%, transparent);
   @supports (color: color-mix(in lab, red, red)) {
     border-color: color-mix(in oklab, var(--color-outline-variant) 20%, transparent);
+  }
+}
+.website-content :where(.web-stitch) .border-outline-variant\/30 {
+  border-color: color-mix(in srgb, #c3c6d7 30%, transparent);
+  @supports (color: color-mix(in lab, red, red)) {
+    border-color: color-mix(in oklab, var(--color-outline-variant) 30%, transparent);
   }
 }
 .website-content .bg-inverse-surface {
@@ -434,10 +495,21 @@
   --website-tw-gradient-position: to bottom in oklab;
   background-image: linear-gradient(var(--website-tw-gradient-stops));
 }
+.website-content :where(.web-stitch) .bg-gradient-to-t {
+  --website-tw-gradient-position: to top in oklab;
+  background-image: linear-gradient(var(--website-tw-gradient-stops));
+}
 .website-content .from-surface-container-low\/40 {
   --website-tw-gradient-from: color-mix(in srgb, #f2f3ff 40%, transparent);
   @supports (color: color-mix(in lab, red, red)) {
     --website-tw-gradient-from: color-mix(in oklab, var(--color-surface-container-low) 40%, transparent);
+  }
+  --website-tw-gradient-stops: var(--website-tw-gradient-via-stops, var(--website-tw-gradient-position), var(--website-tw-gradient-from) var(--website-tw-gradient-from-position), var(--website-tw-gradient-to) var(--website-tw-gradient-to-position));
+}
+.website-content :where(.web-stitch) .from-surface-container-lowest\/90 {
+  --website-tw-gradient-from: color-mix(in srgb, #ffffff 90%, transparent);
+  @supports (color: color-mix(in lab, red, red)) {
+    --website-tw-gradient-from: color-mix(in oklab, var(--color-surface-container-lowest) 90%, transparent);
   }
   --website-tw-gradient-stops: var(--website-tw-gradient-via-stops, var(--website-tw-gradient-position), var(--website-tw-gradient-from) var(--website-tw-gradient-from-position), var(--website-tw-gradient-to) var(--website-tw-gradient-to-position));
 }
@@ -449,6 +521,9 @@
 .website-content .to-transparent {
   --website-tw-gradient-to: transparent;
   --website-tw-gradient-stops: var(--website-tw-gradient-via-stops, var(--website-tw-gradient-position), var(--website-tw-gradient-from) var(--website-tw-gradient-from-position), var(--website-tw-gradient-to) var(--website-tw-gradient-to-position));
+}
+.website-content :where(.web-stitch) .object-contain {
+  object-fit: contain;
 }
 .website-content .object-cover {
   object-fit: cover;
@@ -498,6 +573,9 @@
 .website-content .py-4 {
   padding-block: calc(var(--spacing) * 4);
 }
+.website-content :where(.web-stitch) .py-16 {
+  padding-block: calc(var(--spacing) * 16);
+}
 .website-content .py-20 {
   padding-block: calc(var(--spacing) * 20);
 }
@@ -510,8 +588,14 @@
 .website-content .pt-4 {
   padding-top: calc(var(--spacing) * 4);
 }
+.website-content :where(.web-stitch) .pt-10 {
+  padding-top: calc(var(--spacing) * 10);
+}
 .website-content .pb-6 {
   padding-bottom: calc(var(--spacing) * 6);
+}
+.website-content :where(.web-stitch) .pb-24 {
+  padding-bottom: calc(var(--spacing) * 24);
 }
 .website-content .text-center {
   text-align: center;
@@ -527,6 +611,9 @@
 }
 .website-content .font-display-hero {
   font-family: var(--font-display-hero);
+}
+.website-content :where(.web-stitch) .font-display-metric {
+  font-family: var(--font-display-metric);
 }
 .website-content .font-headline-lg {
   font-family: var(--font-headline-lg);
@@ -551,6 +638,12 @@
   line-height: var(--website-tw-leading, var(--text-display-hero--line-height));
   letter-spacing: var(--website-tw-tracking, var(--text-display-hero--letter-spacing));
   font-weight: var(--website-tw-font-weight, var(--text-display-hero--font-weight));
+}
+.website-content :where(.web-stitch) .text-display-hero-mobile {
+  font-size: var(--text-display-hero-mobile);
+  line-height: var(--website-tw-leading, var(--text-display-hero-mobile--line-height));
+  letter-spacing: var(--website-tw-tracking, var(--text-display-hero-mobile--letter-spacing));
+  font-weight: var(--website-tw-font-weight, var(--text-display-hero-mobile--font-weight));
 }
 .website-content .text-headline-lg {
   font-size: var(--text-headline-lg);
@@ -628,13 +721,29 @@
   --website-tw-leading: var(--leading-relaxed);
   line-height: var(--leading-relaxed);
 }
+.website-content :where(.web-stitch) .leading-snug {
+  --website-tw-leading: var(--leading-snug);
+  line-height: var(--leading-snug);
+}
 .website-content .leading-tight {
   --website-tw-leading: var(--leading-tight);
   line-height: var(--leading-tight);
 }
+.website-content :where(.web-stitch) .font-black {
+  --website-tw-font-weight: var(--font-weight-black);
+  font-weight: var(--font-weight-black);
+}
 .website-content .font-bold {
   --website-tw-font-weight: var(--font-weight-bold);
   font-weight: var(--font-weight-bold);
+}
+.website-content :where(.web-stitch) .font-extrabold {
+  --website-tw-font-weight: var(--font-weight-extrabold);
+  font-weight: var(--font-weight-extrabold);
+}
+.website-content :where(.web-stitch) .font-medium {
+  --website-tw-font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-medium);
 }
 .website-content .font-semibold {
   --website-tw-font-weight: var(--font-weight-semibold);
@@ -712,6 +821,9 @@
 .website-content .text-tertiary-container {
   color: var(--color-tertiary-container);
 }
+.website-content :where(.web-stitch) .text-white {
+  color: var(--color-white);
+}
 .website-content .uppercase {
   text-transform: uppercase;
 }
@@ -720,6 +832,10 @@
 }
 .website-content .opacity-70 {
   opacity: 70%;
+}
+.website-content :where(.web-stitch) .shadow-\[0_8px_20px_rgba\(37\,99\,235\,0\.25\)\] {
+  --website-tw-shadow: 0 8px 20px var(--website-tw-shadow-color, rgba(37,99,235,0.25));
+  box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
 }
 .website-content .shadow-\[0_10px_25px_-5px_rgba\(37\,99\,235\,0\.35\)\] {
   --website-tw-shadow: 0 10px 25px -5px var(--website-tw-shadow-color, rgba(37,99,235,0.35));
@@ -741,8 +857,24 @@
   --website-tw-shadow: 0 20px 40px -15px var(--website-tw-shadow-color, rgba(15,23,42,0.08));
   box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
 }
+.website-content :where(.web-stitch) .shadow-\[0_20px_50px_rgba\(19\,27\,46\,0\.06\)\] {
+  --website-tw-shadow: 0 20px 50px var(--website-tw-shadow-color, rgba(19,27,46,0.06));
+  box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
+}
+.website-content :where(.web-stitch) .shadow-\[0_20px_50px_rgba\(37\,99\,235\,0\.25\)\] {
+  --website-tw-shadow: 0 20px 50px var(--website-tw-shadow-color, rgba(37,99,235,0.25));
+  box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
+}
+.website-content :where(.web-stitch) .shadow-\[0_20px_50px_rgba\(37\,99\,235\,0\.28\)\] {
+  --website-tw-shadow: 0 20px 50px var(--website-tw-shadow-color, rgba(37,99,235,0.28));
+  box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
+}
 .website-content .shadow-\[0_24px_50px_rgba\(40\,48\,68\,0\.18\)\] {
   --website-tw-shadow: 0 24px 50px var(--website-tw-shadow-color, rgba(40,48,68,0.18));
+  box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
+}
+.website-content :where(.web-stitch) .shadow-lg {
+  --website-tw-shadow: 0 10px 15px -3px var(--website-tw-shadow-color, rgb(0 0 0 / 0.1)), 0 4px 6px -4px var(--website-tw-shadow-color, rgb(0 0 0 / 0.1));
   box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
 }
 .website-content .shadow-md {
@@ -751,6 +883,10 @@
 }
 .website-content .shadow-sm {
   --website-tw-shadow: 0 1px 3px 0 var(--website-tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--website-tw-shadow-color, rgb(0 0 0 / 0.1));
+  box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
+}
+.website-content :where(.web-stitch) .shadow-xl {
+  --website-tw-shadow: 0 20px 25px -5px var(--website-tw-shadow-color, rgb(0 0 0 / 0.1)), 0 8px 10px -6px var(--website-tw-shadow-color, rgb(0 0 0 / 0.1));
   box-shadow: var(--website-tw-inset-shadow), var(--website-tw-inset-ring-shadow), var(--website-tw-ring-offset-shadow), var(--website-tw-ring-shadow), var(--website-tw-shadow);
 }
 .website-content .filter {
@@ -859,6 +995,16 @@
     }
   }
 }
+.website-content :where(.web-stitch) .hover\:bg-on-primary\/10 {
+  &:hover {
+    @media (hover: hover) {
+      background-color: color-mix(in srgb, #ffffff 10%, transparent);
+      @supports (color: color-mix(in lab, red, red)) {
+        background-color: color-mix(in oklab, var(--color-on-primary) 10%, transparent);
+      }
+    }
+  }
+}
 .website-content .hover\:bg-primary {
   &:hover {
     @media (hover: hover) {
@@ -877,6 +1023,13 @@
   &:hover {
     @media (hover: hover) {
       background-color: var(--color-surface-container-high);
+    }
+  }
+}
+.website-content :where(.web-stitch) .hover\:bg-surface-container-low {
+  &:hover {
+    @media (hover: hover) {
+      background-color: var(--color-surface-container-low);
     }
   }
 }
@@ -906,14 +1059,22 @@
     display: inline-flex;
   }
 }
-.website-content .sm\:grid-cols-2 {
+.website-content :where(.web-stitch) .sm\:w-auto {
   @media (width >= 40rem) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: auto;
   }
 }
 .website-content .sm\:flex-row {
   @media (width >= 40rem) {
     flex-direction: row;
+  }
+}
+.website-content :where(.web-stitch) .sm\:text-display-metric-mobile {
+  @media (width >= 40rem) {
+    font-size: var(--text-display-metric-mobile);
+    line-height: var(--website-tw-leading, var(--text-display-metric-mobile--line-height));
+    letter-spacing: var(--website-tw-tracking, var(--text-display-metric-mobile--letter-spacing));
+    font-weight: var(--website-tw-font-weight, var(--text-display-metric-mobile--font-weight));
   }
 }
 .website-content .md\:aspect-\[4\/3\] {
@@ -926,6 +1087,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.website-content :where(.web-stitch) .md\:grid-cols-3 {
+  @media (width >= 48rem) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 .website-content .md\:flex-row {
   @media (width >= 48rem) {
     flex-direction: row;
@@ -934,6 +1100,26 @@
 .website-content .md\:items-end {
   @media (width >= 48rem) {
     align-items: flex-end;
+  }
+}
+.website-content :where(.web-stitch) .md\:px-16 {
+  @media (width >= 48rem) {
+    padding-inline: calc(var(--spacing) * 16);
+  }
+}
+.website-content :where(.web-stitch) .lg\:right-12 {
+  @media (width >= 64rem) {
+    right: calc(var(--spacing) * 12);
+  }
+}
+.website-content :where(.web-stitch) .lg\:bottom-10 {
+  @media (width >= 64rem) {
+    bottom: calc(var(--spacing) * 10);
+  }
+}
+.website-content :where(.web-stitch) .lg\:left-12 {
+  @media (width >= 64rem) {
+    left: calc(var(--spacing) * 12);
   }
 }
 .website-content .lg\:order-1 {
@@ -966,6 +1152,16 @@
     margin-bottom: calc(var(--spacing) * -10);
   }
 }
+.website-content :where(.web-stitch) .lg\:mb-20 {
+  @media (width >= 64rem) {
+    margin-bottom: calc(var(--spacing) * 20);
+  }
+}
+.website-content :where(.web-stitch) .lg\:aspect-\[21\/10\] {
+  @media (width >= 64rem) {
+    aspect-ratio: 21/10;
+  }
+}
 .website-content .lg\:grid-cols-3 {
   @media (width >= 64rem) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -986,9 +1182,23 @@
     gap: calc(var(--spacing) * 8);
   }
 }
+.website-content :where(.web-stitch) .lg\:gap-12 {
+  @media (width >= 64rem) {
+    gap: calc(var(--spacing) * 12);
+  }
+}
 .website-content .lg\:gap-16 {
   @media (width >= 64rem) {
     gap: calc(var(--spacing) * 16);
+  }
+}
+.website-content :where(.web-stitch) .lg\:space-y-32 {
+  @media (width >= 64rem) {
+    .website-content :where(& > :not(:last-child)) {
+      --website-tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 32) * var(--website-tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 32) * calc(1 - var(--website-tw-space-y-reverse)));
+    }
   }
 }
 .website-content .lg\:space-y-36 {
@@ -1003,6 +1213,16 @@
 .website-content .lg\:px-12 {
   @media (width >= 64rem) {
     padding-inline: calc(var(--spacing) * 12);
+  }
+}
+.website-content :where(.web-stitch) .lg\:px-16 {
+  @media (width >= 64rem) {
+    padding-inline: calc(var(--spacing) * 16);
+  }
+}
+.website-content :where(.web-stitch) .lg\:py-20 {
+  @media (width >= 64rem) {
+    padding-block: calc(var(--spacing) * 20);
   }
 }
 .website-content .lg\:py-24 {
@@ -1020,12 +1240,25 @@
     padding-block: calc(var(--spacing) * 32);
   }
 }
+.website-content :where(.web-stitch) .lg\:pb-32 {
+  @media (width >= 64rem) {
+    padding-bottom: calc(var(--spacing) * 32);
+  }
+}
 .website-content .lg\:text-display-hero {
   @media (width >= 64rem) {
     font-size: var(--text-display-hero);
     line-height: var(--website-tw-leading, var(--text-display-hero--line-height));
     letter-spacing: var(--website-tw-tracking, var(--text-display-hero--letter-spacing));
     font-weight: var(--website-tw-font-weight, var(--text-display-hero--font-weight));
+  }
+}
+.website-content :where(.web-stitch) .xl\:text-display-metric {
+  @media (width >= 80rem) {
+    font-size: var(--text-display-metric);
+    line-height: var(--website-tw-leading, var(--text-display-metric--line-height));
+    letter-spacing: var(--website-tw-tracking, var(--text-display-metric--letter-spacing));
+    font-weight: var(--website-tw-font-weight, var(--text-display-metric--font-weight));
   }
 }
 @property --website-tw-space-y-reverse {
@@ -1349,5 +1582,347 @@
       --website-tw-scale-y: 1;
       --website-tw-scale-z: 1;
     }
+  }
+}
+.website-content :where(.web-stitch) {--text-body-sm:14px;
+--text-body-sm--line-height:22px;
+--text-body-sm--font-weight:400;
+--text-headline-lg-mobile:26px;
+--text-headline-lg-mobile--line-height:36px;
+--text-headline-lg-mobile--font-weight:700;
+--text-headline-lg-mobile--letter-spacing:-0.01em;
+--text-display-hero-mobile:36px;
+--text-display-hero-mobile--line-height:48px;
+--text-display-hero-mobile--font-weight:800;
+--text-display-hero-mobile--letter-spacing:-0.02em;
+--text-headline-lg:36px;
+--text-headline-lg--line-height:46px;
+--text-headline-lg--font-weight:700;
+--text-headline-lg--letter-spacing:-0.02em;
+--text-display-metric-mobile:44px;
+--text-display-metric-mobile--line-height:52px;
+--text-display-metric-mobile--font-weight:800;
+--text-display-metric-mobile--letter-spacing:-0.02em;
+--text-label-md:14px;
+--text-label-md--line-height:20px;
+--text-label-md--font-weight:600;
+--text-label-md--letter-spacing:0.01em;
+--text-headline-sm:20px;
+--text-headline-sm--line-height:28px;
+--text-headline-sm--font-weight:600;
+--text-headline-sm--letter-spacing:-0.01em;
+--text-body-md:16px;
+--text-body-md--line-height:26px;
+--text-body-md--font-weight:400;
+--text-display-metric:64px;
+--text-display-metric--line-height:72px;
+--text-display-metric--font-weight:800;
+--text-display-metric--letter-spacing:-0.03em;
+--text-headline-md:24px;
+--text-headline-md--line-height:32px;
+--text-headline-md--font-weight:700;
+--text-headline-md--letter-spacing:-0.015em;
+--text-body-lg:18px;
+--text-body-lg--line-height:28px;
+--text-body-lg--font-weight:400;
+--text-display-hero:56px;
+--text-display-hero--line-height:72px;
+--text-display-hero--font-weight:800;
+--text-display-hero--letter-spacing:-0.03em;
+--text-label-sm:12px;
+--text-label-sm--line-height:16px;
+--text-label-sm--font-weight:600;
+--text-label-sm--letter-spacing:0.02em;
+--text-watermark-number:84px;
+--text-watermark-number--line-height:84px;
+--text-watermark-number--font-weight:900;
+--text-watermark-number--letter-spacing:-0.04em;
+--font-body-sm:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-headline-lg-mobile:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-display-hero-mobile:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-headline-lg:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-display-metric-mobile:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-label-md:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-headline-sm:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-body-md:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-display-metric:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-headline-md:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-body-lg:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-display-hero:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-label-sm:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+--font-watermark-number:"Plus Jakarta Sans","Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;}
+.website-content :where(.web-stitch) .space-y-3 {
+  :where(& > :not(:last-child)) {
+  }
+}
+.website-content :where(.web-stitch) .space-y-6 {
+  :where(& > :not(:last-child)) {
+  }
+}
+.website-content :where(.web-stitch) .space-y-24 {
+  :where(& > :not(:last-child)) {
+  }
+}
+.website-content :where(.web-stitch) .space-y-28 {
+  :where(& > :not(:last-child)) {
+  }
+}
+.website-content :where(.web-stitch) .font-body-lg {
+  font-family: var(--font-body-lg);
+}
+.website-content :where(.web-stitch) .font-body-md {
+  font-family: var(--font-body-md);
+}
+.website-content :where(.web-stitch) .font-body-sm {
+  font-family: var(--font-body-sm);
+}
+.website-content :where(.web-stitch) .font-display-hero {
+  font-family: var(--font-display-hero);
+}
+.website-content :where(.web-stitch) .font-display-metric {
+  font-family: var(--font-display-metric);
+}
+.website-content :where(.web-stitch) .font-headline-lg {
+  font-family: var(--font-headline-lg);
+}
+.website-content :where(.web-stitch) .font-headline-md {
+  font-family: var(--font-headline-md);
+}
+.website-content :where(.web-stitch) .font-headline-sm {
+  font-family: var(--font-headline-sm);
+}
+.website-content :where(.web-stitch) .font-label-md {
+  font-family: var(--font-label-md);
+}
+.website-content :where(.web-stitch) .font-label-sm {
+  font-family: var(--font-label-sm);
+}
+.website-content :where(.web-stitch) .font-watermark-number {
+  font-family: var(--font-watermark-number);
+}
+.website-content :where(.web-stitch) .text-display-hero {
+  font-size: var(--text-display-hero);
+  line-height: var(--text-display-hero--line-height);
+  letter-spacing: var(--text-display-hero--letter-spacing);
+  font-weight: var(--text-display-hero--font-weight);
+}
+.website-content :where(.web-stitch) .text-display-hero-mobile {
+  font-size: var(--text-display-hero-mobile);
+  line-height: var(--text-display-hero-mobile--line-height);
+  letter-spacing: var(--text-display-hero-mobile--letter-spacing);
+  font-weight: var(--text-display-hero-mobile--font-weight);
+}
+.website-content :where(.web-stitch) .text-headline-lg {
+  font-size: var(--text-headline-lg);
+  line-height: var(--text-headline-lg--line-height);
+  letter-spacing: var(--text-headline-lg--letter-spacing);
+  font-weight: var(--text-headline-lg--font-weight);
+}
+.website-content :where(.web-stitch) .text-headline-md {
+  font-size: var(--text-headline-md);
+  line-height: var(--text-headline-md--line-height);
+  letter-spacing: var(--text-headline-md--letter-spacing);
+  font-weight: var(--text-headline-md--font-weight);
+}
+.website-content :where(.web-stitch) .text-headline-sm {
+  font-size: var(--text-headline-sm);
+  line-height: var(--text-headline-sm--line-height);
+  letter-spacing: var(--text-headline-sm--letter-spacing);
+  font-weight: var(--text-headline-sm--font-weight);
+}
+.website-content :where(.web-stitch) .text-label-md {
+  font-size: var(--text-label-md);
+  line-height: var(--text-label-md--line-height);
+  letter-spacing: var(--text-label-md--letter-spacing);
+  font-weight: var(--text-label-md--font-weight);
+}
+.website-content :where(.web-stitch) .text-label-sm {
+  font-size: var(--text-label-sm);
+  line-height: var(--text-label-sm--line-height);
+  letter-spacing: var(--text-label-sm--letter-spacing);
+  font-weight: var(--text-label-sm--font-weight);
+}
+.website-content :where(.web-stitch) .text-watermark-number {
+  font-size: var(--text-watermark-number);
+  line-height: var(--text-watermark-number--line-height);
+  letter-spacing: var(--text-watermark-number--letter-spacing);
+  font-weight: var(--text-watermark-number--font-weight);
+}
+.website-content :where(.web-stitch) .text-body-lg {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg--line-height);
+  font-weight: var(--text-body-lg--font-weight);
+}
+.website-content :where(.web-stitch) .text-body-md {
+  font-size: var(--text-body-md);
+  line-height: var(--text-body-md--line-height);
+  font-weight: var(--text-body-md--font-weight);
+}
+.website-content :where(.web-stitch) .text-body-sm {
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+  font-weight: var(--text-body-sm--font-weight);
+}
+.website-content :where(.web-stitch) .text-base {
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+}
+.website-content :where(.web-stitch) .text-xl {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl--line-height);
+}
+.website-content :where(.web-stitch) .text-\[18px\] {
+  font-size: 18px;
+}
+.website-content :where(.web-stitch) .text-\[20px\] {
+  font-size: 20px;
+}
+.website-content :where(.web-stitch) .text-\[28px\] {
+  font-size: 28px;
+}
+.website-content :where(.web-stitch) .leading-none {
+  --website-tw-leading: 1;
+  line-height: 1;
+}
+.website-content :where(.web-stitch) .leading-relaxed {
+  --website-tw-leading: var(--leading-relaxed);
+  line-height: var(--leading-relaxed);
+}
+.website-content :where(.web-stitch) .leading-snug {
+  --website-tw-leading: var(--leading-snug);
+  line-height: var(--leading-snug);
+}
+.website-content :where(.web-stitch) .leading-tight {
+  --website-tw-leading: var(--leading-tight);
+  line-height: var(--leading-tight);
+}
+.website-content :where(.web-stitch) .font-black {
+  --website-tw-font-weight: var(--font-weight-black);
+  font-weight: var(--font-weight-black);
+}
+.website-content :where(.web-stitch) .font-bold {
+  --website-tw-font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-bold);
+}
+.website-content :where(.web-stitch) .font-extrabold {
+  --website-tw-font-weight: var(--font-weight-extrabold);
+  font-weight: var(--font-weight-extrabold);
+}
+.website-content :where(.web-stitch) .font-medium {
+  --website-tw-font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-medium);
+}
+.website-content :where(.web-stitch) .font-semibold {
+  --website-tw-font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-semibold);
+}
+.website-content :where(.web-stitch) .tracking-tight {
+  --website-tw-tracking: var(--tracking-tight);
+  letter-spacing: var(--tracking-tight);
+}
+.website-content :where(.web-stitch) .tracking-wider {
+  --website-tw-tracking: var(--tracking-wider);
+  letter-spacing: var(--tracking-wider);
+}
+.website-content :where(.web-stitch) .tracking-widest {
+  --website-tw-tracking: var(--tracking-widest);
+  letter-spacing: var(--tracking-widest);
+}
+.website-content :where(.web-stitch) .group-hover\:translate-x-1 {
+  &:is(:where(.group):hover *) {
+  }
+}
+.website-content :where(.web-stitch) .group-hover\:scale-102 {
+  &:is(:where(.group):hover *) {
+  }
+}
+.website-content :where(.web-stitch) .group-hover\:scale-105 {
+  &:is(:where(.group):hover *) {
+  }
+}
+.website-content :where(.web-stitch) .group-hover\:text-primary {
+  &:is(:where(.group):hover *) {
+  }
+}
+.website-content :where(.web-stitch) .group-hover\:underline {
+  &:is(:where(.group):hover *) {
+  }
+}
+.website-content :where(.web-stitch) .hover\:-translate-y-0\.5 {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:-translate-y-1\.5 {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:bg-on-primary\/10 {
+  &:hover {
+    @media (hover: hover) {
+    }
+  }
+}
+.website-content :where(.web-stitch) .hover\:bg-primary {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:bg-surface-container {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:bg-surface-container-high {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:bg-surface-container-low {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:bg-surface-variant {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:text-primary {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .hover\:underline {
+  &:hover {
+  }
+}
+.website-content :where(.web-stitch) .sm\:text-display-metric-mobile {
+  @media (width >= 40rem) {
+    font-size: var(--text-display-metric-mobile);
+    line-height: var(--text-display-metric-mobile--line-height);
+    letter-spacing: var(--text-display-metric-mobile--letter-spacing);
+    font-weight: var(--text-display-metric-mobile--font-weight);
+  }
+}
+.website-content :where(.web-stitch) .lg\:space-y-32 {
+  @media (width >= 64rem) {
+    :where(& > :not(:last-child)) {
+    }
+  }
+}
+.website-content :where(.web-stitch) .lg\:space-y-36 {
+  @media (width >= 64rem) {
+    :where(& > :not(:last-child)) {
+    }
+  }
+}
+.website-content :where(.web-stitch) .lg\:text-display-hero {
+  @media (width >= 64rem) {
+    font-size: var(--text-display-hero);
+    line-height: var(--text-display-hero--line-height);
+    letter-spacing: var(--text-display-hero--letter-spacing);
+    font-weight: var(--text-display-hero--font-weight);
+  }
+}
+.website-content :where(.web-stitch) .xl\:text-display-metric {
+  @media (width >= 80rem) {
+    font-size: var(--text-display-metric);
+    line-height: var(--text-display-metric--line-height);
+    letter-spacing: var(--text-display-metric--letter-spacing);
+    font-weight: var(--text-display-metric--font-weight);
   }
 }
