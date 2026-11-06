@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 
 const RANGE_COLUMNS = 'id, title, start_at, end_at, session_type, group_id, students_text, memo, status, price, mileage_option, round_index, round_total, created_by, users:created_by(id, name, role, email, is_admin)';
-const GROUP_COLUMNS = 'id, group_id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number, session_type, memo, mileage_option';
+const GROUP_COLUMNS = 'id, group_id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number, round_display, session_type, memo, mileage_option';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(req: NextRequest) {
