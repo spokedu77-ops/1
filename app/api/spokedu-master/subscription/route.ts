@@ -123,6 +123,7 @@ export async function GET() {
     billingRenewalFailed,
     automaticBillingStopped: isSpokeduMasterAutomaticRenewalStopped(row),
     billingPlan: billingPlan === 'lite' || billingPlan === 'premium' ? billingPlan : null,
+    hasPaidBillingSubscription,
     billingStatus: row?.status ?? 'none',
     billingPeriodEnd: row?.current_period_end ?? row?.period_end ?? null,
     renewalRetryCount: row?.renewal_retry_count ?? 0,

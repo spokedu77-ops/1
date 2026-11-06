@@ -55,7 +55,7 @@ describe('applySpokeduMasterPayment', () => {
       .toBe('2026-02-28T00:00:00.000Z');
   });
 
-  it.each([29, 30, 31])('preserves a KST day-%i anchor for 12 months and only clamps missing dates', (day) => {
+  it.each([28, 29, 30, 31])('preserves a KST day-%i anchor for 12 months and only clamps missing dates', (day) => {
     for (const year of [2027, 2028]) {
       let cursor = new Date(`${year}-01-${String(day).padStart(2, '0')}T03:30:00.000Z`);
       for (let month = 1; month <= 12; month += 1) {
@@ -77,6 +77,11 @@ describe('applySpokeduMasterPayment', () => {
     const march = addOneBillingMonthFromAnchor(february, 31);
     expect(february.toISOString()).toBe('2027-02-28T03:30:00.000Z');
     expect(march.toISOString()).toBe('2027-03-31T03:30:00.000Z');
+  });
+
+  it('computes the initial month from the Korean calendar at a UTC month boundary', () => {
+    expect(calculateSpokeduMasterPaymentPeriod('2026-01-31T16:00:00.000Z').periodEnd)
+      .toBe('2026-02-28T16:00:00.000Z'); // February 1 -> March 1 in Seoul
   });
 
   it('derives the anchor from the KST calendar day at UTC boundaries', () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { getServiceSupabase } = vi.hoisted(() => ({
   getServiceSupabase: vi.fn(),
@@ -8,6 +8,8 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
   getServiceSupabase,
 }));
 
+import { billingKeyPairDigest, SPOKEDU_BILLING_MID } from '@/app/lib/server/spokeduMasterBillingConfiguration';
+afterEach(() => vi.unstubAllEnvs());
 import { POST } from './route';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -275,7 +277,10 @@ describe('SPOKEDU MASTER payment webhook', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    process.env.TOSS_SECRET_KEY = 'test_secret';
+    vi.stubEnv('TOSS_SECRET_KEY', 'test_sk_fixture');
+    vi.stubEnv('NEXT_PUBLIC_TOSS_CLIENT_KEY', 'test_ck_fixture');
+    vi.stubEnv('TOSS_BILLING_MID', SPOKEDU_BILLING_MID);
+    vi.stubEnv('TOSS_BILLING_KEY_PAIR_SHA256', billingKeyPairDigest('test_ck_fixture', 'test_sk_fixture'));
     db = createMockDb();
     installMockSupabase(db);
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse()), { status: 200 })));

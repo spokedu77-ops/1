@@ -417,7 +417,7 @@ export function TeacherHoldingsModal({
             {holdings.length === 0 ? (
               <tr>
                 <td colSpan={4} className={styles.emptyState} style={{ padding: 20 }}>
-                  현재 대여 중인 교구가 없습니다.
+                  보유 중인 교구가 없습니다.
                 </td>
               </tr>
             ) : (

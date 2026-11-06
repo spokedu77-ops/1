@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
+import { getBillingConfigurationError } from './app/lib/server/spokeduMasterBillingConfiguration';
 
 const nextConfig: NextConfig = {
+  env: {
+    // Publish deployment identity, never infer preview from a login flag.
+    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV
+      ?? (process.env.NODE_ENV === 'production' ? 'production' : 'development'),
+  },
   // Different Supabase environments must never share compiled client bundles.
   distDir: process.env.SPOKEDU_LOCAL_INTEGRATION === '1' ? '.next-local-integration' : '.next',
   // Playwright·loopback QA uses 127.0.0.1; without this, Next dev blocks HMR/dev
@@ -136,6 +143,10 @@ const nextConfig: NextConfig = {
   // YouTube/Vimeo embed 허용. "www.youtube.com에서 연결을 거부했습니다" 방지 (CSP frame-src만 추가)
   async headers() {
     return [
+      ...['/spokedu-lab/payment/:path*', '/spokedu-master/payment/:path*'].map((source) => ({
+        source,
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      })),
       // Internal/authenticated surfaces must not become search results. This
       // HTTP directive also covers client-only layouts that cannot export
       // Next.js metadata.
@@ -180,4 +191,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function configureNext(phase: string): NextConfig {
+  // Refuse an incomplete production rollout while the current deployment keeps
+  // serving. Do not print credentials or require live keys in offline CI builds.
+  if (phase === PHASE_PRODUCTION_BUILD && process.env.VERCEL_ENV === 'production') {
+    const error = getBillingConfigurationError();
+    if (error) throw new Error(`SPOKEDU billing production configuration: ${error}`);
+  }
+  return nextConfig;
+}

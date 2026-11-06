@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { isLedgerWriteMode } from '@/app/lib/equipment/writeMode';
-import { fetchEquipmentLegacyImportStatus, fetchLegacyInventory } from '@/app/lib/equipment/legacyReads';
+import {
+  fetchEquipmentLegacyImportStatus,
+  fetchLegacyCatalog,
+  fetchLegacyInventory,
+} from '@/app/lib/equipment/legacyReads';
+import {
+  loadLegacyImportPlanForRead,
+  teacherMappedLegacyPreview,
+  teacherPendingLegacyItems,
+} from '@/app/lib/equipment/legacyImportSync';
 import { isEquipmentLedgerSchemaReady } from '@/app/lib/equipment/schemaReady';
 
 export async function GET() {
@@ -90,15 +99,61 @@ export async function GET() {
     byTeacher.set(id, cur);
   }
 
+  const activeCatalogByTeacher = new Map<string, Set<number>>();
+  const { data: activeRentals, error: arErr } = await service
+    .from('equipment_rentals')
+    .select('teacher_id, catalog_id')
+    .eq('status', 'active')
+    .gt('qty_outstanding', 0);
+  if (arErr) {
+    return NextResponse.json({ error: '대여 집계를 불러오지 못했습니다.' }, { status: 500 });
+  }
+  for (const row of activeRentals ?? []) {
+    const id = String(row.teacher_id);
+    const set = activeCatalogByTeacher.get(id) ?? new Set<number>();
+    set.add(row.catalog_id);
+    activeCatalogByTeacher.set(id, set);
+  }
+
   try {
+    const sync = await loadLegacyImportPlanForRead(service);
+    const catalog = await fetchLegacyCatalog(service);
+    const catalogNames = new Map(catalog.map((c) => [c.catalog_id, c.name]));
     const legacy = await fetchEquipmentLegacyImportStatus(service);
-    for (const row of legacy.unmigrated_items) {
-      const cur = byTeacher.get(row.user_id) ?? { sku_count: 0, total_held: 0, lines: 0 };
-      cur.total_held += Number(row.quantity) || 0;
-      byTeacher.set(row.user_id, cur);
+    const unmigratedIds = new Set(legacy.unmigrated_items.map((row) => Number(row.id)));
+    const unimportedPlan = {
+      ...sync.plan,
+      rows: sync.plan.rows.filter((row) => unmigratedIds.has(row.inventory_id)),
+    };
+    for (const teacher of teachers ?? []) {
+      const cur = byTeacher.get(teacher.id) ?? { sku_count: 0, total_held: 0, lines: 0 };
+
+      for (const item of teacherPendingLegacyItems(unimportedPlan, teacher.id)) {
+        cur.sku_count += 1;
+        cur.total_held += Number(item.quantity) || 0;
+      }
+
+      for (const p of teacherMappedLegacyPreview(unimportedPlan, teacher.id, catalogNames).filter(
+        (row) => !activeCatalogByTeacher.get(teacher.id)?.has(row.catalog_id),
+      )) {
+        cur.sku_count += 1;
+        cur.total_held += Number(p.quantity) || 0;
+      }
+
+      byTeacher.set(teacher.id, cur);
     }
   } catch {
-    return NextResponse.json({ error: '기존 보유 집계를 불러오지 못했습니다.' }, { status: 500 });
+    try {
+      const legacy = await fetchEquipmentLegacyImportStatus(service);
+      for (const row of legacy.unmigrated_items) {
+        const cur = byTeacher.get(row.user_id) ?? { sku_count: 0, total_held: 0, lines: 0 };
+        cur.sku_count += 1;
+        cur.total_held += Number(row.quantity) || 0;
+        byTeacher.set(row.user_id, cur);
+      }
+    } catch {
+      return NextResponse.json({ error: '기존 보유 집계를 불러오지 못했습니다.' }, { status: 500 });
+    }
   }
 
   const items = (teachers ?? []).map((t) => ({

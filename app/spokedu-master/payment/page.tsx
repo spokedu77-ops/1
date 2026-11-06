@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, Lock, Mail, Shield } from 'lucide-react';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { toMasterClientError } from '../lib/clientErrors';
@@ -25,15 +25,8 @@ import {
 import { buildMasterGateDisplayModel, readMasterGateContextFromSearchParams, type MasterGateContext } from '../lib/masterGateIntent';
 import { buildMasterLoginHref } from '../lib/masterLoginReturn';
 import { isTossClientKeyAllowed } from './tossClientKey';
+import type { TossPaymentsSDK } from '@tosspayments/tosspayments-sdk';
 import { trackMasterFunnelEvent } from '../lib/funnelEvents';
-
-declare global {
-  interface Window {
-    TossPayments?: (clientKey: string) => {
-      requestBillingAuth: (method: string, options: Record<string, unknown>) => void;
-    };
-  }
-}
 
 type PaidPlanId = 'lite' | 'premium';
 
@@ -179,9 +172,11 @@ function PaymentContent() {
   const [workingPlan, setWorkingPlan] = useState<PaidPlanId | null>(null);
   const [error, setError] = useState('');
   const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
-  const reviewDeployment = process.env.NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED === 'true' ? 'preview' : undefined;
+  const reviewDeployment = process.env.NEXT_PUBLIC_VERCEL_ENV;
   const tossClientKeyAllowed = isTossClientKeyAllowed(tossClientKey, process.env.NODE_ENV, reviewDeployment);
   const [tossSdkStatus, setTossSdkStatus] = useState<TossSdkStatus>(tossClientKeyAllowed ? 'loading' : 'missing-config');
+  const tossSdk = useRef<TossPaymentsSDK | null>(null);
+  const checkoutLocked = useRef(false);
   const directProducts = useMemo(() => getDirectPurchaseMasterProducts(), []);
   const selectedProduct = MASTER_PRODUCT_CATALOG[selectedPlan];
   const subscriptionDisplay = getSubscriptionDisplaySummary(subscription);
@@ -199,30 +194,18 @@ function PaymentContent() {
       setTossSdkStatus('missing-config');
       return;
     }
-    if (window.TossPayments) {
-      setTossSdkStatus('ready');
-      return;
-    }
-    const script = document.querySelector<HTMLScriptElement>('script[data-toss-payments="true"]');
-    const nextScript = script ?? document.createElement('script');
-    const handleLoad = () => setTossSdkStatus(window.TossPayments ? 'ready' : 'load-error');
-    const handleError = () => setTossSdkStatus('load-error');
+    let disposed = false;
     const timeoutId = window.setTimeout(() => {
-      setTossSdkStatus((current) => current === 'loading' ? 'load-error' : current);
+      if (!disposed) setTossSdkStatus((current) => current === 'loading' ? 'load-error' : current);
     }, 8000);
-    nextScript.addEventListener('load', handleLoad);
-    nextScript.addEventListener('error', handleError);
-    if (!script) {
-      nextScript.src = 'https://js.tosspayments.com/v1';
-      nextScript.dataset.tossPayments = 'true';
-      document.head.appendChild(nextScript);
-    }
-    return () => {
-      window.clearTimeout(timeoutId);
-      nextScript.removeEventListener('load', handleLoad);
-      nextScript.removeEventListener('error', handleError);
-    };
-  }, [tossClientKeyAllowed]);
+    void import('@tosspayments/tosspayments-sdk')
+      .then(({ loadTossPayments }) => loadTossPayments(tossClientKey))
+      .then((sdk) => {
+        if (!disposed) { tossSdk.current = sdk; setTossSdkStatus('ready'); }
+      })
+      .catch(() => { if (!disposed) setTossSdkStatus('load-error'); });
+    return () => { disposed = true; window.clearTimeout(timeoutId); };
+  }, [tossClientKey, tossClientKeyAllowed]);
 
   useEffect(() => {
     const load = async () => {
@@ -258,10 +241,15 @@ function PaymentContent() {
   }, []);
 
   const startBillingAuth = async (plan: PaidPlanId) => {
+    if (checkoutLocked.current) return;
     setSelectedPlan(plan);
     setError('');
     if (!userId) {
       setError('결제를 시작하려면 먼저 로그인해 주세요.');
+      return;
+    }
+    if (!subscription) {
+      setError('이용권 상태를 확인하지 못했습니다. 새로고침 후 다시 시도해 주세요.');
       return;
     }
     if (!gateContext.allowedPlans.includes(plan)) {
@@ -281,6 +269,7 @@ function PaymentContent() {
         setError('업그레이드 결제 금액을 확인하는 중입니다. 잠시 후 다시 시도해 주세요.');
         return;
       }
+      checkoutLocked.current = true;
       setWorkingPlan(plan);
       try {
         trackMasterFunnelEvent('checkout_started', { surface: 'payment', plan });
@@ -293,6 +282,7 @@ function PaymentContent() {
         window.location.assign('/spokedu-lab/subscription?upgraded=1');
       } catch (upgradeError) {
         setError(upgradeError instanceof Error ? upgradeError.message : '업그레이드 결제에 실패했습니다.');
+        checkoutLocked.current = false;
         setWorkingPlan(null);
       }
       return;
@@ -306,11 +296,10 @@ function PaymentContent() {
       setError('결제 모듈을 불러오지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.');
       return;
     }
-    if (tossSdkStatus !== 'ready' || !window.TossPayments) {
+    if (tossSdkStatus !== 'ready' || !tossSdk.current) {
       setError('결제 모듈을 준비하고 있습니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
-    const customerKey = buildCustomerKey(userId);
     const successUrl = new URL('/spokedu-lab/payment/success', window.location.origin);
     successUrl.searchParams.set('plan', plan);
     appendGateContext(successUrl.searchParams, gateContext);
@@ -318,19 +307,32 @@ function PaymentContent() {
     failUrl.searchParams.set('plan', plan);
     appendGateContext(failUrl.searchParams, gateContext);
 
+    checkoutLocked.current = true;
     setWorkingPlan(plan);
+    let stage = 'prepare';
     try {
-      trackMasterFunnelEvent('checkout_started', { surface: 'payment', plan });
-      window.TossPayments(tossClientKey).requestBillingAuth('카드', {
-        customerKey,
-        successUrl: successUrl.toString(),
-        failUrl: failUrl.toString(),
+      const response = await fetch('/api/spokedu-master/payment/billing/prepare', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ planId: plan, clientKey: tossClientKey }),
       });
-    } catch {
-      setError('결제창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      const prepared = await response.json() as { customerKey?: string; error?: string; code?: string };
+      if (!response.ok || !prepared.customerKey) {
+        setError(`${prepared.error ?? '결제를 준비하지 못했습니다.'} [prepare / ${prepared.code ?? response.status}]`);
+        return;
+      }
+      stage = 'billing_auth';
+      trackMasterFunnelEvent('checkout_started', { surface: 'payment', plan });
+      const payment = tossSdk.current.payment({ customerKey: prepared.customerKey });
+      await payment.requestBillingAuth({
+        method: 'CARD', successUrl: successUrl.toString(), failUrl: failUrl.toString(),
+      });
+    } catch (cause) {
+      const code = cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string'
+        && /^[A-Z0-9_]{1,80}$/.test(cause.code) ? cause.code : 'MODULE_OR_NETWORK_ERROR';
+      setError(`${code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED' ? '카드 등록을 취소했습니다.' : '결제창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.'} [${stage} / ${code}]`);
     } finally {
-      // Toss auth UI is non-blocking; clear lock so cancel/return can retry.
-      window.setTimeout(() => setWorkingPlan(null), 1200);
+      checkoutLocked.current = false;
+      setWorkingPlan(null);
     }
   };
 
@@ -438,7 +440,7 @@ function PaymentContent() {
                 const planId = product.serverPlanKey as PaidPlanId;
                 const planAllowedForIntent = gateContext.allowedPlans.includes(planId);
                 const sdkReadyForPlan = paymentPageMode === 'liteUpgrade' || tossSdkStatus === 'ready';
-                const canCheckout = planAllowedForIntent && canStartPaidPlanCheckout(subscription, planId) && sdkReadyForPlan;
+                const canCheckout = subscription !== null && workingPlan === null && planAllowedForIntent && canStartPaidPlanCheckout(subscription, planId) && sdkReadyForPlan;
                 return (
                   <PlanCard
                     key={product.id}

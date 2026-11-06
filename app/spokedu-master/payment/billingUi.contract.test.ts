@@ -31,7 +31,10 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
 
   it('starts Toss billing auth instead of one-time checkout and sends no client amount', () => {
     expect(payment).toContain('requestBillingAuth');
-    expect(payment).toContain("process.env.NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED === 'true' ? 'preview' : undefined");
+    expect(payment).not.toContain('NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED');
+    expect(payment).toContain('@tosspayments/tosspayments-sdk');
+    expect(payment).not.toContain('https://js.tosspayments.com/v1');
+    expect(payment).toContain("method: 'CARD'");
     expect(payment).toContain('isTossClientKeyAllowed(tossClientKey, process.env.NODE_ENV, reviewDeployment)');
     expect(payment).toContain("type TossSdkStatus = 'loading' | 'ready' | 'missing-config' | 'load-error'");
     expect(payment).toContain('결제 설정이 완료되지 않아 지금은 결제를 시작할 수 없습니다.');
@@ -88,7 +91,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(cancel).toContain('카카오톡 고객센터');
     expect(success).toContain('완료 전에는 이용권이 활성화되지 않습니다.');
     expect(success).toContain('결제 인증이 취소되었거나 처리 중 오류가 발생했습니다.');
-    expect(success).toContain('hasMasterEntitlement');
+    expect(success).toContain('isPaidPaymentActivated');
+    expect(read('app/spokedu-master/payment/paymentActivation.ts')).toContain('hasMasterEntitlement');
     expect(success).toContain('/api/spokedu-master/profile');
     expect(success).toContain("setStatus('unknown')");
     expect(success).toContain('response.status >= 500');

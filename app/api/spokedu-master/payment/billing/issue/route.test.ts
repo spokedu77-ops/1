@@ -48,6 +48,11 @@ vi.mock('@/app/lib/monitoring/errorReporter', () => ({
   reportError: mocks.reportError,
 }));
 
+import { BILLING_INTENT_COOKIE, createBillingIntent } from '@/app/lib/server/spokeduMasterBillingIntent';
+
+beforeEach(() => vi.stubEnv('TOSS_SECRET_KEY', 'test_sk_fixture'));
+afterEach(() => vi.unstubAllEnvs());
+
 import { POST } from './route';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -59,32 +64,40 @@ type State = {
 };
 
 function installService(state: State) {
+  if (state.order) state.order = { user_id: USER_ID, applied_at: null, ...state.order };
   const service = {
     from(table: string) {
       const filters: Record<string, unknown> = {};
+      const predicates: Array<(row: Record<string, unknown>) => boolean> = [];
       let updatePatch: Record<string, unknown> | null = null;
+      const matches = (row: Record<string, unknown>) => Object.entries(filters).every(([key, value]) => row[key] === value) && predicates.every((test) => test(row));
       const query = {
         select() { return query; },
         eq(column: string, value: unknown) { filters[column] = value; return query; },
-        in() { return query; },
+        in(column: string, values: unknown[]) { predicates.push((row) => values.includes(row[column])); return query; },
+        is(column: string, value: unknown) { predicates.push((row) => (row[column] ?? null) === value); return query; },
+        like(column: string, value: string) { predicates.push((row) => String(row[column] ?? '').startsWith(value.replace(/%$/, ''))); return query; },
+        not(column: string, _operator: string, value: string) { predicates.push((row) => !String(row[column] ?? '').startsWith(value.replace(/%$/, ''))); return query; },
+        order() { return query; },
+        limit() { return query; },
         lt() { return query; },
         async maybeSingle() {
           if (table === 'spokedu_master_subscriptions') return { data: state.subscription, error: null };
           if (table === 'spokedu_master_payment_orders') {
             if (!state.order) return { data: null, error: null };
-            if (filters.order_id && state.order.order_id !== filters.order_id) return { data: null, error: null };
-            if (filters.billing_cycle_key && state.order.billing_cycle_key !== filters.billing_cycle_key) return { data: null, error: null };
+            if (!matches(state.order)) return { data: null, error: null };
+            if (updatePatch) state.order = { ...state.order, ...updatePatch };
             return { data: state.order, error: null };
           }
           return { data: null, error: null };
         },
         async insert(payload: Record<string, unknown>) {
-          state.order = { ...payload };
+          state.order = { charge_state: 'unattempted', applied_at: null, ...payload };
           return { error: null };
         },
         update(payload: Record<string, unknown>) { updatePatch = payload; return query; },
         then(resolve: (value: { data?: unknown; error: null }) => unknown) {
-          if (updatePatch && table === 'spokedu_master_payment_orders' && state.order) {
+          if (updatePatch && table === 'spokedu_master_payment_orders' && state.order && matches(state.order)) {
             state.order = { ...state.order, ...updatePatch };
           }
           return Promise.resolve(resolve({ data: null, error: null }));
@@ -99,7 +112,7 @@ function installService(state: State) {
 function request(body: Record<string, unknown>) {
   return new Request('https://example.test/api/spokedu-master/payment/billing/issue', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', cookie: `${BILLING_INTENT_COOKIE}=${createBillingIntent({ userId: USER_ID, plan: body.planId === 'premium' ? 'premium' : 'lite', customerKey: String(body.customerKey ?? '') })}` },
     body: JSON.stringify(body),
   });
 }
@@ -156,6 +169,7 @@ describe('billing issue recoverable charge flow', () => {
     expect(mocks.deleteKey).not.toHaveBeenCalled();
     expect(mocks.pay).toHaveBeenCalledTimes(1);
 
+    mocks.findPayment.mockResolvedValue({ paymentKey: 'payment-key-charged', approvedAt: '2026-08-22T00:00:00.000Z' });
     const second = await POST(request({
       planId: 'premium',
       amount: 28900,
@@ -238,6 +252,78 @@ describe('billing issue plan policy', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('rejects a plan changed after the server signed the checkout', async () => {
+    installService({ subscription: null, order: null });
+    const signed = request({ planId: 'lite', customerKey });
+    const tampered = new Request(signed.url, { method: 'POST', headers: signed.headers,
+      body: JSON.stringify({ planId: 'premium', customerKey, authKey: 'fixture-auth' }) });
+    const response = await POST(tampered);
+    expect(response.status).toBe(400); expect(await response.json()).toMatchObject({ code: 'billing_intent_invalid' });
+    expect(mocks.pay).not.toHaveBeenCalled();
+  });
+
+  it('does not resubmit an uncertain charge even when provider lookup returns no payment', async () => {
+    const state: State = { subscription: null, order: { order_id: 'spm-lite-initial-uncertain', plan: 'lite',
+      billing_cycle_key: `initial:${USER_ID}:checkout:0`, status: 'recoverable_failed', payment_key: null, charge_state: 'outcome_unknown' } };
+    installService(state);
+    const response = await POST(request({ planId: 'lite', customerKey, authKey: 'fresh-auth' }));
+    expect(response.status).toBe(409); expect(await response.json()).toMatchObject({ recoverable: true });
+    expect(mocks.issueBillingKey).not.toHaveBeenCalled(); expect(mocks.pay).not.toHaveBeenCalled();
+  });
+
+  it('uses the same stable shared checkout cycle after expiry', async () => {
+    const state: State = { subscription: { ...litePeriod, status: 'expired', current_period_end: '2026-08-01T00:00:00.000Z' }, order: null };
+    installService(state);
+    mocks.issueBillingKey.mockResolvedValue({ billingKey: 'new-key', customerKey }); mocks.storeKey.mockResolvedValue(SECRET_ID);
+    await POST(request({ planId: 'premium', customerKey, authKey: 'auth-key' }));
+    expect(state.order?.billing_cycle_key).toBe(`initial:${USER_ID}:checkout:${Date.parse('2026-08-01T00:00:00.000Z')}`);
+  });
+
+  it('recovers a legacy v1 approval using its original cycle and never creates a second charge', async () => {
+    const originalCycle = `initial:${USER_ID}:lite`;
+    const state: State = { subscription: { plan: 'lite', status: 'pending', pending_billing_key_secret_id: SECRET_ID },
+      order: { order_id: 'spm-lite-initial-legacy', plan: 'lite', amount: 9900, status: 'recoverable_failed',
+        payment_key: 'legacy-payment', charge_state: 'approved_unapplied', billing_cycle_key: originalCycle } };
+    installService(state);
+    mocks.findPayment.mockResolvedValue({ paymentKey: 'legacy-payment', approvedAt: '2026-09-19T00:00:00.000Z' });
+    const response = await POST(request({ planId: 'lite', customerKey, authKey: 'new-unused-auth' }));
+    expect(response.status).toBe(200);
+    expect(mocks.pay).not.toHaveBeenCalled(); expect(mocks.issueBillingKey).not.toHaveBeenCalled();
+    expect(mocks.applyPayment).toHaveBeenCalledWith(expect.objectContaining({ billingCycleKey: originalCycle, approvedAt: '2026-09-19T00:00:00.000Z' }));
+    expect(state.order?.order_id).toBe('spm-lite-initial-legacy');
+  });
+
+  it('holds an uncertain legacy v1 order even when its old charge state says unattempted', async () => {
+    const state: State = { subscription: null, order: { order_id: 'spm-lite-initial-legacy', plan: 'lite', amount: 9900,
+      status: 'recoverable_failed', payment_key: null, charge_state: 'unattempted', billing_cycle_key: `initial:${USER_ID}:lite` } };
+    installService(state);
+    const response = await POST(request({ planId: 'lite', customerKey, authKey: 'new-unused-auth' }));
+    expect(response.status).toBe(409); expect(mocks.pay).not.toHaveBeenCalled();
+    expect(state.order?.order_id).toBe('spm-lite-initial-legacy');
+  });
+
+  it('keeps the original upgrade amount when recovering after the current proration quote has changed', async () => {
+    const cycle = `upgrade:${USER_ID}:premium:${litePeriod.current_period_end}`;
+    const state: State = { subscription: { ...litePeriod }, order: { order_id: 'spm-premium-initial-recovery', plan: 'premium',
+      amount: 10000, status: 'recoverable_failed', payment_key: 'old-upgrade-payment', charge_state: 'approved_unapplied', billing_cycle_key: cycle } };
+    installService(state);
+    mocks.findPayment.mockResolvedValue({ paymentKey: 'old-upgrade-payment', approvedAt: '2026-09-15T00:00:00.000Z' });
+    expect((await POST(request({ planId: 'premium', customerKey }))).status).toBe(200);
+    expect(mocks.findPayment).toHaveBeenCalledWith(expect.objectContaining({ amount: 10000 }));
+    expect(mocks.applyPayment).toHaveBeenCalledWith(expect.objectContaining({ amount: 10000, source: 'upgrade' }));
+    expect(mocks.pay).not.toHaveBeenCalled();
+  });
+
+  it('rotates a definitively declined order before the user authorizes another attempt', async () => {
+    const state: State = { subscription: null, order: { order_id: 'spm-lite-initial-declined', plan: 'lite', amount: 9900,
+      status: 'failed', payment_key: null, charge_state: 'declined', billing_cycle_key: `initial:${USER_ID}:checkout:0` } };
+    installService(state);
+    mocks.issueBillingKey.mockResolvedValue({ billingKey: 'retry-key', customerKey }); mocks.storeKey.mockResolvedValue(SECRET_ID);
+    expect((await POST(request({ planId: 'lite', customerKey, authKey: 'fresh-auth' }))).status).toBe(200);
+    expect(state.order?.order_id).not.toBe('spm-lite-initial-declined');
+    expect(mocks.pay).toHaveBeenCalledTimes(1);
   });
 
   it('charges the server upgrade quote for active Lite → Premium and ignores a matching client amount', async () => {

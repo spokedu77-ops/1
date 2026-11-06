@@ -113,10 +113,13 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     expect(source).toContain('claimSpokeduMasterBillingOrder');
   });
 
-  it('requires payment success to match the requested plan and the active access plan', () => {
+  it('requires payment success to match the requested billing plan and verified paid access', () => {
     const source = read('app/spokedu-master/payment/success/page.tsx');
     expect(source).toContain('json.plan !== plan');
-    expect(source).toContain('hasMasterEntitlement');
-    expect(source).toContain('isPaidAccessActive');
+    expect(source).toContain('isPaidPaymentActivated');
+    const activation = read('app/spokedu-master/payment/paymentActivation.ts');
+    expect(activation).toContain('hasMasterEntitlement');
+    expect(activation).toContain('billing.billingPlan !== plan');
+    expect(activation).toContain('billing.hasPaidBillingSubscription');
   });
 });

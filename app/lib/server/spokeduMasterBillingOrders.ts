@@ -26,24 +26,29 @@ function staleProcessingCutoffIso(now = Date.now()): string {
 export async function claimSpokeduMasterBillingOrder(input: {
   service: ServiceClient;
   orderId: string;
+  billingCycleKey?: string;
 }): Promise<{ claimed: boolean; error: unknown | null }> {
-  const { data: claimed, error } = await input.service
+  let pendingClaim = input.service
     .from('spokedu_master_payment_orders')
     .update({ status: 'processing', last_error_code: null })
     .eq('order_id', input.orderId)
-    .in('status', ['pending', 'failed', 'recoverable_failed'])
+    .in('status', ['pending', 'failed', 'recoverable_failed']);
+  if (input.billingCycleKey) pendingClaim = pendingClaim.eq('billing_cycle_key', input.billingCycleKey);
+  const { data: claimed, error } = await pendingClaim
     .select('order_id')
     .maybeSingle();
 
   if (error) return { claimed: false, error };
   if (claimed) return { claimed: true, error: null };
 
-  const { data: staleClaimed, error: staleError } = await input.service
+  let staleClaim = input.service
     .from('spokedu_master_payment_orders')
     .update({ status: 'processing', last_error_code: null })
     .eq('order_id', input.orderId)
     .eq('status', 'processing')
-    .lt('updated_at', staleProcessingCutoffIso())
+    .lt('updated_at', staleProcessingCutoffIso());
+  if (input.billingCycleKey) staleClaim = staleClaim.eq('billing_cycle_key', input.billingCycleKey);
+  const { data: staleClaimed, error: staleError } = await staleClaim
     .select('order_id')
     .maybeSingle();
 
@@ -53,13 +58,15 @@ export async function claimSpokeduMasterBillingOrder(input: {
   // A provider-confirmed key may have been stored before the apply RPC failed.
   // Atomically reopen only the inconsistent active-without-applied_at shape;
   // a normally applied active order is never claimable here.
-  const { data: unappliedClaimed, error: unappliedError } = await input.service
+  let unappliedClaim = input.service
     .from('spokedu_master_payment_orders')
     .update({ status: 'processing', last_error_code: null })
     .eq('order_id', input.orderId)
     .eq('status', 'active')
     .not('payment_key', 'is', null)
-    .is('applied_at', null)
+    .is('applied_at', null);
+  if (input.billingCycleKey) unappliedClaim = unappliedClaim.eq('billing_cycle_key', input.billingCycleKey);
+  const { data: unappliedClaimed, error: unappliedError } = await unappliedClaim
     .select('order_id')
     .maybeSingle();
 

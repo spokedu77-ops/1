@@ -110,9 +110,7 @@ export function addOneBillingMonthFromAnchor(date: Date, anchorDay: number): Dat
 
 export function calculateSpokeduMasterPaymentPeriod(approvedAt?: string | null, billingAnchorDay?: number | null) {
   const periodStart = parsePeriodStart(approvedAt);
-  const periodEnd = billingAnchorDay == null
-    ? addOneBillingMonth(periodStart)
-    : addOneBillingMonthFromAnchor(periodStart, billingAnchorDay);
+  const periodEnd = addOneBillingMonthFromAnchor(periodStart, billingAnchorDay ?? deriveSeoulBillingAnchor(periodStart).day);
   return {
     periodStart: periodStart.toISOString(),
     periodEnd: periodEnd.toISOString(),
