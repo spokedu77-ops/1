@@ -1,0 +1,2132 @@
+[
+  {
+    "width": 375,
+    "probes": [
+      {
+        "name": "rail",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 675.15625,
+          "x": 20,
+          "y": 137
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 675.15625,
+          "x": 20,
+          "y": 137
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "hero",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 375,
+          "height": 795.15625,
+          "x": 0,
+          "y": 81
+        },
+        "afterBox": {
+          "width": 375,
+          "height": 795.15625,
+          "x": 0,
+          "y": 81
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "h1",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 103.5,
+          "x": 20,
+          "y": 195.09375
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 103.5,
+          "x": 20,
+          "y": 195.09375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 592.15625
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 592.15625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 592.15625
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 592.15625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroActions",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 120,
+          "x": 20,
+          "y": 432.15625
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 120,
+          "x": 20,
+          "y": 432.15625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickGrid",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 1117.84375,
+          "x": 20,
+          "y": 1127.828125
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 1117.84375,
+          "x": 20,
+          "y": 1127.828125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 359.28125,
+          "x": 20,
+          "y": 1127.828125
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 359.28125,
+          "x": 20,
+          "y": 1127.828125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickIcon",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 56,
+          "height": 56,
+          "x": 49,
+          "y": 1156.828125
+        },
+        "afterBox": {
+          "width": 56,
+          "height": 56,
+          "x": 49,
+          "y": 1156.828125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 184,
+          "height": 33,
+          "x": 49,
+          "y": 1272.921875
+        },
+        "afterBox": {
+          "width": 184,
+          "height": 33,
+          "x": 49,
+          "y": 1272.921875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyRow",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 797.171875,
+          "x": 20,
+          "y": 2373.671875
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 698,
+          "x": 20,
+          "y": 2373.671875
+        },
+        "sizeEqual": false,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 84,
+          "x": 20,
+          "y": 2429.671875
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 84,
+          "x": 20,
+          "y": 2429.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 74,
+          "x": 20,
+          "y": 2489.671875
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 74,
+          "x": 20,
+          "y": 2489.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 251.25,
+          "x": 20,
+          "y": 2919.59375
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 251.25,
+          "x": 20,
+          "y": 2820.421875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metrics",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 272.25,
+          "x": 20,
+          "y": 4811.40625
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 272.25,
+          "x": 20,
+          "y": 6881.515625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 159.5,
+          "height": 37.9375,
+          "x": 20,
+          "y": 4823.40625
+        },
+        "afterBox": {
+          "width": 159.5,
+          "height": 37.9375,
+          "x": 20,
+          "y": 6893.515625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricLabel",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 159.5,
+          "height": 44.1875,
+          "x": 20,
+          "y": 4875.34375
+        },
+        "afterBox": {
+          "width": 159.5,
+          "height": 44.1875,
+          "x": 20,
+          "y": 6945.453125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 522.78125,
+          "x": 20,
+          "y": 5366.9375
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 522.78125,
+          "x": 20,
+          "y": 7447.828125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 5366.9375
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 7447.828125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "cta",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 335,
+          "height": 461.953125,
+          "x": 20,
+          "y": 7144.78125
+        },
+        "afterBox": {
+          "width": 335,
+          "height": 461.953125,
+          "x": 20,
+          "y": 9200.171875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 291,
+          "height": 104.390625,
+          "x": 42,
+          "y": 7192.78125
+        },
+        "afterBox": {
+          "width": 291,
+          "height": 104.390625,
+          "x": 42,
+          "y": 9248.171875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaButton",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 291,
+          "height": 54,
+          "x": 42,
+          "y": 7434.734375
+        },
+        "afterBox": {
+          "width": 291,
+          "height": 54,
+          "x": 42,
+          "y": 9490.125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      }
+    ],
+    "quickCardsAligned": true,
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "width": 768,
+    "probes": [
+      {
+        "name": "rail",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 902.546875,
+          "x": 24,
+          "y": 169
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 902.546875,
+          "x": 24,
+          "y": 169
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "hero",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 768,
+          "height": 1086.546875,
+          "x": 0,
+          "y": 81
+        },
+        "afterBox": {
+          "width": 768,
+          "height": 1086.546875,
+          "x": 0,
+          "y": 81
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "h1",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 127.265625,
+          "x": 24,
+          "y": 235.09375
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 127.265625,
+          "x": 24,
+          "y": 235.09375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 480,
+          "x": 24,
+          "y": 591.546875
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 480,
+          "x": 24,
+          "y": 591.546875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 480,
+          "x": 24,
+          "y": 591.546875
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 480,
+          "x": 24,
+          "y": 591.546875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroActions",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 52,
+          "x": 24,
+          "y": 475.546875
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 52,
+          "x": 24,
+          "y": 475.546875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickGrid",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 379.078125,
+          "x": 24,
+          "y": 1420.625
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 407.875,
+          "x": 24,
+          "y": 1420.625
+        },
+        "sizeEqual": false,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 228,
+          "height": 379.078125,
+          "x": 24,
+          "y": 1420.625
+        },
+        "afterBox": {
+          "width": 228,
+          "height": 407.875,
+          "x": 24,
+          "y": 1420.625
+        },
+        "sizeEqual": false,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickIcon",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 56,
+          "height": 56,
+          "x": 49,
+          "y": 1445.625
+        },
+        "afterBox": {
+          "width": 56,
+          "height": 56,
+          "x": 49,
+          "y": 1445.625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 167.265625,
+          "height": 30,
+          "x": 49,
+          "y": 1561.71875
+        },
+        "afterBox": {
+          "width": 167.265625,
+          "height": 30,
+          "x": 49,
+          "y": 1561.71875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyRow",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 579.921875,
+          "x": 24,
+          "y": 1903.703125
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 480.75,
+          "x": 24,
+          "y": 1932.5
+        },
+        "sizeEqual": false,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 342,
+          "height": 100,
+          "x": 24,
+          "y": 2007.703125
+        },
+        "afterBox": {
+          "width": 342,
+          "height": 100,
+          "x": 24,
+          "y": 2036.5
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 342,
+          "height": 80,
+          "x": 24,
+          "y": 2083.703125
+        },
+        "afterBox": {
+          "width": 342,
+          "height": 80,
+          "x": 24,
+          "y": 2112.5
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 342,
+          "height": 256.5,
+          "x": 402,
+          "y": 2117.40625
+        },
+        "afterBox": {
+          "width": 342,
+          "height": 256.5,
+          "x": 402,
+          "y": 2096.625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metrics",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 147.578125,
+          "x": 24,
+          "y": 3729.6875
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 147.578125,
+          "x": 24,
+          "y": 5001.046875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 156,
+          "height": 55.1875,
+          "x": 24,
+          "y": 3741.6875
+        },
+        "afterBox": {
+          "width": 156,
+          "height": 55.1875,
+          "x": 24,
+          "y": 5013.046875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricLabel",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 156,
+          "height": 54.390625,
+          "x": 24,
+          "y": 3810.875
+        },
+        "afterBox": {
+          "width": 156,
+          "height": 54.390625,
+          "x": 24,
+          "y": 5082.234375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 346,
+          "height": 578.28125,
+          "x": 24,
+          "y": 4152.75
+        },
+        "afterBox": {
+          "width": 346,
+          "height": 552.78125,
+          "x": 24,
+          "y": 5381.5
+        },
+        "sizeEqual": false,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 346,
+          "height": 220,
+          "x": 24,
+          "y": 4152.75
+        },
+        "afterBox": {
+          "width": 346,
+          "height": 220,
+          "x": 24,
+          "y": 5381.5
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "cta",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 720,
+          "height": 359.46875,
+          "x": 24,
+          "y": 5503.8125
+        },
+        "afterBox": {
+          "width": 720,
+          "height": 359.46875,
+          "x": 24,
+          "y": 6707.0625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 656,
+          "height": 78.28125,
+          "x": 56,
+          "y": 5575.8125
+        },
+        "afterBox": {
+          "width": 656,
+          "height": 78.28125,
+          "x": 56,
+          "y": 6779.0625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaButton",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 198,
+          "height": 54,
+          "x": 169.71875,
+          "y": 5737.28125
+        },
+        "afterBox": {
+          "width": 198,
+          "height": 54,
+          "x": 169.71875,
+          "y": 6940.53125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      }
+    ],
+    "quickCardsAligned": true,
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "width": 1024,
+    "probes": [
+      {
+        "name": "rail",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 976,
+          "height": 944.96875,
+          "x": 24,
+          "y": 169
+        },
+        "afterBox": {
+          "width": 976,
+          "height": 944.96875,
+          "x": 24,
+          "y": 169
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "hero",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1024,
+          "height": 1128.96875,
+          "x": 0,
+          "y": 81
+        },
+        "afterBox": {
+          "width": 1024,
+          "height": 1128.96875,
+          "x": 0,
+          "y": 81
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "h1",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 976,
+          "height": 169.6875,
+          "x": 24,
+          "y": 235.09375
+        },
+        "afterBox": {
+          "width": 976,
+          "height": 169.6875,
+          "x": 24,
+          "y": 235.09375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 960,
+          "height": 480,
+          "x": 32,
+          "y": 633.96875
+        },
+        "afterBox": {
+          "width": 960,
+          "height": 480,
+          "x": 32,
+          "y": 633.96875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 960,
+          "height": 480,
+          "x": 32,
+          "y": 633.96875
+        },
+        "afterBox": {
+          "width": 960,
+          "height": 480,
+          "x": 32,
+          "y": 633.96875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroActions",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 976,
+          "height": 52,
+          "x": 24,
+          "y": 517.96875
+        },
+        "afterBox": {
+          "width": 976,
+          "height": 52,
+          "x": 24,
+          "y": 517.96875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickGrid",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 976,
+          "height": 370.78125,
+          "x": 24,
+          "y": 1469.65625
+        },
+        "afterBox": {
+          "width": 976,
+          "height": 370.78125,
+          "x": 24,
+          "y": 1469.65625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 306.65625,
+          "height": 370.78125,
+          "x": 24,
+          "y": 1469.65625
+        },
+        "afterBox": {
+          "width": 306.65625,
+          "height": 370.78125,
+          "x": 24,
+          "y": 1469.65625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickIcon",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 56,
+          "height": 56,
+          "x": 57,
+          "y": 1502.65625
+        },
+        "afterBox": {
+          "width": 56,
+          "height": 56,
+          "x": 57,
+          "y": 1502.65625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 57,
+          "y": 1618.75
+        },
+        "afterBox": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 57,
+          "y": 1618.75
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyRow",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 976,
+          "height": 511.140625,
+          "x": 24,
+          "y": 1944.4375
+        },
+        "afterBox": {
+          "width": 976,
+          "height": 450.359375,
+          "x": 24,
+          "y": 1944.4375
+        },
+        "sizeEqual": false,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 456,
+          "height": 100,
+          "x": 24,
+          "y": 2048.4375
+        },
+        "afterBox": {
+          "width": 456,
+          "height": 100,
+          "x": 24,
+          "y": 2048.4375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 456,
+          "height": 80,
+          "x": 24,
+          "y": 2124.4375
+        },
+        "afterBox": {
+          "width": 456,
+          "height": 80,
+          "x": 24,
+          "y": 2124.4375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 456,
+          "height": 342,
+          "x": 544,
+          "y": 2081
+        },
+        "afterBox": {
+          "width": 456,
+          "height": 342,
+          "x": 544,
+          "y": 2050.609375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metrics",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 976,
+          "height": 147.578125,
+          "x": 24,
+          "y": 3640.859375
+        },
+        "afterBox": {
+          "width": 976,
+          "height": 147.578125,
+          "x": 24,
+          "y": 4828.953125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 220,
+          "height": 55.1875,
+          "x": 24,
+          "y": 3652.859375
+        },
+        "afterBox": {
+          "width": 220,
+          "height": 55.1875,
+          "x": 24,
+          "y": 4840.953125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricLabel",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 220,
+          "height": 54.390625,
+          "x": 24,
+          "y": 3722.046875
+        },
+        "afterBox": {
+          "width": 220,
+          "height": 54.390625,
+          "x": 24,
+          "y": 4910.140625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 306.65625,
+          "height": 600.375,
+          "x": 24,
+          "y": 4070.53125
+        },
+        "afterBox": {
+          "width": 306.65625,
+          "height": 600.375,
+          "x": 24,
+          "y": 5168.21875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 306.65625,
+          "height": 220,
+          "x": 24,
+          "y": 4070.53125
+        },
+        "afterBox": {
+          "width": 306.65625,
+          "height": 220,
+          "x": 24,
+          "y": 5168.21875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "cta",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 976,
+          "height": 376.1875,
+          "x": 24,
+          "y": 4862.90625
+        },
+        "afterBox": {
+          "width": 976,
+          "height": 376.1875,
+          "x": 24,
+          "y": 5960.59375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 912,
+          "height": 95,
+          "x": 56,
+          "y": 4934.90625
+        },
+        "afterBox": {
+          "width": 912,
+          "height": 95,
+          "x": 56,
+          "y": 6032.59375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaButton",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 198,
+          "height": 54,
+          "x": 297.71875,
+          "y": 5113.09375
+        },
+        "afterBox": {
+          "width": 198,
+          "height": 54,
+          "x": 297.71875,
+          "y": 6210.78125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      }
+    ],
+    "quickCardsAligned": true,
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "width": 1440,
+    "probes": [
+      {
+        "name": "rail",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 993.671875,
+          "x": 128,
+          "y": 169
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 993.671875,
+          "x": 128,
+          "y": 169
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "hero",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1440,
+          "height": 1177.671875,
+          "x": 0,
+          "y": 81
+        },
+        "afterBox": {
+          "width": 1440,
+          "height": 1177.671875,
+          "x": 0,
+          "y": 81
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "h1",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1040,
+          "height": 218.390625,
+          "x": 200,
+          "y": 235.09375
+        },
+        "afterBox": {
+          "width": 1040,
+          "height": 218.390625,
+          "x": 200,
+          "y": 235.09375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 960,
+          "height": 480,
+          "x": 240,
+          "y": 682.671875
+        },
+        "afterBox": {
+          "width": 960,
+          "height": 480,
+          "x": 240,
+          "y": 682.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 960,
+          "height": 480,
+          "x": 240,
+          "y": 682.671875
+        },
+        "afterBox": {
+          "width": 960,
+          "height": 480,
+          "x": 240,
+          "y": 682.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroActions",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 52,
+          "x": 128,
+          "y": 566.671875
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 52,
+          "x": 128,
+          "y": 566.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickGrid",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 370.78125,
+          "x": 128,
+          "y": 1525.75
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 370.78125,
+          "x": 128,
+          "y": 1525.75
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 376,
+          "height": 370.78125,
+          "x": 128,
+          "y": 1525.75
+        },
+        "afterBox": {
+          "width": 376,
+          "height": 370.78125,
+          "x": 128,
+          "y": 1525.75
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickIcon",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 56,
+          "height": 56,
+          "x": 161,
+          "y": 1558.75
+        },
+        "afterBox": {
+          "width": 56,
+          "height": 56,
+          "x": 161,
+          "y": 1558.75
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 161,
+          "y": 1674.84375
+        },
+        "afterBox": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 161,
+          "y": 1674.84375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyRow",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 524,
+          "x": 128,
+          "y": 2000.53125
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 524,
+          "x": 128,
+          "y": 2000.53125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 560,
+          "height": 100,
+          "x": 128,
+          "y": 2114.15625
+        },
+        "afterBox": {
+          "width": 560,
+          "height": 100,
+          "x": 128,
+          "y": 2129.34375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 560,
+          "height": 104,
+          "x": 128,
+          "y": 2190.15625
+        },
+        "afterBox": {
+          "width": 560,
+          "height": 104,
+          "x": 128,
+          "y": 2205.34375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 560,
+          "height": 420,
+          "x": 752,
+          "y": 2104.53125
+        },
+        "afterBox": {
+          "width": 560,
+          "height": 420,
+          "x": 752,
+          "y": 2104.53125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metrics",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 165.984375,
+          "x": 128,
+          "y": 3733.53125
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 165.984375,
+          "x": 128,
+          "y": 5150.578125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 272,
+          "height": 73.59375,
+          "x": 128,
+          "y": 3745.53125
+        },
+        "afterBox": {
+          "width": 272,
+          "height": 73.59375,
+          "x": 128,
+          "y": 5162.578125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricLabel",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 272,
+          "height": 54.390625,
+          "x": 128,
+          "y": 3833.125
+        },
+        "afterBox": {
+          "width": 272,
+          "height": 54.390625,
+          "x": 128,
+          "y": 5250.171875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 376,
+          "height": 552.78125,
+          "x": 128,
+          "y": 4189
+        },
+        "afterBox": {
+          "width": 376,
+          "height": 552.78125,
+          "x": 128,
+          "y": 5515.640625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 376,
+          "height": 220,
+          "x": 128,
+          "y": 4189
+        },
+        "afterBox": {
+          "width": 376,
+          "height": 220,
+          "x": 128,
+          "y": 5515.640625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "cta",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 408.78125,
+          "x": 128,
+          "y": 4933.78125
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 408.78125,
+          "x": 128,
+          "y": 6260.421875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1050,
+          "height": 127.59375,
+          "x": 195,
+          "y": 5005.78125
+        },
+        "afterBox": {
+          "width": 1050,
+          "height": 127.59375,
+          "x": 195,
+          "y": 6332.421875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaButton",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 198,
+          "height": 54,
+          "x": 505.71875,
+          "y": 5216.5625
+        },
+        "afterBox": {
+          "width": 198,
+          "height": 54,
+          "x": 505.71875,
+          "y": 6543.203125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      }
+    ],
+    "quickCardsAligned": true,
+    "overflow": false,
+    "brokenImages": []
+  },
+  {
+    "width": 1920,
+    "probes": [
+      {
+        "name": "rail",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 993.671875,
+          "x": 368,
+          "y": 169
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 993.671875,
+          "x": 368,
+          "y": 169
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "hero",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1920,
+          "height": 1177.671875,
+          "x": 0,
+          "y": 81
+        },
+        "afterBox": {
+          "width": 1920,
+          "height": 1177.671875,
+          "x": 0,
+          "y": 81
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "h1",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1040,
+          "height": 218.390625,
+          "x": 440,
+          "y": 235.09375
+        },
+        "afterBox": {
+          "width": 1040,
+          "height": 218.390625,
+          "x": 440,
+          "y": 235.09375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 960,
+          "height": 480,
+          "x": 480,
+          "y": 682.671875
+        },
+        "afterBox": {
+          "width": 960,
+          "height": 480,
+          "x": 480,
+          "y": 682.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 960,
+          "height": 480,
+          "x": 480,
+          "y": 682.671875
+        },
+        "afterBox": {
+          "width": 960,
+          "height": 480,
+          "x": 480,
+          "y": 682.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "heroActions",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 52,
+          "x": 368,
+          "y": 566.671875
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 52,
+          "x": 368,
+          "y": 566.671875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickGrid",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 370.78125,
+          "x": 368,
+          "y": 1525.75
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 370.78125,
+          "x": 368,
+          "y": 1525.75
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 376,
+          "height": 370.78125,
+          "x": 368,
+          "y": 1525.75
+        },
+        "afterBox": {
+          "width": 376,
+          "height": 370.78125,
+          "x": 368,
+          "y": 1525.75
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickIcon",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 56,
+          "height": 56,
+          "x": 401,
+          "y": 1558.75
+        },
+        "afterBox": {
+          "width": 56,
+          "height": 56,
+          "x": 401,
+          "y": 1558.75
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "quickTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 401,
+          "y": 1674.84375
+        },
+        "afterBox": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 401,
+          "y": 1674.84375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyRow",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 524,
+          "x": 368,
+          "y": 2000.53125
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 524,
+          "x": 368,
+          "y": 2000.53125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 560,
+          "height": 100,
+          "x": 368,
+          "y": 2114.15625
+        },
+        "afterBox": {
+          "width": 560,
+          "height": 100,
+          "x": 368,
+          "y": 2129.34375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 560,
+          "height": 104,
+          "x": 368,
+          "y": 2190.15625
+        },
+        "afterBox": {
+          "width": 560,
+          "height": 104,
+          "x": 368,
+          "y": 2205.34375
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "whyPhoto",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 560,
+          "height": 420,
+          "x": 992,
+          "y": 2104.53125
+        },
+        "afterBox": {
+          "width": 560,
+          "height": 420,
+          "x": 992,
+          "y": 2104.53125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metrics",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 165.984375,
+          "x": 368,
+          "y": 3733.53125
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 165.984375,
+          "x": 368,
+          "y": 5150.578125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricNumber",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 272,
+          "height": 73.59375,
+          "x": 368,
+          "y": 3745.53125
+        },
+        "afterBox": {
+          "width": 272,
+          "height": 73.59375,
+          "x": 368,
+          "y": 5162.578125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "metricLabel",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 272,
+          "height": 54.390625,
+          "x": 368,
+          "y": 3833.125
+        },
+        "afterBox": {
+          "width": 272,
+          "height": 54.390625,
+          "x": 368,
+          "y": 5250.171875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseCard",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 376,
+          "height": 552.78125,
+          "x": 368,
+          "y": 4189
+        },
+        "afterBox": {
+          "width": 376,
+          "height": 552.78125,
+          "x": 368,
+          "y": 5515.640625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "caseImage",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 376,
+          "height": 220,
+          "x": 368,
+          "y": 4189
+        },
+        "afterBox": {
+          "width": 376,
+          "height": 220,
+          "x": 368,
+          "y": 5515.640625
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "cta",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1184,
+          "height": 408.78125,
+          "x": 368,
+          "y": 4933.78125
+        },
+        "afterBox": {
+          "width": 1184,
+          "height": 408.78125,
+          "x": 368,
+          "y": 6260.421875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaTitle",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 1050,
+          "height": 127.59375,
+          "x": 435,
+          "y": 5005.78125
+        },
+        "afterBox": {
+          "width": 1050,
+          "height": 127.59375,
+          "x": 435,
+          "y": 6332.421875
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      },
+      {
+        "name": "ctaButton",
+        "cssDifferences": [],
+        "beforeBox": {
+          "width": 198,
+          "height": 54,
+          "x": 745.71875,
+          "y": 5216.5625
+        },
+        "afterBox": {
+          "width": 198,
+          "height": 54,
+          "x": 745.71875,
+          "y": 6543.203125
+        },
+        "sizeEqual": true,
+        "classEqual": true,
+        "tagEqual": true
+      }
+    ],
+    "quickCardsAligned": true,
+    "overflow": false,
+    "brokenImages": []
+  }
+]

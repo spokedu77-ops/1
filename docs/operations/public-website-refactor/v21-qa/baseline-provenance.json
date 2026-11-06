@@ -1,0 +1,36 @@
+{
+  "commit": "225a9111149da052db5fe6728f05df950f98b4a9",
+  "originals": {
+    "app/spokedu/website/pages/home.tsx": {
+      "commit": "225a9111149da052db5fe6728f05df950f98b4a9",
+      "sha256": "148675c1d47faaf2be66a1667a621c22a11158a4a611da83ce92979f87194a08",
+      "currentMatches": false
+    },
+    "app/spokedu/website/data/home.ts": {
+      "commit": "225a9111149da052db5fe6728f05df950f98b4a9",
+      "sha256": "47f1822211b6a2f0ede0c5c5ecc5032d865983ddedfe9e0563587f2e7a041cc4",
+      "currentMatches": false
+    },
+    "app/spokedu/website/styles/website.css": {
+      "commit": "225a9111149da052db5fe6728f05df950f98b4a9",
+      "sha256": "5281ff13dc10dfd6b612706913262e6aacf85f43f7f0529031f349dde054f7f6",
+      "currentMatches": true
+    },
+    "app/spokedu/website/styles/home-spomove.css": {
+      "commit": "225a9111149da052db5fe6728f05df950f98b4a9",
+      "sha256": "a7369f9f413ec1c630376ce7a23c8253487e8380a8331929ec5f8637c2838459",
+      "currentMatches": true
+    },
+    "app/spokedu/website/components/shared.tsx": {
+      "commit": "225a9111149da052db5fe6728f05df950f98b4a9",
+      "sha256": "1027ca7db9ab104bcc9e55f2cbebf9f6db8ecdeb6e4084f464ab5d2210d24519",
+      "currentMatches": true
+    },
+    "app/spokedu/website/components/SpomoveVisual.tsx": {
+      "commit": "225a9111149da052db5fe6728f05df950f98b4a9",
+      "sha256": "ab37c05a58aeb527a7e86f53b0b3840939d93e0cfb11f2f510c18fa24fa61d49",
+      "currentMatches": true
+    }
+  },
+  "note": "Final baseline captured at /?v21baseline=1 to use the same root shell and width as /. Current approved GNB is retained. Original Home source/data and unchanged shared CSS/components. Temporary query switch, route and source components were removed before build."
+}

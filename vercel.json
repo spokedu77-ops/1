@@ -1,1 +1,7 @@
-{}
+{
+  "functions": {
+    "app/api/admin/equipment/**/route.ts": {
+      "regions": ["icn1"]
+    }
+  }
+}

@@ -16,25 +16,25 @@ type CatalogRow = {
 };
 
 export async function fetchEquipmentStock(service: SupabaseClient): Promise<EquipmentStockRow[]> {
-  const { data: catalog, error: catErr } = await service
-    .from('catalog')
-    .select(
-      'id, name, category, mgmt_code, image, simple_desc, key_points, usage_examples, qty_on_hand_total, qty_quarantine',
-    )
-    .order('name');
+  const [catalogResult, lentResult, openingResult] = await Promise.all([
+    service
+      .from('catalog')
+      .select(
+        'id, name, category, mgmt_code, image, simple_desc, key_points, usage_examples, qty_on_hand_total, qty_quarantine',
+      )
+      .order('name'),
+    service.from('equipment_rentals').select('catalog_id, qty_outstanding')
+      .eq('status', 'active').gt('qty_outstanding', 0),
+    service.from('equipment_ledger').select('catalog_id')
+      .eq('event_type', 'OPENING_BALANCE_MIGRATION'),
+  ]);
+  const { data: catalog, error: catErr } = catalogResult;
   if (catErr) throw catErr;
 
-  const { data: lentRows, error: lentErr } = await service
-    .from('equipment_rentals')
-    .select('catalog_id, qty_outstanding')
-    .eq('status', 'active')
-    .gt('qty_outstanding', 0);
+  const { data: lentRows, error: lentErr } = lentResult;
   if (lentErr) throw lentErr;
 
-  const { data: openingRows, error: openingErr } = await service
-    .from('equipment_ledger')
-    .select('catalog_id')
-    .eq('event_type', 'OPENING_BALANCE_MIGRATION');
+  const { data: openingRows, error: openingErr } = openingResult;
   if (openingErr) throw openingErr;
   const openingSet = new Set((openingRows ?? []).map((r) => Number(r.catalog_id)));
 

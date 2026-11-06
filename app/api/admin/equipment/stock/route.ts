@@ -54,17 +54,19 @@ export async function GET() {
         { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
       );
     }
-    const sync = await loadLegacyImportPlanForRead(service);
-    let legacy = await fetchEquipmentLegacyImportStatus(service).catch(() => ({
-      staged_rows: 0,
-      pending_rows: 0,
-      imported_rows: 0,
-      pending_items: [],
-      catalogs: [],
-      unmigrated_items: [],
-    }));
-    legacy = applyPlanToLegacyImportStatus(legacy, sync.plan);
-    const items = await fetchEquipmentStock(service);
+    const [sync, legacyStatus, items] = await Promise.all([
+      loadLegacyImportPlanForRead(service),
+      fetchEquipmentLegacyImportStatus(service).catch(() => ({
+        staged_rows: 0,
+        pending_rows: 0,
+        imported_rows: 0,
+        pending_items: [],
+        catalogs: [],
+        unmigrated_items: [],
+      })),
+      fetchEquipmentStock(service),
+    ]);
+    const legacy = applyPlanToLegacyImportStatus(legacyStatus, sync.plan);
     return NextResponse.json(
       {
         items: items.map((item) => {

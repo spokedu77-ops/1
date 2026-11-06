@@ -169,7 +169,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
         onClose={() => setSelectedId(null)} onSaved={applySavedCenter}
         onDeleted={() => { setCenters((rows) => rows.filter((row) => row.id !== selectedId)); setSelectedId(null); }} />}
       <div className="min-w-0 p-3 sm:p-4">
-        {!embedded && <h1 className="mb-3 text-xl font-semibold tracking-tight text-slate-900">센터 관리</h1>}
+        {!embedded && <h1 className="mb-3 text-xl font-semibold tracking-tight text-slate-900">DB 관리</h1>}
         <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2">
           <div className="relative min-w-0 basis-full sm:basis-auto sm:w-64">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

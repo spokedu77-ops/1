@@ -1,0 +1,216 @@
+[
+  {
+    "file": "app/spokedu-master/foundationReset.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "Foundation Reset user-facing contracts keeps Home editorial order and strict resume",
+      "Foundation Reset user-facing contracts composes Schedule and attendance without repeating Classes in Manage",
+      "Foundation Reset user-facing contracts makes Favorites the retrieval surface and opens shared Preview",
+      "Foundation Reset user-facing contracts removes discovery favorites modes and preserves contextual payment"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/informationGrammar.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "MASTER information and action grammar separates static content, system decisions, and personalized memory",
+      "MASTER information and action grammar keeps explicit memory behind core lesson understanding and preparation",
+      "MASTER information and action grammar keeps one dominant action per local decision context"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/masterUiUnity.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "MASTER product UI unity bans 「바로 실행」 as a CTA label while allowing descriptive copy",
+      "MASTER product UI unity shares collection geometry and loading/empty/error grammar across operational lists"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/uiFoundationV3.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "MASTER Visual SSOT (not rendered PASS) makes Manage the canonical operational reference with one contextual primary action",
+      "MASTER Visual SSOT (not rendered PASS) closes the equal-tab IA leak while preserving deep route implementations"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/visualFinish.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "MASTER representative visual finish (pre-reset snapshot; not Art Direction PASS) keeps SPOMOVE discovery cards separate from Preview-owned execution actions"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/tabBarClearance.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "SPOKEDU MASTER TabBar clearance architecture does not render TabBar on login chrome-hidden routes"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/components/lesson/ProgramPreviewModal.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "ProgramPreviewModal responsive preview shell uses the detached mobile footer without duplicating the desktop CTA",
+      "ProgramPreviewModal responsive preview shell splits english subtitles and allows the primary title to wrap to two lines"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/spomove/lowSpecSupport.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "저사양 모드 계획 LOW_SPEC_PLAN.md가 존재하고 WebGL 대상 프리셋을 문서화한다",
+      "저사양 모드 계획 WebGL 저사양 계획 대상 공식 프리셋이 라이브러리에 존재한다"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/craftSelectionReasons.contract.test.ts",
+    "reason": "Historical source-shape/presentation duplication; no runtime execution",
+    "cases": [
+      "SPOKEDU MASTER craft + selection reasons bans tag-only SPOMOVE selection reasons",
+      "SPOKEDU MASTER craft + selection reasons routes onboarding/class-tools/record empty CTAs through spm-btn-primary",
+      "SPOKEDU MASTER craft + selection reasons keeps Today Sessions ahead of discovery content"
+    ]
+  },
+  {
+    "file": "app/api/spokedu-master/apiRouteImports.contract.test.ts",
+    "reason": "Regex relative-import existence checker duplicated by the existing TypeScript CI",
+    "cases": [
+      "SPOKEDU MASTER API route import contract indexes every spokedu-master API route file",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\access\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\class-records\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\classes\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\classes\\[classId]\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\classes\\[classId]\\schedule-rules\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\classes\\[classId]\\schedule-rules\\[ruleId]\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\classes\\[classId]\\students\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\classes\\[classId]\\students\\[studentId]\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\client-errors\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\explanations\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\favorites\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\funnel-events\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\operational-data\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\billing\\cancel\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\billing\\health\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\billing\\issue\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\billing\\renew\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\billing\\upgrade-quote\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\confirm\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\create-checkout\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\portal\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\payment\\webhook\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\profile\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\program-favorites\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\programs\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\promotions\\redeem\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\session-captures\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\attendance\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\next\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\parent-notice\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\programs\\carryover\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\programs\\reorder\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\programs\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\programs\\[sessionProgramId]\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\sessions\\[sessionId]\\start\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\shop\\spomat\\purchase\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\spomove\\guide-video\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\students\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\students\\[id]\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\subscription\\route.ts",
+      "SPOKEDU MASTER API route import contract resolves relative imports in app\\api\\spokedu-master\\value-summary\\route.ts",
+      "SPOKEDU MASTER API route import contract uses the shared operational-data module from nested student routes"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/deepOperationalV32.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "uses operational page grammar for Class detail without a student card grid",
+      "presents Student detail as guidance and linked history rows",
+      "uses the simple operational Session sequence without runtime workspaces"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/favoriteEntryParity.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "keeps card favorite targets at least 44px on mobile",
+      "uses one Favorites-only 4:3 cover presentation for both content families",
+      "keeps retrieval cards compact at three columns on regular desktop and four on wide screens"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/lib/masterCohesion.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "sells outcomes instead of a stale feature count",
+      "uses one destructive vocabulary across Class, Student, and Session",
+      "keeps operational primary CTAs on the brand token"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/lib/masterOsConsistency.journey.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "assign copy uses 수업에 추가 grammar"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/programs/programGateway.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "keeps equal 16:9 responsive cards with badges outside the image"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/landing/commercialLanding.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "keeps the approved section sequence"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/spomove/session/spomoveTypography.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "uses body typography at the MASTER and Session roots and 800 display typography for stimuli",
+      "has no legacy brand fonts or 900-weight branding in MASTER/SPOMOVE sources",
+      "keeps semantic typography roles in the shared MASTER SSOT"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/spomove/spomovePublicNaming.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "stores the exact v2 cardTitle for every public id",
+      "applies both hidden-color titles immediately",
+      "applies all four Stroop public titles immediately",
+      "applies the 3X3 instant-memory public title while exposing cardCore",
+      "does not leak previous subtitle composition into Hub cards",
+      "uses the public display resolver across MASTER session-facing surfaces"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/library/ctaHierarchy.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "keeps favorite in the mobile header and desktop hero action group"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/components/ui/BottomSheet.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "keeps one content scroll owner between detached header and optional footer"
+    ]
+  },
+  {
+    "file": "app/spokedu-master/components/layout/appShellTabPerf.contract.test.ts",
+    "reason": "Reviewed presentation, literal-copy, or source-wiring-only assertions",
+    "cases": [
+      "uses cached home program load on route change and defers forced reload to focus"
+    ]
+  }
+]

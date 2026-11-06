@@ -1,0 +1,50 @@
+[
+  {
+    "route": "records",
+    "width": 390,
+    "elements": 132,
+    "differingBounds": 0
+  },
+  {
+    "route": "contact",
+    "width": 390,
+    "elements": 87,
+    "differingBounds": 0
+  },
+  {
+    "route": "partners",
+    "width": 390,
+    "elements": 47,
+    "differingBounds": 0
+  },
+  {
+    "route": "spomat",
+    "width": 390,
+    "elements": 105,
+    "differingBounds": 0
+  },
+  {
+    "route": "records",
+    "width": 1440,
+    "elements": 132,
+    "differingBounds": 0
+  },
+  {
+    "route": "contact",
+    "width": 1440,
+    "elements": 87,
+    "differingBounds": 0
+  },
+  {
+    "route": "partners",
+    "width": 1440,
+    "elements": 47,
+    "differingBounds": 0
+  },
+  {
+    "route": "spomat",
+    "width": 1440,
+    "elements": 105,
+    "differingBounds": 0
+  }
+]

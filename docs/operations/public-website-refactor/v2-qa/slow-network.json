@@ -1,0 +1,18 @@
+[
+  {
+    "width": 375,
+    "conditions": "1.6Mbps / 150ms latency / cold cache / local dev",
+    "layoutShiftSum": 0,
+    "lcpMs": 12084,
+    "overflow": false,
+    "heroLoaded": true
+  },
+  {
+    "width": 1440,
+    "conditions": "1.6Mbps / 150ms latency / cold cache / local dev",
+    "layoutShiftSum": 0,
+    "lcpMs": 12656,
+    "overflow": false,
+    "heroLoaded": true
+  }
+]

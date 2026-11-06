@@ -1,0 +1,407 @@
+[
+  {
+    "name": "home",
+    "width": 390,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "36px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "education",
+    "width": 390,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "36px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "about",
+    "width": 390,
+    "values": [
+      {
+        "value": "2020",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "36px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "36px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "home",
+    "width": 768,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "44px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "education",
+    "width": 768,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "44px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "about",
+    "width": 768,
+    "values": [
+      {
+        "value": "2020",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "44px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "home",
+    "width": 1024,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "44px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "education",
+    "width": 1024,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "44px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "about",
+    "width": 1024,
+    "values": [
+      {
+        "value": "2020",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "44px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "44px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "home",
+    "width": 1440,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "64px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "education",
+    "width": 1440,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "64px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "about",
+    "width": 1440,
+    "values": [
+      {
+        "value": "2020",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "64px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "home",
+    "width": 1920,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "64px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "education",
+    "width": 1920,
+    "values": [
+      {
+        "value": "10,000+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "64px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "name": "about",
+    "width": 1920,
+    "values": [
+      {
+        "value": "2020",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "500+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "30+",
+        "size": "64px",
+        "clipped": false
+      },
+      {
+        "value": "98%",
+        "size": "64px",
+        "clipped": false
+      }
+    ],
+    "overflow": false
+  }
+]

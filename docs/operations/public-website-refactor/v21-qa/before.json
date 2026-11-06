@@ -1,0 +1,3972 @@
+[
+  {
+    "width": 375,
+    "overflow": false,
+    "brokenImages": [],
+    "probes": {
+      "rail": {
+        "tag": "DIV",
+        "class": "web-container",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 335,
+          "height": 675.15625,
+          "x": 20,
+          "y": 137
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "hero": {
+        "tag": "SECTION",
+        "class": "web-section web-home-hero",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 375,
+          "height": 795.15625,
+          "x": 0,
+          "y": 81
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "56px",
+          "paddingRight": "0px",
+          "paddingBottom": "64px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "h1": {
+        "tag": "H1",
+        "class": "",
+        "text": "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.",
+        "box": {
+          "width": 335,
+          "height": 103.5,
+          "x": 20,
+          "y": 195.09375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "23px",
+          "fontWeight": "700",
+          "lineHeight": "34.5px",
+          "letterSpacing": "-0.345px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1040px"
+        }
+      },
+      "heroPhoto": {
+        "tag": "FIGURE",
+        "class": "web-hero-photo",
+        "text": "학교·기관에서 직접 운영하는 SPOKEDU 체육수업",
+        "box": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 592.15625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "960px"
+        }
+      },
+      "heroImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 592.15625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 100%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "heroActions": {
+        "tag": "DIV",
+        "class": "web-actions",
+        "text": "수업 상담하기수업 유형 살펴보기",
+        "box": {
+          "width": 335,
+          "height": 120,
+          "x": 20,
+          "y": 432.15625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "16px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickGrid": {
+        "tag": "DIV",
+        "class": "web-card-grid",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →학부모개인·소그룹 수업아이에게 맞는 수업 형태와 지도 방식을 살펴보고, 가능한 장소와 일정을 상담하세요.개인·소그룹 수업 안내 →체육 지도자·LAB 이용자SPOKEDU LAB다음 수업에",
+        "box": {
+          "width": 335,
+          "height": 1117.84375,
+          "x": 20,
+          "y": 1127.828125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "20px",
+          "gridTemplateColumns": "335px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickCard": {
+        "tag": "A",
+        "class": "web-audience-card",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →",
+        "box": {
+          "width": 335,
+          "height": 359.28125,
+          "x": 20,
+          "y": 1127.828125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "28px",
+          "paddingRight": "28px",
+          "paddingBottom": "28px",
+          "paddingLeft": "28px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "14px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickIcon": {
+        "tag": "SPAN",
+        "class": "web-audience-icon",
+        "text": "",
+        "box": {
+          "width": 56,
+          "height": 56,
+          "x": 49,
+          "y": 1156.828125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "16px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "56px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "quickTitle": {
+        "tag": "H3",
+        "class": "",
+        "text": "기관·학교 체육수업",
+        "box": {
+          "width": 184,
+          "height": 33,
+          "x": 49,
+          "y": 1272.921875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "22px",
+          "fontWeight": "700",
+          "lineHeight": "33px",
+          "letterSpacing": "-0.55px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "whyRow": {
+        "tag": "ARTICLE",
+        "class": "web-showcase",
+        "text": "01구경하는 아이 없이모두가 몰입하는 기관 출강학교·키움센터·복지관 등 다양한 교육 현장에서 공간과 인원, 연령, 활동 목적에 맞는 체육수업을 설계하고 운영합니다. 모두가 참여할 수 있는 활동 구조와 단계별 과제를 중요하게 생각합니다.#학교·기관출강#특수·포용체육#맞춤형커리큘럼기관수업 자세히 보기 →",
+        "box": {
+          "width": 335,
+          "height": 797.171875,
+          "x": 20,
+          "y": 2373.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "56px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "36px",
+          "gridTemplateColumns": "335px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyNumber": {
+        "tag": "SPAN",
+        "class": "web-watermark",
+        "text": "01",
+        "box": {
+          "width": 335,
+          "height": 84,
+          "x": 20,
+          "y": 2429.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "84px",
+          "fontWeight": "700",
+          "lineHeight": "84px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(219, 225, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "구경하는 아이 없이모두가 몰입하는 기관 출강",
+        "box": {
+          "width": 335,
+          "height": 74,
+          "x": 20,
+          "y": 2489.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "700",
+          "lineHeight": "36px",
+          "letterSpacing": "-0.6px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyPhoto": {
+        "tag": "FIGURE",
+        "class": "web-showcase-photo web-home-showcase-photo-1",
+        "text": "",
+        "box": {
+          "width": 335,
+          "height": 251.25,
+          "x": 20,
+          "y": 2919.59375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metrics": {
+        "tag": "DL",
+        "class": "web-operating-metrics",
+        "text": "누적 운영 수업10,000+누적 출강 학교·기관500+본사 직영 관리 전문 지도자30+파트너 기관 재계약률98%",
+        "box": {
+          "width": 335,
+          "height": 272.25,
+          "x": 20,
+          "y": 4811.40625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "32px 16px",
+          "gridTemplateColumns": "159.5px 159.5px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "metricNumber": {
+        "tag": "DD",
+        "class": "",
+        "text": "10,000+",
+        "box": {
+          "width": 159.5,
+          "height": 37.9375,
+          "x": 20,
+          "y": 4823.40625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "33px",
+          "fontWeight": "700",
+          "lineHeight": "37.95px",
+          "letterSpacing": "-1.155px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(37, 99, 235)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metricLabel": {
+        "tag": "DT",
+        "class": "",
+        "text": "누적 운영 수업",
+        "box": {
+          "width": 159.5,
+          "height": 44.1875,
+          "x": 20,
+          "y": 4875.34375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "13px",
+          "fontWeight": "500",
+          "lineHeight": "22.1px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(67, 70, 85)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "44.2px",
+          "maxWidth": "none"
+        }
+      },
+      "caseCard": {
+        "tag": "ARTICLE",
+        "class": "web-case-card",
+        "text": "정규수업 · SPOMOVE동작거점형 우리동네키움센터초등학생 · SPOMOVE 에듀테크스크린 신호를 보고 판단·반응하며 움직이는 SPOMOVE 놀이체육 — 거점형 키움센터 집단 수업입니다.사례 요약 보기",
+        "box": {
+          "width": 335,
+          "height": 522.78125,
+          "x": 20,
+          "y": 5366.9375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "caseImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 335,
+          "height": 220,
+          "x": 20,
+          "y": 5366.9375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "cta": {
+        "tag": "DIV",
+        "class": "web-cta",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.수업 상담하기실제 수업사례 보기",
+        "box": {
+          "width": 335,
+          "height": 461.953125,
+          "x": 20,
+          "y": 7144.78125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "48px",
+          "paddingRight": "22px",
+          "paddingBottom": "48px",
+          "paddingLeft": "22px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "ctaTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.",
+        "box": {
+          "width": 291,
+          "height": 104.390625,
+          "x": 42,
+          "y": 7192.78125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "24px",
+          "fontWeight": "700",
+          "lineHeight": "34.8px",
+          "letterSpacing": "-0.6px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1050px"
+        }
+      },
+      "ctaButton": {
+        "tag": "A",
+        "class": "web-button",
+        "text": "수업 상담하기",
+        "box": {
+          "width": 291,
+          "height": 54,
+          "x": 42,
+          "y": 7434.734375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "15px",
+          "fontWeight": "600",
+          "lineHeight": "22.5px",
+          "letterSpacing": "normal",
+          "paddingTop": "14px",
+          "paddingRight": "26px",
+          "paddingBottom": "14px",
+          "paddingLeft": "26px",
+          "borderRadius": "999px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(0, 74, 198)",
+          "gap": "12px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54px",
+          "maxWidth": "none"
+        }
+      }
+    },
+    "sections": [
+      {
+        "id": "",
+        "classes": "web-section web-home-hero"
+      },
+      {
+        "id": "service-paths",
+        "classes": "web-section web-blue-wash web-service-hub"
+      },
+      {
+        "id": "showcase",
+        "classes": "web-section web-showcases"
+      },
+      {
+        "id": "operating-scale",
+        "classes": "web-section web-operating-scale"
+      },
+      {
+        "id": "",
+        "classes": "web-section web-blue-wash web-home-cases"
+      },
+      {
+        "id": "",
+        "classes": "web-home-final-cta"
+      }
+    ],
+    "quickCards": [
+      {
+        "height": 359.28125,
+        "linkBottom": 330.28125
+      },
+      {
+        "height": 359.28125,
+        "linkBottom": 330.28125
+      },
+      {
+        "height": 359.28125,
+        "linkBottom": 330.28125
+      }
+    ],
+    "images": [
+      {
+        "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+        "width": 335,
+        "height": 220,
+        "naturalWidth": 2400,
+        "naturalHeight": 1800,
+        "fit": "cover",
+        "position": "50% 100%"
+      },
+      {
+        "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+        "width": 335,
+        "height": 251,
+        "naturalWidth": 1080,
+        "naturalHeight": 1440,
+        "fit": "cover",
+        "position": "50% 61%"
+      },
+      {
+        "src": "/images/spokedu/private/private-coaching.jpg",
+        "width": 335,
+        "height": 251,
+        "naturalWidth": 900,
+        "naturalHeight": 1200,
+        "fit": "cover",
+        "position": "50% 52%"
+      },
+      {
+        "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+        "width": 335,
+        "height": 175,
+        "naturalWidth": 1280,
+        "naturalHeight": 960,
+        "fit": "cover",
+        "position": "50% 100%"
+      },
+      {
+        "src": "/images/spokedu/records/dongjak-spomove.jpg",
+        "width": 335,
+        "height": 220,
+        "naturalWidth": 1980,
+        "naturalHeight": 3520,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-records/yangcheon-paps.jpg",
+        "width": 335,
+        "height": 220,
+        "naturalWidth": 1920,
+        "naturalHeight": 1080,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+        "width": 335,
+        "height": 220,
+        "naturalWidth": 807,
+        "naturalHeight": 514,
+        "fit": "cover",
+        "position": "50% 50%"
+      }
+    ]
+  },
+  {
+    "width": 768,
+    "overflow": false,
+    "brokenImages": [],
+    "probes": {
+      "rail": {
+        "tag": "DIV",
+        "class": "web-container",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 720,
+          "height": 902.546875,
+          "x": 24,
+          "y": 169
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "hero": {
+        "tag": "SECTION",
+        "class": "web-section web-home-hero",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 768,
+          "height": 1086.546875,
+          "x": 0,
+          "y": 81
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "88px",
+          "paddingRight": "0px",
+          "paddingBottom": "96px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "h1": {
+        "tag": "H1",
+        "class": "",
+        "text": "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.",
+        "box": {
+          "width": 720,
+          "height": 127.265625,
+          "x": 24,
+          "y": 235.09375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "32.64px",
+          "fontWeight": "700",
+          "lineHeight": "42.432px",
+          "letterSpacing": "-0.4896px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1040px"
+        }
+      },
+      "heroPhoto": {
+        "tag": "FIGURE",
+        "class": "web-hero-photo",
+        "text": "학교·기관에서 직접 운영하는 SPOKEDU 체육수업",
+        "box": {
+          "width": 720,
+          "height": 480,
+          "x": 24,
+          "y": 591.546875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "960px"
+        }
+      },
+      "heroImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 720,
+          "height": 480,
+          "x": 24,
+          "y": 591.546875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 72%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "heroActions": {
+        "tag": "DIV",
+        "class": "web-actions",
+        "text": "수업 상담하기수업 유형 살펴보기",
+        "box": {
+          "width": 720,
+          "height": 52,
+          "x": 24,
+          "y": 475.546875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "16px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickGrid": {
+        "tag": "DIV",
+        "class": "web-card-grid",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →학부모개인·소그룹 수업아이에게 맞는 수업 형태와 지도 방식을 살펴보고, 가능한 장소와 일정을 상담하세요.개인·소그룹 수업 안내 →체육 지도자·LAB 이용자SPOKEDU LAB다음 수업에",
+        "box": {
+          "width": 720,
+          "height": 379.078125,
+          "x": 24,
+          "y": 1420.625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "18px",
+          "gridTemplateColumns": "228px 228px 228px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickCard": {
+        "tag": "A",
+        "class": "web-audience-card",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →",
+        "box": {
+          "width": 228,
+          "height": 379.078125,
+          "x": 24,
+          "y": 1420.625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "24px",
+          "paddingRight": "24px",
+          "paddingBottom": "24px",
+          "paddingLeft": "24px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "14px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "358px",
+          "maxWidth": "none"
+        }
+      },
+      "quickIcon": {
+        "tag": "SPAN",
+        "class": "web-audience-icon",
+        "text": "",
+        "box": {
+          "width": 56,
+          "height": 56,
+          "x": 49,
+          "y": 1445.625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "16px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "56px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "quickTitle": {
+        "tag": "H3",
+        "class": "",
+        "text": "기관·학교 체육수업",
+        "box": {
+          "width": 167.265625,
+          "height": 30,
+          "x": 49,
+          "y": 1561.71875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "20px",
+          "fontWeight": "700",
+          "lineHeight": "30px",
+          "letterSpacing": "-0.5px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "whyRow": {
+        "tag": "ARTICLE",
+        "class": "web-showcase",
+        "text": "01구경하는 아이 없이모두가 몰입하는 기관 출강학교·키움센터·복지관 등 다양한 교육 현장에서 공간과 인원, 연령, 활동 목적에 맞는 체육수업을 설계하고 운영합니다. 모두가 참여할 수 있는 활동 구조와 단계별 과제를 중요하게 생각합니다.#학교·기관출강#특수·포용체육#맞춤형커리큘럼기관수업 자세히 보기 →",
+        "box": {
+          "width": 720,
+          "height": 579.921875,
+          "x": 24,
+          "y": 1903.703125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "104px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "36px",
+          "gridTemplateColumns": "342px 342px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyNumber": {
+        "tag": "SPAN",
+        "class": "web-watermark",
+        "text": "01",
+        "box": {
+          "width": 342,
+          "height": 100,
+          "x": 24,
+          "y": 2007.703125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "700",
+          "lineHeight": "100px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(219, 225, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "구경하는 아이 없이모두가 몰입하는 기관 출강",
+        "box": {
+          "width": 342,
+          "height": 80,
+          "x": 24,
+          "y": 2083.703125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "26px",
+          "fontWeight": "700",
+          "lineHeight": "39px",
+          "letterSpacing": "-0.65px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyPhoto": {
+        "tag": "FIGURE",
+        "class": "web-showcase-photo web-home-showcase-photo-1",
+        "text": "",
+        "box": {
+          "width": 342,
+          "height": 256.5,
+          "x": 402,
+          "y": 2117.40625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metrics": {
+        "tag": "DL",
+        "class": "web-operating-metrics",
+        "text": "누적 운영 수업10,000+누적 출강 학교·기관500+본사 직영 관리 전문 지도자30+파트너 기관 재계약률98%",
+        "box": {
+          "width": 720,
+          "height": 147.578125,
+          "x": 24,
+          "y": 3729.6875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "32px",
+          "gridTemplateColumns": "156px 156px 156px 156px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "metricNumber": {
+        "tag": "DD",
+        "class": "",
+        "text": "10,000+",
+        "box": {
+          "width": 156,
+          "height": 55.1875,
+          "x": 24,
+          "y": 3741.6875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "48px",
+          "fontWeight": "700",
+          "lineHeight": "55.2px",
+          "letterSpacing": "-1.68px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(37, 99, 235)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metricLabel": {
+        "tag": "DT",
+        "class": "",
+        "text": "누적 운영 수업",
+        "box": {
+          "width": 156,
+          "height": 54.390625,
+          "x": 24,
+          "y": 3810.875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "500",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(67, 70, 85)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54.4px",
+          "maxWidth": "none"
+        }
+      },
+      "caseCard": {
+        "tag": "ARTICLE",
+        "class": "web-case-card",
+        "text": "정규수업 · SPOMOVE동작거점형 우리동네키움센터초등학생 · SPOMOVE 에듀테크스크린 신호를 보고 판단·반응하며 움직이는 SPOMOVE 놀이체육 — 거점형 키움센터 집단 수업입니다.사례 요약 보기",
+        "box": {
+          "width": 346,
+          "height": 578.28125,
+          "x": 24,
+          "y": 4152.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "caseImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 346,
+          "height": 220,
+          "x": 24,
+          "y": 4152.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "cta": {
+        "tag": "DIV",
+        "class": "web-cta",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.수업 상담하기실제 수업사례 보기",
+        "box": {
+          "width": 720,
+          "height": 359.46875,
+          "x": 24,
+          "y": 5503.8125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "72px",
+          "paddingRight": "32px",
+          "paddingBottom": "72px",
+          "paddingLeft": "32px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "ctaTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.",
+        "box": {
+          "width": 656,
+          "height": 78.28125,
+          "x": 56,
+          "y": 5575.8125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "27px",
+          "fontWeight": "700",
+          "lineHeight": "39.15px",
+          "letterSpacing": "-0.675px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1050px"
+        }
+      },
+      "ctaButton": {
+        "tag": "A",
+        "class": "web-button",
+        "text": "수업 상담하기",
+        "box": {
+          "width": 198,
+          "height": 54,
+          "x": 169.71875,
+          "y": 5737.28125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "15px",
+          "fontWeight": "600",
+          "lineHeight": "22.5px",
+          "letterSpacing": "normal",
+          "paddingTop": "14px",
+          "paddingRight": "26px",
+          "paddingBottom": "14px",
+          "paddingLeft": "26px",
+          "borderRadius": "999px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(0, 74, 198)",
+          "gap": "12px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54px",
+          "maxWidth": "none"
+        }
+      }
+    },
+    "sections": [
+      {
+        "id": "",
+        "classes": "web-section web-home-hero"
+      },
+      {
+        "id": "service-paths",
+        "classes": "web-section web-blue-wash web-service-hub"
+      },
+      {
+        "id": "showcase",
+        "classes": "web-section web-showcases"
+      },
+      {
+        "id": "operating-scale",
+        "classes": "web-section web-operating-scale"
+      },
+      {
+        "id": "",
+        "classes": "web-section web-blue-wash web-home-cases"
+      },
+      {
+        "id": "",
+        "classes": "web-home-final-cta"
+      }
+    ],
+    "quickCards": [
+      {
+        "height": 379.078125,
+        "linkBottom": 354.078125
+      },
+      {
+        "height": 379.078125,
+        "linkBottom": 354.078125
+      },
+      {
+        "height": 379.078125,
+        "linkBottom": 354.078125
+      }
+    ],
+    "images": [
+      {
+        "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+        "width": 720,
+        "height": 480,
+        "naturalWidth": 2400,
+        "naturalHeight": 1800,
+        "fit": "cover",
+        "position": "50% 72%"
+      },
+      {
+        "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+        "width": 342,
+        "height": 257,
+        "naturalWidth": 1080,
+        "naturalHeight": 1440,
+        "fit": "cover",
+        "position": "50% 61%"
+      },
+      {
+        "src": "/images/spokedu/private/private-coaching.jpg",
+        "width": 342,
+        "height": 257,
+        "naturalWidth": 900,
+        "naturalHeight": 1200,
+        "fit": "cover",
+        "position": "50% 52%"
+      },
+      {
+        "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+        "width": 342,
+        "height": 175,
+        "naturalWidth": 1280,
+        "naturalHeight": 960,
+        "fit": "cover",
+        "position": "50% 100%"
+      },
+      {
+        "src": "/images/spokedu/records/dongjak-spomove.jpg",
+        "width": 346,
+        "height": 220,
+        "naturalWidth": 1980,
+        "naturalHeight": 3520,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-records/yangcheon-paps.jpg",
+        "width": 346,
+        "height": 220,
+        "naturalWidth": 1920,
+        "naturalHeight": 1080,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+        "width": 346,
+        "height": 220,
+        "naturalWidth": 807,
+        "naturalHeight": 514,
+        "fit": "cover",
+        "position": "50% 50%"
+      }
+    ]
+  },
+  {
+    "width": 1024,
+    "overflow": false,
+    "brokenImages": [],
+    "probes": {
+      "rail": {
+        "tag": "DIV",
+        "class": "web-container",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 976,
+          "height": 944.96875,
+          "x": 24,
+          "y": 169
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "hero": {
+        "tag": "SECTION",
+        "class": "web-section web-home-hero",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 1024,
+          "height": 1128.96875,
+          "x": 0,
+          "y": 81
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "88px",
+          "paddingRight": "0px",
+          "paddingBottom": "96px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "h1": {
+        "tag": "H1",
+        "class": "",
+        "text": "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.",
+        "box": {
+          "width": 976,
+          "height": 169.6875,
+          "x": 24,
+          "y": 235.09375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "43.52px",
+          "fontWeight": "700",
+          "lineHeight": "56.576px",
+          "letterSpacing": "-0.6528px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1040px"
+        }
+      },
+      "heroPhoto": {
+        "tag": "FIGURE",
+        "class": "web-hero-photo",
+        "text": "학교·기관에서 직접 운영하는 SPOKEDU 체육수업",
+        "box": {
+          "width": 960,
+          "height": 480,
+          "x": 32,
+          "y": 633.96875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "960px"
+        }
+      },
+      "heroImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 960,
+          "height": 480,
+          "x": 32,
+          "y": 633.96875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 72%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "heroActions": {
+        "tag": "DIV",
+        "class": "web-actions",
+        "text": "수업 상담하기수업 유형 살펴보기",
+        "box": {
+          "width": 976,
+          "height": 52,
+          "x": 24,
+          "y": 517.96875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "16px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickGrid": {
+        "tag": "DIV",
+        "class": "web-card-grid",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →학부모개인·소그룹 수업아이에게 맞는 수업 형태와 지도 방식을 살펴보고, 가능한 장소와 일정을 상담하세요.개인·소그룹 수업 안내 →체육 지도자·LAB 이용자SPOKEDU LAB다음 수업에",
+        "box": {
+          "width": 976,
+          "height": 370.78125,
+          "x": 24,
+          "y": 1469.65625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "28px",
+          "gridTemplateColumns": "306.656px 306.672px 306.656px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickCard": {
+        "tag": "A",
+        "class": "web-audience-card",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →",
+        "box": {
+          "width": 306.65625,
+          "height": 370.78125,
+          "x": 24,
+          "y": 1469.65625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "32px",
+          "paddingRight": "32px",
+          "paddingBottom": "32px",
+          "paddingLeft": "32px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "14px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "358px",
+          "maxWidth": "none"
+        }
+      },
+      "quickIcon": {
+        "tag": "SPAN",
+        "class": "web-audience-icon",
+        "text": "",
+        "box": {
+          "width": 56,
+          "height": 56,
+          "x": 57,
+          "y": 1502.65625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "16px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "56px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "quickTitle": {
+        "tag": "H3",
+        "class": "",
+        "text": "기관·학교 체육수업",
+        "box": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 57,
+          "y": 1618.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "23px",
+          "fontWeight": "700",
+          "lineHeight": "34.5px",
+          "letterSpacing": "-0.575px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "whyRow": {
+        "tag": "ARTICLE",
+        "class": "web-showcase",
+        "text": "01구경하는 아이 없이모두가 몰입하는 기관 출강학교·키움센터·복지관 등 다양한 교육 현장에서 공간과 인원, 연령, 활동 목적에 맞는 체육수업을 설계하고 운영합니다. 모두가 참여할 수 있는 활동 구조와 단계별 과제를 중요하게 생각합니다.#학교·기관출강#특수·포용체육#맞춤형커리큘럼기관수업 자세히 보기 →",
+        "box": {
+          "width": 976,
+          "height": 511.140625,
+          "x": 24,
+          "y": 1944.4375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "104px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "64px",
+          "gridTemplateColumns": "456px 456px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyNumber": {
+        "tag": "SPAN",
+        "class": "web-watermark",
+        "text": "01",
+        "box": {
+          "width": 456,
+          "height": 100,
+          "x": 24,
+          "y": 2048.4375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "700",
+          "lineHeight": "100px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(219, 225, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "구경하는 아이 없이모두가 몰입하는 기관 출강",
+        "box": {
+          "width": 456,
+          "height": 80,
+          "x": 24,
+          "y": 2124.4375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "26px",
+          "fontWeight": "700",
+          "lineHeight": "39px",
+          "letterSpacing": "-0.65px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyPhoto": {
+        "tag": "FIGURE",
+        "class": "web-showcase-photo web-home-showcase-photo-1",
+        "text": "",
+        "box": {
+          "width": 456,
+          "height": 342,
+          "x": 544,
+          "y": 2081
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metrics": {
+        "tag": "DL",
+        "class": "web-operating-metrics",
+        "text": "누적 운영 수업10,000+누적 출강 학교·기관500+본사 직영 관리 전문 지도자30+파트너 기관 재계약률98%",
+        "box": {
+          "width": 976,
+          "height": 147.578125,
+          "x": 24,
+          "y": 3640.859375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "32px",
+          "gridTemplateColumns": "220px 220px 220px 220px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "metricNumber": {
+        "tag": "DD",
+        "class": "",
+        "text": "10,000+",
+        "box": {
+          "width": 220,
+          "height": 55.1875,
+          "x": 24,
+          "y": 3652.859375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "48px",
+          "fontWeight": "700",
+          "lineHeight": "55.2px",
+          "letterSpacing": "-1.68px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(37, 99, 235)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metricLabel": {
+        "tag": "DT",
+        "class": "",
+        "text": "누적 운영 수업",
+        "box": {
+          "width": 220,
+          "height": 54.390625,
+          "x": 24,
+          "y": 3722.046875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "500",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(67, 70, 85)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54.4px",
+          "maxWidth": "none"
+        }
+      },
+      "caseCard": {
+        "tag": "ARTICLE",
+        "class": "web-case-card",
+        "text": "정규수업 · SPOMOVE동작거점형 우리동네키움센터초등학생 · SPOMOVE 에듀테크스크린 신호를 보고 판단·반응하며 움직이는 SPOMOVE 놀이체육 — 거점형 키움센터 집단 수업입니다.사례 요약 보기",
+        "box": {
+          "width": 306.65625,
+          "height": 600.375,
+          "x": 24,
+          "y": 4070.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "caseImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 306.65625,
+          "height": 220,
+          "x": 24,
+          "y": 4070.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "cta": {
+        "tag": "DIV",
+        "class": "web-cta",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.수업 상담하기실제 수업사례 보기",
+        "box": {
+          "width": 976,
+          "height": 376.1875,
+          "x": 24,
+          "y": 4862.90625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "72px",
+          "paddingRight": "32px",
+          "paddingBottom": "72px",
+          "paddingLeft": "32px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "ctaTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.",
+        "box": {
+          "width": 912,
+          "height": 95,
+          "x": 56,
+          "y": 4934.90625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "32.768px",
+          "fontWeight": "700",
+          "lineHeight": "47.5136px",
+          "letterSpacing": "-0.8192px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1050px"
+        }
+      },
+      "ctaButton": {
+        "tag": "A",
+        "class": "web-button",
+        "text": "수업 상담하기",
+        "box": {
+          "width": 198,
+          "height": 54,
+          "x": 297.71875,
+          "y": 5113.09375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "15px",
+          "fontWeight": "600",
+          "lineHeight": "22.5px",
+          "letterSpacing": "normal",
+          "paddingTop": "14px",
+          "paddingRight": "26px",
+          "paddingBottom": "14px",
+          "paddingLeft": "26px",
+          "borderRadius": "999px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(0, 74, 198)",
+          "gap": "12px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54px",
+          "maxWidth": "none"
+        }
+      }
+    },
+    "sections": [
+      {
+        "id": "",
+        "classes": "web-section web-home-hero"
+      },
+      {
+        "id": "service-paths",
+        "classes": "web-section web-blue-wash web-service-hub"
+      },
+      {
+        "id": "showcase",
+        "classes": "web-section web-showcases"
+      },
+      {
+        "id": "operating-scale",
+        "classes": "web-section web-operating-scale"
+      },
+      {
+        "id": "",
+        "classes": "web-section web-blue-wash web-home-cases"
+      },
+      {
+        "id": "",
+        "classes": "web-home-final-cta"
+      }
+    ],
+    "quickCards": [
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      },
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      },
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      }
+    ],
+    "images": [
+      {
+        "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+        "width": 960,
+        "height": 480,
+        "naturalWidth": 2400,
+        "naturalHeight": 1800,
+        "fit": "cover",
+        "position": "50% 72%"
+      },
+      {
+        "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+        "width": 456,
+        "height": 342,
+        "naturalWidth": 1080,
+        "naturalHeight": 1440,
+        "fit": "cover",
+        "position": "50% 61%"
+      },
+      {
+        "src": "/images/spokedu/private/private-coaching.jpg",
+        "width": 456,
+        "height": 342,
+        "naturalWidth": 900,
+        "naturalHeight": 1200,
+        "fit": "cover",
+        "position": "50% 52%"
+      },
+      {
+        "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+        "width": 456,
+        "height": 260,
+        "naturalWidth": 1280,
+        "naturalHeight": 960,
+        "fit": "cover",
+        "position": "50% 100%"
+      },
+      {
+        "src": "/images/spokedu/records/dongjak-spomove.jpg",
+        "width": 307,
+        "height": 220,
+        "naturalWidth": 1980,
+        "naturalHeight": 3520,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-records/yangcheon-paps.jpg",
+        "width": 307,
+        "height": 220,
+        "naturalWidth": 1920,
+        "naturalHeight": 1080,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+        "width": 307,
+        "height": 220,
+        "naturalWidth": 807,
+        "naturalHeight": 514,
+        "fit": "cover",
+        "position": "50% 50%"
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "overflow": false,
+    "brokenImages": [],
+    "probes": {
+      "rail": {
+        "tag": "DIV",
+        "class": "web-container",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 1184,
+          "height": 993.671875,
+          "x": 128,
+          "y": 169
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "hero": {
+        "tag": "SECTION",
+        "class": "web-section web-home-hero",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 1440,
+          "height": 1177.671875,
+          "x": 0,
+          "y": 81
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "88px",
+          "paddingRight": "0px",
+          "paddingBottom": "96px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "h1": {
+        "tag": "H1",
+        "class": "",
+        "text": "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.",
+        "box": {
+          "width": 1040,
+          "height": 218.390625,
+          "x": 200,
+          "y": 235.09375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "56px",
+          "fontWeight": "700",
+          "lineHeight": "72.8px",
+          "letterSpacing": "-0.84px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1040px"
+        }
+      },
+      "heroPhoto": {
+        "tag": "FIGURE",
+        "class": "web-hero-photo",
+        "text": "학교·기관에서 직접 운영하는 SPOKEDU 체육수업",
+        "box": {
+          "width": 960,
+          "height": 480,
+          "x": 240,
+          "y": 682.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "960px"
+        }
+      },
+      "heroImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 960,
+          "height": 480,
+          "x": 240,
+          "y": 682.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 72%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "heroActions": {
+        "tag": "DIV",
+        "class": "web-actions",
+        "text": "수업 상담하기수업 유형 살펴보기",
+        "box": {
+          "width": 1184,
+          "height": 52,
+          "x": 128,
+          "y": 566.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "16px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickGrid": {
+        "tag": "DIV",
+        "class": "web-card-grid",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →학부모개인·소그룹 수업아이에게 맞는 수업 형태와 지도 방식을 살펴보고, 가능한 장소와 일정을 상담하세요.개인·소그룹 수업 안내 →체육 지도자·LAB 이용자SPOKEDU LAB다음 수업에",
+        "box": {
+          "width": 1184,
+          "height": 370.78125,
+          "x": 128,
+          "y": 1525.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "28px",
+          "gridTemplateColumns": "376px 376px 376px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickCard": {
+        "tag": "A",
+        "class": "web-audience-card",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →",
+        "box": {
+          "width": 376,
+          "height": 370.78125,
+          "x": 128,
+          "y": 1525.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "32px",
+          "paddingRight": "32px",
+          "paddingBottom": "32px",
+          "paddingLeft": "32px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "14px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "358px",
+          "maxWidth": "none"
+        }
+      },
+      "quickIcon": {
+        "tag": "SPAN",
+        "class": "web-audience-icon",
+        "text": "",
+        "box": {
+          "width": 56,
+          "height": 56,
+          "x": 161,
+          "y": 1558.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "16px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "56px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "quickTitle": {
+        "tag": "H3",
+        "class": "",
+        "text": "기관·학교 체육수업",
+        "box": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 161,
+          "y": 1674.84375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "23px",
+          "fontWeight": "700",
+          "lineHeight": "34.5px",
+          "letterSpacing": "-0.575px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "whyRow": {
+        "tag": "ARTICLE",
+        "class": "web-showcase",
+        "text": "01구경하는 아이 없이모두가 몰입하는 기관 출강학교·키움센터·복지관 등 다양한 교육 현장에서 공간과 인원, 연령, 활동 목적에 맞는 체육수업을 설계하고 운영합니다. 모두가 참여할 수 있는 활동 구조와 단계별 과제를 중요하게 생각합니다.#학교·기관출강#특수·포용체육#맞춤형커리큘럼기관수업 자세히 보기 →",
+        "box": {
+          "width": 1184,
+          "height": 524,
+          "x": 128,
+          "y": 2000.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "104px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "64px",
+          "gridTemplateColumns": "560px 560px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyNumber": {
+        "tag": "SPAN",
+        "class": "web-watermark",
+        "text": "01",
+        "box": {
+          "width": 560,
+          "height": 100,
+          "x": 128,
+          "y": 2114.15625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "700",
+          "lineHeight": "100px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(219, 225, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "구경하는 아이 없이모두가 몰입하는 기관 출강",
+        "box": {
+          "width": 560,
+          "height": 104,
+          "x": 128,
+          "y": 2190.15625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "34px",
+          "fontWeight": "700",
+          "lineHeight": "51px",
+          "letterSpacing": "-0.85px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyPhoto": {
+        "tag": "FIGURE",
+        "class": "web-showcase-photo web-home-showcase-photo-1",
+        "text": "",
+        "box": {
+          "width": 560,
+          "height": 420,
+          "x": 752,
+          "y": 2104.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metrics": {
+        "tag": "DL",
+        "class": "web-operating-metrics",
+        "text": "누적 운영 수업10,000+누적 출강 학교·기관500+본사 직영 관리 전문 지도자30+파트너 기관 재계약률98%",
+        "box": {
+          "width": 1184,
+          "height": 165.984375,
+          "x": 128,
+          "y": 3733.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "32px",
+          "gridTemplateColumns": "272px 272px 272px 272px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "metricNumber": {
+        "tag": "DD",
+        "class": "",
+        "text": "10,000+",
+        "box": {
+          "width": 272,
+          "height": 73.59375,
+          "x": 128,
+          "y": 3745.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "lineHeight": "73.6px",
+          "letterSpacing": "-2.24px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(37, 99, 235)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metricLabel": {
+        "tag": "DT",
+        "class": "",
+        "text": "누적 운영 수업",
+        "box": {
+          "width": 272,
+          "height": 54.390625,
+          "x": 128,
+          "y": 3833.125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "500",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(67, 70, 85)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54.4px",
+          "maxWidth": "none"
+        }
+      },
+      "caseCard": {
+        "tag": "ARTICLE",
+        "class": "web-case-card",
+        "text": "정규수업 · SPOMOVE동작거점형 우리동네키움센터초등학생 · SPOMOVE 에듀테크스크린 신호를 보고 판단·반응하며 움직이는 SPOMOVE 놀이체육 — 거점형 키움센터 집단 수업입니다.사례 요약 보기",
+        "box": {
+          "width": 376,
+          "height": 552.78125,
+          "x": 128,
+          "y": 4189
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "caseImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 376,
+          "height": 220,
+          "x": 128,
+          "y": 4189
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "cta": {
+        "tag": "DIV",
+        "class": "web-cta",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.수업 상담하기실제 수업사례 보기",
+        "box": {
+          "width": 1184,
+          "height": 408.78125,
+          "x": 128,
+          "y": 4933.78125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "72px",
+          "paddingRight": "32px",
+          "paddingBottom": "72px",
+          "paddingLeft": "32px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "ctaTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.",
+        "box": {
+          "width": 1050,
+          "height": 127.59375,
+          "x": 195,
+          "y": 5005.78125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "44px",
+          "fontWeight": "700",
+          "lineHeight": "63.8px",
+          "letterSpacing": "-1.1px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1050px"
+        }
+      },
+      "ctaButton": {
+        "tag": "A",
+        "class": "web-button",
+        "text": "수업 상담하기",
+        "box": {
+          "width": 198,
+          "height": 54,
+          "x": 505.71875,
+          "y": 5216.5625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "15px",
+          "fontWeight": "600",
+          "lineHeight": "22.5px",
+          "letterSpacing": "normal",
+          "paddingTop": "14px",
+          "paddingRight": "26px",
+          "paddingBottom": "14px",
+          "paddingLeft": "26px",
+          "borderRadius": "999px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(0, 74, 198)",
+          "gap": "12px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54px",
+          "maxWidth": "none"
+        }
+      }
+    },
+    "sections": [
+      {
+        "id": "",
+        "classes": "web-section web-home-hero"
+      },
+      {
+        "id": "service-paths",
+        "classes": "web-section web-blue-wash web-service-hub"
+      },
+      {
+        "id": "showcase",
+        "classes": "web-section web-showcases"
+      },
+      {
+        "id": "operating-scale",
+        "classes": "web-section web-operating-scale"
+      },
+      {
+        "id": "",
+        "classes": "web-section web-blue-wash web-home-cases"
+      },
+      {
+        "id": "",
+        "classes": "web-home-final-cta"
+      }
+    ],
+    "quickCards": [
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      },
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      },
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      }
+    ],
+    "images": [
+      {
+        "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+        "width": 960,
+        "height": 480,
+        "naturalWidth": 2400,
+        "naturalHeight": 1800,
+        "fit": "cover",
+        "position": "50% 72%"
+      },
+      {
+        "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+        "width": 560,
+        "height": 420,
+        "naturalWidth": 1080,
+        "naturalHeight": 1440,
+        "fit": "cover",
+        "position": "50% 61%"
+      },
+      {
+        "src": "/images/spokedu/private/private-coaching.jpg",
+        "width": 560,
+        "height": 420,
+        "naturalWidth": 900,
+        "naturalHeight": 1200,
+        "fit": "cover",
+        "position": "50% 52%"
+      },
+      {
+        "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+        "width": 560,
+        "height": 338,
+        "naturalWidth": 1280,
+        "naturalHeight": 960,
+        "fit": "cover",
+        "position": "50% 100%"
+      },
+      {
+        "src": "/images/spokedu/records/dongjak-spomove.jpg",
+        "width": 376,
+        "height": 220,
+        "naturalWidth": 1980,
+        "naturalHeight": 3520,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-records/yangcheon-paps.jpg",
+        "width": 376,
+        "height": 220,
+        "naturalWidth": 1920,
+        "naturalHeight": 1080,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+        "width": 376,
+        "height": 220,
+        "naturalWidth": 807,
+        "naturalHeight": 514,
+        "fit": "cover",
+        "position": "50% 50%"
+      }
+    ]
+  },
+  {
+    "width": 1920,
+    "overflow": false,
+    "brokenImages": [],
+    "probes": {
+      "rail": {
+        "tag": "DIV",
+        "class": "web-container",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 1184,
+          "height": 993.671875,
+          "x": 368,
+          "y": 169
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "hero": {
+        "tag": "SECTION",
+        "class": "web-section web-home-hero",
+        "text": "SPOKEDU · 아동·청소년 맞춤 체육교육 아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.전문 지도자가 학교·기관과 개인 수업을 직접 설계하고 운영합니다. 현장의 경험은 SPOMOVE와 SPOKEDU LAB으로 이어집니다.수업 상담하기수업 유형 살펴보기학교·기관에서 직접 운영하는 SPOKEDU 체육수",
+        "box": {
+          "width": 1920,
+          "height": 1177.671875,
+          "x": 0,
+          "y": 81
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "88px",
+          "paddingRight": "0px",
+          "paddingBottom": "96px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "h1": {
+        "tag": "H1",
+        "class": "",
+        "text": "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다.",
+        "box": {
+          "width": 1040,
+          "height": 218.390625,
+          "x": 440,
+          "y": 235.09375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "56px",
+          "fontWeight": "700",
+          "lineHeight": "72.8px",
+          "letterSpacing": "-0.84px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1040px"
+        }
+      },
+      "heroPhoto": {
+        "tag": "FIGURE",
+        "class": "web-hero-photo",
+        "text": "학교·기관에서 직접 운영하는 SPOKEDU 체육수업",
+        "box": {
+          "width": 960,
+          "height": 480,
+          "x": 480,
+          "y": 682.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "960px"
+        }
+      },
+      "heroImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 960,
+          "height": 480,
+          "x": 480,
+          "y": 682.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 72%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "heroActions": {
+        "tag": "DIV",
+        "class": "web-actions",
+        "text": "수업 상담하기수업 유형 살펴보기",
+        "box": {
+          "width": 1184,
+          "height": 52,
+          "x": 368,
+          "y": 566.671875
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "16px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickGrid": {
+        "tag": "DIV",
+        "class": "web-card-grid",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →학부모개인·소그룹 수업아이에게 맞는 수업 형태와 지도 방식을 살펴보고, 가능한 장소와 일정을 상담하세요.개인·소그룹 수업 안내 →체육 지도자·LAB 이용자SPOKEDU LAB다음 수업에",
+        "box": {
+          "width": 1184,
+          "height": 370.78125,
+          "x": 368,
+          "y": 1525.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "28px",
+          "gridTemplateColumns": "376px 376px 376px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "quickCard": {
+        "tag": "A",
+        "class": "web-audience-card",
+        "text": "기관·학교 담당자기관·학교 체육수업정규수업부터 특강·행사까지, 우리 기관에 맞는 프로그램과 도입 방법을 확인하세요.기관·학교 수업 안내 →",
+        "box": {
+          "width": 376,
+          "height": 370.78125,
+          "x": 368,
+          "y": 1525.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "32px",
+          "paddingRight": "32px",
+          "paddingBottom": "32px",
+          "paddingLeft": "32px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "14px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "358px",
+          "maxWidth": "none"
+        }
+      },
+      "quickIcon": {
+        "tag": "SPAN",
+        "class": "web-audience-icon",
+        "text": "",
+        "box": {
+          "width": 56,
+          "height": 56,
+          "x": 401,
+          "y": 1558.75
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "16px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "56px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "quickTitle": {
+        "tag": "H3",
+        "class": "",
+        "text": "기관·학교 체육수업",
+        "box": {
+          "width": 192.359375,
+          "height": 34.5,
+          "x": 401,
+          "y": 1674.84375
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "23px",
+          "fontWeight": "700",
+          "lineHeight": "34.5px",
+          "letterSpacing": "-0.575px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "whyRow": {
+        "tag": "ARTICLE",
+        "class": "web-showcase",
+        "text": "01구경하는 아이 없이모두가 몰입하는 기관 출강학교·키움센터·복지관 등 다양한 교육 현장에서 공간과 인원, 연령, 활동 목적에 맞는 체육수업을 설계하고 운영합니다. 모두가 참여할 수 있는 활동 구조와 단계별 과제를 중요하게 생각합니다.#학교·기관출강#특수·포용체육#맞춤형커리큘럼기관수업 자세히 보기 →",
+        "box": {
+          "width": 1184,
+          "height": 524,
+          "x": 368,
+          "y": 2000.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "104px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "64px",
+          "gridTemplateColumns": "560px 560px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyNumber": {
+        "tag": "SPAN",
+        "class": "web-watermark",
+        "text": "01",
+        "box": {
+          "width": 560,
+          "height": 100,
+          "x": 368,
+          "y": 2114.15625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "100px",
+          "fontWeight": "700",
+          "lineHeight": "100px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(219, 225, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "구경하는 아이 없이모두가 몰입하는 기관 출강",
+        "box": {
+          "width": 560,
+          "height": 104,
+          "x": 368,
+          "y": 2190.15625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "34px",
+          "fontWeight": "700",
+          "lineHeight": "51px",
+          "letterSpacing": "-0.85px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "whyPhoto": {
+        "tag": "FIGURE",
+        "class": "web-showcase-photo web-home-showcase-photo-1",
+        "text": "",
+        "box": {
+          "width": 560,
+          "height": 420,
+          "x": 992,
+          "y": 2104.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metrics": {
+        "tag": "DL",
+        "class": "web-operating-metrics",
+        "text": "누적 운영 수업10,000+누적 출강 학교·기관500+본사 직영 관리 전문 지도자30+파트너 기관 재계약률98%",
+        "box": {
+          "width": 1184,
+          "height": 165.984375,
+          "x": 368,
+          "y": 3733.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "32px",
+          "gridTemplateColumns": "272px 272px 272px 272px",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "metricNumber": {
+        "tag": "DD",
+        "class": "",
+        "text": "10,000+",
+        "box": {
+          "width": 272,
+          "height": 73.59375,
+          "x": 368,
+          "y": 3745.53125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "64px",
+          "fontWeight": "700",
+          "lineHeight": "73.6px",
+          "letterSpacing": "-2.24px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(37, 99, 235)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "metricLabel": {
+        "tag": "DT",
+        "class": "",
+        "text": "누적 운영 수업",
+        "box": {
+          "width": 272,
+          "height": 54.390625,
+          "x": 368,
+          "y": 3833.125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "500",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(67, 70, 85)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54.4px",
+          "maxWidth": "none"
+        }
+      },
+      "caseCard": {
+        "tag": "ARTICLE",
+        "class": "web-case-card",
+        "text": "정규수업 · SPOMOVE동작거점형 우리동네키움센터초등학생 · SPOMOVE 에듀테크스크린 신호를 보고 판단·반응하며 움직이는 SPOMOVE 놀이체육 — 거점형 키움센터 집단 수업입니다.사례 요약 보기",
+        "box": {
+          "width": 376,
+          "height": 552.78125,
+          "x": 368,
+          "y": 4189
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "24px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "auto",
+          "maxWidth": "none"
+        }
+      },
+      "caseImage": {
+        "tag": "IMG",
+        "class": "",
+        "text": "",
+        "box": {
+          "width": 376,
+          "height": 220,
+          "x": 368,
+          "y": 4189
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(19, 27, 46)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "cover",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "100%"
+        }
+      },
+      "cta": {
+        "tag": "DIV",
+        "class": "web-cta",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.수업 상담하기실제 수업사례 보기",
+        "box": {
+          "width": 1184,
+          "height": 408.78125,
+          "x": 368,
+          "y": 4933.78125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "27.2px",
+          "letterSpacing": "normal",
+          "paddingTop": "72px",
+          "paddingRight": "32px",
+          "paddingBottom": "72px",
+          "paddingLeft": "32px",
+          "borderRadius": "28px",
+          "backgroundColor": "rgb(37, 99, 235)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "none"
+        }
+      },
+      "ctaTitle": {
+        "tag": "H2",
+        "class": "",
+        "text": "지금, 우리 학교와 아이를 위한최고의 스포츠 교육을 만나보세요.",
+        "box": {
+          "width": 1050,
+          "height": 127.59375,
+          "x": 435,
+          "y": 5005.78125
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "44px",
+          "fontWeight": "700",
+          "lineHeight": "63.8px",
+          "letterSpacing": "-1.1px",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "borderRadius": "0px",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(255, 255, 255)",
+          "gap": "normal",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "0px",
+          "maxWidth": "1050px"
+        }
+      },
+      "ctaButton": {
+        "tag": "A",
+        "class": "web-button",
+        "text": "수업 상담하기",
+        "box": {
+          "width": 198,
+          "height": 54,
+          "x": 745.71875,
+          "y": 5216.5625
+        },
+        "css": {
+          "fontFamily": "\"Pretendard Variable\", Pretendard, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif",
+          "fontSize": "15px",
+          "fontWeight": "600",
+          "lineHeight": "22.5px",
+          "letterSpacing": "normal",
+          "paddingTop": "14px",
+          "paddingRight": "26px",
+          "paddingBottom": "14px",
+          "paddingLeft": "26px",
+          "borderRadius": "999px",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "color": "rgb(0, 74, 198)",
+          "gap": "12px",
+          "gridTemplateColumns": "none",
+          "objectFit": "fill",
+          "objectPosition": "50% 50%",
+          "minHeight": "54px",
+          "maxWidth": "none"
+        }
+      }
+    },
+    "sections": [
+      {
+        "id": "",
+        "classes": "web-section web-home-hero"
+      },
+      {
+        "id": "service-paths",
+        "classes": "web-section web-blue-wash web-service-hub"
+      },
+      {
+        "id": "showcase",
+        "classes": "web-section web-showcases"
+      },
+      {
+        "id": "operating-scale",
+        "classes": "web-section web-operating-scale"
+      },
+      {
+        "id": "",
+        "classes": "web-section web-blue-wash web-home-cases"
+      },
+      {
+        "id": "",
+        "classes": "web-home-final-cta"
+      }
+    ],
+    "quickCards": [
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      },
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      },
+      {
+        "height": 370.78125,
+        "linkBottom": 337.78125
+      }
+    ],
+    "images": [
+      {
+        "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+        "width": 960,
+        "height": 480,
+        "naturalWidth": 2400,
+        "naturalHeight": 1800,
+        "fit": "cover",
+        "position": "50% 72%"
+      },
+      {
+        "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+        "width": 560,
+        "height": 420,
+        "naturalWidth": 1080,
+        "naturalHeight": 1440,
+        "fit": "cover",
+        "position": "50% 61%"
+      },
+      {
+        "src": "/images/spokedu/private/private-coaching.jpg",
+        "width": 560,
+        "height": 420,
+        "naturalWidth": 900,
+        "naturalHeight": 1200,
+        "fit": "cover",
+        "position": "50% 52%"
+      },
+      {
+        "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+        "width": 560,
+        "height": 338,
+        "naturalWidth": 1280,
+        "naturalHeight": 960,
+        "fit": "cover",
+        "position": "50% 100%"
+      },
+      {
+        "src": "/images/spokedu/records/dongjak-spomove.jpg",
+        "width": 376,
+        "height": 220,
+        "naturalWidth": 1980,
+        "naturalHeight": 3520,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-records/yangcheon-paps.jpg",
+        "width": 376,
+        "height": 220,
+        "naturalWidth": 1920,
+        "naturalHeight": 1080,
+        "fit": "cover",
+        "position": "50% 50%"
+      },
+      {
+        "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+        "width": 376,
+        "height": 220,
+        "naturalWidth": 807,
+        "naturalHeight": 514,
+        "fit": "cover",
+        "position": "50% 50%"
+      }
+    ]
+  }
+]

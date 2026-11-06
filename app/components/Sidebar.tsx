@@ -149,7 +149,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
         { name: '노트', href: '/admin/note', icon: ClipboardList },
         { name: '수업 관리', href: '/admin/classes/calendar', icon: Calendar },
         { name: '피드백 관리', href: '/admin/teachers-classes', icon: CheckCircle },
-        { name: '센터 관리', href: '/admin/centers', icon: Building2 },
+        { name: 'DB 관리', href: '/admin/centers', icon: Building2 },
         { name: '교구·재고', href: '/admin/inventory', icon: Box },
       ],
     },

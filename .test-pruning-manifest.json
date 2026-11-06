@@ -1,0 +1,178 @@
+[
+  [
+    "app/spokedu-master/masterUiUnity.contract.test.ts",
+    "it('routes filter chips through masterUiClasses (no slate-950 chip hardcode)', () => {"
+  ],
+  [
+    "app/spokedu-master/masterUiUnity.contract.test.ts",
+    "it('exposes shared chip/seg helpers', () => {"
+  ],
+  [
+    "app/spokedu-master/masterUiUnity.contract.test.ts",
+    "it('uses spm-btn-primary for subscription gate and payment success primary CTAs', () => {"
+  ],
+  [
+    "app/spokedu-master/operationalResponsive.contract.test.ts",
+    "it('limits mobile tab-bar clearance to the mobile shell family', () => {"
+  ],
+  [
+    "app/spokedu-master/operationalResponsive.contract.test.ts",
+    "it('keeps membership controls touchable and mobile-first', () => {"
+  ],
+  [
+    "app/spokedu-master/tabBarClearance.contract.test.ts",
+    "it('renders a fixed TabBar for authenticated mobile chrome', () => {"
+  ],
+  [
+    "app/spokedu-master/tabBarClearance.contract.test.ts",
+    "it('reserves shared TabBar + safe-area clearance on authenticated main content', () => {"
+  ],
+  [
+    "app/spokedu-master/uiFoundationV3.contract.test.ts",
+    "it('declares one visual authority and keeps required semantic primitives in code', () => {"
+  ],
+  [
+    "app/spokedu-master/uiFoundationV3.contract.test.ts",
+    "it('uses inline states and row-based operational collections', () => {"
+  ],
+  [
+    "app/spokedu-master/uiFoundationV3.contract.test.ts",
+    "it('gives reports a document surface', () => {"
+  ],
+  [
+    "app/spokedu-master/uiFoundationV3.contract.test.ts",
+    "it('converges representative editorial surfaces', () => {"
+  ],
+  [
+    "app/spokedu-master/visualFinish.contract.test.ts",
+    "it(\"keeps Home editorial and media-first without strong content shadows\", () => {"
+  ],
+  [
+    "app/spokedu-master/visualFinish.contract.test.ts",
+    "it(\"keeps Library search-led with saved content and no outer shelf elevation\", () => {"
+  ],
+  [
+    "app/spokedu-master/manage/scheduleResponsive.contract.test.ts",
+    "it('limits compact and desktop cells to two one-line event summaries plus overflow count', () => {"
+  ],
+  [
+    "app/spokedu-master/manage/scheduleResponsive.contract.test.ts",
+    "it('uses the product breakpoint for the desktop workspace transition', () => {"
+  ],
+  [
+    "app/spokedu-master/components/ui/classToolsResponsive.contract.test.ts",
+    "it('keeps all eight tools on screen without a scrolling tab strip', () => {"
+  ],
+  [
+    "app/spokedu-master/components/ui/classToolsResponsive.contract.test.ts",
+    "it('fits the scoreboard by measured columns instead of auto-fit', () => {"
+  ],
+  [
+    "app/spokedu-master/components/ui/classToolsResponsive.contract.test.ts",
+    "it('reflows tournament rounds and gives dense ladders a contained scroll area', () => {"
+  ],
+  [
+    "app/spokedu-master/components/ui/classToolsResponsive.contract.test.ts",
+    "it('relies on AppShell for mobile tab-bar clearance', () => {"
+  ],
+  [
+    "app/spokedu-master/spomove/spomoveMediaFit.contract.test.ts",
+    "it('keeps a shared media module: square clean-fill discovery thumbs, 16:9 contained video frame', () => {"
+  ],
+  [
+    "app/spokedu-master/spomove/spomoveMediaFit.contract.test.ts",
+    "it('routes Hub CardVisual thumbs through SpomoveLayeredThumb, not a page-local crop', () => {"
+  ],
+  [
+    "app/spokedu-master/spomove/spomoveMediaFit.contract.test.ts",
+    "it('renders guide video preview with contain + aspect-video (no column stretch crop)', () => {"
+  ],
+  [
+    "app/spokedu-master/spomove/spomoveMediaFit.contract.test.ts",
+    "it('does not route Hub image thumbs through video preview helpers', () => {"
+  ],
+  [
+    "app/spokedu-master/spomove/spomoveMediaFit.contract.test.ts",
+    "it('shares one clean square image branch between Home and Hub without blur or contain', () => {"
+  ],
+  [
+    "app/spokedu-master/spomove/spomoveUxFriction.contract.test.ts",
+    "it('keeps one card column through 430px and uses a mobile Family preview rail', () => {"
+  ],
+  [
+    "app/spokedu-master/spomove/spomoveUxFriction.contract.test.ts",
+    "it('does not truncate prep values and always exposes a footer close action', () => {"
+  ],
+  [
+    "app/spokedu-master/library/LibraryDetailLayout.contract.test.ts",
+    "it('documents Library Detail as an editorial preparation page', () => {"
+  ],
+  [
+    "app/spokedu-master/library/LibraryDetailLayout.contract.test.ts",
+    "it('keeps both content rows two-column from 900px with intrinsic height', () => {"
+  ],
+  [
+    "app/spokedu-master/library/LibraryDetailLayout.contract.test.ts",
+    "it('keeps shared heading baseline without stretching panels to equal height', () => {"
+  ],
+  [
+    "app/spokedu-master/library/LibraryDetailLayout.contract.test.ts",
+    "it('keeps the precision pass free of nested decorative media cards', () => {"
+  ],
+  [
+    "app/spokedu-master/library/LibraryDetailLayout.contract.test.ts",
+    "it('uses numbered method steps and numbers only when there are multiple variations', () => {"
+  ],
+  [
+    "app/spokedu-master/library/LibraryDetailLayout.contract.test.ts",
+    "it('keeps mobile actions sticky while moving desktop actions and favorite into the hero', () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"uses count-aware grids at every Dashboard breakpoint\", () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"keeps Home media proportional and brings all four recommendations into regular desktop view\", () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"uses a stable SPOMOVE heading row and delegates mobile tab clearance to AppShell\", () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"uses one CTA system for all operational states\", () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"gives mobile Hero actions an explicit one-plus-two hierarchy\", () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"overlays Weekly play affordance inside the media stage\", () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"aligns SPOMOVE card actions to one compact bottom row\", () => {"
+  ],
+  [
+    "app/spokedu-master/dashboard/homeCardSystem.contract.test.ts",
+    "it(\"keeps urgent follow-up compact with a touch-safe action instead of rendering a Home hero\", () => {"
+  ],
+  [
+    "app/spokedu-master/craftSelectionReasons.contract.test.ts",
+    "it('keeps recommendation cards on one fixed space and participant metadata grammar', () => {"
+  ],
+  [
+    "app/spokedu-master/lib/masterVisualSystem.contract.test.ts",
+    "it('keeps primary, secondary, quiet, and destructive actions semantically distinct', () => {"
+  ],
+  [
+    "app/spokedu-master/lib/masterVisualSystem.contract.test.ts",
+    "it('keeps standard collection and support surfaces neutral and compact', () => {"
+  ],
+  [
+    "app/spokedu-master/lib/masterVisualSystem.contract.test.ts",
+    "it('publishes a restrained typography foundation without forcing one universal card', () => {"
+  ]
+]

@@ -1,0 +1,2309 @@
+{
+  "home": [
+    {
+      "width": 375,
+      "title": "스포키듀 SPOKEDU | 기관 체육수업·SPOMOVE·SPOKEDU LAB",
+      "h1": [
+        "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+          "alt": "서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 2400,
+          "naturalHeight": 1800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-04.webp",
+          "alt": "SPOMOVE 색상 반응 — 화면의 색 자극을 보고 SPOMAT 위에서 움직이는 현장",
+          "width": 333,
+          "height": 250,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "지도자와 아동이 야외에서 사다리 움직임 활동을 하는 모습",
+          "width": 333,
+          "height": 250,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/images/spokedu/subscription/library-program-cards-20261008-final.png",
+          "alt": "SPOKEDU LAB의 놀이체육 콘텐츠 탐색 화면",
+          "width": 333,
+          "height": 250,
+          "naturalWidth": 1536,
+          "naturalHeight": 1004,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "지도자가 콘 사이를 달리는 아동의 움직임을 지도하는 수업",
+          "width": 335,
+          "height": 335,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/spe/spe-10.webp",
+          "alt": "SPOMOVE 특수체육 — 화면을 보고 다음 신호를 기다리며 준비하는 현장",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 1395,
+          "naturalHeight": 1127,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/subscription/prepare-class-tools.png",
+          "alt": "SPOKEDU LAB의 스톱워치 등 수업 운영 도구 화면",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 1366,
+          "naturalHeight": 640,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "SPOMOVE 수업 — 화면 자극, SPOMAT, 아이들의 움직임이 한 장면에 연결된 현장",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-07.webp",
+          "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 1600,
+          "naturalHeight": 908,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/spomat-layout.png",
+          "alt": "빨강·노랑·초록·파랑으로 구성된 물리적 SPOMAT",
+          "width": 110,
+          "height": 104,
+          "naturalWidth": 322,
+          "naturalHeight": 305,
+          "fit": "fill",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "매동초등학교 · 스포츠 스텝업 수업",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+          "alt": "동작거점형 우리동네키움센터 · SPOMOVE 수업",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 1600,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "찾아가는 동행 체육교실 · 특수체육 수업",
+          "width": 335,
+          "height": 251,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "어떤 수업을 찾고 계신가요?",
+        "기관·학교 수업",
+        "개인·소그룹 수업",
+        "SPOKEDU LAB",
+        "현장에서 설계하고,운영하며, 발전시킵니다.",
+        "아이와 현장의 조건에 맞춘 체육교육 설계",
+        "다양한 교육환경에서 축적한 현장 운영 경험",
+        "현장 경험을 교육 콘텐츠와 디지털 도구로 확장",
+        "교육 목적에 따라 구성하는 4MOVE",
+        "BASEMOVE",
+        "SPORTSMOVE",
+        "PLAYMOVE",
+        "SPOMOVE",
+        "대상과 현장에 맞춰 적용합니다.",
+        "화면을 보고 판단하고움직이는 체육활동",
+        "활동에 따라 활용하는 4색 매트, SPOMAT",
+        "현장에서 쌓아온 경험, 수업으로 이어갑니다.",
+        "매동초등학교",
+        "동작거점형 우리동네키움센터",
+        "찾아가는 동행 체육교실",
+        "우리 현장과 아이에게 맞는 수업을함께 찾습니다.",
+        "우리 기관의 교육환경에 맞춰",
+        "아이의 출발점과 목표에 맞춰"
+      ]
+    },
+    {
+      "width": 768,
+      "title": "스포키듀 SPOKEDU | 기관 체육수업·SPOMOVE·SPOKEDU LAB",
+      "h1": [
+        "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+          "alt": "서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장",
+          "width": 720,
+          "height": 540,
+          "naturalWidth": 2400,
+          "naturalHeight": 1800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-04.webp",
+          "alt": "SPOMOVE 색상 반응 — 화면의 색 자극을 보고 SPOMAT 위에서 움직이는 현장",
+          "width": 346,
+          "height": 260,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "지도자와 아동이 야외에서 사다리 움직임 활동을 하는 모습",
+          "width": 346,
+          "height": 260,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/images/spokedu/subscription/library-program-cards-20261008-final.png",
+          "alt": "SPOKEDU LAB의 놀이체육 콘텐츠 탐색 화면",
+          "width": 346,
+          "height": 260,
+          "naturalWidth": 1536,
+          "naturalHeight": 1004,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "지도자가 콘 사이를 달리는 아동의 움직임을 지도하는 수업",
+          "width": 720,
+          "height": 540,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/spe/spe-10.webp",
+          "alt": "SPOMOVE 특수체육 — 화면을 보고 다음 신호를 기다리며 준비하는 현장",
+          "width": 720,
+          "height": 540,
+          "naturalWidth": 1395,
+          "naturalHeight": 1127,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/subscription/prepare-class-tools.png",
+          "alt": "SPOKEDU LAB의 스톱워치 등 수업 운영 도구 화면",
+          "width": 720,
+          "height": 540,
+          "naturalWidth": 1366,
+          "naturalHeight": 640,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "SPOMOVE 수업 — 화면 자극, SPOMAT, 아이들의 움직임이 한 장면에 연결된 현장",
+          "width": 346,
+          "height": 260,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-07.webp",
+          "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+          "width": 346,
+          "height": 260,
+          "naturalWidth": 1600,
+          "naturalHeight": 908,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/spomat-layout.png",
+          "alt": "빨강·노랑·초록·파랑으로 구성된 물리적 SPOMAT",
+          "width": 130,
+          "height": 123,
+          "naturalWidth": 322,
+          "naturalHeight": 305,
+          "fit": "fill",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "매동초등학교 · 스포츠 스텝업 수업",
+          "width": 720,
+          "height": 540,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+          "alt": "동작거점형 우리동네키움센터 · SPOMOVE 수업",
+          "width": 340,
+          "height": 255,
+          "naturalWidth": 1600,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "찾아가는 동행 체육교실 · 특수체육 수업",
+          "width": 340,
+          "height": 255,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "어떤 수업을 찾고 계신가요?",
+        "기관·학교 수업",
+        "개인·소그룹 수업",
+        "SPOKEDU LAB",
+        "현장에서 설계하고,운영하며, 발전시킵니다.",
+        "아이와 현장의 조건에 맞춘 체육교육 설계",
+        "다양한 교육환경에서 축적한 현장 운영 경험",
+        "현장 경험을 교육 콘텐츠와 디지털 도구로 확장",
+        "교육 목적에 따라 구성하는 4MOVE",
+        "BASEMOVE",
+        "SPORTSMOVE",
+        "PLAYMOVE",
+        "SPOMOVE",
+        "대상과 현장에 맞춰 적용합니다.",
+        "화면을 보고 판단하고움직이는 체육활동",
+        "활동에 따라 활용하는 4색 매트, SPOMAT",
+        "현장에서 쌓아온 경험, 수업으로 이어갑니다.",
+        "매동초등학교",
+        "동작거점형 우리동네키움센터",
+        "찾아가는 동행 체육교실",
+        "우리 현장과 아이에게 맞는 수업을함께 찾습니다.",
+        "우리 기관의 교육환경에 맞춰",
+        "아이의 출발점과 목표에 맞춰"
+      ]
+    },
+    {
+      "width": 1024,
+      "title": "스포키듀 SPOKEDU | 기관 체육수업·SPOMOVE·SPOKEDU LAB",
+      "h1": [
+        "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+          "alt": "서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장",
+          "width": 488,
+          "height": 366,
+          "naturalWidth": 2400,
+          "naturalHeight": 1800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-04.webp",
+          "alt": "SPOMOVE 색상 반응 — 화면의 색 자극을 보고 SPOMAT 위에서 움직이는 현장",
+          "width": 307,
+          "height": 230,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "지도자와 아동이 야외에서 사다리 움직임 활동을 하는 모습",
+          "width": 307,
+          "height": 230,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/images/spokedu/subscription/library-program-cards-20261008-final.png",
+          "alt": "SPOKEDU LAB의 놀이체육 콘텐츠 탐색 화면",
+          "width": 307,
+          "height": 231,
+          "naturalWidth": 1536,
+          "naturalHeight": 1004,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "지도자가 콘 사이를 달리는 아동의 움직임을 지도하는 수업",
+          "width": 468,
+          "height": 468,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/spe/spe-10.webp",
+          "alt": "SPOMOVE 특수체육 — 화면을 보고 다음 신호를 기다리며 준비하는 현장",
+          "width": 468,
+          "height": 351,
+          "naturalWidth": 1395,
+          "naturalHeight": 1127,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/subscription/prepare-class-tools.png",
+          "alt": "SPOKEDU LAB의 스톱워치 등 수업 운영 도구 화면",
+          "width": 468,
+          "height": 351,
+          "naturalWidth": 1366,
+          "naturalHeight": 640,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "SPOMOVE 수업 — 화면 자극, SPOMAT, 아이들의 움직임이 한 장면에 연결된 현장",
+          "width": 474,
+          "height": 356,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-07.webp",
+          "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+          "width": 474,
+          "height": 356,
+          "naturalWidth": 1600,
+          "naturalHeight": 908,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/spomat-layout.png",
+          "alt": "빨강·노랑·초록·파랑으로 구성된 물리적 SPOMAT",
+          "width": 130,
+          "height": 123,
+          "naturalWidth": 322,
+          "naturalHeight": 305,
+          "fit": "fill",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "매동초등학교 · 스포츠 스텝업 수업",
+          "width": 517,
+          "height": 388,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+          "alt": "동작거점형 우리동네키움센터 · SPOMOVE 수업",
+          "width": 468,
+          "height": 351,
+          "naturalWidth": 1600,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "찾아가는 동행 체육교실 · 특수체육 수업",
+          "width": 468,
+          "height": 351,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "어떤 수업을 찾고 계신가요?",
+        "기관·학교 수업",
+        "개인·소그룹 수업",
+        "SPOKEDU LAB",
+        "현장에서 설계하고,운영하며, 발전시킵니다.",
+        "아이와 현장의 조건에 맞춘 체육교육 설계",
+        "다양한 교육환경에서 축적한 현장 운영 경험",
+        "현장 경험을 교육 콘텐츠와 디지털 도구로 확장",
+        "교육 목적에 따라 구성하는 4MOVE",
+        "BASEMOVE",
+        "SPORTSMOVE",
+        "PLAYMOVE",
+        "SPOMOVE",
+        "대상과 현장에 맞춰 적용합니다.",
+        "화면을 보고 판단하고움직이는 체육활동",
+        "활동에 따라 활용하는 4색 매트, SPOMAT",
+        "현장에서 쌓아온 경험, 수업으로 이어갑니다.",
+        "매동초등학교",
+        "동작거점형 우리동네키움센터",
+        "찾아가는 동행 체육교실",
+        "우리 현장과 아이에게 맞는 수업을함께 찾습니다.",
+        "우리 기관의 교육환경에 맞춰",
+        "아이의 출발점과 목표에 맞춰"
+      ]
+    },
+    {
+      "width": 1440,
+      "title": "스포키듀 SPOKEDU | 기관 체육수업·SPOMOVE·SPOKEDU LAB",
+      "h1": [
+        "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+          "alt": "서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장",
+          "width": 587,
+          "height": 440,
+          "naturalWidth": 2400,
+          "naturalHeight": 1800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-04.webp",
+          "alt": "SPOMOVE 색상 반응 — 화면의 색 자극을 보고 SPOMAT 위에서 움직이는 현장",
+          "width": 377,
+          "height": 282,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "지도자와 아동이 야외에서 사다리 움직임 활동을 하는 모습",
+          "width": 377,
+          "height": 283,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/images/spokedu/subscription/library-program-cards-20261008-final.png",
+          "alt": "SPOKEDU LAB의 놀이체육 콘텐츠 탐색 화면",
+          "width": 377,
+          "height": 282,
+          "naturalWidth": 1536,
+          "naturalHeight": 1004,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "지도자가 콘 사이를 달리는 아동의 움직임을 지도하는 수업",
+          "width": 556,
+          "height": 556,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/spe/spe-10.webp",
+          "alt": "SPOMOVE 특수체육 — 화면을 보고 다음 신호를 기다리며 준비하는 현장",
+          "width": 556,
+          "height": 417,
+          "naturalWidth": 1395,
+          "naturalHeight": 1127,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/subscription/prepare-class-tools.png",
+          "alt": "SPOKEDU LAB의 스톱워치 등 수업 운영 도구 화면",
+          "width": 556,
+          "height": 417,
+          "naturalWidth": 1366,
+          "naturalHeight": 640,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "SPOMOVE 수업 — 화면 자극, SPOMAT, 아이들의 움직임이 한 장면에 연결된 현장",
+          "width": 578,
+          "height": 434,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-07.webp",
+          "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+          "width": 578,
+          "height": 434,
+          "naturalWidth": 1600,
+          "naturalHeight": 908,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/spomat-layout.png",
+          "alt": "빨강·노랑·초록·파랑으로 구성된 물리적 SPOMAT",
+          "width": 130,
+          "height": 123,
+          "naturalWidth": 322,
+          "naturalHeight": 305,
+          "fit": "fill",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "매동초등학교 · 스포츠 스텝업 수업",
+          "width": 616,
+          "height": 462,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+          "alt": "동작거점형 우리동네키움센터 · SPOMOVE 수업",
+          "width": 572,
+          "height": 429,
+          "naturalWidth": 1600,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "찾아가는 동행 체육교실 · 특수체육 수업",
+          "width": 572,
+          "height": 429,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "어떤 수업을 찾고 계신가요?",
+        "기관·학교 수업",
+        "개인·소그룹 수업",
+        "SPOKEDU LAB",
+        "현장에서 설계하고,운영하며, 발전시킵니다.",
+        "아이와 현장의 조건에 맞춘 체육교육 설계",
+        "다양한 교육환경에서 축적한 현장 운영 경험",
+        "현장 경험을 교육 콘텐츠와 디지털 도구로 확장",
+        "교육 목적에 따라 구성하는 4MOVE",
+        "BASEMOVE",
+        "SPORTSMOVE",
+        "PLAYMOVE",
+        "SPOMOVE",
+        "대상과 현장에 맞춰 적용합니다.",
+        "화면을 보고 판단하고움직이는 체육활동",
+        "활동에 따라 활용하는 4색 매트, SPOMAT",
+        "현장에서 쌓아온 경험, 수업으로 이어갑니다.",
+        "매동초등학교",
+        "동작거점형 우리동네키움센터",
+        "찾아가는 동행 체육교실",
+        "우리 현장과 아이에게 맞는 수업을함께 찾습니다.",
+        "우리 기관의 교육환경에 맞춰",
+        "아이의 출발점과 목표에 맞춰"
+      ]
+    },
+    {
+      "width": 1920,
+      "title": "스포키듀 SPOKEDU | 기관 체육수업·SPOMOVE·SPOKEDU LAB",
+      "h1": [
+        "아이와 현장의 조건에 맞춰움직이고 싶게 만드는체육수업을 설계합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+          "alt": "서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장",
+          "width": 587,
+          "height": 440,
+          "naturalWidth": 2400,
+          "naturalHeight": 1800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-04.webp",
+          "alt": "SPOMOVE 색상 반응 — 화면의 색 자극을 보고 SPOMAT 위에서 움직이는 현장",
+          "width": 377,
+          "height": 282,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "지도자와 아동이 야외에서 사다리 움직임 활동을 하는 모습",
+          "width": 377,
+          "height": 283,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/images/spokedu/subscription/library-program-cards-20261008-final.png",
+          "alt": "SPOKEDU LAB의 놀이체육 콘텐츠 탐색 화면",
+          "width": 377,
+          "height": 282,
+          "naturalWidth": 1536,
+          "naturalHeight": 1004,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "지도자가 콘 사이를 달리는 아동의 움직임을 지도하는 수업",
+          "width": 556,
+          "height": 556,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/spe/spe-10.webp",
+          "alt": "SPOMOVE 특수체육 — 화면을 보고 다음 신호를 기다리며 준비하는 현장",
+          "width": 556,
+          "height": 417,
+          "naturalWidth": 1395,
+          "naturalHeight": 1127,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/subscription/prepare-class-tools.png",
+          "alt": "SPOKEDU LAB의 스톱워치 등 수업 운영 도구 화면",
+          "width": 556,
+          "height": 417,
+          "naturalWidth": 1366,
+          "naturalHeight": 640,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "SPOMOVE 수업 — 화면 자극, SPOMAT, 아이들의 움직임이 한 장면에 연결된 현장",
+          "width": 578,
+          "height": 434,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-07.webp",
+          "alt": "SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면",
+          "width": 578,
+          "height": 434,
+          "naturalWidth": 1600,
+          "naturalHeight": 908,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/spomat-layout.png",
+          "alt": "빨강·노랑·초록·파랑으로 구성된 물리적 SPOMAT",
+          "width": 130,
+          "height": 123,
+          "naturalWidth": 322,
+          "naturalHeight": 305,
+          "fit": "fill",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "매동초등학교 · 스포츠 스텝업 수업",
+          "width": 616,
+          "height": 462,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+          "alt": "동작거점형 우리동네키움센터 · SPOMOVE 수업",
+          "width": 572,
+          "height": 429,
+          "naturalWidth": 1600,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "찾아가는 동행 체육교실 · 특수체육 수업",
+          "width": 572,
+          "height": 429,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "contain",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "어떤 수업을 찾고 계신가요?",
+        "기관·학교 수업",
+        "개인·소그룹 수업",
+        "SPOKEDU LAB",
+        "현장에서 설계하고,운영하며, 발전시킵니다.",
+        "아이와 현장의 조건에 맞춘 체육교육 설계",
+        "다양한 교육환경에서 축적한 현장 운영 경험",
+        "현장 경험을 교육 콘텐츠와 디지털 도구로 확장",
+        "교육 목적에 따라 구성하는 4MOVE",
+        "BASEMOVE",
+        "SPORTSMOVE",
+        "PLAYMOVE",
+        "SPOMOVE",
+        "대상과 현장에 맞춰 적용합니다.",
+        "화면을 보고 판단하고움직이는 체육활동",
+        "활동에 따라 활용하는 4색 매트, SPOMAT",
+        "현장에서 쌓아온 경험, 수업으로 이어갑니다.",
+        "매동초등학교",
+        "동작거점형 우리동네키움센터",
+        "찾아가는 동행 체육교실",
+        "우리 현장과 아이에게 맞는 수업을함께 찾습니다.",
+        "우리 기관의 교육환경에 맞춰",
+        "아이의 출발점과 목표에 맞춰"
+      ]
+    }
+  ],
+  "subpages": [
+    {
+      "route": "/about",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/about",
+      "title": "스포키듀 소개 | 현장 체육교육 · SPOMOVE · 구독시스템",
+      "h1": [
+        "움직임으로 아이의 성장을 설계합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 327,
+          "height": 327,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 327,
+          "height": 327,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 327,
+          "height": 327,
+          "naturalWidth": 2400,
+          "naturalHeight": 1800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/instructor-choi.jpg",
+          "alt": "최지훈 대표",
+          "width": 287,
+          "height": 359,
+          "naturalWidth": 1184,
+          "naturalHeight": 656,
+          "fit": "cover",
+          "position": "50% 0%"
+        },
+        {
+          "src": "/images/spokedu/private/instructor-kim-yunki.jpg",
+          "alt": "김윤기 운영총괄",
+          "width": 287,
+          "height": 359,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 0%"
+        },
+        {
+          "src": "/images/spokedu/private/instructor-kim-gumin.jpg",
+          "alt": "김구민 수업팀장",
+          "width": 287,
+          "height": 359,
+          "naturalWidth": 1279,
+          "naturalHeight": 714,
+          "fit": "cover",
+          "position": "50% 0%"
+        }
+      ],
+      "headings": [
+        "이해합니다. ",
+        "설계합니다. ",
+        "관찰합니다. ",
+        "교육을 설계하고 현장을 움직이는 사람들",
+        "최지훈",
+        "김윤기",
+        "김구민",
+        "현장에서 시작해 교육의 가능성을 넓힙니다.",
+        "체육교육",
+        "SPOMOVE",
+        "SPOKEDU LAB",
+        "연락처 및 방문 안내",
+        "걸어온 길",
+        "2026",
+        "2025",
+        "2024",
+        "설립 ~ 2023",
+        "움직임의 경험이 성장의 기회가 되도록."
+      ]
+    },
+    {
+      "route": "/about",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/about",
+      "title": "스포키듀 소개 | 현장 체육교육 · SPOMOVE · 구독시스템",
+      "h1": [
+        "움직임으로 아이의 성장을 설계합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 664,
+          "height": 498,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 664,
+          "height": 498,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-hero-field.webp",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 664,
+          "height": 498,
+          "naturalWidth": 2400,
+          "naturalHeight": 1800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/instructor-choi.jpg",
+          "alt": "최지훈 대표",
+          "width": 336,
+          "height": 420,
+          "naturalWidth": 1184,
+          "naturalHeight": 656,
+          "fit": "cover",
+          "position": "50% 0%"
+        },
+        {
+          "src": "/images/spokedu/private/instructor-kim-yunki.jpg",
+          "alt": "김윤기 운영총괄",
+          "width": 336,
+          "height": 420,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 0%"
+        },
+        {
+          "src": "/images/spokedu/private/instructor-kim-gumin.jpg",
+          "alt": "김구민 수업팀장",
+          "width": 336,
+          "height": 420,
+          "naturalWidth": 1279,
+          "naturalHeight": 714,
+          "fit": "cover",
+          "position": "50% 0%"
+        }
+      ],
+      "headings": [
+        "이해합니다. ",
+        "설계합니다. ",
+        "관찰합니다. ",
+        "교육을 설계하고 현장을 움직이는 사람들",
+        "최지훈",
+        "김윤기",
+        "김구민",
+        "현장에서 시작해 교육의 가능성을 넓힙니다.",
+        "체육교육",
+        "SPOMOVE",
+        "SPOKEDU LAB",
+        "연락처 및 방문 안내",
+        "걸어온 길",
+        "2026",
+        "2025",
+        "2024",
+        "설립 ~ 2023",
+        "움직임의 경험이 성장의 기회가 되도록."
+      ]
+    },
+    {
+      "route": "/education",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/education",
+      "title": "기관 체육수업 | 학교·복지관·키움센터 체육교육 SPOKEDU",
+      "h1": [
+        "학교와 기관을 위한 맞춤형 스포츠 커리큘럼"
+      ],
+      "overflow": false,
+      "overflowElements": [
+        {
+          "tag": "TABLE",
+          "text": "비교 기준SPOKEDU 현장 운영활동 제공 중심 방식수업 설계대상 · 공간 · 인원 · 운영 목적을 확인한 "
+        },
+        {
+          "tag": "THEAD",
+          "text": "비교 기준SPOKEDU 현장 운영활동 제공 중심 방식"
+        },
+        {
+          "tag": "TR",
+          "text": "비교 기준SPOKEDU 현장 운영활동 제공 중심 방식"
+        },
+        {
+          "tag": "TH",
+          "text": "SPOKEDU 현장 운영"
+        },
+        {
+          "tag": "TH",
+          "text": "활동 제공 중심 방식"
+        },
+        {
+          "tag": "TBODY",
+          "text": "수업 설계대상 · 공간 · 인원 · 운영 목적을 확인한 뒤 수업을 구성합니다.준비된 활동 또는 종목 단위로 "
+        },
+        {
+          "tag": "TR",
+          "text": "수업 설계대상 · 공간 · 인원 · 운영 목적을 확인한 뒤 수업을 구성합니다.준비된 활동 또는 종목 단위로 "
+        },
+        {
+          "tag": "TD",
+          "text": "대상 · 공간 · 인원 · 운영 목적을 확인한 뒤 수업을 구성합니다."
+        },
+        {
+          "tag": "TD",
+          "text": "준비된 활동 또는 종목 단위로 운영합니다."
+        },
+        {
+          "tag": "TR",
+          "text": "강사 운영수업 기준과 운영 범위를 공유한 뒤 기관 조건에 맞춰 배정합니다.활동 진행 중심으로 운영합니다."
+        },
+        {
+          "tag": "TD",
+          "text": "수업 기준과 운영 범위를 공유한 뒤 기관 조건에 맞춰 배정합니다."
+        },
+        {
+          "tag": "TD",
+          "text": "활동 진행 중심으로 운영합니다."
+        }
+      ],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "SPOMOVE 수업 현장",
+          "width": 287,
+          "height": 179,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "월간 스포츠 수업 현장",
+          "width": 287,
+          "height": 179,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/donghaeng-special-pe.jpg",
+          "alt": "특수·포용 체육 수업 현장",
+          "width": 287,
+          "height": 179,
+          "naturalWidth": 1263,
+          "naturalHeight": 1245,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/shinwol-integrated-pe.jpg",
+          "alt": "미니올림픽 수업 현장",
+          "width": 287,
+          "height": 179,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/seodaemun-event-booth.jpg",
+          "alt": "체험·부스·커스텀 수업 현장",
+          "width": 287,
+          "height": 179,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "기관 맞춤 프로그램 수업 현장",
+          "width": 287,
+          "height": 179,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-master-ui.png",
+          "alt": "SPOKEDU LAB의 수업 콘텐츠·프로그램 화면",
+          "width": 327,
+          "height": 245,
+          "naturalWidth": 1024,
+          "naturalHeight": 795,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 327,
+          "height": 245,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 327,
+          "height": 245,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/yangcheon-paps.jpg",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/dasarang-oneday-field.jpg",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 601,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "기관·학교 수업",
+        "SPOMOVE",
+        "월간 스포츠",
+        "특수·포용 체육",
+        "미니올림픽",
+        "체험·부스·커스텀",
+        "기관 맞춤 프로그램",
+        "기관 환경과 교육 목표 파악",
+        "수업 운영 및 지도 인력 배정",
+        "운영 후 결과 공유·행정 지원",
+        "수업 방식의 차이를 먼저 확인하세요",
+        "수업 방식의 차이를 먼저 확인하세요",
+        "기관 조건에 맞춰 구성합니다",
+        "이렇게 운영할 수 있습니다",
+        "정기수업",
+        "방학·특강",
+        "원데이·행사",
+        "특수·포용 체육",
+        "교육 목적에 따라 구성하는 4MOVE",
+        "BASEMOVE",
+        "SPORTSMOVE",
+        "PLAYMOVE",
+        "SPOMOVE",
+        "실제 운영 현장",
+        "양천거점형키움센터",
+        "다사랑영등포지역아동센터",
+        "찾아가는 동행 체육교실",
+        "자주 묻는 질문",
+        "우리 학교·기관에 완벽히 들어맞는스포츠 교육을 지금 바로 설계해보세요"
+      ]
+    },
+    {
+      "route": "/education",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/education",
+      "title": "기관 체육수업 | 학교·복지관·키움센터 체육교육 SPOKEDU",
+      "h1": [
+        "학교와 기관을 위한 맞춤형 스포츠 커리큘럼"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "SPOMOVE 수업 현장",
+          "width": 336,
+          "height": 210,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "월간 스포츠 수업 현장",
+          "width": 336,
+          "height": 210,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/donghaeng-special-pe.jpg",
+          "alt": "특수·포용 체육 수업 현장",
+          "width": 336,
+          "height": 210,
+          "naturalWidth": 1263,
+          "naturalHeight": 1245,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/shinwol-integrated-pe.jpg",
+          "alt": "미니올림픽 수업 현장",
+          "width": 336,
+          "height": 210,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/seodaemun-event-booth.jpg",
+          "alt": "체험·부스·커스텀 수업 현장",
+          "width": 336,
+          "height": 210,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "기관 맞춤 프로그램 수업 현장",
+          "width": 336,
+          "height": 210,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-master-ui.png",
+          "alt": "SPOKEDU LAB의 수업 콘텐츠·프로그램 화면",
+          "width": 664,
+          "height": 498,
+          "naturalWidth": 1024,
+          "naturalHeight": 795,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 664,
+          "height": 498,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "학교·기관 체육수업 운영",
+          "width": 664,
+          "height": 498,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/yangcheon-paps.jpg",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/dasarang-oneday-field.jpg",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 800,
+          "naturalHeight": 601,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "기관·학교 수업",
+        "SPOMOVE",
+        "월간 스포츠",
+        "특수·포용 체육",
+        "미니올림픽",
+        "체험·부스·커스텀",
+        "기관 맞춤 프로그램",
+        "기관 환경과 교육 목표 파악",
+        "수업 운영 및 지도 인력 배정",
+        "운영 후 결과 공유·행정 지원",
+        "수업 방식의 차이를 먼저 확인하세요",
+        "수업 방식의 차이를 먼저 확인하세요",
+        "기관 조건에 맞춰 구성합니다",
+        "이렇게 운영할 수 있습니다",
+        "정기수업",
+        "방학·특강",
+        "원데이·행사",
+        "특수·포용 체육",
+        "교육 목적에 따라 구성하는 4MOVE",
+        "BASEMOVE",
+        "SPORTSMOVE",
+        "PLAYMOVE",
+        "SPOMOVE",
+        "실제 운영 현장",
+        "양천거점형키움센터",
+        "다사랑영등포지역아동센터",
+        "찾아가는 동행 체육교실",
+        "자주 묻는 질문",
+        "우리 학교·기관에 완벽히 들어맞는스포츠 교육을 지금 바로 설계해보세요"
+      ]
+    },
+    {
+      "route": "/private",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/private",
+      "title": "개인·소그룹 체육수업 | SPOKEDU",
+      "h1": [
+        "현재 수준과 목표에 맞춰 개인·소그룹 수업을 안내합니다"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 327,
+          "height": 204,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 80%"
+        },
+        {
+          "src": "/images/spokedu/private/class-flow-01.jpg",
+          "alt": "아동이 야외에서 신체활동을 하는 모습",
+          "width": 327,
+          "height": 204,
+          "naturalWidth": 856,
+          "naturalHeight": 642,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 327,
+          "height": 204,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 80%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "지도자와 아동이 함께하는 체육수업 모습",
+          "width": 327,
+          "height": 204,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "지도자와 아동이 함께하는 체육수업 모습",
+          "width": 327,
+          "height": 204,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 327,
+          "height": 204,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 80%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-jumprope.jpg",
+          "alt": "줄넘기",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-running.jpg",
+          "alt": "육상",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-bike.jpg",
+          "alt": "자전거",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-inline.jpg",
+          "alt": "인라인",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-preschool.jpg",
+          "alt": "유아체육",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-soccer.jpg",
+          "alt": "축구",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-basketball.jpg",
+          "alt": "농구",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-paps.jpg",
+          "alt": "팝스",
+          "width": 156,
+          "height": 117,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "어떤 아이에게 맞을까요",
+        "상담 조건 확인 후 적합 강사를 배정합니다",
+        "쿨다운 및 피드백",
+        "아이 맞춤형 특화 레슨 과정",
+        "1:1 개인수업",
+        "2~4명 소그룹",
+        "종목 준비",
+        "느린학습자·발달 수준을 고려한 수업",
+        "1:1 개인수업",
+        "2~4명 소그룹",
+        "개별 수행에 맞춘 조정",
+        "목표 종목에 맞춰 설계하는 수업 방향",
+        "줄넘기",
+        "육상(달리기)",
+        "자전거",
+        "인라인",
+        "유아체육",
+        "축구",
+        "농구",
+        "팝스",
+        "수업 장소와 방식",
+        "SPOKEDU LAB",
+        "아파트 커뮤니티",
+        "공원·개방 체육 공간",
+        "기타 협의 가능한 공간",
+        "수업 사이클",
+        "원데이",
+        "단기",
+        "정기 (8회차)",
+        "상담 전에 많이 묻는 질문",
+        "지금 우리 아이에게 꼭 맞는 전담 코치님을 만나보세요"
+      ]
+    },
+    {
+      "route": "/private",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/private",
+      "title": "개인·소그룹 체육수업 | SPOKEDU",
+      "h1": [
+        "현재 수준과 목표에 맞춰 개인·소그룹 수업을 안내합니다"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 664,
+          "height": 415,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 80%"
+        },
+        {
+          "src": "/images/spokedu/private/class-flow-01.jpg",
+          "alt": "아동이 야외에서 신체활동을 하는 모습",
+          "width": 664,
+          "height": 415,
+          "naturalWidth": 856,
+          "naturalHeight": 642,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 664,
+          "height": 415,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 80%"
+        },
+        {
+          "src": "/images/spokedu/복지관_민첩성 놀이체육.jpg",
+          "alt": "지도자와 아동이 함께하는 체육수업 모습",
+          "width": 373,
+          "height": 233,
+          "naturalWidth": 1080,
+          "naturalHeight": 1440,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/dispatch/dispatch-group-class.jpg",
+          "alt": "지도자와 아동이 함께하는 체육수업 모습",
+          "width": 373,
+          "height": 233,
+          "naturalWidth": 2000,
+          "naturalHeight": 1500,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/private-coaching.jpg",
+          "alt": "공원에서 지도자가 아동의 움직임을 지도하는 모습",
+          "width": 373,
+          "height": 233,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 80%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-jumprope.jpg",
+          "alt": "줄넘기",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-running.jpg",
+          "alt": "육상",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-bike.jpg",
+          "alt": "자전거",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-inline.jpg",
+          "alt": "인라인",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-preschool.jpg",
+          "alt": "유아체육",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-soccer.jpg",
+          "alt": "축구",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-basketball.jpg",
+          "alt": "농구",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/private/curriculum-paps.jpg",
+          "alt": "팝스",
+          "width": 278,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "어떤 아이에게 맞을까요",
+        "상담 조건 확인 후 적합 강사를 배정합니다",
+        "쿨다운 및 피드백",
+        "아이 맞춤형 특화 레슨 과정",
+        "1:1 개인수업",
+        "2~4명 소그룹",
+        "종목 준비",
+        "느린학습자·발달 수준을 고려한 수업",
+        "1:1 개인수업",
+        "2~4명 소그룹",
+        "개별 수행에 맞춘 조정",
+        "목표 종목에 맞춰 설계하는 수업 방향",
+        "줄넘기",
+        "육상(달리기)",
+        "자전거",
+        "인라인",
+        "유아체육",
+        "축구",
+        "농구",
+        "팝스",
+        "수업 장소와 방식",
+        "SPOKEDU LAB",
+        "아파트 커뮤니티",
+        "공원·개방 체육 공간",
+        "기타 협의 가능한 공간",
+        "수업 사이클",
+        "원데이",
+        "단기",
+        "정기 (8회차)",
+        "상담 전에 많이 묻는 질문",
+        "지금 우리 아이에게 꼭 맞는 전담 코치님을 만나보세요"
+      ]
+    },
+    {
+      "route": "/spomove",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/spomove",
+      "title": "SPOMOVE | 움직임에 반응하는 시지각 놀이체육",
+      "h1": [
+        "화면을 보고 판단하고 움직이는 체육활동"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "화면의 시각 자극을 보고 SPOMAT 4색 매트 위에서 움직이는 아동과 수업 지도자",
+          "width": 327,
+          "height": 409,
+          "naturalWidth": 600,
+          "naturalHeight": 800,
+          "fit": "cover",
+          "position": "50% 65%"
+        },
+        {
+          "src": "/images/spokedu/spomat-layout.png",
+          "alt": "SPOMAT 실제 제품 — 위 빨강·노랑, 아래 초록·파랑의 2×2 매트",
+          "width": 239,
+          "height": 226,
+          "naturalWidth": 322,
+          "naturalHeight": 305,
+          "fit": "contain",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "보고, 판단하고, 움직입니다.",
+        "네 가지 색으로 구분하는 SPOMAT",
+        "같은 활동도 다르게 설계할 수 있습니다.",
+        "단순 반응",
+        "선택 반응",
+        "복합 반응",
+        "화면 신호 · 반응 선택",
+        "신체 수행",
+        "화면 신호는 실제 움직임 수행으로 이어집니다",
+        "규칙에 맞는 반응을 선택하도록 구성합니다",
+        "사이먼 효과",
+        "플랭커",
+        "스트룹 과제",
+        "DIVE",
+        "SPOMOVE 도입 문의"
+      ]
+    },
+    {
+      "route": "/spomove",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/spomove",
+      "title": "SPOMOVE | 움직임에 반응하는 시지각 놀이체육",
+      "h1": [
+        "화면을 보고 판단하고 움직이는 체육활동"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/spokedu/programs/spomove/assets/edu/edu-03.webp",
+          "alt": "화면의 시각 자극을 보고 SPOMAT 4색 매트 위에서 움직이는 아동과 수업 지도자",
+          "width": 664,
+          "height": 498,
+          "naturalWidth": 1280,
+          "naturalHeight": 960,
+          "fit": "cover",
+          "position": "50% 62%"
+        },
+        {
+          "src": "/images/spokedu/spomat-layout.png",
+          "alt": "SPOMAT 실제 제품 — 위 빨강·노랑, 아래 초록·파랑의 2×2 매트",
+          "width": 322,
+          "height": 305,
+          "naturalWidth": 322,
+          "naturalHeight": 305,
+          "fit": "contain",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "보고, 판단하고, 움직입니다.",
+        "네 가지 색으로 구분하는 SPOMAT",
+        "같은 활동도 다르게 설계할 수 있습니다.",
+        "단순 반응",
+        "선택 반응",
+        "복합 반응",
+        "화면 신호 · 반응 선택",
+        "신체 수행",
+        "화면 신호는 실제 움직임 수행으로 이어집니다",
+        "규칙에 맞는 반응을 선택하도록 구성합니다",
+        "사이먼 효과",
+        "플랭커",
+        "스트룹 과제",
+        "DIVE",
+        "SPOMOVE 도입 문의"
+      ]
+    },
+    {
+      "route": "/records",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/records",
+      "title": "실제 체육수업 사례 | 학교·기관·키움센터 SPOKEDU",
+      "h1": [
+        "현장에서 운영한 수업 사례"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 1600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/yangcheon-paps.jpg",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/dasarang-oneday-field.jpg",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 601,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/seodaemun-event-booth.jpg",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/gangdong-health-pe.jpg",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 800,
+          "naturalHeight": 601,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/shinwol-integrated-pe.jpg",
+          "alt": "",
+          "width": 335,
+          "height": 209,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "현장 기록 아카이브",
+        "동작거점형 우리동네키움센터",
+        "양천거점형키움센터",
+        "매동초등학교",
+        "다사랑영등포지역아동센터",
+        "서대문구 독립문공원 어린이날 축제",
+        "찾아가는 동행 체육교실",
+        "강동구 보건소 연계 수업",
+        "신월 2동 주민센터",
+        "우리 기관에서도 이런 수업을 운영하고 싶다면"
+      ]
+    },
+    {
+      "route": "/records",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/records",
+      "title": "실제 체육수업 사례 | 학교·기관·키움센터 SPOKEDU",
+      "h1": [
+        "현장에서 운영한 수업 사례"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-spomove-p05.webp",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 1600,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/yangcheon-paps.jpg",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-general.webp",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 807,
+          "naturalHeight": 514,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/dasarang-oneday-field.jpg",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 800,
+          "naturalHeight": 601,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/seodaemun-event-booth.jpg",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/home/field-editorial/home-case-adapted-p05.webp",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 1200,
+          "naturalHeight": 900,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/gangdong-health-pe.jpg",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 800,
+          "naturalHeight": 601,
+          "fit": "cover",
+          "position": "50% 50%"
+        },
+        {
+          "src": "/images/spokedu/records/shinwol-integrated-pe.jpg",
+          "alt": "",
+          "width": 376,
+          "height": 235,
+          "naturalWidth": 4284,
+          "naturalHeight": 5712,
+          "fit": "cover",
+          "position": "50% 50%"
+        }
+      ],
+      "headings": [
+        "현장 기록 아카이브",
+        "동작거점형 우리동네키움센터",
+        "양천거점형키움센터",
+        "매동초등학교",
+        "다사랑영등포지역아동센터",
+        "서대문구 독립문공원 어린이날 축제",
+        "찾아가는 동행 체육교실",
+        "강동구 보건소 연계 수업",
+        "신월 2동 주민센터",
+        "우리 기관에서도 이런 수업을 운영하고 싶다면"
+      ]
+    },
+    {
+      "route": "/spomat",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/spomat",
+      "title": "SPOMAT | SPOMOVE 실행 도구 SPOKEDU",
+      "h1": [
+        "SPOMAT은 SPOMOVE를 실행하는 물리적 도구입니다"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [],
+      "headings": []
+    },
+    {
+      "route": "/spomat",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/spomat",
+      "title": "SPOMAT | SPOMOVE 실행 도구 SPOKEDU",
+      "h1": [
+        "SPOMAT은 SPOMOVE를 실행하는 물리적 도구입니다"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [],
+      "headings": []
+    },
+    {
+      "route": "/spomove/catalog",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/spomove/catalog",
+      "title": "SPOMOVE 프로그램 구성 | SPOKEDU",
+      "h1": [
+        "SPOMOVE 프로그램 구성"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [],
+      "headings": []
+    },
+    {
+      "route": "/spomove/catalog",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/spomove/catalog",
+      "title": "SPOMOVE 프로그램 구성 | SPOKEDU",
+      "h1": [
+        "SPOMOVE 프로그램 구성"
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [],
+      "headings": []
+    },
+    {
+      "route": "/spokedu-lab",
+      "width": 375,
+      "status": 200,
+      "finalPath": "/spokedu-lab",
+      "title": "유아·초등 체육수업 준비·운영·기록 | SPOKEDU LAB",
+      "h1": [
+        "놀이체육을 찾고,수업을 구성하고,현장에서 운영합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [],
+      "headings": []
+    },
+    {
+      "route": "/spokedu-lab",
+      "width": 1440,
+      "status": 200,
+      "finalPath": "/spokedu-lab",
+      "title": "유아·초등 체육수업 준비·운영·기록 | SPOKEDU LAB",
+      "h1": [
+        "놀이체육을 찾고,수업을 구성하고,현장에서 운영합니다."
+      ],
+      "overflow": false,
+      "overflowElements": [],
+      "brokenImages": [],
+      "images": [],
+      "headings": []
+    }
+  ],
+  "links": [
+    {
+      "href": "/",
+      "status": 200,
+      "finalPath": "/"
+    },
+    {
+      "href": "/about",
+      "status": 200,
+      "finalPath": "/about"
+    },
+    {
+      "href": "/education",
+      "status": 200,
+      "finalPath": "/education"
+    },
+    {
+      "href": "/private",
+      "status": 200,
+      "finalPath": "/private"
+    },
+    {
+      "href": "/spomove",
+      "status": 200,
+      "finalPath": "/spomove"
+    },
+    {
+      "href": "/records",
+      "status": 200,
+      "finalPath": "/records"
+    },
+    {
+      "href": "/spokedu-lab",
+      "status": 200,
+      "finalPath": "/spokedu-lab"
+    },
+    {
+      "href": "/contact",
+      "status": 200,
+      "finalPath": "/contact"
+    },
+    {
+      "href": "/spomat",
+      "status": 200,
+      "finalPath": "/spomat"
+    },
+    {
+      "href": "/records/dongjak-spomove",
+      "status": 200,
+      "finalPath": "/records/dongjak-spomove"
+    },
+    {
+      "href": "/contact?type=dispatch",
+      "status": 200,
+      "finalPath": "/contact"
+    },
+    {
+      "href": "/contact?type=private",
+      "status": 200,
+      "finalPath": "/contact"
+    },
+    {
+      "href": "/contact?type=spomove",
+      "status": 200,
+      "finalPath": "/contact"
+    }
+  ],
+  "inquiries": [
+    {
+      "type": "dispatch",
+      "selectedForm": true,
+      "submitted": false
+    },
+    {
+      "type": "private",
+      "selectedForm": true,
+      "submitted": false
+    },
+    {
+      "type": "spomove",
+      "selectedForm": true,
+      "submitted": false
+    },
+    {
+      "type": null,
+      "unselected": true,
+      "submitted": false
+    }
+  ],
+  "navigation": {
+    "desktopOrder": [
+      "SPOKEDU 소개",
+      "기관·학교 수업",
+      "개인·소그룹 수업",
+      "SPOMOVE",
+      "수업사례"
+    ],
+    "mobile": {
+      "order": [
+        "SPOKEDU 소개",
+        "기관·학교 수업",
+        "개인·소그룹 수업",
+        "SPOMOVE",
+        "수업사례"
+      ],
+      "activeLink": "SPOKEDU 소개",
+      "escapeCloses": true,
+      "focusRestored": true,
+      "navigationCloses": true
+    }
+  },
+  "errors": [],
+  "homeDuplicateByteGroups": []
+}

@@ -1,0 +1,24 @@
+{
+  "results": [
+    {
+      "name": "build",
+      "command": "node node_modules/next/dist/bin/next build",
+      "exitCode": 0
+    },
+    {
+      "name": "tests",
+      "command": "node node_modules/vitest/vitest.mjs run app/spokedu",
+      "exitCode": 0
+    },
+    {
+      "name": "eslint",
+      "command": "node node_modules/eslint/bin/eslint.js app/spokedu/components/home-web/home-section03-people.ts app/spokedu/components/site-chrome.tsx app/spokedu/data/about-founder.ts app/spokedu/data/about-page.ts app/spokedu/data/curriculum-page.ts app/spokedu/data/education-system.ts app/spokedu/data/field-records-catalog.ts app/spokedu/data/field-records-catalog.test.ts app/spokedu/data/marketing-public-metrics.ts app/spokedu/data/public-brand-copy.ts app/spokedu/data/site.ts app/spokedu/data/site-ia.test.ts app/spokedu/data/spomat-page.ts app/spokedu/data/spomove-program-page.ts app/spokedu/data/spomove-public-catalog-page.ts app/spokedu/website/components/content-sections.tsx app/spokedu/website/data/education.ts app/spokedu/website/data/home.ts app/spokedu/website/pages/about.tsx app/spokedu/website/pages/education.tsx app/spokedu/website/pages/home.tsx app/spokedu/website/pages/spomove.tsx app/spokedu/website/public-v2.contract.test.ts",
+      "exitCode": 0
+    },
+    {
+      "name": "typescript",
+      "command": "node node_modules/typescript/bin/tsc --noEmit --pretty false",
+      "exitCode": 0
+    }
+  ]
+}

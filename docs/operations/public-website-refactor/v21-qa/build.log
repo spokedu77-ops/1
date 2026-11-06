@@ -1,0 +1,373 @@
+▲ Next.js 16.2.11 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.3s
+  Running TypeScript ...
+  Finished TypeScript in 18.5s ...
+  Collecting page data using 23 workers ...
+  Generating static pages using 23 workers (0/259) ...
+  Generating static pages using 23 workers (64/259) 
+  Generating static pages using 23 workers (129/259) 
+  Generating static pages using 23 workers (194/259) 
+✓ Generating static pages using 23 workers (259/259) in 622ms
+  Finalizing page optimization ...
+
+Route (app)                                                               Revalidate  Expire
+┌ ○ /                                                                             1d      1y
+├ ○ /_not-found
+├ ○ /about
+├ ○ /admin
+├ ƒ /admin/centers
+├ ƒ /admin/centers/[id]
+├ ○ /admin/classes
+├ ○ /admin/classes-v2
+├ ○ /admin/classes-v2/calendar
+├ ○ /admin/classes-v2/create
+├ ƒ /admin/classes-v2/list
+├ ○ /admin/classes/calendar
+├ ○ /admin/classes/create
+├ ○ /admin/classes/list
+├ ○ /admin/consult
+├ ○ /admin/curriculum
+├ ○ /admin/iiwarmup
+├ ○ /admin/iiwarmup/assets
+├ ○ /admin/iiwarmup/spomove
+├ ○ /admin/info-pages
+├ ○ /admin/inventory
+├ ○ /admin/master/reports
+├ ○ /admin/move-report
+├ ○ /admin/note
+├ ƒ /admin/note-v2-preview
+├ ○ /admin/note-v2-release
+├ ƒ /admin/note-v2-stage3
+├ ○ /admin/note-v2-stage4
+├ ○ /admin/note-v2-stage5
+├ ○ /admin/notice
+├ ○ /admin/spokedu
+├ ○ /admin/spokedu-master
+├ ƒ /admin/spokedu-master-admin
+├ ○ /admin/spokedu-master/programs
+├ ○ /admin/spokedu-master/spomove
+├ ○ /admin/spomove
+├ ○ /admin/spomove/training
+├ ○ /admin/teachers-classes
+├ ○ /admin/users
+├ ƒ /api/admin/class-ops/reference
+├ ƒ /api/admin/classes/postpone
+├ ƒ /api/admin/classes/sessions
+├ ƒ /api/admin/classes/sessions/bulk-update
+├ ƒ /api/admin/classes/sessions/checked-update
+├ ƒ /api/admin/classes/sessions/shrink
+├ ƒ /api/admin/consult
+├ ƒ /api/admin/consult/[id]
+├ ƒ /api/admin/consult/summary
+├ ƒ /api/admin/curriculum
+├ ƒ /api/admin/dashboard/sessions
+├ ƒ /api/admin/dispatch-leads
+├ ƒ /api/admin/equipment/adjust
+├ ƒ /api/admin/equipment/capabilities
+├ ƒ /api/admin/equipment/history
+├ ƒ /api/admin/equipment/opening
+├ ƒ /api/admin/equipment/purge-teacher-holdings
+├ ƒ /api/admin/equipment/rent
+├ ƒ /api/admin/equipment/rentals
+├ ƒ /api/admin/equipment/return
+├ ƒ /api/admin/equipment/stock
+├ ƒ /api/admin/equipment/teachers
+├ ƒ /api/admin/inventory/images
+├ ƒ /api/admin/lesson-plans-sessions
+├ ƒ /api/admin/mileage/adjustment
+├ ƒ /api/admin/mileage/cancel
+├ ƒ /api/admin/mileage/cancel-settlement
+├ ƒ /api/admin/mileage/session
+├ ƒ /api/admin/move-report/attribution-sources
+├ ƒ /api/admin/move-report/coach-link-status
+├ ƒ /api/admin/move-report/educator-leads
+├ ƒ /api/admin/move-report/events-reset
+├ ƒ /api/admin/move-report/events-summary
+├ ƒ /api/admin/move-report/leads
+├ ƒ /api/admin/move-report/submissions
+├ ƒ /api/admin/note-v2/documents
+├ ƒ /api/admin/note-v2/documents/[id]
+├ ƒ /api/admin/note-v2/tree
+├ ƒ /api/admin/note-v2/tree/[id]
+├ ƒ /api/admin/note/documents
+├ ƒ /api/admin/note/lite/documents/[id]/snapshot
+├ ƒ /api/admin/notices
+├ ƒ /api/admin/notices/[id]
+├ ƒ /api/admin/postpone-notices
+├ ƒ /api/admin/postpone-notices/[id]
+├ ƒ /api/admin/postpone-notices/teachers
+├ ƒ /api/admin/session-short-code
+├ ƒ /api/admin/settlement-centers
+├ ƒ /api/admin/settlement-sheet
+├ ƒ /api/admin/settlement-summary
+├ ƒ /api/admin/spokedu-master-admin
+├ ƒ /api/admin/spokedu-master-admin/audit
+├ ƒ /api/admin/spokedu-master-admin/billing
+├ ƒ /api/admin/spokedu-master-admin/billing/recovery-preview
+├ ƒ /api/admin/spokedu-master-admin/billing/refunds
+├ ƒ /api/admin/spokedu-master-admin/members/[userId]
+├ ƒ /api/admin/spokedu-master/curriculum-meta
+├ ƒ /api/admin/spokedu-master/entitlement-grants
+├ ƒ /api/admin/spokedu-master/entitlement-grants/[grantId]
+├ ƒ /api/admin/spokedu-master/programs
+├ ƒ /api/admin/spokedu-master/programs/content-audit
+├ ƒ /api/admin/spokedu-master/programs/home-featured
+├ ƒ /api/admin/spokedu-master/programs/seed-reference-videos
+├ ƒ /api/admin/spokedu-master/programs/sync-center
+├ ƒ /api/admin/spokedu-master/programs/video-gaps
+├ ƒ /api/admin/spokedu-master/promotion-invites
+├ ƒ /api/admin/spokedu-master/spomove/home-featured
+├ ƒ /api/admin/spokedu-master/spomove/hub-family-featured
+├ ƒ /api/admin/spokedu-master/storage/recompress
+├ ƒ /api/admin/storage/center-session-file
+├ ƒ /api/admin/storage/center-session-file-link
+├ ƒ /api/admin/storage/cleanup-iiwarmup
+├ ƒ /api/admin/storage/cleanup-session-files
+├ ƒ /api/admin/storage/cleanup-session-photos
+├ ƒ /api/admin/storage/delete
+├ ƒ /api/admin/storage/exists
+├ ƒ /api/admin/storage/signed-upload
+├ ƒ /api/admin/storage/upload
+├ ƒ /api/admin/teacher-tier-fees
+├ ƒ /api/admin/teachers-classes/bulk-approve
+├ ƒ /api/admin/teachers-classes/list
+├ ƒ /api/admin/teachers-classes/save
+├ ƒ /api/admin/teachers/create
+├ ƒ /api/admin/teachers/reset-password
+├ ƒ /api/admin/teachers/sync-by-email
+├ ƒ /api/admin/think-asset-pack
+├ ƒ /api/admin/weekly-best
+├ ƒ /api/admin/weekly-best/[id]
+├ ƒ /api/auth/check-admin
+├ ƒ /api/auth/check-teacher-materials
+├ ƒ /api/auth/login-ux
+├ ƒ /api/auth/logout
+├ ƒ /api/consult
+├ ƒ /api/curriculum/leads
+├ ƒ /api/dispatch/leads
+├ ƒ /api/i18n/translate
+├ ƒ /api/info/gym/leads
+├ ƒ /api/institution/login
+├ ƒ /api/institution/status
+├ ƒ /api/move-report/coach-dashboard
+├ ƒ /api/move-report/coach-links
+├ ƒ /api/move-report/educator-leads
+├ ƒ /api/move-report/events
+├ ƒ /api/move-report/leads
+├ ƒ /api/move-report/share-image
+├ ƒ /api/move-report/submissions
+├ ƒ /api/move-report/track/assets
+├ ƒ /api/move-report/track/programs
+├ ƒ /api/move-report/track/sessions
+├ ƒ /api/move-report/track/sessions/[sessionId]
+├ ƒ /api/move-report/track/sessions/[sessionId]/records/[childId]
+├ ƒ /api/note/public/[token]
+├ ƒ /api/private/leads
+├ ƒ /api/pro/leads
+├ ƒ /api/public/session-report/[id]
+├ ƒ /api/sessions/auto-finish
+├ ƒ /api/spokedu-master/access
+├ ƒ /api/spokedu-master/class-records
+├ ƒ /api/spokedu-master/classes
+├ ƒ /api/spokedu-master/classes/[classId]
+├ ƒ /api/spokedu-master/classes/[classId]/schedule-rules
+├ ƒ /api/spokedu-master/classes/[classId]/schedule-rules/[ruleId]
+├ ƒ /api/spokedu-master/classes/[classId]/students
+├ ƒ /api/spokedu-master/classes/[classId]/students/[studentId]
+├ ƒ /api/spokedu-master/client-errors
+├ ƒ /api/spokedu-master/explanations
+├ ƒ /api/spokedu-master/favorites
+├ ƒ /api/spokedu-master/funnel-events
+├ ƒ /api/spokedu-master/og
+├ ƒ /api/spokedu-master/operational-data
+├ ƒ /api/spokedu-master/payment/billing/cancel
+├ ƒ /api/spokedu-master/payment/billing/health
+├ ƒ /api/spokedu-master/payment/billing/issue
+├ ƒ /api/spokedu-master/payment/billing/renew
+├ ƒ /api/spokedu-master/payment/billing/upgrade-quote
+├ ƒ /api/spokedu-master/payment/confirm
+├ ƒ /api/spokedu-master/payment/create-checkout
+├ ƒ /api/spokedu-master/payment/portal
+├ ƒ /api/spokedu-master/payment/webhook
+├ ƒ /api/spokedu-master/profile
+├ ƒ /api/spokedu-master/program-favorites
+├ ƒ /api/spokedu-master/programs
+├ ƒ /api/spokedu-master/promotions/redeem
+├ ƒ /api/spokedu-master/session-captures
+├ ƒ /api/spokedu-master/sessions
+├ ƒ /api/spokedu-master/sessions/[sessionId]/attendance
+├ ƒ /api/spokedu-master/sessions/[sessionId]/next
+├ ƒ /api/spokedu-master/sessions/[sessionId]/parent-notice
+├ ƒ /api/spokedu-master/sessions/[sessionId]/programs
+├ ƒ /api/spokedu-master/sessions/[sessionId]/programs/[sessionProgramId]
+├ ƒ /api/spokedu-master/sessions/[sessionId]/programs/carryover
+├ ƒ /api/spokedu-master/sessions/[sessionId]/programs/reorder
+├ ƒ /api/spokedu-master/sessions/[sessionId]/start
+├ ƒ /api/spokedu-master/shop/spomat/purchase
+├ ƒ /api/spokedu-master/spomove/guide-video
+├ ƒ /api/spokedu-master/students
+├ ƒ /api/spokedu-master/students/[id]
+├ ƒ /api/spokedu-master/subscription
+├ ƒ /api/spokedu-master/value-summary
+├ ƒ /api/spokedu/commercial-events
+├ ƒ /api/teacher/equipment/holdings
+├ ƒ /api/teacher/lesson-plan
+├ ƒ /api/teacher/my-schedule
+├ ƒ /api/teacher/session-feedback
+├ ƒ /api/teacher/session-file-upload
+├ ƒ /api/teacher/session-reset
+├ ƒ /api/teacher/settlement-sessions
+├ ƒ /api/teacher/spomove/favorites
+├ ƒ /api/teacher/spomove/favorites/[id]
+├ ƒ /api/teacher/weekly-best-detail
+├ ○ /billing
+├ ○ /class/create
+├ ○ /consult
+├ ○ /contact
+├ ○ /dev/equipment-inventory-visual-fixture
+├ ƒ /dispatch
+├ ○ /education
+├ ƒ /info/curriculum
+├ ○ /info/dispatch
+├ ○ /info/gym
+├ ○ /info/gym/privacy
+├ ƒ /info/private
+├ ○ /institution/login
+├ ○ /login
+├ ƒ /move-report
+├ ƒ /move-report/coach
+├ ƒ /move-report/coach/dashboard/[slug]
+├ ƒ /move-report/coach/history
+├ ƒ /move-report/coach/new
+├ ƒ /move-report/coach/observe
+├ ƒ /move-report/educator-beta
+├ ƒ /move-report/en
+├ ƒ /move-report/en/shared
+├ ○ /move-report/opengraph-image
+├ ƒ /move-report/profile
+├ ƒ /move-report/shared
+├ ƒ /move-report/track
+├ ƒ /move-report/track/programs
+├ ƒ /move-report/track/programs/[id]
+├ ƒ /move-report/track/sessions/[id]
+├ ƒ /move-report/track/sessions/[id]/children/[childId]
+├ ƒ /move-report/track/sessions/new
+├ ƒ /note/p/[token]
+├ ○ /partners
+├ ○ /portal
+├ ○ /private
+├ ○ /pro
+├ ○ /pro/apply
+├ ○ /program/iiwarmup
+├ ○ /program/iiwarmup/challenge
+├ ƒ /r/[code]
+├ ○ /records
+├ ● /records/[slug]                                                               1d      1y
+│ ├ /records/dongjak-spomove                                                      1d      1y
+│ ├ /records/yangcheon-paps                                                       1d      1y
+│ ├ /records/dasarang-oneday                                                      1d      1y
+│ └ /records/seodaemun-event-booth                                                1d      1y
+├ ƒ /report/[id]
+├ ƒ /report/-/opengraph-image
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ○ /spokedu                                                                      1d      1y
+├ ƒ /spokedu-lab
+├ ○ /spokedu-lab/activity
+├ ○ /spokedu-lab/class-record
+├ ○ /spokedu-lab/class-tools
+├ ○ /spokedu-lab/classes
+├ ƒ /spokedu-lab/classes/[classId]
+├ ○ /spokedu-lab/dashboard
+├ ○ /spokedu-lab/favorites
+├ ○ /spokedu-lab/library
+├ ƒ /spokedu-lab/library/[id]
+├ ○ /spokedu-lab/manage
+├ ○ /spokedu-lab/profile
+├ ○ /spokedu-lab/programs
+├ ○ /spokedu-lab/report
+├ ○ /spokedu-lab/spomove
+├ ○ /spokedu-lab/spomove/session
+├ ○ /spokedu-lab/students
+├ ƒ /spokedu-lab/students/[studentId]
+├ ○ /spokedu-master
+├ ○ /spokedu-master/activity
+├ ƒ /spokedu-master/auth/callback
+├ ○ /spokedu-master/class-record
+├ ○ /spokedu-master/class-tools
+├ ○ /spokedu-master/classes
+├ ƒ /spokedu-master/classes/[classId]
+├ ○ /spokedu-master/dashboard
+├ ○ /spokedu-master/favorites
+├ ○ /spokedu-master/landing
+├ ○ /spokedu-master/library
+├ ƒ /spokedu-master/library/[id]
+├ ○ /spokedu-master/login
+├ ○ /spokedu-master/manage
+├ ○ /spokedu-master/onboarding
+├ ƒ /spokedu-master/parent/[studentId]
+├ ○ /spokedu-master/payment
+├ ○ /spokedu-master/payment/cancel
+├ ○ /spokedu-master/payment/success
+├ ƒ /spokedu-master/privacy
+├ ○ /spokedu-master/profile
+├ ○ /spokedu-master/programs
+├ ○ /spokedu-master/promotions/redeem
+├ ○ /spokedu-master/report
+├ ○ /spokedu-master/shop
+├ ○ /spokedu-master/spomove
+├ ○ /spokedu-master/spomove/session
+├ ○ /spokedu-master/students
+├ ƒ /spokedu-master/students/[studentId]
+├ ○ /spokedu-master/subscription
+├ ƒ /spokedu-master/terms
+├ ○ /spokedu/about
+├ ○ /spokedu/cases
+├ ƒ /spokedu/cases/[slug]
+├ ○ /spokedu/contact
+├ ○ /spokedu/curriculum
+├ ƒ /spokedu/dispatch
+├ ○ /spokedu/education
+├ ○ /spokedu/insights
+├ ○ /spokedu/monthly
+├ ƒ /spokedu/monthly/[slug]
+├ ○ /spokedu/partners
+├ ○ /spokedu/private
+├ ○ /spokedu/programs
+├ ○ /spokedu/programs/camp
+├ ○ /spokedu/programs/monthly-newsports
+├ ○ /spokedu/programs/oneday-event
+├ ○ /spokedu/programs/paps
+├ ƒ /spokedu/programs/spomove
+├ ○ /spokedu/programs/spomove/catalog
+├ ○ /spokedu/records                                                              1d      1y
+├ ● /spokedu/records/[slug]                                                       1d      1y
+│ ├ /spokedu/records/dongjak-spomove                                              1d      1y
+│ ├ /spokedu/records/yangcheon-paps                                               1d      1y
+│ ├ /spokedu/records/dasarang-oneday                                              1d      1y
+│ └ /spokedu/records/seodaemun-event-booth                                        1d      1y
+├ ○ /spokedu/spomat
+├ ○ /spomat
+├ ○ /spomove
+├ ○ /spomove/catalog
+├ ○ /subscription
+├ ○ /teacher
+├ ○ /teacher/curriculum
+├ ○ /teacher/inventory
+├ ○ /teacher/lesson-plans
+├ ○ /teacher/my-classes
+├ ○ /teacher/report
+└ ○ /teacher/spomove
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

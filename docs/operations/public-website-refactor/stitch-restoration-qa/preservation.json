@@ -1,0 +1,84 @@
+{
+  "baseline": "0891c5c7015bee30ea11fdf2f9668418e7ed519e",
+  "allowed": [
+    "app/spokedu/components/website-chrome.tsx",
+    "app/spokedu/data/site-ia.test.ts",
+    "app/spokedu/docs/PUBLIC_MARKETING_DESIGN_CONTRACT.md",
+    "app/spokedu/website/components/ConsultationLink.tsx",
+    "app/spokedu/website/components/ConsultationLink.test.ts",
+    "app/spokedu/website/components/SpomoveVisual.tsx",
+    "app/spokedu/website/components/content-sections.tsx",
+    "app/spokedu/website/data/home.ts",
+    "app/spokedu/website/pages/home.tsx",
+    "app/spokedu/website/pages/private.tsx",
+    "app/spokedu/website/pages/education.tsx",
+    "app/spokedu/website/pages/about.tsx",
+    "app/spokedu/website/pages/spomove.tsx",
+    "app/spokedu/website/public-v2.contract.test.ts",
+    "app/spokedu/website/styles/home-spomove.css",
+    "app/spokedu/website/styles/spomove-experience.css",
+    "app/spokedu/website/styles/tokens.json",
+    "app/spokedu/website/styles/website-utilities.css",
+    "app/spokedu/website/styles/website.css",
+    "docs/operations/public-website-refactor/SPOKEDU_HOME_DESIGN_CANONICAL.md",
+    "scripts/build-website-styles.mjs"
+  ],
+  "changedWithinScope": [
+    "app/spokedu/components/website-chrome.tsx",
+    "app/spokedu/data/site-ia.test.ts",
+    "app/spokedu/docs/PUBLIC_MARKETING_DESIGN_CONTRACT.md",
+    "app/spokedu/website/components/SpomoveVisual.tsx",
+    "app/spokedu/website/components/content-sections.tsx",
+    "app/spokedu/website/data/home.ts",
+    "app/spokedu/website/pages/about.tsx",
+    "app/spokedu/website/pages/education.tsx",
+    "app/spokedu/website/pages/home.tsx",
+    "app/spokedu/website/pages/private.tsx",
+    "app/spokedu/website/pages/spomove.tsx",
+    "app/spokedu/website/public-v2.contract.test.ts",
+    "app/spokedu/website/styles/home-spomove.css",
+    "app/spokedu/website/styles/spomove-experience.css",
+    "app/spokedu/website/styles/tokens.json",
+    "app/spokedu/website/styles/website-utilities.css",
+    "app/spokedu/website/styles/website.css",
+    "docs/operations/public-website-refactor/SPOKEDU_HOME_DESIGN_CANONICAL.md",
+    "scripts/build-website-styles.mjs"
+  ],
+  "concurrentOutsideChanges": [
+    "app/admin/centers/CentersClient.tsx",
+    "app/admin/centers/CentersHubClient.tsx",
+    "app/admin/master/reports/SettlementSheet.tsx",
+    "app/components/Sidebar.tsx"
+  ],
+  "protectedFiles": [
+    {
+      "file": "app/api/admin/equipment/stock/route.ts",
+      "unchangedSinceStart": true
+    },
+    {
+      "file": "app/lib/equipment/fetchStock.ts",
+      "unchangedSinceStart": true
+    },
+    {
+      "file": "app/lib/equipment/schemaReady.ts",
+      "unchangedSinceStart": true
+    },
+    {
+      "file": "supabase/config.toml",
+      "unchangedSinceStart": true
+    },
+    {
+      "file": "vercel.json",
+      "unchangedSinceStart": true
+    }
+  ],
+  "imageChanges": [],
+  "seoAndSitemapChanged": [],
+  "deletedFiles": [
+    "app/spokedu/website/styles/spomove-experience.css"
+  ],
+  "newImplementationFiles": [
+    "app/spokedu/website/components/ConsultationLink.tsx",
+    "app/spokedu/website/components/ConsultationLink.test.ts"
+  ]
+}

@@ -1,0 +1,106 @@
+[
+  {
+    "route": "records",
+    "width": 390,
+    "before": [
+      390,
+      6604
+    ],
+    "after": [
+      390,
+      6604
+    ],
+    "overflow": false
+  },
+  {
+    "route": "contact",
+    "width": 390,
+    "before": [
+      390,
+      3539
+    ],
+    "after": [
+      390,
+      3529
+    ],
+    "overflow": false
+  },
+  {
+    "route": "partners",
+    "width": 390,
+    "before": [
+      390,
+      2625
+    ],
+    "after": [
+      390,
+      2625
+    ],
+    "overflow": false
+  },
+  {
+    "route": "spomat",
+    "width": 390,
+    "before": [
+      390,
+      4680
+    ],
+    "after": [
+      390,
+      4680
+    ],
+    "overflow": false
+  },
+  {
+    "route": "records",
+    "width": 1440,
+    "before": [
+      1440,
+      3597
+    ],
+    "after": [
+      1440,
+      3597
+    ],
+    "overflow": false
+  },
+  {
+    "route": "contact",
+    "width": 1440,
+    "before": [
+      1440,
+      2126
+    ],
+    "after": [
+      1440,
+      2120
+    ],
+    "overflow": false
+  },
+  {
+    "route": "partners",
+    "width": 1440,
+    "before": [
+      1440,
+      2050
+    ],
+    "after": [
+      1440,
+      1990
+    ],
+    "overflow": false
+  },
+  {
+    "route": "spomat",
+    "width": 1440,
+    "before": [
+      1440,
+      4292
+    ],
+    "after": [
+      1440,
+      4112
+    ],
+    "overflow": false
+  }
+]

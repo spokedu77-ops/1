@@ -1,0 +1,9 @@
+
+ RUN  v4.1.2 C:/Users/joker/Documents/GitHub/1
+
+
+ Test Files  259 passed (259)
+      Tests  1674 passed (1674)
+   Start at  22:30:19
+   Duration  7.22s (transform 16.98s, setup 0ms, import 36.29s, tests 2.36s, environment 7.40s)
+
