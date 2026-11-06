@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   TOSS_BILLING_APPROVAL_TIMEOUT_MS,
@@ -8,6 +8,14 @@ import {
   paySpokeduMasterBillingKey,
   findSpokeduMasterPaymentByOrderId,
 } from './spokeduMasterBillingProvider';
+
+import { billingKeyPairDigest, SPOKEDU_BILLING_MID } from './spokeduMasterBillingConfiguration';
+
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_TOSS_CLIENT_KEY', 'test_ck_demo');
+  vi.stubEnv('TOSS_BILLING_MID', SPOKEDU_BILLING_MID);
+  vi.stubEnv('TOSS_BILLING_KEY_PAIR_SHA256', billingKeyPairDigest('test_ck_demo', 'test_sk_demo'));
+});
 
 const originalSecret = process.env.TOSS_SECRET_KEY;
 const originalNodeEnv = process.env.NODE_ENV;
@@ -24,6 +32,40 @@ afterEach(() => {
 });
 
 describe('spokeduMasterBillingProvider', () => {
+  it('does not recover a DONE response without a valid original approval time', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ mId: SPOKEDU_BILLING_MID, status: 'DONE', paymentKey: 'fixture-payment', orderId: 'spm-lite-initial-fixture', totalAmount: 9900 })));
+    await expect(findSpokeduMasterPaymentByOrderId({ orderId: 'spm-lite-initial-fixture', amount: 9900 })).rejects.toThrow('toss_order_lookup_approval_time_missing');
+  });
+  it('keeps existing renewal keys usable without new checkout attestation variables', () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    vi.stubEnv('TOSS_BILLING_MID', ''); vi.stubEnv('TOSS_BILLING_KEY_PAIR_SHA256', '');
+    expect(isSpokeduMasterBillingProviderConfigured()).toBe(true);
+  });
+  it('issues only for the expected merchant and customer, using the documented mId field', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    for (const [mId, customerKey, expected] of [
+      [SPOKEDU_BILLING_MID, 'customer', true], ['other-mid', 'customer', false], [SPOKEDU_BILLING_MID, 'other-customer', false],
+    ] as const) {
+      vi.stubGlobal('fetch', vi.fn(async () => Response.json({ mId, customerKey, billingKey: 'fixture-billing-key' })));
+      const result = await issueSpokeduMasterBillingKey({ authKey: 'fixture-auth', customerKey: 'customer' });
+      expect(Boolean(result)).toBe(expected);
+    }
+  });
+
+  it('accepts a DONE approval and rejects non-DONE or wrong merchant responses', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    const input = { billingKey: 'fixture-billing', customerKey: 'customer', plan: 'lite' as const, amount: 9900,
+      orderId: 'spm-lite-initial-fixture', orderName: 'Lite', customerEmail: '' };
+    const response = { mId: SPOKEDU_BILLING_MID, status: 'DONE', paymentKey: 'fixture-payment', orderId: input.orderId,
+      totalAmount: 9900, approvedAt: '2026-11-06T12:00:00+09:00' };
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json(response)));
+    expect(await paySpokeduMasterBillingKey(input)).toMatchObject({ totalAmount: 9900, orderId: input.orderId });
+    for (const patch of [{ status: 'CANCELED' }, { mId: 'other' }, { totalAmount: 28900 }, { approvedAt: 'invalid' }]) {
+      vi.stubGlobal('fetch', vi.fn(async () => Response.json({ ...response, ...patch })));
+      await expect(paySpokeduMasterBillingKey(input)).rejects.toThrow('toss_billing_approval_mismatch');
+    }
+  });
   it('allows test keys outside production and fails closed on them in production', () => {
     delete process.env.TOSS_SECRET_KEY;
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(false);
@@ -39,6 +81,8 @@ describe('spokeduMasterBillingProvider', () => {
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(false);
 
     process.env.TOSS_SECRET_KEY = 'live_sk_demo';
+    vi.stubEnv('NEXT_PUBLIC_TOSS_CLIENT_KEY', 'live_ck_demo');
+    vi.stubEnv('TOSS_BILLING_KEY_PAIR_SHA256', billingKeyPairDigest('live_ck_demo', 'live_sk_demo'));
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(true);
   });
 
@@ -66,7 +110,7 @@ describe('spokeduMasterBillingProvider', () => {
   it('returns null when Toss issue HTTP fails', async () => {
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
     vi.stubGlobal('fetch', vi.fn(async () => new Response('no', { status: 500 })));
-    expect(await issueSpokeduMasterBillingKey({ authKey: 'a', customerKey: 'c' })).toBeNull();
+    await expect(issueSpokeduMasterBillingKey({ authKey: 'a', customerKey: 'c' })).rejects.toThrow('toss_billing_key_issue_failed:500');
   });
 
   it('keeps short timeouts for billing-key issue and payment lookup', async () => {
@@ -75,7 +119,7 @@ describe('spokeduMasterBillingProvider', () => {
     vi.stubGlobal('fetch', fetchMock);
     const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
 
-    await issueSpokeduMasterBillingKey({ authKey: 'a', customerKey: 'c' });
+    await expect(issueSpokeduMasterBillingKey({ authKey: 'a', customerKey: 'c' })).rejects.toThrow('toss_billing_key_issue_failed:500');
     await expect(findSpokeduMasterPaymentByOrderId({ orderId: 'order-1', amount: 9900 }))
       .rejects.toThrow('toss_order_lookup_indeterminate:500');
 
@@ -114,6 +158,7 @@ describe('spokeduMasterBillingProvider', () => {
   it('treats pay response mismatches as indeterminate rather than a safe decline', async () => {
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      mId: SPOKEDU_BILLING_MID,
       paymentKey: 'pay_1',
       orderId: 'wrong-order',
       totalAmount: 100,
@@ -152,6 +197,7 @@ describe('spokeduMasterBillingProvider', () => {
   it('looks up DONE payments by order id and rejects non-DONE', async () => {
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      mId: SPOKEDU_BILLING_MID,
       paymentKey: 'pay_1',
       orderId: 'order-1',
       totalAmount: 28900,
@@ -162,6 +208,7 @@ describe('spokeduMasterBillingProvider', () => {
     expect(await findSpokeduMasterPaymentByOrderId({ orderId: 'order-1', amount: 28900 })).toBeNull();
 
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      mId: SPOKEDU_BILLING_MID,
       paymentKey: 'pay_1',
       orderId: 'order-1',
       totalAmount: 28900,

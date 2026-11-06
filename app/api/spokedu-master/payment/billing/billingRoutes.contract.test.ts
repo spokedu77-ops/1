@@ -109,8 +109,8 @@ describe('SPOKEDU MASTER billing API contracts', () => {
   });
 
   it('fails closed without valid Toss credentials', () => {
-    expect(provider).toContain("startsWith('test_')");
-    expect(provider).toContain("startsWith('live_')");
+    expect(provider).toContain('getBillingKeyFormatError');
+    expect(readFileSync(join(process.cwd(), 'app/lib/server/spokeduMasterBillingConfiguration.ts'), 'utf8')).toContain('billing_key_mode_mismatch');
     expect(issueRoute).not.toContain('SPOKEDU_MASTER_BILLING_KEY_STORAGE_MODE');
     expect(issueRoute).not.toContain('plaintext_test_only');
     expect(renewRoute).toContain('CRON_SECRET');

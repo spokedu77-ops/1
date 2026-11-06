@@ -42,7 +42,12 @@ export function createSpokeduMasterRenewalOrderId(
   subscriptionId: string,
   billingCycleKey: string,
 ): string {
-  return `spm-${plan}-renewal-${subscriptionId}-${billingCycleKey}`;
+  const orderId = `spm-${plan}-renewal-${subscriptionId}-${billingCycleKey}`;
+  if (orderId.length <= 64) return orderId;
+  // Premium + a hyphenated UUID + YYYYMMDD is 65 characters. Compact only
+  // this UUID when necessary, keeping all existing shorter order IDs stable.
+  const compactId = subscriptionId.replaceAll('-', '');
+  return `spm-${plan}-renewal-${compactId}-${billingCycleKey}`;
 }
 
 export type SpokeduMasterPaymentOrder = {

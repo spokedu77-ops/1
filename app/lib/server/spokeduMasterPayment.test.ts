@@ -41,6 +41,14 @@ describe('SPOKEDU MASTER recurring payment contract', () => {
     expect(parseSpokeduMasterOrderId('spm-team-1719300000000')).toBeNull();
   });
 
+  it.each(['lite', 'premium'] as const)('keeps UUID renewal order IDs within the provider 64-character limit for %s', (plan) => {
+    const orderId = createSpokeduMasterRenewalOrderId(plan, '11111111-1111-4111-8111-111111111111', '20261106');
+    expect(orderId.length).toBeLessThanOrEqual(64);
+    expect(parseSpokeduMasterOrderId(orderId)).toBe(plan);
+    expect(createSpokeduMasterRenewalOrderId(plan, '11111111-1111-4111-8111-111111111112', '20261106')).not.toBe(orderId);
+    if (plan === 'lite') expect(orderId).toContain('11111111-1111-4111-8111-111111111111');
+  });
+
   it('rejects user, plan, amount, and state mismatches', () => {
     const input = {
       userId: 'user-a',

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Loader2, MessageCircle } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MASTER_CUSTOMER_SERVICE_HREF, MASTER_PRODUCT_CATALOG } from '../../lib/productCatalog';
-import { hasMasterEntitlement, type MasterAccessSnapshot } from '../../lib/masterAccessModel';
+import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
+import { isPaidPaymentActivated, type BillingActivationSummary } from '../paymentActivation';
 import { useMasterStore } from '../../store';
 import { getFallbackForMasterIntent, getSafeMasterPostPaymentPath } from '../../lib/masterPaymentReturn';
 import { readMasterGateContextFromSearchParams } from '../../lib/masterGateIntent';
@@ -29,6 +30,8 @@ type BillingIssueResponse = {
   error?: string;
   charged?: boolean;
   recoverable?: boolean;
+  code?: string;
+  stage?: string;
 };
 
 type AccessResponse = Partial<MasterAccessSnapshot> & {
@@ -37,11 +40,6 @@ type AccessResponse = Partial<MasterAccessSnapshot> & {
 
 const ACCESS_POLL_ATTEMPTS = 6;
 const ACCESS_POLL_INTERVAL_MS = 800;
-
-function isPaidAccessActive(access: AccessResponse | null, plan: PaidPlanId) {
-  if (!access || access.allowed !== true || access.plan !== plan) return false;
-  return hasMasterEntitlement(access as MasterAccessSnapshot);
-}
 
 function sleep(ms: number) {
   return new Promise((resolve) => {
@@ -117,9 +115,9 @@ function SuccessContent() {
     }
     return `/spokedu-lab/payment?${retryParams.toString()}`;
   }, [gateContext, params, safeNext]);
-  const plan = params.get('plan');
-  const authKey = params.get('authKey')?.trim() ?? '';
-  const customerKey = params.get('customerKey')?.trim() ?? '';
+  // Keep the callback in memory when history.replaceState scrubs its secrets.
+  const [callback] = useState(() => ({ plan: params.get('plan'), authKey: params.get('authKey')?.trim() ?? '', customerKey: params.get('customerKey')?.trim() ?? '' }));
+  const { plan, authKey, customerKey } = callback;
   const hasValidParams = isPaidPlanId(plan) && authKey.length > 0 && customerKey.length > 0;
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
@@ -157,21 +155,27 @@ function SuccessContent() {
       await syncSubscription().catch(() => undefined);
 
       let response: Response;
+      let billingResponse: Response;
       try {
-        response = await fetch('/api/spokedu-master/access', { cache: 'no-store' });
+        [response, billingResponse] = await Promise.all([
+          fetch('/api/spokedu-master/access', { cache: 'no-store' }),
+          fetch('/api/spokedu-master/subscription', { cache: 'no-store' }),
+        ]);
       } catch {
         setStatus('access-failed');
         return;
       }
 
-      if (response.status >= 500) {
+      if (!response.ok || !billingResponse.ok) {
         setStatus('access-failed');
         return;
       }
 
       const access = await response.json().catch(() => null) as AccessResponse | null;
-      if (isPaidPlanId(plan) && isPaidAccessActive(access, plan)) {
-        await persistPaidOnboarding();
+      const billing = await billingResponse.json().catch(() => null) as BillingActivationSummary | null;
+      if (isPaidPlanId(plan) && isPaidPaymentActivated(access, billing, plan)) {
+        try { await persistPaidOnboarding(); } catch { setStatus('access-failed'); return; }
+        setResult((current) => current?.ok ? current : { ok: true, plan, periodEnd: billing?.billingPeriodEnd, nextBillingAt: billing?.nextBillingAt });
         setStatus('success');
         return;
       }
@@ -185,9 +189,16 @@ function SuccessContent() {
   }, [persistPaidOnboarding, plan, syncSubscription]);
 
   useEffect(() => {
+    scrubPaymentSecretsFromBrowserUrl();
+    // Refresh/re-entry after URL scrubbing checks durable access only. It must
+    // never recreate a charge from an old success URL.
+    if (isPaidPlanId(plan) && !authKey && !customerKey && !confirmationStarted.current) {
+      confirmationStarted.current = true;
+      void checkAccessActivation();
+      return;
+    }
     if (!hasValidParams || confirmationStarted.current || !isPaidPlanId(plan)) return;
     confirmationStarted.current = true;
-    scrubPaymentSecretsFromBrowserUrl();
 
     const issueBilling = async () => {
       try {
@@ -202,6 +213,7 @@ function SuccessContent() {
           }),
         });
         const json = await response.json().catch(() => null) as BillingIssueResponse | null;
+        setResult(json);
 
         if (!response.ok || json?.ok !== true || json.plan !== plan) {
           // 청구는 됐는데 이용권 apply만 실패한 경우 — 재결제 CTA가 아니라 권한 재확인
@@ -210,6 +222,10 @@ function SuccessContent() {
             (typeof json?.error === 'string' && json.error.includes('결제는 승인'));
           if (chargedButPending) {
             setStatus('delayed');
+            await checkAccessActivation();
+            return;
+          }
+          if (response.status === 409) {
             await checkAccessActivation();
             return;
           }
@@ -249,7 +265,7 @@ function SuccessContent() {
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             {status === 'checking-access'
-              ? `첫 결제가 승인되었습니다. 이용권 접근 권한을 확인합니다. (${accessAttempt}/${ACCESS_POLL_ATTEMPTS})`
+              ? `결제 및 이용권 상태를 확인합니다. (${accessAttempt}/${ACCESS_POLL_ATTEMPTS})`
               : '결제수단 인증 결과로 첫 자동결제를 승인하는 중입니다. 완료 전에는 이용권이 활성화되지 않습니다.'}
           </p>
         </div>
@@ -311,7 +327,7 @@ function SuccessContent() {
             이용권 반영을 다시 확인해 주세요
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-            첫 결제는 처리되었지만 접근 권한 확인이 지연되고 있습니다. 결제를 반복하지 말고 이용권 상태만 다시 확인해 주세요.
+            결제 및 이용권 상태 확인이 지연되고 있습니다. 결제를 반복하지 말고 이용권 상태만 다시 확인해 주세요.
           </p>
         </div>
         <button type="button" onClick={() => void checkAccessActivation()} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">
@@ -332,6 +348,7 @@ function SuccessContent() {
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             네트워크 지연으로 결제 승인 여부를 확인하지 못했습니다. 중복 결제를 피하려면 잠시 후 구독 상태를 확인하거나 고객센터에 문의해 주세요.
           </p>
+          {result?.code ? <p role="status">[{result.stage ?? 'issue'} / {result.code}]</p> : null}
         </div>
         <Link href="/spokedu-lab/subscription" className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">구독 상태 확인</Link>
         <PaymentSupportGuidance href={supportHref} />
@@ -352,6 +369,7 @@ function SuccessContent() {
         <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           결제 인증이 취소되었거나 처리 중 오류가 발생했습니다. 결제수단을 확인한 뒤 다시 시도해 주세요.
         </p>
+        {result?.code ? <p role="status">[{result.stage ?? 'issue'} / {result.code}]</p> : null}
       </div>
       <div className="grid gap-3">
         <Link href={retryHref} className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">

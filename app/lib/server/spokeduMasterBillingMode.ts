@@ -12,7 +12,7 @@ export const SPOKEDU_MASTER_MAX_UPGRADE_AMOUNT =
 
 const UUID_RE = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const UPGRADE_CYCLE_RE = new RegExp(`^upgrade:(${UUID_RE}):premium:(.+)$`, 'i');
-const INITIAL_CYCLE_RE = new RegExp(`^initial:(${UUID_RE}):(lite|premium)(?::\\d+)?$`, 'i');
+const INITIAL_CYCLE_RE = new RegExp(`^initial:(${UUID_RE}):(lite|premium|checkout)(?::\\d+)?$`, 'i');
 
 export function classifySpokeduMasterBillingMode(input: {
   orderId: string;
@@ -36,7 +36,7 @@ export function classifySpokeduMasterBillingMode(input: {
   if (cycle) {
     const initialMatch = INITIAL_CYCLE_RE.exec(cycle);
     if (initialMatch && initialMatch[1].toLowerCase() !== input.userId.toLowerCase()) return 'invalid';
-    if (initialMatch && initialMatch[2] !== input.plan) return 'invalid';
+    if (initialMatch && initialMatch[2] !== 'checkout' && initialMatch[2] !== input.plan) return 'invalid';
   }
 
   return 'initial';

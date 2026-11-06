@@ -1,4 +1,4 @@
-import { isProductionDeployment } from '@/app/lib/deploymentEnvironment';
+import { isProductionDeployment } from '../../lib/deploymentEnvironment';
 
 export function isTossClientKeyAllowed(
   clientKey: string | null | undefined,
@@ -6,10 +6,10 @@ export function isTossClientKeyAllowed(
   vercelEnvironment?: string,
 ): boolean {
   const normalized = clientKey?.trim() ?? '';
-  if (!normalized) return false;
+  if (!/^(test|live)_ck_[A-Za-z0-9]+$/.test(normalized)) return false;
   if (isProductionDeployment({
     nodeEnvironment: environment,
     vercelEnvironment,
-  })) return normalized.startsWith('live_');
-  return normalized.startsWith('test_') || normalized.startsWith('live_');
+  })) return normalized.startsWith('live_ck_');
+  return true;
 }

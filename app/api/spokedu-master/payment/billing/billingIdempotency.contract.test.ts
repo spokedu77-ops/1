@@ -9,8 +9,8 @@ function read(path: string) {
 describe('SPOKEDU MASTER billing idempotency contracts', () => {
   it('claims orders and stores a pending vault key before charging', () => {
     const source = read('app/api/spokedu-master/payment/billing/issue/route.ts');
-    expect(source).toContain('`${billingMode}:${user.id}:${plan}`');
-    expect(source).toContain('billingCycleKey = `${billingMode}:${user.id}:${plan}:${Date.now()}`');
+    expect(source).toContain('checkout:${activePeriodEnd ? Date.parse(activePeriodEnd) : 0}');
+    expect(source).not.toContain('${Date.now()}');
     expect(source).not.toContain("billing_cycle_key: `${billingMode}:${orderId}`");
     expect(source).toContain('claimSpokeduMasterBillingOrder');
     expect(source).toContain('shouldReapplySpokeduMasterBillingOrder');

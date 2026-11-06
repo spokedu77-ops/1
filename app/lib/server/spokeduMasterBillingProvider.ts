@@ -1,5 +1,5 @@
 import { createSpokeduMasterOrderId, type SpokeduMasterPaidPlan } from './spokeduMasterPayment';
-import { isProductionDeployment } from '@/app/lib/deploymentEnvironment';
+import { getBillingKeyFormatError, SPOKEDU_BILLING_MID } from './spokeduMasterBillingConfiguration';
 
 const TOSS_API_BASE = 'https://api.tosspayments.com/v1';
 export const TOSS_FETCH_TIMEOUT_MS = 8_000;
@@ -19,12 +19,9 @@ export type TossBillingPaymentResult = {
 
 export function getTossSecretKey(): string | null {
   const secretKey = process.env.TOSS_SECRET_KEY?.trim();
-  if (!secretKey) return null;
-  if (isProductionDeployment()) {
-    if (!secretKey.startsWith('live_')) return null;
-  } else if (!secretKey.startsWith('test_') && !secretKey.startsWith('live_')) {
-    return null;
-  }
+  // Checkout attestation is enforced by /prepare. Do not make existing paid
+  // renewals or webhook recovery depend on newly introduced checkout metadata.
+  if (!secretKey || getBillingKeyFormatError()) return null;
   return secretKey;
 }
 
@@ -69,11 +66,15 @@ export async function issueSpokeduMasterBillingKey(input: {
     signal: AbortSignal.timeout(TOSS_FETCH_TIMEOUT_MS),
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    const failure = readRecord(await response.json().catch(() => null));
+    const code = typeof failure.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(failure.code) ? failure.code : 'BILLING_KEY_ISSUE_FAILED';
+    throw Object.assign(new Error(`toss_billing_key_issue_failed:${response.status}:${code}`), { code });
+  }
   const json = readRecord(await response.json());
   const billingKey = readString(json.billingKey);
-  const customerKey = readString(json.customerKey) ?? input.customerKey;
-  if (!billingKey) return null;
+  const customerKey = readString(json.customerKey);
+  if (!billingKey || customerKey !== input.customerKey || json.mId !== SPOKEDU_BILLING_MID) return null;
   return { billingKey, customerKey };
 }
 
@@ -118,7 +119,9 @@ export async function paySpokeduMasterBillingKey(input: {
   const returnedOrderId = readString(json.orderId);
   const totalAmount = readNumber(json.totalAmount);
   const approvedAt = readString(json.approvedAt);
-  if (!paymentKey || returnedOrderId !== orderId || totalAmount !== input.amount) {
+  if (!paymentKey || returnedOrderId !== orderId || totalAmount !== input.amount
+    || json.status !== 'DONE' || json.mId !== SPOKEDU_BILLING_MID
+    || !approvedAt || !Number.isFinite(Date.parse(approvedAt))) {
     throw new Error('toss_billing_approval_mismatch');
   }
   return {
@@ -162,10 +165,13 @@ export async function findSpokeduMasterPaymentByOrderId(input: {
   const totalAmount = readNumber(json.totalAmount);
   const approvedAt = readString(json.approvedAt);
   const status = readString(json.status);
-  if (!paymentKey || returnedOrderId !== input.orderId || totalAmount !== input.amount) {
+  if (!paymentKey || returnedOrderId !== input.orderId || totalAmount !== input.amount || json.mId !== SPOKEDU_BILLING_MID) {
     throw new Error('toss_order_lookup_mismatch');
   }
   if (status !== 'DONE') return null;
+  if (!approvedAt || !Number.isFinite(Date.parse(approvedAt))) {
+    throw new Error('toss_order_lookup_approval_time_missing');
+  }
   return {
     paymentKey,
     orderId: returnedOrderId,
