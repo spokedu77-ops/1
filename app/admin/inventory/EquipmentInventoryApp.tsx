@@ -41,7 +41,21 @@ type TeacherRow = {
   id: string;
   name: string;
   ledger_sku_count?: number;
+  ledger_total_held?: number;
   inventory_item_count?: number;
+  inventory_total_held?: number;
+};
+
+type LegacyTeacherInventoryLine = {
+  id: number;
+  name: string;
+  quantity: number;
+};
+
+type LegacyTeacherPreviewLine = {
+  catalog_id: number;
+  name: string;
+  quantity: number;
 };
 
 type CatalogHoldingGroup = {
@@ -65,6 +79,8 @@ export function EquipmentInventoryApp() {
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [history, setHistory] = useState<EquipmentLedgerRow[]>([]);
   const [rentals, setRentals] = useState<EquipmentRentalRow[]>([]);
+  const [legacyTeacherPending, setLegacyTeacherPending] = useState<LegacyTeacherInventoryLine[]>([]);
+  const [legacyTeacherPreview, setLegacyTeacherPreview] = useState<LegacyTeacherPreviewLine[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [detailItem, setDetailItem] = useState<(CatalogDetailShape & { catalog_id?: number }) | null>(null);
@@ -124,14 +140,22 @@ export function EquipmentInventoryApp() {
 
   const refreshRentals = useCallback(async (teacherId: string, signal?: AbortSignal) => {
     setRentals([]);
+    setLegacyTeacherPending([]);
+    setLegacyTeacherPreview([]);
     const res = await fetch(
       `/api/admin/equipment/rentals?teacher_id=${encodeURIComponent(teacherId)}&active=true`,
       { cache: 'no-store', signal },
     );
     if (!res.ok) throw new Error('rentals fetch failed');
-    const body = (await res.json()) as { items: EquipmentRentalRow[] };
+    const body = (await res.json()) as {
+      items: EquipmentRentalRow[];
+      inventory_items?: LegacyTeacherInventoryLine[];
+      legacy_confirmed_preview?: LegacyTeacherPreviewLine[];
+    };
     if (signal?.aborted) return;
     setRentals(body.items ?? []);
+    setLegacyTeacherPending(body.inventory_items ?? []);
+    setLegacyTeacherPreview(body.legacy_confirmed_preview ?? []);
   }, []);
 
   useEffect(() => {
@@ -151,7 +175,8 @@ export function EquipmentInventoryApp() {
   }, [tab, refreshHistory]);
 
   useEffect(() => {
-    if (tab === 'teachers' && selectedTeacherId && ledgerReady) {
+    const canLoadTeacherHoldings = ledgerReady || catalogPreviewOnly;
+    if (tab === 'teachers' && selectedTeacherId && canLoadTeacherHoldings) {
       const controller = new AbortController();
       void refreshRentals(selectedTeacherId, controller.signal).catch(() => {
         if (!controller.signal.aborted) toast.error('보유 내역을 불러오지 못했습니다.');
@@ -215,9 +240,11 @@ export function EquipmentInventoryApp() {
     return history.filter((h) => h.event_type === historyFilter);
   }, [history, historyFilter]);
 
+  const canViewTeacherHoldings = ledgerReady || catalogPreviewOnly;
+
   const openTeacherDetail = (teacherId: string) => {
-    if (!ledgerReady) {
-      toast.message('수불 원장 연결 후 강사별 대여 현황을 볼 수 있습니다.');
+    if (!canViewTeacherHoldings) {
+      toast.message('강사 보유 데이터를 불러온 뒤 다시 시도해 주세요.');
       return;
     }
     setSelectedTeacherId(teacherId);
@@ -237,8 +264,27 @@ export function EquipmentInventoryApp() {
       cur.rentals.push(r);
       map.set(r.catalog_id, cur);
     }
+    for (const p of legacyTeacherPreview) {
+      const cur = map.get(p.catalog_id) ?? {
+        catalog_id: p.catalog_id,
+        catalog_name: `${p.name} (기존·확정)`,
+        qty_outstanding: 0,
+        rentals: [],
+      };
+      cur.qty_outstanding += p.quantity;
+      map.set(p.catalog_id, cur);
+    }
+    for (const item of legacyTeacherPending) {
+      const legacyKey = -item.id;
+      map.set(legacyKey, {
+        catalog_id: legacyKey,
+        catalog_name: `${item.name} (기존·미연결)`,
+        qty_outstanding: item.quantity,
+        rentals: [],
+      });
+    }
     return [...map.values()].sort((a, b) => a.catalog_name.localeCompare(b.catalog_name, 'ko'));
-  }, [rentals]);
+  }, [rentals, legacyTeacherPreview, legacyTeacherPending]);
 
   const openingPersistEnabled = capabilities.opening_persist_enabled !== false;
 
@@ -431,6 +477,7 @@ export function EquipmentInventoryApp() {
                   <div className={styles.teacherGrid}>
                     {teachers.map((t) => {
                       const skuCount = t.ledger_sku_count ?? t.inventory_item_count ?? 0;
+                      const qtyTotal = t.ledger_total_held ?? t.inventory_total_held;
                       const initial = t.name.trim().charAt(0) || '?';
                       return (
                         <button
@@ -443,7 +490,10 @@ export function EquipmentInventoryApp() {
                             <div className={styles.teacherAvatar}>{initial}</div>
                             <div className={styles.teacherInfo}>
                               <h3>{t.name} 선생님</h3>
-                              <p>현재 대여 중: {skuCount}종</p>
+                              <p>
+                                보유: {skuCount}종
+                                {qtyTotal != null && qtyTotal > 0 ? ` · ${qtyTotal}개` : ''}
+                              </p>
                             </div>
                           </div>
                         </button>
@@ -528,11 +578,11 @@ export function EquipmentInventoryApp() {
         </div>
       </div>
 
-      {teacherDetailOpen && selectedTeacher && ledgerReady && (
+      {teacherDetailOpen && selectedTeacher && canViewTeacherHoldings && (
         <TeacherHoldingsModal
           teacherName={selectedTeacher.name}
           holdings={catalogHoldings}
-          ledgerReady={ledgerReady}
+          ledgerReady={ledgerReady && catalogHoldings.some((g) => g.rentals.length > 0)}
           onClose={() => setTeacherDetailOpen(false)}
           onPartialReturn={(group) => {
             setReturnTarget(group);

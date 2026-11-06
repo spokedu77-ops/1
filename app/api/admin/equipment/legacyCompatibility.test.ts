@@ -30,7 +30,7 @@ vi.mock('@/app/lib/server/teacherAuth', () => ({
 // Production's pre-ledger schema: no new columns, tables, views, or RPCs.
 const columns: Record<string, string[]> = {
   catalog: ['id', 'name', 'category', 'image', 'simple_desc', 'key_points', 'usage_examples', 'qty_on_hand_total', 'qty_quarantine', 'mgmt_code'],
-  equipment_rentals: ['rental_id', 'catalog_id', 'qty_outstanding', 'status'],
+  equipment_rentals: ['rental_id', 'catalog_id', 'teacher_id', 'qty_outstanding', 'status'],
   equipment_ledger: ['ledger_id', 'catalog_id', 'event_type'],
   teacher_equipment_holdings_v: ['teacher_id', 'catalog_id', 'name', 'qty_held', 'active_rental_lines', 'category', 'image', 'earliest_opened_at', 'mgmt_code'],
   users: ['id', 'name', 'role', 'is_active', 'is_admin'],
