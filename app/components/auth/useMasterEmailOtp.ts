@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getSafeMasterLoginReturnPath } from '@/app/spokedu-master/lib/masterLoginReturn';
 
@@ -32,6 +32,7 @@ export function useMasterEmailOtp() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const sendInFlightRef = useRef(false);
 
   const send = async (): Promise<SubmitResult> => {
     const normalized = email.trim().toLowerCase();
@@ -40,6 +41,11 @@ export function useMasterEmailOtp() {
       setError(msg);
       return { ok: false, message: msg };
     }
+    // Guard against double-clicks before React can commit the loading state.
+    if (sendInFlightRef.current) {
+      return { ok: false, message: '인증 메일 발송 요청을 처리하고 있습니다.' };
+    }
+    sendInFlightRef.current = true;
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -67,6 +73,7 @@ export function useMasterEmailOtp() {
       setMessage(`${normalized}로 인증 메일을 보냈습니다. 8자리 코드를 입력하거나 메일의 확인 링크를 눌러주세요.`);
       return { ok: true, kind: 'sent' };
     } finally {
+      sendInFlightRef.current = false;
       setLoading(false);
     }
   };
