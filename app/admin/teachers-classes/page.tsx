@@ -65,6 +65,25 @@ interface Session {
   lesson_plans?: { content?: string }[];
 }
 
+type CorrectionHistoryEntry = {
+  id: string;
+  status: string;
+  createdAt: string;
+  completedAt: string | null;
+  consumedAt: string | null;
+  errorCode: string | null;
+  sourceFeedback: FeedbackFields;
+  correctionDraft: FeedbackFields | null;
+};
+
+const AI_CORRECTION_COMPARE_FIELDS = [
+  { key: 'main_activity', label: '오늘 수업의 주요 활동' },
+  { key: 'strengths', label: '강점 및 긍정적인 부분' },
+  { key: 'improvements', label: '개선이 필요한 부분' },
+  { key: 'next_goals', label: '다음 수업 목표 및 계획' },
+  { key: 'condition_notes', label: '특이사항 및 시작/종료 시간' },
+] as const;
+
 interface Coach {
   id: string;
   name: string;
@@ -509,6 +528,8 @@ function FeedbackReviewTab({
   const [correctionJobReadyId, setCorrectionJobReadyId] = useState<string | null>(null);
   const [correctionActionLoading, setCorrectionActionLoading] = useState(false);
   const [correctionBridgeNote, setCorrectionBridgeNote] = useState<string | null>(null);
+  const [correctionHistory, setCorrectionHistory] = useState<CorrectionHistoryEntry[]>([]);
+  const [selectedCorrectionHistoryId, setSelectedCorrectionHistoryId] = useState<string | null>(null);
   const correctionRunLock = useRef(false);
   const [selectedCenterWeekday, setSelectedCenterWeekday] = useState<number | 'all'>('all');
   const feedbackDateInputRef = useRef<HTMLInputElement>(null);
@@ -522,10 +543,16 @@ function FeedbackReviewTab({
       const data = (await res.json().catch(() => ({}))) as {
         active?: { id: string; status: string } | null;
         latestCompleted?: { id: string; status: string } | null;
+        history?: CorrectionHistoryEntry[];
       };
       if (!res.ok) return;
       setCorrectionJobActive(data.active ?? null);
       setCorrectionJobReadyId(data.latestCompleted?.id ?? null);
+      const history = Array.isArray(data.history) ? data.history : [];
+      setCorrectionHistory(history);
+      setSelectedCorrectionHistoryId((current) =>
+        current && history.some((entry) => entry.id === current) ? current : history.find((entry) => entry.correctionDraft)?.id ?? history[0]?.id ?? null,
+      );
     } catch {
       /* non-blocking */
     }
@@ -851,6 +878,8 @@ function FeedbackReviewTab({
     setDuplicateCheck(check);
     setCorrectionJobActive(null);
     setCorrectionJobReadyId(null);
+    setCorrectionHistory([]);
+    setSelectedCorrectionHistoryId(null);
     void refreshCorrectionJobState(session.id);
     
     setIsModalOpen(true);
@@ -929,7 +958,13 @@ function FeedbackReviewTab({
           center_document_names: prev.center_document_names ?? data.correctionDraft?.center_document_names,
         }));
       }
-      toast.success('AI 교정안을 편집창에 불러왔습니다. 내용 확인 후 기존 저장 버튼으로 승인해 주세요.');
+      const selected = correctionHistory.find((entry) => entry.id === correctionJobReadyId);
+      const modifiedCount = selected?.correctionDraft
+        ? AI_CORRECTION_COMPARE_FIELDS.filter(({ key }) => (selected.sourceFeedback?.[key] ?? '') !== (selected.correctionDraft?.[key] ?? '')).length
+        : null;
+      toast.success(modifiedCount === null
+        ? 'AI 교정안을 편집창에 불러왔습니다. 저장 전 내용을 확인해 주세요.'
+        : `AI 교정안 불러오기 완료: 5개 중 ${modifiedCount}개 항목 변경. 아직 저장되지 않았습니다.`);
       setCorrectionJobReadyId(null);
       if (selectedEvent) void refreshCorrectionJobState(selectedEvent.id);
     } catch (error: unknown) {
@@ -1359,6 +1394,75 @@ function FeedbackReviewTab({
                       </button>
                     )}
                   </div>
+                </div>
+              )}
+
+              {correctionHistory.length > 0 && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">AI 교정 전후 비교 · 최근 이력</p>
+                      <p className="text-xs text-slate-500">원문과 AI 결과를 비교합니다. 비교만으로 수업이 저장되지는 않습니다.</p>
+                    </div>
+                    <span className="text-xs text-slate-500">최근 {correctionHistory.length}건</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {correctionHistory.map((entry) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        onClick={() => setSelectedCorrectionHistoryId(entry.id)}
+                        aria-pressed={selectedCorrectionHistoryId === entry.id}
+                        className={`rounded-lg border px-3 py-2 text-xs font-medium ${selectedCorrectionHistoryId === entry.id ? 'border-indigo-600 bg-indigo-50 text-indigo-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      >
+                        {new Date(entry.createdAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {' · '}
+                        {entry.status === 'completed' ? '완료' : entry.status === 'pending' ? '대기' : entry.status === 'processing' ? '처리 중' : entry.status === 'cancelled' ? '취소' : '실패'}
+                      </button>
+                    ))}
+                  </div>
+                  {(() => {
+                    const entry = correctionHistory.find((item) => item.id === selectedCorrectionHistoryId);
+                    if (!entry) return null;
+                    const changedCount = entry.correctionDraft
+                      ? AI_CORRECTION_COMPARE_FIELDS.filter(({ key }) => (entry.sourceFeedback?.[key] ?? '') !== (entry.correctionDraft?.[key] ?? '')).length
+                      : null;
+                    return (
+                      <div className="space-y-3">
+                        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                          {entry.correctionDraft
+                            ? `5개 항목 중 ${changedCount}개 변경 · ${5 - (changedCount ?? 0)}개 동일`
+                            : `교정 결과 없음 (${entry.status})`}
+                          {entry.errorCode ? ` · 오류: ${entry.errorCode}` : ''}
+                          {entry.completedAt ? ` · 완료: ${new Date(entry.completedAt).toLocaleString('ko-KR')}` : ''}
+                          {entry.consumedAt ? ' · 불러오기 이력 있음' : ''}
+                        </div>
+                        {entry.correctionDraft && AI_CORRECTION_COMPARE_FIELDS.map(({ key, label }) => {
+                          const before = String(entry.sourceFeedback?.[key] ?? '');
+                          const after = String(entry.correctionDraft?.[key] ?? '');
+                          const changed = before !== after;
+                          return (
+                            <div key={key} className="rounded-xl border border-slate-200 p-3 space-y-2">
+                              <div className="flex justify-between gap-2 text-xs font-semibold">
+                                <span>{label}</span>
+                                <span className={changed ? 'text-indigo-700' : 'text-slate-500'}>{changed ? '변경됨' : '동일함'}</span>
+                              </div>
+                              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                <div className="rounded-lg bg-slate-50 p-3">
+                                  <p className="mb-1 text-[11px] font-bold text-slate-500">교정 전 (요청 당시 원문)</p>
+                                  <p className="whitespace-pre-wrap break-words text-sm text-slate-700">{before || '(비어 있음)'}</p>
+                                </div>
+                                <div className={changed ? 'rounded-lg border border-indigo-200 bg-indigo-50/60 p-3' : 'rounded-lg bg-slate-50 p-3'}>
+                                  <p className="mb-1 text-[11px] font-bold text-indigo-700">AI 교정 후</p>
+                                  <p className="whitespace-pre-wrap break-words text-sm text-slate-800">{after || '(비어 있음)'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
