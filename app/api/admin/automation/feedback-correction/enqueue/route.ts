@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { loadSessionCorrectionSnapshot } from '@/app/lib/server/feedbackCorrectionJobs';
+import { issueRunGrant } from '@/app/lib/automation/feedbackRunGrant';
 
 type Body = { sessionId?: unknown };
 
@@ -49,5 +50,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, job: data });
+  let runGrant: string | null = null;
+  try {
+    runGrant = issueRunGrant(data.id);
+  } catch {
+    runGrant = null;
+  }
+  return NextResponse.json({ ok: true, job: data, runGrant });
 }

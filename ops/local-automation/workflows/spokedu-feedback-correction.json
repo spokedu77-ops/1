@@ -19,6 +19,7 @@
       "id": "a1000001-0001-4001-8001-000000000001",
       "name": "Every 10 minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
+      "disabled": true,
       "typeVersion": 1.2,
       "position": [200, 400]
     },

@@ -508,6 +508,8 @@ function FeedbackReviewTab({
   const [correctionJobActive, setCorrectionJobActive] = useState<{ id: string; status: string } | null>(null);
   const [correctionJobReadyId, setCorrectionJobReadyId] = useState<string | null>(null);
   const [correctionActionLoading, setCorrectionActionLoading] = useState(false);
+  const [correctionBridgeNote, setCorrectionBridgeNote] = useState<string | null>(null);
+  const correctionRunLock = useRef(false);
   const [selectedCenterWeekday, setSelectedCenterWeekday] = useState<number | 'all'>('all');
   const feedbackDateInputRef = useRef<HTMLInputElement>(null);
 
@@ -528,6 +530,36 @@ function FeedbackReviewTab({
       /* non-blocking */
     }
   }, []);
+
+  const requestLocalRun = useCallback(async (jobId: string, runGrant: string) => {
+    if (correctionRunLock.current) return;
+    correctionRunLock.current = true;
+    try {
+      const res = await fetch('http://127.0.0.1:5681/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, grant: runGrant }),
+      });
+      if (!res.ok) {
+        setCorrectionBridgeNote('이 PC에서 바로 실행하지 못했습니다. 작업은 대기 중이며 다시 실행할 수 있습니다.');
+        return;
+      }
+      setCorrectionBridgeNote('이 PC에서 교정을 시작했습니다.');
+    } catch {
+      setCorrectionBridgeNote('로컬 실행 권한이 없거나 PC의 교정 서비스가 꺼져 있습니다. 작업은 대기 중이며 다시 실행할 수 있습니다.');
+    } finally {
+      correctionRunLock.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isModalOpen || !selectedEvent || !correctionJobActive) return;
+    const sessionId = selectedEvent.id;
+    const timer = window.setInterval(() => {
+      void refreshCorrectionJobState(sessionId);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [isModalOpen, selectedEvent, correctionJobActive, refreshCorrectionJobState]);
 
   const fetchListData = useCallback(async () => {
     setLoading(true);
@@ -834,13 +866,42 @@ function FeedbackReviewTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: selectedEvent.id }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; job?: { id: string; status: string } };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        job?: { id: string; status: string };
+        runGrant?: string | null;
+      };
       if (!res.ok) throw new Error(data.error ?? 'enqueue_failed');
-      toast.success('AI 교정 요청을 대기열에 등록했습니다. PC가 켜지면 자동 처리됩니다.');
       setCorrectionJobActive(data.job ? { id: data.job.id, status: data.job.status } : { id: '', status: 'pending' });
       setCorrectionJobReadyId(null);
+      if (data.job?.id && data.runGrant) {
+        toast.success('AI 교정 요청을 등록했습니다. 이 PC에서 바로 실행합니다.');
+        await requestLocalRun(data.job.id, data.runGrant);
+      } else {
+        toast.success('AI 교정 요청을 대기열에 등록했습니다. PC가 켜지면 자동 처리됩니다.');
+      }
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : 'AI 교정 요청에 실패했습니다.');
+    } finally {
+      setCorrectionActionLoading(false);
+    }
+  };
+
+  const handleResumeLocalRun = async () => {
+    if (!correctionJobActive?.id) return;
+    setCorrectionActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/automation/feedback-correction/run-grant', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: correctionJobActive.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; runGrant?: string; jobId?: string };
+      if (!res.ok || !data.runGrant || !data.jobId) throw new Error(data.error ?? 'resume_failed');
+      await requestLocalRun(data.jobId, data.runGrant);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : '다시 실행에 실패했습니다.');
     } finally {
       setCorrectionActionLoading(false);
     }
@@ -1261,7 +1322,8 @@ function FeedbackReviewTab({
                   <p className="text-sm font-bold text-indigo-900">AI 피드백 교정</p>
                   {correctionJobActive && (
                     <p className="text-xs text-indigo-800">
-                      상태: {correctionJobActive.status === 'processing' ? '처리 중' : '대기 중'} — 로컬 n8n이 가져가면 완료됩니다.
+                      상태: {correctionJobActive.status === 'processing' ? '처리 중' : '대기 중'}
+                      {correctionBridgeNote ? ` — ${correctionBridgeNote}` : ''}
                     </p>
                   )}
                   {correctionJobReadyId && (
@@ -1276,6 +1338,16 @@ function FeedbackReviewTab({
                     >
                       AI 교정 요청
                     </button>
+                    {correctionJobActive?.status === 'pending' && (
+                      <button
+                        type="button"
+                        disabled={correctionActionLoading}
+                        onClick={() => void handleResumeLocalRun()}
+                        className="min-h-10 rounded-xl border border-indigo-600 bg-white px-4 py-2 text-xs font-bold text-indigo-800 disabled:opacity-50"
+                      >
+                        이 PC에서 다시 실행
+                      </button>
+                    )}
                     {correctionJobReadyId && (
                       <button
                         type="button"

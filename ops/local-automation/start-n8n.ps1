@@ -13,4 +13,8 @@ if (-not (Test-Path $envFile)) {
 }
 
 docker compose -f docker-compose.n8n.yml up -d
-Write-Host 'n8n: http://127.0.0.1:5678 (워크플로 import: workflows/spokedu-feedback-correction.json)'
+
+$bridge = Join-Path $Root 'local-bridge\server.mjs'
+Start-Process -FilePath 'node' -ArgumentList $bridge -WorkingDirectory $Root -WindowStyle Hidden
+Write-Host 'n8n: http://127.0.0.1:5678'
+Write-Host 'local bridge: http://127.0.0.1:5681 (127.0.0.1 only)'
