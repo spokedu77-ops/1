@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     .select('*')
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(12);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,6 +32,16 @@ export async function GET(request: Request) {
     ok: true,
     active,
     latestCompleted,
+    history: jobs.map((job) => ({
+      id: job.id,
+      status: job.status,
+      createdAt: job.created_at,
+      completedAt: job.completed_at,
+      consumedAt: job.consumed_at,
+      errorCode: job.error_code,
+      sourceFeedback: job.input_snapshot?.feedback_fields ?? {},
+      correctionDraft: job.correction_draft,
+    })),
     jobs: jobs.map((job) => ({
       id: job.id,
       status: job.status,
