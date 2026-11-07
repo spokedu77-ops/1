@@ -191,7 +191,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
   const [passwordDeleteRequested, setPasswordDeleteRequested] = useState(false);
-  const editSnapshot = useRef('');
+  const [editSnapshot, setEditSnapshot] = useState('');
   const editDialog = useRef<HTMLDivElement>(null);
   const initialRequest = useRef<{ id: string; promise: Promise<Center | null> } | null>(null);
   const historyRequest = useRef<{ id: string; promise: Promise<CenterHistoryEntry[]> } | null>(null);
@@ -200,7 +200,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
   const [teachersError, setTeachersError] = useState(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
-  const dirty = (isEditOpen && JSON.stringify(editForm) !== editSnapshot.current) ||
+  const dirty = (isEditOpen && JSON.stringify(editForm) !== editSnapshot) ||
     Boolean(historyDraft.trim() || historyEditingId || passwordChanged || passwordDeleteRequested);
   const busy = editSubmitting || deleteSubmitting || criminalUploading || Boolean(criminalDeletingPath) ||
     historySaving || historyUpdating || Boolean(historyDeletingId);
@@ -363,7 +363,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
       criminal_check_files: center.criminal_check_files ?? [],
     };
     setEditForm(nextForm);
-    editSnapshot.current = JSON.stringify(nextForm);
+    setEditSnapshot(JSON.stringify(nextForm));
     setShowEditPassword(false);
     setPasswordChanged(false);
     setPasswordDeleteRequested(false);
