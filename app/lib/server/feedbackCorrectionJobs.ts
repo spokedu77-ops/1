@@ -126,3 +126,84 @@ export function toWorkerPayload(
     lessonPlanContent,
   });
 }
+
+const CORRECTION_FIELD_KEYS = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'] as const;
+
+export function snapshotFieldsError(snapshot: FeedbackCorrectionInputSnapshot | null | undefined): string | null {
+  const fields = snapshot?.feedback_fields;
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return 'SNAPSHOT_FIELDS_REQUIRED';
+  for (const key of CORRECTION_FIELD_KEYS) {
+    const value = fields[key];
+    if (typeof value !== 'string' || value.trim().length < 1) return 'SNAPSHOT_FIELDS_REQUIRED';
+  }
+  return null;
+}
+
+export type SessionClaimContext =
+  | { found: true; feedbackFields: FeedbackFields; lessonPlanContent: string | null }
+  | { found: false; code: 'SESSION_NOT_FOUND' | 'SESSION_LOOKUP_FAILED' };
+
+/** Live session row for integrity comparison. Empty feedback does not reject the job snapshot. */
+export async function loadSessionClaimContext(
+  service: ServiceSupabase,
+  sessionId: string,
+): Promise<SessionClaimContext> {
+  const { data: row, error } = await service
+    .from('sessions')
+    .select('id, feedback_fields, lesson_plans(content)')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (error) return { found: false, code: 'SESSION_LOOKUP_FAILED' };
+  if (!row) return { found: false, code: 'SESSION_NOT_FOUND' };
+
+  const feedbackFields =
+    row.feedback_fields && typeof row.feedback_fields === 'object' && !Array.isArray(row.feedback_fields)
+      ? (row.feedback_fields as FeedbackFields)
+      : {};
+  const lessonPlans = row.lesson_plans as { content?: unknown }[] | { content?: unknown } | null;
+  const lessonPlanContent = Array.isArray(lessonPlans)
+    ? String(lessonPlans[0]?.content ?? '') || null
+    : lessonPlans && typeof lessonPlans === 'object'
+      ? String((lessonPlans as { content?: unknown }).content ?? '') || null
+      : null;
+
+  return { found: true, feedbackFields, lessonPlanContent };
+}
+
+export function buildClaimContext(
+  job: FeedbackCorrectionJobRow,
+  live: SessionClaimContext,
+): Record<string, unknown> {
+  if (!live.found) {
+    return {
+      job_id: job.id,
+      session_id: job.session_id,
+      error: live.code,
+      instruction: 'session context unavailable',
+    };
+  }
+
+  const snapshotError = snapshotFieldsError(job.input_snapshot);
+  if (snapshotError) {
+    return {
+      job_id: job.id,
+      session_id: job.session_id,
+      error: snapshotError,
+      instruction: 'input_snapshot is missing one or more required feedback fields',
+    };
+  }
+
+  const snapshotFields = job.input_snapshot.feedback_fields;
+  const sourceUnchanged = CORRECTION_FIELD_KEYS.every(
+    (key) => String(snapshotFields[key] ?? '').trim() === String(live.feedbackFields[key] ?? '').trim(),
+  );
+
+  return {
+    ...toWorkerPayload(job, live.lessonPlanContent),
+    source_integrity: {
+      compared_to_session: true,
+      source_unchanged: sourceUnchanged,
+    },
+  };
+}

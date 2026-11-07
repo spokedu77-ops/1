@@ -91,7 +91,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.item.json;\nconst ctx = item.context || {};\nconst source = ctx.source_feedback || {};\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nreturn [{\n  json: {\n    job_id: item.job_id,\n    session_id: item.session_id,\n    attempt_count: item.attempt_count,\n    max_attempts: item.max_attempts,\n    source_feedback: source,\n    llmBody: {\n      model: $env.LM_STUDIO_MODEL || 'qwen3.5-9b',\n      temperature: 0.1,\n      messages: [\n        {\n          role: 'system',\n          content: 'Correct Korean teacher feedback field-by-field. For EACH key in source_feedback, fix spelling/grammar only for THAT field. Do not swap or copy content between fields. Do not invent facts, scores, or behaviors. Keep SPOMOVE literals unchanged. Return JSON with EXACTLY keys: main_activity, strengths, improvements, next_goals, condition_notes (strings only). No nested objects or extra keys.',\n        },\n        {\n          role: 'user',\n          content: JSON.stringify({ source_feedback: source, required_keys: keys }),\n        },\n      ],\n    },\n  },\n}];\n"
+        "jsCode": "const item = $input.item.json;\nconst ctx = item.context || {};\nconst source = ctx.source_feedback || {};\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nconst missing = keys.filter((key) => String(source[key] || '').trim().length < 1);\nif (ctx.error || missing.length > 0) {\n  return [{\n    json: {\n      job_id: item.job_id,\n      skipLlm: true,\n      errorCode: ctx.error || 'SNAPSHOT_FIELDS_REQUIRED',\n      errorDetail: ctx.error ? String(ctx.instruction || ctx.error).slice(0, 200) : 'required_fields_empty:' + missing.join(','),\n    },\n  }];\n}\nreturn [{\n  json: {\n    job_id: item.job_id,\n    session_id: item.session_id,\n    attempt_count: item.attempt_count,\n    max_attempts: item.max_attempts,\n    skipLlm: false,\n    source_feedback: source,\n    llmBody: {\n      model: $env.LM_STUDIO_MODEL || 'qwen3.5-9b',\n      temperature: 0.1,\n      messages: [\n        {\n          role: 'system',\n          content: 'Correct Korean teacher feedback field-by-field. For EACH key in source_feedback, fix spelling/grammar only for THAT field. Do not swap or copy content between fields. Do not invent facts, scores, or behaviors. Keep SPOMOVE literals unchanged. Return JSON with EXACTLY keys: main_activity, strengths, improvements, next_goals, condition_notes (strings only). No nested objects or extra keys.',\n        },\n        {\n          role: 'user',\n          content: JSON.stringify({ source_feedback: source, required_keys: keys }),\n        },\n      ],\n    },\n  },\n}];\n"
       },
       "id": "a1000006-0006-4006-8006-000000000006",
       "name": "Build LLM request",
@@ -112,8 +112,29 @@
       "name": "LM Studio chat",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1300, 280],
+      "position": [1520, 280],
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-llm-input",
+              "leftValue": "={{ $json.skipLlm }}",
+              "rightValue": false,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a1000017-0017-4017-8017-000000000017",
+      "name": "LLM input OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1300, 280]
     },
     {
       "parameters": {
@@ -294,7 +315,13 @@
       ]
     },
     "Build LLM request": {
-      "main": [[{ "node": "LM Studio chat", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "LLM input OK?", "type": "main", "index": 0 }]]
+    },
+    "LLM input OK?": {
+      "main": [
+        [{ "node": "LM Studio chat", "type": "main", "index": 0 }],
+        [{ "node": "Mark job failed", "type": "main", "index": 0 }]
+      ]
     },
     "LM Studio chat": {
       "main": [[{ "node": "LLM response OK?", "type": "main", "index": 0 }]]

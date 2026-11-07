@@ -23,6 +23,17 @@ describe('n8n feedback correction workflow contract', () => {
     expect(String(expand?.parameters?.jsCode)).toContain('no_pending_jobs');
   });
 
+  it('blocks the LLM when claim context has an error or empty source fields', () => {
+    const build = workflow.nodes.find((n) => n.name === 'Build LLM request');
+    const code = String(build?.parameters?.jsCode);
+    expect(code).toContain('ctx.error');
+    expect(code).toContain('skipLlm');
+    expect(code).toContain('SNAPSHOT_FIELDS_REQUIRED');
+    const gate = workflow.connections['LLM input OK?'] as { main: unknown[][] };
+    expect(gate.main[0]).toEqual([expect.objectContaining({ node: 'LM Studio chat' })]);
+    expect(gate.main[1]).toEqual([expect.objectContaining({ node: 'Mark job failed' })]);
+  });
+
   it('processes each claimed job through LLM parse and complete/fail paths', () => {
     const names = new Set(workflow.nodes.map((n) => n.name));
     for (const required of [
@@ -42,7 +53,7 @@ describe('n8n feedback correction workflow contract', () => {
   });
 
   it('does not embed secrets in workflow JSON', () => {
-    const raw = JSON.stringify(workflow);
+    const raw = JSON.stringify(workflow).replace(/\$env\.SPOKEDU_AUTOMATION_WORKER_SECRET\b/g, '');
     expect(raw).not.toMatch(/AUTOMATION_WORKER_SECRET|service_role|eyJ/);
   });
 });

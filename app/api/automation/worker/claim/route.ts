@@ -5,8 +5,8 @@ import {
 } from '@/app/lib/server/automationWorkerAuth';
 import {
   parseJobRow,
-  toWorkerPayload,
-  loadSessionCorrectionSnapshot,
+  buildClaimContext,
+  loadSessionClaimContext,
 } from '@/app/lib/server/feedbackCorrectionJobs';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { FEEDBACK_CORRECTION_MAX_ATTEMPTS } from '@/app/lib/automation/feedbackCorrectionPolicy';
@@ -46,20 +46,13 @@ export async function POST(request: Request) {
   const payloads = [];
 
   for (const job of jobs) {
-    const loaded = await loadSessionCorrectionSnapshot(service, job.session_id);
+    const live = await loadSessionClaimContext(service, job.session_id);
     payloads.push({
       job_id: job.id,
       session_id: job.session_id,
       attempt_count: job.attempt_count,
       max_attempts: FEEDBACK_CORRECTION_MAX_ATTEMPTS,
-      context: loaded.ok
-        ? toWorkerPayload(job, loaded.lessonPlanContent)
-        : {
-            job_id: job.id,
-            session_id: job.session_id,
-            error: loaded.code,
-            instruction: 'session context unavailable',
-          },
+      context: buildClaimContext(job, live),
     });
   }
 
