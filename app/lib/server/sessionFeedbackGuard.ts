@@ -39,7 +39,7 @@ export function assertSessionSchedulePreservesFeedback(
 ): void {
   if (!nextStartAt) return;
   const nextDay = sessionKstDay(nextStartAt);
-  if (nextDay < sessionKstDay(now) || nextDay === sessionKstDay(session.start_at)) return;
+  if (nextDay <= sessionKstDay(now) || nextDay === sessionKstDay(session.start_at)) return;
   if (hasSessionFeedback(session) || session.status === 'finished' || session.status === 'verified') {
     throw new Error('SESSION_RECORDED_SCHEDULE_MOVE_FORBIDDEN');
   }

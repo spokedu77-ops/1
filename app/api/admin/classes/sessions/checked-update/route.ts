@@ -64,6 +64,9 @@ export async function POST(request: NextRequest) {
     const { data, error } = await update.select(COLUMNS).maybeSingle();
     if (error) {
       console.warn('checked session update rejected', { sessionId: input.sessionId, code: error.code, reason: error.message, details: error.details });
+      if (error.message.includes('SESSION_RECORDED_SCHEDULE_MOVE_FORBIDDEN') || error.message.includes('SESSION_FUTURE_FEEDBACK_FORBIDDEN')) {
+        return NextResponse.json({ error: error.message, message: sessionSaveErrorMessage(error.message) }, { status: 409 });
+      }
       if (error.message.includes('SESSION_SCHEDULE_METADATA_INVALID')) {
         return NextResponse.json({ error: 'SESSION_SCHEDULE_METADATA_INVALID', message: sessionSaveErrorMessage(error.message) }, { status: 422 });
       }
@@ -84,7 +87,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, session: data });
   } catch (error) {
     if (error instanceof Error && error.message === 'SESSION_RECORDED_SCHEDULE_MOVE_FORBIDDEN') {
-      return NextResponse.json({ error: error.message, message: '완료 기록이나 피드백이 있는 수업을 오늘·미래 날짜로 옮길 수 없습니다. 기존 기록을 보존하고 새 수업을 생성해 주세요.' }, { status: 409 });
+      return NextResponse.json({ error: error.message, message: '완료 기록이나 피드백이 있는 수업은 오늘까지의 실제 수업일로 정정할 수 있습니다. 미래로 연기하려면 기존 기록을 보존하고 새 수업을 생성해 주세요.' }, { status: 409 });
     }
     console.warn('checked session update unavailable', { sessionId: input.sessionId, error: error instanceof Error ? error.name : 'unknown' });
     const metadata = error instanceof SyntaxError || (error instanceof Error && error.message.startsWith('SESSION_METADATA_'));

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     if (error instanceof Error && error.message === 'SESSION_RECORDED_SCHEDULE_MOVE_FORBIDDEN') {
-      return NextResponse.json({ error: error.message }, { status: 409 });
+      return NextResponse.json({ error: error.message, message: sessionSaveErrorMessage(error.message) }, { status: 409 });
     }
     return NextResponse.json({ error: 'SESSION_SCHEDULE_INVALID' }, { status: 400 });
   }
