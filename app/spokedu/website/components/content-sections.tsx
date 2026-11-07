@@ -12,7 +12,7 @@ import { ConsultationLink } from './ConsultationLink';
 
 export function PageCTA({ page }: { page: 'home' | 'education' | 'private' | 'about' | 'spomove' }) {
   const actions = {
-    home: { title: '지금, 우리 학교와 아이를 위한 최고의 스포츠 교육을 만나보세요.', description: '대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.', href: '/contact', label: '수업 상담하기', secondary: { href: '/records', label: '실제 수업사례 보기' } },
+    home: { title: '지금, 우리 학교와 아이를 위한 최고의 스포츠 교육을 만나보세요.', description: '대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.', href: '/contact', label: '수업 상담하기', secondary: { href: '/records', label: '전체 수업 사례 보기' } },
     education: { title: '우리 학교·기관에 들어맞는 스포츠 교육을 설계해보세요', description: education.hero.lead, href: '/contact?type=dispatch', label: '기관 수업 상담하기', secondary: { href: '/records', label: '실제 학교 운영 사례 확인' } },
     private: { title: '지금 우리 아이에게 꼭 맞는 전담 코치님을 만나보세요', description: privatePage.finalCta.description, href: '/contact?type=private', label: '아이 조건으로 수업 방향 상담하기', secondary: undefined },
     about: { title: aboutPage.closing.tagline, description: aboutPage.intro.body, href: '/contact', label: '문의·상담하기', secondary: { href: '/education', label: '수업 유형 살펴보기' } },
@@ -30,7 +30,7 @@ export function PageCTA({ page }: { page: 'home' | 'education' | 'private' | 'ab
   return <section id={page === 'home' ? 'next-step' : 'inquiry'} className={layout.section}>
     <div className={layout.rail}><div className={layout.panel}>
       <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
-      <h2 className={`${layout.heading} max-w-3xl mb-6`}>{action.title}</h2>
+      <h2 className={`${layout.heading} max-w-3xl mb-6`}>{page === 'home' ? <><span>지금, 우리 학교와 아이를 위한</span><span>최고의 스포츠 교육을 만나보세요.</span></> : action.title}</h2>
       <p className="font-body-md text-body-md text-on-primary-container max-w-xl mx-auto mb-10 leading-relaxed">{action.description}</p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
         <ConsultationLink className="w-full sm:w-auto bg-surface-container-lowest text-primary font-label-md text-label-md font-bold px-8 py-4 rounded-full hover:bg-surface-container-low transition-all shadow-lg flex items-center justify-center gap-2" href={action.href}>{action.label}<WebsiteIcon name="arrow_forward" /></ConsultationLink>

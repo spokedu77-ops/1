@@ -718,7 +718,8 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeLandingSource).toMatch(/function HomePage/);
     expect(homeLandingSource).toMatch(/id="showcase"/);
     expect(homeLandingSource).toMatch(/id="operating-metrics"/);
-    expect(homeLandingSource).not.toMatch(/id="service-paths"|id="spomove-experience"/);
+    expect(homeLandingSource).toMatch(/id="service-paths"/);
+    expect(homeLandingSource).toMatch(/id="spomove-experience"/);
     expect(homeLandingSource).not.toMatch(/HomeClassSection|HomeFieldBridge|HomeCommercialChoice|home-canonical/);
     expect(homeLandingSource).not.toMatch(/HomeAudienceGates/);
     expect(spomoveLandingSource).toMatch(/function SpomovePage/);

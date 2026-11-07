@@ -27,7 +27,7 @@ afterEach(async () => { await Promise.all(windows.splice(0).map(window => window
 
 describe('Canonical Stitch public page structure and preserved handoffs', () => {
   it.each([
-    ['home', ['brand', 'showcase', 'operating-metrics', 'field-stories', 'next-step']],
+    ['home', ['brand', 'service-paths', 'showcase', 'spomove-experience', 'field-stories', 'next-step']],
     ['private', ['brand', 'showcase', 'class-types', 'inquiry']],
     ['education', ['brand', 'program-grid', 'process-showcase', 'operating-metrics', 'inquiry']],
     ['about', ['brand', 'showcase', 'team', 'inquiry']],
@@ -85,14 +85,14 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     if (page === 'private') expect(doc.querySelector('#apply #inquiry')).not.toBeNull();
   });
 
-  it('keeps Home product and case destinations outside the retired dark section', () => {
+  it('keeps Home product and case destinations with the restored SPOMOVE section', () => {
     const doc = render('home');
     for (const href of ['/contact', '/education', '/about', '/records']) expect(doc.querySelector(`a[href="${href}"]`)).not.toBeNull();
     const sharedDestinations = JSON.stringify([siteNav, footerNavGroups, siteHeaderLabCta]);
     for (const href of ['/private', '/spokedu-lab', '/spomove', '/spomove/catalog', '/spomat']) expect(sharedDestinations).toContain(href);
     for (const slug of ['maedong-sports-stepup', 'dongjak-spomove', 'donghaeng-special-pe'] as const) expect(doc.querySelector(`a[href="${getFieldRecordCatalogItem(slug).href}"]`)).not.toBeNull();
-    expect(doc.querySelector('#spomove-experience')).toBeNull();
-    expect(doc.querySelector('#service-paths')).toBeNull();
+    expect(doc.querySelector('#spomove-experience')).not.toBeNull();
+    expect(doc.querySelector('#service-paths')).not.toBeNull();
     expect(getFieldRecordCatalogItem('maedong-sports-stepup').thumbnailSrc).toBe(SPOKEDU_IMAGES.home.fieldEditorialCaseGeneral.src);
     expect(getFieldRecordCatalogItem('dongjak-spomove').thumbnailSrc).toBe(SPOKEDU_IMAGES.home.fieldEditorialCaseSpomove.src);
     expect(getFieldRecordCatalogItem('donghaeng-special-pe').thumbnailSrc).toBe(SPOKEDU_IMAGES.home.fieldEditorialCaseAdapted.src);
