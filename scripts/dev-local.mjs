@@ -99,6 +99,32 @@ function pidsOnPortWin32(p) {
   }
 }
 
+async function ensureAuthReachable() {
+  const text = readFileSync(resolve(repoRoot, '.env.local'), 'utf8');
+  const value = (name) => {
+    const match = text.match(new RegExp(`^\\s*${name}\\s*=\\s*(.+)$`, 'm'));
+    return match?.[1].trim().replace(/^(['"])(.*)\1$/, '$2');
+  };
+  const url = value('NEXT_PUBLIC_SUPABASE_URL');
+  const key = value('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  try {
+    const response = await fetch(new URL('/auth/v1/settings', url), {
+      headers: { apikey: key },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) {
+      fail(`Supabase auth check failed (HTTP ${response.status}). Check .env.local credentials.`, 2);
+    }
+    log('Supabase auth connection verified.');
+  } catch (error) {
+    const codes = [error?.cause?.code, ...(error?.cause?.errors ?? []).map((item) => item.code)];
+    if (codes.includes('EACCES') || codes.includes('EPERM')) {
+      fail('Supabase auth connection blocked by process permissions. Restart npm run dev:local with network access; login cannot work in this sandbox.', 2);
+    }
+    fail('Supabase auth connection unavailable. Check network access before opening local login.', 2);
+  }
+}
+
 function killPidsWin32(pids) {
   for (const pid of pids) {
     try {
@@ -181,6 +207,7 @@ async function main() {
   ensureRepo();
   ensureNodeModules();
   ensureEnvLocal();
+  await ensureAuthReachable();
 
   if (await isAlreadyHealthy()) {
     log(`Already running at ${baseUrl}`);
