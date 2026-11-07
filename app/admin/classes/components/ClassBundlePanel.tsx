@@ -78,7 +78,7 @@ type Props = {
   bundleTitle: string;
   groupIds: string[];
   onClose: () => void;
-  onChanged?: () => void;
+  onChanged?: () => void | Promise<void>;
   calendarEvents?: SessionEvent[];
   calendarDataStatus?: "range-limited" | "incomplete" | "unavailable";
 };
@@ -1029,15 +1029,11 @@ export default function ClassBundlePanel({
     if (!confirm(confirmMsg)) return;
 
     setDeletingSessionId(sessionId);
+    let cancellationSaved = false;
     try {
       // 취소 = 정산 제외 + 슬롯 소진. 메인 수업료와 회차·날짜는 보존.
-      const cancelPatch: {
-        status: string;
-        round_display?: string;
-      } = { status: "cancelled" };
-      if (roundIndex != null && contractTotal > 0) {
-        cancelPatch.round_display = formatRoundDisplay(roundIndex, contractTotal);
-      }
+      // 취소는 표시 회차를 다시 계산하거나 덮어쓰는 작업이 아닙니다.
+      const cancelPatch = { status: "cancelled" };
 
       let cancelQuery = supabase
         .from("sessions")
@@ -1053,6 +1049,11 @@ export default function ClassBundlePanel({
       if (!cancelledRow?.id) throw new Error("BUNDLE_SESSION_NOT_CANCELLED");
       invalidateAdminSessionRequests();
       assertSavedSessionRows([cancelledRow], [{ id: sessionId, ...cancelPatch }]);
+      cancellationSaved = true;
+      setSessionsByGroupId((previous) => ({
+        ...previous,
+        [gid]: (previous[gid] ?? []).map((row) => row.id === sessionId ? { ...row, status: "cancelled" } : row),
+      }));
       setRoundView("all"); // 방금 취소한 회차가 목록에서 사라지지 않게 합니다.
       toast.success(
         roundLabel
@@ -1060,10 +1061,28 @@ export default function ClassBundlePanel({
           : "회차가 차감(취소) 처리되었습니다."
       );
       await loadAll();
-      onChanged?.();
+      await onChanged?.();
     } catch (err) {
       devLogger.error(err);
-      toast.error("회차 차감(취소) 처리에 실패했습니다.");
+      // A lost response can follow a committed UPDATE. Read before describing the outcome.
+      if (!cancellationSaved) {
+        try {
+          const { data: stored, error: readError } = await supabase.from("sessions")
+            .select("id,status").eq("id", sessionId).maybeSingle();
+          cancellationSaved = !readError && stored?.status === "cancelled";
+          if (cancellationSaved) {
+            invalidateAdminSessionRequests();
+            setRoundView("all");
+            await loadAll();
+            await onChanged?.();
+          }
+        } catch (readError) {
+          devLogger.error(readError);
+        }
+      }
+      toast.error(cancellationSaved
+        ? "회차 차감(취소)은 저장되었습니다. 목록을 새로고침해 주세요."
+        : "회차 차감(취소) 결과를 확인하지 못했습니다. 목록을 새로고침해 상태를 확인해 주세요.");
     } finally {
       setDeletingSessionId(null);
     }
