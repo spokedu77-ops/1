@@ -7,23 +7,13 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { getCenters, createCenter, updateCenter, deleteCenter, type GetCentersFilters } from './actions/centers';
 import type { Center, CenterListItem, CenterStatus } from '@/app/lib/centers/types';
+import { CENTER_STATUS_OPTIONS, CENTER_STATUS_STYLES as STATUS_STYLES } from '@/app/lib/centers/status';
 import { matchesCenterFilters, toCenterListItem } from '@/app/lib/centers/listItem';
 import { centerDisplayName } from '@/app/lib/centers/displayName';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { Search, Plus, Loader2, X, Trash2, ChevronRight } from 'lucide-react';
 
-const STATUS_OPTIONS = [
-  { value: '', label: '전체' },
-  { value: 'active', label: '활성' },
-  { value: 'paused', label: '일시중지' },
-  { value: 'ended', label: '종료' },
-] as const;
 
-const STATUS_STYLES: Record<CenterStatus, string> = {
-  active: 'bg-indigo-100 text-indigo-800',
-  paused: 'bg-amber-100 text-amber-800',
-  ended: 'bg-slate-100 text-slate-600',
-};
 
 const DAY_LABELS: Record<string, string> = {
   mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일',
@@ -44,7 +34,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('active');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'ended'>('active');
   const [regionFilter, setRegionFilter] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<{
@@ -53,7 +43,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
     address: string;
     project_name: string;
     status: CenterStatus;
-  }>({ name: '', region_tag: '', address: '', project_name: '', status: 'active' });
+  }>({ name: '', region_tag: '', address: '', project_name: '', status: 'regular' });
   const [createError, setCreateError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -123,7 +113,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
         return;
       }
       setIsCreateOpen(false);
-      setCreateForm({ name: '', region_tag: '', address: '', project_name: '', status: 'active' });
+      setCreateForm({ name: '', region_tag: '', address: '', project_name: '', status: 'regular' });
       if (result.data) applySavedCenter(result.data);
     } finally {
       setSubmitting(false);
@@ -176,9 +166,9 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
             <input type="search" aria-label="센터 검색" placeholder="센터명, 프로젝트명, 주소, 담당자 검색" value={search} onChange={(e) => setSearch(e.target.value)}
               className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20" />
           </div>
-          <select aria-label="센터 상태 필터" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm">
-            {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
+          <div role="tablist" aria-label="센터 운영 상태" className="inline-flex shrink-0 gap-1 rounded-lg bg-slate-100 p-1">
+            {([{ value: 'active', label: '활성' }, { value: 'ended', label: '종료' }] as const).map(({ value, label }) => <button key={value} type="button" role="tab" aria-selected={statusFilter === value} onClick={() => setStatusFilter(value)} className={`min-h-8 whitespace-nowrap rounded-md px-4 text-sm font-medium ${statusFilter === value ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>{label}</button>)}
+          </div>
           <input aria-label="지역 필터" placeholder="지역 태그" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="h-10 w-24 min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm" />
           <button type="button" onClick={() => setIsCreateOpen(true)} className="ml-auto inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700">
             <Plus className="h-4 w-4" />센터 추가
@@ -197,7 +187,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 px-3 py-1.5 text-xs text-slate-500">
                 <select aria-label={`${c.name} 상태`} value={c.status} onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)} disabled={updatingStatusId === c.id}
                   className={`h-8 min-w-0 rounded-md px-2 text-xs ${STATUS_STYLES[c.status]}`}>
-                  <option value="active">활성</option><option value="paused">일시중지</option><option value="ended">종료</option>
+                  {CENTER_STATUS_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
                 {c.region_tag && <span className="max-w-full break-words">{c.region_tag}</span>}
                 <span className="min-w-0 break-words">{[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].filter(Boolean).join(' · ') || '강사 미배정'}</span>
@@ -223,7 +213,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                     </Link>
                   </td>
                   <td className="px-2 py-1"><select aria-label={`${c.name} 상태`} value={c.status} onChange={(e) => handleStatusChange(c, e.target.value as CenterStatus)} disabled={updatingStatusId === c.id}
-                    className={`h-8 w-full min-w-0 rounded-md px-1 text-xs ${STATUS_STYLES[c.status]}`}><option value="active">활성</option><option value="paused">일시중지</option><option value="ended">종료</option></select></td>
+                    className={`h-8 w-full min-w-0 rounded-md px-1 text-xs ${STATUS_STYLES[c.status]}`}>{CENTER_STATUS_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select></td>
                   <td className="px-2 py-1 text-xs text-slate-600"><span className="block truncate" title={[c.main_teacher_name, c.main_teacher_2_name, c.main_teacher_3_name].filter(Boolean).join(', ')}>{c.main_teacher_name || '미배정'}</span>{[c.main_teacher_2_name, c.main_teacher_3_name].some(Boolean) && <span className="mt-0.5 block truncate text-slate-400">보조 {[c.main_teacher_2_name, c.main_teacher_3_name].filter(Boolean).join(', ')}</span>}</td>
                   <td className="px-2 py-1 text-xs"><span className="block truncate text-slate-700" title={c.contact_name ?? ''}>{c.contact_name || '-'}</span><span className="mt-0.5 block truncate tabular-nums text-slate-500" title={c.contact_phone ?? ''}>{c.contact_phone || '-'}</span></td>
                   <td className="px-2 py-1 text-xs text-slate-500"><span className="block truncate" title={(c.weekly_schedule ?? []).map((slot) => `${DAY_LABELS[slot.day] ?? slot.day} ${slot.start}–${slot.end}`).join(' / ')}>{(c.weekly_schedule ?? []).slice(0, 1).map((slot) => `${DAY_LABELS[slot.day] ?? slot.day} ${slot.start}`).join('') || '미설정'}{(c.weekly_schedule?.length ?? 0) > 1 ? ` +${c.weekly_schedule.length - 1}` : ''}</span></td>

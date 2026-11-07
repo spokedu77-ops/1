@@ -10,7 +10,7 @@ import { totalCenterFee, type CenterBillingBreakdown } from '@/app/lib/centers/f
 
 export type ResolvedCenterLabor = { assignmentKey: string; fees: CenterTeacherFee[] };
 
-export default function CenterTeacherFees({ ids, overrides = [], onFeesChange, teachers, onTeacherChange, names = [], summary = false, sessionFee, billingBreakdown, onResolvedFees }: {
+export default function CenterTeacherFees({ ids, overrides = [], onFeesChange, teachers, onTeacherChange, names = [], summary = false, sessionFee, billingBreakdown, vat, onResolvedFees }: {
   ids: (string | null | undefined)[];
   overrides?: CenterTeacherFee[];
   onFeesChange?: (fees: CenterTeacherFee[]) => void;
@@ -20,6 +20,7 @@ export default function CenterTeacherFees({ ids, overrides = [], onFeesChange, t
   summary?: boolean;
   sessionFee?: number | null;
   billingBreakdown?: CenterBillingBreakdown;
+  vat?: 'auto' | 'none';
   onResolvedFees?: (value: ResolvedCenterLabor) => void;
 }) {
   const [extraSlots, setExtraSlots] = useState(0);
@@ -61,6 +62,7 @@ export default function CenterTeacherFees({ ids, overrides = [], onFeesChange, t
     return <section aria-label="센터 청구 수업료와 지급 강사료" className="min-w-0 space-y-2">
       <div className="min-w-0 rounded-lg bg-indigo-50/70 px-3 py-2">
         <h2 className="mb-2 text-xs font-semibold text-indigo-800">우리가 받는 회당 수업료</h2>
+        <p className="mb-2 text-xs text-indigo-600">{vat === 'none' ? '부가세 없음' : billingBreakdown?.vatIncluded === false ? '부가세 별도 입력 · 총액에 10% 합산' : '부가세 포함'}</p>
         <dl className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
           {([['주강사비', billingBreakdown?.mainCharge], ['보조강사비', billingBreakdown?.assistCharge], ['대여비', billingBreakdown?.rentalCharge]] as const).map(([label, amount]) => <div key={label} className="flex min-w-0 justify-between gap-2 text-xs sm:block"><dt className="text-slate-500">{label}</dt><dd className="min-w-0 break-words font-semibold tabular-nums text-slate-800 sm:mt-1">{money(amount)}</dd></div>)}
         </dl>

@@ -21,7 +21,7 @@ import CentersClient from './CentersClient';
 import { CenterDetailClient } from './[id]/CenterDetailClient';
 
 const center: Center = {
-  id: '11111111-1111-4111-8111-111111111111', name: '테스트 센터', status: 'active', region_tag: '서울',
+  id: '11111111-1111-4111-8111-111111111111', name: '테스트 센터', status: 'regular', region_tag: '서울',
   address: '서울 주소', access_note: '출입 안내', contact_name: '담당자', contact_phone: '000', contact_email: 'test@example.test', contact_role: '담당',
   contract_start: '2026-01-01', contract_end: '2026-12-31', session_fee: 100000,
   main_teacher_id: 'old-teacher', main_teacher_2_id: null, main_teacher_3_id: null, main_teacher_name: '기존 강사',

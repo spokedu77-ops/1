@@ -1,0 +1,50 @@
+.schedule {
+  container-type: inline-size;
+}
+
+.scheduleRow {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.scheduleRow > select {
+  padding-inline: 0.5rem;
+}
+
+@container (max-width: 460px) {
+  .scheduleRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scheduleRow > select {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .scheduleRow > input {
+    grid-row: 2;
+  }
+
+  .scheduleRow > button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+}
+
+@container (max-width: 300px) {
+  .scheduleRow {
+    grid-template-columns: minmax(0, 1fr) 2rem;
+  }
+
+  .scheduleRow > input {
+    grid-column: 1 / -1;
+  }
+
+  .scheduleRow > input:nth-of-type(2) {
+    grid-row: 3;
+  }
+}

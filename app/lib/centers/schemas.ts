@@ -24,7 +24,7 @@ const instructorsDefaultSchema = z.object({
   })).optional(),
 });
 
-export const centerStatusSchema = z.enum(['active', 'paused', 'ended']);
+export const centerStatusSchema = z.enum(['ongoing', 'regular', 'short', 'ended']);
 
 export const createCenterSchema = z.object({
   settlement_defaults: centerSettlementDefaultsSchema.optional(),
@@ -36,7 +36,7 @@ export const createCenterSchema = z.object({
   contact_phone: z.string().optional().nullable(),
   contact_email: z.string().optional().nullable(),
   contact_role: z.string().optional().nullable(),
-  status: centerStatusSchema.optional().default('active'),
+  status: centerStatusSchema.optional().default('regular'),
   contract_start: z.string().optional().nullable(),
   contract_end: z.string().optional().nullable(),
   session_fee: z.number().int().min(0).optional().nullable(),

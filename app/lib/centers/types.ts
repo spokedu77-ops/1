@@ -2,7 +2,8 @@
  * 센터 관리 핵심 타입 (압축 리뉴얼)
  */
 
-export type CenterStatus = 'active' | 'paused' | 'ended';
+import type { CenterStatus } from './status';
+export type { CenterStatus } from './status';
 
 /** 주간 시간표 1행 (centers.weekly_schedule jsonb) */
 export interface WeeklyScheduleSlot {

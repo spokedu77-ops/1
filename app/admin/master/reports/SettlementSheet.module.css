@@ -140,6 +140,22 @@
 .entryPanel { border: 1px solid var(--sheet-line); border-radius: 10px; background: white; padding: 10px 12px; }
 .entryToolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .entryToolbar > span { color: #34413c; font-size: 12px; font-weight: 650; }
+.privateImport { margin-top: 12px; border-top: 1px solid var(--sheet-line); padding-top: 12px; }
+.importSelect { position: relative; width: 100%; min-width: 0; }
+.importTrigger { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--sheet-line); border-radius: 8px; background: white; padding: 10px 12px; color: inherit; font-size: 13px; text-align: left; }
+.importTrigger span { min-width: 0; overflow-wrap: anywhere; }
+.importTrigger svg { flex: none; }
+.importMenu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 45; width: 100%; overflow: hidden; border: 1px solid var(--sheet-line); border-radius: 10px; background: white; box-shadow: 0 12px 32px -12px rgba(15,35,28,.3); }
+.importSearch { display: flex; min-height: 44px; align-items: center; gap: 8px; border-bottom: 1px solid var(--sheet-line); padding: 8px 12px; color: var(--sheet-muted); }
+.importSearch input { width: 100%; min-width: 0; background: transparent; color: inherit; font-size: 13px; }
+.importOptions { max-height: min(280px, 40dvh); overflow-y: auto; overscroll-behavior: contain; padding: 4px; }
+.importOptions > button { display: flex; width: 100%; min-height: 44px; flex-direction: column; justify-content: center; gap: 2px; border-radius: 6px; padding: 8px; font-size: 13px; text-align: left; overflow-wrap: anywhere; }
+.importOptions > button:hover:not(:disabled) { background: var(--sheet-accent-soft); }
+.importOptions > button:disabled { opacity: .45; cursor: not-allowed; }
+.importOptions small, .importOptions p { color: var(--sheet-muted); font-size: 12px; }
+.importOptions p { padding: 12px 8px; }
+.importOptions p button { min-height: 44px; text-decoration: underline; }
+.importTrigger:focus-visible, .importOptions button:focus-visible, .importSearch input:focus-visible { outline: 2px solid var(--sheet-accent); outline-offset: -2px; }
 .entryPanel .selectedSource { display: inline-flex; min-height: 34px; align-items: center; gap: 6px; border: 1px solid var(--sheet-accent); border-radius: 8px; background: var(--sheet-accent-soft); padding: 6px 12px; color: var(--sheet-accent); font-size: 13px; font-weight: 600; }
 .editingTools { display: grid; gap: 8px; padding-block: 4px; }
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -200,7 +216,8 @@
 .totalInput::placeholder { color: #34413c; opacity: 1; }
 .centerInput { font-weight: 550; }
 .statusCell { text-align: center; }
-.statusButton { display: grid; width: 26px; height: 26px; margin: 2px auto 0; place-items: center; border: 1.5px dashed var(--sheet-line); border-radius: 999px; background: transparent; color: transparent; font-size: 12px; font-weight: 800; transition: color .18s ease, border-color .18s ease, background .18s ease, transform .16s ease; }
+.invoiceNotApplicable { display: grid; min-height: 34px; place-items: center; color: var(--sheet-muted); }
+.statusButton { display: grid; width: 26px; height: 26px; margin: 2px auto 0; place-items: center; border: 2px solid var(--sheet-muted); border-radius: 999px; background: white; color: transparent; font-size: 12px; font-weight: 800; transition: color .18s ease, border-color .18s ease, background .18s ease, transform .16s ease; }
 .statusButton:hover:not(:disabled) { border-color: var(--sheet-accent); }
 .statusButton:active:not(:disabled) { transform: scale(.88); }
 .statusButtonOn { border-style: solid; border-color: var(--sheet-accent); background: var(--sheet-accent); color: white; }
@@ -211,11 +228,6 @@
 .vatCell select { border-color: var(--sheet-line); background: var(--sheet-surface-soft); padding-inline: 4px; font-size: 11px; }
 .vatValue { padding-right: 4px; text-align: right; white-space: nowrap; }
 .netValue { display: block; padding: 5px 5px 0; font-weight: 700; text-align: right; white-space: nowrap; }
-.adjustInput { min-height: 20px !important; padding: 1px 5px !important; color: var(--sheet-muted) !important; font-size: 10.5px !important; text-align: right; }
-.adjustDetails { margin-top: 1px; text-align: right; }
-.adjustDetails summary { cursor: pointer; list-style: none; padding-right: 5px; color: var(--sheet-muted); font-size: 9.5px; line-height: 16px; }
-.adjustDetails summary::-webkit-details-marker { display: none; }
-.adjustDetails[open] summary { color: #8a5a18; }
 .actions { display: flex; height: 34px; align-items: center; justify-content: center; gap: 1px; white-space: nowrap; }
 .actionButton { display: grid; width: 20px; height: 24px; place-items: center; border-radius: 5px; color: var(--sheet-muted); font-size: 12px; }
 .actionButton:hover:not(:disabled) { background: var(--sheet-accent-soft); color: var(--sheet-accent); }
@@ -275,7 +287,7 @@
 .settlementGrid th:last-child { border-top-right-radius: 12px; }
 .settlementGrid th.centered,
 .settlementGrid .centered { text-align: center; }
-.settlementGrid td { height: auto; padding: 10px 6px; vertical-align: top; }
+.settlementGrid td { height: auto; padding: 4px 6px; vertical-align: middle; }
 .settlementGrid th:first-child,
 .settlementGrid td:first-child { padding-left: 12px; }
 .settlementGrid input { min-height: 34px; padding: 6px 4px; }
@@ -285,22 +297,36 @@
 .settlementGrid .statusButton { width: 28px; height: 28px; margin-top: 3px; }
 .settlementGrid .cellMeta { margin-top: 4px; min-height: 13px; font-size: 10px; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
 .settlementGrid .partialInput { min-height: 24px !important; padding-inline: 1px !important; font-size: 10px !important; text-align: center; }
-.settlementGrid .vatCell { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 4px; }
-.settlementGrid .vatCell select { align-self: flex-end; width: 64px; max-width: 100%; min-height: 24px; padding-block: 2px; }
+.settlementGrid .vatCell { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px; }
+.settlementGrid .vatCell select { width: 50px; max-width: 100%; min-height: 30px; padding: 3px 0; }
 .settlementGrid .vatValue { display: flex; min-height: 34px; align-items: center; justify-content: flex-end; padding: 6px 4px; }
-.profitDetails { min-width: 0; }
+.profitValue { display: block; min-height: 34px; padding: 6px 4px; font-weight: 750; text-align: right; white-space: nowrap; }
+.vatDetails { position: relative; min-width: 0; }
+.vatMenu { position: absolute; top: 100%; right: 0; z-index: 10; display: grid; gap: 6px; width: 160px; border: 1px solid var(--sheet-line); border-radius: 8px; padding: 8px; background: white; box-shadow: 0 8px 24px -8px rgba(15,35,28,.3); }
+.settlementGrid .vatMenu select { border-color: var(--sheet-line); }
 .profitAmount { display: block; min-height: 34px; border-radius: 6px; padding: 6px 4px; cursor: pointer; list-style: none; font-weight: 750; text-align: right; white-space: nowrap; }
 .profitAmount::-webkit-details-marker { display: none; }
 .profitAmount:hover { background: var(--sheet-accent-soft); }
 .profitAmount:focus-visible { outline: 2px solid var(--sheet-accent); outline-offset: 2px; }
-.settlementGrid .adjustInput { margin-top: 4px; min-height: 24px !important; border-color: var(--sheet-line); background: var(--sheet-surface-soft); }
-.noteInput { display: block; width: 100%; min-width: 0; min-height: 56px; resize: vertical; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 4px; color: inherit; font: inherit; line-height: 1.5; overflow-wrap: anywhere; }
+.noteInput { display: block; width: 100%; min-width: 0; min-height: 34px; resize: vertical; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 4px; color: inherit; font: inherit; line-height: 1.5; overflow-wrap: anywhere; }
 .noteInput:hover:not(:disabled) { border-color: var(--sheet-line); }
 .noteInput:focus { outline: none; border-color: var(--sheet-accent); box-shadow: 0 0 0 3px var(--sheet-accent-soft); }
 .noteInput:disabled { color: #43504b; opacity: .72; }
-.settlementGrid .actions { display: grid; width: fit-content; height: auto; margin: 3px auto 0; grid-template-columns: repeat(2, 24px); gap: 2px; }
+.noteButton { position: relative; display: grid; width: 34px; height: 34px; margin: auto; place-items: center; border-radius: 6px; color: var(--sheet-muted); }
+.noteButton:hover, .noteButtonFilled { background: var(--sheet-accent-soft); color: var(--sheet-accent); }
+.noteDot { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--sheet-accent); }
+.noteDialog { position: fixed; inset: 0; width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: auto; border: 1px solid var(--sheet-line); border-radius: 12px; padding: 16px; background: white; color: inherit; box-shadow: 0 16px 48px rgba(15,35,28,.2); }
+.noteDialog::backdrop { background: rgba(15,35,28,.35); }
+.noteDialog form { display: grid; gap: 12px; }
+.noteHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; }
+.noteHeader strong { min-width: 0; overflow-wrap: anywhere; }
+.noteHeader button { display: grid; width: 34px; height: 34px; flex: none; place-items: center; }
+.settlementGrid .noteEditor { width: 100%; min-height: 160px; max-height: 50dvh; resize: vertical; border: 1px solid var(--sheet-line); border-radius: 8px; padding: 10px; font: inherit; font-size: 14px; line-height: 1.6; }
+.noteFooter { display: flex; justify-content: flex-end; gap: 8px; }
+.noteButton:focus-visible, .noteEditor:focus-visible { outline: 2px solid var(--sheet-accent); outline-offset: 2px; }
+.settlementGrid .actions { display: flex; width: fit-content; height: auto; margin: 0 auto; gap: 2px; }
 .settlementGrid .actionButton { width: 24px; height: 24px; }
-.settlementGrid .deleteButton { grid-column: 1 / -1; justify-self: center; }
+
 .settlementGrid .sectionRow td,
 .settlementGrid .sectionRow th { padding: 5px 8px; }
 .settlementGrid .sectionContent { gap: 8px; }

@@ -6,11 +6,16 @@ export const centerBillingBreakdownSchema = z.object({
   mainCharge: amount,
   assistCharge: amount,
   rentalCharge: amount,
-}).refine((value) => Number.isSafeInteger(value.mainCharge + value.assistCharge + value.rentalCharge), '회당 수업료 합계가 너무 큽니다.');
+  vatIncluded: z.boolean().optional(),
+}).refine((value) => {
+  const subtotal = value.mainCharge + value.assistCharge + value.rentalCharge;
+  return Number.isSafeInteger(subtotal) && Number.isSafeInteger(subtotal + (value.vatIncluded === false ? Math.round(subtotal / 10) : 0));
+}, '회당 수업료 합계가 너무 큽니다.');
 export type CenterBillingBreakdown = z.infer<typeof centerBillingBreakdownSchema>;
 
 export function totalCenterFee(value: CenterBillingBreakdown): number {
-  return value.mainCharge + value.assistCharge + value.rentalCharge;
+  const subtotal = value.mainCharge + value.assistCharge + value.rentalCharge;
+  return subtotal + (value.vatIncluded === false ? Math.round(subtotal / 10) : 0);
 }
 
 /** Payouts are independent of what the center is charged. */

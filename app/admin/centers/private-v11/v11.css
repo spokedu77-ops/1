@@ -113,17 +113,7 @@
 .private-v11 .status-btn{padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid transparent;cursor:pointer}
 .private-v11 .status-btn.scheduled{background:#f1f5f9;color:var(--text-sub)}
 .private-v11 .status-btn.done{background:var(--green-bg);color:var(--green-text);border-color:#a7f3d0}
-.private-v11 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;padding:16px;min-height:300px}
-.private-v11 .week-day{background:#f8fafc;border:1px solid var(--line-soft);border-radius:10px;padding:10px;min-height:200px;display:flex;flex-direction:column;gap:6px}
-.private-v11 .week-day.today{background:#f0fdf4;border-color:#bbf7d0}
-.private-v11 .week-day-header{padding:2px 4px 8px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:baseline}
-.private-v11 .day-char{font-weight:800;font-size:14px;color:var(--text)}
-.private-v11 .week-day.today .day-char{color:var(--green-text)}
 .private-v11 .day-date{font-size:11.5px;color:var(--muted);font-weight:600}
-.private-v11 .week-slot{background:#fff;border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px;cursor:pointer;transition:.12s}
-.private-v11 .week-slot:hover{border-color:var(--primary);background:var(--primary-light)}
-.private-v11 .week-slot .slot-time{font-weight:700;font-size:11.5px;color:var(--primary);margin-bottom:2px}
-.private-v11 .week-slot .slot-name{font-weight:600;font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .private-v11 .log-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;transition:.15s}
 .private-v11 .log-card:hover{border-color:#cbd5e1;box-shadow:0 4px 12px rgba(15,23,42,.05)}
 .private-v11 .log-card.deleted{border-style:dashed;opacity:.7;background:#f8fafc}
@@ -192,13 +182,11 @@
 .private-v11 .report-logs{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:14px}
 .private-v11 .report-log{padding:8px 12px;background:#f8fafc;border-radius:8px;font-size:12.5px;border-left:3px solid var(--primary)}
 .private-v11 .report-log-date{font-weight:700;color:var(--primary);margin-bottom:3px;font-size:12px}
-@media(max-width:900px){.private-v11 .week-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.private-v11 .app-header{padding:12px 16px}
 .private-v11 main{padding:16px}
 .private-v11 .card-grid{grid-template-columns:1fr;padding:12px}
 .private-v11 .form-grid{grid-template-columns:1fr}
 .private-v11 .brand-sub{display:none}
-.private-v11 .week-grid{grid-template-columns:1fr}
 .private-v11 .enroll-add-row{grid-template-columns:1fr 1fr}
 .private-v11 .report-stats{grid-template-columns:1fr}}
 @media print{.private-v11 .app-header, .private-v11 .toolbar, .private-v11 .tabs, .private-v11 #backupBanner, .private-v11 .hint, .private-v11 .card-actions, .private-v11 .icon, .private-v11 #toast{display:none!important}
@@ -211,3 +199,129 @@
 .private-v11 .app-header{position:relative;top:auto}
 .private-v11 dialog[open]{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);max-height:94vh}
 .private-v11 .form-error{color:#b91c1c;font-weight:600;padding:8px 14px}
+
+/* Compact manager and editor share the same surfaces and controls. */
+.private-v11 main{padding:12px 16px 16px}
+.private-v11 .app-header{padding:10px 16px}
+.private-v11 .stats{gap:8px;margin-bottom:12px}
+.private-v11 .stat{padding:10px 12px;border-radius:10px}
+.private-v11 .stat-label{margin-bottom:2px}
+.private-v11 .stat-value{font-size:20px}
+.private-v11 .card-grid{grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:10px;padding:12px;align-items:start}
+.private-v11 .student-card{padding:12px;gap:8px}
+.private-v11 .session-block{padding:8px 10px;gap:5px}
+.private-v11 .session-bar{height:6px}
+.private-v11 .card-actions{flex-wrap:wrap;gap:4px;padding-top:0}
+.private-v11 .card-btn{padding:6px 10px;font-size:12px;border-radius:8px;min-height:34px}
+.private-v11 .hint{padding:10px;margin:0}
+.private-v11 dialog{background:var(--bg);color:var(--text);border:1px solid var(--line);margin:0}
+.private-v11 dialog[open]{max-height:calc(100dvh - 24px)}
+.private-v11 dialog form{display:flex;flex-direction:column;max-height:calc(100dvh - 26px)}
+.private-v11 .dialog-head{padding:12px 16px;background:var(--card);flex-shrink:0}
+.private-v11 .dialog-body{padding:12px 16px;max-height:none;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.private-v11 .dialog-foot{padding:10px 16px;background:var(--card);flex-shrink:0}
+.private-v11 .unit-dialog{width:min(1480px,calc(100vw - 24px))}
+.private-v11 .unit-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:12px}
+.private-v11 .unit-section{container:private-unit-section / inline-size;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;align-self:start}
+.private-v11 .unit-section-title{font-size:13px;font-weight:700;margin:0 0 10px;color:var(--text)}
+.private-v11 .unit-dialog .form-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px 10px}
+.private-v11 .unit-dialog .field{min-width:0;gap:3px}
+.private-v11 .unit-dialog .field label{font-size:12px}
+.private-v11 .unit-dialog .field input,.private-v11 .unit-dialog .field select,.private-v11 .unit-dialog .field textarea{padding:7px 9px;font-size:13px;min-width:0;min-height:34px}
+.private-v11 .unit-dialog .field textarea{min-height:52px}
+.private-v11 .unit-dialog .day-chip{padding:6px 10px}
+.private-v11 .unit-dialog .section-header{margin-top:2px;padding-top:8px}
+.private-v11 .unit-dialog .guardian-hint{padding:6px 8px;margin:0;font-size:11px;flex-wrap:wrap}
+.private-v11 .unit-dialog .enroll-section{padding:8px;margin:0;min-width:0}
+.private-v11 .unit-dialog .enroll-table{font-size:11px;margin-bottom:4px}
+.private-v11 .unit-dialog .enroll-table th{padding:4px 3px;font-size:10px}
+.private-v11 .unit-dialog .enroll-table td{padding:5px 3px;white-space:nowrap}
+.private-v11 .unit-dialog .enroll-empty{padding:8px}
+.private-v11 .unit-dialog .enroll-add-row{gap:6px 8px;margin-top:6px;padding-top:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+.private-v11 .unit-dialog .enroll-add-row .input-group{min-width:0}.private-v11 .unit-dialog .enroll-add-row input{min-width:0;max-width:100%;box-sizing:border-box;padding:8px;font-size:14px;min-height:44px}
+.private-v11 .unit-dialog .enroll-add-row label{font-size:10px}
+.private-v11 .unit-dialog .enroll-add-row .btn-wrap{margin:0}
+@media(max-width:800px){
+.private-v11 .unit-layout{grid-template-columns:1fr;gap:10px}
+.private-v11 .unit-dialog{width:min(600px,calc(100vw - 16px))}
+}
+@media(max-width:640px){
+.private-v11 main{padding:10px}
+.private-v11 .app-header{padding:10px}
+.private-v11 .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.private-v11 .stat{padding:8px}
+.private-v11 .stat-label{font-size:10px}
+.private-v11 .card-grid{padding:8px}
+.private-v11 .dialog-body{padding:10px}
+.private-v11 .unit-section{padding:10px}
+
+.private-v11 .unit-dialog .field input,.private-v11 .unit-dialog .field select,.private-v11 .unit-dialog .field textarea{font-size:16px}
+}
+
+.private-v11 .private-schedules{display:flex;flex-direction:column;gap:8px}
+.private-v11 .private-schedule{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);min-width:0}
+.private-v11 .private-schedule label{display:flex;flex-direction:column;align-items:stretch;gap:3px;min-width:0}
+.private-v11 .private-schedule .schedule-coach{grid-column:1/-1}
+.private-v11 .private-schedule .schedule-remove{grid-column:2;grid-row:1;align-self:end;justify-self:end;justify-content:center;padding:0;width:44px;height:44px}
+.private-v11 .card-meta-line.schedule-summary{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;text-align:left}
+@container private-unit-section (max-width:360px){
+.private-v11 .private-schedule label:has(input[type=time]){grid-column:1/-1}
+}
+
+/* Balance basic details, schedules, and enrollment instead of one tall column. */
+.private-v11 .unit-dialog .dialog-head{padding:8px 12px;font-size:14px}
+.private-v11 .unit-dialog .dialog-body{padding:10px;gap:10px}
+.private-v11 .unit-dialog .dialog-foot{padding:8px 12px}
+.private-v11 .unit-dialog .unit-section{padding:10px}
+.private-v11 .unit-dialog .unit-section-title{margin-bottom:8px;font-size:12px}
+.private-v11 .unit-dialog .form-grid{gap:6px 8px}
+.private-v11 .unit-dialog .field input,.private-v11 .unit-dialog .field select{padding:5px 7px;min-height:32px}
+.private-v11 .unit-dialog .field label{font-size:11px}
+.private-v11 .unit-dialog .private-schedule{padding:6px;gap:4px}
+.private-v11 .unit-dialog .private-schedules{gap:6px}
+.private-v11 .unit-optional{grid-column:1/-1;min-width:0;border-top:1px solid var(--line);padding-top:6px}
+.private-v11 .unit-optional summary,.private-v11 .enroll-history summary{cursor:pointer;color:var(--text-sub);font-size:12px;font-weight:600;padding:3px 0}
+.private-v11 .unit-optional[open] summary,.private-v11 .enroll-history[open] summary{margin-bottom:6px}
+.private-v11 .unit-dialog .guardian-link{background:transparent;border:0;padding:0;justify-content:space-between;font-size:11px}
+.private-v11 .unit-dialog .guardian-link button{padding:3px 6px;font-size:11px;background:transparent;border-color:transparent;color:var(--text-sub)}
+@media(min-width:1200px){
+.private-v11 .unit-layout{grid-template-columns:minmax(0,.95fr) minmax(0,1.1fr) minmax(0,1.2fr)}
+}
+@media(min-width:801px) and (max-width:1199px){
+.private-v11 .unit-layout{grid-template-columns:repeat(2,minmax(0,1fr))}
+.private-v11 .guardian-section{grid-column:1/-1}
+
+
+}
+@media(max-width:800px){
+.private-v11 .unit-dialog{width:min(600px,calc(100vw - 16px))}
+}
+
+.private-v11 .unit-pane-nav{display:none}
+@media(max-width:1199px){
+.private-v11 .unit-pane-nav{display:flex;gap:4px;padding:6px 10px;background:var(--card);border-bottom:1px solid var(--line);flex-shrink:0}
+.private-v11 .unit-pane-nav button{flex:1;justify-content:center;white-space:nowrap;min-height:34px;padding:5px 8px;border-color:transparent;background:var(--bg);font-size:12px}
+.private-v11 .unit-pane-nav button[aria-pressed=true]{background:var(--primary-light);color:var(--primary);border-color:#bfdbfe}
+.private-v11 .unit-layout{display:block}
+.private-v11 .unit-layout[data-unit-pane=info] .unit-section:not([data-pane=info]),
+.private-v11 .unit-layout[data-unit-pane=schedule] .unit-section:not([data-pane=schedule]),
+.private-v11 .unit-layout[data-unit-pane=guardian] .unit-section:not([data-pane=guardian]){display:none}
+.private-v11 .unit-dialog{width:min(800px,calc(100vw - 16px))}
+
+.private-v11 .unit-dialog .enroll-add-row{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+}
+@media(max-width:640px){
+
+}
+
+.private-v11 .student-panel{container:private-students / inline-size}
+.private-v11 .student-grid{grid-template-columns:minmax(0,1fr)}
+@container private-students (min-width:720px){
+.private-v11 .student-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@container private-students (min-width:1080px){
+.private-v11 .student-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media print{
+.private-v11 .student-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

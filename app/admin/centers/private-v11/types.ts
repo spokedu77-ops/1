@@ -1,12 +1,15 @@
-import type { PrivateAttendance, PrivateWeekPattern, PrivateClassStatus } from './core';
+import type { PrivateAttendance, PrivateWeekPattern, PrivateClassStatus, PrivateSchedule } from './core';
 export type { PrivateAttendance, PrivateWeekPattern, PrivateClassStatus } from './core';
 export interface Unit {
   id: string; revision: number; name: string; ageGrade: string; classType: string; coach: string;
+  coachId?: string | null;
   status: PrivateClassStatus; neighborhood: string; placeType: string; address: string;
   subject: string; scheduleDays: number[]; scheduleTime: string; weekPattern: PrivateWeekPattern;
+  schedules?: PrivateSchedule[];
   memo: string; lastClassDate?: string; deletedAt?: string | null;
 }
 export interface Guardian { id: string; revision: number; relation: string; phone: string }
+export interface PrivateTeacher { id: string; name: string }
 export interface UnitGuardian { unitId: string; guardianId: string; position: number }
 export interface Enrollment {
   id: string; revision: number; studentId: string; enrolledAt: string; sessions: number;

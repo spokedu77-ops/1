@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { toast } from 'sonner';
-import { CONSUMING, daysSince, getHeadlineStats, getPaymentInfo, getSessionInfo, getWeekDays, isScheduledOn } from './core';
-import type { Enrollment, Guardian, LessonLog, PrivateSnapshot, SaveGuardianChoice, Unit } from './types';
+import { CONSUMING, daysSince, getHeadlineStats, getPaymentInfo, getSessionInfo, getWeekDays, isScheduledOn, getPrivateSchedules, getPrivateSchedulesOn, formatPrivatePhone, defaultPrivateEndTime } from './core';
+import type { Enrollment, Guardian, LessonLog, PrivateSnapshot, SaveGuardianChoice, Unit, PrivateTeacher } from './types';
 import { emptySnapshot } from './types';
 import './v11.css';
 
@@ -12,7 +12,6 @@ const DAYS='일월화수목금토';
 const ATTENDED=['출석','보강','당일결석','사전결석','우천취소/연기'] as const;
 const MODULES=[
   {key:'checklist',name:'오늘 체크리스트',desc:'시간순 실행 도구'},
-  {key:'week',name:'주간 뷰',desc:'요일별 미리보기'},
   {key:'logs',name:'수업일지',desc:'필드 입력'},
   {key:'feedback',name:'발송 이력',desc:'학부모 카톡 발송 여부'},
   {key:'report',name:'월간 리포트',desc:'학부모 공유용'},
@@ -22,10 +21,10 @@ const MODULES=[
   {key:'trash',name:'휴지통',desc:'삭제 복원'},
 ] as const;
 type ModuleKey=typeof MODULES[number]['key'];
-type Tab='students'|'checklist'|'week'|'logs'|'trash';
+type Tab='students'|'checklist'|'logs'|'trash';
 const defaultSettings=Object.fromEntries(MODULES.map(x=>[x.key,true])) as Record<ModuleKey,boolean>;
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
-const newUnit=():Unit=>({id:'',revision:0,name:'',ageGrade:'',classType:'1:1 개인',coach:'',status:'active',neighborhood:'',placeType:'아파트 커뮤니티',address:'',subject:'',scheduleDays:[],scheduleTime:'',weekPattern:'every',memo:''});
+const newUnit=():Unit=>({id:'',revision:0,name:'',ageGrade:'',classType:'1:1 개인',coach:'',status:'active',neighborhood:'',placeType:'아파트 커뮤니티',address:'',subject:'',scheduleDays:[],scheduleTime:'',schedules:[],weekPattern:'every',memo:''});
 const newEnrollment=(studentId=''):Enrollment=>({id:'',revision:0,studentId,enrolledAt:today(),sessions:0,amount:0,paidAt:today(),nextDueDate:'',expiresAt:'',memo:'',canceledAt:null});
 const newLog=(studentId=''):LessonLog=>({id:'',revision:0,studentId,date:today(),attended:'출석',equipment:'',content:'',homework:'',deletedAt:null,sentAt:null});
 const clampPhone=(phone:string)=>phone.replace(/[-\s]/g,'');
@@ -44,6 +43,7 @@ const toastError=(e:unknown)=>toast.error(e instanceof Error?e.message:'요청�
 
 export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty:boolean)=>void}={}){
   const [db,setDb]=useState<PrivateSnapshot>(emptySnapshot);
+  const [teachers,setTeachers]=useState<PrivateTeacher[]>([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
@@ -54,13 +54,13 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
   const [statusFilter,setStatusFilter]=useState('');
   const [sortBy,setSortBy]=useState<'name'|'neighborhood'|'remain'>('name');
   const [group,setGroup]=useState(false);
-  const [weekOffset,setWeekOffset]=useState(0);
   const [logFilter,setLogFilter]=useState('');
   const [logFrom,setLogFrom]=useState('');
   const [logTo,setLogTo]=useState('');
   const [settings,setSettings]=useState<Record<ModuleKey,boolean>>(defaultSettings);
   const [expanded,setExpanded]=useState<Record<string,boolean>>({});
   const [editUnit,setEditUnit]=useState<Unit|null>(null);
+  const [unitPane,setUnitPane]=useState<'info'|'schedule'|'guardian'>('info');
   const [guardianForm,setGuardianForm]=useState<{relation:string;phone:string;selectedId:string}>({relation:'어머님',phone:'',selectedId:''});
   const [draftEnroll,setDraftEnroll]=useState<Enrollment[]>([]);
   const [newEnr,setNewEnr]=useState<Enrollment>(newEnrollment());
@@ -80,9 +80,9 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
   const load=async()=>{
     setLoading(true);setError('');
     try{const response=await fetch('/api/admin/private-v11',{credentials:'include',cache:'no-store'});
-      const json=await response.json().catch(()=>({error:'응답 오류'})) as {data?:PrivateSnapshot;error?:string};
+      const json=await response.json().catch(()=>({error:'응답 오류'})) as {data?:PrivateSnapshot;teachers?:PrivateTeacher[];error?:string};
       if(!response.ok||!json.data)throw new Error(json.error??`조회 실패 (${response.status})`);
-      setDb(json.data);
+      setDb(json.data);setTeachers(json.teachers??[]);
       const previous=localStorage.getItem('spokedu.private.v11.last-backup');
       const days=previous?Math.floor((Date.now()-new Date(previous).getTime())/86400000):Infinity;
       setBackupDue(json.data.units.length>0&&(!previous||days>=7));
@@ -112,24 +112,24 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
     const sess=getSessionInfo(u.id,db.enrollments,db.logs),pay=getPaymentInfo(u.id,db.enrollments,today());
     if(statusFilter==='active'&&u.status!=='active')return false;
     if(statusFilter==='paused'&&u.status!=='paused')return false;
+    if(statusFilter==='ended'&&u.status!=='ended')return false;
     if(statusFilter==='unpaid'&&pay.unpaidAmount<=0)return false;
     if(statusFilter==='renewal'&&sess.remain>1)return false;
     if(range==='today'&&!isScheduledOn(u,new Date()))return false;
     if(range==='week'&&!getWeekDays().some(d=>isScheduledOn(u,d)))return false;
     const g=guardianOf(u);
-    if(search.trim()&&![u.name,u.ageGrade,u.classType,u.coach,u.address,u.neighborhood,u.placeType,u.subject,u.memo,g?.phone,g?.relation].join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))return false;
+    if(search.trim()&&![u.name,u.ageGrade,u.classType,u.coach,u.address,u.neighborhood,u.placeType,u.subject,u.memo,...getPrivateSchedules(u).map(slot=>slot.coach),g?.phone,g?.relation].join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))return false;
     return true;
   }).sort((a,b)=>sortBy==='name'?a.name.localeCompare(b.name,'ko'):sortBy==='neighborhood'?(a.neighborhood.localeCompare(b.neighborhood,'ko')||a.name.localeCompare(b.name,'ko')):getSessionInfo(a.id,db.enrollments,db.logs).remain-getSessionInfo(b.id,db.enrollments,db.logs).remain);
-  const weekDays=getWeekDays(weekOffset);
   const filteredLogs=visibleLogs.filter(l=>(!logFilter||l.studentId===logFilter)&&(!logFrom||l.date>=logFrom)&&(!logTo||l.date<=logTo)).sort((a,b)=>b.date.localeCompare(a.date));
   const trashCount=db.units.filter(u=>u.deletedAt).length+db.logs.filter(l=>l.deletedAt).length;
   const currentUnit=reportId?unitMap.get(reportId):undefined;
   const reportLogs=reportId?visibleLogs.filter(l=>l.studentId===reportId&&l.date.startsWith(today().slice(0,7))).sort((a,b)=>a.date.localeCompare(b.date)):[];
 
   const openUnit=(unit?:Unit)=>{
-    const u=unit?{...unit,scheduleDays:[...unit.scheduleDays]}:newUnit();
+    const u=unit?{...unit,scheduleDays:[...unit.scheduleDays],schedules:getPrivateSchedules(unit).map(slot=>({...slot}))}:newUnit();
     const g=unit?guardianOf(unit):undefined;
-    setEditUnit(u);setGuardianForm({relation:g?.relation??'어머님',phone:g?.phone??'',selectedId:g?.id??''});
+    setUnitPane('info');setEditUnit(u);setGuardianForm({relation:g?.relation??'어머님',phone:g?.phone??'',selectedId:g?.id??''});
     setDraftEnroll(unit?db.enrollments.filter(e=>e.studentId===unit.id&&!e.canceledAt).map(x=>({...x})):[]);
     const en=unit?db.enrollments.filter(e=>e.studentId===unit.id&&!e.canceledAt).map(x=>({...x})):[];
     const guardian={relation:g?.relation??'어머님',phone:g?.phone??'',selectedId:g?.id??''};
@@ -143,7 +143,8 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
   };
   const saveUnit=async(event:FormEvent)=>{
     event.preventDefault();if(!editUnit)return;
-    if(!editUnit.name.trim()){toast.error('이름은 필수입니다.');return;}
+    if(!editUnit.name.trim()){setUnitPane('info');toast.error('이름은 필수입니다.');return;}
+    if(getPrivateSchedules(editUnit).some(slot=>slot.start&&slot.end&&slot.end===slot.start)){setUnitPane('schedule');toast.error('시작과 종료 시간을 다르게 입력해 주세요.');return;}
     const original=editUnit.id?db.units.find(x=>x.id===editUnit.id):undefined;
     const originalGuardian=original?guardianOf(original):undefined;
     let guardian:SaveGuardianChoice={mode:'keep'};
@@ -158,7 +159,7 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
     setBusy(true);setSavingText('수강생 정보를 저장하는 중입니다.');
     try {
       // Atomic RPC: unit, guardian, new enrollments and cancellations all commit or all roll back.
-      await requestApi({action:'saveUnit',unit:editUnit,guardian,addEnrollments:adds,cancelEnrollments:removedIds.map(e=>({id:e.id,revision:e.revision}))});
+      await requestApi({action:'saveUnit',unit:{...editUnit,scheduleDays:[...new Set(getPrivateSchedules(editUnit).map(slot=>slot.day))],scheduleTime:getPrivateSchedules(editUnit)[0]?.start??'',coach:editUnit.coach},guardian,addEnrollments:adds,cancelEnrollments:removedIds.map(e=>({id:e.id,revision:e.revision}))});
       await refresh();setEditUnit(null);toast.success('수강생 정보를 저장했습니다.');
     }catch(e){toastError(e);}finally{setBusy(false);setSavingText('');}
 
@@ -183,7 +184,7 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
   const exportJson=()=>{download(JSON.stringify({students:db.units.map(u=>({...u,guardianIds:db.links.filter(l=>l.unitId===u.id).map(l=>l.guardianId)})),guardians:db.guardians,enrollments:db.enrollments,logs:db.logs},null,2),`SPOKEDU_백업_${today()}.json`,'application/json');try{localStorage.setItem('spokedu.private.v11.last-backup',new Date().toISOString());}catch{}setBackupDue(false);};
   const exportCsv=()=>{
     const headers=['이름','연령','수업형태','담당코치','보호자관계','보호자연락처','동네','장소','주소','종목','요일','시간','반복','상태','등록회차','사용회차','잔여회차','총금액(만)','입금액(만)','미납(만)','다음결제','최근수업일','메모'];
-    const rows=active.map(u=>{const sess=getSessionInfo(u.id,db.enrollments,db.logs),pay=getPaymentInfo(u.id,db.enrollments,today()),g=guardianOf(u);return [u.name,u.ageGrade,u.classType,u.coach,g?.relation,g?.phone,u.neighborhood,u.placeType,u.address,u.subject,u.scheduleDays.map(d=>DAYS[d]).join('·'),u.scheduleTime,u.weekPattern,u.status,sess.total,sess.used,sess.remain,pay.totalAmount,pay.paidAmount,pay.unpaidAmount,pay.upcoming,u.lastClassDate,u.memo];});
+    const rows=active.map(u=>{const sess=getSessionInfo(u.id,db.enrollments,db.logs),pay=getPaymentInfo(u.id,db.enrollments,today()),g=guardianOf(u);return [u.name,u.ageGrade,u.classType,u.coach,g?.relation,g?.phone,u.neighborhood,u.placeType,u.address,u.subject,getPrivateSchedules(u).map(slot=>DAYS[slot.day]).join('·'),getPrivateSchedules(u).map(slot=>`${DAYS[slot.day]} ${slot.start}${slot.end?'~'+slot.end:''} ${slot.coach}`).join(' / '),u.weekPattern,u.status,sess.total,sess.used,sess.remain,pay.totalAmount,pay.paidAmount,pay.unpaidAmount,pay.upcoming,u.lastClassDate,u.memo];});
     download('\ufeff'+[headers,...rows].map(row=>row.map(safeCsvCell).join(',')).join('\n'),`SPOKEDU_수강생_${today()}.csv`,'text/csv;charset=utf-8');
   };
   const exportLogs=()=>{const headers=['날짜','학생','출석','교구','내용','피드백','발송'];download('\ufeff'+[headers,...filteredLogs.map(l=>[l.date,unitMap.get(l.studentId)?.name,l.attended,l.equipment,l.content,l.homework,l.sentAt?'발송':'미발송'])].map(row=>row.map(safeCsvCell).join(',')).join('\n'),`SPOKEDU_수업일지_${today()}.csv`,'text/csv;charset=utf-8');};
@@ -192,20 +193,20 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
 
   const unitCard=(u:Unit)=>{
     const g=guardianOf(u),sess=getSessionInfo(u.id,db.enrollments,db.logs),pay=getPaymentInfo(u.id,db.enrollments,today());
-    const scheduled=isScheduledOn(u,new Date()),paused=u.status==='paused',exhausted=!paused&&sess.remain<=0;
-    const meta=[u.scheduleDays.map(d=>DAYS[d]).join('·')+(u.scheduleTime?' '+u.scheduleTime:''),u.subject].filter(Boolean).join(' · ');
+    const scheduled=u.status==='active'&&isScheduledOn(u,new Date()),paused=u.status!=='active',exhausted=!paused&&sess.remain<=0;
+    const meta=[getPrivateSchedules(u).map(slot=>`${DAYS[slot.day]} ${slot.start}${slot.end?'~'+slot.end:''}${slot.coach?' '+slot.coach:''}`).join(' / '),u.subject].filter(Boolean).join(' · ');
     const hrefPhone=g?.phone?`tel:${g.phone.replace(/[^0-9+]/g,'')}`:'';
     const mapUrl=u.address?`https://map.kakao.com/?q=${encodeURIComponent(u.address)}`:'';
     const due=pay.unpaidAmount>0?<Badge tone="bad">미납 {pay.unpaidAmount}만</Badge>:pay.paidAmount>0?<Badge tone="ok">결제완료</Badge>:null;
     return <div className={`student-card${scheduled?' today':''}${paused?' paused':''}${exhausted?' exhausted':''}`} key={u.id}>
       <div className="card-top" onClick={()=>setExpanded(x=>({...x,[u.id]:!x[u.id]}))} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setExpanded(x=>({...x,[u.id]:!x[u.id]}));}}} aria-expanded={!!expanded[u.id]}>
-        <div className="card-top-1"><span className="card-avatar">{u.name.charAt(0)||'?'}</span><span className="card-name">{u.name}</span>{paused&&<Badge>휴강</Badge>}<span className="card-meta-line">{meta}</span></div>
+        <div className="card-top-1"><span className="card-avatar">{u.name.charAt(0)||'?'}</span><span className="card-name">{u.name}</span>{paused&&<Badge>{u.status==='ended'?'종료':'홀드'}</Badge>}<span className="card-meta-line schedule-summary">{meta}</span></div>
         <div className="card-top-2">{[u.neighborhood,g?.phone?`${g.relation||'보호자'} ${g.phone}`:''].filter(Boolean).join(' · ')}</div>
       </div>
       {settings.enrollment&&<div className={`session-block ${sess.level}`}><div className="session-header"><span className="session-label">잔여 회차</span><span className={`session-count ${sess.level}`}>{sess.remain} / {sess.total}회</span></div><div className="session-bar"><div className={`session-fill ${sess.level}`} style={{width:`${sess.pct}%`}}/></div>{!paused&&sess.remain<=1&&<div className={`session-note${sess.remain<0?' bad':''}`}>{sess.remain<0?`${-sess.remain}회 초과사용`:sess.remain===0?'재등록 필요':'재등록 임박'}</div>}</div>}
       {settings.payment&&<div className="payment-row"><div className="payment-info">{due}{pay.totalAmount>0&&<span className="fee-text">{pay.totalAmount.toLocaleString()}만</span>}{pay.lastPaidAt&&<span className="payment-date">· {pay.lastPaidAt} 입금</span>}{pay.upcoming&&<span className="next-due">· 다음 {pay.upcoming}</span>}</div>{u.lastClassDate&&<span className="last-class">최근 {u.lastClassDate}{daysSince(u.lastClassDate)!=null?` (${daysSince(u.lastClassDate)}일전)`:''}</span>}</div>}
-      <div className="card-actions">{hrefPhone&&<a className="card-btn" href={hrefPhone}>📞 전화</a>}{mapUrl&&<a className="card-btn" href={mapUrl} target="_blank" rel="noopener noreferrer">🗺 길찾기</a>}<button className="card-btn" onClick={()=>openLog(undefined,u.id)}>📝 일지</button><button className="card-btn more" aria-label={`${u.name} 상세`} onClick={()=>setExpanded(x=>({...x,[u.id]:!x[u.id]}))}>⋯</button></div>
-      {expanded[u.id]&&<div className="card-details" style={{display:'flex'}}>{([['주소',u.address],['장소',u.placeType],['연령',u.ageGrade],['형태',u.classType],['코치',u.coach]] as const).filter(([,v])=>v).map(([label,value])=><div className="detail-row" key={label}><strong>{label}</strong><span>{value}</span></div>)}{settings.memo&&u.memo&&<div className="detail-memo">{u.memo}</div>}<div style={{display:'flex',gap:6,flexWrap:'wrap'}}><button className="card-btn" onClick={()=>openUnit(u)}>✏️ 수정</button>{settings.report&&<button className="card-btn" onClick={()=>setReportId(u.id)}>📄 리포트</button>}<button className="card-btn" style={{color:'var(--red)'}} onClick={()=>void mutate('softDelete','unit',u.id,u.revision)}>🗑 삭제</button></div></div>}
+      <div className="card-actions"><button className="card-btn" onClick={()=>openUnit(u)}>수정</button>{hrefPhone&&<a className="card-btn" href={hrefPhone}>📞 전화</a>}{mapUrl&&<a className="card-btn" href={mapUrl} target="_blank" rel="noopener noreferrer">🗺 길찾기</a>}<button className="card-btn" onClick={()=>openLog(undefined,u.id)}>📝 일지</button><button className="card-btn more" aria-label={`${u.name} 상세`} onClick={()=>setExpanded(x=>({...x,[u.id]:!x[u.id]}))}>⋯</button></div>
+      {expanded[u.id]&&<div className="card-details" style={{display:'flex'}}>{([['주소',u.address],['장소',u.placeType],['연령',u.ageGrade],['형태',u.classType],['코치',u.coach]] as const).filter(([,v])=>v).map(([label,value])=><div className="detail-row" key={label}><strong>{label}</strong><span>{value}</span></div>)}{settings.memo&&u.memo&&<div className="detail-memo">{u.memo}</div>}<div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{settings.report&&<button className="card-btn" onClick={()=>setReportId(u.id)}>📄 리포트</button>}<button className="card-btn" style={{color:'var(--red)'}} onClick={()=>void mutate('softDelete','unit',u.id,u.revision)}>🗑 삭제</button></div></div>}
     </div>;
   };
 
@@ -225,49 +226,53 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
     {error&&<div role="alert" className="form-error">{error} <button type="button" onClick={()=>void load()}>다시 시도</button></div>}
     {!loading&&!error&&<main>
       <section className="stats">
-        {([['활성 수강생 🏃',stats.active,'팀',''],['오늘 수업 📅',stats.today,'건','green'],['이번주 🗓',stats.thisWeek,'건',''],['재등록 필요 🔔',stats.renewal,'팀','amber'],['미납 💳',stats.unpaid,'팀','red']] as const).map(([title,count,unit,tone])=><div className={`stat ${tone}`} key={title}><div className="stat-label">{title}</div><div className="stat-value">{count}<small>{unit}</small></div></div>)}
+        {([['진행 수강생 🏃',stats.active,'팀',''],['오늘 수업 📅',stats.today,'건','green'],['이번주 🗓',stats.thisWeek,'건',''],['재등록 필요 🔔',stats.renewal,'팀','amber'],['미납 💳',stats.unpaid,'팀','red']] as const).map(([title,count,unit,tone])=><div className={`stat ${tone}`} key={title}><div className="stat-label">{title}</div><div className="stat-value">{count}<small>{unit}</small></div></div>)}
       </section>
-      <div className="tabs" role="tablist">{([['students','수강생 / 팀'],['checklist','오늘 체크리스트'],['week','주간 뷰'],['logs','수업일지'],['trash',`휴지통 ${trashCount}`]] as const).filter(([k])=>k==='students'||k==='trash'||settings[k as ModuleKey]).map(([key,label])=><button role="tab" aria-selected={tab===key} key={key} className={`tab${tab===key?' active':''}`} onClick={()=>setTab(key)}>{label}</button>)}</div>
-      {tab==='students'&&<section className="panel"><div className="toolbar">
+      <div className="tabs" role="tablist">{([['students','수강생 / 팀'],['checklist','오늘 체크리스트'],['logs','수업일지'],['trash',`휴지통 ${trashCount}`]] as const).filter(([k])=>k==='students'||k==='trash'||settings[k as ModuleKey]).map(([key,label])=><button role="tab" aria-selected={tab===key} key={key} className={`tab${tab===key?' active':''}`} onClick={()=>setTab(key)}>{label}</button>)}</div>
+      {tab==='students'&&<section className="panel student-panel"><div className="toolbar">
         <input id="privateSearch" type="search" placeholder="🔍 이름, 종목, 동네, 코치, 보호자 검색" value={search} onChange={e=>setSearch(e.target.value)}/>
         <div className="chips">{(['all','today','week'] as const).map((k,i)=><button key={k} className={`chip${range===k?' active':''}`} onClick={()=>setRange(k)}>{['전체','오늘','이번주'][i]}</button>)}</div>
         <select value={neighborhood} onChange={e=>setNeighborhood(e.target.value)} aria-label="동네"><option value="">📍 동네</option>{neighborhoods.map(n=><option key={n} value={n}>{n}</option>)}</select>
-        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} aria-label="상태"><option value="">📊 상태</option>{[['active','활성'],['paused','휴강'],['unpaid','미납'],['renewal','재등록 필요']].map(([v,label])=><option value={v} key={v}>{label}</option>)}</select>
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} aria-label="상태"><option value="">📊 상태</option>{[['active','진행'],['paused','홀드'],['ended','종료'],['unpaid','미납'],['renewal','재등록 필요']].map(([v,label])=><option value={v} key={v}>{label}</option>)}</select>
         <select value={sortBy} onChange={e=>setSortBy(e.target.value as typeof sortBy)} aria-label="정렬"><option value="name">이름순</option><option value="neighborhood">동네순</option><option value="remain">잔여 적은순</option></select>
         <label className="check"><input type="checkbox" checked={group} onChange={e=>setGroup(e.target.checked)}/> 동네 묶기</label>
         <button className="primary" style={{marginLeft:'auto'}} onClick={()=>openUnit()} disabled={busy}>+ 신규</button>
-      </div><div className="card-grid">{filtered.length===0?<div className="empty"><h3>{active.length===0?'등록된 수업이 없습니다':'조건에 맞는 수업이 없습니다'}</h3><button className="primary" onClick={()=>openUnit()}>+ 신규</button></div>:filtered.map((u,i)=><div key={u.id} style={{display:'contents'}}>{group&&(i===0||u.neighborhood!==filtered[i-1].neighborhood)&&<div className="group-header">📍 {u.neighborhood||'지역 미지정'} <span className="count">{filtered.filter(x=>x.neighborhood===u.neighborhood).length}</span></div>}{unitCard(u)}</div>)}</div></section>}
-      {tab==='checklist'&&<section className="panel"><div className="toolbar"><strong style={{flex:1}}>오늘({today()}) 체크리스트</strong><button className="small" onClick={()=>void refresh()}>🔄</button></div><div className="checklist">{active.filter(u=>u.status!=='paused'&&isScheduledOn(u,new Date())).sort((a,b)=>a.scheduleTime.localeCompare(b.scheduleTime)).map(u=>{const log=visibleLogs.find(l=>l.studentId===u.id&&l.date===today());return <div key={u.id} className={`check-item${log?' done':''}`}><span className="check-time">{u.scheduleTime||'--:--'}</span><div style={{flex:1}}><span className="check-name">{u.name}</span><div className="check-meta">{u.subject} · {u.neighborhood} · 잔여 {getSessionInfo(u.id,db.enrollments,db.logs).remain}회</div></div><div>{log?<Badge tone="ok">완료 ({log.attended})</Badge>:<button className="status-btn scheduled" onClick={()=>openLog(undefined,u.id)}>📝 일지</button>}</div></div>;})}{active.filter(u=>u.status!=='paused'&&isScheduledOn(u,new Date())).length===0&&<div className="empty">오늘 수업이 없습니다.</div>}</div></section>}
-      {tab==='week'&&<section className="panel"><div className="toolbar"><button onClick={()=>setWeekOffset(w=>w-1)}>◀ 이전</button><strong style={{flex:1,textAlign:'center'}}>{weekDays[0].getFullYear()}년 {weekDays[0].getMonth()+1}월 {weekDays[0].getDate()}일 ~ {weekDays[6].getMonth()+1}월 {weekDays[6].getDate()}일</strong><button onClick={()=>setWeekOffset(w=>w+1)}>다음 ▶</button><button onClick={()=>setWeekOffset(0)}>이번주</button></div><div className="week-grid">{weekDays.map(d=>{const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;return <div className={`week-day${today()===iso?' today':''}`} key={iso}><div className="week-day-header"><span className="day-char">{DAYS[d.getDay()]}</span><span className="day-date">{d.getMonth()+1}/{d.getDate()}</span></div>{active.filter(u=>u.status!=='paused'&&isScheduledOn(u,d)).map(u=><button className="week-slot" style={{textAlign:'left'}} key={u.id} onClick={()=>{const l=visibleLogs.find(x=>x.studentId===u.id&&x.date===iso);openLog(l, u.id);setEditLog(x=>x?{...x,date:iso}:x);}}><div className="slot-time">{u.scheduleTime}</div><div className="slot-name">{u.name}</div></button>)}</div>;})}</div></section>}
+      </div><div className="card-grid student-grid">{filtered.length===0?<div className="empty"><h3>{active.length===0?'등록된 수업이 없습니다':'조건에 맞는 수업이 없습니다'}</h3><button className="primary" onClick={()=>openUnit()}>+ 신규</button></div>:filtered.map((u,i)=><div key={u.id} style={{display:'contents'}}>{group&&(i===0||u.neighborhood!==filtered[i-1].neighborhood)&&<div className="group-header">📍 {u.neighborhood||'지역 미지정'} <span className="count">{filtered.filter(x=>x.neighborhood===u.neighborhood).length}</span></div>}{unitCard(u)}</div>)}</div></section>}
+      {tab==='checklist'&&<section className="panel"><div className="toolbar"><strong style={{flex:1}}>오늘({today()}) 체크리스트</strong><button className="small" onClick={()=>void refresh()}>🔄</button></div><div className="checklist">{active.filter(u=>u.status==='active').flatMap(u=>getPrivateSchedulesOn(u,new Date()).map((slot,index)=>({unit:u,slot,index}))).sort((a,b)=>a.slot.start.localeCompare(b.slot.start)).map(({unit:u,slot,index})=>{const log=visibleLogs.find(l=>l.studentId===u.id&&l.date===today());return <div key={`${u.id}-${index}`} className={`check-item${log?' done':''}`}><span className="check-time">{slot.start||'--:--'}</span><div style={{flex:1}}><span className="check-name">{u.name}</span><div className="check-meta">{slot.coach||u.coach} · {u.subject} · {u.neighborhood} · 잔여 {getSessionInfo(u.id,db.enrollments,db.logs).remain}회</div></div><div>{log?<Badge tone="ok">완료 ({log.attended})</Badge>:<button className="status-btn scheduled" onClick={()=>openLog(undefined,u.id)}>📝 일지</button>}</div></div>;})}{active.filter(u=>u.status==='active'&&isScheduledOn(u,new Date())).length===0&&<div className="empty">오늘 수업이 없습니다.</div>}</div></section>}
       {tab==='logs'&&<section className="panel"><div className="toolbar"><select value={logFilter} onChange={e=>setLogFilter(e.target.value)}><option value="">전체 수강생</option>{active.map(u=><option value={u.id} key={u.id}>{u.name}</option>)}</select><input type="date" value={logFrom} onChange={e=>setLogFrom(e.target.value)}/><span>~</span><input type="date" value={logTo} onChange={e=>setLogTo(e.target.value)}/><button className="small" onClick={()=>{setLogFrom('');setLogTo('');}}>초기화</button><button className="small" onClick={exportLogs}>📊 CSV</button><button className="primary" style={{marginLeft:'auto'}} onClick={()=>openLog()}>+ 일지</button></div><div className="card-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(min(440px,100%),1fr))'}}>{filteredLogs.map(l=><div className="log-card" key={l.id}><div className="log-head"><span className="log-date">{l.date}</span><Badge tone={CONSUMING.includes(l.attended)?'ok':'warn'}>{l.attended}</Badge><span className="log-student">{unitMap.get(l.studentId)?.name||'(삭제)'}</span><div className="actions">{settings.feedback&&(l.sentAt?<Badge tone="ok">발송됨</Badge>:<button className="icon" title="발송 완료" onClick={()=>void mutate('markSent','log',l.id,l.revision)}>📤</button>)}<button className="icon" title="복사" onClick={()=>void copy(feedback(l))}>📋</button><button className="icon" title="수정" onClick={()=>openLog(l)}>✏️</button><button className="icon danger" title="삭제" onClick={()=>void mutate('softDelete','log',l.id,l.revision)}>🗑</button></div></div>{l.equipment&&<div><Badge>{l.equipment}</Badge></div>}{l.content&&<div className="log-section"><div className="log-label">프로그램</div><div className="log-content">{l.content}</div></div>}{l.homework&&<div className="log-section"><div className="log-label">피드백</div><div className="log-content feedback">{l.homework}</div></div>}</div>)}{!filteredLogs.length&&<div className="empty">수업일지가 없습니다.</div>}</div></section>}
       {tab==='trash'&&<section className="panel"><div className="toolbar"><span style={{flex:1}}>삭제된 항목 — 복원 가능</span><button className="danger small" disabled title="영구 삭제는 별도 정책 승인 전까지 잠겨 있습니다.">전체 영구삭제 (승인 대기)</button></div><div className="card-grid">{db.units.filter(u=>u.deletedAt).map(u=><div className="log-card deleted" key={u.id}><div className="log-head"><Badge>학생</Badge><strong>{u.name}</strong><div className="actions"><button onClick={()=>void mutate('restore','unit',u.id,u.revision)}>↶ 복원</button><button disabled title="정책 승인 대기">영구삭제</button></div></div></div>)}{db.logs.filter(l=>l.deletedAt).map(l=><div className="log-card deleted" key={l.id}><div className="log-head"><Badge>일지</Badge><span>{l.date}</span><strong>{unitMap.get(l.studentId)?.name||'(삭제)'}</strong><div className="actions"><button onClick={()=>void mutate('restore','log',l.id,l.revision)}>↶ 복원</button><button disabled title="정책 승인 대기">영구삭제</button></div></div></div>)}{trashCount===0&&<div className="empty">휴지통이 비어있습니다.</div>}</div></section>}
       <p className="hint"><kbd>Ctrl</kbd>+<kbd>K</kbd> 검색 · <kbd>Ctrl</kbd>+<kbd>N</kbd> 신규 · 운영 DB 서버 저장</p>
     </main>}
 
-    <dialog ref={unitDialog} onCancel={e=>{e.preventDefault();closeUnit();}} onClose={()=>setEditUnit(null)}>{editUnit&&<form onSubmit={e=>void saveUnit(e)}><div className="dialog-head"><span>{editUnit.id?'체육 수업 수정':'신규 체육 수업'}</span><button type="button" className="ghost" onClick={closeUnit}>✕</button></div><div className="dialog-body"><div className="form-grid">
-      <Field label="이름 *"><input required value={editUnit.name} onChange={e=>setEditUnit(u=>u&&({...u,name:e.target.value}))}/></Field>
+    <dialog className="unit-dialog" aria-labelledby="unit-dialog-title" ref={unitDialog} onCancel={e=>{e.preventDefault();closeUnit();}} onClose={()=>setEditUnit(null)}>{editUnit&&<form onSubmit={e=>void saveUnit(e)}><div className="dialog-head"><span id="unit-dialog-title">{editUnit.id?'체육 수업 수정':'신규 체육 수업'}</span><button type="button" className="ghost" aria-label="닫기" onClick={closeUnit}>✕</button></div><div className="unit-pane-nav" role="group" aria-label="수업 정보 입력 영역">{([['info','기본정보'],['schedule','수업 일정'],['guardian','보호자·등록']] as const).map(([key,label])=><button key={key} type="button" aria-pressed={unitPane===key} onClick={()=>setUnitPane(key)}>{label}</button>)}</div><div className="dialog-body unit-layout" data-unit-pane={unitPane}><section className="unit-section" data-pane="info"><h3 className="unit-section-title">수업 정보</h3><div className="form-grid">
+      <Field label="이름 *"><input aria-required="true" value={editUnit.name} onChange={e=>setEditUnit(u=>u&&({...u,name:e.target.value}))}/></Field>
       <Field label="연령 / 학년"><input value={editUnit.ageGrade} onChange={e=>setEditUnit(u=>u&&({...u,ageGrade:e.target.value}))}/></Field>
-      <Field label="수업 형태"><select value={editUnit.classType} onChange={e=>setEditUnit(u=>u&&({...u,classType:e.target.value}))}>{['1:1 개인','1:2 듀엣','소그룹 팀','센터(LAB)'].map(x=><option key={x}>{x}</option>)}</select></Field>
-      <Field label="담당 코치"><input value={editUnit.coach} onChange={e=>setEditUnit(u=>u&&({...u,coach:e.target.value}))}/></Field>
-      <Field label="상태"><select value={editUnit.status} onChange={e=>setEditUnit(u=>u&&({...u,status:e.target.value as Unit['status']}))}><option value="active">활성</option><option value="paused">휴강</option></select></Field>
+      <Field label="수업 형태"><select value={editUnit.classType} onChange={e=>setEditUnit(u=>u&&({...u,classType:e.target.value}))}>{['1:1 개인','1:2 듀엣','소그룹 팀','센터(LAB)','3:1','4:1'].map(x=><option key={x}>{x}</option>)}</select></Field>
+      <Field label="기본 코치"><select aria-label="기본 코치" value={editUnit.coachId||(editUnit.coach?'legacy':'')} onChange={e=>{const teacher=teachers.find(t=>t.id===e.target.value);setEditUnit(u=>u&&({...u,coachId:teacher?.id??null,coach:teacher?.name??'',schedules:getPrivateSchedules(u).map(slot=>!slot.coachId&&!slot.coach?{...slot,coachId:teacher?.id??null,coach:teacher?.name??''}:slot)}));}}><option value="">강사 선택</option>{editUnit.coach&&!editUnit.coachId&&<option value="legacy" disabled>{editUnit.coach} (기존 입력)</option>}{editUnit.coachId&&!teachers.some(t=>t.id===editUnit.coachId)&&<option value={editUnit.coachId}>{editUnit.coach} (기존 배정)</option>}{teachers.map(teacher=><option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></Field>
+      <Field label="상태"><select value={editUnit.status} onChange={e=>setEditUnit(u=>u&&({...u,status:e.target.value as Unit['status']}))}><option value="active">진행</option><option value="paused">홀드</option><option value="ended">종료</option></select></Field>
       <Field label="동네"><input value={editUnit.neighborhood} onChange={e=>setEditUnit(u=>u&&({...u,neighborhood:e.target.value}))}/></Field>
       <Field label="장소 구분"><select value={editUnit.placeType} onChange={e=>setEditUnit(u=>u&&({...u,placeType:e.target.value}))}>{['아파트 커뮤니티','야외 공원/운동장','가정 내(거실/마당)','스포키듀 LAB','대관 체육관'].map(x=><option key={x}>{x}</option>)}</select></Field>
       <Field label="종목"><input value={editUnit.subject} onChange={e=>setEditUnit(u=>u&&({...u,subject:e.target.value}))}/></Field>
       <Field label="상세 주소" full><input value={editUnit.address} onChange={e=>setEditUnit(u=>u&&({...u,address:e.target.value}))}/></Field>
-      <Field label="수업 요일" full><div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{[0,1,2,3,4,5,6].map(d=><label className={`day-chip${editUnit.scheduleDays.includes(d)?' on':''}`} key={d}><input type="checkbox" style={{display:'none'}} checked={editUnit.scheduleDays.includes(d)} onChange={e=>setEditUnit(u=>u&&({...u,scheduleDays:e.target.checked?[...u.scheduleDays,d].sort():u.scheduleDays.filter(x=>x!==d)}))}/>{DAYS[d]}</label>)}</div></Field>
-      <Field label="시간"><input type="time" value={editUnit.scheduleTime} onChange={e=>setEditUnit(u=>u&&({...u,scheduleTime:e.target.value}))}/></Field>
+<details className="unit-optional"><summary>현장 메모{editUnit.memo?' · 작성됨':''}</summary><Field label="현장 메모" full><textarea value={editUnit.memo} onChange={e=>setEditUnit(u=>u&&({...u,memo:e.target.value}))}/></Field></details></div></section><section className="unit-section schedule-section" data-pane="schedule"><h3 className="unit-section-title">수업 일정</h3><div className="form-grid">      <Field label="주간 수업 일정" full><div className="private-schedules">{getPrivateSchedules(editUnit).map((slot,index)=><div className="private-schedule" key={index}>
+        <label>요일<select aria-label={`일정 ${index+1} 요일`} value={slot.day} onChange={e=>setEditUnit(u=>u&&({...u,schedules:getPrivateSchedules(u).map((item,i)=>i===index?{...item,day:Number(e.target.value)}:item)}))}>{[0,1,2,3,4,5,6].map(day=><option key={day} value={day}>{DAYS[day]}요일</option>)}</select></label>
+        <label>시작<input type="time" aria-label={`일정 ${index+1} 시작`} value={slot.start} onChange={e=>setEditUnit(u=>u&&({...u,schedules:getPrivateSchedules(u).map((item,i)=>i===index?{...item,start:e.target.value,end:defaultPrivateEndTime(e.target.value)}:item)}))}/></label>
+        <label>종료<input type="time" aria-label={`일정 ${index+1} 종료`} value={slot.end} onChange={e=>setEditUnit(u=>u&&({...u,schedules:getPrivateSchedules(u).map((item,i)=>i===index?{...item,end:e.target.value}:item)}))}/></label>
+        <label className="schedule-coach">담당 코치<select aria-label={`일정 ${index+1} 담당 코치`} value={slot.coachId||(slot.coach?'legacy':'')} onChange={e=>{const teacher=teachers.find(t=>t.id===e.target.value);setEditUnit(u=>u&&({...u,schedules:getPrivateSchedules(u).map((item,i)=>i===index?{...item,coachId:teacher?.id??null,coach:teacher?.name??''}:item)}));}}><option value="">강사 선택</option>{slot.coach&&!slot.coachId&&<option value="legacy" disabled>{slot.coach} (기존 입력)</option>}{slot.coachId&&!teachers.some(t=>t.id===slot.coachId)&&<option value={slot.coachId}>{slot.coach} (기존 배정)</option>}{teachers.map(teacher=><option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select>{slot.start&&slot.end&&slot.end<slot.start&&<span>종료: 다음날</span>}</label>
+        <button type="button" className="schedule-remove" aria-label={`일정 ${index+1} 삭제`} onClick={()=>setEditUnit(u=>u&&({...u,schedules:getPrivateSchedules(u).filter((_,i)=>i!==index)}))}>×</button>
+      </div>)}</div><button type="button" className="small" disabled={getPrivateSchedules(editUnit).length>=14} onClick={()=>setEditUnit(u=>u&&({...u,schedules:[...getPrivateSchedules(u),{day:1,start:'',end:'',coach:u.coach,coachId:u.coachId??null}]}))}>+ 수업 일정 추가</button></Field>
       <Field label="반복"><select value={editUnit.weekPattern} onChange={e=>setEditUnit(u=>u&&({...u,weekPattern:e.target.value as Unit['weekPattern']}))}><option value="every">매주</option><option value="odd">홀수주</option><option value="even">짝수주</option><option value="biweekly">격주</option></select></Field>
-      <div className="section-header">👤 보호자</div>
+      </div></section><section className="unit-section guardian-section" data-pane="guardian"><h3 className="unit-section-title">보호자 · 등록</h3><div className="form-grid">
       <Field label="관계"><input value={guardianForm.relation} onChange={e=>setGuardianForm(g=>({...g,relation:e.target.value}))}/></Field>
-      <Field label="연락처"><input value={guardianForm.phone} onChange={e=>setGuardianForm(g=>({...g,phone:e.target.value}))} placeholder="010-0000-0000"/></Field>
-      {editUnit.id&&guardianOf(editUnit)&&<div className="guardian-hint">보호자 연결 <button type="button" onClick={()=>setGuardianForm({relation:'',phone:'',selectedId:''})}>연결 해제</button></div>}
+      <Field label="연락처"><input type="tel" inputMode="tel" value={guardianForm.phone} onChange={e=>setGuardianForm(g=>({...g,phone:formatPrivatePhone(e.target.value)}))} placeholder="010-0000-0000"/></Field>
+      {editUnit.id&&guardianForm.selectedId&&guardianOf(editUnit)&&<div className="guardian-hint guardian-link">보호자 연결됨 <button type="button" title="저장 시 이 수강생과의 연결만 해제합니다. 보호자와 수업 기록은 유지됩니다." onClick={()=>setGuardianForm({relation:'',phone:'',selectedId:''})}>보호자 연결 해제</button></div>}
       {editUnit.id&&guardianForm.selectedId&&guardianForm.selectedId===guardianOf(editUnit)?.id&&guardianForm.phone!==guardianOf(editUnit)?.phone&&<div className="guardian-hint">공유된 보호자 정보는 임의 수정할 수 없습니다. <button type="button" onClick={()=>setGuardianForm(g=>({...g,selectedId:''}))}>새 보호자 정보로 분리</button></div>}
       {guardianForm.phone&&db.guardians.filter(g=>clampPhone(g.phone)===clampPhone(guardianForm.phone)&&g.id!==guardianForm.selectedId).length>0&&<div className="guardian-hint">같은 전화번호의 보호자가 있습니다. 동일인으로 확인한 경우에만 연결하십시오. {db.guardians.filter(g=>clampPhone(g.phone)===clampPhone(guardianForm.phone)&&g.id!==guardianForm.selectedId).map(g=><button key={g.id} type="button" onClick={()=>{if(confirm('같은 보호자로 명시적으로 연결하시겠습니까?'))setGuardianForm({relation:g.relation,phone:g.phone,selectedId:g.id});}}>{g.relation||'보호자'} · {db.links.filter(l=>l.guardianId===g.id).map(l=>unitMap.get(l.unitId)?.name).filter(Boolean).join('·')||'연결된 수강생 없음'} 연결</button>)}</div>}
       <div className="section-header">📋 등록 이력</div>
-      <div className="enroll-section"><div className="enroll-table" style={{overflowX:'auto'}}><table className="enroll-table"><thead><tr>{['등록일','회차','금액(만)','결제일','다음결제','유효기간',''].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{draftEnroll.map((en,i)=><tr key={en.id||'new-'+i}><td>{en.enrolledAt}</td><td>{en.sessions}회</td><td>{en.amount}만</td><td>{en.paidAt||'미납'}</td><td>{en.nextDueDate||'-'}</td><td>{en.expiresAt||'-'}</td><td><button type="button" title="등록 취소" onClick={()=>setDraftEnroll(x=>x.filter((_,j)=>i!==j))}>🗑</button></td></tr>)}{!draftEnroll.length&&<tr><td colSpan={7} className="enroll-empty">등록 이력 없음</td></tr>}</tbody></table></div>
+      <div className="enroll-section"><details className="enroll-history"><summary>등록 이력 {draftEnroll.length}건</summary><div className="enroll-table" style={{overflowX:'auto'}}><table className="enroll-table"><thead><tr>{['등록일','회차','금액(만)','결제일','다음결제','유효기간',''].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{draftEnroll.map((en,i)=><tr key={en.id||'new-'+i}><td>{en.enrolledAt}</td><td>{en.sessions}회</td><td>{en.amount}만</td><td>{en.paidAt||'미납'}</td><td>{en.nextDueDate||'-'}</td><td>{en.expiresAt||'-'}</td><td><button type="button" title="등록 취소" onClick={()=>setDraftEnroll(x=>x.filter((_,j)=>i!==j))}>🗑</button></td></tr>)}{!draftEnroll.length&&<tr><td colSpan={7} className="enroll-empty">등록 이력 없음</td></tr>}</tbody></table></div></details>
         <div className="enroll-add-row"><div className="input-group"><label>등록일</label><input type="date" value={newEnr.enrolledAt} onChange={e=>setNewEnr(n=>({...n,enrolledAt:e.target.value}))}/></div><div className="input-group"><label>등록 회차</label><input type="number" min={1} value={newEnr.sessions||''} onChange={e=>setNewEnr(n=>({...n,sessions:Number(e.target.value)}))}/></div><div className="input-group"><label>금액 (만원)</label><input type="number" min={0} value={newEnr.amount} onChange={e=>setNewEnr(n=>({...n,amount:Number(e.target.value)}))}/></div><div className="input-group"><label>결제일 (미입력=미납)</label><input type="date" value={newEnr.paidAt||''} onChange={e=>setNewEnr(n=>({...n,paidAt:e.target.value||null}))}/></div><div className="input-group"><label>다음 결제 예정일</label><input type="date" value={newEnr.nextDueDate} onChange={e=>setNewEnr(n=>({...n,nextDueDate:e.target.value}))}/></div><div className="input-group"><label>유효기간</label><input type="date" value={newEnr.expiresAt} onChange={e=>setNewEnr(n=>({...n,expiresAt:e.target.value}))}/></div><div className="btn-wrap"><button type="button" className="primary small" onClick={addDraftEnr}>+ 등록 이력 추가</button></div></div></div>
-      <Field label="현장 메모" full><textarea value={editUnit.memo} onChange={e=>setEditUnit(u=>u&&({...u,memo:e.target.value}))}/></Field>
-    </div></div><div className="dialog-foot"><div className="right"><button type="button" onClick={closeUnit}>취소</button><button type="submit" className="primary" disabled={busy}>저장</button></div></div></form>}</dialog>
+
+    </div></section></div><div className="dialog-foot"><div className="right"><button type="button" onClick={closeUnit}>취소</button><button type="submit" className="primary" disabled={busy}>저장</button></div></div></form>}</dialog>
 
     <dialog ref={logDialog} onCancel={e=>{e.preventDefault();closeLog();}} onClose={()=>setEditLog(null)}>{editLog&&<form onSubmit={e=>void saveLog(e)}><div className="dialog-head"><span>{editLog.id?'수업일지 수정':'수업일지'}</span><button type="button" className="ghost" onClick={closeLog}>✕</button></div><div className="dialog-body"><div className="form-grid">
       <Field label="수강생 *" full><select required value={editLog.studentId} onChange={e=>setEditLog(l=>l&&({...l,studentId:e.target.value}))}><option value="">수강생 선택</option>{active.map(u=><option key={u.id} value={u.id}>{u.name} (잔여 {getSessionInfo(u.id,db.enrollments,db.logs).remain}회)</option>)}</select></Field>

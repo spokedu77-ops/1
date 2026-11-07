@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { Download, FileDown, Lock, MoreHorizontal, Plus, Redo2, Save, Trash2, Undo2, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import SettlementCenterImport from './SettlementCenterImport';
+import SettlementPrivateImport from './SettlementPrivateImport';
 import SettlementProfitSummary from './SettlementProfitSummary';
 import SettlementCalculationSettings from './SettlementCalculationSettings';
 import MoneyInput from './SettlementMoneyInput';
+import SettlementNote from './SettlementNote';
 import styles from './SettlementSheet.module.css';
 import {
-  calculateRow, SETTLEMENT_GROUPS, rowsFromRecurringCenters, nextSettlementMonthKey, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize, uid,
+  calculateRow, sortSettlementRows, SETTLEMENT_GROUPS, rowsFromRecurringCenters, nextSettlementMonthKey, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize,
   type CenterType, type SettlementCenter, type SettlementMonth, type SettlementRow,
   type SettlementSettings, type SettlementSheetData,
 } from './settlementSheetCore';
@@ -166,7 +168,7 @@ export default function SettlementSheet() {
     // Preserve the existing policy-name convenience without linking an operational center by name.
     const replacement = { ...rowFromCenter(policy, monthKey), id: row.id, name: row.name,
       total: row.total, inv: row.inv, rcpt: row.rcpt, rcptAmt: row.rcptAmt,
-      invDate: row.invDate, rcptDate: row.rcptDate, adj: row.adj, note: row.note };
+      invDate: row.invDate, rcptDate: row.rcptDate, note: row.note };
     updateMonthRows(month, month.rows.map((item) => item.id === rowId ? replacement : item));
   };
   const updateRow = (id: string, patch: Partial<SettlementRow>) => current && updateRows(current.rows.map((row) => row.id === id ? { ...row, ...patch } : row));
@@ -248,7 +250,7 @@ export default function SettlementSheet() {
       const xlsx = await loadXlsx(); const workbook = xlsx.utils.book_new(); const months = all ? sortedMonths(data) : current ? [current] : [];
       for (const month of months) {
         const rows: unknown[][] = [['기관명','수업료','회기','총액','계산서 발행 여부','영수여부','부가세','강사료(인건비)','정산 순수익','비고','발행일','영수일','영수금액']];
-        month.rows.forEach((row) => {
+        sortSettlementRows(month.rows).forEach((row) => {
           if (row.kind === 'section') { rows.push([row.name]); return; }
           const value = calculateRow(row, data.settings); rows.push([row.name,row.fee,row.sessions,value.total,row.inv?'O':'',row.rcpt?'O':'',value.vat,row.cost,value.netAfterWh,row.note,row.invDate,row.rcptDate,row.rcptAmt ?? '']);
         });
@@ -297,10 +299,11 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
   persist:()=>Promise<void>; toggleLock:()=>Promise<void>; deleteMonth:()=>Promise<void>; undo:()=>void; redo:()=>void; canUndo:boolean; canRedo:boolean;
 }) {
   const [addingCenter, setAddingCenter] = useState(false);
+  const [addingPrivate, setAddingPrivate] = useState(false);
   if (!month || !summary) return <div className="rounded-2xl border bg-white p-16 text-center"><p className="font-bold">아직 정산 데이터가 없습니다.</p><p className="mt-2 text-sm text-slate-500">새 달을 만들어 정산을 시작하세요.</p></div>;
   const rows = month.rows.filter((row) => row.kind === 'row');
   const waiting = rows.filter((row) => row.fee !== '' && row.sessions === '' && row.total === '' && !calculateRow(row, settings).total).length;
-  const visible = month.rows.filter((row) => row.kind === 'section'
+  const visible = sortSettlementRows(month.rows).filter((row) => row.kind === 'section'
     ? filter === 'all' && !query
     : (!query || `${row.name} ${row.note}`.toLowerCase().includes(query.toLowerCase()))
       && (filter==='all'||filter==='wait'&&row.fee!==''&&row.sessions===''&&row.total===''&&!calculateRow(row,settings).total||filter==='invoice'&&!row.inv&&row.vatMode!=='none'||filter==='unpaid'&&calculateRow(row,settings).outstanding>0));
@@ -318,19 +321,27 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
     <SettlementProfitSummary summary={summary} />
     {!month.locked ? <section className={styles.entryPanel} aria-label="수업 추가">
       <div className={styles.entryToolbar}><span>수업 추가</span><div className={styles.toolbarActions}>
-        <button type="button" aria-expanded={addingCenter} className={addingCenter ? styles.selectedSource : styles.secondaryButton} onClick={() => setAddingCenter((value) => !value)}><Plus size={14}/>센터 DB에서</button>
-        <button type="button" className={styles.secondaryButton} title="등록된 개인수업 중 아직 없는 수업을 이 달에 추가합니다." onClick={() => void loadPolicies().then((loaded) => {
-          if (!loaded) return;
-          const additions = Object.values(loaded).filter((center) => center.type === 'private' && center.status !== 'ended' && !month.rows.some((row) => row.centerId === center.id));
-          if (!additions.length) { toast.info('추가할 개인수업이 없습니다.'); return; }
-          updateRows([...month.rows, ...additions.map((center) => rowFromCenter(center,month.key))]);
-          toast.success(`${additions.length}개 개인수업을 추가했습니다.`);
-        })}>개인수업 가져오기</button>
+        <button type="button" aria-expanded={addingCenter} className={addingCenter ? styles.selectedSource : styles.secondaryButton} onClick={() => { setAddingCenter((value) => !value); setAddingPrivate(false); }}><Plus size={14}/>센터 수업</button>
+        <button type="button" aria-expanded={addingPrivate} className={addingPrivate ? styles.selectedSource : styles.secondaryButton}
+          onClick={() => { setAddingPrivate((value) => !value); setAddingCenter(false); }}><Plus size={14}/>개인 수업</button>
         <button type="button" className={styles.secondaryButton} onClick={() => updateRows([...month.rows, emptyRow()])}>직접 입력</button>
       </div></div>
       {addingCenter ? <SettlementCenterImport key={month.key} monthKey={month.key} disabled={false} expanded
         existingIds={month.rows.flatMap((row) => row.operationalCenterId ? [row.operationalCenterId] : [])}
         onAdd={(row) => { updateRows([...month.rows,row]); setAddingCenter(false); }} /> : null}
+      {addingPrivate ? <SettlementPrivateImport month={month} onAdd={(additions) => {
+        const next = [...month.rows];
+        let groupIndex = next.findIndex((row) => row.kind === 'section' && row.type === 'private');
+        if (groupIndex < 0) {
+          const etcIndex = next.findIndex((row) => row.kind === 'section' && row.type === 'etc');
+          groupIndex = etcIndex < 0 ? next.length : etcIndex;
+          next.splice(groupIndex, 0, section(SETTLEMENT_GROUPS.find((group) => group.type === 'private')!.name, 'private'));
+        }
+        const nextSection = next.findIndex((row, index) => index > groupIndex && row.kind === 'section');
+        next.splice(nextSection < 0 ? next.length : nextSection, 0, ...additions);
+        updateRows(next); setAddingPrivate(false);
+        toast.success(`${additions.length}개 개인수업을 추가했습니다.`);
+      }} /> : null}
     </section> : null}
     <section className={styles.editingTools} aria-label="검색·편집">
     <div className={styles.toolbar} aria-label="정산 행 검색">
@@ -350,19 +361,18 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
       <tbody>{visible.map((row)=>{
         if(row.kind==='section') return <tr key={row.id} className={styles.sectionRow}><th colSpan={11} scope="rowgroup"><div className={styles.sectionContent}><span>{row.name}</span></div></th></tr>;
         const value=calculateRow(row,settings);
-        const move=(direction:-1|1)=>{const index=month.rows.indexOf(row);const target=index+direction;if(target<0||target>=month.rows.length)return;const next=[...month.rows];[next[target],next[index]]=[next[index],next[target]];updateRows(next);};
         return <tr key={row.id}>
           <td data-label="기관명"><input disabled={month.locked} onFocus={() => void loadPolicies()} list="settlement-centers" className={styles.centerInput} value={row.name} aria-label="기관명" onChange={(e)=>updateRow(row.id,{name:e.target.value})} onBlur={(e)=>void applyPolicyByName(month.key,row.id,e.currentTarget.value)}/></td>
           <td data-label="수업료"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.fee} aria-label={`${row.name} 수업료`} onChange={(e)=>updateRow(row.id,{fee:e.target.value})}/></td>
           <td data-label="회기"><input disabled={month.locked} className={styles.centered} value={row.sessions} inputMode="numeric" aria-label={`${row.name} 회기`} onChange={(e)=>updateRow(row.id,{sessions:e.target.value})}/></td>
           <td data-label="총액"><MoneyInput disabled={month.locked} className={`${styles.numericInput} ${styles.totalInput}`} placeholder={Math.round(value.total).toLocaleString('ko-KR')} value={row.total} aria-label={`${row.name} 총액`} title="비워 두면 수업료×회기" onChange={(e)=>updateRow(row.id,{total:e.target.value})}/></td>
-          <td data-label="계산서" className={styles.statusCell}><button title={row.invDate||'계산서 발행'} aria-label={`${row.name} 계산서 발행`} aria-pressed={row.inv} disabled={month.locked} className={`${styles.statusButton} ${row.inv?styles.statusButtonOn:''}`} onClick={()=>updateRow(row.id,{inv:!row.inv,invDate:!row.inv?new Date().toISOString().slice(0,10):''})}>✓</button><span className={styles.cellMeta}>{row.invDate?.slice(5)}</span></td>
-          <td data-label="입금" className={styles.statusCell}><button title={row.rcptDate||row.dueDate||'영수'} aria-label={`${row.name} 영수`} aria-pressed={row.rcpt} disabled={month.locked} className={`${styles.statusButton} ${row.rcpt?styles.statusButtonOn:row.rcptAmt?styles.statusButtonPending:''}`} onClick={()=>updateRow(row.id,{rcpt:!row.rcpt,rcptDate:!row.rcpt?new Date().toISOString().slice(0,10):''})}>✓</button>{!row.rcpt&&value.total>0&&<MoneyInput showSuffix={false} disabled={month.locked} className={styles.partialInput} placeholder="일부 입금" value={row.rcptAmt??''} aria-label={`${row.name} 일부 입금액`} onChange={(e)=>updateRow(row.id,{rcptAmt:e.target.value?Number(e.target.value):null})}/>}<span className={styles.cellMeta}>{row.rcpt?row.rcptDate?.slice(5):row.dueDate?`~${row.dueDate.slice(5)}`:''}</span></td>
-          <td data-label="부가세"><div className={styles.vatCell}><select disabled={month.locked} value={row.vatMode} aria-label={`${row.name} 부가세 방식`} onChange={(e)=>updateRow(row.id,{vatMode:e.target.value as SettlementRow['vatMode']})}><option value="auto">자동</option><option value="none">없음</option><option value="manual">직접</option></select>{row.vatMode==='manual'?<MoneyInput disabled={month.locked} className={styles.numericInput} value={row.vatManual} aria-label={`${row.name} 부가세`} onChange={(e)=>updateRow(row.id,{vatManual:Number(e.target.value)})}/>:<span className={styles.vatValue}>{row.vatMode==='none'?'–':money(value.vat)}</span>}</div>{row.whRate>0&&<span className={styles.cellMeta}>원천 -{money(value.withholding)}</span>}</td>
-          <td data-label="강사료(인건비)"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.cost} aria-label={`${row.name} 강사료(인건비)`} onChange={(e)=>updateRow(row.id,{cost:e.target.value})}/>{row.operationalCenterId && <span className={styles.cellMeta}>합계 {money(value.cost)}</span>}</td>
-          <td data-label="정산 순수익"><details className={styles.profitDetails} open={row.adj!==0||undefined}><summary className={styles.profitAmount} title="금액을 눌러 순수익 보정액 입력" aria-label={`${row.name} 정산 순수익 ${money(value.netAfterWh)}, 보정액 입력 열기`}>{money(value.netAfterWh)}</summary><MoneyInput disabled={month.locked} className={styles.adjustInput} placeholder="± 금액" value={row.adj||''} aria-label={`${row.name} 정산 순수익 조정액`} onChange={(e)=>updateRow(row.id,{adj:Number(e.target.value)||0})}/></details></td>
-          <td data-label="비고"><textarea rows={2} className={styles.noteInput} disabled={month.locked} value={row.note} aria-label={`${row.name} 비고`} onChange={(e)=>updateRow(row.id,{note:e.target.value})}/></td>
-          <td data-label="행 작업"><div className={styles.actions}><button className={styles.actionButton} disabled={month.locked} title="위로 이동" aria-label={`${row.name} 위로 이동`} onClick={()=>move(-1)}>↑</button><button className={styles.actionButton} disabled={month.locked} title="아래로 이동" aria-label={`${row.name} 아래로 이동`} onClick={()=>move(1)}>↓</button><button className={`${styles.actionButton} ${styles.deleteButton}`} disabled={month.locked} title="행 삭제" aria-label={`${row.name} 삭제`} onClick={()=>updateRows(month.rows.filter((item)=>item.id!==row.id))}><Trash2 size={13}/></button></div></td>
+          <td data-label="계산서" className={styles.statusCell}>{row.vatMode === 'none' ? <span className={styles.invoiceNotApplicable} title="부가세 없음 · 계산서 발행 대상 아님" aria-label={`${row.name} 부가세 없음, 계산서 발행 대상 아님`}>—</span> : <button title={row.invDate||'계산서 발행'} aria-label={`${row.name} 계산서 발행`} aria-pressed={row.inv} disabled={month.locked} className={`${styles.statusButton} ${row.inv?styles.statusButtonOn:''}`} onClick={()=>updateRow(row.id,{inv:!row.inv,invDate:!row.inv?new Date().toISOString().slice(0,10):''})}>✓</button>}</td>
+          <td data-label="입금" className={styles.statusCell}><button title={row.rcptDate||row.dueDate||'영수'} aria-label={`${row.name} 영수`} aria-pressed={row.rcpt} disabled={month.locked} className={`${styles.statusButton} ${row.rcpt?styles.statusButtonOn:row.rcptAmt?styles.statusButtonPending:''}`} onClick={()=>updateRow(row.id,{rcpt:!row.rcpt,rcptDate:!row.rcpt?new Date().toISOString().slice(0,10):''})}>✓</button></td>
+          <td data-label="부가세"><details className={styles.vatDetails}><summary className={styles.profitAmount} aria-label={`${row.name} 부가세 설정`} title={`부가세 설정${row.whRate > 0 ? ` · 원천 -${money(value.withholding)}` : ''}`}>{row.vatMode==='none'?'없음':money(value.vat)}</summary><div className={styles.vatMenu}><select disabled={month.locked} value={row.vatMode} aria-label={`${row.name} 부가세 방식`} onChange={(e)=>updateRow(row.id,{vatMode:e.target.value as SettlementRow['vatMode']})}><option value="auto">자동</option><option value="none">없음</option><option value="manual">직접</option></select>{row.vatMode==='manual'&&<MoneyInput disabled={month.locked} className={styles.numericInput} value={row.vatManual} aria-label={`${row.name} 부가세`} onChange={(e)=>updateRow(row.id,{vatManual:Number(e.target.value)})}/>}</div></details></td>
+          <td data-label="강사료(인건비)"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.cost === '' ? '' : value.cost} aria-label={`${row.name} 강사료(인건비)`} onChange={(e)=>updateRow(row.id,{cost:e.target.value})}/></td>
+          <td data-label="정산 순수익"><output className={styles.profitValue} aria-label={`${row.name} 정산 순수익`}>{money(value.netAfterWh)}</output></td>
+          <td data-label="비고"><SettlementNote name={row.name} value={row.note} disabled={month.locked} onSave={(note) => updateRow(row.id, { note })}/></td>
+          <td data-label="행 작업"><div className={styles.actions}><button className={`${styles.actionButton} ${styles.deleteButton}`} disabled={month.locked} title="행 삭제" aria-label={`${row.name} 삭제`} onClick={()=>updateRows(month.rows.filter((item)=>item.id!==row.id))}><Trash2 size={13}/></button></div></td>
         </tr>})}</tbody>
     </table></div>
     <datalist id="settlement-centers">{centers.filter((center) => center.type === 'private').map((center)=><option key={center.id} value={center.name}/>)}</datalist>

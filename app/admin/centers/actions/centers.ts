@@ -4,7 +4,7 @@ import { readCenterSettlementDefaults } from '@/app/lib/centers/settlementDefaul
 
 import { staffTeacherIds } from '@/app/lib/staffTeacherFees';
 
-import { createCenterSchema, type CreateCenterInput } from '@/app/lib/centers/schemas';
+import { createCenterSchema, centerStatusSchema, type CreateCenterInput } from '@/app/lib/centers/schemas';
 import { totalCenterFee } from '@/app/lib/centers/feeBreakdown';
 import type { Center, CenterListItem, TeacherOption } from '@/app/lib/centers/types';
 import { toCenterListItem } from '@/app/lib/centers/listItem';
@@ -20,7 +20,7 @@ function applyBillingTotal(input: Partial<CreateCenterInput>): void {
 }
 const getCentersFiltersSchema = z.object({
   search: z.string().trim().max(100).optional(),
-  status: z.enum(['active', 'paused', 'ended']).optional(),
+  status: z.union([centerStatusSchema, z.literal('active')]).optional(),
   region_tag: z.string().trim().max(100).optional(),
 });
 
@@ -57,7 +57,7 @@ function normalizeCenterRow(row: CenterRowWithTeacher): Center {
     contact_phone: (baseRow.contact_phone as string | null) ?? null,
     contact_email: (baseRow.contact_email as string | null) ?? null,
     contact_role: (baseRow.contact_role as string | null) ?? null,
-    status: (baseRow.status as Center['status']) ?? 'active',
+    status: (baseRow.status as Center['status']) ?? 'regular',
     contract_start: (baseRow.contract_start as string | null) ?? null,
     contract_end: (baseRow.contract_end as string | null) ?? null,
     settlement_defaults: readCenterSettlementDefaults(baseRow.settlement_defaults),
@@ -140,7 +140,9 @@ export async function getCenters(filters: GetCentersFilters = {}): Promise<Cente
     .order('name');
 
   if (parsedFilters.data.status) {
-    q = q.eq('status', parsedFilters.data.status);
+    q = parsedFilters.data.status === 'active'
+      ? q.in('status', ['regular', 'short', 'ongoing'])
+      : q.eq('status', parsedFilters.data.status);
   }
   if (parsedFilters.data.region_tag) {
     q = q.eq('region_tag', parsedFilters.data.region_tag);

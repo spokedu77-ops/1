@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import SettlementSearchSelect from './SettlementSearchSelect';
+import BillingVatToggle, { type BillingVatMode } from '@/app/admin/centers/components/BillingVatToggle';
 import type { SettlementRow } from './settlementSheetCore';
 import { dueDate, emptyRow } from './settlementSheetCore';
 import { readCenterSettlementDefaults, type CenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
@@ -26,9 +28,10 @@ export default function SettlementCenterImport({ monthKey, disabled, existingIds
   const [legacyFee, setLegacyFee] = useState('');
   const [main, setMain] = useState('');
   const [assist, setAssist] = useState('');
-  const [mainCharge, setMainCharge] = useState('');
-  const [assistCharge, setAssistCharge] = useState('');
-  const [rentalCharge, setRentalCharge] = useState('');
+  const [mainCharge, setMainCharge] = useState('0');
+  const [assistCharge, setAssistCharge] = useState('0');
+  const [rentalCharge, setRentalCharge] = useState('0');
+  const [billingVatMode, setBillingVatMode] = useState<BillingVatMode>('included');
   const [sessions, setSessions] = useState('1');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,9 +55,10 @@ export default function SettlementCenterImport({ monthKey, disabled, existingIds
     setSelected(center); setLegacyFee(center.sessionFee == null ? '' : String(center.sessionFee));
     setMain(center.mainZeroFee ? '0' : center.mainFee == null ? '' : String(center.mainFee));
     setAssist(center.assistZeroFee ? '0' : center.assistFee == null ? '' : String(center.assistFee));
-    setMainCharge(center.billingBreakdown ? String(center.billingBreakdown.mainCharge) : '');
-    setAssistCharge(center.billingBreakdown ? String(center.billingBreakdown.assistCharge) : '');
-    setRentalCharge(center.billingBreakdown ? String(center.billingBreakdown.rentalCharge) : '');
+    setMainCharge(center.billingBreakdown ? String(center.billingBreakdown.mainCharge) : '0');
+    setAssistCharge(center.billingBreakdown ? String(center.billingBreakdown.assistCharge) : '0');
+    setRentalCharge(center.billingBreakdown ? String(center.billingBreakdown.rentalCharge) : '0');
+    setBillingVatMode(center.defaults.vat === 'none' ? 'none' : center.billingBreakdown?.vatIncluded === false ? 'excluded' : 'included');
     setSessions(center.defaults.sessions == null ? '' : String(center.defaults.sessions));
   };
   const labor = (selected?.mainZeroFee ? 0 : Number(main)) + (selected?.assistZeroFee ? 0 : Number(assist));
@@ -63,6 +67,7 @@ export default function SettlementCenterImport({ monthKey, disabled, existingIds
     mainCharge: validAmount(mainCharge) ? Number(mainCharge) : null,
     assistCharge: validAmount(assistCharge) ? Number(assistCharge) : null,
     rentalCharge: validAmount(rentalCharge) ? Number(rentalCharge) : null,
+    vatIncluded: billingVatMode !== 'excluded',
   });
   const fee = parsedBilling.success ? totalCenterFee(parsedBilling.data) : null;
   const canAdd = Boolean(selected) && !disabled && fee != null && validAmount(main) && validAmount(assist)
@@ -76,17 +81,15 @@ export default function SettlementCenterImport({ monthKey, disabled, existingIds
       <span>센터 DB에서 수업 추가</span><span aria-hidden="true">{open ? '−' : '+'}</span>
     </button>}
     {open && !disabled ? <div className="space-y-3 border-t border-slate-100 p-3">
-      <input aria-label="추가할 센터 검색" placeholder="센터명 검색" maxLength={100} value={query} onChange={(event) => setQuery(event.target.value)} className={inputClass} />
-      {loading ? <p role="status" className="text-xs text-slate-500">불러오는 중…</p> : error ? <p role="alert" className="text-xs text-red-600">{error} <button type="button" onClick={() => setRetry((value) => value + 1)} className="underline">다시 시도</button></p> : <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto">
-        {results.map((center) => <button type="button" key={center.id} disabled={existingIds.includes(center.id)} onClick={() => select(center)}
-          className={`rounded-md border px-2 py-1.5 text-xs disabled:opacity-40 ${selected?.id === center.id ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-700'}`}>
-          {center.name}{center.region ? ` · ${center.region}` : ''}{existingIds.includes(center.id) ? ' · 추가됨' : ''}
-        </button>)}
-        {!results.length ? <p className="text-xs text-slate-500">검색 결과가 없습니다.</p> : null}
-      </div>}
+      <SettlementSearchSelect label="센터명 검색 또는 선택" selectedLabel={selected ? `${selected.name}${selected.region ? ` · ${selected.region}` : ''}` : undefined}
+        query={query} onQueryChange={setQuery} loading={loading} error={error} onRetry={() => setRetry((value) => value + 1)}
+        options={results.map((center) => ({ id: center.id, label: center.name, detail: center.region || undefined, disabled: existingIds.includes(center.id) }))}
+        onSelect={(id) => { const center = results.find((item) => item.id === id); if (center) select(center); }} />
       {selected ? <div className="space-y-2 border-t border-slate-100 pt-2">
         <p className="text-sm font-semibold text-slate-900">{selected.name}</p>
         <fieldset className="min-w-0 space-y-2"><legend className="mb-2 text-xs font-semibold text-indigo-800">우리가 받는 회당 수업료</legend>
+          <BillingVatToggle mode={billingVatMode} onChange={setBillingVatMode} />
+          {billingVatMode === 'excluded' && parsedBilling.success && <p className="text-xs text-indigo-600">입력 금액 합계에 부가세 {Math.round((parsedBilling.data.mainCharge + parsedBilling.data.assistCharge + parsedBilling.data.rentalCharge) / 10).toLocaleString()}원을 합산합니다.</p>}
           <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
             {([['청구 주강사비 / 회', mainCharge, setMainCharge], ['청구 보조강사비 / 회', assistCharge, setAssistCharge], ['청구 대여비 / 회', rentalCharge, setRentalCharge]] as const).map(([label, value, setValue]) => <label key={label} className="min-w-0 space-y-1 text-xs text-slate-500"><span>{label}</span><input type="number" min={0} step={1} max={Number.MAX_SAFE_INTEGER} value={value} onChange={(event) => setValue(event.target.value)} placeholder="없으면 0 입력" className={inputClass} /></label>)}
           </div>
@@ -106,7 +109,7 @@ export default function SettlementCenterImport({ monthKey, disabled, existingIds
             if (!selected || !canAdd) return;
             const defaults = readCenterSettlementDefaults(selected.defaults);
             onAdd({ ...emptyRow(), operationalCenterId: selected.id, name: selected.name, fee: Number(fee), sessions: count,
-              cost: `${labor}*회기`, type: defaults.type, vatMode: defaults.vat, whRate: defaults.whRate, dueDate: dueDate(monthKey, defaults) });
+              cost: `${labor}*회기`, type: defaults.type, vatMode: billingVatMode === 'none' ? 'none' : 'auto', whRate: defaults.whRate, dueDate: dueDate(monthKey, defaults) });
             setSelected(null); setOpen(false);
           }}>이 달에 추가</button>
         </div>

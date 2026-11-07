@@ -21,7 +21,7 @@ describe('settlement sheet calculation contract', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ operationalCenterId: source.id, name: source.name, type: 'regular',
       fee: 120000, cost: '60000*회기', dueDate: '2026-12-31', sessions: '', total: '',
-      inv: false, rcpt: false, rcptAmt: null, invDate: '', rcptDate: '', adj: 0 });
+      inv: false, rcpt: false, rcptAmt: null, invDate: '', rcptDate: '' });
   });
 
   it('keeps missing DB prices blank rather than inventing zero amounts', () => {
@@ -31,14 +31,14 @@ describe('settlement sheet calculation contract', () => {
     expect(row.cost).toBe('');
   });
 
-  it('keeps formula, VAT, expense, withholding, partial receipt, and adjustment semantics', () => {
+  it('calculates VAT, expense, withholding and partial receipt while ignoring legacy adjustments', () => {
     const row = { ...emptyRow(), fee: '100000+20000', sessions: 4, cost: '5000*회기', whRate: 3.3,
       rcptAmt: 240000, adj: 10000 };
     const result = calculateRow(row, settings);
     expect(result.total).toBe(480000);
     expect(result.vat).toBe(43636);
     expect(result.cost).toBe(20000);
-    expect(result.net).toBe(426364);
+    expect(result.net).toBe(416364);
     expect(result.received).toBe(240000);
     expect(result.outstanding).toBe(240000);
     expect(result.withholding).toBe(Math.round((480000 - 43636) * 0.033));

@@ -21,18 +21,18 @@ beforeEach(() => {
 
 describe('center query and security behavior', () => {
   it('keeps all list displays but removes detail placeholders and unused projection fields', async () => {
-    const q = query([{ id, name: '센터', status: 'active', updated_at: '2026-10-30',
+    const q = query([{ id, name: '센터', status: 'regular', updated_at: '2026-10-30',
       main_teacher: { name: '강사1' }, mt2: [{ name: '강사2' }], mt3: null,
       contact_phone: '000', weekly_schedule: [{ day: 'mon', start: '09:00', end: '10:00' }] }]);
     mock.from.mockReturnValue(q);
-    const rows = await getCenters({ status: 'active', region_tag: '서울', search: '주소' });
+    const rows = await getCenters({ status: 'regular', region_tag: '서울', search: '주소' });
     expect(mock.from).toHaveBeenCalledTimes(1);
     const select = q.select.mock.calls[0][0];
     expect(select).not.toContain('created_at');
     expect(select).not.toContain('(id, name)');
     expect(select).not.toContain('criminal_check');
     expect(q.or).toHaveBeenCalledWith('name.ilike.%주소%,address.ilike.%주소%,contact_name.ilike.%주소%,contact_email.ilike.%주소%,settlement_defaults->>projectName.ilike.%주소%');
-    expect(q.eq).toHaveBeenCalledWith('status', 'active');
+    expect(q.eq).toHaveBeenCalledWith('status', 'regular');
     expect(q.eq).toHaveBeenCalledWith('region_tag', '서울');
     expect(rows[0]).toMatchObject({ main_teacher_name: '강사1', main_teacher_2_name: '강사2', contact_phone: '000' });
     expect(rows[0]).not.toHaveProperty('contract_start');

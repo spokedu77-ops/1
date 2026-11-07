@@ -4,12 +4,13 @@ export type VatMode = 'auto' | 'none' | 'manual';
 export type CenterType = 'regular' | 'short' | 'private' | 'etc';
 
 export type SettlementRow = {
+  privateUnitId?: string;
   /** Operational center source; centerId remains a legacy settlement-policy ID. */
   operationalCenterId?: string;
   id: string; kind: 'row' | 'section'; name: string; fee: string | number;
   sessions: string | number; total: string | number; inv: boolean; rcpt: boolean;
   rcptAmt: number | null; vatMode: VatMode; vatManual: number; cost: string | number;
-  adj: number; note: string; invDate: string; rcptDate: string; whRate: number;
+  note: string; invDate: string; rcptDate: string; whRate: number;
   centerId: string; dueDate: string; type: CenterType;
 };
 
@@ -47,7 +48,7 @@ export const resolveDefaultSettlementMonth = (data: SettlementSheetData, selecte
 export const uid = () => crypto.randomUUID();
 export const emptyRow = (): SettlementRow => ({
   id: uid(), kind: 'row', name: '', fee: '', sessions: '', total: '', inv: false, rcpt: false,
-  rcptAmt: null, vatMode: 'auto', vatManual: 0, cost: '', adj: 0, note: '', invDate: '',
+  rcptAmt: null, vatMode: 'auto', vatManual: 0, cost: '', note: '', invDate: '',
   rcptDate: '', whRate: 0, centerId: '', dueDate: '', type: 'regular',
 });
 
@@ -57,6 +58,25 @@ export const SETTLEMENT_GROUPS = [
   { type: 'private', name: '개인 수업' },
   { type: 'etc', name: '기타' },
 ] as const;
+
+export function sortSettlementRows(rows: SettlementRow[]): SettlementRow[] {
+  const result: SettlementRow[] = [];
+  let group: SettlementRow[] = [];
+  const flush = () => {
+    result.push(...group.sort((a, b) => {
+      const left = a.name.trim(); const right = b.name.trim();
+      if (!left || !right) return left ? -1 : right ? 1 : 0;
+      return left.localeCompare(right, 'ko', { numeric: true });
+    }));
+    group = [];
+  };
+  for (const row of rows) {
+    if (row.kind === 'section') { flush(); result.push(row); }
+    else group.push(row);
+  }
+  flush();
+  return result;
+}
 
 export function evaluateExpression(source: string | number, sessions: string | number): number | undefined {
   if (source === '' || source == null) return undefined;
@@ -82,7 +102,7 @@ export function calculateRow(row: SettlementRow, settings: SettlementSettings) {
   const withholding = row.whRate > 0 ? Math.round((total - vat) * row.whRate / 100) : 0;
   const received = row.rcpt ? total : Math.min(Number(row.rcptAmt) || 0, total);
   const ratio = total > 0 ? received / total : 0;
-  const net = total - vat - cost + (Number(row.adj) || 0);
+  const net = total - vat - cost;
   return { total, vat, cost, withholding, net, netAfterWh: net - withholding, received,
     outstanding: Math.max(0, total - received), netReceived: net * ratio, netAfterWhReceived: (net - withholding) * ratio,
     invalid: Number.isNaN(fee) || Number.isNaN(explicitTotal) };
@@ -128,7 +148,7 @@ export function rowFromCenter(center: SettlementCenter, monthKey: string): Settl
 }
 function copyRowForNextMonth(row: SettlementRow): SettlementRow {
   return row.kind === 'section' ? { ...row, id: uid() } : { ...row, id: uid(), sessions: '', inv: false,
-    rcpt: false, rcptAmt: null, total: '', adj: 0, note: '', invDate: '', rcptDate: '' };
+    rcpt: false, rcptAmt: null, total: '', note: '', invDate: '', rcptDate: '' };
 }
 export function carryOver(rows: SettlementRow[]) {
   return rows.map(copyRowForNextMonth)

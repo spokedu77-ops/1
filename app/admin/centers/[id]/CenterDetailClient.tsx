@@ -1,6 +1,9 @@
 'use client';
 
 import CenterSettlementFields from '../components/CenterSettlementFields';
+import BillingVatToggle from '../components/BillingVatToggle';
+import styles from './CenterDetailClient.module.css';
+import { CENTER_STATUS_OPTIONS, CENTER_STATUS_STYLES as STATUS_STYLES, CENTER_STATUS_LABELS as STATUS_LABELS } from '@/app/lib/centers/status';
 import { DEFAULT_CENTER_SETTLEMENT, readCenterSettlementDefaults, type CenterSettlementDefaults } from '@/app/lib/centers/settlementDefaults';
 
 import { toast } from 'sonner';
@@ -71,17 +74,7 @@ function formatCenterHistoryDate(iso: string): string {
   });
 }
 
-const STATUS_STYLES: Record<CenterStatus, string> = {
-  active: 'bg-indigo-100 text-indigo-800',
-  paused: 'bg-amber-100 text-amber-800',
-  ended: 'bg-slate-100 text-slate-600',
-};
 
-const STATUS_LABELS: Record<CenterStatus, string> = {
-  active: '운영 중',
-  paused: '일시중지',
-  ended: '종료',
-};
 
 const editControl = 'mt-1 h-10 w-full min-w-0 max-w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20';
 const editField = 'grid min-w-0 grid-cols-1 items-center gap-x-3 text-sm text-slate-600 sm:grid-cols-[8rem_minmax(0,1fr)] [&>input]:sm:mt-0 [&>select]:sm:mt-0';
@@ -109,6 +102,7 @@ type EditForm = {
   main_charge: string;
   assist_charge: string;
   rental_charge: string;
+  billing_vat_included: boolean;
   main_teacher_id: string;
   main_teacher_2_id: string;
   main_teacher_3_id: string;
@@ -132,13 +126,14 @@ const DEFAULT_EDIT_FORM: EditForm = {
   contact_phone_secondary: '',
   contact_email: '',
   contact_role: '',
-  status: 'active',
+  status: 'regular',
   contract_start: '',
   contract_end: '',
   session_fee: '',
-  main_charge: '',
-  assist_charge: '',
-  rental_charge: '',
+  main_charge: '0',
+  assist_charge: '0',
+  rental_charge: '0',
+  billing_vat_included: true,
   main_teacher_id: '',
   main_teacher_2_id: '',
   main_teacher_3_id: '',
@@ -175,6 +170,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
     mainCharge: editForm.main_charge.trim() === '' ? null : Number(editForm.main_charge),
     assistCharge: editForm.assist_charge.trim() === '' ? null : Number(editForm.assist_charge),
     rentalCharge: editForm.rental_charge.trim() === '' ? null : Number(editForm.rental_charge),
+    vatIncluded: editForm.settlement_defaults.vat === 'none' || editForm.billing_vat_included,
   });
   const draftBreakdown = parsedBilling.success ? parsedBilling.data : null;
   const [editError, setEditError] = useState('');
@@ -352,9 +348,10 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
       contract_start: center.contract_start ?? '',
       contract_end: center.contract_end ?? '',
       session_fee: center.session_fee != null ? String(center.session_fee) : '',
-      main_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.mainCharge) : '',
-      assist_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.assistCharge) : '',
-      rental_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.rentalCharge) : '',
+      main_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.mainCharge) : '0',
+      assist_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.assistCharge) : '0',
+      rental_charge: center.settlement_defaults?.billingBreakdown ? String(center.settlement_defaults.billingBreakdown.rentalCharge) : '0',
+      billing_vat_included: center.settlement_defaults?.billingBreakdown?.vatIncluded !== false,
       main_teacher_id: center.main_teacher_id ?? '',
       main_teacher_2_id: center.main_teacher_2_id ?? '',
       main_teacher_3_id: center.main_teacher_3_id ?? '',
@@ -665,6 +662,7 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
         <CenterTeacherFees ids={[center.main_teacher_id, center.main_teacher_2_id, center.main_teacher_3_id]}
           overrides={center.instructors_default?.fees} sessionFee={center.session_fee} summary
           billingBreakdown={center.settlement_defaults?.billingBreakdown}
+          vat={center.settlement_defaults?.vat}
           names={[center.main_teacher_name, center.main_teacher_2_name, center.main_teacher_3_name]} />
         <nav aria-label="센터 상세 탭" className="mt-3 mb-2 grid grid-cols-2 border-b border-slate-200">
           {([['basic', '센터 정보'], ['history', '운영기록']] as const).map(([key, label]) => (
@@ -972,14 +970,14 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                   <legend className="mb-2 text-xs font-semibold text-slate-500">기본정보</legend>
                   <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_6.5rem] gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
                     <label className={editField}>센터명 *<input required value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} className={editControl} /></label>
-                    <label className="min-w-0 text-xs text-slate-600"><span className="sr-only">상태</span><select aria-label="상태" value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as CenterStatus }))} className={editControl + ' sm:mt-0'}><option value="active">운영 중</option><option value="paused">일시중지</option><option value="ended">종료</option></select></label>
+                    <label className="min-w-0 text-xs text-slate-600"><span className="sr-only">상태</span><select aria-label="상태" value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value as CenterStatus }))} className={editControl + ' sm:mt-0'}>{CENTER_STATUS_OPTIONS.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select></label>
                   </div>
                   <label className={editField}>주소<input value={editForm.address} onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))} className={editControl} /></label>
                   <label className={editField}>수업(프로젝트)명<input maxLength={160} value={editForm.project_name} onChange={(e) => setEditForm((form) => ({ ...form, project_name: e.target.value }))} className={editControl + ' sm:mt-0'} /></label>
                   <label className={editField}>담당자<input value={editForm.contact_name} onChange={(e) => setEditForm((f) => ({ ...f, contact_name: e.target.value }))} className={editControl} /></label>
                   <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-                    <label className={editField}>연락처 1<input type="tel" value={editForm.contact_phone} onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))} className={editControl} /></label>
-                    <label className={editField}>연락처 2<input type="tel" value={editForm.contact_phone_secondary} onChange={(e) => setEditForm((f) => ({ ...f, contact_phone_secondary: e.target.value }))} className={editControl} /></label>
+                    <label className="block min-w-0 text-xs text-slate-600">연락처 1<input type="tel" value={editForm.contact_phone} onChange={(e) => setEditForm((f) => ({ ...f, contact_phone: e.target.value }))} className={editControl} /></label>
+                    <label className="block min-w-0 text-xs text-slate-600">연락처 2<input type="tel" value={editForm.contact_phone_secondary} onChange={(e) => setEditForm((f) => ({ ...f, contact_phone_secondary: e.target.value }))} className={editControl} /></label>
                   </div>
                 </fieldset>
                 <fieldset className="min-w-0 space-y-3 border-t border-slate-100 pt-4">
@@ -989,8 +987,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                     <label className="min-w-0 text-xs text-slate-600">수업 종료일<input type="date" value={editForm.contract_end} onChange={(e) => setEditForm((form) => ({ ...form, contract_end: e.target.value }))} className={editControl} /></label>
                   </div>
                   <div className="space-y-3">
-                    {editForm.weekly_schedule.map((slot, index) => <div key={index} className="min-w-0 space-y-3 rounded-lg border border-slate-200 p-2">
-                      <div className="grid min-w-0 grid-cols-2 items-center gap-1.5 sm:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1fr)_2rem]">
+                    {editForm.weekly_schedule.map((slot, index) => <div key={index} className={`${styles.schedule} min-w-0 space-y-3 rounded-lg border border-slate-200 p-2`}>
+                      <div className={styles.scheduleRow}>
                         <select aria-label={`스케줄 ${index + 1} 요일`} value={slot.day} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, day: e.target.value } : row) }))} className={editControl + ' mt-0 px-1'}>{Object.entries(DAY_LABELS).map(([day, label]) => <option key={day} value={day}>{label}요일</option>)}</select>
                         <input aria-label={`스케줄 ${index + 1} 시작`} type="time" value={slot.start} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, start: e.target.value } : row) }))} className={editControl + ' mt-0 px-1'} />
                         <input aria-label={`스케줄 ${index + 1} 종료`} type="time" value={slot.end} onChange={(e) => setEditForm((form) => ({ ...form, weekly_schedule: form.weekly_schedule.map((row, i) => i === index ? { ...row, end: e.target.value } : row) }))} className={editControl + ' mt-0 px-1'} />
@@ -1006,6 +1004,8 @@ export function CenterDetailClient({ id, onClose, onSaved, onDeleted, registerCl
                 </fieldset>
                 <fieldset className="min-w-0 space-y-3 border-t border-slate-100 pt-4">
                   <legend className="text-xs font-semibold text-slate-500">우리가 받는 회당 수업료</legend>
+                  <BillingVatToggle mode={editForm.settlement_defaults.vat === 'none' ? 'none' : editForm.billing_vat_included ? 'included' : 'excluded'} onChange={(mode) => setEditForm((form) => ({ ...form, billing_vat_included: mode !== 'excluded', settlement_defaults: { ...form.settlement_defaults, vat: mode === 'none' ? 'none' : 'auto' } }))} />
+                  {editForm.settlement_defaults.vat !== 'none' && !editForm.billing_vat_included && draftBreakdown && <p className="text-xs text-indigo-600">입력 금액 합계에 부가세 {Math.round((draftBreakdown.mainCharge + draftBreakdown.assistCharge + draftBreakdown.rentalCharge) / 10).toLocaleString()}원을 합산합니다.</p>}
                   <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
                     {([['주강사비', 'main_charge'], ['보조강사비', 'assist_charge'], ['대여비', 'rental_charge']] as const).map(([label, field]) => <label key={field} className="min-w-0 text-xs text-slate-600">{label}
                       <span className="flex min-w-0 items-center gap-1"><input aria-label={`청구 ${label}`} required type="number" min={0} step={1} max={Number.MAX_SAFE_INTEGER} placeholder="없으면 0 입력" value={editForm[field]} onChange={(e) => setEditForm((form) => ({ ...form, [field]: e.target.value }))} className={editControl + ' text-right tabular-nums'} /><span className="shrink-0">원</span></span>

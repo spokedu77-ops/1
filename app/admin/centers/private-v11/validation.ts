@@ -8,7 +8,10 @@ export {isRecord,uuid};
 export const validDay=validDate;
 export function validUnit(x:unknown):x is Unit {
   if(!isRecord(x))return false;
-  return typeof x.name==='string'&&x.name.trim().length>0&&['active','paused'].includes(String(x.status))&&
+  const time = (value: unknown) => typeof value === 'string' && (value === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(value));
+  if (x.coachId != null && !uuid(x.coachId)) return false;
+  if (x.schedules !== undefined && (!Array.isArray(x.schedules) || x.schedules.length > 14 || x.schedules.some(slot => !isRecord(slot) || !Number.isInteger(slot.day) || Number(slot.day) < 0 || Number(slot.day) > 6 || !time(slot.start) || !time(slot.end) || typeof slot.coach !== 'string' || (slot.coachId != null && !uuid(slot.coachId)) || (slot.start && slot.end && slot.end === slot.start)))) return false;
+  return typeof x.name==='string'&&x.name.trim().length>0&&['active','paused','ended'].includes(String(x.status))&&
     ['every','odd','even','biweekly'].includes(String(x.weekPattern))&&Array.isArray(x.scheduleDays)&&x.scheduleDays.every(v=>Number.isInteger(v)&&v>=0&&v<=6)&&new Set(x.scheduleDays).size===x.scheduleDays.length&&
     ['ageGrade','classType','coach','neighborhood','placeType','address','subject','scheduleTime','memo'].every(k=>typeof x[k]==='string')&&
     (x.scheduleTime===''||/^([01]\d|2[0-3]):[0-5]\d$/.test(String(x.scheduleTime)));

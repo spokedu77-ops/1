@@ -4,7 +4,8 @@
  * No storage/API/UI side effects. Behavioral equivalence is intentional, including
  * original odd/even/biweekly month/year anchoring, pending business approval to revise.
  */
-export type PrivateClassStatus = 'active' | 'paused';
+export type PrivateClassStatus = 'active' | 'paused' | 'ended';
+export interface PrivateSchedule { day: number; start: string; end: string; coach: string; coachId?: string | null }
 export type PrivateAttendance = '출석' | '보강' | '당일결석' | '사전결석' | '우천취소/연기';
 export type PrivateWeekPattern = 'every' | 'odd' | 'even' | 'biweekly';
 
@@ -14,6 +15,9 @@ export interface PrivateStudent {
   status?: PrivateClassStatus;
   scheduleDays?: number[];
   scheduleTime?: string;
+  coach?: string;
+  coachId?: string | null;
+  schedules?: PrivateSchedule[];
   weekPattern?: PrivateWeekPattern;
   lastClassDate?: string;
   deletedAt?: string | null;
@@ -59,7 +63,7 @@ export function getWeekDays(offset = 0, now = new Date()): Date[] {
 }
 
 export function isScheduledOn(student: PrivateStudent, day: Date): boolean {
-  const days = Array.isArray(student.scheduleDays) ? student.scheduleDays.map(Number) : [];
+  const days = getPrivateSchedules(student).map(slot => slot.day);
   if (!days.includes(day.getDay())) return false;
   const pattern = student.weekPattern || 'every';
   if (pattern === 'every') return true;
@@ -72,6 +76,25 @@ export function isScheduledOn(student: PrivateStudent, day: Date): boolean {
     return Math.floor(diff / 7) % 2 === 0;
   }
   return true;
+}
+
+export function getPrivateSchedules(student: PrivateStudent): PrivateSchedule[] {
+  return student.schedules ?? (student.scheduleDays ?? []).map(day => ({ day, start: student.scheduleTime ?? '', end: '', coach: student.coach ?? '', coachId: student.coachId ?? null }));
+}
+
+export function defaultPrivateEndTime(start: string): string {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(start)) return '';
+  const [hours, minutes] = start.split(':').map(Number);
+  return `${String((hours + 1) % 24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+export function getPrivateSchedulesOn(student: PrivateStudent, day: Date): PrivateSchedule[] {
+  return isScheduledOn(student, day) ? getPrivateSchedules(student).filter(slot => slot.day === day.getDay()) : [];
+}
+
+export function formatPrivatePhone(value: string): string {
+  const digits = value.replace(/[^0-9]/g, '');
+  return /^010\d{8}$/.test(digits) ? `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}` : value;
 }
 
 export function getEnrollments(studentId: string, enrollments: readonly PrivateEnrollment[]): PrivateEnrollment[] {
@@ -105,10 +128,10 @@ export function getLastClassDate(studentId: string, logs: readonly PrivateLesson
     .sort((a, b) => b.date.localeCompare(a.date))[0]?.date || '';
 }
 export function getHeadlineStats(students: readonly PrivateStudent[], enrollments: readonly PrivateEnrollment[], logs: readonly PrivateLessonLog[], now = new Date()) {
-  const active = students.filter(student => student.status !== 'paused' && !student.deletedAt);
-  const today = active.filter(student => isScheduledOn(student, now)).length;
+  const active = students.filter(student => (!student.status || student.status === 'active') && !student.deletedAt);
+  const today = active.reduce((count, student) => count + getPrivateSchedulesOn(student, now).length, 0);
   const weekDays = getWeekDays(0, now);
-  const thisWeek = active.reduce((count, student) => count + weekDays.filter(day => isScheduledOn(student, day)).length, 0);
+  const thisWeek = active.reduce((count, student) => count + weekDays.reduce((sum, day) => sum + getPrivateSchedulesOn(student, day).length, 0), 0);
   const renewal = active.filter(student => getSessionInfo(student.id, enrollments, logs).remain <= 1).length;
   const todayIso = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
   const unpaid = active.filter(student => getPaymentInfo(student.id, enrollments, todayIso).unpaidAmount > 0).length;
