@@ -9,7 +9,7 @@
 1. 저장소 최신 브랜치 `feature/local-feedback-quality-ab-20261107` 확인.
 2. 기존 로컬 환경 변수에서 `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` 확인. 인증키를 화면/로그/커밋에 출력하지 않는다. 키가 없으면 실험을 중지하고 현재 가용 인증 방식을 보고하며 임의 새 키를 만들거나 운영 설정을 변경하지 않는다.
 3. LM Studio 모델 구동 확인. 다른 모델을 자동 설치하지 않는다.
-4. 현재 셸 환경 변수 또는 로컬의 기존 비밀 환경변수 파일을 읽어 아래 실행. 사용자에게 파일 다운로드 요구하지 않는다.
+4. 먼저 비밀키·DB 연결 없이 `node ops/local-automation/feedback-learning/experiment.mjs --self-test`를 실행한다. `SELF_TEST_PASS`가 나와야 한다. 이어서 현재 셸 환경 변수 또는 로컬의 기존 비밀 환경변수 파일을 읽어 아래 실행. 사용자에게 파일 다운로드 요구하지 않는다.
 
 ```powershell
 $env:LM_STUDIO_BASE_URL = "http://127.0.0.1:1234"
