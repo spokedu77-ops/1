@@ -461,6 +461,16 @@ function isReactTrainRepetitionLevel(modeId: string, levelId: number): boolean {
 
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
   launch = { ...launch, activityId: trainingActivityForLevelChange(modeId, levelId, launch.activityId) };
+  if (launch.activityId === 'visual-search') {
+    return {
+      ...launch,
+      timeMode: 'reps',
+      targetReps: [10, 20, 30, 40].includes(launch.targetReps) ? launch.targetReps : 20,
+      speed: Math.min(10, Math.max(1, Math.round(launch.speed * 2) / 2)),
+      accel: false,
+      intervalMode: false,
+    };
+  }
   if (isReactTrainRepetitionLevel(modeId, levelId)) {
     return {
       ...launch,
