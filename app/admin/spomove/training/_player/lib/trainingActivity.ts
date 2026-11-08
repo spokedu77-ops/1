@@ -4,7 +4,7 @@ export type TrainingRuntime =
   | 'signals' | 'sequence-memory' | 'color-number-memory' | 'color-number-quiz' | 'instant-memory'
   | 'flow' | 'rush' | 'falling-bricks' | 'balloon' | 'beat-wave' | 'camouflage' | 'mole'
   | 'wormhole' | 'number-cart' | 'color-tracker' | 'goalkeeper' | 'virus' | 'shell-tracking'
-  | 'relative-compass' | 'shape-completion' | 'simon-camouflage' | 'simon-balloon';
+  | 'relative-compass' | 'shape-completion' | 'simon-camouflage' | 'simon-balloon' | 'visual-search';
 
 type Route = { mode: string; levels: readonly number[] };
 type Definition = {
@@ -50,6 +50,7 @@ export const TRAINING_ACTIVITIES = {
   'flanker-theme': { routes: [route('flanker', 2, 6)], catalog: catalog('flanker', 2), runtime: 'signals' },
   'flanker-extreme': { routes: [route('flanker', 3)], catalog: catalog('flanker', 3), runtime: 'signals' },
   'flanker-nested': { routes: [route('flanker', 4)], catalog: catalog('flanker', 4), runtime: 'signals' },
+  'visual-search': { routes: [route('flanker', 7)], catalog: catalog('flanker', 7), runtime: 'visual-search' },
   'stroop-arrow': { routes: [route('stroop', 1)], catalog: catalog('stroop', 1), runtime: 'signals' },
   'stroop-word': { routes: [route('stroop', 2)], catalog: catalog('stroop', 2), runtime: 'signals' },
   'stroop-word-advanced': { routes: [route('stroop', 3)], runtime: 'signals', title: '단어 의미·잉크 전환 심화' },
