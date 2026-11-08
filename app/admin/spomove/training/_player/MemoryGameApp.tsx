@@ -123,6 +123,7 @@ const NumberCartReactionTraining = React.lazy(() => import('./components/NumberC
 const ColorTrackerReactionTraining = React.lazy(() => import('./components/ColorTrackerReactionTraining').then((m) => ({ default: m.ColorTrackerReactionTraining })));
 const GoalkeeperReactionTraining = React.lazy(() => import('./components/GoalkeeperReactionTraining').then((m) => ({ default: m.GoalkeeperReactionTraining })));
 const ColorMemoryGridReactionTraining = React.lazy(() => import('./components/ColorMemoryGridReactionTraining').then((m) => ({ default: m.ColorMemoryGridReactionTraining })));
+const VisualSearchReactionTraining = React.lazy(() => import('./components/VisualSearchReactionTraining').then((m) => ({ default: m.VisualSearchReactionTraining })));
 const VirusOutbreakReactionTraining = React.lazy(() => import('./components/VirusOutbreakReactionTraining').then((m) => ({ default: m.VirusOutbreakReactionTraining })));
 const FlowGameClient = React.lazy(() => import('./flow-lab/FlowGameClient'));
 const UnityDiveThemeClient = React.lazy(() => import('./flow-lab/UnityDiveThemeClient'));
@@ -1111,7 +1112,7 @@ function MemoryGameRuntime({
               : 'visualReaction';
         // 시지각·사이먼 카모/풍선: 플레이어 내부 카운트다운만 사용 (바깥 워밍업과 이중 카운트 방지)
         const screenWarmupSec =
-          nextScreen === 'visualReaction' || resolvedForStart.runtime === 'simon-camouflage' || resolvedForStart.runtime === 'simon-balloon'
+          (nextScreen === 'visualReaction' && resolvedForStart.runtime !== 'visual-search') || resolvedForStart.runtime === 'simon-camouflage' || resolvedForStart.runtime === 'simon-balloon'
             ? 0
             : warmupSec;
         setScreen(nextScreen);
@@ -2637,6 +2638,16 @@ function MemoryGameRuntime({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
+        ) : visualRuntime === 'visual-search' ? (
+          <VisualSearchReactionTraining
+            speedSec={settings.speed}
+            targetRounds={settings.targetReps}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+            onRoundPresented={(lanes) => {
+              colorCountsRef.current = laneCountToColorStimulusCounts(lanes);
+            }}
+          />
         ) : visualRuntime === 'instant-memory' ? (
           <ColorMemoryGridReactionTraining
             roundCount={Math.max(1, settings.targetReps ?? 10)}
