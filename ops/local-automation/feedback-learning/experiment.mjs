@@ -17,7 +17,11 @@ const baseUrl = (process.env.LM_STUDIO_BASE_URL || 'http://127.0.0.1:1234').repl
 const model = process.env.LM_STUDIO_MODEL || 'qwen3.5-9b';
 const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const maxSamples = Math.min(100, Math.max(1, Number(process.env.SPOKEDU_AB_LIMIT || 30)));
+const requestedSamples = Number(process.env.SPOKEDU_AB_LIMIT || 30);
+if (!Number.isInteger(requestedSamples) || requestedSamples < 5 || requestedSamples > 100) {
+  throw Error('SPOKEDU_AB_LIMIT must be an integer from 5 to 100');
+}
+const maxSamples = requestedSamples;
 const outputPath = resolve(process.env.SPOKEDU_AB_OUTPUT || 'ops/local-automation/feedback-learning/results/ab-latest.json');
 
 function requireLoopback(url) {
@@ -27,7 +31,7 @@ function requireLoopback(url) {
   }
 }
 requireLoopback(baseUrl);
-if (!supabaseUrl.startsWith('https://') || !secret) throw Error('Missing Supabase HTTPS URL or service key (local env only)');
+
 const digest = x => createHash('sha256').update(x).digest('hex').slice(0,16);
 const withTimeout = async (url, opts = {}, ms = 120000) => {
   const ac = new AbortController();
@@ -87,6 +91,7 @@ async function getCorpus() {
 async function infer(system, fields) {
   const res = await withTimeout(baseUrl + '/v1/chat/completions', {
     method: 'POST',
+    redirect: 'error',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, temperature: 0.1, messages: [
       { role: 'system', content: system },
@@ -108,6 +113,29 @@ function metrics(src, dst) {
     lexicalOverlap: Number((FIELDS.reduce((s,k)=>s+overlap(src[k],dst[k]),0) / FIELDS.length).toFixed(3)),
   };
 }
+// Fast local test: exercises the gate without reading Supabase or calling Qwen.
+if (process.argv.includes('--self-test')) {
+  const sample = {
+    main_activity: 'SPOMOVE 10회 점프를 실시했습니다.',
+    strengths: '공을 5회 정확히 받았습니다.',
+    improvements: '자세 유지가 어려웠습니다.',
+    next_goals: '다음 회차 10회 반복하겠습니다.',
+    condition_notes: '14:00 시작, 15:00 종료',
+  };
+  const unchanged = metrics(sample, sample);
+  if (!unchanged.valid || unchanged.changed !== 0 || !unchanged.numericPreserved || !unchanged.lengthSafe) throw Error('unchanged case gate broken');
+  const changed = { ...sample, improvements: '자세를 일정하게 유지하기는 어려웠습니다.' };
+  const changeMetrics = metrics(sample, changed);
+  if (!changeMetrics.valid || changeMetrics.changed !== 1 || !changeMetrics.numericPreserved) throw Error('single-field diff gate broken');
+  const broken = { ...sample, strengths: '공을 8회 정확히 받았습니다.' };
+  if (metrics(sample, broken).numericPreserved) throw Error('fabricated count was not flagged');
+  const invalid = { ...sample, next_goals: '' };
+  if (metrics(sample, invalid).valid) throw Error('empty field accepted');
+  console.log('SELF_TEST_PASS: no DB read, no model call, no file output');
+  process.exit(0);
+}
+if (!supabaseUrl.startsWith('https://') || !secret) throw Error('Missing Supabase HTTPS URL or service key (local env only)');
+
 const rows = await getCorpus();
 const eligible = rows.filter(r => r.status === 'verified' && r.session_type === 'regular_private' && valid(r.feedback_fields));
 const groups = { total: rows.length, nonempty: rows.filter(r=>FIELDS.some(k=>String(r.feedback_fields?.[k]||'').trim())).length, verifiedPrivateFive: eligible.length };
