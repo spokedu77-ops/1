@@ -461,6 +461,10 @@ function isReactTrainRepetitionLevel(modeId: string, levelId: number): boolean {
 
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
   launch = { ...launch, activityId: trainingActivityForLevelChange(modeId, levelId, launch.activityId) };
+  // A 10-second visual-search value must not leak to other, 1–6-second activities.
+  if (launch.activityId !== 'visual-search' && !isFlowColorGateLevel(modeId, levelId) && launch.speed > 6) {
+    launch = { ...launch, speed: 6 };
+  }
   if (launch.activityId === 'visual-search') {
     return {
       ...launch,
