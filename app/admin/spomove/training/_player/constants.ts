@@ -163,6 +163,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 2, name: '랜덤 자극', enName: 'Random Stimulus', desc: '색상이 기본이며, 반응 인지와 동일한 7가지 테마(색상·과일·동물·음식·자연·탈 것·믹스)를 고릅니다. 가운데 원 색에 반응합니다.' },
       { id: 3, name: '극단', enName: 'Extreme', desc: '난이도 보통은 7개 테마의 극단 크기 원, 어려움은 극단 크기 화살표입니다. 가운데 목표에 반응합니다.' },
       { id: 4, name: '(보류) 원 속의 원', enName: '(On Hold) Nested Circles', desc: '동심 원 플랭커는 현재 보류합니다. 삭제하지 않고 관리자에서만 확인합니다.' },
+      { id: 7, name: '복합 시각탐색', enName: 'Visual Search', desc: '방해 도형 사이의 목표 위치를 찾아 이동합니다.' },
     ],
   },
 
@@ -479,7 +480,7 @@ export function isKnownTrainingLevel(mode: string, level: number): boolean {
   }
   if (mode === 'flanker') {
     // 1~5 + 레거시 6(극단 크기)
-    return level >= 1 && level <= 6;
+    return level >= 1 && level <= 7;
   }
   if (mode === 'spatial') {
     return isColorSequenceLevel(level) || isColorNumberLevel(level) || isInstantMemoryLevel(level);
