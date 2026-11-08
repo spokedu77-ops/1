@@ -485,6 +485,40 @@ export function resolveTrainingResultRichContent(
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
   const volumeLabel = options?.volumeLabel ?? describeSessionVolume(cfg);
   const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal, elapsedMs, options?.programTitle);
+  if (cfg.activityId === 'visual-search') {
+    const title = options?.programTitle ?? '복합 시각탐색';
+    const description = '화면에 나타난 여러 도형 중 유일한 목표 도형을 찾고 해당 구역으로 이동하는 시각탐색 활동입니다.';
+    return applyMasterCompletionTruth({
+      praise: '복합 시각탐색 활동을 진행했어요',
+      praiseSub: '제시된 탐색 과제의 횟수를 기록했어요. 정답이나 반응 시간은 측정하지 않았습니다.',
+      activityFeel: '방해 도형 사이에서 목표를 찾아보았어요',
+      elapsedLabel,
+      volumeLabel,
+      sessionHighlight: `${title} · ${volumeLabel}`,
+      sessionSnapshot: [
+        { id: 'program', label: '프로그램', value: title },
+        { id: 'volume', label: '설정 분량', value: volumeLabel },
+        { id: 'elapsed', label: '진행 시간', value: elapsedLabel },
+        { id: 'focus', label: '활동 포인트', value: '화면 전체에서 목표 도형 찾기' },
+      ],
+      colorDominantLine: colorCounts && colorTotal > 0
+        ? (() => { const order = RESULT_COLOR_ORDER; const winner = order.reduce((best, id) => colorCounts[id] > colorCounts[best] ? id : best, order[0]!); return `${colorMeta(winner).name} 구역에 목표가 가장 많이 나왔어요 · ${colorCounts[winner]}회`; })()
+        : null,
+      programTitle: title,
+      phaseName: '복합 시각탐색',
+      programSummary: description,
+      benefitTags: ['시각탐색', '선택 반응', '공간 위치 판단'],
+      benefitLine: '목표와 방해 도형을 구분하며 위치를 탐색했어요',
+      coachTip: '목표 도형을 발견한 후 화면의 해당 구역과 실제 SPOMAT 위치를 연결해 지도하세요.',
+      selfCheckItems: selectSelfChecks([
+        { id: 'focus', label: '화면 전체를 고르게 살펴보았나요?' },
+        { id: 'target', label: '다른 도형 사이에서 목표를 찾았나요?' },
+        { id: 'zone', label: '목표가 나타난 구역을 확인했나요?' },
+        { id: 'move', label: '목표 구역에 맞는 매트 위치로 이동했나요?' },
+        { id: 'reset', label: '다음 화면이 나오기 전에 준비했나요?' },
+      ], `${title}:${Math.round(elapsedMs / 1000)}`, 5),
+    }, options?.completionReason);
+  }
   if (cfg.mode === 'spatial' && cfg.level === 7) {
     const instantTitle = options?.programTitle ?? '한눈에 색 배치 기억하기';
     const gridLabel = instantTitle.includes('4X4') || instantTitle.includes('4×4') ? '4×4' : '3×3';
