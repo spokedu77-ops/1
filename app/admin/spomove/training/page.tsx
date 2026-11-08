@@ -809,6 +809,7 @@ function SettingsScreen({
   const isFlowOrChallenge = modeId === 'flow';
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
   const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId, levelId);
+  const isVisualSearch = launch.activityId === 'visual-search';
   const compactSettingsMenu =
     isReactTrain ||
     isSimon || modeId === 'flanker' || isSpatial;
@@ -1119,7 +1120,7 @@ function SettingsScreen({
             <div className="settings-column">
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
-          {modeId === 'flanker' && levelId !== 1 && levelId !== 2 && levelId !== 3 && levelId !== 5 && levelId !== 6 ? (
+          {modeId === 'flanker' && levelId === 4 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 옵션</label>
@@ -1976,7 +1977,7 @@ function SettingsScreen({
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
                 compact={isColorGateTheme}
-                max={isColorGateTheme ? 10 : 6}
+                max={isColorGateTheme || isVisualSearch ? 10 : 6}
               />
             </section>
           ) : null}
@@ -2436,7 +2437,7 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrainRepetition
+                  {isReactTrainRepetition || isVisualSearch
                     ? '횟수'
                     : isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
                     ? '라운드'
@@ -2448,7 +2449,13 @@ function SettingsScreen({
                 </label>
               </div>
 
-              {isReactTrainRepetition ? (
+              {isVisualSearch ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[10, 20, 30, 40].map((r) => (
+                    <button key={r} type="button" onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))} style={{ flex: '1 1 90px', padding: '11px 10px', borderRadius: 12, border: `1.5px solid ${launch.targetReps === r ? accent : T.border}`, background: launch.targetReps === r ? `${accent}16` : T.card, color: launch.targetReps === r ? accent : T.textDim, fontFamily: 'inherit', fontSize: 13, fontWeight: launch.targetReps === r ? 900 : 700, cursor: 'pointer' }}>{r}회</button>
+                  ))}
+                </div>
+              ) : isReactTrainRepetition ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[10, 15, 20, 30].map((r) => {
                     const active = launch.targetReps === r;
