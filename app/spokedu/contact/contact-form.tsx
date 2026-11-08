@@ -21,6 +21,7 @@ import { submitInquiry } from './inquiry-submit';
 import { V0PrivacyConsent } from '../components/v0-privacy-consent';
 import { parseSpomoveOperationLabel } from '../data/commercial-routes';
 import { resolveContactInquiryType } from './resolve-contact-inquiry-type';
+import { getEducationProgram } from '../website/data/education';
 import { createFormStartedTracker, trackCommercialEvent } from '../lib/commercial-events';
 import { externalLinkProps } from '../lib/external-link';
 import { marketingButtonPrimary, marketingInteractiveTransition, fineHover } from '../lib/ui-classes';
@@ -213,16 +214,18 @@ function CommonFields({
   values,
   inquiryTypeLabel,
   minimal = false,
+  educationLayout = false,
   onChange,
 }: {
   values: InquiryCommonFields;
   inquiryTypeLabel: string;
   minimal?: boolean;
+  educationLayout?: boolean;
   onChange: (patch: Partial<InquiryCommonFields>) => void;
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <Field label="이름" required>
+      <Field label={educationLayout ? '담당자명' : '이름'} required>
         <input
           required
           autoComplete="name"
@@ -266,7 +269,7 @@ function CommonFields({
           <input readOnly value={inquiryTypeLabel} className={`${inputClass} bg-slate-50 text-slate-700`} />
         </Field>
       </div>
-      <div className="sm:col-span-2">
+      {!educationLayout && <div className="sm:col-span-2">
         <Field label="문의 내용" required>
           <textarea
             required
@@ -276,7 +279,7 @@ function CommonFields({
             className={`${inputClass} min-h-[6.5rem] resize-y`}
           />
         </Field>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -421,11 +424,20 @@ function applyPayloadToForms(payload: InquiryPayload, handlers: {
   });
 }
 
-export default function SpokeduContactForm({ inlineType }: { inlineType?: InquiryType } = {}) {
+function appendProgramInterest(message: string, programId: string | null) {
+  const program = getEducationProgram(programId);
+  if (!program) return message;
+  const interest = `관심 프로그램: ${program.name}`;
+  return message.split('\n').some(line => line.trim() === interest) ? message : `${message}${message ? '\n\n' : ''}${interest}`;
+}
+
+export default function SpokeduContactForm({ inlineType, educationProgramSelection = false }: { inlineType?: InquiryType; educationProgramSelection?: boolean } = {}) {
+  const isEducationInquiry = educationProgramSelection && inlineType === 'dispatch';
   const router = useRouter();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
+  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const markFormStartedRef = useRef(createFormStartedTracker('other', 'contact_form'));
   const [inquiryType, setInquiryType] = useState<InquiryType | null>(inlineType ?? null);
   const [submitting, setSubmitting] = useState(false);
@@ -438,6 +450,17 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
   const [spomoveForm, setSpomoveForm] = useState<SpomoveInquiryFields>(SPOMOVE_DEFAULT);
   const [curriculumForm, setCurriculumForm] = useState<CurriculumInquiryFields>(CURRICULUM_DEFAULT);
   const [otherForm, setOtherForm] = useState<OtherInquiryFields>(OTHER_DEFAULT);
+
+  useEffect(() => {
+    if (!educationProgramSelection || inlineType !== 'dispatch') return;
+    function selectProgram(event: Event) {
+      const id: unknown = (event as CustomEvent<unknown>).detail;
+      if (typeof id !== 'string' || !getEducationProgram(id)) return;
+      setSelectedProgramId(id);
+    }
+    window.addEventListener('spokedu:education-program', selectProgram);
+    return () => window.removeEventListener('spokedu:education-program', selectProgram);
+  }, [educationProgramSelection, inlineType]);
 
   useEffect(() => {
     if (!inquiryType) return;
@@ -466,6 +489,12 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
     const resolvedType = inlineType ?? resolveContactInquiryType(requestedType, searchParams.get('proposal'));
 
     setInquiryType(resolvedType);
+
+    const programId = searchParams.get('program');
+    if (resolvedType === 'dispatch' && getEducationProgram(programId)) {
+      setSelectedProgramId(programId);
+      if (!isEducationInquiry) setDispatchForm(previous => ({ ...previous, message: appendProgramInterest(previous.message, programId) }));
+    }
 
     const classType = searchParams.get('classType');
     if (classType === '1to1') {
@@ -502,7 +531,7 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
             : 'SPOMOVE 도입·운영 상담을 요청합니다.'),
       }));
     }
-  }, [searchParams, inlineType]);
+  }, [searchParams, inlineType, isEducationInquiry]);
 
   const activeOption = useMemo(
     () => contactTypeOptions.find((option) => option.id === inquiryType) ?? null,
@@ -522,7 +551,7 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
   function buildPayload(): InquiryPayload {
     const createdAt = new Date().toISOString();
     if (inquiryType === 'private') return { type: 'private', createdAt, ...privateForm };
-    if (inquiryType === 'dispatch') return { type: 'dispatch', createdAt, ...dispatchForm };
+    if (inquiryType === 'dispatch') return { type: 'dispatch', createdAt, ...dispatchForm, message: isEducationInquiry ? appendProgramInterest(dispatchForm.message, selectedProgramId) : dispatchForm.message };
     if (inquiryType === 'spomove') return { type: 'spomove', createdAt, ...spomoveForm };
     if (inquiryType === 'curriculum') return { type: 'curriculum', createdAt, ...curriculumForm };
     return { type: 'other', createdAt, ...otherForm };
@@ -530,7 +559,7 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
 
   function resetFormForType(type: InquiryType) {
     if (type === 'private') setPrivateForm(PRIVATE_DEFAULT);
-    else if (type === 'dispatch') setDispatchForm(DISPATCH_DEFAULT);
+    else if (type === 'dispatch') { setDispatchForm(DISPATCH_DEFAULT); setSelectedProgramId(null); }
     else if (type === 'spomove') setSpomoveForm(SPOMOVE_DEFAULT);
     else if (type === 'curriculum') setCurriculumForm(CURRICULUM_DEFAULT);
     else setOtherForm(OTHER_DEFAULT);
@@ -709,17 +738,18 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
 
         <div ref={formRef}>
           {inquiryType && activeOption ? (
-          <form onSubmit={onSubmit} className="space-y-5 rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
-            <div className="border-b border-slate-100 pb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#245DFF]">상담 접수</p>
-              <h3 className="mt-1 text-lg font-bold text-slate-950 sm:text-xl">{activeOption.title}</h3>
+          <form onSubmit={onSubmit} className={isEducationInquiry ? 'web-education-inquiry-form' : 'space-y-5 rounded-lg border border-slate-200 bg-white p-4 sm:p-5'}>
+            <div className={isEducationInquiry ? 'web-education-inquiry-heading' : 'border-b border-slate-100 pb-3'}>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#245DFF]">{isEducationInquiry ? 'INQUIRY' : '상담 접수'}</p>
+              <h3 className="mt-1 text-lg font-bold text-slate-950 sm:text-xl">{isEducationInquiry ? '기관 체육교육 문의' : activeOption.title}</h3>
+              {isEducationInquiry && <p>대상과 일정이 모두 정해지지 않았더라도 현재 계획하고 있는 내용을 남겨주세요.</p>}
             </div>
 
-            <V0PrivacyConsent id="contact-privacy-consent" checked={privacyConsent} onChange={setPrivacyConsent} />
+            {!isEducationInquiry && <V0PrivacyConsent id="contact-privacy-consent" checked={privacyConsent} onChange={setPrivacyConsent} />}
 
             <div className="space-y-3">
               <p className="text-sm font-bold text-slate-900">기본 정보</p>
-              <CommonFields minimal={!!inlineType && inquiryType === 'spomove'} values={commonValues} inquiryTypeLabel={inquiryTypeLabel} onChange={onCommonChange} />
+              <CommonFields educationLayout={isEducationInquiry} minimal={!!inlineType && inquiryType === 'spomove'} values={commonValues} inquiryTypeLabel={inquiryTypeLabel} onChange={onCommonChange} />
             </div>
 
             {inquiryType === 'private' ? (
@@ -775,7 +805,7 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
                   markFormStartedRef.current();
                   setDispatchForm((p) => ({ ...p, ...patch }));
                 }}
-                title="기관 체육교육 정보"
+                title={isEducationInquiry ? '기관 운영 정보' : '기관 체육교육 정보'}
               />
             ) : null}
 
@@ -894,6 +924,18 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
               </div>
             ) : null}
 
+            {isEducationInquiry && <div className="web-education-inquiry-message">
+              <p className="text-sm font-bold text-slate-900">문의 내용</p>
+              {getEducationProgram(selectedProgramId) && <div className="web-education-inquiry-selection" aria-live="polite">
+                <span>관심 프로그램: <strong>{getEducationProgram(selectedProgramId)!.name}</strong></span>
+                <button type="button" onClick={() => setSelectedProgramId(null)}>선택 해제</button>
+              </div>}
+              <Field label="문의 내용 및 관심 프로그램" required>
+                <textarea required rows={5} value={dispatchForm.message} onChange={event => onCommonChange({ message: event.target.value })} className={`${inputClass} resize-y`} />
+              </Field>
+              <V0PrivacyConsent id="contact-privacy-consent" checked={privacyConsent} onChange={setPrivacyConsent} />
+            </div>}
+
             {notice ? (
               <div
                 className={`rounded-lg px-4 py-3.5 text-sm ${
@@ -935,9 +977,9 @@ export default function SpokeduContactForm({ inlineType }: { inlineType?: Inquir
                   disabled={submitting}
                   data-track={`contact-submit-${inquiryType}`}
                   data-track-label={activeOption.submitTrackLabel}
-                  className={`${marketingButtonPrimary} w-full`}
+                  className={isEducationInquiry ? 'web-education-inquiry-submit' : `${marketingButtonPrimary} w-full`}
                 >
-                  {submitting ? '접수 중...' : '상담 접수하기'}
+                  {submitting ? '접수 중...' : isEducationInquiry ? '기관 수업 문의 접수하기' : '상담 접수하기'}
                 </button>
               </div>
             ) : null}

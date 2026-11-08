@@ -1,9 +1,6 @@
 /* Home-only corrections; shared page styles and components stay unchanged. */
 .website-content .web-home .web-home-headline > span { display: block; }
 .website-content .web-home .web-home-hero { padding-bottom: 64px; }
-.website-content .web-home .web-home-hero figure { background: transparent; box-shadow: none; overflow: visible; }
-.website-content .web-home .web-home-hero figure > div { border-radius: 24px; }
-.website-content .web-home .web-home-hero-caption { padding: 12px 8px 0; color: #434655; }
 .website-content .web-home .web-home-services { padding: 0 0 80px; }
 .website-content .web-home .web-home-services-heading { text-align: center; display: grid; gap: 16px; margin-bottom: 40px; }
 .website-content .web-home .web-home-service-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
@@ -14,9 +11,12 @@
 .website-content .web-home .web-home-service-card h3 { font-size: 24px; line-height: 1.4; }
 .website-content .web-home .web-home-service-card > p { line-height: 1.7; }
 .website-content .web-home .web-home-service-card > a { display: inline-flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 12px; min-height: 44px; }
+.website-content .web-home .web-home-service-diagram .web-home-service-card { padding: 0; border-radius: 0; box-shadow: none; gap: 12px; min-width: 0; }
+.website-content .web-home .web-home-service-diagram .web-home-service-grid { gap: 28px; }
+.website-content .web-home .web-home-service-diagram .web-home-service-card h3 { font-size: 22px; }
 .website-content .web-home .web-home-showcase-copy { display: grid; gap: 20px; min-width: 0; }
 .website-content .web-home .web-home-showcase-copy > * { margin: 0; }
-.website-content .web-home .web-home-showcase-copy > .font-watermark-number { line-height: 1; margin-bottom: -44px; }
+.website-content .web-home .web-home-showcase-copy > .font-watermark-number { line-height: 1; margin-bottom: -44px; transform: translateY(-12px); }
 .website-content .web-home .web-home-showcase-copy > h2 { position: relative; z-index: 1; }
 .website-content .web-home .web-home-showcase-tags > span { white-space: nowrap; }
 /* Retain the complete program library capture inside the existing frame. */
@@ -24,7 +24,9 @@
 .website-content .web-home .web-home-lab-frame img { width: 100%; height: auto; object-fit: contain; }
 .website-content .web-home .web-home-proof-heading { margin-top: 64px; }
 .website-content .web-home .web-home-proof .web-home-cases { margin-top: 40px; }
-.website-content .web-home #operating-metrics dd { font-variant-numeric: tabular-nums; line-height: 1.1; }
+.website-content .web-home #operating-metrics dd { font-variant-numeric: tabular-nums; line-height: 1.1; white-space: nowrap; flex-wrap: nowrap; }
+.website-content .web-home #operating-metrics dd > span:last-child { font-size: .78em; }
+.website-content .web-home .web-home-proof [data-record-slug='donghaeng-special-pe'] .web-case-image img { object-fit: cover; object-position: 65% 35%; }
 .website-content .web-home #operating-metrics dt { margin-top: 12px; }
 @media (min-width:1024px) {
   .website-content .web-home .web-home-hero { padding-bottom: 96px; }

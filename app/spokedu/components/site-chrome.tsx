@@ -136,7 +136,7 @@ export function SiteHeader() {
       return;
     }
     lockSpokeduScroll();
-    const desktop = window.matchMedia('(min-width: 1280px)');
+    const desktop = window.matchMedia('(min-width: 1024px)');
     const onDesktop = () => { if (desktop.matches) closeMenus(); };
     desktop.addEventListener('change', onDesktop);
     const panel = mobilePanelRef.current;
@@ -199,14 +199,10 @@ export function SiteHeader() {
   }, [openDesktopGroup]);
 
   const linkClass = (active: boolean) =>
-    `inline-flex h-10 shrink-0 items-center whitespace-nowrap text-[15px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-      onHero
-        ? active
-          ? 'text-white underline decoration-white/80 underline-offset-[6px]'
-          : 'text-white/80 hover:text-white focus-visible:outline-white'
-        : active
-          ? 'text-[#0B1F46] underline decoration-[#245DFF]/70 underline-offset-[6px]'
-          : 'text-slate-600 hover:text-[#0B1F46] focus-visible:outline-[#245DFF]'
+    `inline-flex h-10 shrink-0 items-center px-3.5 py-2 rounded-xl text-[15px] whitespace-nowrap leading-none tracking-[-0.01em] transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+      active
+        ? 'bg-blue-50/80 text-blue-600 font-semibold'
+        : 'font-medium text-slate-600 hover:bg-slate-100/90 hover:text-slate-900'
     }`;
 
   const renderDesktopEntry = (entry: SiteNavEntry) => {
@@ -355,7 +351,7 @@ export function SiteHeader() {
           <BrandLogo onDark={onHero} scrollHomeOnClick size="sm" />
 
           <nav
-            className="hidden h-10 min-w-0 items-center justify-center gap-3 text-[14px] xl:flex xl:gap-4 xl:text-[15px] 2xl:gap-6"
+            className="hidden lg:flex h-10 min-w-0 items-center justify-center gap-2 xl:gap-3"
             aria-label="주요 메뉴"
           >
             {siteNav.map(renderDesktopEntry)}
@@ -366,14 +362,12 @@ export function SiteHeader() {
               href={siteHeaderLabCta.href}
               trackLabel={siteHeaderLabCta.trackLabel}
               active={labActive}
-              className={`hidden h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden h-10 px-4.5 text-sm font-semibold rounded-full sm:inline-flex items-center justify-center whitespace-nowrap border bg-white leading-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                 menuOpen
                   ? 'pointer-events-none invisible'
-                  : onHero
-                    ? 'border-white/35 text-white hover:bg-white/10 focus-visible:outline-white'
-                    : labActive
+                  : labActive
                       ? 'border-[#245DFF] bg-blue-50 text-[#245DFF] focus-visible:outline-[#245DFF]'
-                      : 'border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-[#245DFF]'
+                      : 'border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-600 focus-visible:outline-[#245DFF]'
               }`}
             >
               {siteHeaderLabCta.label}
@@ -382,16 +376,13 @@ export function SiteHeader() {
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
               active={ctaActive}
-              className={`hidden h-10 items-center justify-center rounded-full px-5 text-sm font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden h-10 px-4.5 text-sm font-semibold rounded-full sm:inline-flex items-center justify-center whitespace-nowrap bg-blue-600 text-white shadow-xs hover:bg-blue-700 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 leading-none transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                 menuOpen
                   ? 'pointer-events-none invisible'
-                  : onHero
-                    ? 'border border-white/35 bg-white text-[#0B1F46] hover:bg-white/90 focus-visible:outline-white'
-                    : ctaActive
+                  : ctaActive
                       ? 'ring-2 ring-[#245DFF]/35 text-white focus-visible:outline-[#245DFF]'
                       : 'text-white focus-visible:outline-[#245DFF]'
               }`}
-              style={onHero || menuOpen ? undefined : { backgroundColor: ATHLETIC_BLUE }}
             >
               {siteHeaderCta.label}
             </NavAnchor>
@@ -399,7 +390,7 @@ export function SiteHeader() {
             <button
               ref={menuButtonRef}
               type="button"
-              className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 xl:hidden ${
+              className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
                 onHero
                   ? 'border-white/35 text-white focus-visible:outline-white'
                   : 'border-slate-300 text-[#0B1F46] focus-visible:outline-[#245DFF]'
@@ -430,7 +421,7 @@ export function SiteHeader() {
       <div
         id="mobile-nav-panel"
         ref={mobilePanelRef}
-        className={`fixed inset-x-0 bottom-0 top-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px))] z-50 xl:hidden ${
+        className={`fixed inset-x-0 bottom-0 top-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px))] z-50 lg:hidden ${
           menuOpen ? '' : 'pointer-events-none invisible'
         }`}
         style={{ backgroundColor: NAVY }}

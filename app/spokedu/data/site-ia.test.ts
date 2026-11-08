@@ -91,17 +91,17 @@ describe('spokedu site IA', () => {
   });
 
   it('keeps supporting destinations in footer groups, not header', () => {
-    expect(footerNavGroups.map((group) => group.heading)).toEqual(['체육수업', '솔루션', 'SPOKEDU', '문의']);
+    expect(footerNavGroups.map((group) => group.heading)).toEqual(['SPOKEDU', '솔루션', '파트너·협업', '문의']);
     const footerLabels = footerNavLinks.map((link) => link.label);
     expect(footerLabels).toEqual([
-      '기관수업',
-      '개인·소그룹',
+      'SPOKEDU 소개',
+      '기관·학교 수업',
+      '개인·소그룹 수업',
       'SPOMOVE',
+      '수업사례',
       'SPOMOVE 카탈로그',
       'SPOMAT',
       'SPOKEDU LAB',
-      '수업사례',
-      '스포키듀 소개',
       '파트너·협업',
       '문의하기',
     ]);
@@ -264,7 +264,7 @@ describe('spokedu site IA', () => {
     expect(source).toContain('아이와 현장의 조건에 맞춰');
     expect(source).toContain('움직이고 싶게 만드는');
     expect(source).toContain('체육수업을 설계합니다.');
-    expect(source).toContain('getFieldRecordCatalogItem');
+    expect(source).toContain('legacyRecordCards');
     expect(source).not.toMatch(/innerHTML|data-path|isStitchC0Enabled/);
   });
 
@@ -719,7 +719,7 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeLandingSource).toMatch(/id="showcase"/);
     expect(homeLandingSource).toMatch(/id="operating-metrics"/);
     expect(homeLandingSource).toMatch(/id="service-paths"/);
-    expect(homeLandingSource).toMatch(/id="spomove-experience"/);
+    expect(homeLandingSource).not.toMatch(/id="spomove-experience"/);
     expect(homeLandingSource).not.toMatch(/HomeClassSection|HomeFieldBridge|HomeCommercialChoice|home-canonical/);
     expect(homeLandingSource).not.toMatch(/HomeAudienceGates/);
     expect(spomoveLandingSource).toMatch(/function SpomovePage/);

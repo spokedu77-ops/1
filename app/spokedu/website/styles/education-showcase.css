@@ -1,0 +1,51 @@
+/* Match HOME and ABOUT's label → watermark → heading flow. */
+.website-content .web-education-showcase-copy { display: grid; gap: 20px; min-width: 0; }
+.website-content .web-education-showcase-copy > * { margin: 0; }
+.website-content .web-education-showcase-copy > .font-watermark-number { line-height: 1; margin-bottom: -44px; transform: translateY(-12px); }
+.website-content .web-education-showcase-copy > h3 { position: relative; z-index: 1; }
+.website-content .web-education-showcase-tag { padding: 4px 14px; border-radius: 999px; background: #fff; border: 1px solid #e2e8f0; color: #475569; white-space: nowrap; }
+.website-content .web-education-process { padding-bottom: 48px; }
+.website-content .web-education-process .web-education-lab-screen { object-position: 50% 0%; }
+.website-content .web-education-process .absolute.bottom-6 { padding: 12px 16px; gap: 12px; }
+.website-content .web-education-process .absolute.bottom-6 .font-headline-sm { margin-top: 4px; font-size: 16px; line-height: 1.5; }
+.website-content .web-education-process .web-education-case-links { margin-top: 64px; }
+.website-content .web-education-case-links > h3 { margin-top: 8px; }
+.website-content .web-education-case-links > p { margin-top: 8px; }
+.website-content .web-education-case-links ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-top: 28px; padding: 0; list-style: none; }
+.website-content .web-education-case-links li { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 20px; border-top: 1px solid var(--color-outline-variant); }
+.website-content .web-education-case-links li h4 { font-size: 18px; line-height: 1.5; font-weight: 700; color: var(--color-on-surface); }
+.website-content .web-education-case-links li > p { font-size: 14px; line-height: 1.8; color: var(--color-on-surface-variant); }
+.website-content .web-education-case-links li > .web-education-case-type { font-size: 12px; font-weight: 600; color: var(--color-primary); }
+.website-content .web-education-case-links li > a { margin-top: auto; }
+.website-content .web-education-case-links a { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 44px; font-size: 14px; color: var(--color-primary); text-decoration: none; }
+.website-content .web-education-case-links a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.website-content .web-education-case-links a span { color: var(--color-on-surface-variant); }
+.website-content .web-education-case-links .website-icon { margin-left: 4px; }
+.website-content .web-education-inquiry { padding: 48px 0 80px; background: var(--color-surface-container-low); }
+.website-content .web-education-inquiry > div { max-width: 960px; }
+.website-content .web-education-inquiry-form { display: grid; gap: 32px; padding: 40px; border-radius: 24px; background: var(--color-surface-container-lowest); box-shadow: 0 10px 30px -5px rgb(15 23 42 / 4%); }
+.website-content .web-education-inquiry-heading { padding-bottom: 28px; border-bottom: 1px solid var(--color-surface-container); }
+.website-content .web-education-inquiry-heading > h3 { margin: 8px 0 12px; font-size: 28px; line-height: 1.4; color: var(--color-on-surface); }
+.website-content .web-education-inquiry-heading > p:last-child { font-size: 15px; line-height: 1.8; color: var(--color-on-surface-variant); }
+.website-content .web-education-inquiry-form .grid { gap: 20px; }
+.website-content .web-education-inquiry-form > .space-y-3 > p, .website-content .web-education-inquiry-message > p { margin-bottom: 16px; font-size: 17px; color: var(--color-on-surface); }
+.website-content .web-education-inquiry-form input:not([type='checkbox']), .website-content .web-education-inquiry-form select, .website-content .web-education-inquiry-form textarea { min-height: 48px; border-radius: 12px; border-color: var(--color-outline-variant); font: inherit; font-size: 15px; }
+.website-content .web-education-inquiry-form input:focus, .website-content .web-education-inquiry-form select:focus, .website-content .web-education-inquiry-form textarea:focus { border-color: var(--color-primary-container); }
+.website-content .web-education-inquiry-form > .border-t, .website-content .web-education-inquiry-message { padding-top: 28px; border-top: 1px solid var(--color-surface-container); }
+.website-content .web-education-inquiry-submit { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; padding: 14px 28px; border: 0; border-radius: 999px; background: var(--color-primary-container); color: var(--color-on-primary); font-size: 15px; font-weight: 600; cursor: pointer; transition: background 180ms; }
+.website-content .web-education-inquiry-submit:hover { background: var(--color-primary); }
+.website-content .web-education-inquiry-submit:disabled { opacity: .6; cursor: wait; }
+.website-content .web-education-inquiry-selection { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding: 12px 16px; border-radius: 12px; background: var(--color-surface-container-low); color: var(--color-primary); font-size: 14px; }
+.website-content .web-education-inquiry-selection button { flex-shrink: 0; min-height: 32px; color: var(--color-on-surface-variant); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+@media (max-width: 639px) {
+  .website-content .web-education-process .absolute.bottom-6 { bottom: 16px; left: 16px; right: 16px; padding: 10px 12px; }
+  .website-content .web-education-process .absolute.bottom-6 .font-headline-sm { font-size: 14px; }
+  .website-content .web-education-process .web-education-case-links { margin-top: 48px; }
+  .website-content .web-education-case-links ul { grid-template-columns: 1fr; gap: 24px; }
+  .website-content .web-education-inquiry { padding-top: 32px; padding-bottom: 64px; }
+  .website-content .web-education-inquiry-form { padding: 24px 20px; gap: 24px; }
+  .website-content .web-education-inquiry-heading > h3 { font-size: 24px; }
+}
+@media (min-width: 1024px) {
+  .website-content .web-education-showcase-copy > .font-watermark-number { margin-bottom: -60px; }
+}

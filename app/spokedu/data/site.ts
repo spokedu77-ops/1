@@ -160,28 +160,38 @@ export type FooterNavGroup = {
 /** Global Footer IA — Header보다 넓은 supporting destinations */
 export const footerNavGroups: FooterNavGroup[] = [
   {
-    heading: '체육수업',
+    heading: 'SPOKEDU',
     links: [
       {
-        label: '기관수업',
+        label: 'SPOKEDU 소개',
+        href: SPOKEDU_PATHS.about,
+        trackLabel: 'footer-about',
+      },
+      {
+        label: '기관·학교 수업',
         href: SPOKEDU_PATHS.education,
         trackLabel: 'footer-education-institution',
       },
       {
-        label: '개인·소그룹',
+        label: '개인·소그룹 수업',
         href: SPOKEDU_PATHS.private,
         trackLabel: 'footer-education-private',
+      },
+      {
+        label: 'SPOMOVE',
+        href: SPOKEDU_PATHS.spomove,
+        trackLabel: 'footer-spomove',
+      },
+      {
+        label: '수업사례',
+        href: SPOKEDU_PATHS.records,
+        trackLabel: 'footer-records',
       },
     ],
   },
   {
     heading: '솔루션',
     links: [
-      {
-        label: 'SPOMOVE',
-        href: SPOKEDU_PATHS.spomove,
-        trackLabel: 'footer-spomove',
-      },
       {
         label: 'SPOMOVE 카탈로그',
         href: SPOKEDU_PATHS.spomoveCatalog,
@@ -200,18 +210,8 @@ export const footerNavGroups: FooterNavGroup[] = [
     ],
   },
   {
-    heading: 'SPOKEDU',
+    heading: '파트너·협업',
     links: [
-      {
-        label: '수업사례',
-        href: SPOKEDU_PATHS.records,
-        trackLabel: 'footer-records',
-      },
-      {
-        label: '스포키듀 소개',
-        href: SPOKEDU_PATHS.about,
-        trackLabel: 'footer-about',
-      },
       {
         label: '파트너·협업',
         href: SPOKEDU_PATHS.partners,

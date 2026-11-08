@@ -1,0 +1,22 @@
+/* ABOUT 01–03 only; hero, profiles and closing CTA are outside this scope. */
+.website-content .web-about-showcase-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: center; }
+.website-content .web-about-showcase-copy { display: grid; gap: 20px; min-width: 0; order: 1; }
+.website-content .web-about-showcase-copy > * { margin: 0; }
+.website-content .web-about-showcase-label { grid-row: 1; }
+.website-content .web-about-showcase-copy > .web-about-showcase-number { position: relative; top: auto; left: auto; grid-row: 2; display: block; line-height: 1; margin-bottom: -44px; transform: translateY(-12px); }
+.website-content .web-about-showcase-copy > h2 { position: relative; z-index: 1; grid-row: 3; }
+.website-content .web-about-showcase-copy h2 > span { display: block; white-space: pre-line; }
+.website-content .web-about-showcase-keywords { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
+.website-content .web-about-showcase-keywords li { padding: 4px 14px; border-radius: 999px; background: #fff; border: 1px solid #e2e8f0; color: #475569; }
+.website-content .web-about-showcase-media { margin: 0; min-width: 0; order: 2; }
+.website-content .web-about-showcase-photo-label { position: absolute; top: 24px; left: 24px; padding: 8px 16px; border-radius: 999px; background: rgb(255 255 255 / 90%); color: #004ac6; backdrop-filter: blur(12px); box-shadow: 0 1px 3px rgb(19 27 46 / 8%); }
+.website-content .web-about-showcase-copy > a { justify-self: start; min-height: 44px; }
+.website-content .web-about-showcase-item :is(h2, p, a) { overflow-wrap: break-word; }
+@media (min-width: 1024px) {
+  .website-content .web-about-showcase-item { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 64px; }
+  .website-content .web-about-showcase-copy { grid-column: 1 / span 5; grid-row: 1; }
+  .website-content .web-about-showcase-copy > .web-about-showcase-number { margin-bottom: -60px; }
+  .website-content .web-about-showcase-media { grid-column: 6 / span 7; grid-row: 1; }
+  .website-content .web-about-showcase-reversed .web-about-showcase-copy { grid-column: 8 / span 5; }
+  .website-content .web-about-showcase-reversed .web-about-showcase-media { grid-column: 1 / span 7; }
+}

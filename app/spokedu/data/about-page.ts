@@ -1,4 +1,5 @@
 import { HOME_SECTION03_PEOPLE } from '../components/home-web/home-section03-people';
+import { aboutFounder } from './about-founder';
 import { PUBLIC_PROGRAM_COPY, PUBLIC_TEAM_ROLES } from './public-brand-copy';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
@@ -83,6 +84,7 @@ export const aboutPage = {
     id: 'team',
     eyebrow: 'OUR PEOPLE',
     title: '교육을 설계하고 현장을 움직이는 사람들',
+    description: 'SPOKEDU의 교육과정과 현장 운영을 책임지는 전문 운영진을 소개합니다.',
     members: [
       {
         id: 'choi',
@@ -91,6 +93,12 @@ export const aboutPage = {
         photo: HOME_SECTION03_PEOPLE[0]!.photo,
         photoObjectPosition: '50% top',
         credentials: [...HOME_SECTION03_PEOPLE[0]!.credentials],
+        degree: '연세대학교 체육교육학과',
+        mainRole: '경영·교육 방향 총괄',
+        photoScale: 1,
+        detailEducation: aboutFounder.credentials[0],
+        qualifications: [aboutFounder.credentials[1]],
+        experience: aboutFounder.credentials.slice(2),
       },
       {
         id: 'kim-yunki',
@@ -99,6 +107,12 @@ export const aboutPage = {
         photo: HOME_SECTION03_PEOPLE[1]!.photo,
         photoObjectPosition: '50% top',
         credentials: [...HOME_SECTION03_PEOPLE[1]!.credentials],
+        degree: '연세대학교 체육교육학과',
+        mainRole: '교육 운영·현장 관리',
+        photoScale: 1.04,
+        detailEducation: HOME_SECTION03_PEOPLE[1]!.credentials[0]!,
+        qualifications: HOME_SECTION03_PEOPLE[1]!.credentials.slice(1),
+        experience: [],
       },
       {
         id: 'kim-gumin',
@@ -107,6 +121,12 @@ export const aboutPage = {
         photo: HOME_SECTION03_PEOPLE[2]!.photo,
         photoObjectPosition: '50% top',
         credentials: [...HOME_SECTION03_PEOPLE[2]!.credentials],
+        degree: '강원대학교 레저스포츠학과',
+        mainRole: '수업 운영·현장 지도',
+        photoScale: 1.06,
+        detailEducation: HOME_SECTION03_PEOPLE[2]!.credentials[0]!,
+        qualifications: HOME_SECTION03_PEOPLE[2]!.credentials.slice(1),
+        experience: [],
       },
     ] as const,
   },

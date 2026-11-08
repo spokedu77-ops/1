@@ -1,0 +1,30 @@
+/* Compact ABOUT team cards; biographies expand in place without a modal. */
+.website-content .web-about-team { padding-block: 64px; }
+.website-content #team .web-about-people-grid { align-items: start; gap: 24px; }
+.website-content #team .web-about-person-card { display: flex; flex-direction: column; min-width: 0; padding: 16px; border-radius: 24px; background: #fff; }
+.website-content #team .web-about-person-photo { aspect-ratio: 1; overflow: hidden; border-radius: 16px; background: #f1f5f9; }
+.website-content #team .web-about-person-photo img { display: block; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 25%; }
+.website-content #team .web-about-person-info { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 16px 4px 0; }
+.website-content #team .web-about-person-role { margin: 0; color: #004ac6; font-size: 13px; font-weight: 600; line-height: 20px; }
+.website-content #team .web-about-person-info h3 { margin: 4px 0 8px; font-size: 26px; font-weight: 700; line-height: 34px; }
+.website-content #team .web-about-person-degree { margin: 0; color: #434655; font-size: 14px; line-height: 24px; }
+.website-content #team .web-about-person-responsibility { margin: 4px 0 14px; color: #434655; font-size: 14px; line-height: 24px; }
+.website-content #team .web-about-person-details { width: 100%; margin-top: auto; border-top: 1px solid #e2e8f0; }
+.website-content #team .web-about-person-details > summary { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; list-style: none; color: #004ac6; font-size: 14px; font-weight: 600; }
+.website-content #team .web-about-person-details > summary::-webkit-details-marker { display: none; }
+.website-content #team .web-about-person-details > summary:hover { color: #2563eb; }
+.website-content #team .web-about-person-collapse-label { display: none; }
+.website-content #team .web-about-person-details[open] .web-about-person-expand-label { display: none; }
+.website-content #team .web-about-person-details[open] .web-about-person-collapse-label { display: inline; }
+.website-content #team .web-about-person-chevron { margin-left: auto; transition: transform 180ms; }
+.website-content #team .web-about-person-details[open] .web-about-person-chevron { transform: rotate(180deg); }
+.website-content #team .web-about-person-biography { padding: 8px 0 12px; }
+.website-content #team .web-about-person-biography section + section { margin-top: 16px; }
+.website-content #team .web-about-person-biography h4 { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #64748b; }
+.website-content #team .web-about-person-biography p,
+.website-content #team .web-about-person-biography ul { margin: 0; font-size: 14px; line-height: 1.8; }
+.website-content #team .web-about-person-biography ul { padding-left: 18px; list-style: disc; }
+.website-content #team .web-about-person-biography li + li { margin-top: 6px; }
+@media (min-width: 1024px) {
+  .website-content .web-about-team { padding-block: 80px; }
+}

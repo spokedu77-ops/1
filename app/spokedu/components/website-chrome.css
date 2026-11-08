@@ -14,13 +14,25 @@
 }
 .phase-d-preview > header { background: rgb(250 248 255 / 96%); }
 .phase-d-preview > header > div { padding-inline: clamp(20px, 3.3vw, 48px); max-width: 1440px; margin-inline: auto; }
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .phase-d-preview > header > div { padding-inline: 24px; }
+}
 .phase-d-preview > header img { max-width: 150px; height: auto; }
+@media (min-width: 1024px) and (max-width: 1099px) {
+  .phase-d-preview > header > div { padding-inline: 20px; }
+  .phase-d-preview > header img { max-width: 110px; }
+}
 .phase-d-preview > header > div > div:last-child { grid-column: 3; justify-self: end; }
 .phase-d-preview #mobile-nav-panel { background: #131b2e; color: #fff; }
 .phase-d-preview #mobile-nav-panel a { color: #fff; }
 .phase-d-preview > footer > div { max-width: 1280px; margin-inline: auto; padding-inline: 24px; }
-.phase-d-preview > header a[href='/contact'] { border-radius: 999px; padding: 12px 20px; background: #004ac6; color: #fff; font-weight: 700; }
-.phase-d-preview > header a[href='/spokedu-lab'] { border: 1px solid #c5d0ec; border-radius: 999px; padding: 10px 16px; color: #004ac6; }
+.phase-d-preview > header a[href='/contact'] { border-radius: 999px; height: 40px; padding: 0 18px; background: #004ac6; color: #fff; font-weight: 600; }
+.phase-d-preview > header a[href='/spokedu-lab'] { border: 1px solid #c5d0ec; border-radius: 999px; height: 40px; padding: 0 18px; font-weight: 600; color: #004ac6; }
+.phase-d-preview > header a[href='/contact'] { background: #2563eb; }
+.phase-d-preview > header a[href='/contact']:hover { background: #1d4ed8; }
+.phase-d-preview > header a[href='/spokedu-lab'] { border-color: #e2e8f0; background: #fff; color: #334155; }
+.phase-d-preview > header a[href='/spokedu-lab']:hover,
+.phase-d-preview > header a[href='/spokedu-lab'][aria-current='page'] { border-color: #93c5fd; background: rgb(239 246 255 / 80%); color: #2563eb; }
 .phase-d-preview > footer { background: #131b2e; }
 .phase-d-preview .phase-d-contact { background: #faf8ff; }
 .phase-d-preview .phase-d-contact h1 { letter-spacing: -.04em; line-height: 1.3; }

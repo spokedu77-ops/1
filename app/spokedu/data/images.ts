@@ -169,7 +169,7 @@ export const SPOKEDU_IMAGES = {
       'home-hero-field',
       'field-editorial/home-hero-field.webp',
       '서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장',
-      { allowedPages: ['home'] },
+      { allowedPages: ['home', 'about'] },
     ),
     fieldGymMotion: defineImage(
       'home',
@@ -280,6 +280,7 @@ export const SPOKEDU_IMAGES = {
       'dispatch-group',
       'dispatch-group-class.jpg',
       '기관 정규 파견 단체 체육수업 장면',
+      { allowedPages: ['dispatch', 'about'] },
     ),
     kiwoomCenter: defineImage('dispatch', 'dispatch-kiwoom', 'dispatch-institution-class.jpg', '키움센터 체육 프로그램 운영 장면'),
     oneDayEvent: defineImage(
@@ -310,7 +311,7 @@ export const SPOKEDU_IMAGES = {
       'curriculum-training',
       'curriculum-instructor-training.jpg',
       '스포키듀 강사 교육·워크숍 장면',
-      { kind: 'field-photo', programs: ['curriculum'], allowedPages: ['home', 'curriculum'] },
+      { kind: 'field-photo', programs: ['curriculum'], allowedPages: ['home', 'curriculum', 'about'] },
     ),
     programMaterials: defineImage('curriculum', 'curriculum-materials', 'curriculum-materials.jpg', '프로그램 운영 자료·콘텐츠 패키지 장면', {
       kind: 'document',

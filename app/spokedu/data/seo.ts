@@ -137,9 +137,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       'SPOMOVE, PAPS, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 맞는 프로그램을 한곳에서 확인합니다.',
   },
   records: {
-    title: '실제 체육수업 사례 | 학교·기관·키움센터 SPOKEDU',
+    title: 'SPOKEDU 현장 기록 | 실제 수업으로 확인하는 SPOKEDU의 체육교육',
     description:
-      '학교, 키움센터, 복지기관과 지역 현장에서 대상·공간·운영 목적에 맞춰 진행한 SPOKEDU 체육수업 사례를 확인하세요.',
+      '학교와 기관에서 운영한 다양한 체육수업을 통해 교육과정과 지도 방식 그리고 현장에서 관찰한 움직임의 변화를 소개합니다.',
   },
   cases: {
     title: '수업 운영 사례 | 기관 협업 SPOKEDU',
