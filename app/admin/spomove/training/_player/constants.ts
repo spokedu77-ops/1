@@ -102,6 +102,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 8, name: '(보류) 숫자 연산 기차', enName: '(On Hold) Number Train', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
       { id: 13, name: '(보류) 바이러스 폭증', enName: '(On Hold) Virus Outbreak', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
       { id: 14, name: '목표 끝까지 따라가기', enName: 'Target Tracking', desc: '처음 표시된 목표를 끝까지 추적한 뒤 마지막 위치에 해당하는 SPOMAT으로 이동합니다.' },
+      { id: 15, name: '움직이는 숫자 판별', enName: 'Moving Number Reader', desc: '움직이는 숫자 캡슐을 눈으로 추적하고 숫자에 해당하는 구역으로 이동하는 활동입니다.' },
     ],
   },
   basic: {
@@ -163,6 +164,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 2, name: '랜덤 자극', enName: 'Random Stimulus', desc: '색상이 기본이며, 반응 인지와 동일한 7가지 테마(색상·과일·동물·음식·자연·탈 것·믹스)를 고릅니다. 가운데 원 색에 반응합니다.' },
       { id: 3, name: '극단', enName: 'Extreme', desc: '난이도 보통은 7개 테마의 극단 크기 원, 어려움은 극단 크기 화살표입니다. 가운데 목표에 반응합니다.' },
       { id: 4, name: '(보류) 원 속의 원', enName: '(On Hold) Nested Circles', desc: '동심 원 플랭커는 현재 보류합니다. 삭제하지 않고 관리자에서만 확인합니다.' },
+      { id: 7, name: '복합 시각탐색', enName: 'Conjunction Visual Search', desc: '화면에 나타난 여러 도형 중 목표 도형을 찾아 해당 위치로 이동하는 시각탐색 과제입니다.' },
     ],
   },
 
@@ -198,6 +200,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 1, name: '순서 기억', enName: 'Order Memory', desc: '난이도 쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개 점증, 어려움은 직접 지정 10색으로 진행합니다.' },
       { id: 2, name: '랜덤 기억', enName: 'Random Memory', desc: '난이도 어려움에서 퀴즈 또는 전체 공개 방식으로 색과 번호를 기억합니다.' },
       { id: 7, name: '순간 기억', enName: 'Instant Memory', desc: '그리드 색을 잠깐 기억한 뒤, 바뀐 한 칸의 색을 찾아 패드로 반응합니다. 타일 수(3×3/4×4/5×5)와 깜빡이/원샷을 고릅니다.' },
+      { id: 8, name: '기억의 유리 다리', enName: 'Glass Bridge Memory', desc: '순서대로 점등되는 유리 발판의 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직이는 활동입니다.' },
     ],
   },
 

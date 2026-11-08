@@ -1,7 +1,7 @@
+import type { GlassBridgeResult } from './glassBridgeMemory';
 import { resolveTrainingSelection } from './trainingActivity';
 import { trainingActivityGuide } from './trainingActivityGuide';
 import {
-  isFront3PanelLevel,
   isModifiedQuadrantLevel,
   modifiedQuadrantStage,
   MODES,
@@ -475,7 +475,7 @@ export function resolveTrainingResultRichContent(
   cfg: TrainingResultConfig,
   elapsedMs: number,
   colorCounts: ColorStimulusCounts | null,
-  options?: { programTitle?: string; volumeLabel?: string; completionReason?: SpomoveCompletionReason },
+  options?: { programTitle?: string; volumeLabel?: string; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult },
 ): TrainingResultRichContent {
   const mo = MODES[cfg.mode];
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
@@ -485,6 +485,68 @@ export function resolveTrainingResultRichContent(
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
   const volumeLabel = options?.volumeLabel ?? describeSessionVolume(cfg);
   const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal, elapsedMs, options?.programTitle);
+  if (selection.activityId === 'glass-bridge-memory') {
+    const bridge = options?.glassBridge;
+    const start = bridge?.startLength ?? cfg.glassBridgeStartLength ?? 5;
+    const description = '순서대로 점등되는 유리 발판의 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직이는 활동입니다.';
+    const measured = bridge ? `${bridge.presentedRounds}라운드` : '기록 없음';
+    const content = applyMasterCompletionTruth({
+      praise, praiseSub, activityFeel, elapsedLabel,
+      volumeLabel: `${cfg.targetReps}라운드 · 발판당 ${cfg.speed ?? 2}초`,
+      sessionHighlight: `기억의 유리 다리 · 시작 ${start}칸 · 발판당 ${cfg.speed ?? 2}초`,
+      sessionSnapshot: [
+        { id: 'length', label: '시작 / 마지막 난이도', value: `${start}칸 / ${bridge ? `${bridge.lastLength}칸` : '기록 없음'}` },
+        { id: 'presented', label: '제시 완료 라운드', value: measured },
+        { id: 'success', label: '교사 성공 판정', value: bridge ? `${bridge.successRounds}라운드` : '기록 없음' },
+        { id: 'failure', label: '교사 실패 판정', value: bridge ? `${bridge.failureRounds}회` : '기록 없음' },
+      ],
+      colorDominantLine: null, programTitle: '기억의 유리 다리', phaseName: '시각적 순서 기억 · 작업기억',
+      programSummary: description, benefitTags: [], benefitLine: description,
+      coachTip: '아래에서 위로 켜지는 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직인 뒤 교사가 판정합니다.',
+      selfCheckItems: [{ id: 'teacher-input', label: '교사 입력 기반 결과입니다. 아동의 정확도·반응 시간은 자동 측정하지 않습니다.' }],
+    }, options?.completionReason);
+    return { ...content, programSummary: description, benefitLine: description,
+      selfCheckItems: [{ id: 'teacher-input', label: '교사 입력 기반 결과입니다. 아동의 정확도·반응 시간은 자동 측정하지 않습니다.' }],
+      activityFeel: bridge?.teacherFailed ? '교사 실패 판정으로 종료' : content.activityFeel };
+  }
+  if (selection.activityId === 'moving-number-reader') {
+    const description = '움직이는 숫자 캡슐을 눈으로 추적하고 숫자에 해당하는 구역으로 이동하는 활동입니다.';
+    const measured = options?.stims ?? colorTotal;
+    const content = applyMasterCompletionTruth({
+      praise, praiseSub, activityFeel, elapsedLabel,
+      volumeLabel: `${cfg.targetReps}회 · 비행 ${cfg.speed ?? 3}초 · 제시 ${measured}회`,
+      sessionHighlight: `움직이는 숫자 판별 · ${cfg.targetReps}회 · 비행 ${cfg.speed ?? 3}초`,
+      sessionSnapshot: [
+        { id: 'flight', label: '캡슐 비행 시간', value: `${cfg.speed ?? 3}초` },
+        { id: 'timing', label: '별도 단계 시간', value: '준비 1.5초 · 이동 3초 · 공개 2.5초' },
+        { id: 'presented', label: '실제 제시 횟수', value: `${measured}회` },
+      ],
+      colorDominantLine: null, programTitle: '움직이는 숫자 판별', phaseName: '움직이는 숫자 추적과 구역 선택',
+      programSummary: description, benefitTags: [], benefitLine: description,
+      coachTip: '캡슐의 색이 아니라 안의 숫자를 읽고, 1 빨강 · 2 노랑 · 3 초록 · 4 파랑 구역으로 이동하세요.',
+      selfCheckItems: [{ id: 'measurement', label: '숫자 출현 횟수는 자극 제시 빈도이며 정답이나 수행 횟수가 아닙니다.' }],
+    }, options?.completionReason);
+    return { ...content, programSummary: description, benefitLine: description };
+  }
+  if (selection.activityId === 'visual-search') {
+    const description = '화면에 나타난 여러 도형 중 목표 도형을 찾아 해당 위치로 이동하는 시각탐색 활동입니다.';
+    const measured = options?.stims ?? colorTotal;
+    const content = applyMasterCompletionTruth({
+      praise, praiseSub, activityFeel, elapsedLabel,
+      volumeLabel: `${cfg.targetReps}회 · 탐색 ${cfg.speed ?? 5}초 · 제시 ${measured}회`,
+      sessionHighlight: `복합 시각탐색 · ${cfg.targetReps}회 · 탐색 ${cfg.speed ?? 5}초`,
+      sessionSnapshot: [
+        { id: 'search', label: '탐색 시간', value: `${cfg.speed ?? 5}초` },
+        { id: 'reveal', label: '정답 공개', value: '3초' },
+        { id: 'presented', label: '실제 제시 과제', value: `${measured}회` },
+      ],
+      colorDominantLine: null, programTitle: '복합 시각탐색', phaseName: '시각탐색 과제',
+      programSummary: description, benefitTags: [], benefitLine: description,
+      coachTip: '빨간 원 또는 파란 사각형을 찾은 뒤, 목표가 있는 SPOMAT 구역으로 이동하세요.',
+      selfCheckItems: [{ id: 'measurement', label: '목표 구역별 제시 횟수는 과제 기록이며 정답 횟수가 아닙니다.' }],
+    }, options?.completionReason);
+    return { ...content, programSummary: description, benefitLine: description };
+  }
   if (cfg.mode === 'spatial' && cfg.level === 7) {
     const instantTitle = options?.programTitle ?? '한눈에 색 배치 기억하기';
     const gridLabel = instantTitle.includes('4X4') || instantTitle.includes('4×4') ? '4×4' : '3×3';

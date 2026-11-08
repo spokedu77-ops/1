@@ -917,7 +917,7 @@ describe('training result summary', () => {
   test('resolveReactTrainUiLevel: 화면 카탈로그 엔진 id + 구 id 폴백', async () => {
     const { catalogReactTrainUiLevel, resolveReactTrainUiLevel, MODES } = await import('./constants');
     const ids = MODES.reactTrain.levels.map((lv) => lv.id);
-    expect(ids).toEqual([3, 1, 2, 6, 10, 201, 9, 8, 13, 14]);
+    expect(ids).toEqual([3, 1, 2, 6, 10, 201, 9, 8, 13, 14, 15]);
     expect(MODES.reactTrain.levels.map((lv) => lv.enName)).toEqual([
       'Balloon Pop',
       'Wave Dodge',
@@ -929,6 +929,7 @@ describe('training result summary', () => {
       '(On Hold) Number Train',
       '(On Hold) Virus Outbreak',
       'Target Tracking',
+      'Moving Number Reader',
     ]);
     expect(MODES.reactTrain.levels.map((lv) => lv.name)).toEqual([
       '풍선 터뜨리기',
@@ -941,6 +942,7 @@ describe('training result summary', () => {
       '(보류) 숫자 연산 기차',
       '(보류) 바이러스 폭증',
       '목표 끝까지 따라가기',
+      '움직이는 숫자 판별',
     ]);
     // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);

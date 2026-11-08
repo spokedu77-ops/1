@@ -4,7 +4,7 @@ export type TrainingRuntime =
   | 'signals' | 'sequence-memory' | 'color-number-memory' | 'color-number-quiz' | 'instant-memory'
   | 'flow' | 'rush' | 'falling-bricks' | 'balloon' | 'beat-wave' | 'camouflage' | 'mole'
   | 'wormhole' | 'number-cart' | 'color-tracker' | 'goalkeeper' | 'virus' | 'shell-tracking'
-  | 'relative-compass' | 'shape-completion' | 'simon-camouflage' | 'simon-balloon';
+  | 'glass-bridge-memory' | 'moving-number-reader' | 'visual-search' | 'relative-compass' | 'shape-completion' | 'simon-camouflage' | 'simon-balloon';
 
 type Route = { mode: string; levels: readonly number[] };
 type Definition = {
@@ -40,12 +40,14 @@ export const TRAINING_ACTIVITIES = {
   'color-tracker': { routes: [route('reactTrain', 9, 101, 102, 103)], catalog: catalog('reactTrain', 9), runtime: 'color-tracker' },
   'goalkeeper': { routes: [route('reactTrain', 10, 11)], catalog: catalog('reactTrain', 10), runtime: 'goalkeeper' },
   'virus-outbreak': { routes: [route('reactTrain', 13)], catalog: catalog('reactTrain', 13), runtime: 'virus' },
+  'moving-number-reader': { routes: [route('reactTrain', 15)], catalog: catalog('reactTrain', 15), runtime: 'moving-number-reader' },
   'target-tracking': { routes: [route('reactTrain', 14)], catalog: catalog('reactTrain', 14), runtime: 'shell-tracking' },
   'simon-shape': { routes: [route('simon', 1)], catalog: catalog('simon', 1), runtime: 'signals' },
   'simon-arrow': { routes: [route('simon', 2)], catalog: catalog('simon', 2), runtime: 'signals' },
   'simon-theme': { routes: [route('simon', 3)], catalog: catalog('simon', 3), runtime: 'signals' },
   'simon-camouflage': { routes: [route('simon', 4)], catalog: catalog('simon', 4), runtime: 'simon-camouflage' },
   'simon-balloon': { routes: [route('simon', 5)], catalog: catalog('simon', 5), runtime: 'simon-balloon' },
+  'visual-search': { routes: [route('flanker', 7)], catalog: catalog('flanker', 7), runtime: 'visual-search' },
   'flanker-arrow': { routes: [route('flanker', 1, 5)], catalog: catalog('flanker', 1), runtime: 'signals' },
   'flanker-theme': { routes: [route('flanker', 2, 6)], catalog: catalog('flanker', 2), runtime: 'signals' },
   'flanker-extreme': { routes: [route('flanker', 3)], catalog: catalog('flanker', 3), runtime: 'signals' },
@@ -57,6 +59,7 @@ export const TRAINING_ACTIVITIES = {
   'sequence-memory': { routes: [route('spatial', 1, 2, 3, 6)], catalog: catalog('spatial', 1), runtime: 'sequence-memory' },
   'color-number-memory': { routes: [route('spatial', 4)], catalog: catalog('spatial', 2, 4), runtime: 'color-number-memory' },
   'color-number-quiz': { routes: [route('spatial', 5)], runtime: 'color-number-quiz', title: '색·번호 기억 퀴즈' },
+  'glass-bridge-memory': { routes: [route('spatial', 8)], catalog: catalog('spatial', 8), runtime: 'glass-bridge-memory' },
   'instant-memory': { routes: [route('spatial', 7)], catalog: catalog('spatial', 7), runtime: 'instant-memory' },
   'action-move': { routes: [route('flow', 1)], catalog: catalog('flow', 1), runtime: 'flow' },
   'motion-gate': { routes: [route('flow', 2)], catalog: catalog('flow', 2), runtime: 'flow' },
@@ -126,6 +129,8 @@ export function resolveTrainingSelection(mode: string, level: number, input: Tra
   const compatibilityDefaults: ReactTrainUiLevelDefaults = normalized.mode === 'reactTrain'
     ? resolveReactTrainUiLevel(normalized.level) : { engineLevel: normalized.level };
   const { engineMode: _mode, engineLevel: _level, ...optionDefaults } = compatibilityDefaults;
+  void _mode;
+  void _level;
   return { ...normalized, activityId, optionDefaults, ...resolveTrainingEngine(normalized.mode, normalized.level), ...trainingActivityPresentation(activityId) };
 }
 /** Resolve a catalog choice atomically, including grouped memory sublevels. */

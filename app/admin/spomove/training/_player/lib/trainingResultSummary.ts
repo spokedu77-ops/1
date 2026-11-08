@@ -1,3 +1,4 @@
+import type { GlassBridgeResult } from './glassBridgeMemory';
 import { resolveTrainingSelection, type TrainingActivityId } from './trainingActivity';
 import { trainingActivityGuide } from './trainingActivityGuide';
 import { COLORS, MEMORY_ROUNDS, MODES } from '../constants';
@@ -17,6 +18,7 @@ export type TrainingSessionResult = {
   stoppedEarly?: boolean;
   completionReason?: SpomoveCompletionReason;
   stims?: number;
+  glassBridge?: GlassBridgeResult;
 };
 
 export type PadColorId = 'red' | 'blue' | 'green' | 'yellow';
@@ -56,6 +58,8 @@ export type TrainingResultConfig = {
   level: number;
   activityId?: TrainingActivityId;
   flankerExtremeMode?: 'theme' | 'arrow';
+  speed?: number;
+  glassBridgeStartLength?: 4 | 5 | 6;
   timeMode: string;
   duration: number;
   targetReps: number;
@@ -66,6 +70,8 @@ export type TrainingResultConfig = {
 };
 
 export function describeSessionVolume(cfg: TrainingResultConfig): string {
+  if (cfg.activityId === 'glass-bridge-memory' || (cfg.mode === 'spatial' && cfg.level === 8)) return `${cfg.targetReps}라운드`;
+  if (cfg.activityId === 'moving-number-reader' || (cfg.mode === 'reactTrain' && cfg.level === 15)) return `${cfg.targetReps}회`;
   if (cfg.mode === 'reactTrain' && (cfg.level === 8 || cfg.level === 9)) {
     return `${cfg.targetReps}라운드`;
   }
@@ -125,6 +131,8 @@ export function settingsToTrainingResultConfig(cfg: {
   level: number;
   activityId?: TrainingActivityId;
   flankerExtremeMode?: 'theme' | 'arrow';
+  speed?: number;
+  glassBridgeStartLength?: 4 | 5 | 6;
   timeMode: string;
   duration: number;
   targetReps: number;
@@ -138,6 +146,8 @@ export function settingsToTrainingResultConfig(cfg: {
     level: cfg.level,
     activityId: cfg.activityId,
     flankerExtremeMode: cfg.flankerExtremeMode,
+    speed: cfg.speed,
+    glassBridgeStartLength: cfg.glassBridgeStartLength,
     timeMode: cfg.timeMode,
     duration: cfg.duration,
     targetReps: cfg.targetReps,

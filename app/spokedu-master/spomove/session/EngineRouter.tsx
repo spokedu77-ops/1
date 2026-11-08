@@ -117,6 +117,9 @@ export function preloadSpomoveEngine(
 ): Promise<unknown> {
   const { runtime } = resolveTrainingSelection(mode, level, { activityId });
   switch (runtime) {
+    case 'glass-bridge-memory': throw new Error('Glass bridge memory is an admin-only activity');
+    case 'moving-number-reader': throw new Error('Moving number reader is an admin-only activity');
+    case 'visual-search': throw new Error('Visual search is an admin-only activity');
     case 'simon-camouflage': case 'camouflage': return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
     case 'simon-balloon': case 'falling-bricks': case 'balloon': return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
     case 'flow': return Promise.all([

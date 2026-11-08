@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import type { GlassBridgeResult } from '../lib/glassBridgeMemory';
 import { resolveTrainingSelection } from '../lib/trainingActivity';
 import { MODES } from '../constants';
 import { CSS, S } from '../styles';
@@ -35,6 +36,8 @@ type Props = {
   completionReason?: SpomoveCompletionReason;
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
+  stims?: number;
+  glassBridge?: GlassBridgeResult;
   levelLabel: string;
   title?: string;
   statusBadge?: string | null;
@@ -164,6 +167,8 @@ export function TrainingResultScreen({
   completionReason,
   elapsedMs,
   colorCounts,
+  stims,
+  glassBridge,
   levelLabel,
   title: providedTitle,
   statusBadge: providedStatusBadge = null,
@@ -189,8 +194,8 @@ export function TrainingResultScreen({
     || (selection.activityId === 'flanker-extreme' && cfg.flankerExtremeMode === 'arrow');
   const resultColorCounts = cfg.mode === 'simon' || cfg.mode === 'spatial' || flankerDirectionOnly ? null : colorCounts;
   const rich = useMemo(
-    () => resolveTrainingResultRichContent(cfg, elapsedMs, resultColorCounts, { programTitle, volumeLabel, completionReason }),
-    [cfg, elapsedMs, resultColorCounts, programTitle, volumeLabel, completionReason],
+    () => resolveTrainingResultRichContent(cfg, elapsedMs, resultColorCounts, { programTitle, volumeLabel, completionReason, stims, glassBridge }),
+    [cfg, elapsedMs, resultColorCounts, programTitle, volumeLabel, completionReason, stims, glassBridge],
   );
 
   const dive = useMemo(
@@ -569,9 +574,9 @@ export function TrainingResultScreen({
             {showColorBreakdown ? (
               <>
                 <div style={{ flexShrink: 0 }}>
-                  <h2 style={sectionTitle}>{cfg.mode === 'flanker' ? '가운데 목표 색' : '색상 제시 횟수'}</h2>
+                  <h2 style={sectionTitle}>{selection.activityId === 'moving-number-reader' ? '숫자 1·2·3·4 출현 횟수' : selection.activityId === 'visual-search' ? '목표 구역별 제시 횟수' : cfg.mode === 'flanker' ? '가운데 목표 색' : '색상 제시 횟수'}</h2>
                   <p style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650 }}>
-                    {cfg.mode === 'flanker'
+                    {selection.activityId === 'moving-number-reader' ? `총 ${colorTotal}개의 숫자 캡슐이 제시되었습니다. 수행 횟수가 아닌 자극 빈도입니다.` : selection.activityId === 'visual-search' ? `총 ${colorTotal}개의 탐색 과제가 제시되었습니다.` : cfg.mode === 'flanker'
                       ? `총 ${colorTotal}회 가운데 목표 색이 제시되었습니다.`
                       : `총 ${colorTotal}회 관문 색상이 제시되었습니다.`}
                   </p>
@@ -608,7 +613,7 @@ export function TrainingResultScreen({
                         />
                         <div style={{ minWidth: 0, width: '100%' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                            <span style={{ fontSize: 'var(--tr-body)', fontWeight: 800 }}>{meta.name}</span>
+                            <span style={{ fontSize: 'var(--tr-body)', fontWeight: 800 }}>{selection.activityId === 'moving-number-reader' ? `${RESULT_COLOR_ORDER.indexOf(id) + 1} · ${meta.name}` : meta.name}</span>
                             <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{percent}%</span>
                           </div>
                           <div style={{ marginTop: '0.32rem', height: 7, borderRadius: 999, background: 'var(--card)', overflow: 'hidden' }}>
@@ -701,7 +706,9 @@ export function TrainingResultScreen({
                       ? '진행 시간은 측정값이며 액션 구성과 스테이지 시간은 실행 설정입니다.'
                       : '화면의 신호에 맞춰 방향을 바꾸고 점프하고 숙이며 연속적인 움직임을 경험하는 활동입니다.'
                     : completionReason
-                      ? '진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.'
+                      ? selection.activityId === 'glass-bridge-memory'
+                        ? '제시 완료 라운드는 패턴 재생 기록이며 성공·실패는 교사의 수동 입력입니다.'
+                        : '진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.'
                       : '표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.'}
                 </p>
               </>

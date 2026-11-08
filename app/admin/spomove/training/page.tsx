@@ -30,6 +30,9 @@ import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { useViewportScrollLock } from './_player/lib/lockViewportScroll';
 import { TrainingDashboard } from './TrainingDashboard';
+import { normalizeGlassBridgeLength, normalizeGlassBridgeSeconds, normalizeGlassBridgeRounds } from './_player/lib/glassBridgeMemory';
+import { normalizeNumberReaderSeconds, normalizeNumberReaderReps } from './_player/lib/movingNumberReader';
+import { normalizeSearchSeconds, normalizeSearchReps } from './_player/lib/visualSearch';
 import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
@@ -303,6 +306,7 @@ type LaunchSettings = {
   activityId: TrainingActivityId;
   shapeCompletionDifficulty: 'easy' | 'normal' | 'hard';
   shapeCompletionResponseSeconds: 2 | 3 | 4 | 5 | 6;
+  glassBridgeStartLength: 4 | 5 | 6;
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount: 1 | 2;
   /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
@@ -312,6 +316,7 @@ type LaunchSettings = {
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
+  glassBridgeStartLength: 5,
   speed: 2.0,
   timeMode: 'reps',
   duration: 60,
@@ -437,6 +442,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     relativeCompassStartSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassStartSeconds,
     relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassResponseSeconds,
     activityId: resolveTrainingActivity(mode, level, auto, fallback.activityId),
+    glassBridgeStartLength: normalizeGlassBridgeLength(auto.glassBridgeStartLength ?? fallback.glassBridgeStartLength),
     shapeCompletionDifficulty: auto.shapeCompletionDifficulty === 'easy' || auto.shapeCompletionDifficulty === 'hard' ? auto.shapeCompletionDifficulty : fallback.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.shapeCompletionResponseSeconds,
     simonPoleCount: auto.simonPoleCount === 2 ? 2 : fallback.simonPoleCount,
@@ -448,7 +454,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
 const FLOW_COLOR_GATE_LEVEL_ID = 2;
 const ACTION_MOVE_STAGE_SECONDS = [15, 20, 25, 30, 35] as const;
 const COLOR_GATE_REPETITION_COUNTS = [10, 15, 20, 30] as const;
-const REACT_TRAIN_REPETITION_LEVEL_IDS = new Set([3, 1, 2, 6, 10, 201]);
+const REACT_TRAIN_REPETITION_LEVEL_IDS = new Set([3, 1, 2, 6, 10, 201, 15]);
 const DEFAULT_ACTION_MOVE_STAGE_SEC = 20;
 
 function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
@@ -460,7 +466,14 @@ function isReactTrainRepetitionLevel(modeId: string, levelId: number): boolean {
 }
 
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
+  const previousActivity = launch.activityId;
   launch = { ...launch, activityId: trainingActivityForLevelChange(modeId, levelId, launch.activityId) };
+  if (launch.activityId === 'glass-bridge-memory') return { ...launch, glassBridgeStartLength: normalizeGlassBridgeLength(launch.glassBridgeStartLength), speed: normalizeGlassBridgeSeconds(launch.speed), targetReps: normalizeGlassBridgeRounds(launch.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
+  if (previousActivity === 'glass-bridge-memory') launch = { ...launch, speed: Math.min(6, launch.speed) };
+  if (launch.activityId === 'visual-search') return { ...launch, speed: normalizeSearchSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeSearchReps(launch.targetReps), intervalMode: false, accel: false };
+  if (launch.activityId === 'moving-number-reader') return { ...launch, speed: normalizeNumberReaderSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeNumberReaderReps(launch.targetReps), intervalMode: false, accel: false };
+  if (previousActivity === 'moving-number-reader') launch = { ...launch, speed: Math.min(6, launch.speed) };
+  if (previousActivity === 'visual-search') launch = { ...launch, speed: Math.min(6, launch.speed) };
   if (isReactTrainRepetitionLevel(modeId, levelId)) {
     return {
       ...launch,
@@ -628,6 +641,7 @@ function TrainingPortal({
     relativeCompassResponseSeconds: launch.relativeCompassResponseSeconds,
     activityId: launch.activityId,
     ...legacyTrainingActivityFlags(launch.activityId),
+    glassBridgeStartLength: launch.glassBridgeStartLength,
     shapeCompletionDifficulty: launch.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: launch.shapeCompletionResponseSeconds,
     simonPoleCount: launch.simonPoleCount,
@@ -750,11 +764,15 @@ function SettingsScreen({
     const levelId = typeof update === 'function' ? update(current.levelId) : update;
     return { levelId, launch: { ...current.launch, activityId: trainingActivityForLevelChange(modeId, levelId, current.launch.activityId) } };
   });
-  const setLaunch = (update: LaunchSettings | ((current: LaunchSettings) => LaunchSettings)) => setSelection(current => {
+  const setLaunch = useCallback((update: LaunchSettings | ((current: LaunchSettings) => LaunchSettings)) => setSelection(current => {
     const launch = typeof update === 'function' ? update(current.launch) : update;
     return { ...current, launch: { ...launch, activityId: trainingActivityForLevelChange(modeId, current.levelId, launch.activityId) } };
-  });
+  }), [modeId]);
   const selectedActivity = resolveTrainingSelection(modeId, levelId, { activityId: launch.activityId });
+  const [previousMemorySettings, setPreviousMemorySettings] = useState(() => {
+    const source = initial.activityId === 'glass-bridge-memory' ? DEFAULT_LAUNCH : initial;
+    return { speed: source.speed, targetReps: source.targetReps, timeMode: source.timeMode };
+  });
 
   const [guideOpen, setGuideOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -786,7 +804,7 @@ function SettingsScreen({
     // 훈련 복귀 시에는 initial(launch)에 담긴 테마를 유지. 그 외에는 색상 기본값.
     if (typeof initialLevelId === 'number') return;
     setLaunch((s) => ({ ...s, variantColorTheme: 'color', basicNumberOverlay: 'none' }));
-  }, [initialLevelId]);
+  }, [initialLevelId, setLaunch]);
 
   const guideBlock = useMemo(
     () => GUIDE_BLOCKS.find((b) => b.id === selectedActivity.catalogMode) ?? null,
@@ -816,7 +834,7 @@ function SettingsScreen({
   useEffect(() => {
     if (!isFlowOrChallenge) return;
     setLaunch((s) => launchSettingsForLevel(modeId, levelId, s));
-  }, [isFlowOrChallenge, levelId, modeId]);
+  }, [isFlowOrChallenge, levelId, modeId, setLaunch]);
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -941,8 +959,28 @@ function SettingsScreen({
             </button>
             {guideOpen ? (
               <div style={{ padding: '12px 14px 16px', borderTop: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />
-                {guideBlock ? (
+                {launch.activityId !== 'visual-search' && launch.activityId !== 'moving-number-reader' && launch.activityId !== 'glass-bridge-memory' && <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />}
+                {launch.activityId === 'glass-bridge-memory' ? (
+                  <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
+                    순서대로 점등되는 세로 유리 발판의 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직입니다.
+                    아래에서 위로 제시된 뒤 교사가 성공·실패를 판정합니다. 성공하면 길이가 1칸 늘어나며 최대 10칸입니다.
+                    실패하면 정답 공개와 유리 파괴 후 결과 화면으로 이동합니다. 발판당 제시 시간의 75%는 점등, 25%는 소등입니다.
+                  </p>
+                ) : launch.activityId === 'moving-number-reader' ? (
+                  <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
+                    움직이는 숫자 캡슐을 눈으로 추적하고 숫자에 해당하는 구역으로 이동하는 활동입니다.
+                    준비 1.5초 → 설정된 비행 시간 → 이동 3초 → 정답 공개 2.5초로 진행합니다.
+                    3회차부터 가림막 1개, 5회차부터 3개가 등장하고 캡슐 크기는 점차 줄어듭니다.
+                    1은 왼쪽 위 빨강, 2는 오른쪽 위 노랑, 3은 왼쪽 아래 초록, 4는 오른쪽 아래 파랑입니다.
+                  </p>
+                ) : launch.activityId === 'visual-search' ? (
+                  <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
+                    화면에 나타난 여러 도형 중 목표 도형을 찾아 해당 위치로 이동하는 시각탐색 활동입니다.
+                    1~2회는 빨간 원, 3회부터는 파란 사각형을 찾습니다. 5회부터 도형이 움직입니다.
+                    탐색 시간은 모든 과제에서 동일하며 정답은 3초 동안 공개됩니다.
+                    SPOMAT 위치는 왼쪽 위 빨강 · 오른쪽 위 노랑 · 왼쪽 아래 초록 · 오른쪽 아래 파랑입니다.
+                  </p>
+                ) : guideBlock ? (
                   <>
                     {guidePhase ? (
                       <div style={{ marginBottom: 14 }}>
@@ -999,9 +1037,19 @@ function SettingsScreen({
                     key={lv.id}
                     type="button"
                     onClick={() => {
+                      if (modeId === 'spatial' && lv.id === 8 && launch.activityId !== 'glass-bridge-memory') {
+                        setPreviousMemorySettings({ speed: launch.speed, targetReps: launch.targetReps, timeMode: launch.timeMode });
+                      }
                       setSelection(current => {
                         const chosen = resolveCatalogTrainingSelection(modeId, lv.id, { level: current.levelId, activityId: current.launch.activityId });
-                        let next = launchSettingsForLevel(modeId, chosen.level, { ...current.launch, activityId: chosen.activityId });
+                        let next = launchSettingsForLevel(modeId, chosen.level, { ...current.launch, activityId: chosen.activityId,
+                          ...(current.launch.activityId === 'glass-bridge-memory' && chosen.activityId !== 'glass-bridge-memory' ? previousMemorySettings : {}),
+                          ...(chosen.activityId === 'glass-bridge-memory' && current.launch.activityId !== 'glass-bridge-memory' ? { speed: 2, targetReps: 20, glassBridgeStartLength: 5 as const } : {}),
+                          ...(chosen.activityId === 'moving-number-reader' && current.launch.activityId !== 'moving-number-reader' ? { speed: 3, targetReps: 20 } : {}),
+                          ...(current.launch.activityId === 'moving-number-reader' && chosen.activityId !== 'moving-number-reader' ? { speed: Math.min(6, current.launch.speed) } : {}),
+                          ...(chosen.activityId === 'visual-search' && current.launch.activityId !== 'visual-search' ? { speed: 5, targetReps: 20 } : {}),
+                          ...(current.launch.activityId === 'visual-search' && chosen.activityId !== 'visual-search' ? { speed: Math.min(6, current.launch.speed) } : {}),
+                        });
                         if (isReactTrain) {
                           const mapped = chosen.optionDefaults;
                           next = {
@@ -1119,7 +1167,7 @@ function SettingsScreen({
             <div className="settings-column">
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
-          {modeId === 'flanker' && levelId !== 1 && levelId !== 2 && levelId !== 3 && levelId !== 5 && levelId !== 6 ? (
+          {launch.activityId !== 'visual-search' && modeId === 'flanker' && levelId !== 1 && levelId !== 2 && levelId !== 3 && levelId !== 5 && levelId !== 6 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 옵션</label>
@@ -1943,12 +1991,27 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {launch.activityId === 'glass-bridge-memory' ? (
+            <section style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', marginBottom: 10, fontSize: 11, fontWeight: 800, color: T.muted }}>시작 난이도</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([4, 5, 6] as const).map((value, index) => {
+                  const active = launch.glassBridgeStartLength === value;
+                  return <button key={value} type="button" aria-pressed={active} onClick={() => setLaunch(s => ({ ...s, glassBridgeStartLength: value }))}
+                    style={{ flex: 1, padding: '12px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontWeight: active ? 900 : 700, cursor: 'pointer' }}>
+                    {['쉬움', '보통', '어려움'][index]} · {value}칸
+                  </button>;
+                })}
+              </div>
+              <p style={{ margin: '8px 0 0', color: T.textDim, fontSize: 12 }}>성공할 때마다 1칸 증가 · 최대 10칸</p>
+            </section>
+          ) : null}
           {/* 속도 / 순간 기억 기억 시간 */}
           {(!isFlowOrChallenge || isColorGateTheme) && !(launch.activityId === 'relative-compass' || launch.activityId === 'shape-completion') && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: isColorGateTheme ? 10 : 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isColorGateTheme ? 6 : 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isSpatial && isInstantMemoryLevel(levelId)
+                  {launch.activityId === 'glass-bridge-memory' ? '발판당 제시 시간 (점등 75% · 소등 25%)' : launch.activityId === 'moving-number-reader' ? '캡슐 비행 시간' : launch.activityId === 'visual-search' ? '탐색 시간 (정답 공개 3초 별도)' : isSpatial && isInstantMemoryLevel(levelId)
                     ? '기억 시간'
                     : isColorGateTheme
                       ? '게이트 통과 시간'
@@ -1957,7 +2020,7 @@ function SettingsScreen({
                         : '신호 속도'}
                 </label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                  {isSpatial && isInstantMemoryLevel(levelId)
+                  {launch.activityId === 'moving-number-reader' ? `${launch.speed.toFixed(1)}초 / 화면 통과` : isSpatial && isInstantMemoryLevel(levelId)
                     ? `${launch.speed.toFixed(1)}초 / 첫 화면`
                     : isColorGateTheme
                       ? `${launch.speed.toFixed(1)}초 / 화면 통과`
@@ -1976,7 +2039,7 @@ function SettingsScreen({
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
                 compact={isColorGateTheme}
-                max={isColorGateTheme ? 10 : 6}
+                max={isColorGateTheme || launch.activityId === 'visual-search' || launch.activityId === 'moving-number-reader' || launch.activityId === 'glass-bridge-memory' ? 10 : 6}
               />
             </section>
           ) : null}
@@ -2101,7 +2164,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 키즈 세이프 모드 (시지각 반응 전용) */}
-          {isReactTrain ? (
+          {isReactTrain && launch.activityId !== 'moving-number-reader' ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -2436,7 +2499,7 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrainRepetition
+                  {launch.activityId === 'glass-bridge-memory' ? '목표 라운드' : isReactTrainRepetition
                     ? '횟수'
                     : isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
                     ? '라운드'
@@ -2448,7 +2511,7 @@ function SettingsScreen({
                 </label>
               </div>
 
-              {isReactTrainRepetition ? (
+              {isReactTrainRepetition || launch.activityId === 'glass-bridge-memory' ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[10, 15, 20, 30].map((r) => {
                     const active = launch.targetReps === r;
@@ -2470,7 +2533,7 @@ function SettingsScreen({
                           cursor: 'pointer',
                         }}
                       >
-                        {r}회
+                        {r}{launch.activityId === 'glass-bridge-memory' ? '라운드' : '회'}
                       </button>
                     );
                   })}
@@ -2882,7 +2945,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 고급 설정 */}
-          {!isFlowOrChallenge ? (
+          {!isFlowOrChallenge && launch.activityId !== 'visual-search' && launch.activityId !== 'moving-number-reader' && launch.activityId !== 'glass-bridge-memory' ? (
             <section style={{ marginBottom: 26 }}>
               <button
                 type="button"
@@ -3042,14 +3105,14 @@ function SpomoveTrainingPageContent() {
   useEffect(() => {
     if (queryTopTab !== 'teacher') return;
     if (typeof window === 'undefined') return;
-    window.location.href = TEACHER_SPOMOVE_URL;
-  }, [queryTopTab]);
+    router.push(TEACHER_SPOMOVE_URL);
+  }, [queryTopTab, router]);
 
   const switchTopTab = useCallback(
     (next: TopTab) => {
       if (next === 'teacher') {
         if (typeof window !== 'undefined') {
-          window.location.href = TEACHER_SPOMOVE_URL;
+          router.push(TEACHER_SPOMOVE_URL);
         }
         return;
       }
