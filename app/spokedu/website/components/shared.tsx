@@ -20,11 +20,11 @@ export function CTASection({ title, description, href, label, secondary }: { tit
   return <Section><div className="web-cta"><h2>{title}</h2><p>{description}</p><div className="web-actions"><ActionLink href={href}>{label}</ActionLink>{secondary && <ActionLink href={secondary.href} secondary>{secondary.label}</ActionLink>}</div></div></Section>;
 }
 
-export function CaseCard({ record }: { record: FieldRecordItem }) {
+export function CaseCard({ record }: { record: FieldRecordItem & { imageAlt?: string } }) {
   const external = record.href.startsWith('https://');
   return <article className="web-case-card" data-record-slug={record.slug}>
     <Link href={record.href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="web-case-image" tabIndex={-1} aria-hidden="true">
-      {record.thumbnailSrc && <Image unoptimized src={record.thumbnailSrc} alt="" loading="lazy" width={720} height={480} />}
+      {record.thumbnailSrc && <Image unoptimized src={record.thumbnailSrc} alt={record.imageAlt ?? ''} loading="lazy" width={720} height={480} />}
     </Link>
     <div className="web-case-body"><span className="web-tag">{record.operationType} · {record.programLabel}</span><h3><Link href={record.href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{record.venue}</Link></h3><p className="web-case-meta">{record.meta}</p><p>{record.description}</p><Link className="web-text-link" href={record.href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{record.ctaLabel}<ArrowRight size={17} aria-hidden="true" /></Link></div>
   </article>;

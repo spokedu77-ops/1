@@ -1,0 +1,1188 @@
+{
+  "sourceSha256": "5a8c23ece2e9425632a925777c4b90877a455de304fc817feb0ea7d6695a8031",
+  "records": [
+    {
+      "slug": "maedong-sports-stepup",
+      "content": {
+        "title": "다양한 스포츠 경험을 기본운동기술로 연결하다",
+        "venue": "매동초등학교",
+        "subtitle": "종로거점형키움센터 연계 · 늘봄 스포츠 교육",
+        "operationType": "학교 체육교육",
+        "programLabel": "정규수업",
+        "summary": "다양한 스포츠 종목을 경험하며 기본운동기술을 익히고 종목별 움직임을 단계적으로 확장합니다.",
+        "audience": "초등학생. 확인된 2025년 11월 운영 기록의 대상은 1~2학년.",
+        "operator": "종로거점형 우리동네키움센터 연계 · 매동초등학교 늘봄 스포츠 교육",
+        "period": "",
+        "categories": [
+          "institution"
+        ],
+        "keywords": [
+          "기본운동기술",
+          "뉴스포츠",
+          "단계별 스포츠 교육"
+        ],
+        "sections": [
+          {
+            "id": "introduction",
+            "title": "대표 소개",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "다양한 스포츠 경험을 기본운동기술로 연결하다"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "아이들에게 새로운 스포츠를 가르친다는 것은 종목의 경기 규칙과 기술을 전달하는 것만을 의미하지 않습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "공을 다루는 방법을 익히고 자신의 움직임을 조절하며 친구들과 함께 규칙을 적용하는 과정도 체육교육의 중요한 부분입니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOKEDU는 매동초등학교에서 종로거점형 우리동네키움센터와 연계한 늘봄 스포츠 교육을 운영했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "다양한 스포츠 종목의 특성을 활용하면서 기본운동기술과 종목별 기술을 단계적으로 연결하는 수업을 구성했습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "background",
+            "title": "교육 배경과 목표",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "다양한 스포츠 경험을 하나의 교육과정으로"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "아이들은 스포츠를 처음 접할 때 서로 다른 운동 경험과 수행 수준을 가지고 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "따라서 종목별 기술을 바로 요구하기보다 해당 활동에 필요한 기본 움직임을 이해하고 충분히 연습하는 과정이 중요합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이번 수업에서는 다양한 종목을 경험하면서 이동운동기술과 조작운동기술을 활용하도록 했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "또한 스포츠 활동 안에서 규칙을 이해하고 차례를 지키며 친구와 함께 움직이는 경험을 제공하고자 했습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "activities",
+            "title": "실제 수업 구성",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "기본 움직임에서 스포츠 기술까지"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "매동초등학교 수업은 종목의 기술과 기본 움직임을 연결하도록 구성했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "피클볼 — 라켓 조작과 타격 움직임"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "라켓을 잡고 기본 스윙을 연습한 뒤 교사의 서브를 받아보고 랠리를 주고받는 활동으로 확장했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "공의 움직임을 끝까지 살피고 타격 시점과 방향을 조절하는 경험에 중점을 두었습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "플로어볼 — 공 조작에서 실제 게임으로"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "스틱을 잡는 방법과 기본적인 볼 컨트롤을 익힌 뒤 패스와 드리블을 연습했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "펀스틱과 접시콘을 활용한 기초 활동에서 실제 플로어볼 스틱과 공을 사용하는 과제로 연결했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이후 방향 전환과 슈팅 그리고 소규모 게임 활동으로 확장했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "기본 움직임과 놀이 활동"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "라바콘 왕복 달리기와 지그재그 달리기 등 기본 이동운동기술을 경험했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "스카프 캐치와 균형 활동을 통해 신체 부위의 활용과 자세 조절을 다루고 협동 릴레이 등으로 활동 범위를 넓혔습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "teaching",
+            "title": "SPOKEDU의 지도 방식",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "스포츠 기술 이전에 움직임의 출발점을 살핍니다"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "동일한 종목에서도 아이마다 익숙한 움직임과 어려워하는 과제는 다릅니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOKEDU는 기본 동작을 충분히 경험한 뒤 종목별 기술로 연결하는 방식으로 수업을 구성했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "특히 플로어볼에서는 펀스틱과 접시콘을 이용해 드리블 움직임을 먼저 연습한 다음 실제 스틱과 공을 사용하도록 했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이러한 단계적 구성은 도구 사용의 부담을 줄이고 아이들이 방향 전환과 공 조작에 집중할 수 있도록 하기 위한 접근입니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "경기 활동에서도 무조건 빠르게 움직이거나 승리하는 것보다 기술을 적용하고 규칙에 맞게 참여하는 과정을 중요하게 다뤘습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "observations",
+            "title": "현장 관찰과 기록",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "반복된 연습이 실제 움직임으로 이어진 장면"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "실제 수업일지에서는 처음 라켓 사용을 어렵게 느끼던 아이들이 피클볼 활동을 반복하면서 공을 살피고 스윙 동작을 조절하려는 모습이 기록되었습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "플로어볼에서는 기초 드리블 이후 실제 스틱과 공을 사용하는 활동으로 전환했을 때 비교적 수월하게 적응하는 모습이 관찰되었습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "일부 아이들은 방향을 바꾸며 드리블을 수행하거나 목표물을 정확하게 맞히기 위한 방법을 스스로 선택했습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "협동 활동에서는 차례를 지키고 활동 공간을 조절하는 모습도 기록되었습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이러한 관찰은 스포츠 기술의 완성도만이 아니라 아이들이 과제를 이해하고 움직임을 조절하는 과정 역시 중요한 교육 내용임을 보여줍니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "gallery",
+            "title": "현장 사진 및 교육 안내",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": "매동초등학교 스포츠 교육 현장"
+              }
+            ]
+          }
+        ],
+        "hero": {
+          "localKey": "maedong",
+          "alt": "매동초등학교 실제 체육수업 현장",
+          "caption": "",
+          "publicConfirmed": false
+        },
+        "gallery": [],
+        "imagePublicConfirmed": false,
+        "relatedProgram": "/education",
+        "ctaTitle": "학교와 기관의 환경에 맞는 체육교육을 설계합니다.",
+        "programCtaLabel": "기관 체육교육 알아보기",
+        "contactCtaLabel": "수업 상담하기",
+        "contactHref": "/contact?type=dispatch",
+        "seoTitle": "매동초등학교 · 다양한 스포츠 경험을 기본운동기술로 연결하다",
+        "seoDescription": "다양한 스포츠 종목을 경험하며 기본운동기술을 익히고 종목별 움직임을 단계적으로 확장합니다.",
+        "editorialNotes": "승인 원고를 그대로 이관한 초안입니다. 사진 공개 동의와 기관 일치 여부를 확인한 후 게시하세요.\n\n**갤러리 제목**\n\n매동초등학교 스포츠 교육 현장\n\n**사진 구성**\n\n- 기본 이동운동기술 활동\n- 피클볼 또는 플로어볼 실제 수업\n- 협동 및 스포츠 게임 활동\n\n실제 매동초 사진만 사용하며 사진 속 활동과 설명을 일치시킨다.\n\n**하단 CTA**\n\n학교와 기관의 환경에 맞는 체육교육을 설계합니다.\n\n버튼: 기관 체육교육 알아보기 / 수업 상담하기\n\n---\n\n"
+      }
+    },
+    {
+      "slug": "dongjak-spomove",
+      "content": {
+        "title": "시각정보를 인식하고 선택하며 움직이는 체육교육",
+        "venue": "동작거점형 우리동네키움센터",
+        "subtitle": "초등학생 · SPOMOVE 활용 수업",
+        "operationType": "키움센터",
+        "programLabel": "시지각 움직임 교육",
+        "summary": "화면의 시각정보를 인식하고 적절한 반응을 선택해 움직임으로 수행하는 활동을 경험합니다.",
+        "audience": "초등학생",
+        "operator": "동작거점형 우리동네키움센터 · SPOMOVE 활용 수업",
+        "period": "",
+        "categories": [
+          "institution",
+          "spomove"
+        ],
+        "keywords": [
+          "시지각",
+          "선택반응",
+          "운동조절"
+        ],
+        "sections": [
+          {
+            "id": "introduction",
+            "title": "대표 소개",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "시각정보를 인식하고 선택하며 움직이는 체육교육"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "화면에 나타난 색상과 위치를 보고 몸을 움직이는 활동에는 단순한 반응 이상의 과정이 포함되어 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "어떤 정보가 제시되었는지 인식하고 주어진 규칙에 따라 움직임을 선택한 다음 실제 신체 움직임으로 수행해야 하기 때문입니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOKEDU의 자체 개발 프로그램 SPOMOVE는 이러한 정보처리 과정과 신체 움직임을 하나의 교육활동으로 연결합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "동작거점형 우리동네키움센터 사례는 디지털 시각정보를 활용한 움직임 교육을 기관 체육수업에 접목한 운영 사례입니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "background",
+            "title": "교육 배경과 목표",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "보고 따라 하는 활동에서 스스로 선택하는 활동으로"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOMOVE는 화면에 제시되는 시각정보를 실제 신체 움직임으로 연결하는 교육 프로그램입니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "아이들은 색상과 위치 등의 정보를 인식하고 활동 규칙에 맞는 움직임을 선택해 수행합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이 과정에서 시각정보 인식과 선택반응 그리고 운동조절을 함께 다룰 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "중요한 것은 단순히 빠르게 반응하는 것이 아니라 주어진 정보를 정확히 이해하고 적절한 움직임을 선택하는 과정입니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "activities",
+            "title": "실제 수업 구성",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "지각에서 선택 그리고 움직임 수행까지"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOMOVE의 교육 원리는 세 가지 과정으로 설명할 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "PERCEIVE — 지각하기"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "화면에 제시되는 시각정보를 인식합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "색상과 위치 등 활동에 필요한 단서를 살피고 정보를 구별합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "DECIDE — 판단하고 선택하기"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "인식한 정보와 활동 규칙을 연결합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "현재 수행해야 할 움직임을 판단하고 적절한 반응을 선택합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "MOVE — 움직임으로 수행하기"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "선택한 반응을 신체 움직임으로 실행합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "움직임의 방향과 위치를 조절하며 과제를 수행합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOMOVE는 단순한 정보 인식에서 선택반응과 복합적인 움직임 과제로 확장할 수 있도록 구성되어 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "teaching",
+            "title": "SPOKEDU의 지도 방식",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "같은 화면에서도 활동 조건은 달라질 수 있습니다"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "시각정보를 인식하고 움직임으로 반응하는 속도와 정확성은 아이마다 다를 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "따라서 SPOMOVE는 활동의 정보량과 자극 제시 속도 그리고 수행해야 하는 움직임의 복잡도를 단계적으로 조정할 수 있도록 구성되어 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "처음에는 단순한 신호에 반응하는 활동부터 시작하고 이후 선택해야 하는 정보나 움직임의 조건을 추가할 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "지도자는 아이의 과제 이해 수준과 수행 특성을 고려해 적절한 난이도를 선택합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이러한 방식은 화면의 자극을 단순히 빠르게 따라 하기보다 정보를 이해하고 판단하며 움직임으로 수행하는 경험을 제공하기 위한 것입니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "observations",
+            "title": "현장 관찰과 기록",
+            "visible": false,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "수행 결과뿐 아니라 선택과 움직임의 과정을 살핍니다"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOMOVE의 수업 관찰에서는 정답 여부와 반응 속도만으로 학생의 수행을 판단하지 않습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "시각정보를 정확하게 인식했는지, 활동 규칙을 이해했는지, 적절한 반응을 선택했는지, 선택한 움직임을 안정적으로 수행했는지를 구분해 살핍니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이러한 관찰은 아이가 현재 어떤 과정에서 도움을 필요로 하는지 이해하고 다음 활동의 조건을 조정하는 데 활용할 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "gallery",
+            "title": "현장 사진 및 교육 안내",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": "SPOMOVE 시지각 움직임 교육 현장"
+              }
+            ]
+          }
+        ],
+        "hero": {
+          "localKey": "dongjak",
+          "alt": "동작거점형 우리동네키움센터 실제 체육수업 현장",
+          "caption": "",
+          "publicConfirmed": false
+        },
+        "gallery": [],
+        "imagePublicConfirmed": false,
+        "relatedProgram": "/spomove",
+        "ctaTitle": "시각정보를 움직임으로 연결하는 SPOKEDU의 자체 개발 프로그램을 살펴보세요.",
+        "programCtaLabel": "SPOMOVE 알아보기",
+        "contactCtaLabel": "프로그램 도입 문의",
+        "contactHref": "/contact?type=spomove",
+        "seoTitle": "동작거점형 우리동네키움센터 · 시각정보를 인식하고 선택하며 움직이는 체육교육",
+        "seoDescription": "화면의 시각정보를 인식하고 적절한 반응을 선택해 움직임으로 수행하는 활동을 경험합니다.",
+        "editorialNotes": "승인 원고를 그대로 이관한 초안입니다. 사진 공개 동의와 기관 일치 여부를 확인한 후 게시하세요.\n\n### 수행 결과뿐 아니라 선택과 움직임의 과정을 살핍니다\n\nSPOMOVE의 수업 관찰에서는 정답 여부와 반응 속도만으로 학생의 수행을 판단하지 않습니다.\n\n시각정보를 정확하게 인식했는지, 활동 규칙을 이해했는지, 적절한 반응을 선택했는지, 선택한 움직임을 안정적으로 수행했는지를 구분해 살핍니다.\n\n이러한 관찰은 아이가 현재 어떤 과정에서 도움을 필요로 하는지 이해하고 다음 활동의 조건을 조정하는 데 활용할 수 있습니다.\n\n※ 이 영역은 프로그램의 관찰 원칙을 설명한 내용입니다. 동작거점형 센터의 구체적인 수행 변화나 성과로 게시하지 않습니다. 실제 회차 기록을 확보하기 전에는 '현장 관찰 결과' 영역을 비공개로 처리합니다.\n\n**갤러리 제목**\n\nSPOMOVE 시지각 움직임 교육 현장\n\n**사진 기준**\n\n- 동작거점형 키움센터에서 실제 촬영한 사진\n- SPOMOVE 화면 또는 시각정보 활용 활동이 확인되는 장면\n- 실제 움직임 수행 모습이 드러나는 사진\n\n다른 기관에서 촬영한 SPOMOVE 사진을 동작거점형 키움센터의 실제 사례로 사용하지 않는다.\n\n적합한 사진이 없으면 기존 이미지 유지 또는 대표 사진 등록 보류로 처리한다.\n\n**하단 CTA**\n\n시각정보를 움직임으로 연결하는 SPOKEDU의 자체 개발 프로그램을 살펴보세요.\n\n버튼: SPOMOVE 알아보기 / 프로그램 도입 문의\n\n---\n\n※ 위 내용은 SPOMOVE의 교육 원리입니다. 특정 센터 회차에서 실시한 세부 활동명은 실제 수업 기록을 확인한 후 등록합니다.\n※ 이 영역은 프로그램의 관찰 원칙을 설명한 내용입니다. 동작거점형 센터의 구체적인 수행 변화나 성과로 게시하지 않습니다. 실제 회차 기록을 확보하기 전에는 '현장 관찰 결과' 영역을 비공개로 처리합니다."
+      }
+    },
+    {
+      "slug": "donghaeng-special-pe",
+      "content": {
+        "title": "서로 다른 출발점에서 함께 움직임을 만들어갑니다",
+        "venue": "찾아가는 동행 체육교실",
+        "subtitle": "서울 중구 · 특수교육 대상 학생 맞춤 체육",
+        "operationType": "특수체육",
+        "programLabel": "찾아가는 교육",
+        "summary": "학생별 수행 수준과 과제 이해 정도에 맞춰 활동의 난이도와 규칙을 조정하고 단계적으로 지도합니다.",
+        "audience": "특수교육 대상 학생",
+        "operator": "서울 중구 · 학교 특수학급 및 지역 복지기관 등 찾아가는 맞춤형 체육교육",
+        "period": "",
+        "categories": [
+          "institution",
+          "special",
+          "spomove"
+        ],
+        "keywords": [
+          "개별화 체육교육",
+          "기본운동기술",
+          "과정 중심 관찰"
+        ],
+        "sections": [
+          {
+            "id": "introduction",
+            "title": "대표 소개",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "서로 다른 출발점에서 함께 움직임을 만들어갑니다"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "같은 움직임을 수행하더라도 학생마다 과제를 이해하는 방식과 움직임의 속도는 다릅니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "어떤 학생에게는 익숙한 활동이 다른 학생에게는 새로운 도전이 될 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOKEDU는 이러한 차이를 고려해 학생이 자신의 수행 수준에서 체육활동에 참여할 수 있도록 수업을 설계합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "서울 중구의 찾아가는 동행 체육교실은 학교 특수학급과 지역 복지기관 등 다양한 현장에서 학생별 운동 수행 수준과 참여 특성을 고려해 운영하는 맞춤형 체육교육 프로그램입니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "background",
+            "title": "교육 배경과 목표",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "개별 수행 수준을 고려한 움직임 교육"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "특수체육에서는 학생마다 다른 운동 경험과 신체 기능뿐 아니라 과제 이해와 자기조절 능력도 함께 고려해야 합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOKEDU는 기본운동기술과 조작운동기술을 중심으로 시지각 움직임 활동과 협동 놀이를 연결해 수업을 구성합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이를 통해 학생들이 걷기·달리기·점프 등 기본 이동운동을 경험하고 공을 다루거나 목표물을 향해 움직이는 과제를 수행하도록 합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "또한 시각정보를 이해하고 반응을 선택하는 활동과 차례를 지키며 친구와 함께 참여하는 과정을 교육 목표에 포함합니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "activities",
+            "title": "실제 수업 구성",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "네 가지 움직임 영역을 연결하는 수업"
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "BASE MOVE — 기본 움직임"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "걷기·달리기·점프와 균형 활동을 통해 기본 이동운동기술과 신체 협응을 경험합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "SPOMOVE — 시지각 움직임"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "화면에 제시되는 시각정보를 인식하고 적절한 반응을 선택해 움직임으로 수행합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "SPORTS MOVE — 스포츠 움직임"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "공 굴리기·던지기·목표물 맞히기 등 조작운동기술을 활용한 활동을 진행합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "PLAY MOVE — 놀이와 협동"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "규칙에 맞춰 움직이고 친구와 함께 과제를 수행하는 활동을 통해 참여와 협동을 경험합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "네 가지 영역은 고정된 수행 난이도를 의미하지 않습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "학생별 특성과 수업 목표에 맞춰 활동의 순서와 조건을 조정할 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "teaching",
+            "title": "SPOKEDU의 지도 방식",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "아이의 현재 수행 수준에서 시작합니다"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOKEDU는 새로운 과제를 제시하기 전 학생의 움직임과 활동 참여 특성을 살핍니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "과제를 이해하는 데 어려움이 있다면 지시를 단순하게 나누고 시각적인 단서를 제공할 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "목표물을 맞히기 어려운 경우에는 거리와 크기를 조정하고 공을 조작하는 데 어려움이 있다면 교구와 수행 방식을 변경할 수 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "활동에 익숙해지면 거리와 방향 그리고 규칙의 복잡도를 조정해 다음 단계로 연결합니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이러한 지도 방식은 모든 학생이 동일한 결과를 내도록 하는 것이 아니라 학생별 출발점을 고려해 적절한 움직임 과제를 제공하는 데 목적이 있습니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "observations",
+            "title": "현장 관찰과 기록",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "heading",
+                "props": {
+                  "level": 2
+                },
+                "content": "얼마나 잘했는가를 넘어 어떻게 움직였는가를 살핍니다"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "찾아가는 동행 체육교실에서는 회차별 수업일지와 학생별 관찰 기록을 바탕으로 활동 과정과 수행 특성을 살펴왔습니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "수업에서는 기본운동기술과 조작운동기술의 수행뿐 아니라 지시 이해와 참여 태도 그리고 규칙에 맞게 움직임을 조절하는 과정도 중요하게 다룹니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "학생이 과제를 이해하기까지 어떤 도움이 필요했는지, 스스로 움직임을 시작했는지, 실패한 과제를 다시 시도했는지와 같은 과정도 관찰 대상입니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "이러한 기록은 다음 수업에서 과제의 난이도와 지도 방식을 조정하는 근거가 됩니다.",
+                    "styles": {}
+                  }
+                ]
+              },
+              {
+                "type": "heading",
+                "props": {
+                  "level": 3
+                },
+                "content": "기록의 향상을 넘어 움직임의 변화를 관찰합니다."
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "SPOKEDU는 수행 결과뿐 아니라 학생이 어떻게 이해하고 선택하며 움직였는지를 함께 살피는 체육교육을 지향합니다.",
+                    "styles": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "gallery",
+            "title": "현장 사진 및 교육 안내",
+            "visible": true,
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": "찾아가는 동행 체육교실의 움직임 기록"
+              }
+            ]
+          }
+        ],
+        "hero": {
+          "localKey": "donghaeng",
+          "alt": "찾아가는 동행 체육교실 실제 체육수업 현장",
+          "caption": "",
+          "publicConfirmed": false
+        },
+        "gallery": [],
+        "imagePublicConfirmed": false,
+        "relatedProgram": "/education",
+        "ctaTitle": "학생의 발달 수준과 교육 환경에 맞는 체육수업을 설계합니다.",
+        "programCtaLabel": "특수체육 프로그램 알아보기",
+        "contactCtaLabel": "기관 수업 상담하기",
+        "contactHref": "/contact?type=dispatch",
+        "seoTitle": "찾아가는 동행 체육교실 · 서로 다른 출발점에서 함께 움직임을 만들어갑니다",
+        "seoDescription": "학생별 수행 수준과 과제 이해 정도에 맞춰 활동의 난이도와 규칙을 조정하고 단계적으로 지도합니다.",
+        "editorialNotes": "승인 원고를 그대로 이관한 초안입니다. 사진 공개 동의와 기관 일치 여부를 확인한 후 게시하세요.\n\n**갤러리 제목**\n\n찾아가는 동행 체육교실의 움직임 기록\n\n**사진 구성**\n\n- 기본운동기술 활동\n- SPOMOVE 활용 활동\n- 스포츠 조작운동 활동\n- 놀이 및 협동 활동\n\n학생 개인정보와 장애 특성이 불필요하게 드러나지 않도록 사진 공개 여부를 검토한다.\n\n**하단 CTA**\n\n학생의 발달 수준과 교육 환경에 맞는 체육수업을 설계합니다.\n\n버튼: 특수체육 프로그램 알아보기 / 기관 수업 상담하기\n\n---\n\n"
+      }
+    }
+  ]
+}

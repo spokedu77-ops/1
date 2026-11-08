@@ -157,6 +157,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
       group: '콘텐츠',
       items: [
         { name: '커리큘럼', href: '/admin/curriculum', icon: BookOpen },
+        { name: '현장 기록 관리', href: '/admin/field-records', icon: ClipboardList },
         { name: 'SPOMOVE', href: '/admin/spomove/training', icon: Sparkles },
       ],
     },

@@ -8,6 +8,9 @@ import {
   type FieldRecordSlug,
 } from '../../data/field-records-catalog';
 import { buildSpokeduPageMetadata } from '../../data/seo';
+import { fieldRecordsCmsEnabled, getPublishedFieldRecord } from '@/app/lib/server/fieldRecords';
+import { FieldRecordDetail } from '../../website/components/FieldRecordDetail';
+import { MIGRATED_RECORD_SLUGS, recordMediaSrc } from '@/app/lib/field-records/contract';
 
 export const revalidate = 86400;
 
@@ -22,6 +25,7 @@ function findOnsiteRecord(slug: string) {
 }
 
 export function generateStaticParams() {
+  if (fieldRecordsCmsEnabled()) return [];
   return FIELD_RECORD_CATALOG.filter(hasFieldRecordOnsiteSummary).map((item) => ({
     slug: item.slug,
   }));
@@ -29,6 +33,10 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const record = await getPublishedFieldRecord(slug);
+  if (record) return buildSpokeduPageMetadata({ title: record.content.seoTitle, description: record.content.seoDescription,
+    canonical: `/records/${record.slug}`, pageKey: 'records', ogImage: record.content.hero ? { url: recordMediaSrc(record.content.hero), alt: record.content.hero.alt } : undefined });
+  if (fieldRecordsCmsEnabled() && MIGRATED_RECORD_SLUGS.some(item => item === slug)) notFound();
   const item = findOnsiteRecord(slug);
   if (!item) {
     return buildSpokeduPageMetadata({
@@ -53,6 +61,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SpokeduRecordDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  const record = await getPublishedFieldRecord(slug);
+  if (record) return <FieldRecordDetail content={record.content} />;
+  if (fieldRecordsCmsEnabled() && MIGRATED_RECORD_SLUGS.some(item => item === slug)) notFound();
   const item = findOnsiteRecord(slug);
   if (!item) notFound();
 

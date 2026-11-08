@@ -1,0 +1,28 @@
+.website-content .web-field-record { padding: 48px 0 80px; }
+.website-content .web-field-record > article { max-width: 1040px; }
+.website-content .web-field-record-header { display: grid; justify-items: start; gap: 16px; margin-bottom: 32px; }
+.website-content .web-field-record-header h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.3; }
+.website-content .web-field-record-facts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px 32px; padding-block: 24px; width: 100%; border-block: 1px solid #e2e8f0; }
+.website-content .web-field-record-facts dt { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+.website-content .web-field-record-facts dd { margin: 0; }
+.website-content .web-field-record-keywords { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
+.website-content .web-field-record-keywords li { padding: 6px 12px; background: #eef3ff; border-radius: 999px; font-size: 13px; color: #004ac6; }
+.website-content .web-field-record figure { margin: 0; }
+.website-content .web-field-record figure img { display: block; width: 100%; height: auto; border-radius: 16px; }
+.website-content .web-field-record figcaption { padding-top: 12px; font-size: 13px; color: #64748b; }
+.website-content .web-field-record-sections { display: grid; gap: 48px; max-width: 800px; margin: 48px auto; }
+.website-content .web-field-record-sections h2 { font-size: clamp(22px, 3vw, 28px); margin: 8px 0 24px; line-height: 1.4; }
+.website-content .web-field-record-prose { font-size: 16px; line-height: 1.9; overflow-wrap: break-word; word-break: keep-all; }
+.website-content .web-field-record-prose p { margin: 0 0 16px; white-space: pre-line; }
+.website-content .web-field-record-prose h3 { margin: 28px 0 16px; font-size: 20px; line-height: 1.5; }
+.website-content .web-field-record-prose ul, .website-content .web-field-record-prose ol { padding-left: 24px; margin-block: 16px; }
+.website-content .web-field-record-prose ul { list-style: disc; }
+.website-content .web-field-record-prose ol { list-style: decimal; }
+.website-content .web-field-record-prose a { color: #004ac6; text-decoration: underline; }
+.website-content .web-field-record-gallery { display: grid; gap: 24px; margin-top: 24px; }
+.website-content .web-field-record > article > .web-text-link { margin-top: 32px; }
+@media (max-width: 639px) {
+  .website-content .web-field-record { padding-top: 32px; }
+  .website-content .web-field-record-facts { grid-template-columns: 1fr; }
+  .website-content .web-field-record-sections { gap: 36px; margin-block: 36px; }
+}

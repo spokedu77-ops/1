@@ -5,10 +5,14 @@ import {
 } from './spokedu/data/field-records-catalog';
 import { SPOKEDU_PATHS } from './spokedu/data/public-routes';
 import { getSpokeduSiteUrl } from './spokedu/lib/site-url';
+import { fieldRecordsCmsEnabled, listPublishedFieldRecords } from './lib/server/fieldRecords';
+import { MIGRATED_RECORD_SLUGS } from './lib/field-records/contract';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSpokeduSiteUrl();
-  const recordDetailRoutes = FIELD_RECORD_CATALOG.filter(hasFieldRecordOnsiteSummary).map(
+  const published = await listPublishedFieldRecords();
+  const cmsEnabled = fieldRecordsCmsEnabled();
+  const recordDetailRoutes = FIELD_RECORD_CATALOG.filter(hasFieldRecordOnsiteSummary).filter(record => !cmsEnabled || !MIGRATED_RECORD_SLUGS.some(slug => slug === record.slug)).map(
     (record) => `${SPOKEDU_PATHS.records}/${record.slug}`,
   );
   const spokeduRoutes = [
@@ -20,7 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     SPOKEDU_PATHS.spomoveCatalog,
     SPOKEDU_PATHS.subscription,
     SPOKEDU_PATHS.records,
-    ...recordDetailRoutes,
+    ...new Set([...recordDetailRoutes, ...published.map(record => `/records/${record.slug}`)]),
     SPOKEDU_PATHS.contact,
     SPOKEDU_PATHS.spomat,
     SPOKEDU_PATHS.partners,
