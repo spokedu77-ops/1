@@ -1,5 +1,7 @@
 'use client';
 
+import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
+
 import type { ReactNode } from 'react';
 import { useAppSidebar } from '@/app/providers/AppSidebarProvider';
 import styles from './MobileTrainingDashboard.module.css';
@@ -94,47 +96,7 @@ export function MobileTrainingDashboard({ tab, filter, onTabChange, onFilterChan
         </p>
 </div>
 
-<div className="mt-4 pt-4 border-t border-white/5">
-<div className="flex items-center justify-between mb-2">
-<div className="flex items-center space-x-1.5">
-<span className="w-2 h-2 rounded-full bg-brand-red animate-pulse"></span>
-<span className="text-[11px] font-semibold text-gray-300 tracking-wide font-mono uppercase">SPOMOVE ACTIVE FIELD</span>
-</div>
-<span className="text-[10px] text-amber-400 font-medium px-2 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">⚡ 신체·두뇌 협응 모드</span>
-</div>
-
-<div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-black/40 border border-white/10" data-purpose="color-field-grid">
-
-<div className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-950/40 border border-brand-red/30 glow-red">
-<div className="w-7 h-7 rounded-full bg-brand-red flex items-center justify-center text-white font-black text-xs shadow-md">R</div>
-<span className="text-[10px] font-bold text-red-300 mt-1 uppercase tracking-tight">RED ZONE</span>
-</div>
-
-<div className="flex flex-col items-center justify-center p-3 rounded-lg bg-yellow-950/40 border border-brand-yellow/30 glow-yellow">
-<div className="w-7 h-7 rounded-full bg-brand-yellow flex items-center justify-center text-black font-black text-xs shadow-md">Y</div>
-<span className="text-[10px] font-bold text-yellow-300 mt-1 uppercase tracking-tight">YLW ZONE</span>
-</div>
-
-<div className="flex flex-col items-center justify-center p-3 rounded-lg bg-green-950/40 border border-brand-green/30 glow-green">
-<div className="w-7 h-7 rounded-full bg-brand-green flex items-center justify-center text-white font-black text-xs shadow-md">G</div>
-<span className="text-[10px] font-bold text-green-300 mt-1 uppercase tracking-tight">GRN ZONE</span>
-</div>
-
-<div className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-950/40 border border-brand-blue/30 glow-blue">
-<div className="w-7 h-7 rounded-full bg-brand-blue flex items-center justify-center text-white font-black text-xs shadow-md">B</div>
-<span className="text-[10px] font-bold text-blue-300 mt-1 uppercase tracking-tight">BLU ZONE</span>
-</div>
-</div>
-<div className="flex items-center justify-between text-[11px] text-gray-400 mt-2 px-1">
-<div className="flex items-center space-x-1">
-<svg className="w-3.5 h-3.5 text-brand-yellow" fill="currentColor" viewBox="0 0 20 20">
-<path clipRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" fillRule="evenodd"></path>
-</svg>
-<span className="">보고 · 판단하고 · 움직이는 인지 체육</span>
-</div>
-<span className="text-[10px] font-mono text-gray-500">4-COLOR INTERACTION</span>
-</div>
-</div>
+<div className="mt-4"><SpomoveCatalogHero /></div>
 
 <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
 <div className="flex items-center space-x-1.5 text-xs text-gray-300 font-medium">
