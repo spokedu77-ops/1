@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { feedbackListItems, numberedFeedbackItems } from '@/app/lib/feedbackListText';
 import { useParams } from 'next/navigation';
 import { X, Maximize2 } from 'lucide-react';
 
@@ -19,53 +20,13 @@ interface ReportSession {
   [key: string]: unknown;
 }
 
-function renderSmartText(content: string) {
-  const raw = String(content ?? '').replace(/\r\n/g, '\n').trim();
-  if (!raw) return null;
-
-  const lines = raw.split('\n').map((l) => l.trim());
-  const nonEmpty = lines.filter(Boolean);
-  if (nonEmpty.length === 0) return null;
-
-  // `-항목` / `1.항목` 처럼 공백 없이 쓴 경우도 인식 (수업안 혼합 형식과 구분용)
-  const isBulletLine = (l: string) => /^[-*•](\s|\S)/.test(l);
-  const isNumberedLine = (l: string) => /^\d+[.)](\s|\S)/.test(l);
-
-  const allBullet = nonEmpty.length >= 2 && nonEmpty.every(isBulletLine);
-  const allNumbered = nonEmpty.length >= 2 && nonEmpty.every(isNumberedLine);
-
-  // 번호 섹션 + 하위 `-` + 일반 줄이 섞이면 자동 목록으로 바꾸지 않음 (줄마다 불릿이 생기는 문제 방지)
-  if (allBullet) {
-    const items = nonEmpty.map((l) => l.replace(/^[-*•]\s*/, '').trim()).filter(Boolean);
-    return (
-      <ul className="list-disc pl-5 space-y-2">
-        {items.map((it, idx) => (
-          <li key={idx} className="text-[15px] leading-[1.9] text-slate-700 font-medium break-keep">
-            {it}
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  if (allNumbered) {
-    const items = nonEmpty.map((l) => l.replace(/^\d+[.)]\s*/, '').trim()).filter(Boolean);
-    return (
-      <ol className="list-decimal pl-5 space-y-2 marker:font-medium">
-        {items.map((it, idx) => (
-          <li key={idx} className="text-[15px] leading-[1.9] text-slate-700 font-medium break-keep pl-1">
-            {it}
-          </li>
-        ))}
-      </ol>
-    );
-  }
-
-  return (
-    <div className="text-[15px] leading-[1.9] text-slate-700 font-medium break-keep whitespace-pre-wrap">
-      {raw}
-    </div>
-  );
+function renderSmartText(content: string, numbered = false) {
+  const items = numbered ? numberedFeedbackItems(content) : feedbackListItems(content);
+  if (!items.length) return null;
+  const List = numbered ? 'ol' : 'ul';
+  return <List className={`${numbered ? 'list-decimal' : 'list-disc'} pl-5 space-y-2 marker:font-medium`}>
+    {items.map((item, index) => <li key={index} className="text-[15px] leading-[1.9] text-slate-700 font-medium break-keep whitespace-pre-line">{item}</li>)}
+  </List>;
 }
 
 function FeedbackCard({
@@ -74,12 +35,14 @@ function FeedbackCard({
   content,
   accentBorderClass,
   badgeClass,
+  numbered = false,
 }: {
   emoji: string;
   label: string;
   content: string;
   accentBorderClass: string;
   badgeClass: string;
+  numbered?: boolean;
 }) {
   if (!content?.trim()) return null;
   return (
@@ -92,14 +55,33 @@ function FeedbackCard({
             {emoji} {label}
           </span>
         </div>
-        {renderSmartText(content)}
+        {renderSmartText(content, numbered)}
       </div>
     </div>
   );
 }
 
+const REPORT_INTROS = [
+  { opening: '오늘의 수업을', accent: '함께', ending: ' 돌아봅니다.' },
+  { opening: '움직임으로 채운', accent: '오늘의', ending: ' 기록입니다.' },
+  { opening: '아이의 수업 속', accent: '작은 순간', ending: '을 전합니다.' },
+  { opening: '함께 움직인 하루,', accent: '수업 이야기', ending: '를 전합니다.' },
+  { opening: '오늘의 활동을', accent: '하나씩', ending: ' 살펴봅니다.' },
+  { opening: '아이와 함께한', accent: '오늘의 수업', ending: '을 담았습니다.' },
+] as const;
+
 export default function PremiumParentReport() {
   const params = useParams();
+  const [introIndex, setIntroIndex] = useState(0);
+  useEffect(() => {
+    let previous = -1;
+    try { previous = Number(sessionStorage.getItem('spokedu.report.last-intro') ?? -1); } catch { /* Storage is optional. */ }
+    const choices = REPORT_INTROS.map((_, index) => index).filter(index => index !== previous);
+    const next = choices[Math.floor(Math.random() * choices.length)]!;
+    setIntroIndex(next);
+    try { sessionStorage.setItem('spokedu.report.last-intro', String(next)); } catch { /* Storage is optional. */ }
+  }, [params.id]);
+  const intro = REPORT_INTROS[introIndex]!;
   const [session, setSession] = useState<ReportSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<'not_found' | 'not_available' | 'network' | null>(null);
@@ -187,7 +169,7 @@ export default function PremiumParentReport() {
     <div className="min-h-screen bg-[#FAFAFA] text-slate-900 pb-20 selection:bg-blue-100">
       <style>{`
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-        * { font-family: "Pretendard Variable", sans-serif !important; letter-spacing: -0.04em; }
+        * { font-family: var(--font-sans) !important; letter-spacing: -0.04em; }
         .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
         .magazine-shadow { box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.08); }
         .img-zoom { transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -226,30 +208,30 @@ export default function PremiumParentReport() {
         <div className="text-[10px] font-black text-slate-400 border border-slate-200 px-2 py-1 rounded tracking-widest">GROWTH REPORT</div>
       </nav>
 
-      <main className="max-w-md mx-auto px-6 pt-10 space-y-12">
+      <main className="max-w-md mx-auto px-6 pt-10 space-y-6">
         <header className="space-y-4 text-left">
           <div className="flex items-center gap-2">
             <span className="w-8 h-[1px] bg-blue-600"></span>
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Daily Archive</span>
+            <span className="text-xs font-semibold text-blue-600">수업 리포트</span>
           </div>
-          <h2 className="text-4xl font-black leading-[1.1] tracking-tighter text-left">
-            오늘 우리 아이는<br/>
-            <span className="text-blue-600 italic font-bold">한 뼘 더</span> 자랐습니다.
+          <h2 className="text-[30px] sm:text-[34px] font-bold leading-[1.3] tracking-tight text-left break-keep">
+            {intro.opening}<br/>
+            <span className="text-blue-600">{intro.accent}</span>{intro.ending}
           </h2>
           
-          <div className="pt-8 flex justify-between items-center border-t border-slate-100">
-            <div className="flex items-center gap-4 text-left">
-              <div className="w-12 h-12 rounded-full bg-[#002D72] flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-100 font-serif italic text-xl">S</div>
-              <div className="flex flex-col">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5 font-mono">Spokedu Lead</p>
-                <span className="text-[16px] font-black text-slate-900 tracking-tight">{session.users?.name || '담당'} 선생님</span>
+          <div className="pt-4 flex justify-between items-center gap-3 border-t border-slate-100">
+            <div className="flex min-w-0 items-center gap-2.5 text-left">
+              <div aria-hidden="true" className="w-9 h-9 rounded-full bg-[#002D72] flex items-center justify-center text-white shrink-0 text-sm font-bold">S</div>
+              <div className="flex min-w-0 flex-col">
+                <p className="text-xs text-slate-500 mb-1">담당 강사</p>
+                <span className="text-sm font-bold text-slate-900 break-keep">{session.users?.name || '담당'} 선생님</span>
               </div>
             </div>
             
-            <div className="text-right flex flex-col items-end">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Class Date</p>
-              <div className="bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                <p className="text-[10px] font-black text-slate-500 font-mono">
+            <div className="shrink-0 text-right flex flex-col items-end">
+              <p className="text-xs text-slate-500 mb-1">수업일</p>
+              <div>
+                <p className="text-sm font-semibold text-slate-700 tabular-nums">
                   {new Date(session.start_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').slice(0, -1)}
                 </p>
               </div>
@@ -268,11 +250,7 @@ export default function PremiumParentReport() {
           if (validPhotos.length === 0) return null;
 
           return (
-            <section className="grid gap-6">
-              <div className="flex items-end justify-between">
-                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">사진</p>
-                <p className="text-[11px] font-bold text-slate-400">{validPhotos.length}장</p>
-              </div>
+            <section className="grid gap-3">
               {validPhotos.map((url: string, i: number) => (
                 <div 
                   key={i} 
@@ -303,6 +281,7 @@ export default function PremiumParentReport() {
               emoji="✅"
               label="오늘 수업의 주요 활동"
               content={String(feedback?.main_activity ?? '')}
+              numbered
               accentBorderClass="border-l-4 border-l-blue-500"
               badgeClass="bg-blue-50 text-blue-700"
             />

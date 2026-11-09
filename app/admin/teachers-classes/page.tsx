@@ -1,8 +1,10 @@
 'use client';
 
+import feedbackStyles from "./FeedbackReview.module.css";
+
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, useMemo, useRef, type MouseEventHandler } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, type MouseEventHandler, type TextareaHTMLAttributes } from 'react';
 import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -24,8 +26,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { SessionPhotosCleanupButton } from '@/app/components/admin/assets/SessionPhotosCleanupButton';
-import { SessionCenterFilesCleanupButton } from '@/app/components/admin/assets/SessionCenterFilesCleanupButton';
 import {
   FeedbackFields,
   parseTemplateToFields,
@@ -38,6 +38,8 @@ import {
 import {
   isCenterSessionType,
 } from '@/app/admin/classes/lib/sessionTypeCategory';
+import { FeedbackCorrectionReview, type CorrectionHistoryItem } from '@/app/admin/teachers-classes/FeedbackCorrectionReview';
+import type { CorrectionProposal } from '@/app/lib/automation/feedbackCorrectionProposal';
 
 interface Session {
   id: string;
@@ -102,24 +104,20 @@ export default function MasterQCPage() {
   }, [supabase]);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 md:p-12 text-left">
+    <div className={`${feedbackStyles.page} bg-slate-50 p-3 sm:p-4 lg:p-6 text-left`}>
       <div className="max-w-6xl mx-auto">
-        <header className="mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-stretch md:items-end gap-4 md:gap-6">
+        <header className="mb-3 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Spokedu QC</h1>
-            <p className="text-slate-500 text-sm sm:text-base font-bold mt-2">체육 교육의 기준점, 스포키듀 리포트 마스터 검수</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <SessionPhotosCleanupButton days={7} />
-            <SessionCenterFilesCleanupButton days={7} />
+            <h1 className="text-xl font-semibold tracking-tight text-slate-900">수업 검수</h1>
+            <p className="mt-1 text-xs text-slate-500">피드백과 수업안을 확인합니다.</p>
           </div>
         </header>
 
         {/* 탭 */}
-        <div className="flex gap-2 mb-6 sm:mb-8 bg-white p-1 rounded-2xl shadow-sm border">
+        <div className="flex gap-2 mb-3 bg-white p-1 rounded-2xl shadow-sm border">
           <button 
             onClick={() => setActiveTab('feedback')}
-            className={`flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 min-w-0 min-h-11 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'feedback' 
                 ? 'bg-slate-900 text-white' 
                 : 'text-slate-400 hover:text-slate-600'
@@ -129,7 +127,7 @@ export default function MasterQCPage() {
           </button>
           <button 
             onClick={() => setActiveTab('lessonplan')}
-            className={`flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 min-w-0 min-h-11 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'lessonplan' 
                 ? 'bg-slate-900 text-white' 
                 : 'text-slate-400 hover:text-slate-600'
@@ -496,6 +494,7 @@ function FeedbackReviewTab({
   const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reviewTab, setReviewTab] = useState<'content' | 'feedback'>('content');
   const [feedbackFields, setFeedbackFields] = useState<FeedbackFields>({});
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [fileUrls, setFileUrls] = useState<string[]>([]);
@@ -509,6 +508,8 @@ function FeedbackReviewTab({
   const [correctionJobReadyId, setCorrectionJobReadyId] = useState<string | null>(null);
   const [correctionActionLoading, setCorrectionActionLoading] = useState(false);
   const [correctionBridgeNote, setCorrectionBridgeNote] = useState<string | null>(null);
+  const [correctionProposal, setCorrectionProposal] = useState<CorrectionProposal | null>(null);
+  const [correctionHistory, setCorrectionHistory] = useState<CorrectionHistoryItem[]>([]);
   const correctionRunLock = useRef(false);
   const [selectedCenterWeekday, setSelectedCenterWeekday] = useState<number | 'all'>('all');
   const feedbackDateInputRef = useRef<HTMLInputElement>(null);
@@ -522,10 +523,14 @@ function FeedbackReviewTab({
       const data = (await res.json().catch(() => ({}))) as {
         active?: { id: string; status: string } | null;
         latestCompleted?: { id: string; status: string } | null;
+        proposal?: CorrectionProposal | null;
+        history?: CorrectionHistoryItem[];
       };
       if (!res.ok) return;
       setCorrectionJobActive(data.active ?? null);
       setCorrectionJobReadyId(data.latestCompleted?.id ?? null);
+      setCorrectionProposal(data.proposal ?? null);
+      setCorrectionHistory(data.history ?? []);
     } catch {
       /* non-blocking */
     }
@@ -827,6 +832,7 @@ function FeedbackReviewTab({
   };
 
   const openEditModal = async (session: Session) => {
+    setReviewTab('content');
     setSelectedEvent(session);
     const urls = Array.isArray(session.file_url) ? session.file_url : [];
     const isCenter =
@@ -851,6 +857,8 @@ function FeedbackReviewTab({
     setDuplicateCheck(check);
     setCorrectionJobActive(null);
     setCorrectionJobReadyId(null);
+    setCorrectionProposal(null);
+    setCorrectionHistory([]);
     void refreshCorrectionJobState(session.id);
     
     setIsModalOpen(true);
@@ -907,36 +915,9 @@ function FeedbackReviewTab({
     }
   };
 
-  const handleLoadAiCorrectionDraft = async () => {
-    if (!correctionJobReadyId) return;
-    setCorrectionActionLoading(true);
-    try {
-      const res = await fetch('/api/admin/automation/feedback-correction/consume', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: correctionJobReadyId }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        correctionDraft?: FeedbackFields;
-      };
-      if (!res.ok) throw new Error(data.error ?? 'consume_failed');
-      if (data.correctionDraft) {
-        setFeedbackFields((prev) => ({
-          ...prev,
-          ...data.correctionDraft,
-          center_document_names: prev.center_document_names ?? data.correctionDraft?.center_document_names,
-        }));
-      }
-      toast.success('AI 교정안을 편집창에 불러왔습니다. 내용 확인 후 기존 저장 버튼으로 승인해 주세요.');
-      setCorrectionJobReadyId(null);
-      if (selectedEvent) void refreshCorrectionJobState(selectedEvent.id);
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : '교정안 불러오기에 실패했습니다.');
-    } finally {
-      setCorrectionActionLoading(false);
-    }
+  const handleAcceptCorrectionField = (key: keyof FeedbackFields, revised: string) => {
+    setFeedbackFields((prev) => ({ ...prev, [key]: revised }));
+    toast.success('수락한 항목만 편집창에 넣었습니다. 검수 저장 전까지는 반영되지 않습니다.');
   };
 
   const handleSave = async (newStatus = 'verified') => {
@@ -985,7 +966,7 @@ function FeedbackReviewTab({
         </div>
       )}
 
-      <div className="mb-6 space-y-3">
+      <div className="mb-3 space-y-2">
         <div className="flex gap-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
           <button
             type="button"
@@ -1006,8 +987,8 @@ function FeedbackReviewTab({
             센터 피드백
           </button>
         </div>
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="space-y-2">
+        <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[minmax(0,1fr)_14rem] sm:items-start shadow-sm">
+          <div className="min-w-0 space-y-1">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -1054,7 +1035,7 @@ function FeedbackReviewTab({
               <p className="text-[11px] text-slate-500 font-bold px-1">일간 조회: 선택한 날짜의 수업만</p>
             )}
           </div>
-          <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="min-h-11 w-full cursor-pointer rounded-xl bg-slate-50 px-4 py-2 text-sm font-bold outline-none">
+          <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="min-h-11 w-full self-start cursor-pointer rounded-xl bg-slate-50 px-4 py-2 text-sm font-bold outline-none">
             <option value="all">전체 강사</option>
             {coachFilterOptions.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1074,7 +1055,7 @@ function FeedbackReviewTab({
 
       {!loading && !error && (
         <>
-          <div className="mb-8 space-y-4">
+          <div className="mb-3 space-y-2">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:rounded-2xl sm:border sm:bg-white sm:p-1 sm:shadow-sm">
               {['all', 'empty', 'done', 'verified'].map(filter => (
                 <button 
@@ -1092,14 +1073,15 @@ function FeedbackReviewTab({
               ))}
             </div>
 
-            <div className="relative">
+            <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-0 flex-1 basis-56">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
               <input 
                 type="text"
                 placeholder="수업명 또는 강사명 검색..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white rounded-xl text-sm font-bold outline-none border-2 border-slate-200 focus:border-blue-400"
+                className="min-h-11 w-full pl-10 pr-3 py-2 bg-white rounded-xl text-sm font-bold outline-none border-2 border-slate-200 focus:border-blue-400"
               />
             </div>
 
@@ -1108,6 +1090,7 @@ function FeedbackReviewTab({
                 작성완료 전체 선택 ({statistics.done}개)
               </button>
             )}
+            </div>
           </div>
         </>
       )}
@@ -1142,7 +1125,7 @@ function FeedbackReviewTab({
               })}
             </div>
           )}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className={`${feedbackStyles.cards} ${selectedSessions.size > 0 ? feedbackStyles.cardsWithSelection : ''}`}>
           {feedbackListItems.map((item) => {
             const s = item.session;
             const sessionStatus = getSessionStatusForFeedbackReview(s);
@@ -1182,15 +1165,15 @@ function FeedbackReviewTab({
                     <input type="checkbox" checked={isSelected} onChange={() => toggleSelection(s.id)} className="w-4 h-4 cursor-pointer" onClick={(e) => e.stopPropagation()} />
                   </div>
                 )}
-                <div className={`bg-white rounded-2xl p-4 shadow-sm border-2 ${isSelected ? 'border-blue-500' : 'border-slate-200'} flex flex-col hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer`} onClick={() => openEditModal(s)}>
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg text-[10px] font-bold">{time}</span>
+                <div className={`bg-white rounded-xl p-3 shadow-sm border ${isSelected ? 'border-blue-500' : 'border-slate-200'} flex flex-col hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer`} onClick={() => openEditModal(s)}>
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg text-[10px] font-bold ${canSelect ? 'ml-6' : ''}`}>{time}</span>
                     <span className={`text-[9px] font-bold px-2 py-1 rounded-lg uppercase ${cardBadge.className}`}>
                       {cardBadge.text}
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 mb-2 line-clamp-2 text-left leading-tight">{s.title}</h3>
-                  <div className="space-y-1 mb-3 text-left">
+                  <h3 className="text-base font-bold text-slate-900 mb-1 line-clamp-2 text-left leading-tight">{s.title}</h3>
+                  <div className="space-y-1 mb-2 text-left">
                     <div className="flex items-center gap-1 text-slate-600 text-xs">
                       <User size={12} /> {coachName}
                     </div>
@@ -1198,7 +1181,7 @@ function FeedbackReviewTab({
                       <MapPin size={10} /> {getSessionTypeLabel(s.session_type)}
                     </div>
                   </div>
-                  <div className="mt-auto flex flex-wrap gap-2 items-center">
+                  <div className="mt-auto flex flex-wrap gap-1.5 items-center">
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation();
@@ -1257,18 +1240,19 @@ function FeedbackReviewTab({
       )}
 
       {selectedSessions.size > 0 && (
-        <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-2xl sm:bottom-8 sm:left-1/2 sm:right-auto sm:w-auto sm:-translate-x-1/2 sm:flex-row sm:items-center sm:gap-6 sm:rounded-full sm:px-8 sm:py-4">
-          <div className="min-w-0">
-            <span className="font-bold">{selectedSessions.size}개 선택됨</span>
-            <p className="mt-0.5 text-[11px] leading-snug text-slate-300 sm:mt-0 sm:inline sm:ml-3">
-              승인 전 대상 카드(날짜/강사/중복 경고)를 확인하세요
-            </p>
+        <div className={feedbackStyles.selectionBar} role="region" aria-label="선택한 수업 일괄 검수">
+          <div className={feedbackStyles.selectionSummary}>
+            <span className={feedbackStyles.selectionCount}>{selectedSessions.size}</span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-slate-900">수업 선택됨</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">날짜·강사·중복 경고를 확인한 뒤 승인해 주세요.</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={handleBulkApprove} disabled={bulkActionLoading} className="flex-1 sm:flex-none px-5 py-2.5 bg-blue-600 rounded-full font-black hover:bg-blue-500 cursor-pointer disabled:opacity-50">
+          <div className={feedbackStyles.selectionActions}>
+            <button onClick={clearSelection} className={feedbackStyles.selectionCancel}>선택 해제</button>
+            <button onClick={handleBulkApprove} disabled={bulkActionLoading} className={feedbackStyles.selectionApprove}>
               {bulkActionLoading ? '처리 중...' : '일괄 승인'}
             </button>
-            <button onClick={clearSelection} className="shrink-0 text-slate-400 hover:text-white cursor-pointer px-2 py-2">취소</button>
           </div>
         </div>
       )}
@@ -1280,10 +1264,10 @@ function FeedbackReviewTab({
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="flex max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:max-h-[calc(var(--viewport-height-px,100dvh)-2rem)] md:rounded-[48px]"
+            className="flex h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:h-[min(760px,calc(var(--viewport-height-px,100dvh)-2rem))] md:rounded-2xl"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex shrink-0 items-start justify-between gap-3 border-b p-4 sm:gap-4 sm:p-8">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b p-4 sm:gap-4">
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-lg font-black text-slate-900 sm:text-2xl" title={selectedEvent.title}>
                   {selectedEvent.title}
@@ -1299,11 +1283,24 @@ function FeedbackReviewTab({
               </button>
             </div>
 
-            <div className="flex-1 space-y-6 overflow-y-auto bg-slate-50/30 p-4 sm:space-y-8 sm:p-8">
-              <div className="flex gap-2">
-                <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${isCenterSessionType(selectedEvent.session_type) ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
-                  {getSessionTypeBadgeLabel(selectedEvent.session_type)}
-                </span>
+            <div role="tablist" aria-label="검수 항목" className="flex shrink-0 gap-1 border-b border-slate-200 px-4 py-2">
+              {([{ key: 'content', label: '수업 내용' }, { key: 'feedback', label: '피드백' }] as const).map((tab) => (
+                <button key={tab.key} type="button" role="tab" id={`review-tab-${tab.key}`} aria-controls={`review-panel-${tab.key}`} aria-selected={reviewTab === tab.key} tabIndex={reviewTab === tab.key ? 0 : -1}
+                  onClick={() => setReviewTab(tab.key)}
+                  onKeyDown={(event) => {
+                    const keys = ['content', 'feedback'] as const;
+                    const index = keys.indexOf(tab.key);
+                    const next = event.key === 'ArrowRight' ? (index + 1) % keys.length : event.key === 'ArrowLeft' ? (index + keys.length - 1) % keys.length : event.key === 'Home' ? 0 : event.key === 'End' ? keys.length - 1 : null;
+                    if (next === null) return;
+                    event.preventDefault();
+                    setReviewTab(keys[next]!);
+                    document.getElementById(`review-tab-${keys[next]}`)?.focus();
+                  }}
+                  className={`min-h-11 flex-1 rounded-lg px-3 text-sm font-semibold ${reviewTab === tab.key ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>{tab.label}</button>
+              ))}
+            </div>
+            <div key={reviewTab} role="tabpanel" id={`review-panel-${reviewTab}`} aria-labelledby={`review-tab-${reviewTab}`} tabIndex={0} className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/30 p-4">
+              {(selectedEvent.status === 'postponed' || selectedEvent.status === 'cancelled') && <div className="flex gap-2">
                 {selectedEvent.status === 'postponed' && (
                   <span className="text-[9px] font-black px-3 py-1.5 rounded-full uppercase bg-purple-100 text-purple-700">
                     연기
@@ -1314,9 +1311,10 @@ function FeedbackReviewTab({
                     취소
                   </span>
                 )}
-              </div>
+              </div>}
 
               {/* 중복 경고 */}
+              {reviewTab === 'feedback' && <>
               {(correctionJobActive || correctionJobReadyId) && (
                 <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-4 space-y-3">
                   <p className="text-sm font-bold text-indigo-900">AI 피드백 교정</p>
@@ -1326,18 +1324,11 @@ function FeedbackReviewTab({
                       {correctionBridgeNote ? ` — ${correctionBridgeNote}` : ''}
                     </p>
                   )}
-                  {correctionJobReadyId && (
-                    <p className="text-xs text-emerald-800 font-semibold">교정 초안이 준비되었습니다. 불러온 뒤 검수 저장을 진행하세요.</p>
+                  {correctionProposal && (
+                    <p className="text-xs text-emerald-800 font-semibold">교정 제안이 준비되었습니다. 항목별로 확인한 뒤 수락하세요.</p>
                   )}
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      disabled={correctionActionLoading || Boolean(correctionJobActive)}
-                      onClick={() => void handleRequestAiCorrection()}
-                      className="min-h-10 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
-                    >
-                      AI 교정 요청
-                    </button>
+
                     {correctionJobActive?.status === 'pending' && (
                       <button
                         type="button"
@@ -1348,32 +1339,20 @@ function FeedbackReviewTab({
                         이 PC에서 다시 실행
                       </button>
                     )}
-                    {correctionJobReadyId && (
-                      <button
-                        type="button"
-                        disabled={correctionActionLoading}
-                        onClick={() => void handleLoadAiCorrectionDraft()}
-                        className="min-h-10 rounded-xl border border-emerald-600 bg-white px-4 py-2 text-xs font-bold text-emerald-800 disabled:opacity-50"
-                      >
-                        교정안 불러오기
-                      </button>
-                    )}
                   </div>
+                  {correctionProposal && (
+                    <FeedbackCorrectionReview
+                      proposal={correctionProposal}
+                      history={correctionHistory}
+                      onAccept={(field) => {
+                        if (field.revised) handleAcceptCorrectionField(field.key, field.revised);
+                      }}
+                    />
+                  )}
                 </div>
               )}
 
-              {!correctionJobActive && !correctionJobReadyId && (
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    disabled={correctionActionLoading}
-                    onClick={() => void handleRequestAiCorrection()}
-                    className="min-h-10 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 disabled:opacity-50"
-                  >
-                    AI 교정 요청
-                  </button>
-                </div>
-              )}
+              </>}
 
               {duplicateCheck?.isDuplicate && (
                 <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-4">
@@ -1391,10 +1370,16 @@ function FeedbackReviewTab({
                 </div>
               )}
 
+
+              {reviewTab === 'content' && <dl className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm">
+                <div><dt className="text-xs text-slate-500">담당 강사</dt><dd className="mt-1 text-slate-900">{selectedEvent.users?.name || coaches.find(coach => coach.id === selectedEvent.created_by)?.name || '미정'}</dd></div>
+                <div><dt className="text-xs text-slate-500">수업 일시</dt><dd className="mt-1 text-slate-900">{formatKstSessionDateTime(selectedEvent.start_at)}</dd></div>
+              </dl>}
+
               {(() => {
                   const centerCondition =
                     isCenterSessionType(selectedEvent.session_type);
-                  return centerCondition ? (
+                  return centerCondition && reviewTab === 'content' ? (
                     <div className="bg-white p-5 rounded-[24px] border border-indigo-100 space-y-3">
                   <p className="text-[10px] font-black text-indigo-400 uppercase">파일</p>
                   {fileUrls.length > 0 ? fileUrls.map((url, i) => (
@@ -1423,7 +1408,7 @@ function FeedbackReviewTab({
               {(() => {
                 const centerCondition =
                   isCenterSessionType(selectedEvent.session_type);
-                return !centerCondition ? (
+                return !centerCondition && reviewTab === 'content' ? (
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-slate-400 uppercase">사진</p>
                   {photoUrls.length > 0 ? (
@@ -1443,30 +1428,29 @@ function FeedbackReviewTab({
               {(() => {
                 const centerCondition =
                   isCenterSessionType(selectedEvent.session_type);
-                return centerCondition ? (
+                return centerCondition ? (reviewTab === 'feedback' ? (
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-400 uppercase block ml-1">메모</label>
-                  <textarea 
-                    className="w-full min-h-[120px] bg-white rounded-2xl p-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 resize-none border" 
+                  <AutoHeightTextarea
+                    className={`${feedbackStyles.reviewInput} bg-white rounded-xl p-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 border`}
                     value={feedbackFields.condition_notes || ''} 
                     onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: e.target.value})}
                     placeholder="센터 수업 메모를 작성하세요..."
                   />
                 </div>
-                ) : (
+                ) : null) : (
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-400 uppercase ml-1">피드백 내용</p>
                   {[
                     { key: 'main_activity', label: '✅ 오늘 수업의 주요 활동', color: 'indigo', placeholder: '예: 축구 기본기 드리블 연습' },
                     { key: 'strengths', label: '✅ 강점 및 긍정적인 부분', color: 'emerald', placeholder: '예: 드리블 속도가 빨라졌습니다' },
                     { key: 'improvements', label: '✅ 개선이 필요한 부분', color: 'amber', placeholder: '예: 슈팅 정확도 연습 필요' },
                     { key: 'next_goals', label: '✅ 다음 수업 목표 및 계획', color: 'blue', placeholder: '예: 패스 연습과 전술 이해도 향상' },
                     { key: 'condition_notes', label: '✅ 특이사항 및 시작/종료 시간', color: 'slate', placeholder: '예: 14:00 시작, 15:30 종료' }
-                  ].map(field => (
+                  ].filter(field => reviewTab === 'content' ? field.key === 'main_activity' : ['strengths', 'improvements', 'next_goals', 'condition_notes'].includes(field.key)).map(field => (
                     <div key={field.key} className="space-y-2">
                       <label className={`text-[9px] font-bold text-${field.color}-600 uppercase block ml-1`}>{field.label}</label>
-                      <textarea 
-                        className={`w-full h-20 bg-white rounded-xl p-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-${field.color}-100 resize-none border`}
+                      <AutoHeightTextarea
+                        className={`${feedbackStyles.reviewInput} bg-white rounded-xl p-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-${field.color}-100 border`}
                         value={(feedbackFields as Record<string, string>)[field.key] || ''} 
                         onChange={(e) => setFeedbackFields({...feedbackFields, [field.key]: e.target.value})}
                         placeholder={field.placeholder}
@@ -1478,11 +1462,11 @@ function FeedbackReviewTab({
               })()}
             </div>
 
-            <div className="flex shrink-0 flex-col gap-2 border-t p-4 sm:flex-row sm:gap-4 sm:p-8">
-              <button onClick={() => handleSave('finished')} className="w-full py-3.5 sm:py-5 bg-slate-50 border rounded-2xl sm:rounded-3xl font-bold text-rose-500 hover:bg-rose-50 cursor-pointer sm:flex-1">
+            <div className={`${feedbackStyles.reviewFooter} flex shrink-0 flex-col gap-2 border-t p-3 sm:flex-row sm:gap-3`}>
+              <button onClick={() => handleSave('finished')} className="w-full min-h-11 py-2 bg-slate-50 border rounded-xl font-bold text-rose-500 hover:bg-rose-50 cursor-pointer sm:flex-1">
                 <RotateCcw size={18} className="inline mr-1" /> 수정 요청으로 저장
               </button>
-              <button onClick={() => handleSave('verified')} className="w-full py-3.5 sm:py-5 bg-slate-900 rounded-2xl sm:rounded-3xl font-black text-white shadow-xl hover:bg-indigo-600 cursor-pointer sm:flex-[2]">
+              <button onClick={() => handleSave('verified')} className="w-full min-h-11 py-2 bg-slate-900 rounded-xl font-black text-white shadow-xl hover:bg-indigo-600 cursor-pointer sm:flex-[2]">
                 검수 승인(학부모 공유용) 저장
               </button>
             </div>
@@ -1511,7 +1495,7 @@ function LessonPlanTab({
   const [lessonPlanScope, setLessonPlanScope] = useState<'private' | 'center'>('private');
   const [sessions, setSessions] = useState<LessonPlanSession[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState('all');
-  const [selectedPrivateWeekday, setSelectedPrivateWeekday] = useState<number | 'all'>('all');
+  const [selectedWeekday, setSelectedWeekday] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<LessonPlanSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1549,7 +1533,7 @@ function LessonPlanTab({
     fetchSessions();
   }, [selectedTeacher, lessonPlanScope, excludedAdminCoachIds]);
 
-  const privateWeekdayGroups = useMemo(() => {
+  const weekdayGroups = useMemo(() => {
     const labels = ['월', '화', '수', '목', '금', '토', '일'];
     return labels.map((label, dayIndex) => ({
       dayIndex,
@@ -1565,9 +1549,9 @@ function LessonPlanTab({
   }, [sessions]);
 
   const visibleSessions = useMemo(() => {
-    if (lessonPlanScope !== 'private' || selectedPrivateWeekday === 'all') return sessions;
-    return privateWeekdayGroups[selectedPrivateWeekday]?.sessions ?? [];
-  }, [lessonPlanScope, privateWeekdayGroups, selectedPrivateWeekday, sessions]);
+    if (selectedWeekday === 'all') return sessions;
+    return weekdayGroups[selectedWeekday]?.sessions ?? [];
+  }, [weekdayGroups, selectedWeekday, sessions]);
 
   const groupedByTeacher = useMemo(() => {
     const groups: Record<string, LessonPlanSession[]> = {};
@@ -1584,7 +1568,7 @@ function LessonPlanTab({
       <div className="mb-6 flex flex-wrap gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
         <button
           type="button"
-          onClick={() => setLessonPlanScope('private')}
+          onClick={() => { setLessonPlanScope('private'); setSelectedWeekday('all'); }}
           className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
             lessonPlanScope === 'private' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
           }`}
@@ -1593,7 +1577,7 @@ function LessonPlanTab({
         </button>
         <button
           type="button"
-          onClick={() => setLessonPlanScope('center')}
+          onClick={() => { setLessonPlanScope('center'); setSelectedWeekday('all'); }}
           className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
             lessonPlanScope === 'center' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
           }`}
@@ -1610,18 +1594,19 @@ function LessonPlanTab({
         <span className="text-sm text-slate-500">이번 주 (월요일~일요일, KST)</span>
       </div>
 
-      {lessonPlanScope === 'private' && !loading && (
+      {!loading && (
         <div className="mb-6 grid grid-cols-4 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm md:grid-cols-8">
           {[
             { dayIndex: 'all' as const, label: '전체', sessions },
-            ...privateWeekdayGroups,
+            ...weekdayGroups,
           ].map((item) => {
-            const selected = selectedPrivateWeekday === item.dayIndex;
+            const selected = selectedWeekday === item.dayIndex;
             return (
               <button
                 key={String(item.dayIndex)}
                 type="button"
-                onClick={() => setSelectedPrivateWeekday(item.dayIndex)}
+                aria-pressed={selected}
+                onClick={() => setSelectedWeekday(item.dayIndex)}
                 className={`min-w-0 rounded-xl px-1 py-2.5 text-xs font-black transition-colors ${
                   selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
                 }`}
@@ -1647,11 +1632,11 @@ function LessonPlanTab({
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedByTeacher).map(([teacher, teacherSessions]) => (
-            <div key={teacher} className="bg-white rounded-2xl border-2 border-slate-200 p-4 transition-all hover:border-blue-200 sm:p-6">
-              <h3 className="mb-4 truncate text-lg font-black text-slate-900 sm:text-xl">{teacher} 선생님</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className={feedbackStyles.teacherGrid}>
+          {Object.entries(groupedByTeacher).sort(([a], [b]) => a.localeCompare(b, 'ko-KR')).map(([teacher, teacherSessions]) => (
+            <div key={teacher} className="min-w-0 bg-white rounded-2xl border border-slate-200 p-4 transition-all hover:border-blue-200">
+              <h3 className="mb-3 truncate text-base font-bold text-slate-900">{teacher} 선생님</h3>
+              <div className={feedbackStyles.teacherSessions}>
                 {teacherSessions.map((session: LessonPlanSession) => {
                   const hasLessonPlan = !!getLessonPlanContent(session);
                   const date = new Date((session.start_at as string) ?? 0);
@@ -1724,4 +1709,28 @@ function LessonPlanTab({
       )}
     </>
   );
+}
+
+function AutoHeightTextarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const resize = () => {
+      const borderHeight = input.offsetHeight - input.clientHeight;
+      input.style.height = 'auto';
+      input.style.height = `${input.scrollHeight + borderHeight}px`;
+    };
+    resize();
+    let previousWidth = input.getBoundingClientRect().width;
+    const observer = new ResizeObserver(() => {
+      const width = input.getBoundingClientRect().width;
+      if (width === previousWidth) return;
+      previousWidth = width;
+      resize();
+    });
+    observer.observe(input);
+    return () => observer.disconnect();
+  }, [props.value]);
+  return <textarea {...props} ref={inputRef} />;
 }

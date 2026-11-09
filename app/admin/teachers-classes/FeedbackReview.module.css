@@ -1,0 +1,96 @@
+.selectionBar {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 50;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: min(680px, calc(100% - 32px));
+  padding: 12px 16px;
+  border: 1px solid #dbe3ee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 32px #0f172a1f;
+}
+.selectionSummary { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.selectionCount { display: grid; place-items: center; flex-shrink: 0; min-width: 40px; height: 40px; padding: 0 8px; border-radius: 12px; background: #eff6ff; color: #2563eb; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.selectionActions { display: flex; gap: 8px; flex-shrink: 0; }
+.selectionCancel, .selectionApprove { min-height: 44px; padding: 0 14px; border-radius: 10px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.selectionCancel { color: #475569; background: #f1f5f9; }
+.selectionCancel:hover { background: #e2e8f0; }
+.selectionApprove { color: #fff; background: #2563eb; }
+.selectionApprove:hover { background: #1d4ed8; }
+.selectionApprove:disabled { opacity: .5; cursor: wait; }
+.selectionBar button:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+@media (max-width: 520px) {
+  .selectionBar { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px; }
+  .selectionActions { justify-content: flex-end; }
+  .selectionApprove { flex: 1; }
+}
+
+.reviewInput {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  resize: none;
+}
+
+.page {
+  min-height: calc(100dvh - var(--app-header-height, 0px) - env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 1200px) {
+  .page { min-height: 100dvh; }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.cards > * { min-width: 0; }
+.cardsWithSelection { padding-bottom: 112px; }
+.reviewFooter { padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+
+@media (max-width: 639px) {
+  .page input:not([type='checkbox']), .page select, .page textarea { font-size: 16px; }
+  .reviewInput { font-size: 16px; line-height: 1.6; }
+}
+
+@media (max-width: 520px) {
+  .cardsWithSelection { padding-bottom: calc(176px + env(safe-area-inset-bottom, 0px)); }
+}
+
+.teacherGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.teacherSessions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 8px;
+}
+
+.teacherSessions > * { min-width: 0; }
+
+@media (min-width: 640px) {
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 700px) {
+  .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 900px) {
+  .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .teacherGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

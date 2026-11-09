@@ -1,5 +1,7 @@
 'use client';
 
+import { feedbackListInput, markFeedbackPaste } from '@/app/lib/feedbackListInput';
+
 import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -892,7 +894,8 @@ function MyClassesContent() {
                     <textarea 
                       className="w-full h-32 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                       value={feedbackFields.condition_notes || ''}
-                      onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: e.target.value})}
+                      onPaste={markFeedbackPaste}
+                      onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: feedbackListInput(e, feedbackFields.condition_notes || '', false)})}
                       placeholder="특이사항이나 간단한 메모를 남겨주세요"
                     />
                   </div>
@@ -908,7 +911,8 @@ function MyClassesContent() {
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                     value={feedbackFields.main_activity || ''}
-                    onChange={(e) => setFeedbackFields({...feedbackFields, main_activity: e.target.value})}
+                    onPaste={markFeedbackPaste}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, main_activity: feedbackListInput(e, feedbackFields.main_activity || '', true)})}
                     placeholder="예: 축구 기본기 드리블 연습, 미니 게임 진행"
                   />
                 </div>
@@ -920,7 +924,8 @@ function MyClassesContent() {
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                     value={feedbackFields.strengths || ''}
-                    onChange={(e) => setFeedbackFields({...feedbackFields, strengths: e.target.value})}
+                    onPaste={markFeedbackPaste}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, strengths: feedbackListInput(e, feedbackFields.strengths || '', false)})}
                     placeholder="예: 드리블 속도가 빨라졌고, 팀워크가 좋아졌습니다"
                   />
                 </div>
@@ -932,7 +937,8 @@ function MyClassesContent() {
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                     value={feedbackFields.improvements || ''}
-                    onChange={(e) => setFeedbackFields({...feedbackFields, improvements: e.target.value})}
+                    onPaste={markFeedbackPaste}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, improvements: feedbackListInput(e, feedbackFields.improvements || '', false)})}
                     placeholder="예: 슈팅 정확도 연습이 더 필요합니다"
                   />
                 </div>
@@ -944,7 +950,8 @@ function MyClassesContent() {
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                     value={feedbackFields.next_goals || ''}
-                    onChange={(e) => setFeedbackFields({...feedbackFields, next_goals: e.target.value})}
+                    onPaste={markFeedbackPaste}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, next_goals: feedbackListInput(e, feedbackFields.next_goals || '', false)})}
                     placeholder="예: 패스 연습과 전술 이해도 향상"
                   />
                 </div>
@@ -956,7 +963,8 @@ function MyClassesContent() {
                   <textarea 
                     className="w-full h-24 bg-white rounded-2xl p-4 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                     value={feedbackFields.condition_notes || ''}
-                    onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: e.target.value})}
+                    onPaste={markFeedbackPaste}
+                    onChange={(e) => setFeedbackFields({...feedbackFields, condition_notes: feedbackListInput(e, feedbackFields.condition_notes || '', false)})}
                     placeholder="예: 14:00 시작, 15:30 종료"
                   />
                 </div>
