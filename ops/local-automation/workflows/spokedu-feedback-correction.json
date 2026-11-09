@@ -8,12 +8,20 @@
       "name": "Manual test run",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 240]
+      "position": [
+        200,
+        240
+      ]
     },
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "minutes", "minutesInterval": 10 }]
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
         }
       },
       "id": "a1000001-0001-4001-8001-000000000001",
@@ -21,7 +29,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "disabled": true,
       "typeVersion": 1.2,
-      "position": [200, 400]
+      "position": [
+        200,
+        400
+      ]
     },
     {
       "parameters": {
@@ -43,13 +54,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"limit\": 5, \"leaseSeconds\": 900}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "a1000002-0002-4002-8002-000000000002",
       "name": "Claim jobs",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [420, 400]
+      "position": [
+        420,
+        400
+      ]
     },
     {
       "parameters": {
@@ -59,18 +75,28 @@
       "name": "Expand or idle",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [640, 400]
+      "position": [
+        640,
+        400
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-has-job",
               "leftValue": "={{ $json.idle }}",
               "rightValue": false,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -80,7 +106,10 @@
       "name": "Has pending job?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [860, 400]
+      "position": [
+        860,
+        400
+      ]
     },
     {
       "parameters": {},
@@ -88,17 +117,23 @@
       "name": "No pending jobs",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1080, 560]
+      "position": [
+        1080,
+        560
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.item.json;\nconst ctx = item.context || {};\nconst source = ctx.source_feedback || {};\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nconst missing = keys.filter((key) => String(source[key] || '').trim().length < 1);\nif (ctx.error || missing.length > 0) {\n  return [{\n    json: {\n      job_id: item.job_id,\n      skipLlm: true,\n      errorCode: ctx.error || 'SNAPSHOT_FIELDS_REQUIRED',\n      errorDetail: ctx.error ? String(ctx.instruction || ctx.error).slice(0, 200) : 'required_fields_empty:' + missing.join(','),\n    },\n  }];\n}\nreturn [{\n  json: {\n    job_id: item.job_id,\n    session_id: item.session_id,\n    attempt_count: item.attempt_count,\n    max_attempts: item.max_attempts,\n    skipLlm: false,\n    source_feedback: source,\n    llmBody: {\n      model: $env.LM_STUDIO_MODEL || 'qwen3.5-9b',\n      temperature: 0.1,\n      messages: [\n        {\n          role: 'system',\n          content: 'Correct Korean teacher feedback field-by-field. For EACH key in source_feedback, fix spelling/grammar only for THAT field. Do not swap or copy content between fields. Do not invent facts, scores, or behaviors. Keep SPOMOVE literals unchanged. Return JSON with EXACTLY keys: main_activity, strengths, improvements, next_goals, condition_notes (strings only). No nested objects or extra keys.',\n        },\n        {\n          role: 'user',\n          content: JSON.stringify({ source_feedback: source, required_keys: keys }),\n        },\n      ],\n    },\n  },\n}];\n"
+        "jsCode": "const item = $input.item.json;\nconst ctx = item.context || {};\nconst source = ctx.source_feedback || {};\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nconst missing = keys.filter((key) => String(source[key] || '').trim().length < 1);\nif (ctx.error || missing.length > 0) {\n  return [{\n    json: {\n      job_id: item.job_id,\n      skipLlm: true,\n      errorCode: ctx.error || 'SNAPSHOT_FIELDS_REQUIRED',\n      errorDetail: ctx.error ? String(ctx.instruction || ctx.error).slice(0, 200) : 'required_fields_empty:' + missing.join(','),\n    },\n  }];\n}\nreturn [{\n  json: {\n    job_id: item.job_id,\n    session_id: item.session_id,\n    attempt_count: item.attempt_count,\n    max_attempts: item.max_attempts,\n    skipLlm: false,\n    source_feedback: source,\n    llmBody: {\n      model: $env.LM_STUDIO_MODEL || 'qwen3.5-9b',\n      temperature: 0.1,\n      messages: [\n        {\n          role: 'system',\n          content: '너는 SPOKEDU 아동 체육 피드백의 교정 제안자다. 원문을 대신 작성하지 않는다.\\n고칠 필요가 있는 항목만 corrections에 넣는다. 맞춤법, 띄어쓰기, 조사, 비문만 수정한다.\\nrevised는 그 항목의 전체 문장이다. 활동명, 운동기술 명칭, SPOMOVE 이름, 횟수, 시간, 거리, 기록, 실제 수행, 개선점, 다음 지도 계획, 특이사항과 안전 기록은 삭제하거나 다른 뜻으로 바꾸지 않는다.\\n영어 번역을 하지 않는다. 스텝레더를 스텝 리더로, 스퀘어를 스쿼어로, 발목 자세를 발목 관절로 바꾸지 않는다.\\n교육적 의견은 notes에만 쓴다. notes는 원문 문장을 바꾸지 않으며, 원문에 없는 활동, 횟수, 수행을 만들지 않는다.\\nJSON 객체만 반환한다. 형식은 {\\\"corrections\\\":[{\\\"key\\\":\\\"improvements\\\",\\\"revised\\\":\\\"...\\\",\\\"reason\\\":\\\"...\\\"}],\\\"notes\\\":[{\\\"key\\\":\\\"next_goals\\\",\\\"text\\\":\\\"...\\\"}]} 이다.\\nkey는 main_activity, strengths, improvements, next_goals, condition_notes만 허용한다.',\n        },\n        {\n          role: 'user',\n          content: JSON.stringify({ source_feedback: source, required_keys: keys }),\n        },\n      ],\n    },\n  },\n}];\n"
       },
       "id": "a1000006-0006-4006-8006-000000000006",
       "name": "Build LLM request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1080, 280]
+      "position": [
+        1080,
+        280
+      ]
     },
     {
       "parameters": {
@@ -107,25 +142,37 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json.llmBody }}",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       },
       "id": "a1000007-0007-4007-8007-000000000007",
       "name": "LM Studio chat",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1520, 280],
+      "position": [
+        1520,
+        280
+      ],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-llm-input",
               "leftValue": "={{ $json.skipLlm }}",
               "rightValue": false,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -135,18 +182,28 @@
       "name": "LLM input OK?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1300, 280]
+      "position": [
+        1300,
+        280
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
           "conditions": [
             {
               "id": "cond-llm-choices",
               "leftValue": "={{ $json.choices?.[0]?.message?.content }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEmpty" }
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
             }
           ],
           "combinator": "and"
@@ -156,7 +213,10 @@
       "name": "LLM response OK?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1520, 280]
+      "position": [
+        1520,
+        280
+      ]
     },
     {
       "parameters": {
@@ -166,28 +226,41 @@
       "name": "Fail LLM unreachable",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1740, 420]
+      "position": [
+        1740,
+        420
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const job = $('Build LLM request').item.json;\nconst llm = $input.item.json;\nconst source = job.source_feedback || {};\nconst content = llm?.choices?.[0]?.message?.content ?? '';\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nfunction fieldTokens(text) {\n  const found = new Set();\n  for (const m of String(text).matchAll(/SPOMOVE[\\w-]*|\\d{1,2}:\\d{2}|\\d+(?:\\.\\d+)?%|[가-힣A-Za-z]{2,}/g)) {\n    if (m[0] && m[0].length >= 2) found.add(m[0]);\n  }\n  return [...found];\n}\ntry {\n  const trimmed = content.trim().replace(/^```json\\s*/i, '').replace(/```\\s*$/i, '');\n  const parsed = JSON.parse(trimmed);\n  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not_object');\n  if ('feedback_fields' in parsed) throw new Error('nested_feedback_fields');\n  for (const k of Object.keys(parsed)) {\n    if (!keys.includes(k)) throw new Error('extra_key_' + k);\n  }\n  const draft = {};\n  for (const k of keys) {\n    if (typeof parsed[k] !== 'string' || !parsed[k].trim()) throw new Error('missing_field_' + k);\n    draft[k] = parsed[k].trim();\n  }\n  for (const k of keys) {\n    const src = String(source[k] || '').trim();\n    if (!src) continue;\n    const tokens = fieldTokens(src);\n    if (tokens.length && !tokens.some((t) => draft[k].includes(t))) {\n      throw new Error('field_mismatch_' + k);\n    }\n    const spomove = [...src.matchAll(/SPOMOVE[\\w-]*/gi)].map((m) => m[0]);\n    for (const lit of [...new Set(spomove)]) {\n      if (!draft[k].includes(lit)) throw new Error('spomove_lost_' + k);\n    }\n  }\n  return [{ json: { job_id: job.job_id, parseOk: true, correctionDraft: draft } }];\n} catch (e) {\n  return [{\n    json: {\n      job_id: job.job_id,\n      parseOk: false,\n      errorCode: 'llm_json_invalid',\n      errorDetail: String(e?.message || 'parse_failed').slice(0, 120),\n    },\n  }];\n}\n"
+        "jsCode": "const job = $('Build LLM request').item.json;\nconst llm = $input.item.json;\nconst source = job.source_feedback || {};\nconst content = llm?.choices?.[0]?.message?.content ?? '';\nconst keys = ['main_activity', 'strengths', 'improvements', 'next_goals', 'condition_notes'];\nfunction fieldTokens(text) {\n  const found = new Set();\n  for (const m of String(text).matchAll(/SPOMOVE[\\w-]*|\\d{1,2}:\\d{2}|\\d+(?:\\.\\d+)?%|[가-힣A-Za-z]{2,}/g)) {\n    if (m[0] && m[0].length >= 2) found.add(m[0]);\n  }\n  return [...found];\n}\ntry {\n  const trimmed = content.trim().replace(/^```json\\s*/i, '').replace(/```\\s*$/i, '');\n  const parsed = JSON.parse(trimmed);\n  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not_object');\n  if ('feedback_fields' in parsed) throw new Error('nested_feedback_fields');\n  if (Array.isArray(parsed.corrections) || Array.isArray(parsed.notes)) {\n    return [{ json: { job_id: job.job_id, parseOk: true, correctionDraft: { corrections: Array.isArray(parsed.corrections) ? parsed.corrections : [], notes: Array.isArray(parsed.notes) ? parsed.notes : [] } } }];\n  }\n  for (const k of Object.keys(parsed)) {\n    if (!keys.includes(k)) throw new Error('extra_key_' + k);\n  }\n  const draft = {};\n  for (const k of keys) {\n    if (typeof parsed[k] !== 'string' || !parsed[k].trim()) throw new Error('missing_field_' + k);\n    draft[k] = parsed[k].trim();\n  }\n  for (const k of keys) {\n    const src = String(source[k] || '').trim();\n    if (!src) continue;\n    const tokens = fieldTokens(src);\n    if (tokens.length && !tokens.some((t) => draft[k].includes(t))) {\n      throw new Error('field_mismatch_' + k);\n    }\n    const spomove = [...src.matchAll(/SPOMOVE[\\w-]*/gi)].map((m) => m[0]);\n    for (const lit of [...new Set(spomove)]) {\n      if (!draft[k].includes(lit)) throw new Error('spomove_lost_' + k);\n    }\n  }\n  return [{ json: { job_id: job.job_id, parseOk: true, correctionDraft: draft } }];\n} catch (e) {\n  return [{\n    json: {\n      job_id: job.job_id,\n      parseOk: false,\n      errorCode: 'llm_json_invalid',\n      errorDetail: String(e?.message || 'parse_failed').slice(0, 120),\n    },\n  }];\n}\n"
       },
       "id": "a1000010-0010-4010-8010-000000000010",
       "name": "Parse correction JSON",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1740, 200]
+      "position": [
+        1740,
+        200
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-parse-ok",
               "leftValue": "={{ $json.parseOk }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -197,7 +270,10 @@
       "name": "Parse OK?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1960, 200]
+      "position": [
+        1960,
+        200
+      ]
     },
     {
       "parameters": {
@@ -219,25 +295,37 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ correctionDraft: $json.correctionDraft }) }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "a1000012-0012-4012-8012-000000000012",
       "name": "Complete job",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2180, 120],
+      "position": [
+        2180,
+        120
+      ],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
           "conditions": [
             {
               "id": "cond-complete-ok",
               "leftValue": "={{ $json.ok }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "equals" }
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -247,7 +335,10 @@
       "name": "Complete OK?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [2400, 120]
+      "position": [
+        2400,
+        120
+      ]
     },
     {
       "parameters": {
@@ -257,7 +348,10 @@
       "name": "Fail complete rejected",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2620, 240]
+      "position": [
+        2620,
+        240
+      ]
     },
     {
       "parameters": {
@@ -279,13 +373,18 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ errorCode: $json.errorCode, errorDetail: ($json.errorDetail || '').slice(0, 200) }) }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "a1000015-0015-4015-8015-000000000015",
       "name": "Mark job failed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2840, 360]
+      "position": [
+        2840,
+        360
+      ]
     },
     {
       "parameters": {},
@@ -293,69 +392,212 @@
       "name": "Job done",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [2620, 40]
+      "position": [
+        2620,
+        40
+      ]
     }
   ],
   "connections": {
     "Manual test run": {
-      "main": [[{ "node": "Claim jobs", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Claim jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Every 10 minutes": {
-      "main": [[{ "node": "Claim jobs", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Claim jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Claim jobs": {
-      "main": [[{ "node": "Expand or idle", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Expand or idle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Expand or idle": {
-      "main": [[{ "node": "Has pending job?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Has pending job?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has pending job?": {
       "main": [
-        [{ "node": "Build LLM request", "type": "main", "index": 0 }],
-        [{ "node": "No pending jobs", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build LLM request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No pending jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build LLM request": {
-      "main": [[{ "node": "LLM input OK?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "LLM input OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "LLM input OK?": {
       "main": [
-        [{ "node": "LM Studio chat", "type": "main", "index": 0 }],
-        [{ "node": "Mark job failed", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "LM Studio chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark job failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "LM Studio chat": {
-      "main": [[{ "node": "LLM response OK?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "LLM response OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "LLM response OK?": {
       "main": [
-        [{ "node": "Parse correction JSON", "type": "main", "index": 0 }],
-        [{ "node": "Fail LLM unreachable", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse correction JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail LLM unreachable",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse correction JSON": {
-      "main": [[{ "node": "Parse OK?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse OK?": {
       "main": [
-        [{ "node": "Complete job", "type": "main", "index": 0 }],
-        [{ "node": "Mark job failed", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Complete job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark job failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Complete job": {
-      "main": [[{ "node": "Complete OK?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Complete OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Complete OK?": {
       "main": [
-        [{ "node": "Job done", "type": "main", "index": 0 }],
-        [{ "node": "Fail complete rejected", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Job done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail complete rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Fail LLM unreachable": {
-      "main": [[{ "node": "Mark job failed", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Mark job failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Fail complete rejected": {
-      "main": [[{ "node": "Mark job failed", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Mark job failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {

@@ -95,7 +95,7 @@ export function buildWorkerJobContext(input: {
     source_feedback: input.snapshot.feedback_fields,
     lesson_plan_excerpt: redactLessonPlanExcerpt(input.lessonPlanContent),
     rules: [
-      '맞춤법·문장만 교정한다.',
+      '맞춤법·문장만 제안하고, 원문을 대신 작성하지 않는다.',
       '관찰 사실·활동·시간·수치는 추가·삭제·왜곡하지 않는다.',
       '존재하지 않는 행동·성과·평가를 만들지 않는다.',
       'SPOMOVE 등 사용자가 적은 고유명사/항목명은 그대로 둔다.',

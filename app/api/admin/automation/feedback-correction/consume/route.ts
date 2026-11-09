@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { parseJobRow } from '@/app/lib/server/feedbackCorrectionJobs';
-import type { FeedbackFields } from '@/app/lib/feedbackValidation';
+import { proposalFromStoredDraft } from '@/app/lib/automation/feedbackCorrectionProposal';
 
 type Body = { jobId?: unknown };
 
-/** Loads correction draft into admin review — does not mutate sessions. */
+/** Returns a review proposal. Does not change the job or the session. */
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
@@ -37,21 +37,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '교정 초안이 아직 준비되지 않았습니다.' }, { status: 409 });
   }
 
-  const consumedAt = new Date().toISOString();
-  const { error: updateError } = await service
-    .from('admin_feedback_correction_jobs')
-    .update({ consumed_at: consumedAt, updated_at: consumedAt })
-    .eq('id', jobId)
-    .is('consumed_at', null);
-
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
   return NextResponse.json({
     ok: true,
     sessionId: job.session_id,
-    correctionDraft: job.correction_draft as FeedbackFields,
-    inputSnapshot: job.input_snapshot,
+    proposal: proposalFromStoredDraft(job.input_snapshot.feedback_fields, job.correction_draft),
   });
 }

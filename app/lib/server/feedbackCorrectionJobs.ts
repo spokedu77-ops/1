@@ -5,6 +5,7 @@ import {
   normalizeCorrectionDraft,
 } from '@/app/lib/automation/feedbackCorrectionDraft';
 import { validateFeedbackCorrectionQuality } from '@/app/lib/automation/feedbackCorrectionQuality';
+import { buildCorrectionProposal, type CorrectionProposal } from '@/app/lib/automation/feedbackCorrectionProposal';
 import { hasSessionFeedback } from '@/app/lib/server/sessionFeedbackGuard';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 
@@ -16,7 +17,7 @@ export type FeedbackCorrectionJobRow = {
   status: string;
   idempotency_key: string;
   input_snapshot: FeedbackCorrectionInputSnapshot;
-  correction_draft: FeedbackFields | null;
+  correction_draft: FeedbackFields | CorrectionProposal | null;
   worker_id: string | null;
   lease_until: string | null;
   attempt_count: number;
@@ -85,7 +86,7 @@ export function parseJobRow(raw: Record<string, unknown>): FeedbackCorrectionJob
     status: String(raw.status),
     idempotency_key: String(raw.idempotency_key),
     input_snapshot: raw.input_snapshot as FeedbackCorrectionInputSnapshot,
-    correction_draft: (raw.correction_draft as FeedbackFields | null) ?? null,
+    correction_draft: (raw.correction_draft as FeedbackFields | CorrectionProposal | null) ?? null,
     worker_id: raw.worker_id != null ? String(raw.worker_id) : null,
     lease_until: raw.lease_until != null ? String(raw.lease_until) : null,
     attempt_count: Number(raw.attempt_count ?? 0),
@@ -103,16 +104,15 @@ export function parseJobRow(raw: Record<string, unknown>): FeedbackCorrectionJob
 export function validateWorkerCompletionDraft(
   snapshot: FeedbackCorrectionInputSnapshot,
   draftRaw: unknown,
-): { ok: true; draft: FeedbackFields } | { ok: false; error: string } {
-  const draft = normalizeCorrectionDraft(draftRaw, snapshot);
-  if (!draft) {
+): { ok: true; draft: CorrectionProposal } | { ok: false; error: string } {
+  const legacy = normalizeCorrectionDraft(draftRaw, snapshot);
+  if (legacy) {
+    const qualityError = validateFeedbackCorrectionQuality(snapshot, legacy);
+    if (qualityError) return { ok: false, error: qualityError };
+  } else if (!draftRaw || typeof draftRaw !== 'object' || Array.isArray(draftRaw) || !('corrections' in draftRaw)) {
     return { ok: false, error: '교정 초안 형식이 올바르지 않습니다.' };
   }
-  const qualityError = validateFeedbackCorrectionQuality(snapshot, draft);
-  if (qualityError) {
-    return { ok: false, error: qualityError };
-  }
-  return { ok: true, draft };
+  return { ok: true, draft: buildCorrectionProposal(snapshot.feedback_fields, legacy ?? draftRaw) };
 }
 
 export function toWorkerPayload(

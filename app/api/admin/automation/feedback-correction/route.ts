@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { parseJobRow } from '@/app/lib/server/feedbackCorrectionJobs';
+import { proposalFromStoredDraft } from '@/app/lib/automation/feedbackCorrectionProposal';
 
 export async function GET(request: Request) {
   const auth = await requireAdmin();
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
     .select('*')
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(12);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -28,10 +29,23 @@ export async function GET(request: Request) {
   const latestCompleted =
     jobs.find((job) => job.status === 'completed' && !job.consumed_at) ?? null;
 
+  const readyProposal = latestCompleted
+    ? proposalFromStoredDraft(latestCompleted.input_snapshot.feedback_fields, latestCompleted.correction_draft)
+    : null;
+
   return NextResponse.json({
     ok: true,
     active,
     latestCompleted,
+    proposal: readyProposal,
+    history: jobs.map((job) => ({
+      id: job.id,
+      status: job.status,
+      createdAt: job.created_at,
+      completedAt: job.completed_at,
+      consumedAt: job.consumed_at,
+      errorCode: job.error_code,
+    })),
     jobs: jobs.map((job) => ({
       id: job.id,
       status: job.status,
