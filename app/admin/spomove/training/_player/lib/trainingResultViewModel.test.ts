@@ -12,6 +12,17 @@ const search: TrainingResultViewInput = {
 };
 
 describe('result feedback units and evidence', () => {
+  it.each([undefined, 'balloon-pop'] as const)('shows recorded balloon colors for legacy and canonical activity identity: %s', activityId => {
+    const colorCounts = { red: 2, blue: 1, green: 0, yellow: 2 };
+    const vm = build({ ...base, cfg: { ...base.cfg, mode: 'reactTrain', level: 3, activityId, adminRounds: true, targetReps: 5 }, stims: 5, colorCounts });
+    expect(vm.activityTitle).toBe('풍선 터뜨리기');
+    expect(vm.distribution.map(row => [row.id, row.count])).toEqual([
+      ['red', 2], ['yellow', 2], ['green', 0], ['blue', 1],
+    ]);
+    expect(vm.distributionKind).toBe('color');
+    expect(vm.progress).toBe('5회 제시');
+    expect(vm.recordNote).not.toContain('자동 측정하지 않음');
+  });
   it.each([
     ['natural_complete', '오늘의 미션을 마쳤어요!', true],
     ['stopped_early', '오늘은 여기까지!', true],
@@ -41,7 +52,9 @@ describe('result feedback units and evidence', () => {
     const zero = build({ ...search, stims: 0, colorCounts: { red: 0, yellow: 0, blue: 0, green: 0 } });
     expect(zero.facts.map(f => f.value)).toEqual(['0회', '0개']);
     expect(zero.recordNote).toContain('실제 기록 없음');
-    expect(zero.distribution).toEqual([]);
+    expect(zero.distribution.map(row => [row.id, row.count, row.width])).toEqual([
+      ['red', 0, 0], ['yellow', 0, 0], ['green', 0, 0], ['blue', 0, 0],
+    ]);
   });
 
   it('does not accept negative, fractional or non-finite counters', () => {

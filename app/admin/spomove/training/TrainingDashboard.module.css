@@ -280,7 +280,7 @@
   -webkit-text-size-adjust: 100%;
   -moz-tab-size: 4;
   tab-size: 4;
-  font-family: Pretendard, Noto Sans KR, Inter, sans-serif;
+  font-family: var(--font-sans);
   font-feature-settings: normal;
   font-variation-settings: normal;
   -webkit-tap-highlight-color: transparent
@@ -1537,7 +1537,7 @@
   min-height: 100vh;
   padding-bottom: 48px;
   color: #f1f5f9;
-  font-family: 'Spomove Reference Sans', sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   user-select: none;
   line-height: 1.5;

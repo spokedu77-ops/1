@@ -2,7 +2,7 @@ import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/sessi
 import { resolveSpomoveCompletionPresentation } from '@/app/spokedu-master/spomove/session/sessionResultModel';
 import { buildDiveActionMoveReport, type DiveActionMoveSession } from './diveActionMoveReport';
 import type { GlassBridgeResult } from './glassBridgeMemory';
-import { resolveTrainingSelection } from './trainingActivity';
+import { resolveTrainingSelection, type TrainingActivityId } from './trainingActivity';
 import { trainingActivityGuide } from './trainingActivityGuide';
 import { resolveTrainingResultRichContent } from './trainingResultRichContent';
 import { colorMeta, describeSessionVolume, formatElapsedSeconds, RESULT_COLOR_ORDER, type ColorStimulusCounts, type TrainingResultConfig } from './trainingResultSummary';
@@ -37,6 +37,12 @@ function validCounts(value: ColorStimulusCounts | null): value is ColorStimulusC
   return value !== null && RESULT_COLOR_ORDER.every(id => count(value[id]));
 }
 
+// Canonical activity identities, not runtime names (balloon-pop runs as `balloon`).
+const COLOR_DISTRIBUTION_ACTIVITIES = new Set<TrainingActivityId>([
+  'wave-dodge', 'falling-bricks', 'balloon-pop', 'beat-wave', 'visual-camouflage',
+  'mole', 'virus-outbreak', 'wormhole', 'motion-gate',
+]);
+
 /** Presentation only: never infer child performance or alter runtime / persistence. */
 export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
   const { cfg, elapsedMs, stims, glassBridge: bridge } = input;
@@ -53,8 +59,7 @@ export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
   const zoneActivity = ['color-tracker', 'number-cart', 'goalkeeper'].includes(id);
   const colorActivity = !directionOnly && !['direction-cue', 'relative-compass', 'shape-completion'].includes(id)
     && !dive && cfg.mode !== 'spatial' && cfg.mode !== 'simon'
-    && (['basic', 'flanker', 'stroop'].includes(cfg.mode) || id === 'motion-gate'
-      || ['wave-dodge', 'falling-bricks', 'balloon', 'beat-wave', 'visual-camouflage', 'mole', 'virus-outbreak', 'wormhole'].includes(id));
+    && (['basic', 'flanker', 'stroop'].includes(cfg.mode) || COLOR_DISTRIBUTION_ACTIVITIES.has(id));
   const distributionSupported = search || numberReader || colorActivity || zoneActivity;
   const rawCounts = distributionSupported && validCounts(input.colorCounts) ? input.colorCounts : null;
   // These legacy engines count red/yellow/green/blue by index, unlike lane counters.
@@ -122,7 +127,10 @@ export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
       progress = count(bridge?.presentedRounds) ? `${bridge.presentedRounds}라운드 제시` : '라운드 기록 미전달';
     }
     add('last', '마지막 도달 길이', bridge?.lastLength, '칸');
-    recordNote = bridge ? '패턴 1회 제시, 라운드 완료와 발판별 입력을 서로 다른 단위로 기록합니다.' : '현재 호출부에서 유리 다리 데이터 미전달';
+    recordNote = bridge ? bridge.scoringMode === 'color-choice'
+      ? '교사가 입력한 색과 정답을 비교한 기록입니다. 실제 움직임을 자동 측정하지 않습니다.'
+      : '교사가 수동으로 판정한 기록입니다. 실제 움직임을 자동 측정하지 않습니다.'
+      : '현재 호출부에서 유리 다리 데이터 미전달';
   } else if (dive) {
     facts.push({ id: 'elapsed', label: '실제 진행 시간', value: dive.activityTimeValue });
     settings.push(...dive.snapshot.filter(item => ['actions', 'stage'].includes(item.id)));
@@ -167,19 +175,28 @@ export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
     if (input.sessionSettings.secondary?.trim()) setting('session-detail', '추가 설정', input.sessionSettings.secondary);
   }
   if (distributionSupported && !counts) limitations.push('자극 분포: 현재 호출부에서 데이터 미전달 또는 유효한 집계값 없음.');
-  const distribution = counts && total !== undefined && total > 0 ? RESULT_COLOR_ORDER.map((key, index) => ({
+  const distribution = counts ? RESULT_COLOR_ORDER.map((key, index) => ({
     id: key,
     label: numberReader ? `숫자 ${index + 1}` : `${colorMeta(key).name}${search || zoneActivity ? ' 구역' : ''}`,
     color: colorMeta(key).bg,
     count: counts[key],
     // Relative count bars, no success-rate or rounded-percentage claims.
-    width: counts[key] / Math.max(...RESULT_COLOR_ORDER.map(k => counts[k])) * 100,
+    width: counts[key] / Math.max(1, ...RESULT_COLOR_ORDER.map(k => counts[k])) * 100,
   })) : [];
   return {
     reason, title: CHILD_TITLES[reason], status: completion.statusBadge, description: completion.description,
     activityTitle: input.programTitle ?? selection.title,
     elapsed: Number.isFinite(elapsedMs) && elapsedMs >= 0 ? (elapsedMs === 0 ? '0초' : formatElapsedSeconds(elapsedMs)) : '시간 기록 미전달',
     volume, progress, facts, settings, distribution, recordNote, objective, meaning, nextChallenge, limitations,
+    distributionKind: search || zoneActivity ? 'zone' : numberReader ? 'number' : 'color',
+    activityDescription: search
+      ? '여러 도형 중 목표를 구별하고 해당 위치를 찾아 움직이는 활동입니다. 시각정보를 살펴보고 위치를 선택하는 과정을 경험합니다.'
+      : id === 'glass-bridge-memory' ? rich.programSummary : guide?.goal ?? objective,
+    educationTags: search ? ['시각적 주의', '정보 선택', '시지각-운동 협응']
+      : id === 'instant-memory' ? ['시각 기억', '공간 기억', '변화 탐지']
+      : cfg.mode === 'spatial' ? ['시각 기억', '작업기억', '순차적 움직임']
+      : dive ? ['시각 신호 구별', '움직임 전환', '리듬 유지']
+      : rich.benefitTags.length ? rich.benefitTags.slice(0, 3) : ['시각적 주의', '규칙에 따른 반응', '시지각-운동 협응'],
     distributionTitle: search || zoneActivity ? '목표 구역별 출현' : numberReader ? '숫자별 출현' : '색상별 자극 제시',
     showFeeling: reason === 'natural_complete' || reason === 'stopped_early',
   };

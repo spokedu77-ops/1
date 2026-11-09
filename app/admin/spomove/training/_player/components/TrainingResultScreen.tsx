@@ -6,7 +6,7 @@ import type { DiveActionMoveSession } from '../lib/diveActionMoveReport';
 import type { ColorStimulusCounts, TrainingResultConfig } from '../lib/trainingResultSummary';
 import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
 import { buildTrainingResultViewModel, type ResultFact } from '../lib/trainingResultViewModel';
-import { MODES } from '../constants';
+import { ClipboardCheck, Flag, Info, LayoutGrid, Lightbulb, RotateCcw, Timer, Target } from 'lucide-react';
 import { CSS } from '../styles';
 import { useViewportScrollLock } from '../lib/lockViewportScroll';
 import styles from './TrainingResultScreen.module.css';
@@ -33,7 +33,7 @@ type Props = {
   statusBadge?: string | null;
   programTitle?: string;
   student?: StudentBadge | null;
-  /** 유효한 실제 사용 설정만 지도자 상세에 표시합니다. */
+  /** 유효한 실제 사용 설정 요약입니다. */
   sessionSettings?: TrainingResultSessionSettings | null;
   footer?: React.ReactNode;
   /** DIVE 액션무브 결과만. 없으면 기존 훈련 리포트를 유지한다. */
@@ -45,103 +45,81 @@ type Props = {
   retryLabel?: string;
 };
 
-const FEELINGS = [
-  { label: '쉬웠어요', icon: '☀', reply: '느낌을 알려줘서 고마워요. 다음에도 함께해요!' },
-  { label: '괜찮았어요', icon: '◡', reply: '느낌을 나눠줘서 고마워요. 잠깐 쉬어도 좋아요!' },
-  { label: '어려웠어요', icon: '△', reply: '솔직하게 알려줘서 고마워요. 선생님과 함께 이야기해 봐요!' },
-] as const;
-
-function FactList({ items }: { items: ResultFact[] }) {
-  return <dl className={styles.facts}>{items.map(item => (
-    <div key={item.id}><dt>{item.label}</dt><dd>{item.value}</dd></div>
-  ))}</dl>;
+function FactList({ items, summary = false }: { items: ResultFact[]; summary?: boolean }) {
+  const icons = [Timer, Flag, Target];
+  return <dl className={styles.facts}>{items.map((item, index) => {
+    const Icon = icons[index];
+    return <div key={item.id}><dt>{summary && Icon ? <Icon size={21} aria-hidden="true" /> : null}{item.label}</dt><dd>{item.value}</dd></div>;
+  })}</dl>;
 }
 
 export function TrainingResultScreen(props: Props) {
   const vm = buildTrainingResultViewModel(props);
-  const [feeling, setFeeling] = useState<number | null>(null);
   const [theme] = useState(() => typeof window !== 'undefined' && localStorage.getItem('spokedu_theme') === 'dark' ? 'dark' : 'light');
   useViewportScrollLock(true);
-  const accent = MODES[props.cfg.mode]?.accent ?? '#F97316';
+  const hasDistribution = vm.distribution.length > 0;
+  // Top-level facts already show elapsed time and task count. Keep other recorded units here.
+  const extraFacts = vm.facts.filter(item => {
+    if (item.id === 'elapsed' || item.id === 'tasks') return false;
+    if (hasDistribution && item.id === 'targets') return false;
+    if (item.id === 'presented') return props.glassBridge?.scoringMode === 'color-choice';
+    if (item.id === 'completed' && props.glassBridge?.scoringMode === 'color-choice') return false;
+    if (props.glassBridge?.scoringMode === 'color-choice' && ['success', 'failure'].includes(item.id)) return false;
+    return true;
+  });
+  const recordTitle = hasDistribution
+    ? vm.distributionKind === 'zone' ? '이번 활동에서 목표가 나타난 구역' : vm.distributionTitle
+    : '이번 활동의 기록';
   return (
-    <div className={`spomove-player-root tr-result-root ${styles.root}`} data-theme={theme}
-      data-completion={vm.reason} style={{ '--tr-accent': accent } as React.CSSProperties}>
+    <div className={`spomove-player-root tr-result-root ${styles.root}`} data-theme={theme} data-completion={vm.reason}>
       <style>{CSS}</style>
       <header className={styles.header}>
-        <button type="button" className={styles.button} onClick={props.onBack}>목록</button>
-        <span className={styles.headerTitle}>오늘의 활동 기록</span>
-        <button type="button" className={`${styles.button} ${styles.primary}`} onClick={props.onRetry}>{props.retryLabel ?? '다시 실행'}</button>
+        <div className={styles.headerInner}>
+          <div className={styles.brand}><span className={styles.wordmark}>SPOMOVE</span><span>스마트 인지놀이 체육</span></div>
+          <span className={styles.headerTitle}><ClipboardCheck size={21} aria-hidden="true" />활동 결과 리포트</span>
+        </div>
       </header>
       <main className={styles.scroll}>
         <div className={styles.board}>
           <section className={`${styles.card} ${styles.mission}`} aria-labelledby="tr-mission-title">
-            <div className={styles.missionHeading}>
-              <div>
-                <p className={styles.eyebrow}>오늘의 미션 결과</p>
-                <h1 id="tr-mission-title">{vm.title}</h1>
-                <p className={styles.activity}>{vm.activityTitle}</p>
-                {props.student ? <p className={styles.muted}>{props.student.name}의 활동 기록</p> : null}
-              </div>
-              <span className={styles.status}>{vm.status}</span>
-            </div>
-            <p className={styles.muted}>{vm.description}</p>
-            <FactList items={[
-              { id: 'elapsed', label: '실제 진행 시간', value: vm.elapsed },
+            <div className={styles.identity}><span className={styles.status}>{vm.status}</span><span>스마트 신체인지 활동</span></div>
+            <div className={styles.missionHeading}><h1 id="tr-mission-title">{vm.title}</h1><p className={styles.activity}>{vm.activityTitle}</p></div>
+            {props.student ? <p className={styles.muted}>{props.student.name}의 활동 기록</p> : null}
+            <FactList summary items={[
+              { id: 'elapsed', label: '활동 시간', value: vm.elapsed },
               { id: 'volume', label: '설정 분량', value: vm.volume },
               { id: 'progress', label: '실제 진행량', value: vm.progress },
             ]} />
           </section>
 
-          <div className={styles.middle}>
-            <section className={styles.card} aria-labelledby="tr-record-title">
-              <p className={styles.eyebrow}>이번에 남긴 기록</p>
-              <h2 id="tr-record-title">오늘의 활동 기록</h2>
-              {vm.facts.length ? <FactList items={vm.facts} /> : null}
-              {vm.distribution.length ? <div className={styles.distribution}>
-                <h3>{vm.distributionTitle}</h3>
-                <ul>{vm.distribution.map(item => <li key={item.id}>
-                  <span>{item.label}</span>
-                  <span className={styles.track} aria-hidden="true"><span style={{ width: `${item.width}%`, background: item.color }} /></span>
-                  <strong>{item.count}회</strong>
-                </li>)}</ul>
-              </div> : null}
-              <p className={styles.note}>{vm.recordNote}</p>
-            </section>
-            {vm.showFeeling ? <section className={`${styles.card} ${styles.feeling}`} aria-labelledby="tr-feeling-title">
-              <p className={styles.eyebrow}>정답 없는 나의 이야기</p>
-              <h2 id="tr-feeling-title">내 느낌</h2>
-              <p className={styles.muted}>오늘 활동은 어땠나요?</p>
-              <div className={styles.feelingChoices} role="group" aria-label="오늘 활동의 느낌">
-                {FEELINGS.map((item, index) => <button key={item.label} type="button" aria-pressed={feeling === index}
-                  onClick={() => setFeeling(feeling === index ? null : index)}>
-                  <span className={styles.feelingIcon} aria-hidden="true">{item.icon}</span>{item.label}
-                </button>)}
-              </div>
-              <p className={styles.muted}>선택은 자유예요. 결과 점수에 영향을 주지 않아요.</p>
-              <p role="status" className={styles.reply}>{feeling !== null ? FEELINGS[feeling].reply : ''}</p>
-            </section> : null}
-          </div>
-
-          <section className={`${styles.card} ${styles.challenge}`} aria-labelledby="tr-challenge-title">
-            <p className={styles.eyebrow}>다시 해볼 때 떠올려요</p>
-            <h2 id="tr-challenge-title">다음 도전</h2>
-            <p>{vm.nextChallenge}</p>
-          </section>
-          <details className={`${styles.card} ${styles.details}`}>
-            <summary>지도자 상세 분석 <span className={styles.muted}>기록과 지도 방법 확인</span></summary>
-            <div className={styles.detailContent}>
-              <section><h3>활동 목표</h3><p>{vm.objective}</p></section>
-              <section><h3>실제 기록</h3><FactList items={[
-                { id: 'status', label: '종료 상태', value: vm.status },
-                { id: 'elapsed', label: '실제 진행 시간', value: vm.elapsed },
-                ...vm.facts.filter(item => item.id !== 'elapsed'),
-              ]} /></section>
-              <section><h3>교육적 의미</h3><p>{vm.meaning}</p></section>
-              <section><h3>지도 포인트</h3><p>{vm.nextChallenge}</p><p className={styles.muted}>다음 수업에서 목표를 확인하는 과정과 이동 후 균형을 관찰해 주세요.</p></section>
-              <section><h3>사용한 설정</h3><FactList items={[{ id: 'volume', label: '설정 분량', value: vm.volume }, ...vm.settings]} /></section>
-              <section><h3>기록 한계</h3><ul className={styles.limits}>{vm.limitations.map(line => <li key={line}>{line}</li>)}</ul></section>
+          <section className={styles.card} aria-labelledby="tr-record-title">
+            <div className={styles.sectionHeading}>
+              <h2 id="tr-record-title">{recordTitle}</h2>
+              {hasDistribution ? <p className={styles.muted}>{vm.distributionKind === 'zone' ? 'SPOMAT 4구역 발판 배치 기준' : vm.distributionKind === 'number' ? '숫자별 실제 출현 기록' : '실제 색상 자극 제시 기록'}</p> : null}
             </div>
-          </details>
+            {hasDistribution ? <ul className={styles.distribution} aria-label={vm.distributionTitle}>
+              {vm.distribution.map(item => <li key={item.id} data-color={vm.distributionKind === 'number' ? undefined : item.id}>
+                <div className={styles.colorLabel}><span className={styles.dot} aria-hidden="true" /><div><span>{item.label}</span><span className={styles.countLabel}>출현 횟수</span></div></div>
+                <strong>{item.count}<span>회</span></strong>
+              </li>)}
+            </ul> : null}
+            {extraFacts.length ? <FactList items={extraFacts} /> : null}
+            {!hasDistribution && vm.settings.length ? <FactList items={vm.settings} /> : null}
+            {hasDistribution && props.sessionSettings?.primary.trim() ? <p className={styles.settings}>{[props.sessionSettings.primary, props.sessionSettings.secondary].filter(Boolean).join(' · ')}</p> : null}
+            <p className={styles.note}><Info size={22} aria-hidden="true" />{vm.recordNote}</p>
+          </section>
+
+          <div className={styles.bottom}>
+            <section className={`${styles.card} ${styles.education}`} aria-labelledby="tr-about-title">
+              <h2 id="tr-about-title"><Lightbulb size={22} aria-hidden="true" />이 활동은?</h2>
+              <p>{vm.activityDescription}</p>
+              {vm.educationTags.length ? <div className={styles.educationElements}><h3>교육적 요소</h3><ul>{vm.educationTags.map(tag => <li key={tag}>{tag}</li>)}</ul></div> : null}
+            </section>
+            <nav className={styles.actions} aria-label="활동 결과 행동">
+              <button type="button" className={styles.button} onClick={props.onBack}><LayoutGrid size={22} aria-hidden="true" />활동 목록으로</button>
+              <button type="button" className={`${styles.button} ${styles.primary}`} onClick={props.onRetry}><RotateCcw size={22} aria-hidden="true" />{props.retryLabel ?? '다시 실행'}</button>
+            </nav>
+          </div>
           {props.footer ? <footer className={styles.footer}>{props.footer}</footer> : null}
         </div>
       </main>

@@ -7,14 +7,14 @@ export type RepsState = { presented: number };
 
 export type RegisterPresentedSignalResult = {
   next: RepsState;
-  /** presented >= targetReps이면 true → 훅에서 finish() 호출 */
+  /** 목표 개수 도달 여부. 마지막 신호의 제시 시간이 지난 뒤 종료해야 한다. */
   finished: boolean;
 };
 
 /**
  * 신호 1회를 처리해 새 상태와 완료 여부를 반환한다.
  * - hasValidSignal=false(null signal)이면 카운트를 올리지 않는다.
- * - finished=true이면 호출 측에서 즉시 finish()를 호출해야 한다.
+ * - finished=true이면 추가 신호 생성을 멈추고 마지막 신호의 제시 시간을 보장한다.
  */
 export function registerPresentedSignal({
   state,

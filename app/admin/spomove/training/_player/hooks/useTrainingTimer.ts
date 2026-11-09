@@ -203,15 +203,16 @@ export function useTrainingTimer({
           finish();
           return;
         }
+        // The final cue must remain visible for its full configured interval.
+        // Finishing in emitSignal's frame batches away that cue in React.
+        if (timeMode === 'reps' && repsStateRef.current.presented >= targetReps && elapsed >= nextSignalTimeRef.t) {
+          finish();
+          return;
+        }
         const i = Math.floor(elapsed / (speed * 1000));
-        if (i > idxRef.current) {
+        if (i > idxRef.current && (timeMode !== 'reps' || repsStateRef.current.presented < targetReps)) {
           idxRef.current = i;
           emitSignal(elapsed);
-          // reps 모드: registerPresentedSignal이 카운팅한 횟수로 종료 판정
-          if (timeMode === 'reps' && repsStateRef.current.presented >= targetReps) {
-            finish();
-            return;
-          }
         }
         rafRef.current = requestAnimationFrame(tick);
       };
@@ -224,12 +225,12 @@ export function useTrainingTimer({
           finish();
           return;
         }
-        if (elapsed >= nextSignalTimeRef.t) {
+        if (timeMode === 'reps' && repsStateRef.current.presented >= targetReps && elapsed >= nextSignalTimeRef.t) {
+          finish();
+          return;
+        }
+        if (elapsed >= nextSignalTimeRef.t && (timeMode !== 'reps' || repsStateRef.current.presented < targetReps)) {
           emitSignal(elapsed);
-          if (timeMode === 'reps' && repsStateRef.current.presented >= targetReps) {
-            finish();
-            return;
-          }
         }
         rafRef.current = requestAnimationFrame(tick);
       };
