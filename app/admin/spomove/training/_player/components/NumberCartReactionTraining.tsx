@@ -12,6 +12,7 @@ import {
 } from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { normalizeNumberCartRounds } from '../lib/roundNormalization';
+import { normalizeAdminTrainingRounds } from '../lib/adminTrainingRounds';
 
 export { NUMBER_CART_ROUND_OPTIONS, normalizeNumberCartRounds } from '../lib/roundNormalization';
 
@@ -105,6 +106,7 @@ type CartGame = {
 };
 
 type Props = {
+  adminRounds?: boolean;
   targetRounds: number;
   speedLevel: number;
   speedSec: number;
@@ -314,9 +316,9 @@ const css = `
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
-export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec, tier = 2, onExit, onComplete }: Props) {
+export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec, tier = 2, onExit, onComplete, adminRounds = false }: Props) {
   const cartTier: NumberCartTier = tier === 1 || tier === 3 ? tier : 2;
-  const totalRounds = normalizeNumberCartRounds(targetRounds);
+  const totalRounds = adminRounds ? normalizeAdminTrainingRounds(targetRounds) : normalizeNumberCartRounds(targetRounds);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const hudRoundRef = useRef<HTMLDivElement>(null);

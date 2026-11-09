@@ -6,7 +6,7 @@ import { settingsToExitResume } from './lib/trainingLaunchSnapshot';
 export { settingsToExitResume } from './lib/trainingLaunchSnapshot';
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { EMBED_FIXED_VIEWPORT, EMBED_SAFE_BOTTOM, EMBED_SAFE_TOP } from './lib/embedViewport';
+import { EMBED_FIXED_VIEWPORT, EMBED_SAFE_BOTTOM } from './lib/embedViewport';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
@@ -32,11 +32,15 @@ import {
 } from './components/TargetTrackingReactionTraining';
 import { RelativeCompassReactionTraining, type RelativeCompassDifficulty, type RelativeCompassSeconds } from './components/RelativeCompassReactionTraining';
 import { GlassBridgeMemoryTraining } from './components/GlassBridgeMemoryTraining';
-import { normalizeGlassBridgeLength, normalizeGlassBridgeSeconds, normalizeGlassBridgeRounds, type GlassBridgeResult, type GlassBridgeComplete } from './lib/glassBridgeMemory';
+import { normalizeGlassBridgeLength, normalizeGlassBridgeSeconds, normalizeGlassBridgeRounds, normalizeGlassBridgeDifficulty, type GlassBridgeResult, type GlassBridgeComplete } from './lib/glassBridgeMemory';
 import { MovingNumberReaderTraining } from './components/MovingNumberReaderTraining';
 import { normalizeNumberReaderSeconds, normalizeNumberReaderReps } from './lib/movingNumberReader';
+import { ADMIN_TRAINING_ROUNDS, normalizeAdminTrainingRounds } from './lib/adminTrainingRounds';
+import { MemoryRoundSeries } from './components/MemoryRoundSeries';
+import { TrainingRuntimeHud } from './components/TrainingRuntimeHud';
+import { ReactTrainStartCountdownOverlay } from './lib/reactTrainStartCountdown';
 import { VisualSearchReactionTraining } from './components/VisualSearchReactionTraining';
-import { normalizeSearchSeconds, normalizeSearchReps } from './lib/visualSearch';
+import { normalizeSearchSeconds, normalizeSearchReps, normalizeSearchStage, normalizeSearchTargetCount } from './lib/visualSearch';
 import { ShapeCompletionReactionTraining } from './components/ShapeCompletionReactionTraining';
 import { normalizeShapeCompletionDifficulty, normalizeShapeCompletionSeconds, type ShapeCompletionDifficulty, type ShapeCompletionSeconds } from './lib/shapeCompletionPuzzle';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
@@ -77,6 +81,7 @@ import {
   isModifiedQuadrantLevel,
   isFront3PanelLevel,
   isColorSequenceLevel,
+  ADMIN_SEQUENCE_OPTIONS,
   isColorNumberLevel,
   isInstantMemoryLevel,
   modifiedQuadrantStage,
@@ -168,6 +173,8 @@ export type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal' | 'together-family';
 
 type Settings = {
+  visualSearchStage: 1 | 2;
+  visualSearchTargetCount: 1 | 2;
   mode: string;
   level: number;
   speed: number;
@@ -255,7 +262,8 @@ type Settings = {
   activityId: TrainingActivityId;
   shapeCompletionDifficulty: ShapeCompletionDifficulty;
   shapeCompletionResponseSeconds: ShapeCompletionSeconds;
-  glassBridgeStartLength: 4 | 5 | 6;
+  glassBridgeDifficulty: 'easy' | 'hard';
+  glassBridgeStartLength: 3 | 4 | 5 | 6;
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount: 1 | 2;
   /** ???????????????????????????????6???????????? 1~10??????????????????????????????????????????????ㅻ깹??????????????????????????????????????????*/
@@ -263,9 +271,12 @@ type Settings = {
 };
 
 const defaultSettings: Settings = {
+  visualSearchStage: 1,
+  visualSearchTargetCount: 1,
   mode: 'basic',
   level: 1,
-  glassBridgeStartLength: 5,
+  glassBridgeDifficulty: 'easy',
+  glassBridgeStartLength: 3,
   speed: 4.0,
   timeMode: 'time',
   duration: 60,
@@ -332,6 +343,8 @@ const defaultSettings: Settings = {
 };
 
 export type MemoryGameAutoLaunch = {
+  visualSearchStage?: 1 | 2;
+  visualSearchTargetCount?: 1 | 2;
   speed?: number;
   timeMode?: 'time' | 'reps';
   duration?: number;
@@ -410,7 +423,8 @@ export type MemoryGameAutoLaunch = {
   relativeCompassEnabled?: boolean;
   shapeCompletionDifficulty?: ShapeCompletionDifficulty;
   shapeCompletionResponseSeconds?: ShapeCompletionSeconds;
-  glassBridgeStartLength?: 4 | 5 | 6;
+  glassBridgeDifficulty?: 'easy' | 'hard';
+  glassBridgeStartLength?: 3 | 4 | 5 | 6;
   shapeCompletionEnabled?: boolean;
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
@@ -435,6 +449,7 @@ function MemoryGameRuntime({
   initialMode,
   initialLevel,
   autoLaunch,
+  adminMemorySettings = false,
   embed = false,
   disableBgm = false,
   flowBgmPath,
@@ -446,6 +461,7 @@ function MemoryGameRuntime({
   onThemeChange,
 }: {
   onThemeChange?: (theme: 'light' | 'dark') => void;
+  adminMemorySettings?: boolean;
   initialMode?: string;
   initialLevel?: number;
   /** SPOKEDU MASTER iframe ????? ???????????????????admin????????????????????????????????????????????????癲????????????釉먮폁???????????곕츥???꿔꺂????용끏???????????????????????????????????????? */
@@ -720,7 +736,8 @@ function MemoryGameRuntime({
     // Resolve before starting. Unknown addresses must not become the first catalog activity.
     resolveTrainingActivity(normalized.mode, targetLevelRaw, autoLaunch ?? {});
     const targetLevel = normalized.mode === 'stroop' && targetLevelRaw === 5 ? 4 : targetLevelRaw;
-    const optionDefaults = resolveTrainingSelection(normalized.mode, targetLevel, autoLaunch ?? {}).optionDefaults;
+    const initialSelection = resolveTrainingSelection(normalized.mode, targetLevel, autoLaunch ?? {});
+    const optionDefaults = initialSelection.optionDefaults;
     const legacyStroopMissing = normalized.mode === 'stroop' && targetLevelRaw === 5;
 
     if (autoLaunch) {
@@ -785,6 +802,12 @@ function MemoryGameRuntime({
         shapeCompletionDifficulty: normalizeShapeCompletionDifficulty(autoLaunch.shapeCompletionDifficulty),
         shapeCompletionResponseSeconds: normalizeShapeCompletionSeconds(autoLaunch.shapeCompletionResponseSeconds),
       };
+      if (merged.activityId === 'visual-search') {
+        merged.speed = normalizeSearchSeconds(autoLaunch.speed);
+        merged.targetReps = normalizeSearchReps(autoLaunch.targetReps);
+        merged.visualSearchStage = normalizeSearchStage(autoLaunch.visualSearchStage);
+        merged.visualSearchTargetCount = normalizeSearchTargetCount(autoLaunch.visualSearchStage, autoLaunch.visualSearchTargetCount);
+      }
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
       // setScreen('setup') ?????????????????????????????????????home ????????????????? ???????????????????????early-return??????????????????????????????????????????????????猷몄굣???????????????????
@@ -796,6 +819,7 @@ function MemoryGameRuntime({
         mode: normalized.mode,
         level: targetLevel,
         activityId: resolveTrainingActivity(normalized.mode, targetLevel),
+        ...(initialSelection.activityId === 'visual-search' ? { speed: 5, targetReps: 20, visualSearchStage: 1 as const, visualSearchTargetCount: 1 as const } : {}),
         stroopWordMode: legacyStroopMissing ? 'missing' : s.stroopWordMode,
       }));
       setScreen('setup');
@@ -866,23 +890,24 @@ function MemoryGameRuntime({
     resultDeliveredRef.current = true;
     const completionReason = resolveTrainingCompletionReason({ completionReason: meta?.completionReason, stoppedEarly: meta?.endedEarly });
     const glassBridge = cfg.activityId === 'glass-bridge-memory' ? meta?.glassBridge ?? glassBridgeStatsRef.current : undefined;
+    const measuredStims = meta?.stims ?? (resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId }).runtime === 'signals' ? countRef.current : undefined);
     const payload: TrainingSessionResult = {
-      cfg: settingsToTrainingResultConfig(cfg),
+      cfg: settingsToTrainingResultConfig({ ...cfg, adminRounds: adminMemorySettings, adminSequenceTiming: adminMemorySettings && cfg.activityId === 'sequence-memory' }),
       elapsedMs,
       colorCounts,
       stoppedEarly: completionReason === 'stopped_early',
       completionReason,
-      stims: meta?.stims,
+      stims: measuredStims,
       glassBridge,
     };
     if (embed && onComplete) {
       onComplete(payload);
       return;
     }
-    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: meta?.stims, glassBridge });
+    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge });
     setScreen('result');
     onComplete?.(payload);
-  }, [embed, onComplete]);
+  }, [embed, onComplete, adminMemorySettings]);
 
   const onFinish = useCallback((_dupStats?: DupStats | null) => {
     if (resultDeliveredRef.current) return;
@@ -1047,7 +1072,13 @@ function MemoryGameRuntime({
       // O4: preserve autoLaunch/user intervalSets (do not force 4)
       if (cfg.activityId === 'glass-bridge-memory') cfg = { ...cfg, glassBridgeStartLength: normalizeGlassBridgeLength(cfg.glassBridgeStartLength), speed: normalizeGlassBridgeSeconds(cfg.speed), targetReps: normalizeGlassBridgeRounds(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
       if (cfg.activityId === 'moving-number-reader') cfg = { ...cfg, speed: normalizeNumberReaderSeconds(cfg.speed), targetReps: normalizeNumberReaderReps(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
-      if (cfg.activityId === 'visual-search') cfg = { ...cfg, speed: normalizeSearchSeconds(cfg.speed), targetReps: normalizeSearchReps(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
+      if (cfg.activityId === 'visual-search') cfg = { ...cfg, visualSearchStage: normalizeSearchStage(cfg.visualSearchStage), visualSearchTargetCount: normalizeSearchTargetCount(cfg.visualSearchStage, cfg.visualSearchTargetCount), speed: normalizeSearchSeconds(cfg.speed), targetReps: normalizeSearchReps(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
+      if (adminMemorySettings) cfg = { ...cfg,
+        targetReps: cfg.mode === 'spatial' && cfg.level === 3 ? 5 : normalizeAdminTrainingRounds(cfg.targetReps),
+        ...(cfg.mode === 'spatial' ? { timeMode: 'reps' as const } : {}),
+        glassBridgeDifficulty: normalizeGlassBridgeDifficulty(cfg.glassBridgeDifficulty), warmup: 3,
+      };
+
       setSettings(cfg);
       sessionStartMsRef.current = 0; // ?????????????????????????????????????????????????????????????????????????????????????????????????????????(?????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐?????????????????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝?????????????????????????????????????????????????????????????????????????????????????????????????????????
       countRef.current = 0;
@@ -1178,7 +1209,7 @@ function MemoryGameRuntime({
         }, 1000);
       }
     },
-    [disableBgm, flowBgmEnabled, flowBgmPath, readiness, settings, spomoveBgmList, spomoveBgmLoading]
+    [adminMemorySettings, disableBgm, flowBgmEnabled, flowBgmPath, readiness, settings, spomoveBgmList, spomoveBgmLoading]
   );
 
   /** autoLaunch: ?????????????????????????????????startSession??ref-cfg?????????????????????????????????????????????????????????????????????????????????????????????????????????(setup ??????????????????????????????????????????????????????????ㅻ깹??????????????????????????釉먮폁????????????????? ?????????????? */
@@ -1274,9 +1305,9 @@ function MemoryGameRuntime({
       const counts =
         totalColorStimulusCount(stoppedColorCounts) > 0 ? stoppedColorCounts : null;
       if (countdown !== null) {
-        deliverSessionResult(cfg, elapsedMs, counts, { completionReason: 'cancelled' });
+        deliverSessionResult(cfg, elapsedMs, counts, { completionReason: 'cancelled', ...(cfg.activityId === 'visual-search' ? { stims: countRef.current } : {}) });
       } else {
-        deliverSessionResult(cfg, elapsedMs, counts, { endedEarly: true });
+        deliverSessionResult(cfg, elapsedMs, counts, { endedEarly: true, ...(cfg.activityId === 'visual-search' ? { stims: countRef.current } : {}) });
       }
       return;
     }
@@ -1341,7 +1372,7 @@ function MemoryGameRuntime({
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setIsTraining(false);
     const elapsedMs = sessionStartMsRef.current > 0 ? Math.max(0, performance.now() - sessionStartMsRef.current) : 0;
-    deliverSessionResult({ ...settingsRef.current }, elapsedMs, { ...colorCountsRef.current }, { completionReason: 'failed' });
+    deliverSessionResult({ ...settingsRef.current }, elapsedMs, { ...colorCountsRef.current }, { completionReason: 'failed', ...(settingsRef.current.activityId === 'visual-search' ? { stims: countRef.current } : {}) });
   }, [deliverSessionResult]);
 
   useEffect(() => {
@@ -1746,10 +1777,10 @@ function MemoryGameRuntime({
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>난이도</div>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
-                    쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개, 어려움은 직접 지정 10색입니다.
+                    {adminMemorySettings ? '쉬움은 3색, 보통은 5색입니다.' : '쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개, 어려움은 직접 지정 10색입니다.'}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.4rem' }}>
-                    {([
+                    {(adminMemorySettings ? ADMIN_SEQUENCE_OPTIONS : [
                       { id: 3 as const, label: '쉬움', detail: '3개' },
                       { id: 5 as const, label: '보통', detail: '5개' },
                       { id: 'ramp' as const, label: '쉬움→보통→어려움', detail: '3~7개' },
@@ -2194,7 +2225,7 @@ function MemoryGameRuntime({
                   </p>
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                     {(!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1
-                      ? [10, 15, 20, 30]
+                      ? (adminMemorySettings ? ADMIN_TRAINING_ROUNDS : [10, 15, 20, 30])
                       : [15, 20, 25, 30, 35]
                     ).map((n) => (
                       <button
@@ -2247,11 +2278,11 @@ function MemoryGameRuntime({
             )}
             {settings.mode !== 'flow' && (
               <>
-                {((settings.activityId === 'relative-compass' || settings.activityId === 'shape-completion')) || (settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9 || reactTrainEngineLevelForUi(settings.level) === 14)) ? null : spatialBasicRandomSpeed ? (
+                {((settings.activityId === 'relative-compass' || settings.activityId === 'shape-completion')) || (settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9 || reactTrainEngineLevelForUi(settings.level) === 14)) ? null : spatialBasicRandomSpeed || (adminMemorySettings && settings.mode === 'spatial' && isColorSequenceLevel(settings.level)) ? (
                   <div style={S.sec}>
                     {stepNum(stepSpeed, "Signal speed")}
                     <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600 }}>
-                      Stimulus duration is randomized between 1 and 3 seconds.
+                      {adminMemorySettings && isColorSequenceLevel(settings.level) ? '색상별 1~2.5초 랜덤 제시' : 'Stimulus duration is randomized between 1 and 3 seconds.'}
                     </p>
                   </div>
                 ) : settings.mode === 'spatial' && isInstantMemoryLevel(settings.level) ? (
@@ -2434,8 +2465,11 @@ function MemoryGameRuntime({
                     </div>
                   </div>
                 ) : null}
+                {adminMemorySettings && settings.mode === 'spatial' && <div style={S.sec}>
+                  <p>목표 라운드</p><div style={{ display: 'flex', gap: 8 }}>{ADMIN_TRAINING_ROUNDS.map(n => <button key={n} type="button" aria-pressed={settings.targetReps === n} onClick={() => setSettings(s => ({ ...s, timeMode: 'reps', targetReps: n }))}>{n}라운드</button>)}</div>
+                </div>}
                 {((settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 8 && reactTrainEngineLevelForUi(settings.level) !== 9 && reactTrainEngineLevelForUi(settings.level) !== 14) ||
-                  (settings.mode === 'spatial' && isInstantMemoryLevel(settings.level))) ? (
+                  (settings.mode === 'spatial' && isInstantMemoryLevel(settings.level))) && !adminMemorySettings ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose duration")}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -2489,7 +2523,7 @@ function MemoryGameRuntime({
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose repetitions")}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {[10, 20, 30, 40].map((n) => (
+                      {(adminMemorySettings ? ADMIN_TRAINING_ROUNDS : [10, 20, 30, 40]).map((n) => (
                         <button
                           key={n}
                           type="button"
@@ -2524,7 +2558,7 @@ function MemoryGameRuntime({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #E2E8F0' }}>
                       <div>
                         <div style={{ fontSize: "0.96rem", fontWeight: 700, color: "#64748B", marginBottom: "0.35rem" }}>Warmup</div>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>{[0, 3, 5].map((n) => (
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>{(adminMemorySettings ? [3] : [0, 3, 5]).map((n) => (
                           <button key={n} type="button" onClick={() => set("warmup", n)} style={{ padding: "0.5rem 0.8rem", borderRadius: "0.6rem", border: `2px solid ${settings.warmup === n ? "#0F172A" : "#E2E8F0"}`, background: settings.warmup === n ? "#0F172A" : "#fff", color: settings.warmup === n ? "#fff" : "#475569", fontWeight: 600, fontSize: "0.96rem", cursor: "pointer", fontFamily: "inherit" }}>{n === 0 ? "None" : `${n}s`}</button>
                         ))}</div>
                       </div>
@@ -2612,24 +2646,18 @@ function MemoryGameRuntime({
   );
 
   if (screen === 'memory') {
-    if (countdown !== null) {
-      return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400 }}>
-          <style>{CSS}</style>
-          <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
-        </div>
-      );
-    }
+    if (countdown !== null) return <div style={{ position: 'fixed', inset: 0, background: '#0a0a0f', zIndex: 400 }}><ReactTrainStartCountdownOverlay countdown={countdown} variant="standard" /></div>;
     if (selectedActivity.runtime === 'glass-bridge-memory') return runtimeSuspense(
-      <GlassBridgeMemoryTraining startLength={settings.glassBridgeStartLength} cueSeconds={settings.speed} targetRounds={settings.targetReps}
+      <GlassBridgeMemoryTraining difficulty={settings.glassBridgeDifficulty} startLength={settings.glassBridgeStartLength} cueSeconds={settings.speed} targetRounds={settings.targetReps}
         effectsEnabled={settings.audioMode !== 'off'} onProgress={stats => { glassBridgeStatsRef.current = stats; }} onComplete={handleGlassBridgeComplete} />,
     );
     if (selectedActivity.runtime === 'color-number-memory')
-      return runtimeSuspense(<MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
+      return runtimeSuspense(adminMemorySettings ? <MemoryRoundSeries component={MemoryGameLevel4} rounds={settings.targetReps} onComplete={handleMemoryComplete} onExit={stop} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} /> : <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
     if (selectedActivity.runtime === 'color-number-quiz')
-      return runtimeSuspense(<MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
+      return runtimeSuspense(adminMemorySettings ? <MemoryRoundSeries component={MemoryGameLevel5} rounds={settings.targetReps} onComplete={handleMemoryComplete} onExit={stop} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} /> : <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
     return runtimeSuspense(
       <MemoryGame
+        adminUniformTiming={adminMemorySettings}
         level={settings.level}
         onExit={stop}
         onComplete={handleMemoryComplete}
@@ -2659,7 +2687,7 @@ function MemoryGameRuntime({
             onProgress={(count, counts) => { countRef.current = count; colorCountsRef.current = counts; }}
             onComplete={handleReactTrainComplete} />
         ) : settings.activityId === 'visual-search' ? (
-          <VisualSearchReactionTraining targetReps={settings.targetReps} searchSeconds={settings.speed}
+          <VisualSearchReactionTraining visualSearchStage={settings.visualSearchStage} visualSearchTargetCount={settings.visualSearchTargetCount} targetReps={settings.targetReps} searchSeconds={settings.speed}
             onProgress={(count, counts) => { countRef.current = count; colorCountsRef.current = counts; }}
             onComplete={handleReactTrainComplete} />
         ) : settings.activityId === 'shape-completion' ? (
@@ -2733,7 +2761,8 @@ function MemoryGameRuntime({
           />
         ) : visualRuntime === 'number-cart' ? (
           <NumberCartReactionTraining
-            targetRounds={normalizeNumberCartRounds(settings.targetReps ?? 5)}
+            adminRounds={adminMemorySettings}
+            targetRounds={adminMemorySettings ? normalizeAdminTrainingRounds(settings.targetReps) : normalizeNumberCartRounds(settings.targetReps ?? 5)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
             tier={settings.numberCartTier}
@@ -2761,6 +2790,7 @@ function MemoryGameRuntime({
           />
         ) : visualRuntime === 'camouflage' ? (
           <CamouflageReactionTraining
+            targetReps={adminMemorySettings && settings.timeMode === 'reps' ? settings.targetReps : undefined}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -2787,6 +2817,7 @@ function MemoryGameRuntime({
           />
         ) : visualRuntime === 'falling-bricks' || visualRuntime === 'balloon' ? (
           <VisualReactionTraining
+            targetReps={adminMemorySettings && settings.timeMode === 'reps' ? settings.targetReps : undefined}
             variant={visualRuntime === 'falling-bricks' ? 'flow' : 'flash'}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedSec={safeReactSpeedSec}
@@ -2860,6 +2891,7 @@ function MemoryGameRuntime({
         <div ref={trainingContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
           <style>{CSS}</style>
           <CamouflageReactionTraining
+            targetReps={adminMemorySettings && settings.timeMode === 'reps' ? settings.targetReps : undefined}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -2880,6 +2912,7 @@ function MemoryGameRuntime({
         <div ref={trainingContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
           <style>{CSS}</style>
           <VisualReactionTraining
+            targetReps={adminMemorySettings && settings.timeMode === 'reps' ? settings.targetReps : undefined}
             variant="balloonSimon"
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedSec={safeReactSpeedSec}
@@ -2982,12 +3015,9 @@ function MemoryGameRuntime({
             </div>
           </div>
         )}
-        <div style={{ position: 'absolute', top: EMBED_SAFE_TOP, left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
-          <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <TrainingRuntimeHud onStop={stop}>
             {settings.intervalMode ? <><span style={{ color: intervalPhase === "work" ? "#FCA5A5" : "#86EFAC" }}>{intervalPhase === "work" ? "WORK" : "REST"}</span><span>{intervalLeft}s</span><span style={{ fontSize: "0.7rem", opacity: 0.6 }}>{intervalSet}/{settings.intervalSets}</span></> : settings.timeMode === "time" ? <><span style={{ color: "#FCA5A5" }}>TIME</span> {stats.timeLeft}s</> : <><span style={{ color: "#86EFAC" }}>REPS</span> {stats.repsLeft}</>}
-          </div>
-          <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
-        </div>
+        </TrainingRuntimeHud>
         {settings.intervalMode && intervalPhase === 'rest' && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 25, gap: '1rem' }}>
             <div style={{ fontSize: "3.5rem" }}>REST</div>
@@ -2997,11 +3027,7 @@ function MemoryGameRuntime({
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 5, background: 'rgba(255,255,255,0.1)', zIndex: 20 }}>
           <div style={{ height: '100%', width: `${stats.progress * 100}%`, background: dark ? '#F97316' : 'rgba(0,0,0,0.3)', transition: 'width 0.1s linear', borderRadius: '0 2px 2px 0' }} />
         </div>
-        {countdown !== null && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30, backdropFilter: 'blur(8px)' }}>
-            <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
-          </div>
-        )}
+        <ReactTrainStartCountdownOverlay variant="standard" blocksInput countdown={countdown ?? 0} />
         <div style={{ position: 'absolute', inset: 0 }}>
           {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} bodyLabelMode={quadBodyLevel ? 'easy' : undefined} /> : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: "2rem", fontWeight: 700 }}>Get ready</div>}
           {dupFlashVisible && countdown === null ? (
@@ -3030,7 +3056,7 @@ function MemoryGameRuntime({
     };
     return (
       <TrainingResultScreen
-        cfg={settingsToTrainingResultConfig(cfg)}
+        cfg={settingsToTrainingResultConfig({ ...cfg, adminRounds: adminMemorySettings, adminSequenceTiming: adminMemorySettings && cfg.activityId === 'sequence-memory' })}
         completionReason={result.completionReason}
         elapsedMs={elapsedMs}
         colorCounts={colorCounts}

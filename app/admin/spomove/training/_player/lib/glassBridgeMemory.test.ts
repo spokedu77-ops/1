@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GlassBridgeMemoryTraining } from '../components/GlassBridgeMemoryTraining';
 import { advanceGlassBridge, createGlassBridgePattern, createGlassBridgeState, glassBridgeLitIndex, glassBridgePanels,
-  judgeGlassBridge, normalizeGlassBridgeLength, normalizeGlassBridgeSeconds } from './glassBridgeMemory';
+  answerGlassBridge, glassBridgeShowsAll, glassBridgeRoundLength, normalizeGlassBridgeRounds, normalizeGlassBridgeLength, normalizeGlassBridgeSeconds } from './glassBridgeMemory';
 import { catalogTrainingActivity, resolveTrainingSelection } from './trainingActivity';
 import { describeSessionVolume, settingsToTrainingResultConfig } from './trainingResultSummary';
 import { resolveTrainingResultRichContent } from './trainingResultRichContent';
@@ -13,119 +13,111 @@ import { MEMORY_ROUNDS, isColorSequenceLevel } from '../constants';
 import { createGlassBridgeAudio } from './glassBridgeAudio';
 
 const clock = vi.hoisted(() => ({ now: 0, next: 0, frames: new Map<number, FrameRequestCallback>() }));
-vi.mock('./runtimeClock', () => ({ spomovePerformance: { now: () => clock.now },
+vi.mock('./runtimeClock', () => ({ spomoveSetInterval: (fn: () => void, ms: number) => globalThis.setInterval(fn, ms), spomoveClearInterval: (id: number) => globalThis.clearInterval(id), spomovePerformance: { now: () => clock.now },
   spomoveRequestAnimationFrame: (callback: FrameRequestCallback) => { const id = ++clock.next; clock.frames.set(id, callback); return id; },
   spomoveCancelAnimationFrame: (id: number) => clock.frames.delete(id) }));
 let root: Root; let host: HTMLDivElement;
-function step(ms: number) { act(() => { clock.now += ms; const callbacks = [...clock.frames.values()]; clock.frames.clear(); callbacks.forEach(callback => callback(clock.now)); }); }
+function step(ms: number) { act(() => { clock.now += ms; vi.advanceTimersByTime(ms); const callbacks = [...clock.frames.values()]; clock.frames.clear(); callbacks.forEach(callback => callback(clock.now)); }); }
 beforeEach(() => {
+  vi.useFakeTimers();
   clock.now = 0; clock.frames.clear(); Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(new Proxy({}, { get: (_, name) => name === 'createRadialGradient' ? () => ({ addColorStop: () => {} }) : () => {} }) as never);
   host = document.createElement('div'); document.body.append(host); root = createRoot(host);
 });
-afterEach(() => { act(() => root.unmount()); host.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+afterEach(() => { act(() => root.unmount()); host.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
-describe('glass bridge memory timing and teacher judgments', () => {
-  it.each([4, 5, 6].flatMap(length => [1, 2, 3, 6, 10].flatMap(seconds => [10, 15, 20, 30].map(rounds => [length, seconds, rounds]))))('starts at %s steps, uses %s-second cues and requires %s teacher successes', (length, seconds, rounds) => {
-    let now = 0; let state = createGlassBridgeState(length!, seconds!, rounds!, now);
-    for (let round = 1; round <= rounds!; round++) {
-      expect(state.length).toBe(Math.min(10, length! + round - 1));
-      expect(state.pattern.every((color, index) => index === 0 || color !== state.pattern[index - 1])).toBe(true);
-      state = advanceGlassBridge(state, now += 2499); expect(state.phase).toBe('READY');
-      state = advanceGlassBridge(state, now += 1); expect(state.phase).toBe('SHOWING');
-      const showingStart = now;
-      for (let index = 0; index < state.length; index++) {
-        expect(glassBridgeLitIndex(state, showingStart + index * seconds! * 1000)).toBe(index);
-        expect(glassBridgeLitIndex(state, showingStart + (index + 0.75) * seconds! * 1000)).toBe(-1);
+describe('glass bridge color choices and fixed round schedule', () => {
+  it.each([5, 10, 15, 20])('groups lengths from three to seven over %s rounds regardless of answers', total => {
+    for (const allCorrect of [false, true]) {
+      let now = 0; let state = createGlassBridgeState(6, 1, total, 0, () => 0);
+      const lengths: number[] = []; let answered = 0;
+      for (let round = 1; round <= total; round++) {
+        const length = 3 + Math.floor((round - 1) / (total / 5)); lengths.push(state.length);
+        expect(state.length).toBe(length); const pattern = [...state.pattern];
+        expect(answerGlassBridge(state, 'red', now)).toBe(state);
+        state = advanceGlassBridge(state, now += state.round === 1 ? 3000 : 2500, () => 0);
+        for (let index = 0; index < length; index++) {
+          expect(glassBridgeLitIndex(state, now + index * 1000)).toBe(index);
+          expect(glassBridgeLitIndex(state, now + index * 1000 + 750)).toBe(-1);
+        }
+        state = advanceGlassBridge(state, now += length * 1000 + 500, () => 0);
+        expect(state.phase).toBe('WAITING'); expect(state.result.presentedRounds).toBe(round);
+        expect(advanceGlassBridge(state, now + 999999)).toBe(state);
+        for (let index = 0; index < length; index++) {
+          expect(state.answerIndex).toBe(index); expect(state.answers).toHaveLength(index);
+          const answer = allCorrect ? pattern[index]! : pattern[index] === 'red' ? 'blue' : 'red';
+          state = answerGlassBridge(state, answer, now); answered++;
+          expect(state.answers).toHaveLength(index + 1);
+          expect(answerGlassBridge(state, answer, now)).toBe(state);
+          expect(state.phase).toBe(allCorrect ? 'SUCCESS' : 'SHATTER');
+          state = advanceGlassBridge(state, now += allCorrect ? 2000 : 5000, () => 0);
+          if (index < length - 1) expect(state.phase).toBe('WAITING');
+        }
+        expect(state.result.completedRounds).toBe(round);
+        if (round < total) { expect(state.phase).toBe('READY'); expect(state.pattern).not.toEqual(pattern); }
       }
-      state = advanceGlassBridge(state, now += state.length * seconds! * 1000);
-      expect(state.result.presentedRounds).toBe(round); expect(state.result.successRounds).toBe(round - 1);
-      state = advanceGlassBridge(state, now += 500); expect(state.phase).toBe('WAITING');
-      state = judgeGlassBridge(state, true, now); expect(state.result.successRounds).toBe(round);
-      expect(judgeGlassBridge(state, true, now)).toBe(state);
-      expect(judgeGlassBridge(state, false, now)).toBe(state);
-      expect(advanceGlassBridge(state, now + 500).phase).toBe('SUCCESS');
-      state = advanceGlassBridge(state, now += 2000);
+      expect(lengths).toEqual([3, 4, 5, 6, 7].flatMap(length => Array(total / 5).fill(length)));
+      expect(state.phase).toBe('COMPLETED');
+      expect(state.result).toMatchObject({ scoringMode: 'color-choice', completedRounds: total, presentedRounds: total,
+        successRounds: allCorrect ? total : 0, failureRounds: allCorrect ? 0 : total,
+        correctSteps: allCorrect ? answered : 0, incorrectSteps: allCorrect ? 0 : answered, teacherFailed: false });
+      expect(answered).toBe(total * 5);
     }
-    expect(state.phase).toBe('COMPLETED'); expect(state.result.failureRounds).toBe(0);
-    expect(state.result.teacherFailed).toBe(false);
   });
-
-  it('generates capped patterns without adjacent repeats even with a constant random source', () => {
-    const pattern = createGlassBridgePattern(999, () => 0);
-    expect(pattern).toHaveLength(10); expect(new Set(pattern).size).toBe(2);
-    expect(pattern.every((color, index) => index === 0 || color !== pattern[index - 1])).toBe(true);
-    expect(normalizeGlassBridgeLength()).toBe(5); expect(normalizeGlassBridgeSeconds()).toBe(2);
+  it('uses the full common three-second countdown and shows easy patterns together for exactly twenty seconds', () => {
+    let state = createGlassBridgeState(3, 1, 5, 0, () => 0, 'easy');
+    expect(advanceGlassBridge(state, 2999).phase).toBe('READY');
+    state = advanceGlassBridge(state, 3000); expect(state.phase).toBe('SHOWING');
+    expect(glassBridgeShowsAll(state, 3000)).toBe(true);
+    expect(glassBridgeShowsAll(state, 22999)).toBe(true);
+    expect(glassBridgeLitIndex(state, 4000)).toBe(-1);
+    expect(glassBridgeShowsAll(state, 23000)).toBe(false);
+    expect(advanceGlassBridge(state, 23499).phase).toBe('SHOWING');
+    state = advanceGlassBridge(state, 23500); expect(state.phase).toBe('WAITING');
+    expect(state.answers).toHaveLength(0); expect(glassBridgeShowsAll(state, 23500)).toBe(false);
   });
-
-  it('retains a vertical bottom-to-top bridge within desktop and mobile bounds', () => {
-    for (const [width, height] of [[1440, 800], [390, 600], [844, 180]]) for (const count of [4, 5, 6, 10]) {
+  it('normalizes restored settings and creates nonadjacent patterns within mobile bounds', () => {
+    expect(normalizeGlassBridgeRounds(5)).toBe(5); expect(normalizeGlassBridgeRounds(999)).toBe(20);
+    expect(normalizeGlassBridgeSeconds(10)).toBe(6); expect(normalizeGlassBridgeLength(6)).toBe(3);
+    expect(glassBridgeRoundLength(99, 5)).toBe(7);
+    const pattern = createGlassBridgePattern(99, () => 0); expect(pattern).toHaveLength(7);
+    expect(pattern.every((color, i) => i === 0 || color !== pattern[i - 1])).toBe(true);
+    for (const count of [3, 4, 5, 6, 7]) for (const [width, height] of [[320, 220], [1440, 700]]) {
       const panels = glassBridgePanels(count, width!, height!);
-      expect(panels).toHaveLength(count);
-      panels.forEach((panel, index) => {
-        expect(panel.height).toBeGreaterThan(0); expect(panel.x).toBeGreaterThanOrEqual(0); expect(panel.y).toBeGreaterThanOrEqual(0);
-        expect(panel.y + panel.height).toBeLessThanOrEqual(height!);
-        expect(panel.x + panel.width).toBeLessThanOrEqual(width!);
-        if (index > 0) expect(panel.y).toBeLessThan(panels[index - 1]!.y);
-      });
+      for (const panel of panels) { expect(panel.y).toBeGreaterThanOrEqual(0); expect(panel.y + panel.height).toBeLessThanOrEqual(height!); }
     }
   });
-
-  it('blocks judgments until showing is complete, prevents duplicates and reports teacher failure separately', () => {
+  it('accepts a color per step, blocks duplicate clicks and continues after a wrong answer', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
     const complete = vi.fn(); const progress = vi.fn();
-    act(() => root.render(React.createElement(GlassBridgeMemoryTraining, { startLength: 5, cueSeconds: 2, targetRounds: 10, effectsEnabled: false, onComplete: complete, onProgress: progress })));
-    const success = host.querySelectorAll('button')[1]!; const fail = host.querySelectorAll('button')[2]!;
-    expect(success.disabled).toBe(true); step(2500); expect(fail.disabled).toBe(true);
-    step(10000); expect(success.disabled).toBe(true); expect(progress.mock.lastCall![0].presentedRounds).toBe(1);
-    step(500); expect(fail.disabled).toBe(false);
-    act(() => { fail.click(); fail.click(); success.click(); });
-    expect(progress.mock.lastCall![0]).toMatchObject({ presentedRounds: 1, successRounds: 0, failureRounds: 1, teacherFailed: true });
-    expect(success.disabled).toBe(true); expect(host.textContent).toContain('정답은 이것');
-    step(2000); expect(host.textContent).toContain('다리 붕괴'); expect(complete).not.toHaveBeenCalled();
-    step(5000); expect(complete).toHaveBeenCalledOnce();
-    expect(complete.mock.lastCall![0]).toMatchObject({ completionReason: 'stopped_early', failureRounds: 1, teacherFailed: true });
-    expect(clock.frames.size).toBe(0); step(99999); expect(complete).toHaveBeenCalledOnce();
+    act(() => root.render(React.createElement(GlassBridgeMemoryTraining, { startLength: 3, cueSeconds: 1, targetRounds: 5, effectsEnabled: false, onComplete: complete, onProgress: progress })));
+    const colors = () => [...host.querySelectorAll<HTMLButtonElement>('aside button')];
+    expect(colors()).toHaveLength(4); expect(colors().every(button => button.disabled)).toBe(true);
+    step(3000); step(3500); expect(colors()[0]!.disabled).toBe(false);
+    // Pattern is red, yellow, red. Blue is incorrect but must still reveal the next step.
+    act(() => { colors()[3]!.click(); colors()[3]!.click(); });
+    expect(progress.mock.lastCall![0]).toMatchObject({ incorrectSteps: 1, completedRounds: 0, failureRounds: 0 });
+    expect(colors().every(button => button.disabled)).toBe(true); step(5000);
+    expect(host.textContent).toContain('2번째 발판'); expect(complete).not.toHaveBeenCalled();
+    act(() => colors()[1]!.click()); step(2000);
+    expect(host.textContent).toContain('3번째 발판');
+    act(() => colors()[0]!.click()); step(2000);
+    expect(host.textContent).toContain('4칸 기억하기');
+    expect(progress.mock.lastCall![0]).toMatchObject({ incorrectSteps: 1, correctSteps: 2, completedRounds: 1, failureRounds: 1, successRounds: 0 });
+    act(() => host.querySelector('button')!.click());
+    expect(complete.mock.lastCall![0]).toMatchObject({ completionReason: 'stopped_early', completedRounds: 1 });
+    step(999999); expect(complete).toHaveBeenCalledOnce();
   });
-
-  it('counts full patterns rather than individual flashes and resets after cancellation or partial stop', () => {
-    const complete = vi.fn(); const progress = vi.fn();
-    const render = (key: number) => act(() => root.render(React.createElement(GlassBridgeMemoryTraining, { key, startLength: 6, cueSeconds: 1, targetRounds: 10, effectsEnabled: false, onComplete: complete, onProgress: progress })));
-    render(1); act(() => host.querySelector('button')!.click());
-    expect(complete.mock.lastCall![0]).toMatchObject({ completionReason: 'cancelled', presentedRounds: 0 }); expect(clock.frames.size).toBe(0);
-    render(2); step(2500); step(3000); act(() => host.querySelector('button')!.click());
-    expect(complete.mock.lastCall![0]).toMatchObject({ completionReason: 'stopped_early', presentedRounds: 0, successRounds: 0 });
-    render(3); step(2500); step(6500);
-    act(() => { host.querySelectorAll('button')[1]!.click(); host.querySelectorAll('button')[1]!.click(); });
-    expect(progress.mock.lastCall![0].successRounds).toBe(1); step(2000);
-    expect(host.textContent).toContain('기억할 패턴: 7개');
-    act(() => root.unmount()); root = createRoot(host); expect(clock.frames.size).toBe(0);
+  it('distinguishes individual answer counts from completed rounds in results', () => {
+    const cfg = settingsToTrainingResultConfig({ mode: 'spatial', level: 8, activityId: 'glass-bridge-memory', speed: 1, targetReps: 5, timeMode: 'reps', duration: 60 });
+    const bridge = { startLength: 3 as const, lastLength: 7, presentedRounds: 5, successRounds: 0, failureRounds: 5, teacherFailed: false,
+      scoringMode: 'color-choice' as const, completedRounds: 5, correctSteps: 10, incorrectSteps: 15 };
+    const rich = resolveTrainingResultRichContent(cfg, 45000, null, { completionReason: 'natural_complete', glassBridge: bridge });
+    expect(rich.sessionSnapshot.find(item => item.id === 'correct-steps')?.value).toBe('10개');
+    expect(rich.sessionSnapshot.find(item => item.id === 'incorrect-steps')?.value).toBe('15개');
+    expect(rich.sessionSnapshot.find(item => item.id === 'completed')?.value).toBe('5 / 5라운드');
+    expect(rich.volumeLabel).not.toContain('성공 목표'); expect(rich.activityFeel).not.toContain('실패 판정으로 종료');
   });
-
-  it('delivers normal completion only after the last teacher success effect', () => {
-    const complete = vi.fn();
-    act(() => root.render(React.createElement(GlassBridgeMemoryTraining, { startLength: 4, cueSeconds: 1, targetRounds: 10, effectsEnabled: false, onComplete: complete, onProgress: vi.fn() })));
-    for (let round = 1; round <= 10; round++) {
-      step(2500); step(Math.min(10, round + 3) * 1000 + 500);
-      act(() => host.querySelectorAll('button')[1]!.click());
-      step(500); expect(complete).not.toHaveBeenCalled(); step(1500);
-    }
-    expect(complete).toHaveBeenCalledOnce();
-    expect(complete.mock.lastCall![0]).toMatchObject({ completionReason: 'natural_complete', presentedRounds: 10, successRounds: 10, lastLength: 10 });
-    expect(clock.frames.size).toBe(0);
-  });
-
-  it('does not call teacher failure a system error even on the last configured round', () => {
-    let state = createGlassBridgeState(6, 1, 10, 0); let now = 0;
-    for (let round = 1; round <= 10; round++) {
-      state = advanceGlassBridge(state, now += 2500);
-      state = advanceGlassBridge(state, now += state.length * 1000 + 500);
-      state = judgeGlassBridge(state, round !== 10, now);
-      state = advanceGlassBridge(state, now += 2000);
-    }
-    expect(state.phase).toBe('SHATTER'); state = advanceGlassBridge(state, now + 5000);
-    expect(state.phase).toBe('STOPPED'); expect(state.result).toMatchObject({ presentedRounds: 10, successRounds: 9, failureRounds: 1 });
-  });
-
   it('retains settings through launch snapshots and preserves existing memory volumes', () => {
     expect(catalogTrainingActivity('spatial', 8)).toBe('glass-bridge-memory');
     expect(resolveTrainingSelection('spatial', 8).runtime).toBe('glass-bridge-memory'); expect(isColorSequenceLevel(8)).toBe(false);
@@ -136,7 +128,7 @@ describe('glass bridge memory timing and teacher judgments', () => {
     expect(describeSessionVolume({ ...cfg, activityId: 'sequence-memory', level: 1 })).toBe(`${MEMORY_ROUNDS}라운드`);
     const bridge = { startLength: 6 as const, lastLength: 7, presentedRounds: 2, successRounds: 1, failureRounds: 1, teacherFailed: true };
     const rich = resolveTrainingResultRichContent(cfg, 45000, null, { completionReason: 'stopped_early', glassBridge: bridge });
-    expect(rich.activityFeel).toBe('교사 실패 판정으로 종료');
+    expect(rich.activityFeel).toBe('중도 종료');
     expect(rich.sessionSnapshot.find(item => item.id === 'presented')?.value).toBe('2라운드');
     expect(rich.selfCheckItems[0]?.label).toContain('교사 입력 기반');
   });

@@ -15,8 +15,8 @@ type Phase = 'idle' | 'showing' | 'waiting' | 'reveal' | 'summaryIntro' | 'summa
 const BASIC_RANDOM_MIN_MS = 1000;
 const SEQUENCE_RANDOM_MAX_MS = 3000;
 
-function randomSequenceShowMs() {
-  return Math.round(BASIC_RANDOM_MIN_MS + Math.random() * (SEQUENCE_RANDOM_MAX_MS - BASIC_RANDOM_MIN_MS));
+function randomSequenceShowMs(maxMs = SEQUENCE_RANDOM_MAX_MS) {
+  return Math.round(BASIC_RANDOM_MIN_MS + Math.random() * (maxMs - BASIC_RANDOM_MIN_MS));
 }
 
 function buildBasicShowSchedule(level: number, patternLength: number): number[] {
@@ -30,7 +30,8 @@ function buildBasicShowSchedule(level: number, patternLength: number): number[] 
   return schedule;
 }
 
-function colorShowMs(level: number, speedSec: number, schedule: number[], index: number) {
+function colorShowMs(level: number, speedSec: number, schedule: number[], index: number, adminUniformTiming: boolean) {
+  if (adminUniformTiming) return randomSequenceShowMs(2500);
   if (level >= 1 && level <= 3) return schedule[index] ?? randomSequenceShowMs();
   return Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
 }
@@ -51,6 +52,7 @@ export function MemoryGame({
   startDelayMs = 500,
   slotColorIds,
   roundCount = MEMORY_ROUNDS,
+  adminUniformTiming = false,
 }: {
   level: number;
   onExit: () => void;
@@ -60,6 +62,8 @@ export function MemoryGame({
   startDelayMs?: number;
   slotColorIds?: string[];
   roundCount?: number;
+  /** Explicit admin caller opt-in. Teacher and public engines retain their timing. */
+  adminUniformTiming?: boolean;
 }) {
   const isRampLevel = level === 3;
   const total = isRampLevel ? COLOR_SEQUENCE_RAMP_ROUNDS : Math.max(1, roundCount);
@@ -119,7 +123,7 @@ export function MemoryGame({
         setPhase('showing');
         timerRef.current = setTimeout(
           () => runSequence(pattern, index + 1),
-          colorShowMs(level, speedSec, scheduleRef.current, index),
+          colorShowMs(level, speedSec, scheduleRef.current, index, adminUniformTiming),
         );
       };
 
@@ -132,7 +136,7 @@ export function MemoryGame({
       }
       previousBgRef.current = item.bg;
     },
-    [audioMode, level, speedSec],
+    [audioMode, level, speedSec, adminUniformTiming],
   );
 
   const startRound = useCallback(
@@ -145,10 +149,10 @@ export function MemoryGame({
       setFlashWhite(false);
       setPhase('idle');
       previousBgRef.current = null;
-      scheduleRef.current = level >= 1 && level <= 3 ? buildBasicShowSchedule(level, pattern.length) : [];
+      scheduleRef.current = !adminUniformTiming && level >= 1 && level <= 3 ? buildBasicShowSchedule(level, pattern.length) : [];
       timerRef.current = setTimeout(() => runSequence(pattern, 0), Math.max(0, startDelayMs));
     },
-    [clearTimer, level, patterns, runSequence, startDelayMs],
+    [clearTimer, level, patterns, runSequence, startDelayMs, adminUniformTiming],
   );
 
   useEffect(() => {

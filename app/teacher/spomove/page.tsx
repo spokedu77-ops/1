@@ -3087,6 +3087,8 @@ export default function SpomovePage() {
         completionReason={presetResult.completionReason ?? (presetResult.stoppedEarly ? 'stopped_early' : 'natural_complete')}
         elapsedMs={presetResult.elapsedMs}
         colorCounts={presetResult.colorCounts}
+        stims={presetResult.stims}
+        glassBridge={presetResult.glassBridge}
         levelLabel={resultLevelLabel(selectedProgram.mode, selectedProgram.level)}
         programTitle={selectedProgram.title}
         onBack={() => {

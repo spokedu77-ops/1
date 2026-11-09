@@ -9,7 +9,7 @@ describe('SPOMOVE STOP result payload', () => {
     const source = read('app/admin/spomove/training/_player/MemoryGameApp.tsx');
     expect(source).toContain('const stoppedColorCounts = { ...colorCountsRef.current }');
     expect(source).toContain('performance.now() - sessionStartMsRef.current');
-    expect(source).toContain('deliverSessionResult(cfg, elapsedMs, counts, { endedEarly: true })');
+    expect(source).toMatch(/deliverSessionResult\(cfg, elapsedMs, counts, \{\s*endedEarly:\s*true\b/);
     expect(source).not.toContain('if (embed && onExit) {\n      onExit(settingsToExitResume(settings));');
   });
 

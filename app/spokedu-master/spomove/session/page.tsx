@@ -1293,6 +1293,7 @@ function SpomoveSessionContent() {
             activityTitle={sessionDisplayTitle}
             elapsedMs={sessionResult.elapsedMs ?? 0}
             colorCounts={sessionResult.colorCounts ?? null}
+            stims={sessionResult.stims}
             engineMode={sessionResult.engineMode}
             engineLevel={sessionResult.engineLevel}
             activityId={sessionResult.activityId}

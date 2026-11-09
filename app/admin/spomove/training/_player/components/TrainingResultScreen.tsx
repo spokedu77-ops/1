@@ -1,25 +1,15 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import type { GlassBridgeResult } from '../lib/glassBridgeMemory';
-import { resolveTrainingSelection } from '../lib/trainingActivity';
-import { MODES } from '../constants';
-import { CSS, S } from '../styles';
-import { useViewportScrollLock } from '../lib/lockViewportScroll';
-import {
-  buildDiveActionMoveReport,
-  type DiveActionMoveSession,
-} from '../lib/diveActionMoveReport';
-import { resolveTrainingResultRichContent } from '../lib/trainingResultRichContent';
-import {
-  RESULT_COLOR_ORDER,
-  colorMeta,
-  totalColorStimulusCount,
-  type ColorStimulusCounts,
-  type TrainingResultConfig,
-} from '../lib/trainingResultSummary';
+import type { DiveActionMoveSession } from '../lib/diveActionMoveReport';
+import type { ColorStimulusCounts, TrainingResultConfig } from '../lib/trainingResultSummary';
 import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
-import { resolveSpomoveCompletionPresentation } from '@/app/spokedu-master/spomove/session/sessionResultModel';
+import { buildTrainingResultViewModel, type ResultFact } from '../lib/trainingResultViewModel';
+import { MODES } from '../constants';
+import { CSS } from '../styles';
+import { useViewportScrollLock } from '../lib/lockViewportScroll';
+import styles from './TrainingResultScreen.module.css';
 
 type StudentBadge = { name: string; color: string };
 
@@ -43,7 +33,7 @@ type Props = {
   statusBadge?: string | null;
   programTitle?: string;
   student?: StudentBadge | null;
-  /** 훈련 정리 카드 안(코칭 팁 아래)에 표시. footer에 끼워 넣지 않음 */
+  /** 유효한 실제 사용 설정만 지도자 상세에 표시합니다. */
   sessionSettings?: TrainingResultSessionSettings | null;
   footer?: React.ReactNode;
   /** DIVE 액션무브 결과만. 없으면 기존 훈련 리포트를 유지한다. */
@@ -55,800 +45,104 @@ type Props = {
   retryLabel?: string;
 };
 
-const RESULT_CSS = `
-  .tr-result-root {
-    --tr-label: clamp(0.7rem, 1.55vmin, 0.86rem);
-    --tr-body: clamp(0.82rem, 1.75vmin, 0.98rem);
-    --tr-title: clamp(1.02rem, 2.3vmin, 1.28rem);
-    --tr-hero: clamp(1.22rem, 2.9vmin, 1.7rem);
-    --tr-stat: clamp(1rem, 2.5vmin, 1.35rem);
-    --tr-color: clamp(1.05rem, 2.6vmin, 1.4rem);
-    --tr-gap: clamp(0.55rem, 1.4vmin, 0.85rem);
-    --tr-pad: clamp(0.75rem, 1.8vmin, 1.05rem);
-  }
-  .tr-result-root, .tr-result-root * { box-sizing: border-box; }
-  .tr-result-header {
-    padding-top: max(clamp(0.4rem, 1.2vmin, 0.55rem), env(safe-area-inset-top));
-  }
-  .tr-result-board {
-    grid-template-columns: minmax(200px, 0.92fr) minmax(230px, 1fr) minmax(250px, 1.12fr);
-    /* 보드 높이는 가장 긴 카드 기준, 3카드 절대 높이는 동일하게 stretch */
-    align-items: stretch;
-  }
-  .tr-result-card {
-    height: 100%;
-    min-height: 100%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 0.55rem;
-    overflow-wrap: anywhere;
-  }
-  .tr-result-card > *,
-  .tr-result-card p,
-  .tr-result-card span {
-    min-width: 0;
-    max-width: 100%;
-  }
-  .tr-result-header-center {
-    min-width: 0;
-    max-width: 100%;
-    text-align: center;
-    overflow-wrap: anywhere;
-  }
-  /* 남는 높이는 블록이 나눠 먹되, 내용 최소 높이 아래로는 안 줄어듦 */
-  .tr-fill-stack {
-    flex: 1 1 auto;
-    min-height: min-content;
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-  }
-  .tr-fill-row {
-    flex: 1 1 auto;
-    min-height: 2.75rem;
-    display: flex;
-    align-items: center;
-  }
-  .tr-panel-block {
-    flex: 1 1 0;
-    min-height: min-content;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  .tr-result-footer-wrap {
-    padding-bottom: max(0.2rem, env(safe-area-inset-bottom));
-  }
-  @media (max-width: 920px), (max-height: 700px) {
-    .tr-result-board {
-      grid-template-columns: 1fr !important;
-      max-width: 28rem !important;
-    }
-  }
-  .tr-dive-report {
-    word-break: keep-all;
-    overflow-wrap: anywhere;
-    --tr-pad: clamp(0.65rem, 1.55vmin, 0.95rem);
-    --tr-gap: clamp(0.45rem, 1.2vmin, 0.75rem);
-  }
-  .tr-dive-report .tr-dive-nowrap {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-  .tr-dive-report .tr-dive-copy {
-    word-break: keep-all;
-    overflow-wrap: anywhere;
-    min-width: 0;
-    max-width: 100%;
-  }
-  @media (max-width: 420px) {
-    .tr-result-header {
-      grid-template-columns: auto 1fr auto !important;
-      gap: 0.25rem !important;
-    }
-    .tr-result-header-center {
-      font-size: clamp(0.68rem, 2vmin, 0.82rem) !important;
-      white-space: normal !important;
-      text-align: center;
-      line-height: 1.2;
-    }
-    .tr-result-header .tr-btn-back,
-    .tr-result-header .tr-btn-retry {
-      padding: 0.4rem 0.55rem !important;
-      font-size: clamp(0.65rem, 1.9vmin, 0.78rem) !important;
-    }
-  }
-`;
+const FEELINGS = [
+  { label: '쉬웠어요', icon: '☀', reply: '느낌을 알려줘서 고마워요. 다음에도 함께해요!' },
+  { label: '괜찮았어요', icon: '◡', reply: '느낌을 나눠줘서 고마워요. 잠깐 쉬어도 좋아요!' },
+  { label: '어려웠어요', icon: '△', reply: '솔직하게 알려줘서 고마워요. 선생님과 함께 이야기해 봐요!' },
+] as const;
 
-export function TrainingResultScreen({
-  cfg,
-  completionReason,
-  elapsedMs,
-  colorCounts,
-  stims,
-  glassBridge,
-  levelLabel,
-  title: providedTitle,
-  statusBadge: providedStatusBadge = null,
-  programTitle,
-  student,
-  sessionSettings = null,
-  footer,
-  diveActionMove = null,
-  volumeLabel,
-  onBack,
-  onRetry,
-  retryLabel = '다시 실행',
-}: Props) {
-  const completion = completionReason ? resolveSpomoveCompletionPresentation(completionReason) : null;
-  const title = completion?.title ?? providedTitle ?? '훈련 완료';
-  const statusBadge = completion?.statusBadge ?? providedStatusBadge;
-  const mo = MODES[cfg.mode];
-  const accent = mo?.accent ?? '#F97316';
-  // 플랭커는 가운데 목표가 색인 활동만 색 통계를 보여준다. 화살표 활동의
-  // 방향 균형용 내부 색 매핑은 결과로 노출하지 않는다.
-  const selection = resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId });
-  const flankerDirectionOnly = selection.activityId === 'flanker-arrow'
-    || (selection.activityId === 'flanker-extreme' && cfg.flankerExtremeMode === 'arrow');
-  const resultColorCounts = cfg.mode === 'simon' || cfg.mode === 'spatial' || flankerDirectionOnly ? null : colorCounts;
-  const rich = useMemo(
-    () => resolveTrainingResultRichContent(cfg, elapsedMs, resultColorCounts, { programTitle, volumeLabel, completionReason, stims, glassBridge }),
-    [cfg, elapsedMs, resultColorCounts, programTitle, volumeLabel, completionReason, stims, glassBridge],
-  );
+function FactList({ items }: { items: ResultFact[] }) {
+  return <dl className={styles.facts}>{items.map(item => (
+    <div key={item.id}><dt>{item.label}</dt><dd>{item.value}</dd></div>
+  ))}</dl>;
+}
 
-  const dive = useMemo(
-    () => (diveActionMove ? buildDiveActionMoveReport(diveActionMove, elapsedMs, completionReason) : null),
-    [diveActionMove, elapsedMs, completionReason],
-  );
-  const colorTotal = resultColorCounts ? totalColorStimulusCount(resultColorCounts) : 0;
-  const showColorBreakdown = !dive && resultColorCounts != null && colorTotal > 0;
-
+export function TrainingResultScreen(props: Props) {
+  const vm = buildTrainingResultViewModel(props);
+  const [feeling, setFeeling] = useState<number | null>(null);
+  const [theme] = useState(() => typeof window !== 'undefined' && localStorage.getItem('spokedu_theme') === 'dark' ? 'dark' : 'light');
   useViewportScrollLock(true);
-
-  const card: React.CSSProperties = {
-    border: '1px solid color-mix(in srgb, var(--border) 88%, transparent)',
-    borderRadius: 'clamp(0.95rem, 2.2vmin, 1.25rem)',
-    background: 'color-mix(in srgb, var(--card) 94%, transparent)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    padding: 'var(--tr-pad)',
-    boxShadow: '0 10px 28px rgba(15, 23, 42, 0.08), 0 1px 0 rgba(255,255,255,0.65) inset',
-  };
-
-  const sectionTitle: React.CSSProperties = {
-    margin: 0,
-    fontSize: 'var(--tr-label)',
-    fontWeight: 800,
-    color: 'var(--text-muted)',
-    letterSpacing: '0.02em',
-  };
-
+  const accent = MODES[props.cfg.mode]?.accent ?? '#F97316';
   return (
-    <div
-      className={dive ? 'spomove-player-root tr-result-root tr-dive-report' : 'spomove-player-root tr-result-root'}
-      data-theme={typeof window !== 'undefined' && localStorage.getItem('spokedu_theme') === 'dark' ? 'dark' : 'light'}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        width: '100vw',
-        height: '100dvh',
-        maxHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        overscrollBehavior: 'none',
-        background: `
-          radial-gradient(ellipse 70% 55% at 50% 0%, ${accent}22 0%, transparent 58%),
-          radial-gradient(ellipse 50% 40% at 100% 100%, ${accent}12 0%, transparent 55%),
-          var(--bg)
-        `,
-        fontFamily: S.page.fontFamily,
-        color: 'var(--text)',
-        zIndex: 80,
-      }}
-    >
+    <div className={`spomove-player-root tr-result-root ${styles.root}`} data-theme={theme}
+      data-completion={vm.reason} style={{ '--tr-accent': accent } as React.CSSProperties}>
       <style>{CSS}</style>
-      <style>{RESULT_CSS}</style>
-
-      <header
-        className="tr-result-header"
-        style={{
-          flexShrink: 0,
-          display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
-          alignItems: 'center',
-          gap: '0.4rem',
-          padding: 'clamp(0.4rem, 1.2vmin, 0.55rem) clamp(0.7rem, 2vmin, 1.1rem)',
-          borderBottom: '1px solid color-mix(in srgb, var(--border) 70%, transparent)',
-          background: 'color-mix(in srgb, var(--card) 72%, transparent)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-        }}
-      >
-        <button
-          type="button"
-          className="tr-btn-back"
-          style={{
-            ...S.btn,
-            ...S.bSecondary,
-            justifySelf: 'start',
-            padding: '0.45rem 0.75rem',
-            fontSize: 'var(--tr-label)',
-            borderRadius: '0.65rem',
-          }}
-          onClick={onBack}
-        >
-          목록
-        </button>
-        <div
-          className="tr-result-header-center"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.35rem',
-            fontSize: 'var(--tr-label)',
-            fontWeight: 800,
-          }}
-        >
-          <span>{mo?.icon}</span>
-          <span>{programTitle || `${mo?.title} · ${levelLabel}`}</span>
-        </div>
-        <button
-          type="button"
-          className="tr-btn-retry"
-          style={{
-            ...S.btn,
-            ...S.bPrimary,
-            justifySelf: 'end',
-            padding: '0.45rem 0.8rem',
-            fontSize: 'var(--tr-label)',
-            borderRadius: '0.65rem',
-          }}
-          onClick={onRetry}
-        >
-          {retryLabel}
-        </button>
+      <header className={styles.header}>
+        <button type="button" className={styles.button} onClick={props.onBack}>목록</button>
+        <span className={styles.headerTitle}>오늘의 활동 기록</span>
+        <button type="button" className={`${styles.button} ${styles.primary}`} onClick={props.onRetry}>{props.retryLabel ?? '다시 실행'}</button>
       </header>
-
-      <main
-        style={{
-          flex: 1,
-          minHeight: 0,
-          minWidth: 0,
-          overflowX: 'hidden',
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: 'clamp(0.75rem, 2.2vmin, 1.4rem) clamp(0.7rem, 2vmin, 1.2rem) clamp(1rem, 2.8vmin, 1.6rem)',
-        }}
-      >
-        <div
-          className="tr-result-board"
-          style={{
-            width: '100%',
-            maxWidth: '68rem',
-            alignSelf: 'center',
-            marginTop: 'auto',
-            marginBottom: 'auto',
-            display: 'grid',
-            gap: 'var(--tr-gap)',
-          }}
-        >
-          {/* ── 왼쪽: 완료 요약 ── */}
-          <section className="tr-result-card" style={card}>
-            <div
-              className="tr-panel-block"
-              style={{
-                borderRadius: '0.85rem',
-                padding: 'clamp(0.75rem, 1.8vmin, 1rem)',
-                textAlign: 'center',
-                background: `${accent}12`,
-                border: `1px solid ${accent}30`,
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '0.35rem',
-              }}
-            >
-              {student ? (
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    padding: '0.15rem 0.55rem',
-                    borderRadius: '999px',
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      background: student.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.68rem',
-                      fontWeight: 800,
-                      color: '#fff',
-                    }}
-                  >
-                    {student.name[0]}
-                  </div>
-                  <span style={{ fontSize: 'var(--tr-label)', fontWeight: 700, color: student.color }}>{student.name}</span>
-                </div>
-              ) : null}
-              <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 800, lineHeight: 1.15 }}>{completionReason ? title : dive ? dive.title : title}</div>
-              <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: 0, fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, lineHeight: 1.4 }}>
-                {dive ? dive.subtitle : rich.praiseSub}
-              </p>
-              {dive?.actionLine ? (
-                <p className="tr-dive-copy" style={{ margin: 0, fontSize: 'var(--tr-body)', fontWeight: 850, lineHeight: 1.35 }}>
-                  {dive.actionLine}
-                </p>
-              ) : null}
-              <p
-                className={dive ? 'tr-dive-copy' : undefined}
-                style={{
-                  margin: 0,
-                  fontSize: 'var(--tr-label)',
-                  fontWeight: 800,
-                  color: accent,
-                  lineHeight: 1.35,
-                  wordBreak: 'keep-all',
-                }}
-              >
-                {dive ? (
-                  <>
-                    DIVE 액션무브
-                    {dive.stageLine ? <> · <span className="tr-dive-nowrap">{dive.stageLine}</span></> : null}
-                  </>
-                ) : rich.sessionHighlight}
-              </p>
-              {(completionReason ? statusBadge : dive ? dive.statusBadge : statusBadge) ? (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    fontSize: 'var(--tr-label)',
-                    fontWeight: 800,
-                    padding: '0.12rem 0.5rem',
-                    borderRadius: '999px',
-                    background: 'var(--card)',
-                    color: accent,
-                    border: `1px solid ${accent}44`,
-                  }}
-                >
-                  {completionReason ? statusBadge : dive ? dive.statusBadge : statusBadge}
-                </span>
-              ) : null}
-            </div>
-
-            <div
-              className="tr-panel-block"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gridTemplateRows: 'minmax(2.75rem, 1fr) minmax(2.75rem, 1fr)',
-                gap: '0.45rem',
-              }}
-            >
-              {[
-                dive
-                  ? { label: '활동 시간', value: dive.activityTimeValue, nowrap: true }
-                  : { label: '진행 시간', value: rich.elapsedLabel, nowrap: false },
-                dive
-                  ? { label: completionReason ? '설정 스테이지 시간' : '스테이지 시간', value: dive.stageTimeValue, nowrap: true }
-                  : { label: '설정 분량', value: volumeLabel ?? rich.volumeLabel, nowrap: false },
-              ].map((stat) => {
-                const bonusVolume = stat.value.match(/^(.*?)\s*\+\s*(보너스\s+\d+초)$/);
-                return (
-                  <div
-                    key={stat.label}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      gap: '0.2rem',
-                      borderRadius: '0.7rem',
-                      background: 'var(--subtle-bg)',
-                      border: '1px solid var(--border)',
-                      padding: '0.55rem 0.65rem',
-                      minHeight: 0,
-                    }}
-                  >
-                    <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800, whiteSpace: 'nowrap', wordBreak: 'keep-all' }}>{stat.label}</span>
-                    <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: '0.28em', fontSize: 'var(--tr-stat)', fontWeight: 800, lineHeight: 1.15, wordBreak: 'keep-all', overflowWrap: 'normal' }}>
-                      {bonusVolume ? (
-                        <>
-                          <span style={{ whiteSpace: 'nowrap' }}>{bonusVolume[1]}</span>
-                          <span style={{ whiteSpace: 'nowrap', fontSize: 'var(--tr-body)', color: 'var(--text-muted)' }}>+ {bonusVolume[2]}</span>
-                        </>
-                      ) : stat.value}
-                    </span>
-                  </div>
-                );
-              })}
-              <div
-                style={{
-                  gridColumn: '1 / -1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
-                  gap: '0.75rem',
-                  borderRadius: '0.7rem',
-                  background: 'var(--subtle-bg)',
-                  border: '1px solid var(--border)',
-                  padding: '0.55rem 0.65rem',
-                  minHeight: 0,
-                }}
-              >
-                <span
-                  style={{
-                    flex: '0 0 auto',
-                    whiteSpace: 'nowrap',
-                    wordBreak: 'keep-all',
-                    fontSize: 'var(--tr-label)',
-                    color: 'var(--text-muted)',
-                    fontWeight: 800,
-                  }}
-                >
-                  {dive || completionReason ? '종료 상태' : '오늘 느낌'}
-                </span>
-                <span
-                  className={dive ? 'tr-dive-nowrap' : undefined}
-                  style={{
-                    minWidth: 0,
-                    paddingLeft: '0.75rem',
-                    borderLeft: '1px solid var(--border)',
-                    fontSize: 'var(--tr-body)',
-                    fontWeight: 800,
-                    lineHeight: 1.2,
-                    textAlign: 'left',
-                    wordBreak: 'keep-all',
-                  }}
-                >
-                  {dive ? dive.sessionStatusValue : rich.activityFeel}
-                </span>
-              </div>
-            </div>
-
-            <div
-              className="tr-panel-block"
-              style={{
-                borderRadius: '0.85rem',
-                background: 'var(--subtle-bg)',
-                border: '1px solid var(--border)',
-                padding: '0.7rem 0.75rem',
-                gap: '0.55rem',
-                justifyContent: 'center',
-              }}
-            >
+      <main className={styles.scroll}>
+        <div className={styles.board}>
+          <section className={`${styles.card} ${styles.mission}`} aria-labelledby="tr-mission-title">
+            <div className={styles.missionHeading}>
               <div>
-                <h2 style={sectionTitle}>{completionReason ? '활동 내용' : dive ? '오늘의 움직임' : '오늘의 포인트'}</h2>
-                <p
-                  className={dive ? 'tr-dive-copy' : undefined}
-                  style={{
-                    margin: '0.4rem 0 0',
-                    fontSize: 'var(--tr-body)',
-                    lineHeight: 1.45,
-                    fontWeight: 750,
-                    color: 'var(--text)',
-                    wordBreak: 'keep-all',
-                    borderLeft: `3px solid ${accent}55`,
-                    paddingLeft: '0.55rem',
-                  }}
-                >
-                  {dive ? dive.movementBody : rich.benefitLine}
-                </p>
+                <p className={styles.eyebrow}>오늘의 미션 결과</p>
+                <h1 id="tr-mission-title">{vm.title}</h1>
+                <p className={styles.activity}>{vm.activityTitle}</p>
+                {props.student ? <p className={styles.muted}>{props.student.name}의 활동 기록</p> : null}
               </div>
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                {(dive ? dive.tags : rich.benefitTags).map((tag) => (
-                  <span
-                    key={`left-${tag}`}
-                    style={{
-                      fontSize: 'var(--tr-label)',
-                      fontWeight: 850,
-                      padding: '0.2rem 0.5rem',
-                      borderRadius: '999px',
-                      background: `${accent}12`,
-                      color: accent,
-                      border: `1px solid ${accent}33`,
-                    }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              <span className={styles.status}>{vm.status}</span>
             </div>
+            <p className={styles.muted}>{vm.description}</p>
+            <FactList items={[
+              { id: 'elapsed', label: '실제 진행 시간', value: vm.elapsed },
+              { id: 'volume', label: '설정 분량', value: vm.volume },
+              { id: 'progress', label: '실제 진행량', value: vm.progress },
+            ]} />
           </section>
 
-          {/* ── 가운데: 색 집계 또는 세션 스냅샷 ── */}
-          <section className="tr-result-card" style={{ ...card, gap: '0.75rem' }}>
-            {showColorBreakdown ? (
-              <>
-                <div style={{ flexShrink: 0 }}>
-                  <h2 style={sectionTitle}>{selection.activityId === 'moving-number-reader' ? '숫자 1·2·3·4 출현 횟수' : selection.activityId === 'visual-search' ? '목표 구역별 제시 횟수' : cfg.mode === 'flanker' ? '가운데 목표 색' : '색상 제시 횟수'}</h2>
-                  <p style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650 }}>
-                    {selection.activityId === 'moving-number-reader' ? `총 ${colorTotal}개의 숫자 캡슐이 제시되었습니다. 수행 횟수가 아닌 자극 빈도입니다.` : selection.activityId === 'visual-search' ? `총 ${colorTotal}개의 탐색 과제가 제시되었습니다.` : cfg.mode === 'flanker'
-                      ? `총 ${colorTotal}회 가운데 목표 색이 제시되었습니다.`
-                      : `총 ${colorTotal}회 관문 색상이 제시되었습니다.`}
-                  </p>
-                </div>
+          <div className={styles.middle}>
+            <section className={styles.card} aria-labelledby="tr-record-title">
+              <p className={styles.eyebrow}>이번에 남긴 기록</p>
+              <h2 id="tr-record-title">오늘의 활동 기록</h2>
+              {vm.facts.length ? <FactList items={vm.facts} /> : null}
+              {vm.distribution.length ? <div className={styles.distribution}>
+                <h3>{vm.distributionTitle}</h3>
+                <ul>{vm.distribution.map(item => <li key={item.id}>
+                  <span>{item.label}</span>
+                  <span className={styles.track} aria-hidden="true"><span style={{ width: `${item.width}%`, background: item.color }} /></span>
+                  <strong>{item.count}회</strong>
+                </li>)}</ul>
+              </div> : null}
+              <p className={styles.note}>{vm.recordNote}</p>
+            </section>
+            {vm.showFeeling ? <section className={`${styles.card} ${styles.feeling}`} aria-labelledby="tr-feeling-title">
+              <p className={styles.eyebrow}>정답 없는 나의 이야기</p>
+              <h2 id="tr-feeling-title">내 느낌</h2>
+              <p className={styles.muted}>오늘 활동은 어땠나요?</p>
+              <div className={styles.feelingChoices} role="group" aria-label="오늘 활동의 느낌">
+                {FEELINGS.map((item, index) => <button key={item.label} type="button" aria-pressed={feeling === index}
+                  onClick={() => setFeeling(feeling === index ? null : index)}>
+                  <span className={styles.feelingIcon} aria-hidden="true">{item.icon}</span>{item.label}
+                </button>)}
+              </div>
+              <p className={styles.muted}>선택은 자유예요. 결과 점수에 영향을 주지 않아요.</p>
+              <p role="status" className={styles.reply}>{feeling !== null ? FEELINGS[feeling].reply : ''}</p>
+            </section> : null}
+          </div>
 
-                <div className="tr-fill-stack" style={{ gap: '0.45rem' }}>
-                  {RESULT_COLOR_ORDER.map((id) => {
-                    const meta = colorMeta(id);
-                    const count = resultColorCounts![id];
-                    const percent = colorTotal > 0 ? Math.round((count / colorTotal) * 100) : 0;
-                    return (
-                      <div
-                        key={id}
-                        className="tr-fill-row"
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr auto',
-                          gap: '0.55rem',
-                          padding: '0.55rem 0.65rem',
-                          borderRadius: '0.7rem',
-                          background: 'var(--subtle-bg)',
-                          border: '1px solid var(--border)',
-                        }}
-                      >
-                        <span
-                          aria-hidden
-                          style={{
-                            width: 'clamp(16px, 3.5vmin, 22px)',
-                            height: 'clamp(16px, 3.5vmin, 22px)',
-                            borderRadius: '50%',
-                            background: meta.bg,
-                            boxShadow: `0 0 0 3px ${meta.bg}33`,
-                          }}
-                        />
-                        <div style={{ minWidth: 0, width: '100%' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                            <span style={{ fontSize: 'var(--tr-body)', fontWeight: 800 }}>{selection.activityId === 'moving-number-reader' ? `${RESULT_COLOR_ORDER.indexOf(id) + 1} · ${meta.name}` : meta.name}</span>
-                            <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{percent}%</span>
-                          </div>
-                          <div style={{ marginTop: '0.32rem', height: 7, borderRadius: 999, background: 'var(--card)', overflow: 'hidden' }}>
-                            <div style={{ width: `${percent}%`, height: '100%', background: meta.bg, borderRadius: 999 }} />
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 'var(--tr-color)', fontWeight: 800, color: accent }}>{count}회</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {rich.colorDominantLine ? (
-                  <p
-                    style={{
-                      margin: 0,
-                      flexShrink: 0,
-                      fontSize: 'var(--tr-label)',
-                      fontWeight: 800,
-                      color: accent,
-                      lineHeight: 1.4,
-                      wordBreak: 'keep-all',
-                      borderRadius: '0.7rem',
-                      background: `${accent}12`,
-                      border: `1px solid ${accent}30`,
-                      padding: '0.55rem 0.7rem',
-                    }}
-                  >
-                    {rich.colorDominantLine}
-                  </p>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <div style={{ flexShrink: 0 }}>
-                  <h2 style={sectionTitle}>{dive ? '오늘의 DIVE' : '활동 요약'}</h2>
-                  <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, wordBreak: 'keep-all' }}>
-                    {dive
-                      ? completionReason
-                        ? '설정된 액션 구성과 실제 진행 시간을 구분해 정리합니다.'
-                        : '이번 세션에서 진행한 액션과 활동 구성을 정리합니다.'
-                      : completionReason
-                        ? '설정된 과제와 실제 진행 시간을 구분해 정리합니다.'
-                        : '이번 활동에서 진행한 과제와 시간을 정리합니다.'}
-                  </p>
-                </div>
-
-                <div className="tr-fill-stack" style={{ gap: '0.45rem' }}>
-                  {(dive
-                    ? dive.snapshot
-                    : rich.sessionSnapshot.map((item) => ({ ...item, nowrap: false }))
-                  ).map((item) => (
-                    <div
-                      key={item.id}
-                      className="tr-fill-row"
-                      style={{
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '0.7rem',
-                        padding: '0.6rem 0.7rem',
-                        borderRadius: '0.7rem',
-                        background: 'var(--subtle-bg)',
-                        border: '1px solid var(--border)',
-                      }}
-                    >
-                      <span className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800, flexShrink: dive ? 0 : undefined }}>{item.label}</span>
-                      <span className={item.nowrap ? 'tr-dive-nowrap' : dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 800, textAlign: 'right', wordBreak: 'keep-all', minWidth: 0 }}>{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <p
-                  className={dive ? 'tr-dive-copy' : undefined}
-                  style={{
-                    margin: 0,
-                    flexShrink: 0,
-                    fontSize: 'var(--tr-label)',
-                    lineHeight: 1.45,
-                    color: 'var(--text-muted)',
-                    fontWeight: 650,
-                    wordBreak: 'keep-all',
-                    borderRadius: '0.7rem',
-                    background: 'var(--subtle-bg)',
-                    border: '1px solid var(--border)',
-                    padding: '0.6rem 0.7rem',
-                  }}
-                >
-                  {dive
-                    ? completionReason
-                      ? '진행 시간은 측정값이며 액션 구성과 스테이지 시간은 실행 설정입니다.'
-                      : '화면의 신호에 맞춰 방향을 바꾸고 점프하고 숙이며 연속적인 움직임을 경험하는 활동입니다.'
-                    : completionReason
-                      ? selection.activityId === 'glass-bridge-memory'
-                        ? '제시 완료 라운드는 패턴 재생 기록이며 성공·실패는 교사의 수동 입력입니다.'
-                        : '진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.'
-                      : '표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.'}
-                </p>
-              </>
-            )}
+          <section className={`${styles.card} ${styles.challenge}`} aria-labelledby="tr-challenge-title">
+            <p className={styles.eyebrow}>다시 해볼 때 떠올려요</p>
+            <h2 id="tr-challenge-title">다음 도전</h2>
+            <p>{vm.nextChallenge}</p>
           </section>
-
-          {/* ── 오른쪽: 훈련 정리 + 코칭 팁 ── */}
-          <section className="tr-result-card" style={{ ...card, gap: '0.7rem' }}>
-            <div style={{ flexShrink: 0 }}>
-              <h2 style={sectionTitle}>{dive ? '움직임 리포트' : '훈련 정리'}</h2>
-              <h3 className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.25rem 0 0', fontSize: 'var(--tr-title)', fontWeight: 800, lineHeight: 1.25 }}>
-                {dive ? 'DIVE 액션무브' : rich.programTitle}
-              </h3>
+          <details className={`${styles.card} ${styles.details}`}>
+            <summary>지도자 상세 분석 <span className={styles.muted}>기록과 지도 방법 확인</span></summary>
+            <div className={styles.detailContent}>
+              <section><h3>활동 목표</h3><p>{vm.objective}</p></section>
+              <section><h3>실제 기록</h3><FactList items={[
+                { id: 'status', label: '종료 상태', value: vm.status },
+                { id: 'elapsed', label: '실제 진행 시간', value: vm.elapsed },
+                ...vm.facts.filter(item => item.id !== 'elapsed'),
+              ]} /></section>
+              <section><h3>교육적 의미</h3><p>{vm.meaning}</p></section>
+              <section><h3>지도 포인트</h3><p>{vm.nextChallenge}</p><p className={styles.muted}>다음 수업에서 목표를 확인하는 과정과 이동 후 균형을 관찰해 주세요.</p></section>
+              <section><h3>사용한 설정</h3><FactList items={[{ id: 'volume', label: '설정 분량', value: vm.volume }, ...vm.settings]} /></section>
+              <section><h3>기록 한계</h3><ul className={styles.limits}>{vm.limitations.map(line => <li key={line}>{line}</li>)}</ul></section>
             </div>
-
-            <div
-              style={{
-                flexShrink: 0,
-                borderRadius: '0.75rem',
-                border: `1px solid ${accent}30`,
-                background: `${accent}12`,
-                padding: '0.7rem',
-              }}
-            >
-              <div className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: accent }}>{dive ? '시각 신호 · 방향 전환 · 전신 반응' : (mo?.tag ?? 'SPOMOVE 훈련')}</div>
-              <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.35rem 0 0', fontSize: 'var(--tr-body)', lineHeight: 1.5, color: 'var(--text)', fontWeight: 650, wordBreak: 'keep-all' }}>
-                {dive
-                  ? '화면의 신호를 보며 좌우 이동과 점프, 숙이기 동작을 연속해서 수행하는 활동입니다.'
-                  : rich.programSummary}
-              </p>
-            </div>
-
-            <div
-              style={{
-                flexShrink: 0,
-                borderRadius: '0.75rem',
-                background: 'var(--subtle-bg)',
-                border: '1px solid var(--border)',
-                padding: '0.65rem 0.7rem',
-              }}
-            >
-              <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                {dive ? '다음 활동 포인트' : '다음 시도 팁'}
-              </div>
-              <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, fontWeight: 700, color: 'var(--text)', wordBreak: 'keep-all' }}>
-                {dive
-                  ? '다음 신호를 미리 확인하며 동작 사이의 흐름이 끊기지 않도록 움직여 보세요.'
-                  : rich.coachTip}
-              </p>
-            </div>
-
-            {false && sessionSettings?.primary ? (
-              <div
-                style={{
-                  flexShrink: 0,
-                  borderRadius: '0.75rem',
-                  border: `1px solid ${accent}30`,
-                  background: `${accent}12`,
-                  padding: '0.7rem',
-                }}
-              >
-                <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: accent }}>
-                  {sessionSettings?.title ?? '사용한 동작'}
-                </div>
-                <p
-                  style={{
-                    margin: '0.35rem 0 0',
-                    fontSize: 'var(--tr-title)',
-                    fontWeight: 800,
-                    lineHeight: 1.3,
-                    color: 'var(--text)',
-                    wordBreak: 'keep-all',
-                  }}
-                >
-                  {sessionSettings?.primary}
-                </p>
-                {sessionSettings?.secondary ? (
-                  <p
-                    style={{
-                      margin: '0.3rem 0 0',
-                      fontSize: 'var(--tr-body)',
-                      lineHeight: 1.45,
-                      fontWeight: 650,
-                      color: 'var(--text-muted)',
-                      wordBreak: 'keep-all',
-                    }}
-                  >
-                    {sessionSettings?.secondary}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div style={{ flex: '1 1 auto', minHeight: 'min-content', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <h2 style={{ ...sectionTitle, flexShrink: 0 }}>{completionReason ? '결과 안내' : '스스로 점검'}</h2>
-              <div className="tr-fill-stack" style={{ gap: '0.4rem' }}>
-                {(dive ? dive.selfChecks : rich.selfCheckItems).map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="tr-fill-row"
-                    style={{
-                      gap: '0.5rem',
-                      padding: '0.55rem 0.65rem',
-                      borderRadius: '0.65rem',
-                      background: 'var(--subtle-bg)',
-                      border: '1px solid var(--border)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: '1.5rem',
-                        height: '1.5rem',
-                        borderRadius: '50%',
-                        background: `${accent}18`,
-                        color: accent,
-                        fontSize: 'var(--tr-label)',
-                        fontWeight: 800,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {index + 1}
-                    </span>
-                    <span className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 750, lineHeight: 1.3, color: 'var(--text)', wordBreak: 'keep-all' }}>
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {footer ? (
-              <div className="tr-result-footer-wrap" style={{ flexShrink: 0 }}>
-                {footer}
-              </div>
-            ) : null}
-          </section>
+          </details>
+          {props.footer ? <footer className={styles.footer}>{props.footer}</footer> : null}
         </div>
       </main>
     </div>

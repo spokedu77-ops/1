@@ -19,6 +19,7 @@ A user request or approved Sprint Brief may implement or improve a surface in an
 | LIBRARY DETAIL | Understand + Prepare | Editorial preparation | Canonical | PENDING | PENDING |
 | SPOMOVE HUB | Browse | Digital sports content | Canonical | PENDING | PENDING |
 | SPOMOVE START | Confirm then run | Digital execution gate | Canonical | PENDING | PENDING |
+| SPOMOVE RESULT | Reflect + review + retry | Shared child/instructor feedback | Canonical | LOCAL RENDERED — REVIEW REQUIRED | LOCAL RENDERED — REVIEW REQUIRED |
 | PROGRAMS | Discover programs | Editorial gateway | Surface role | PENDING | PENDING |
 | LIBRARY | Find activities | Catalog discovery | Surface role | PENDING | PENDING |
 | FAVORITES | Retrieve saved | Retrieval | Surface role | PENDING | PENDING |
@@ -29,5 +30,7 @@ A user request or approved Sprint Brief may implement or improve a surface in an
 | REPORT | Record / send | Document reading | Surface role | PENDING | PENDING |
 
 **WHY CLASS TOOLS IS DIFFERENT:** live utility needs 900-weight numerals; not a discovery surface.
+
+SPOMOVE Result (2026-11-09): local populated component fixtures at 390/768/1440 in light/dark; feeling selection, disclosure, footer callbacks, all four terminal states and overflow checked. Actual local Admin visual-search completion and glass-bridge completion/STOP/retry checked with browser-only authentication fixtures. Evidence: `artifacts/result-feedback-20261109/`. Authenticated Teacher and MASTER/LAB end-to-end flows are not verified by these fixtures.
 
 **WHY SESSION IS BLOCKED:** no populated PREP/TEACH/CAPTURE fixture in this cycle; lifecycle mutation is out of visual scope.

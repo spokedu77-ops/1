@@ -58,6 +58,7 @@ interface Session {
   id: string;
   title: string;
   start_at: string;
+  end_at?: string;
   session_type: string;
   status: string;
   created_by?: string | null;

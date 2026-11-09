@@ -24,6 +24,9 @@ export function MasterSessionResult({
   activityTitle,
   elapsedMs,
   colorCounts = null,
+  stims,
+  settings,
+  cueSeconds,
   engineMode,
   engineLevel,
   activityId,
@@ -47,6 +50,7 @@ export function MasterSessionResult({
   elapsedMs: number;
   settings: string[];
   colorCounts?: ColorStimulusCounts | null;
+  stims?: number;
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
   activityId?: TrainingActivityId;
@@ -75,6 +79,7 @@ export function MasterSessionResult({
     level: engineLevel,
     activityId,
     flankerExtremeMode,
+    speed: cueSeconds,
     timeMode: executionVolume.kind === 'reps' ? 'reps' : executionVolume.kind === 'interval' ? 'interval' : 'time',
     duration: executionVolume.kind === 'time' || executionVolume.kind === 'stage' ? executionVolume.durationSec : 0,
     targetReps: executionVolume.kind === 'reps' || executionVolume.kind === 'rounds' || executionVolume.kind === 'stage' ? executionVolume.count : rounds,
@@ -88,6 +93,8 @@ export function MasterSessionResult({
       completionReason={completionReason}
       elapsedMs={elapsedMs}
       colorCounts={colorCounts}
+      stims={stims}
+      sessionSettings={settings.length ? { title: '실행 설정', primary: settings.join(' · ') } : null}
       levelLabel={resultLevelLabel(engineMode, engineLevel, activityId)}
       title={completion.title}
       statusBadge={completion.statusBadge}

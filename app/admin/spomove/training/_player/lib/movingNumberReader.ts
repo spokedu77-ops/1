@@ -18,7 +18,7 @@ export function normalizeNumberReaderSeconds(value?: number) {
 }
 
 export function normalizeNumberReaderReps(value?: number) {
-  return [10, 15, 20, 30].includes(value ?? 0) ? value! : 20;
+  return [5, 10, 15, 20, 30].includes(value ?? 0) ? value! : 20;
 }
 
 export function numberReaderPhaseSeconds(phase: NumberReaderPhase, flightSeconds: number) {

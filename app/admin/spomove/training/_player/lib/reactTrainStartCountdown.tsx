@@ -21,7 +21,11 @@ const OVERLAY_CSS = `
  * 시작 3·2·1 오버레이 (MemoryGameApp CSS 없이도 동작).
  * countdown ≤ 0 이면 렌더하지 않는다.
  */
-export function ReactTrainStartCountdownOverlay({ countdown }: { countdown: number }) {
+export function ReactTrainStartCountdownOverlay({ countdown, variant = 'canvas', blocksInput = false }: {
+  countdown: number;
+  variant?: 'canvas' | 'standard';
+  blocksInput?: boolean;
+}) {
   if (countdown <= 0) return null;
   return (
     <>
@@ -30,13 +34,13 @@ export function ReactTrainStartCountdownOverlay({ countdown }: { countdown: numb
         style={{
           position: 'absolute',
           inset: 0,
-          zIndex: 80,
+          zIndex: variant === 'standard' ? 30 : 80,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'rgba(0,0,0,0.62)',
+          background: variant === 'standard' ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.62)',
           backdropFilter: 'blur(8px)',
-          pointerEvents: 'none',
+          pointerEvents: blocksInput ? 'auto' : 'none',
         }}
       >
         <div
@@ -44,12 +48,12 @@ export function ReactTrainStartCountdownOverlay({ countdown }: { countdown: numb
           className="react-train-cd-pop"
           style={{
             fontFamily: 'var(--spm-font-display)',
-            fontSize: 'clamp(120px,30vw,260px)',
+            fontSize: variant === 'standard' ? 'clamp(120px,30vw,240px)' : 'clamp(120px,30vw,260px)',
             fontWeight: 800,
             fontSynthesis: 'none',
             color: '#F97316',
             lineHeight: 1,
-            textShadow: '0 0 48px rgba(249,115,22,0.42)',
+            textShadow: variant === 'standard' ? undefined : '0 0 48px rgba(249,115,22,0.42)',
           }}
         >
           {countdown}

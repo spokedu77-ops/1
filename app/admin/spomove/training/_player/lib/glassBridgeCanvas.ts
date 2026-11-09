@@ -1,5 +1,5 @@
 import { COLORS } from '../constants';
-import { glassBridgeLitIndex, glassBridgePanels, type GlassBridgeState } from './glassBridgeMemory';
+import { glassBridgeLitIndex, glassBridgeShowsAll, glassBridgePanels, type GlassBridgeState } from './glassBridgeMemory';
 
 export function createGlassBridgeVisuals(random = Math.random) {
   return { dust: Array.from({ length: 100 }, () => ({ x: random(), y: random(), size: 1 + random() * 2, speed: 0.01 + random() * 0.025, alpha: 0.1 + random() * 0.4 })),
@@ -27,7 +27,7 @@ export function drawGlassBridge(ctx: CanvasRenderingContext2D, width: number, he
   const lit = glassBridgeLitIndex(state, now);
   for (const [index, panel] of panels.entries()) {
     const color = COLORS.find(color => color.id === state.pattern[index])!.bg;
-    if (state.phase === 'SHATTER') {
+    if (state.phase === 'SHATTER' && index === state.answerIndex) {
       for (const shard of visuals.shards) {
         const x = panel.x + panel.width * (shard.x + shard.vx * shatterTime);
         const y = panel.y + panel.height * shard.y + height * (shard.vy * shatterTime + 0.24 * shatterTime ** 2);
@@ -36,15 +36,19 @@ export function drawGlassBridge(ctx: CanvasRenderingContext2D, width: number, he
         ctx.globalAlpha = Math.max(0, 0.8 - shatterTime * 0.25); ctx.fillStyle = color; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(0, -size); ctx.lineTo(size, size); ctx.lineTo(-size, size); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
       }
-      continue;
     }
-    const active = lit === index || state.phase === 'REVEAL' || (state.phase === 'SUCCESS' && now - state.phaseStarted < 500);
-    ctx.shadowBlur = active ? 40 : 8; ctx.shadowColor = active ? color : '#ffffff22';
+    const answered = index < state.answers.length;
+    const active = lit === index || glassBridgeShowsAll(state, now) || answered;
+    const successPulse = state.phase === 'SUCCESS' && index === state.answerIndex ? (1 + Math.sin((now - state.phaseStarted) / 150)) / 2 : 0;
+    ctx.shadowBlur = active ? 40 + successPulse * 20 : 8; ctx.shadowColor = successPulse ? '#86efac' : active ? color : '#ffffff22';
     ctx.fillStyle = active ? color + 'cc' : '#ffffff0d';
     ctx.beginPath(); ctx.roundRect(panel.x, panel.y, panel.width, panel.height, Math.min(20, panel.height * 0.25)); ctx.fill();
-    ctx.lineWidth = active ? 4 : 2; ctx.strokeStyle = active ? '#fff' : '#ffffff33'; ctx.stroke(); ctx.shadowBlur = 0;
+    const current = state.phase === 'WAITING' && index === state.answerIndex;
+    ctx.lineWidth = active || current ? 4 : 2; ctx.strokeStyle = current ? '#fff' : answered ? (state.answers[index] === state.pattern[index] ? '#86efac' : '#fca5a5') : active ? '#fff' : '#ffffff33'; ctx.stroke(); ctx.shadowBlur = 0;
     ctx.fillStyle = '#ffffff33'; ctx.beginPath();
     ctx.roundRect(panel.x + 5, panel.y + 3, panel.width - 10, panel.height * 0.3, Math.min(12, panel.height * 0.1)); ctx.fill();
+    ctx.font = `800 ${Math.min(20, panel.height * 0.55)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+    ctx.fillText(String(index + 1), panel.x + panel.width / 2, panel.y + panel.height / 2);
   }
   ctx.restore();
 }

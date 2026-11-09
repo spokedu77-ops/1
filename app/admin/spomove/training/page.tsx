@@ -17,6 +17,7 @@ import {
   isModifiedQuadrantLevel,
   isFront3PanelLevel,
   isColorSequenceLevel,
+  ADMIN_SEQUENCE_OPTIONS,
   isColorNumberLevel,
   isInstantMemoryLevel,
   modifiedQuadrantStage,
@@ -30,9 +31,10 @@ import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { useViewportScrollLock } from './_player/lib/lockViewportScroll';
 import { TrainingDashboard } from './TrainingDashboard';
-import { normalizeGlassBridgeLength, normalizeGlassBridgeSeconds, normalizeGlassBridgeRounds } from './_player/lib/glassBridgeMemory';
-import { normalizeNumberReaderSeconds, normalizeNumberReaderReps } from './_player/lib/movingNumberReader';
-import { normalizeSearchSeconds, normalizeSearchReps } from './_player/lib/visualSearch';
+import { normalizeGlassBridgeLength, normalizeGlassBridgeSeconds, normalizeGlassBridgeRounds, normalizeGlassBridgeDifficulty } from './_player/lib/glassBridgeMemory';
+import { normalizeNumberReaderSeconds } from './_player/lib/movingNumberReader';
+import { normalizeSearchSeconds, normalizeSearchStage, normalizeSearchTargetCount } from './_player/lib/visualSearch';
+import { ADMIN_TRAINING_ROUNDS, normalizeAdminTrainingRounds } from './_player/lib/adminTrainingRounds';
 import { SpeedSelector } from './_player/components/SpeedSelector';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
@@ -243,6 +245,8 @@ type ColorGateSelectableCategory = Exclude<ColorGateCategoryFilter, 'all'> | 'to
 type ColorGateDifficultySelection = 'single' | 'compound' | 'family';
 
 type LaunchSettings = {
+  visualSearchStage: 1 | 2;
+  visualSearchTargetCount: 1 | 2;
   speed: number;
   timeMode: 'time' | 'reps';
   duration: number;
@@ -306,7 +310,8 @@ type LaunchSettings = {
   activityId: TrainingActivityId;
   shapeCompletionDifficulty: 'easy' | 'normal' | 'hard';
   shapeCompletionResponseSeconds: 2 | 3 | 4 | 5 | 6;
-  glassBridgeStartLength: 4 | 5 | 6;
+  glassBridgeDifficulty: 'easy' | 'hard';
+  glassBridgeStartLength: 3 | 4 | 5 | 6;
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount: 1 | 2;
   /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
@@ -316,7 +321,10 @@ type LaunchSettings = {
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
-  glassBridgeStartLength: 5,
+  visualSearchStage: 1,
+  visualSearchTargetCount: 1,
+  glassBridgeDifficulty: 'easy',
+  glassBridgeStartLength: 3,
   speed: 2.0,
   timeMode: 'reps',
   duration: 60,
@@ -442,6 +450,9 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     relativeCompassStartSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassStartSeconds,
     relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassResponseSeconds,
     activityId: resolveTrainingActivity(mode, level, auto, fallback.activityId),
+    visualSearchStage: normalizeSearchStage(auto.visualSearchStage),
+    visualSearchTargetCount: normalizeSearchTargetCount(auto.visualSearchStage, auto.visualSearchTargetCount),
+    glassBridgeDifficulty: normalizeGlassBridgeDifficulty(auto.glassBridgeDifficulty),
     glassBridgeStartLength: normalizeGlassBridgeLength(auto.glassBridgeStartLength ?? fallback.glassBridgeStartLength),
     shapeCompletionDifficulty: auto.shapeCompletionDifficulty === 'easy' || auto.shapeCompletionDifficulty === 'hard' ? auto.shapeCompletionDifficulty : fallback.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.shapeCompletionResponseSeconds,
@@ -453,7 +464,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
 
 const FLOW_COLOR_GATE_LEVEL_ID = 2;
 const ACTION_MOVE_STAGE_SECONDS = [15, 20, 25, 30, 35] as const;
-const COLOR_GATE_REPETITION_COUNTS = [10, 15, 20, 30] as const;
+const COLOR_GATE_REPETITION_COUNTS = ADMIN_TRAINING_ROUNDS;
 const REACT_TRAIN_REPETITION_LEVEL_IDS = new Set([3, 1, 2, 6, 10, 201, 15]);
 const DEFAULT_ACTION_MOVE_STAGE_SEC = 20;
 
@@ -467,18 +478,18 @@ function isReactTrainRepetitionLevel(modeId: string, levelId: number): boolean {
 
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
   const previousActivity = launch.activityId;
-  launch = { ...launch, activityId: trainingActivityForLevelChange(modeId, levelId, launch.activityId) };
+  launch = { ...launch, targetReps: normalizeAdminTrainingRounds(launch.targetReps), activityId: trainingActivityForLevelChange(modeId, levelId, launch.activityId) };
   if (launch.activityId === 'glass-bridge-memory') return { ...launch, glassBridgeStartLength: normalizeGlassBridgeLength(launch.glassBridgeStartLength), speed: normalizeGlassBridgeSeconds(launch.speed), targetReps: normalizeGlassBridgeRounds(launch.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
   if (previousActivity === 'glass-bridge-memory') launch = { ...launch, speed: Math.min(6, launch.speed) };
-  if (launch.activityId === 'visual-search') return { ...launch, speed: normalizeSearchSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeSearchReps(launch.targetReps), intervalMode: false, accel: false };
-  if (launch.activityId === 'moving-number-reader') return { ...launch, speed: normalizeNumberReaderSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeNumberReaderReps(launch.targetReps), intervalMode: false, accel: false };
+  if (launch.activityId === 'visual-search') return { ...launch, visualSearchStage: normalizeSearchStage(launch.visualSearchStage), visualSearchTargetCount: normalizeSearchTargetCount(launch.visualSearchStage, launch.visualSearchTargetCount), speed: normalizeSearchSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeAdminTrainingRounds(launch.targetReps), intervalMode: false, accel: false };
+  if (launch.activityId === 'moving-number-reader') return { ...launch, speed: normalizeNumberReaderSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeAdminTrainingRounds(launch.targetReps), intervalMode: false, accel: false };
   if (previousActivity === 'moving-number-reader') launch = { ...launch, speed: Math.min(6, launch.speed) };
   if (previousActivity === 'visual-search') launch = { ...launch, speed: Math.min(6, launch.speed) };
   if (isReactTrainRepetitionLevel(modeId, levelId)) {
     return {
       ...launch,
       timeMode: 'reps',
-      targetReps: [10, 15, 20, 30].includes(launch.targetReps) ? launch.targetReps : 20,
+      targetReps: normalizeAdminTrainingRounds(launch.targetReps),
     };
   }
   if (launch.activityId === 'relative-compass') {
@@ -525,7 +536,8 @@ function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchS
     return { ...launch, flankerStimulusType: 'color' };
   }
 
-  return launch;
+  if (modeId === 'reactTrain') return { ...launch, timeMode: [8, 9, 14].includes(reactTrainEngineLevelForUi(levelId)) ? 'reps' : 'time' };
+  return (modeId === 'spatial' || modeId !== 'reactTrain' && modeId !== 'flow') ? { ...launch, timeMode: 'reps' } : launch;
 }
 
 type PagePhase =
@@ -641,6 +653,9 @@ function TrainingPortal({
     relativeCompassResponseSeconds: launch.relativeCompassResponseSeconds,
     activityId: launch.activityId,
     ...legacyTrainingActivityFlags(launch.activityId),
+    visualSearchStage: launch.visualSearchStage,
+    visualSearchTargetCount: launch.visualSearchTargetCount,
+    glassBridgeDifficulty: launch.glassBridgeDifficulty,
     glassBridgeStartLength: launch.glassBridgeStartLength,
     shapeCompletionDifficulty: launch.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: launch.shapeCompletionResponseSeconds,
@@ -656,6 +671,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
+        adminMemorySettings
         key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.colorGateCategories.join(',')}-${launch.colorGateDifficulties.join(',')}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.activityId}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
@@ -757,7 +773,8 @@ function SettingsScreen({
     const activityId = typeof initialLevelId === 'number'
       ? resolveTrainingActivity(modeId, levelId, launch)
       : catalogTrainingActivity(modeId, levelId);
-    return { levelId, launch: { ...launch, activityId } };
+    const selectedLaunch = { ...launch, activityId };
+    return { levelId, launch: launchSettingsForLevel(modeId, levelId, selectedLaunch) };
   });
   const { levelId, launch } = selection;
   const setLevelId = (update: number | ((current: number) => number)) => setSelection(current => {
@@ -837,7 +854,7 @@ function SettingsScreen({
   }, [isFlowOrChallenge, levelId, modeId, setLaunch]);
 
   return (
-    <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', ...(isSpatial ? { wordBreak: 'keep-all' as const } : {}) }}>
       <style jsx>{`
         .settings-body {
           flex: 1;
@@ -963,8 +980,8 @@ function SettingsScreen({
                 {launch.activityId === 'glass-bridge-memory' ? (
                   <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
                     순서대로 점등되는 세로 유리 발판의 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직입니다.
-                    아래에서 위로 제시된 뒤 교사가 성공·실패를 판정합니다. 성공하면 길이가 1칸 늘어나며 최대 10칸입니다.
-                    실패하면 정답 공개와 유리 파괴 후 결과 화면으로 이동합니다. 발판당 제시 시간의 75%는 점등, 25%는 소등입니다.
+                    순서를 기억한 뒤 교사가 이동한 색을 한 칸씩 선택합니다. 맞으면 성공 연출, 틀리면 유리 파괴 연출과 함께 해당 칸의 정답을 공개하고 다음 발판으로 진행합니다.
+                    쉬움은 전체 색상을 20초 동안 함께 보고, 어려움은 한 색씩 봅니다. 길이는 3→4→5→6→7칸 순서입니다. 5라운드는 각 길이 1회, 10라운드는 2회, 15라운드는 3회씩 진행하며 오답과 관계없이 끝까지 이어집니다. 점등 75%·소등 25%입니다.
                   </p>
                 ) : launch.activityId === 'moving-number-reader' ? (
                   <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
@@ -975,10 +992,11 @@ function SettingsScreen({
                   </p>
                 ) : launch.activityId === 'visual-search' ? (
                   <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
-                    화면에 나타난 여러 도형 중 목표 도형을 찾아 해당 위치로 이동하는 시각탐색 활동입니다.
-                    1~2회는 빨간 원, 3회부터는 파란 사각형을 찾습니다. 5회부터 도형이 움직입니다.
-                    탐색 시간은 모든 과제에서 동일하며 정답은 3초 동안 공개됩니다.
-                    SPOMAT 위치는 왼쪽 위 빨강 · 오른쪽 위 노랑 · 왼쪽 아래 초록 · 오른쪽 아래 파랑입니다.
+                    여러 기호 속에서 다른 기호를 찾아 해당 SPOMAT 구역으로 이동하는 활동입니다.
+                    선택한 단계와 목표 개수, 탐색 시간은 훈련 내내 유지됩니다.
+                    1단계는 전반에 +와 ×의 다수·소수 역할이 바뀌고, 후반에는 정답의 색·기호 조합이 바뀝니다. 기호 개수는 점진적으로 늘어납니다.
+                    목표 1개·2개 모두 탐색 후 정답을 자동으로 3초 동안 공개합니다.
+                    2단계는 정답의 색·기호 조합이 라운드마다 달라집니다. 화면의 네 구역은 SPOMAT의 색 배치와 같습니다.
                   </p>
                 ) : guideBlock ? (
                   <>
@@ -1044,7 +1062,7 @@ function SettingsScreen({
                         const chosen = resolveCatalogTrainingSelection(modeId, lv.id, { level: current.levelId, activityId: current.launch.activityId });
                         let next = launchSettingsForLevel(modeId, chosen.level, { ...current.launch, activityId: chosen.activityId,
                           ...(current.launch.activityId === 'glass-bridge-memory' && chosen.activityId !== 'glass-bridge-memory' ? previousMemorySettings : {}),
-                          ...(chosen.activityId === 'glass-bridge-memory' && current.launch.activityId !== 'glass-bridge-memory' ? { speed: 2, targetReps: 20, glassBridgeStartLength: 5 as const } : {}),
+                          ...(chosen.activityId === 'glass-bridge-memory' && current.launch.activityId !== 'glass-bridge-memory' ? { speed: 2, targetReps: 5, glassBridgeStartLength: 3 as const } : {}),
                           ...(chosen.activityId === 'moving-number-reader' && current.launch.activityId !== 'moving-number-reader' ? { speed: 3, targetReps: 20 } : {}),
                           ...(current.launch.activityId === 'moving-number-reader' && chosen.activityId !== 'moving-number-reader' ? { speed: Math.min(6, current.launch.speed) } : {}),
                           ...(chosen.activityId === 'visual-search' && current.launch.activityId !== 'visual-search' ? { speed: 5, targetReps: 20 } : {}),
@@ -1068,21 +1086,21 @@ function SettingsScreen({
                             next = {
                               ...next,
                               timeMode: 'reps',
-                              targetReps: [7, 10, 15, 25].includes(next.targetReps) ? next.targetReps : 10,
+                              targetReps: normalizeAdminTrainingRounds(next.targetReps),
                             };
                           }
                           if (chosen.runtime === 'color-tracker') {
                             next = {
                               ...next,
                               timeMode: 'reps',
-                              targetReps: [2, 3, 5, 10].includes(next.targetReps) ? next.targetReps : 5,
+                              targetReps: normalizeAdminTrainingRounds(next.targetReps),
                             };
                           }
                           if (chosen.runtime === 'goalkeeper') {
                             next = {
                               ...next,
                               timeMode: 'reps',
-                              targetReps: [10, 15, 20, 30].includes(next.targetReps) ? next.targetReps : 20,
+                              targetReps: normalizeAdminTrainingRounds(next.targetReps),
                             };
                           }
                           if (chosen.runtime === 'shell-tracking') {
@@ -1991,23 +2009,47 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {launch.activityId === 'glass-bridge-memory' ? (
-            <section style={{ marginBottom: 22 }}>
-              <label style={{ display: 'block', marginBottom: 10, fontSize: 11, fontWeight: 800, color: T.muted }}>시작 난이도</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {([4, 5, 6] as const).map((value, index) => {
-                  const active = launch.glassBridgeStartLength === value;
-                  return <button key={value} type="button" aria-pressed={active} onClick={() => setLaunch(s => ({ ...s, glassBridgeStartLength: value }))}
-                    style={{ flex: 1, padding: '12px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontWeight: active ? 900 : 700, cursor: 'pointer' }}>
-                    {['쉬움', '보통', '어려움'][index]} · {value}칸
+          {launch.activityId === 'visual-search' && <>
+            <section style={{ marginBottom: 26 }} aria-label="복합 시각탐색 안내">
+              <h3 style={{ margin: '0 0 8px', fontSize: 14, color: T.text }}>복합 시각탐색</h3>
+              <p style={{ margin: 0, color: T.textDim, fontSize: 12, lineHeight: 1.65 }}>여러 기호 속에서 다른 기호를 찾아 해당 SPOMAT 구역으로 이동하는 활동입니다.</p>
+            </section>
+            <section style={{ marginBottom: 26 }} aria-label="탐색 단계">
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, color: T.text }}>탐색 단계</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+                {([1, 2] as const).map(stage => {
+                  const active = launch.visualSearchStage === stage;
+                  return <button key={stage} type="button" aria-pressed={active} onClick={() => setLaunch(s => ({ ...s, visualSearchStage: stage, visualSearchTargetCount: normalizeSearchTargetCount(stage, s.visualSearchTargetCount) }))}
+                    style={{ minHeight: 64, padding: '12px 10px', borderRadius: 12, border: `2px solid ${active ? accent : T.border}`, background: active ? `${accent}18` : T.card, color: active ? accent : T.text, font: 'inherit', fontSize: 14, fontWeight: 700, wordBreak: 'keep-all' }}>
+                    {stage}단계 · {stage === 1 ? '고정형' : '이동형'} 탐색
                   </button>;
                 })}
               </div>
-              <p style={{ margin: '8px 0 0', color: T.textDim, fontSize: 12 }}>성공할 때마다 1칸 증가 · 최대 10칸</p>
+              <p style={{ margin: '8px 0 0', color: T.textDim, fontSize: 12, lineHeight: 1.6 }}>{launch.visualSearchStage === 1 ? `움직이지 않는 기호가 10개부터 최대 30개까지 늘어납니다. 앞 ${Math.floor(launch.targetReps / 2)}회는 +와 ×의 다수·소수 역할이 번갈아 바뀌고, 뒤 ${Math.ceil(launch.targetReps / 2)}회는 정답의 색·기호 조합이 바뀝니다.` : '움직이는 기호가 20개부터 최대 60개까지 늘어납니다. 드물게 등장하는 색·기호 조합이 라운드마다 정답이 됩니다.'}</p>
             </section>
-          ) : null}
+            <section style={{ marginBottom: 26 }} aria-label="목표 개수">
+              <h3 style={{ margin: '0 0 10px', fontSize: 14, color: T.text }}>목표 개수</h3>
+              {launch.visualSearchStage === 1 ? <p style={{ margin: 0, color: T.textDim, fontSize: 14 }}>목표 1개 · 한 곳 찾기</p> : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+                {([1, 2] as const).map(count => <button key={count} type="button" aria-pressed={launch.visualSearchTargetCount === count} onClick={() => setLaunch(s => ({ ...s, visualSearchTargetCount: count }))}
+                  style={{ minHeight: 44, padding: '10px 8px', borderRadius: 12, border: `2px solid ${launch.visualSearchTargetCount === count ? accent : T.border}`, background: launch.visualSearchTargetCount === count ? `${accent}18` : T.card, color: launch.visualSearchTargetCount === count ? accent : T.text, font: 'inherit', fontSize: 14, fontWeight: 700 }}>
+                  목표 {count}개 · {count === 1 ? '한 곳' : '두 곳'} 찾기
+                </button>)}
+              </div>}
+            </section>
+          </>}
+          {launch.activityId === 'glass-bridge-memory' && <section style={{ marginBottom: 22 }}>
+            <label style={{ display: 'block', marginBottom: 10, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</label>
+            <div style={{ display: 'flex', gap: 8 }}>{(['easy', 'hard'] as const).map(value => {
+              const active = launch.glassBridgeDifficulty === value;
+              return <button key={value} type="button" aria-pressed={active} onClick={() => setLaunch(s => ({ ...s, glassBridgeDifficulty: value }))}
+                style={{ flex: 1, minHeight: 44, padding: '12px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontWeight: 800 }}>
+                {value === 'easy' ? '쉬움 · 전체 20초' : '어려움 · 한 색씩'}
+              </button>;
+            })}</div>
+            {launch.glassBridgeDifficulty === 'easy' && <p style={{ fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>모든 발판의 색을 20초 동안 함께 본 뒤, 가려진 정답을 한 칸씩 맞춥니다.</p>}
+          </section>}
           {/* 속도 / 순간 기억 기억 시간 */}
-          {(!isFlowOrChallenge || isColorGateTheme) && !(launch.activityId === 'relative-compass' || launch.activityId === 'shape-completion') && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {!(launch.activityId === 'glass-bridge-memory' && launch.glassBridgeDifficulty === 'easy') && (!isFlowOrChallenge || isColorGateTheme) && !(launch.activityId === 'relative-compass' || launch.activityId === 'shape-completion') && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: isColorGateTheme ? 10 : 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isColorGateTheme ? 6 : 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -2039,7 +2081,7 @@ function SettingsScreen({
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
                 compact={isColorGateTheme}
-                max={isColorGateTheme || launch.activityId === 'visual-search' || launch.activityId === 'moving-number-reader' || launch.activityId === 'glass-bridge-memory' ? 10 : 6}
+                max={isColorGateTheme || launch.activityId === 'moving-number-reader' ? 10 : 6}
               />
             </section>
           ) : null}
@@ -2050,16 +2092,11 @@ function SettingsScreen({
                 <div style={{ marginBottom: 8 }}>
                   <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                   <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                    쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개, 어려움은 직접 지정 10색입니다.
+                    쉬움은 3색, 보통은 5색입니다.
                   </p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-                  {([
-                    { id: 3 as const, label: '쉬움', detail: '3개' },
-                    { id: 5 as const, label: '보통', detail: '5개' },
-                    { id: 'ramp' as const, label: '쉬움→보통→어려움', detail: '3~7개' },
-                    { id: 'custom10' as const, label: '어려움', detail: '직접 지정 10색' },
-                  ] satisfies { id: ColorSequenceOption; label: string; detail: string }[]).map((opt) => {
+                  {ADMIN_SEQUENCE_OPTIONS.map((opt) => {
                     const active = colorSequenceOption(levelId) === opt.id;
                     return (
                       <button
@@ -2090,9 +2127,7 @@ function SettingsScreen({
               <section style={{ marginBottom: 26 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>색 전환 간격</label>
                 <p style={{ margin: '8px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.55, fontWeight: 600 }}>
-                  {levelId === 2
-                    ? '1.0~3.0초 사이에서 매 색마다 자동으로 바뀝니다.'
-                    : '1.0~2.5초 사이에서 매 색마다 자동으로 바뀝니다.'}
+                  색상별 1~2.5초 랜덤 제시
                 </p>
               </section>
             </>
@@ -2495,175 +2530,18 @@ function SettingsScreen({
           ) : null}
 
           {/* 분량/시간 */}
-          {!isFlowOrChallenge ? (
-            <section style={{ marginBottom: 26 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {launch.activityId === 'glass-bridge-memory' ? '목표 라운드' : isReactTrainRepetition
-                    ? '횟수'
-                    : isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
-                    ? '라운드'
-                    : isReactTrain || (isSpatial && isInstantMemoryLevel(levelId))
-                      ? '훈련 시간'
-                      : isSpatial
-                        ? '진행'
-                        : '분량'}
-                </label>
-              </div>
-
-              {isReactTrainRepetition || launch.activityId === 'glass-bridge-memory' ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {[10, 15, 20, 30].map((r) => {
-                    const active = launch.targetReps === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
-                        style={{
-                          flex: '1 1 90px',
-                          padding: '11px 10px',
-                          borderRadius: 12,
-                          border: `1.5px solid ${active ? accent : T.border}`,
-                          background: active ? `${accent}16` : T.card,
-                          color: active ? accent : T.textDim,
-                          fontFamily: 'inherit',
-                          fontSize: 13,
-                          fontWeight: active ? 900 : 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {r}{launch.activityId === 'glass-bridge-memory' ? '라운드' : '회'}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {[7, 10, 15, 25].map((r) => {
-                    const active = launch.targetReps === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
-                        style={{
-                          flex: '1 1 90px',
-                          padding: '11px 10px',
-                          borderRadius: 12,
-                          border: `1.5px solid ${active ? accent : T.border}`,
-                          background: active ? `${accent}16` : T.card,
-                          color: active ? accent : T.textDim,
-                          fontFamily: 'inherit',
-                          fontSize: 13,
-                          fontWeight: active ? 900 : 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {r}라운드
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {[2, 3, 5, 10].map((r) => {
-                    const active = launch.targetReps === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
-                        style={{
-                          flex: '1 1 90px',
-                          padding: '11px 10px',
-                          borderRadius: 12,
-                          border: `1.5px solid ${active ? accent : T.border}`,
-                          background: active ? `${accent}16` : T.card,
-                          color: active ? accent : T.textDim,
-                          fontFamily: 'inherit',
-                          fontSize: 13,
-                          fontWeight: active ? 900 : 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {r}라운드
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : isReactTrain && reactTrainEngineLevelForUi(levelId) === 14 ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {[5, 10, 15, 20].map((r) => {
-                    const active = launch.targetReps === r;
-                    return (
-                      <button key={r} type="button" onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))} style={{ flex: '1 1 90px', padding: '11px 10px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 900 : 700, cursor: 'pointer' }}>
-                        {r}라운드
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : isReactTrain || (isSpatial && isInstantMemoryLevel(levelId)) ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {[30, 60, 120, 180].map((sec) => {
-                    const active = launch.duration === sec;
-                    return (
-                      <button
-                        key={sec}
-                        type="button"
-                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'time', duration: sec }))}
-                        style={{
-                          flex: '1 1 90px',
-                          padding: '11px 10px',
-                          borderRadius: 12,
-                          border: `1.5px solid ${active ? accent : T.border}`,
-                          background: active ? `${accent}16` : T.card,
-                          color: active ? accent : T.textDim,
-                          fontFamily: 'inherit',
-                          fontSize: 13,
-                          fontWeight: active ? 900 : 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {sec < 60 ? `${sec}초` : sec === 60 ? '1분' : sec === 120 ? '2분' : '3분'}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : isSpatial ? (
-                <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>
-                  순차 기억은 설정 후 전용 메모리 화면에서 진행됩니다.
-                </p>
-              ) : (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {[10, 20, 30, 40].map((r) => {
-                    const active = launch.targetReps === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
-                        style={{
-                          flex: '1 1 90px',
-                          padding: '11px 10px',
-                          borderRadius: 12,
-                          border: `1.5px solid ${active ? accent : T.border}`,
-                          background: active ? `${accent}16` : T.card,
-                          color: active ? accent : T.textDim,
-                          fontFamily: 'inherit',
-                          fontSize: 13,
-                          fontWeight: active ? 900 : 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {r}회
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          ) : null}
+          {!isFlowOrChallenge && <section style={{ marginBottom: 26 }}>
+            <label style={{ display: 'block', marginBottom: 10, fontSize: 11, fontWeight: 800, color: T.muted }}>
+              {isReactTrain && !isReactTrainRepetition && ![8, 9, 14].includes(reactTrainEngineLevelForUi(levelId)) ? '훈련 시간' : '목표 라운드'}
+            </label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {isReactTrain && !isReactTrainRepetition && ![8, 9, 14].includes(reactTrainEngineLevelForUi(levelId))
+                ? [30, 60, 120, 180].map(sec => <button key={sec} type="button" aria-pressed={launch.duration === sec} onClick={() => setLaunch(s => ({ ...s, timeMode: 'time', duration: sec }))}
+                    style={{ ...diveAdminChoiceStyle(launch.duration === sec, accent), flex: '1 1 64px', padding: '11px 10px' }}>{sec < 60 ? `${sec}초` : `${sec / 60}분`}</button>)
+                : ADMIN_TRAINING_ROUNDS.map(r => <button key={r} type="button" aria-pressed={launch.targetReps === r} onClick={() => setLaunch(s => ({ ...s, timeMode: 'reps', targetReps: r }))}
+                    style={{ ...diveAdminChoiceStyle(launch.targetReps === r, accent), flex: '1 1 64px', padding: '11px 10px', fontWeight: launch.targetReps === r ? 900 : 700 }}>{r}라운드</button>)}
+            </div>
+          </section>}
 
           {/* 변형 사분할: 단계 1~3 */}
           {modeId === 'basic' && isModifiedQuadrantLevel(levelId) && launch.activityId === 'hand-foot' ? (

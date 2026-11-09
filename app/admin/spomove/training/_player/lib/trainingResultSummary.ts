@@ -59,7 +59,11 @@ export type TrainingResultConfig = {
   activityId?: TrainingActivityId;
   flankerExtremeMode?: 'theme' | 'arrow';
   speed?: number;
-  glassBridgeStartLength?: 4 | 5 | 6;
+  visualSearchStage?: 1 | 2;
+  visualSearchTargetCount?: 1 | 2;
+  adminRounds?: boolean;
+  adminSequenceTiming?: boolean;
+  glassBridgeStartLength?: 3 | 4 | 5 | 6;
   timeMode: string;
   duration: number;
   targetReps: number;
@@ -70,6 +74,7 @@ export type TrainingResultConfig = {
 };
 
 export function describeSessionVolume(cfg: TrainingResultConfig): string {
+  if (cfg.adminRounds && cfg.timeMode === 'reps') return `${cfg.targetReps}라운드`;
   if (cfg.activityId === 'glass-bridge-memory' || (cfg.mode === 'spatial' && cfg.level === 8)) return `${cfg.targetReps}라운드`;
   if (cfg.activityId === 'moving-number-reader' || (cfg.mode === 'reactTrain' && cfg.level === 15)) return `${cfg.targetReps}회`;
   if (cfg.mode === 'reactTrain' && (cfg.level === 8 || cfg.level === 9)) {
@@ -88,6 +93,7 @@ export function describeSessionVolume(cfg: TrainingResultConfig): string {
     const sets = cfg.intervalSets ?? 4;
     return `Tabata ${sets}세트 · ${work}초`;
   }
+  if (cfg.timeMode === 'reps') return `${cfg.targetReps}회`;
   if (cfg.mode === 'reactTrain' || cfg.timeMode === 'time') {
     return `${cfg.duration}초`;
   }
@@ -132,7 +138,11 @@ export function settingsToTrainingResultConfig(cfg: {
   activityId?: TrainingActivityId;
   flankerExtremeMode?: 'theme' | 'arrow';
   speed?: number;
-  glassBridgeStartLength?: 4 | 5 | 6;
+  visualSearchStage?: 1 | 2;
+  visualSearchTargetCount?: 1 | 2;
+  adminRounds?: boolean;
+  adminSequenceTiming?: boolean;
+  glassBridgeStartLength?: 3 | 4 | 5 | 6;
   timeMode: string;
   duration: number;
   targetReps: number;
@@ -147,6 +157,10 @@ export function settingsToTrainingResultConfig(cfg: {
     activityId: cfg.activityId,
     flankerExtremeMode: cfg.flankerExtremeMode,
     speed: cfg.speed,
+    visualSearchStage: cfg.visualSearchStage,
+    visualSearchTargetCount: cfg.visualSearchTargetCount,
+    adminRounds: cfg.adminRounds,
+    adminSequenceTiming: cfg.adminSequenceTiming,
     glassBridgeStartLength: cfg.glassBridgeStartLength,
     timeMode: cfg.timeMode,
     duration: cfg.duration,

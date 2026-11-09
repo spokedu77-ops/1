@@ -23,7 +23,7 @@ describe("SPOKEDU login UX P0 contracts", () => {
 
   it("routes the public root through the SPOKEDU marketing home", () => {
     const root = read("app/(spokedu-public)/page.tsx");
-    expect(root).toContain("from '../spokedu/website/pages/home'");
+    expect(root).toContain("from '../spokedu/website/pages/home-server'");
     expect(root).toContain("revalidate = 86400");
   });
 

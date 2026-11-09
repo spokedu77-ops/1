@@ -1,3 +1,4 @@
+import { normalizeSearchStage, normalizeSearchTargetCount, normalizeSearchSeconds } from './visualSearch';
 import type { GlassBridgeResult } from './glassBridgeMemory';
 import { resolveTrainingSelection } from './trainingActivity';
 import { trainingActivityGuide } from './trainingActivityGuide';
@@ -68,10 +69,7 @@ function applyMasterCompletionTruth(
     sessionSnapshot: [
       ...content.sessionSnapshot.filter((item) => item.id !== 'feel' && item.id !== 'status'),
       { id: 'status', label: '종료 상태', value: completion.statusBadge },
-    ].slice(0, 5),
-    programSummary: `${content.programTitle}의 화면 신호와 설정된 과제를 따라 움직이는 활동입니다.`,
-    benefitTags: [],
-    benefitLine: `설정된 활동 내용 · ${content.phaseName || content.programTitle}`,
+    ],
     selfCheckItems: [{
       id: 'measurement-note',
       label: '진행 시간과 실제 집계값 외의 수행 성과는 자동 판정하지 않습니다.',
@@ -485,18 +483,58 @@ export function resolveTrainingResultRichContent(
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
   const volumeLabel = options?.volumeLabel ?? describeSessionVolume(cfg);
   const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal, elapsedMs, options?.programTitle);
+  if (selection.activityId === 'sequence-memory' && cfg.adminSequenceTiming) {
+    const description = '색상별 1~2.5초 랜덤 제시';
+    return applyMasterCompletionTruth({
+      praise, praiseSub, activityFeel, elapsedLabel,
+      volumeLabel: `${volumeLabel} · ${description}`,
+      sessionHighlight: `순서 기억 · ${description}`,
+      sessionSnapshot: [
+        { id: 'pattern', label: '기억 길이', value: spatialPatternLabel(cfg.level) },
+        { id: 'cue', label: '색상 제시', value: description },
+        { id: 'volume', label: '설정 분량', value: volumeLabel },
+      ],
+      colorDominantLine: null, programTitle: '순서 기억', phaseName: '순서 기억',
+      programSummary: description, benefitTags: [], benefitLine: description,
+      coachTip: '색상이 나타난 순서를 기억한 뒤 같은 순서로 움직이세요.',
+      selfCheckItems: [{ id: 'measurement', label: '아동의 정확도·반응 시간은 자동 측정하지 않습니다.' }],
+    }, options?.completionReason);
+  }
   if (selection.activityId === 'glass-bridge-memory') {
     const bridge = options?.glassBridge;
-    const start = bridge?.startLength ?? cfg.glassBridgeStartLength ?? 5;
+    if (bridge?.scoringMode === 'color-choice') {
+      const description = '3→4→5→6→7칸 순서로 기억하고, 교사가 선택한 색에 따라 한 발판씩 정답을 공개합니다. 오답이어도 다음 발판과 라운드로 계속 진행합니다.';
+      const content = applyMasterCompletionTruth({
+        praise, praiseSub, activityFeel, elapsedLabel,
+        volumeLabel: `${cfg.targetReps}라운드 · 길이별 ${cfg.targetReps / 5}회 · ${bridge.difficulty === 'easy' ? '쉬움 · 전체 20초' : `어려움 · 발판당 ${cfg.speed ?? 2}초`}`,
+        sessionHighlight: '기억의 유리 다리 · 발판별 색 선택',
+        sessionSnapshot: [
+          { id: 'length', label: '시작 / 마지막 길이', value: `3칸 / ${bridge.lastLength}칸` },
+          { id: 'presented', label: '패턴 제시 라운드', value: `${bridge.presentedRounds}라운드` },
+          { id: 'completed', label: '정답 공개 완료 라운드', value: `${bridge.completedRounds ?? 0} / ${cfg.targetReps}라운드` },
+          { id: 'correct-steps', label: '맞힌 발판', value: `${bridge.correctSteps ?? 0}개` },
+          { id: 'incorrect-steps', label: '틀린 발판', value: `${bridge.incorrectSteps ?? 0}개` },
+          { id: 'success', label: '모두 맞힌 라운드', value: `${bridge.successRounds}라운드` },
+          { id: 'failure', label: '오답이 있던 라운드', value: `${bridge.failureRounds}라운드` },
+        ],
+        colorDominantLine: null, programTitle: '기억의 유리 다리', phaseName: '시각적 순서 기억 · 작업기억',
+        programSummary: description, benefitTags: [], benefitLine: description,
+        coachTip: '아동이 이동한 색을 입력하세요. 틀려도 다음 발판을 끝까지 공개합니다.',
+        selfCheckItems: [{ id: 'teacher-input', label: '교사가 선택한 색과 정답을 비교한 기록입니다. 아동의 정확도·반응 시간은 직접 측정하지 않습니다.' }],
+      }, options?.completionReason);
+      return { ...content, programSummary: description, benefitLine: description };
+    }
+    const start = bridge?.startLength ?? cfg.glassBridgeStartLength ?? 3;
     const description = '순서대로 점등되는 유리 발판의 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직이는 활동입니다.';
-    const measured = bridge ? `${bridge.presentedRounds}라운드` : '기록 없음';
+    const legacy = start !== 3;
+    const measured = bridge ? `${bridge.presentedRounds}${legacy ? '라운드' : '회'}` : '기록 없음';
     const content = applyMasterCompletionTruth({
       praise, praiseSub, activityFeel, elapsedLabel,
-      volumeLabel: `${cfg.targetReps}라운드 · 발판당 ${cfg.speed ?? 2}초`,
+      volumeLabel: `${legacy ? '' : '성공 목표 '}${cfg.targetReps}라운드 · 발판당 ${cfg.speed ?? 2}초`,
       sessionHighlight: `기억의 유리 다리 · 시작 ${start}칸 · 발판당 ${cfg.speed ?? 2}초`,
       sessionSnapshot: [
         { id: 'length', label: '시작 / 마지막 난이도', value: `${start}칸 / ${bridge ? `${bridge.lastLength}칸` : '기록 없음'}` },
-        { id: 'presented', label: '제시 완료 라운드', value: measured },
+        { id: 'presented', label: legacy ? '제시 완료 라운드' : '제시한 도전', value: measured },
         { id: 'success', label: '교사 성공 판정', value: bridge ? `${bridge.successRounds}라운드` : '기록 없음' },
         { id: 'failure', label: '교사 실패 판정', value: bridge ? `${bridge.failureRounds}회` : '기록 없음' },
       ],
@@ -507,7 +545,7 @@ export function resolveTrainingResultRichContent(
     }, options?.completionReason);
     return { ...content, programSummary: description, benefitLine: description,
       selfCheckItems: [{ id: 'teacher-input', label: '교사 입력 기반 결과입니다. 아동의 정확도·반응 시간은 자동 측정하지 않습니다.' }],
-      activityFeel: bridge?.teacherFailed ? '교사 실패 판정으로 종료' : content.activityFeel };
+      activityFeel: !options?.completionReason && legacy && bridge?.teacherFailed ? '교사 실패 판정으로 종료' : content.activityFeel };
   }
   if (selection.activityId === 'moving-number-reader') {
     const description = '움직이는 숫자 캡슐을 눈으로 추적하고 숫자에 해당하는 구역으로 이동하는 활동입니다.';
@@ -529,21 +567,29 @@ export function resolveTrainingResultRichContent(
     return { ...content, programSummary: description, benefitLine: description };
   }
   if (selection.activityId === 'visual-search') {
-    const description = '화면에 나타난 여러 도형 중 목표 도형을 찾아 해당 위치로 이동하는 시각탐색 활동입니다.';
-    const measured = options?.stims ?? colorTotal;
+    const stage = normalizeSearchStage(cfg.visualSearchStage);
+    const description = stage === 1
+      ? '전반에는 +와 ×의 다수·소수 역할이 번갈아 바뀌고, 후반에는 정답의 색·기호 조합이 바뀝니다. 다른 기호를 찾아 해당 SPOMAT 구역으로 이동하는 활동입니다.'
+      : '움직이는 기호 속에서 드물게 등장하는 색·기호 조합을 찾아 해당 SPOMAT 구역으로 이동하는 활동입니다. 정답 조합은 라운드마다 달라집니다.';
+    const targets = normalizeSearchTargetCount(stage, cfg.visualSearchTargetCount);
+    const seconds = normalizeSearchSeconds(cfg.speed);
+    // Legacy records had one target. New records carry stims independently of target appearances.
+    const measured = options?.stims ?? colorTotal / targets;
     const content = applyMasterCompletionTruth({
       praise, praiseSub, activityFeel, elapsedLabel,
-      volumeLabel: `${cfg.targetReps}회 · 탐색 ${cfg.speed ?? 5}초 · 제시 ${measured}회`,
-      sessionHighlight: `복합 시각탐색 · ${cfg.targetReps}회 · 탐색 ${cfg.speed ?? 5}초`,
+      volumeLabel: `${cfg.targetReps}회 · 탐색 ${seconds}초 · 제시 ${measured}회`,
+      sessionHighlight: `복합 시각탐색 · ${stage}단계 · 목표 ${targets}개 · ${cfg.targetReps}회 · 탐색 ${seconds}초`,
       sessionSnapshot: [
-        { id: 'search', label: '탐색 시간', value: `${cfg.speed ?? 5}초` },
-        { id: 'reveal', label: '정답 공개', value: '3초' },
-        { id: 'presented', label: '실제 제시 과제', value: `${measured}회` },
+        { id: 'stage', label: '탐색 단계', value: `${stage}단계 · ${stage === 1 ? '고정형' : '이동형'}` },
+        { id: 'targets', label: '라운드당 목표', value: `${targets}개` },
+        { id: 'presented', label: '제시된 탐색 과제', value: `${measured}회` },
+        { id: 'target-shapes', label: '제시된 목표 도형', value: `${colorCounts ? colorTotal : measured * targets}개` },
+        { id: 'search', label: '탐색 / 정답 공개', value: `${seconds}초 / 3초` },
       ],
       colorDominantLine: null, programTitle: '복합 시각탐색', phaseName: '시각탐색 과제',
       programSummary: description, benefitTags: [], benefitLine: description,
-      coachTip: '빨간 원 또는 파란 사각형을 찾은 뒤, 목표가 있는 SPOMAT 구역으로 이동하세요.',
-      selfCheckItems: [{ id: 'measurement', label: '목표 구역별 제시 횟수는 과제 기록이며 정답 횟수가 아닙니다.' }],
+      coachTip: targets === 2 ? '다른 기호가 있는 두 구역으로 이동하세요. 탐색 후 두 위치를 자동으로 3초간 공개하며 수행 성공을 판정하지 않습니다.' : '다른 기호를 발견한 뒤, 해당 SPOMAT 구역으로 이동하세요.',
+      selfCheckItems: [{ id: 'measurement', label: '목표 구역별 제시 횟수는 목표 출현 기록이며 정답 횟수가 아닙니다.' }],
     }, options?.completionReason);
     return { ...content, programSummary: description, benefitLine: description };
   }
@@ -614,7 +660,7 @@ export function resolveTrainingResultRichContent(
       colorDominantLine: null,
       programTitle: shapeCompletionTitle,
       phaseName: shapePhaseName,
-      programSummary: '현재 조각과 완성 형태를 비교해 필요한 조각을 찾고, 해당 후보의 SPOMAT 위치로 이동했어요.',
+    programSummary: '현재 조각과 완성 형태를 비교해 필요한 조각을 찾고, 해당 후보의 SPOMAT 위치로 이동하도록 설계된 활동입니다.',
       benefitTags: ['형태 지각', '부분·전체 관계', '공간 선택'],
       benefitLine: '보이지 않는 조각을 머릿속으로 완성하고 움직임으로 연결해요',
       coachTip: '현재 조각에 없는 부분을 먼저 찾은 뒤, 완성 형태와 정확히 맞는 후보를 골라보세요.',
@@ -658,7 +704,7 @@ export function resolveTrainingResultRichContent(
       colorDominantLine: null,
       programTitle: relativeCompassTitle,
       phaseName: relativePhaseName,
-      programSummary: '시작 색에 선 뒤, 지금 자리에서 화살표 방향으로 한 칸 이동하고 그 자리에 남아 다음 신호를 받았어요.',
+      programSummary: '시작 색에 선 뒤, 지금 자리에서 화살표 방향으로 한 칸 이동하고 그 자리에 남아 다음 신호를 받도록 설계된 활동입니다.',
       benefitTags: ['공간 방향', '위치 기억', '방향 전환'],
       benefitLine: '가운데로 돌아가지 않고, 선 칸에서 다음 방향으로 이어 가요',
       coachTip: '시작 색을 먼저 확인하고, 화살표가 뜨면 지금 자리에서 한 칸만 이동하게 하세요. 돌아오지 않습니다.',

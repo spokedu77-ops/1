@@ -386,6 +386,12 @@ export function catalogSpatialUiLevel(level: number): number {
 
 export type ColorSequenceOption = 3 | 5 | 'ramp' | 'custom10';
 
+/** Admin-only new selections. Legacy ramp addresses and public catalogs stay intact. */
+export const ADMIN_SEQUENCE_OPTIONS: readonly { id: ColorSequenceOption; label: string; detail: string }[] = [
+  { id: 3, label: '쉬움', detail: '3색' },
+  { id: 5, label: '보통', detail: '5색' },
+];
+
 export function colorSequenceOption(level: number): ColorSequenceOption {
   if (level === 2) return 5;
   if (level === 3) return 'ramp';
