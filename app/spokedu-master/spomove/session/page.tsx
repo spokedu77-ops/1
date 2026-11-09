@@ -85,6 +85,7 @@ import {
 import { useSpomoveWakeLock } from './useSpomoveWakeLock';
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 import { MasterSessionResult } from './MasterSessionResult';
+import { getSpomoveResultEducation } from '../spomoveResultEducation';
 import {
   beginMovementRun,
   changePausedMovement,
@@ -221,12 +222,12 @@ function SpomoveSessionContent() {
   const activityFamily = useMemo(() => {
     if (!officialPreset?.activityFamilyId) return null;
     return getActivityFamily(officialPreset.activityFamilyId);
-  }, [officialPreset?.activityFamilyId]);
+  }, [officialPreset]);
 
   const movementProfile = useMemo(() => {
     if (!officialPreset?.movementProfileId) return null;
     return getMovementProfile(officialPreset.movementProfileId);
-  }, [officialPreset?.movementProfileId]);
+  }, [officialPreset]);
   const recommendedMovement = useMemo(() => {
     if (!officialPreset || !activityFamily || !movementProfile) return null;
     return resolveEffectiveMovement({
@@ -1291,6 +1292,7 @@ function SpomoveSessionContent() {
             finalMovement={sessionResult.finalMovement}
             movementChangeCount={sessionResult.movementChanges.length}
             activityTitle={sessionDisplayTitle}
+            education={getSpomoveResultEducation(officialPreset)}
             elapsedMs={sessionResult.elapsedMs ?? 0}
             colorCounts={sessionResult.colorCounts ?? null}
             stims={sessionResult.stims}

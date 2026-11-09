@@ -19,7 +19,7 @@ A user request or approved Sprint Brief may implement or improve a surface in an
 | LIBRARY DETAIL | Understand + Prepare | Editorial preparation | Canonical | PENDING | PENDING |
 | SPOMOVE HUB | Browse | Digital sports content | Canonical | PENDING | PENDING |
 | SPOMOVE START | Confirm then run | Digital execution gate | Canonical | PENDING | PENDING |
-| SPOMOVE RESULT | Reflect + review + retry | Shared child/instructor feedback | Canonical | LOCAL RENDERED — REVIEW REQUIRED | LOCAL RENDERED — REVIEW REQUIRED |
+| SPOMOVE RESULT | Reflect + review + retry | Shared child/instructor feedback | User-approved Stitch result reference | PENDING | PENDING |
 | PROGRAMS | Discover programs | Editorial gateway | Surface role | PENDING | PENDING |
 | LIBRARY | Find activities | Catalog discovery | Surface role | PENDING | PENDING |
 | FAVORITES | Retrieve saved | Retrieval | Surface role | PENDING | PENDING |
@@ -30,6 +30,8 @@ A user request or approved Sprint Brief may implement or improve a surface in an
 | REPORT | Record / send | Document reading | Surface role | PENDING | PENDING |
 
 **WHY CLASS TOOLS IS DIFFERENT:** live utility needs 900-weight numerals; not a discovery surface.
+
+SPOMOVE Result (2026-11-10): current implementation follows the user-approved `stitch_spomove_visual_search_result_ui.zip` (`screen.png` + `code.html`). Demo program/status switchers are excluded from production. The final content refinement uses compact section spacing, omits empty statistics and unmeasured-performance notices, and forwards resolved LAB preset descriptions with 2–3 educational keywords. All 72 public IDs have naming entries; three existing Stroop public names imply jumping while their engines use verbal responses, so names remain unchanged and descriptions follow actual execution. Non-distribution activities show available progress without filler; teacher-entered glass-bridge results retain their recorded meaning. Runtime, persistence, terminal states and callbacks are unchanged. Current revision has not undergone rendered desktop/mobile or side-by-side review; the evidence below belongs to the previous revision.
 
 SPOMOVE Result (2026-11-09, Stitch transplant, corrected after user review): populated local shared-component fixtures at 390/768/1126/1440/1600 in light/dark; reference side-by-side review, SPOMAT 2×2 positions, zero-count color identity, all four terminal states, list/retry/footer callbacks and horizontal overflow checked. The original balloon omission was a View Model identity error (`balloon` runtime versus canonical `balloon-pop`); regression coverage now includes both legacy and explicit activity inputs. Actual unmodified balloon runtime at 390/1440 completed five cues, retried, then stopped after a cue; resulting lane counts match all four displayed color counts. Visual search, balloon, color-choice glass bridge, DIVE, sequence/instant memory, directional and missing-data cases covered. Local font assets are served in fixtures; typography no longer inherits the heavy Paperlogy display font. Feeling controls and instructor disclosure removed under the explicit approved scope. Evidence: `artifacts/result-stitch-20261109/` (`report.json`, `reference-comparison.png`, `balloon-live-complete-1440.png`). Authenticated Admin, Teacher and MASTER/LAB end-to-end flows are not verified by these component fixtures; human rendered review remains required. Earlier runtime evidence in `artifacts/result-feedback-20261109/` predates this transplant.
 

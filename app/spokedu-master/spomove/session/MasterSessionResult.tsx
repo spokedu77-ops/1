@@ -1,5 +1,7 @@
 'use client';
 
+import type { SpomoveResultEducation } from '../spomoveResultEducation';
+
 import type { TrainingActivityId } from '@/app/admin/spomove/training/_player/lib/trainingActivity';
 
 import { ClipboardList, RefreshCw } from 'lucide-react';
@@ -22,6 +24,7 @@ import type { MovementPick } from '../movements/movementTypes';
 export function MasterSessionResult({
   completionReason,
   activityTitle,
+  education,
   elapsedMs,
   colorCounts = null,
   stims,
@@ -47,6 +50,7 @@ export function MasterSessionResult({
   finalMovement: MovementPick | null;
   movementChangeCount: number;
   activityTitle: string;
+  education?: SpomoveResultEducation;
   elapsedMs: number;
   settings: string[];
   colorCounts?: ColorStimulusCounts | null;
@@ -100,6 +104,7 @@ export function MasterSessionResult({
       statusBadge={completion.statusBadge}
       diveActionMove={diveActionMove ? { ...diveActionMove, completed: completionReason === 'natural_complete' } : null}
       programTitle={activityTitle}
+      education={education}
       volumeLabel={executionVolume.label}
       retryLabel="같은 설정으로 다시 준비"
       onBack={() => router.push(hubHref)}

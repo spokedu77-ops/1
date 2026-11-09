@@ -17,6 +17,7 @@ export type TrainingResultViewInput = {
   stims?: number;
   glassBridge?: GlassBridgeResult;
   programTitle?: string;
+  education?: { description: string; tags: string[] };
   volumeLabel?: string;
   sessionSettings?: ResultSessionSettings | null;
   diveActionMove?: DiveActionMoveSession | null;
