@@ -8,7 +8,7 @@
   --sheet-surface: #ffffff;
   --sheet-surface-soft: #fafbf8;
   color: #141a18;
-  font-family: "Paperlogy", "SUIT", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-family: var(--font-sans);
   word-break: keep-all;
   container-type: inline-size;
 }
@@ -223,6 +223,7 @@
 .statusButtonOn { border-style: solid; border-color: var(--sheet-accent); background: var(--sheet-accent); color: white; }
 .statusButtonPending { border-color: #d59b55; background: #fff7e8; }
 .cellMeta { display: block; min-height: 11px; margin-top: 1px; color: var(--sheet-muted); font-size: 9px; line-height: 1; text-align: center; white-space: nowrap; }
+.statusDate { display: block; margin-top: 3px; color: var(--sheet-muted); font-size: 10px; line-height: 1.2; text-align: center; white-space: nowrap; }
 .partialInput { min-height: 20px !important; padding: 1px 4px !important; color: #9a5c12 !important; font-size: 10px !important; text-align: right; }
 .vatCell { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 4px; }
 .vatCell select { border-color: var(--sheet-line); background: var(--sheet-surface-soft); padding-inline: 4px; font-size: 11px; }
@@ -243,7 +244,7 @@
 @keyframes sheetRise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes rowReveal { from { opacity: 0; } to { opacity: 1; } }
 
-@container (max-width: 1080px) {
+@media (max-width: 899px) {
   .summaryGrid { grid-template-columns: 1fr; }
   .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tableWrap { overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
@@ -331,7 +332,7 @@
 .settlementGrid .sectionRow th { padding: 5px 8px; }
 .settlementGrid .sectionContent { gap: 8px; }
 
-@container (max-width: 1080px) {
+@media (max-width: 899px) {
   .settlementGrid tbody { gap: 12px; }
   .settlementGrid tbody tr:not(.sectionRow) { grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; }
   .settlementGrid tbody tr:not(.sectionRow) td:nth-child(n) { display: block; grid-column: auto; padding: 10px 12px; }

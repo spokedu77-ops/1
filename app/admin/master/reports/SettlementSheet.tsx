@@ -10,6 +10,7 @@ import SettlementProfitSummary from './SettlementProfitSummary';
 import SettlementCalculationSettings from './SettlementCalculationSettings';
 import MoneyInput from './SettlementMoneyInput';
 import SettlementNote from './SettlementNote';
+import { loadXlsx } from './settlementXlsx';
 import styles from './SettlementSheet.module.css';
 import {
   calculateRow, sortSettlementRows, SETTLEMENT_GROUPS, rowsFromRecurringCenters, nextSettlementMonthKey, emptyRow, resolveDefaultSettlementMonth, rowFromCenter, summarize,
@@ -18,36 +19,11 @@ import {
 } from './settlementSheetCore';
 
 type View = 'month' | 'year';
-type XLSXApi = {
-  read(data: ArrayBuffer, options: object): { SheetNames: string[]; Sheets: Record<string, Record<string, { v?: unknown; f?: string }>> };
-  writeFile(workbook: unknown, filename: string): void;
-  utils: {
-    decode_range(ref: string): { s: { c: number }; e: { c: number; r: number } };
-    encode_col(index: number): string;
-    book_new(): unknown;
-    book_append_sheet(workbook: unknown, sheet: unknown, name: string): void;
-    aoa_to_sheet(data: unknown[][]): Record<string, unknown>;
-  };
-};
-declare global { interface Window { XLSX?: XLSXApi } }
-
 const EMPTY_DATA: SettlementSheetData = { months: {}, centers: {}, settings: { vatMethod: 'sheet', year: new Date().getFullYear() } };
 const money = (value: number) => `${Math.round(value || 0).toLocaleString('ko-KR')}원`;
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const sortedMonths = (data: SettlementSheetData) => Object.values(data.months).sort((a, b) => a.key.localeCompare(b.key));
 
-async function loadXlsx() {
-  if (window.XLSX) return window.XLSX;
-  await new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    script.integrity = 'sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM+kK6VEJq/rLcJq88PQJ0VYNSm8O2VYdOXsKjHDQw==';
-    script.crossOrigin = 'anonymous'; script.onload = () => resolve(); script.onerror = () => reject(new Error('xlsx'));
-    document.head.appendChild(script);
-  });
-  if (!window.XLSX) throw new Error('xlsx');
-  return window.XLSX;
-}
 
 export default function SettlementSheet() {
   const [data, setData] = useState<SettlementSheetData>(EMPTY_DATA);
@@ -366,8 +342,8 @@ function MonthView({ applyPolicyByName, loadPolicies, month, settings, summary, 
           <td data-label="수업료"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.fee} aria-label={`${row.name} 수업료`} onChange={(e)=>updateRow(row.id,{fee:e.target.value})}/></td>
           <td data-label="회기"><input disabled={month.locked} className={styles.centered} value={row.sessions} inputMode="numeric" aria-label={`${row.name} 회기`} onChange={(e)=>updateRow(row.id,{sessions:e.target.value})}/></td>
           <td data-label="총액"><MoneyInput disabled={month.locked} className={`${styles.numericInput} ${styles.totalInput}`} placeholder={Math.round(value.total).toLocaleString('ko-KR')} value={row.total} aria-label={`${row.name} 총액`} title="비워 두면 수업료×회기" onChange={(e)=>updateRow(row.id,{total:e.target.value})}/></td>
-          <td data-label="계산서" className={styles.statusCell}>{row.vatMode === 'none' ? <span className={styles.invoiceNotApplicable} title="부가세 없음 · 계산서 발행 대상 아님" aria-label={`${row.name} 부가세 없음, 계산서 발행 대상 아님`}>—</span> : <button title={row.invDate||'계산서 발행'} aria-label={`${row.name} 계산서 발행`} aria-pressed={row.inv} disabled={month.locked} className={`${styles.statusButton} ${row.inv?styles.statusButtonOn:''}`} onClick={()=>updateRow(row.id,{inv:!row.inv,invDate:!row.inv?new Date().toISOString().slice(0,10):''})}>✓</button>}</td>
-          <td data-label="입금" className={styles.statusCell}><button title={row.rcptDate||row.dueDate||'영수'} aria-label={`${row.name} 영수`} aria-pressed={row.rcpt} disabled={month.locked} className={`${styles.statusButton} ${row.rcpt?styles.statusButtonOn:row.rcptAmt?styles.statusButtonPending:''}`} onClick={()=>updateRow(row.id,{rcpt:!row.rcpt,rcptDate:!row.rcpt?new Date().toISOString().slice(0,10):''})}>✓</button></td>
+          <td data-label="계산서" className={styles.statusCell}>{row.vatMode === 'none' ? <span className={styles.invoiceNotApplicable} title="부가세 없음 · 계산서 발행 대상 아님" aria-label={`${row.name} 부가세 없음, 계산서 발행 대상 아님`}>—</span> : <><button title={row.invDate||'계산서 발행'} aria-label={`${row.name} 계산서 발행`} aria-pressed={row.inv} disabled={month.locked} className={`${styles.statusButton} ${row.inv?styles.statusButtonOn:''}`} onClick={()=>updateRow(row.id,{inv:!row.inv,invDate:!row.inv?new Date().toISOString().slice(0,10):''})}>✓</button>{row.inv && row.invDate && <time className={styles.statusDate} dateTime={row.invDate}>{row.invDate.slice(5).replace('-', '.')}</time>}</>}</td>
+          <td data-label="입금" className={styles.statusCell}><button title={row.rcptDate||row.dueDate||'영수'} aria-label={`${row.name} 영수`} aria-pressed={row.rcpt} disabled={month.locked} className={`${styles.statusButton} ${row.rcpt?styles.statusButtonOn:row.rcptAmt?styles.statusButtonPending:''}`} onClick={()=>updateRow(row.id,{rcpt:!row.rcpt,rcptDate:!row.rcpt?new Date().toISOString().slice(0,10):''})}>✓</button>{row.rcpt && row.rcptDate && <time className={styles.statusDate} dateTime={row.rcptDate}>{row.rcptDate.slice(5).replace('-', '.')}</time>}</td>
           <td data-label="부가세"><details className={styles.vatDetails}><summary className={styles.profitAmount} aria-label={`${row.name} 부가세 설정`} title={`부가세 설정${row.whRate > 0 ? ` · 원천 -${money(value.withholding)}` : ''}`}>{row.vatMode==='none'?'없음':money(value.vat)}</summary><div className={styles.vatMenu}><select disabled={month.locked} value={row.vatMode} aria-label={`${row.name} 부가세 방식`} onChange={(e)=>updateRow(row.id,{vatMode:e.target.value as SettlementRow['vatMode']})}><option value="auto">자동</option><option value="none">없음</option><option value="manual">직접</option></select>{row.vatMode==='manual'&&<MoneyInput disabled={month.locked} className={styles.numericInput} value={row.vatManual} aria-label={`${row.name} 부가세`} onChange={(e)=>updateRow(row.id,{vatManual:Number(e.target.value)})}/>}</div></details></td>
           <td data-label="강사료(인건비)"><MoneyInput disabled={month.locked} className={styles.numericInput} value={row.cost === '' ? '' : value.cost} aria-label={`${row.name} 강사료(인건비)`} onChange={(e)=>updateRow(row.id,{cost:e.target.value})}/></td>
           <td data-label="정산 순수익"><output className={styles.profitValue} aria-label={`${row.name} 정산 순수익`}>{money(value.netAfterWh)}</output></td>

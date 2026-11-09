@@ -92,13 +92,15 @@ export function evaluateExpression(source: string | number, sessions: string | n
   } catch { return Number.NaN; }
 }
 
-export function calculateRow(row: SettlementRow, settings: SettlementSettings) {
+export function calculateRow(row: SettlementRow, _settings: SettlementSettings) {
+  // Persisted legacy settings remain compatible; automatic VAT always uses the exact rate.
+  void _settings;
   const fee = evaluateExpression(row.fee, row.sessions);
   const explicitTotal = row.total !== '' ? evaluateExpression(row.total, row.sessions) : undefined;
   const total = explicitTotal ?? ((fee || 0) * (Number(row.sessions) || 0));
   const cost = evaluateExpression(row.cost, row.sessions) || 0;
   const vat = row.vatMode === 'none' ? 0 : row.vatMode === 'manual' ? Number(row.vatManual) || 0
-    : settings.vatMethod === 'div11' ? Math.round(total / 11) : Math.round(total * (1 - 0.9091));
+    : Math.round(total / 11);
   const withholding = row.whRate > 0 ? Math.round((total - vat) * row.whRate / 100) : 0;
   const received = row.rcpt ? total : Math.min(Number(row.rcptAmt) || 0, total);
   const ratio = total > 0 ? received / total : 0;

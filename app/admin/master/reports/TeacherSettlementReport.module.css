@@ -1,0 +1,59 @@
+.page { width: 100%; max-width: 1400px; margin: 0 auto; padding: 20px 16px 32px; font-family: var(--font-sans); color: #0f172a; }
+.header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+.heading { font-size: 22px; font-weight: 750; letter-spacing: -.035em; line-height: 1.3; }
+.subtitle { margin-top: 4px; font-size: 12px; color: #64748b; }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.taxButton { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 14px; border: 1px solid #dbe3ef; border-radius: 10px; background: white; color: #334155; font-size: 13px; font-weight: 650; }
+.taxButton:hover { background: #eff6ff; border-color: #93b4ff; }
+.taxButton:disabled { opacity: .5; }
+.period { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid #dbe3ef; border-radius: 10px; background: white; }
+.period select { min-height: 40px; font-size: 13px; color: #334155; font-weight: 650; }
+.period button { min-height: 40px; padding: 0 12px; font-size: 12px; font-weight: 650; }
+.summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.metricCard, .netCard { min-width: 0; padding: 18px 20px; border: 1px solid #dfe6ef; border-radius: 14px; background: white; }
+.netCard { grid-column: 1 / -1; background: #eff5ff; border-color: #cbdcff; }
+.metricLabel { display: flex; align-items: center; gap: 7px; color: #64748b; font-size: 12px; font-weight: 650; }
+.netAmount, .taxAmount, .grossAmount { margin-top: 8px; font-size: clamp(20px, 2.6vw, 28px); font-weight: 750; letter-spacing: -.035em; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.netAmount { color: #1958f5; }
+.taxAmount { color: #dc3545; }
+.netAmount > span, .taxAmount > span, .grossAmount > span { margin-left: 4px; font-size: 12px; font-weight: 500; color: #64748b; }
+.metricHint { margin-top: 10px; color: #64748b; font-size: 12px; }
+.breakdown { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; color: #64748b; font-size: 11px; }
+.teacherGrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.workspaceBar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+.viewTabs { display: flex; padding: 4px; gap: 4px; border-radius: 10px; background: #eaf0f7; }
+.viewTabs button { min-height: 44px; padding: 0 16px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 700; }
+.viewTabs button[aria-selected=true] { background: #0f172a; color: white; }
+.monthlyHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.monthlyHeader h2 { font-size: 17px; font-weight: 750; }
+.monthlyHeader p { margin-top: 4px; font-size: 12px; line-height: 1.5; color: #64748b; }
+.monthlyTotal { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border: 1px solid #cbdcff; border-radius: 12px; background: #eff5ff; color: #475569; font-size: 13px; }
+.monthlyTotal strong { display: block; margin-top: 4px; color: #1958f5; font-size: 26px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.monthlyFilters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0 12px; }
+.search { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid #dbe3ef; border-radius: 8px; background: white; color: #64748b; }
+.search input { width: 160px; min-width: 0; outline: none; background: transparent; font-size: 13px; color: #0f172a; }
+.search:focus-within { outline: 2px solid #2563eb; outline-offset: 2px; }
+.monthlyFilters select { min-height: 44px; padding: 0 10px; border: 1px solid #dbe3ef; border-radius: 8px; background: white; font-size: 13px; }
+.zeroFilter { display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 13px; cursor: pointer; }
+.monthlyTableWrap { overflow-x: auto; border: 1px solid #dfe6ef; border-radius: 12px; background: white; }
+.monthlyTable { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.monthlyTable th, .monthlyTable td { padding: 13px 14px; border-bottom: 1px solid #edf1f7; text-align: right; white-space: nowrap; }
+.monthlyTable th:first-child { text-align: left; }
+.monthlyTable thead { background: #f1f5f9; color: #64748b; font-size: 12px; }
+.monthlyTable tbody th { font-weight: 650; }
+.monthlyTable small { margin-left: 6px; color: #94a3b8; font-size: 11px; font-weight: 500; }
+.monthlyTable tbody tr:hover { background: #f8faff; }
+.monthlyTable tfoot { background: #f8faff; font-weight: 700; }
+.monthlyTable tfoot th, .monthlyTable tfoot td { border-bottom: 0; }
+@media (min-width: 900px) {
+  .summary { grid-template-columns: 1.2fr 1fr 1.2fr; }
+  .netCard { grid-column: auto; }
+  .teacherGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 599px) {
+  .page { padding: 16px 12px 24px; }
+  .tools { width: 100%; }
+  .period { width: 100%; justify-content: space-between; }
+  .period select { font-size: 16px; }
+  .metricCard, .netCard { padding: 14px; }
+}

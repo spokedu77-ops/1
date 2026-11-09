@@ -11,6 +11,14 @@ const center: SettlementCenter = {
 };
 
 describe('settlement sheet calculation contract', () => {
+  it.each(['sheet', 'div11'] as const)('calculates exact included VAT for persisted %s settings', (vatMethod) => {
+    const row = { ...emptyRow(), fee: 99000, sessions: 3 };
+    const selectedSettings = { vatMethod, year: 2026 };
+    expect(calculateRow(row, selectedSettings)).toMatchObject({ total: 297000, vat: 27000, net: 270000 });
+    expect(calculateRow({ ...row, vatMode: 'none' }, selectedSettings).vat).toBe(0);
+    expect(calculateRow({ ...row, vatMode: 'manual', vatManual: 12345 }, selectedSettings).vat).toBe(12345);
+  });
+
   it('creates new monthly rows from current DB classifications and terms with no settlement evidence', () => {
     const source = { id: 'operational-1', name: '새 정기 센터', defaults: { ...DEFAULT_CENTER_SETTLEMENT },
       sessionFee: 120000, mainFee: 40000, assistFee: 20000 };
