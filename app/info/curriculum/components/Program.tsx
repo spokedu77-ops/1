@@ -90,7 +90,7 @@ export default function Program() {
                 </div>
               </div>
               <div style={{ paddingTop: 28, borderTop: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', fontFamily: "'DM Serif Display',serif", marginBottom: 6 }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', fontFamily: 'var(--font-sans)', marginBottom: 6 }}>
                   Immersive Interactive System
                 </div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>기관의 역량을 극대화하는 체계적인 매뉴얼</div>

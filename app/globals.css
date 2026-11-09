@@ -142,6 +142,7 @@
 }
 
 :root {
+  --font-ui: "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --spm-bg: #f4f6fb;
   --spm-s1: #ffffff;
   --spm-s2: #eef1f8;
@@ -219,8 +220,8 @@
   --spm-br: rgba(15, 23, 42, 0.07);
   --spm-br2: rgba(15, 23, 42, 0.11);
   --spm-br3: rgba(15, 23, 42, 0.18);
-  --spm-font-body: "Paperlogy", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-  --spm-font-display: "Paperlogy", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --spm-font-body: var(--font-ui);
+  --spm-font-display: var(--font-ui);
 }
 
 @keyframes spmSkeleton {
@@ -233,7 +234,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-ui);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -288,7 +289,7 @@ body {
 
 /* Admin / Teacher shared responsive foundation. Public and subscriber surfaces are excluded. */
 :root {
-  --admin-sidebar-width: 216px;
+  --admin-sidebar-width: 240px;
   --app-header-height: 3.5rem;
 }
 
@@ -640,8 +641,8 @@ body {
 
 /** Public Marketing 전용 foundation. 제품 UI의 --spm-*와 분리한다. */
 .spokedu-marketing {
-  --spokedu-marketing-font-body: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --spokedu-marketing-font-display: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --spokedu-marketing-font-body: var(--font-ui);
+  --spokedu-marketing-font-display: var(--font-ui);
   --spokedu-marketing-font-metric: var(--spokedu-marketing-font-display);
   --spokedu-marketing-color-navy-deep: #081126;
   --spokedu-marketing-color-navy: #0b1f46;

@@ -1,6 +1,6 @@
 /* Scope visual overrides to the isolated stage-2 preview route. */
 .note-v2-preview .bn-container {
-  --bn-font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", Inter, system-ui, sans-serif;
+  --bn-font-family: var(--font-sans);
 }
 .note-v2-preview .bn-editor {
   min-height: 380px;

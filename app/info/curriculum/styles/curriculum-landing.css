@@ -22,19 +22,19 @@
 .curriculum-landing {
   background: var(--surface);
   color: #e8f0eb;
-  font-family: "Pretendard", "DM Sans", sans-serif;
+  font-family: var(--font-sans);
   font-weight: 300;
   overflow-x: hidden;
 }
 
 .curriculum-landing .display {
-  font-family: "DM Serif Display", serif;
+  font-family: var(--font-sans);
   line-height: 1.05;
   letter-spacing: -0.02em;
 }
 
 .curriculum-landing .label {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -144,7 +144,7 @@
 }
 
 .curriculum-landing .stat-num {
-  font-family: "DM Serif Display", serif;
+  font-family: var(--font-sans);
   font-size: clamp(2.5rem, 5vw, 4rem);
   line-height: 1;
   color: #fff;
@@ -224,7 +224,7 @@
 }
 
 .curriculum-landing .feature-num {
-  font-family: "DM Serif Display", serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   color: var(--green);
   min-width: 28px;
@@ -273,7 +273,7 @@
   border-radius: 12px;
   padding: 14px 18px;
   color: #e8f0eb;
-  font-family: "Pretendard", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;

@@ -10,7 +10,7 @@
 }
 
 .phase-d-preview {
-  font-family: 'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-family: var(--font-sans);
   --spokedu-marketing-color-body: #434655;
   --spokedu-marketing-color-paper: #faf8ff;
   --spokedu-marketing-color-white: #fff;
@@ -18,7 +18,7 @@
   --spokedu-marketing-radius-large: 24px;
   --spokedu-marketing-shadow-media: 0 16px 40px rgb(19 27 46 / 6%);
 }
-.website-content { background: #faf8ff; color: #131b2e; font: 400 16px/1.7 'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+.website-content { background: #faf8ff; color: #131b2e; font: 400 16px/1.7 var(--font-sans); }
 .website-content :is(h1,h2,h3,h4,p,li,a,button,dt,dd,summary) { word-break: keep-all; line-break: strict; }
 .website-content :is(h1,h2,h3,h4):where(:not(.web-stitch *)) { font-weight: 700; letter-spacing: -.025em; text-wrap: balance; }
 .website-content p { text-wrap: pretty; }
@@ -119,7 +119,7 @@
 }
 
 /* Canonical Stitch roles apply only to the five restored pages. */
-.website-content .web-stitch { font-family: 'Plus Jakarta Sans', 'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; }
+.website-content .web-stitch { font-family: var(--font-sans); }
 .website-content .web-stitch :where(h1,h2,h3,h4,p,li,a,button,dt,dd,summary) { word-break: keep-all; overflow-wrap: break-word; line-break: auto; text-wrap: wrap; }
 .website-content .web-stitch :where(h1,h2,h3,h4) { margin-top: 0; }
 .website-content .web-stitch figure { margin: 0; }

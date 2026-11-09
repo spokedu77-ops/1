@@ -891,7 +891,7 @@ export function SpokeduRhythmGame({
           @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&family=Outfit:wght@300;600;800&display=swap');
           .font-outfit { font-family: 'Outfit', sans-serif; }
           .font-display { font-family: 'Black Han Sans', sans-serif; }
-          .font-body { font-family: 'Noto Sans KR', sans-serif; }
+          .font-body { font-family: var(--font-sans); }
         `}
       </style>
 

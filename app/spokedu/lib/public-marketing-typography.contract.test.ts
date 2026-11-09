@@ -30,11 +30,12 @@ describe('public marketing typography contract', () => {
     collectSource('app/spokedu/programs'),
   ].join('\n');
 
-  it('owns the two font families in the marketing foundation', () => {
+  it('uses the shared SUIT family in the marketing foundation', () => {
     expect(globals).toMatch(/@font-face\s*{[^}]*font-family:\s*"Cafe24SsurroundAir"[^}]*Cafe24SsurroundAir\.woff/);
     expect(existsSync(join(root, 'public/fonts/Cafe24SsurroundAir.woff'))).toBe(true);
-    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*Pretendard/);
-    expect(globals).toMatch(/--spokedu-marketing-font-body:\s*Pretendard,\s*"Noto Sans KR",\s*"Apple SD Gothic Neo",\s*"Malgun Gothic",\s*system-ui/);
+    expect(globals).toMatch(/--font-ui:\s*"SUIT"/);
+    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*var\(--font-ui\)/);
+    expect(globals).toMatch(/--spokedu-marketing-font-body:\s*var\(--font-ui\)/);
     expect(globals).toMatch(/--spokedu-marketing-font-metric:\s*var\(--spokedu-marketing-font-display\)/);
     expect(globals).toMatch(/\.spokedu-marketing\s*{[^}]*font-family:\s*var\(--spokedu-marketing-font-body\)/);
   });
@@ -50,7 +51,7 @@ describe('public marketing typography contract', () => {
     expect(homeWebCss).not.toMatch(/homeBrandDisplay|--he-brand-display/);
   });
 
-  it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the approved Pretendard 700 display contract', (name) => {
+  it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the shared 700 display contract', (name) => {
     const value = utility(utilities, name);
     expect(value).toContain('[font-family:var(--spokedu-marketing-font-display)]');
     expect(value).toContain('font-bold');
@@ -83,9 +84,9 @@ describe('public marketing typography contract', () => {
     expect(publicSource).not.toContain('[font-family:var(--spokedu-marketing-font-display)]');
   });
 
-  it('keeps website headings readable in Korean with a scoped Pretendard family', () => {
+  it('keeps website headings readable in Korean with the shared font family', () => {
     const css = read('app/spokedu/website/styles/website.css');
-    expect(css).toContain('Pretendard');
+    expect(css).toContain('var(--font-sans)');
     expect(css).toContain('word-break: keep-all');
     expect(css).toContain('text-wrap: balance');
     for (const page of ['home', 'education', 'private', 'spomove', 'records', 'about']) {

@@ -3,7 +3,7 @@
   --spokedu-public-header-height: 80px;
   --spokedu-marketing-color-navy: #131b2e;
   --spokedu-marketing-color-blue: #004ac6;
-  font-family: 'Pretendard Variable', Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-family: var(--font-sans);
   color: #131b2e;
   background: #faf8ff;
 }

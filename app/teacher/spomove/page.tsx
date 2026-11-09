@@ -113,7 +113,7 @@ html, body, #root {
     radial-gradient(circle at bottom right, rgba(10,132,255,0.10), transparent 32%),
     linear-gradient(180deg, #07080C 0%, #0B0D13 100%);
   color: var(--text);
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  font-family: var(--font-sans);
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -174,7 +174,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.24em;
@@ -279,7 +279,7 @@ button {
 }
 
 .spm-step-title {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 800;
   font-size: clamp(32px, 7.4vw, 40px);
   line-height: 1;
@@ -446,7 +446,7 @@ button {
 }
 
 .spm-sym.mono {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 20px;
   font-weight: 800;
 }
@@ -465,7 +465,7 @@ button {
 }
 
 .spm-tog-text h4 {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
   font-weight: 800;
   color: var(--text);
@@ -554,7 +554,7 @@ button {
 }
 
 .spm-opt h4 {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-size: 15px;
   font-weight: 800;
   margin-bottom: 6px;
@@ -662,7 +662,7 @@ button {
 }
 
 .spm-set-n {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 800;
   font-size: clamp(84px, 20vw, 100px);
   line-height: 0.88;
@@ -670,7 +670,7 @@ button {
 }
 
 .spm-set-unit {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   padding-bottom: 12px;
   font-size: 15px;
   font-weight: 700;
@@ -900,7 +900,7 @@ button {
 }
 
 .spm-s-num {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(140px, 28vw, 280px);
   font-weight: 900;
   line-height: 0.88;
@@ -914,7 +914,7 @@ button {
   bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -937,7 +937,7 @@ button {
   background: rgba(6,7,10,0.28);
   backdrop-filter: blur(12px);
   color: rgba(255,255,255,0.62);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -995,7 +995,7 @@ button {
 }
 
 .spm-intro-title {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 900;
   font-size: clamp(52px, 14vw, 72px);
   line-height: 0.92;
@@ -1060,7 +1060,7 @@ button {
 }
 
 .spm-intro-btn-title {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 900;
   font-size: 28px;
   line-height: 1;
@@ -1129,7 +1129,7 @@ button {
 }
 
 .spm-favlist-title {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 900;
   font-size: 24px;
   letter-spacing: -0.02em;
@@ -1199,7 +1199,7 @@ button {
 }
 
 .spm-fav-label {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 800;
   font-size: 15px;
   color: var(--text);
@@ -1296,7 +1296,7 @@ button {
 }
 
 .spm-modal-title {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 900;
   font-size: 20px;
   letter-spacing: -0.02em;
@@ -1449,7 +1449,7 @@ button {
 }
 
 .spm-countdown-num {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(160px, 38vw, 320px);
   font-weight: 900;
   line-height: 1;
@@ -1520,7 +1520,7 @@ button {
 }
 
 .spm-i-h {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(42px, 12vw, 54px);
   font-weight: 800;
   line-height: 0.96;
@@ -1557,7 +1557,7 @@ button {
 }
 
 .spm-stat-n {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 46px;
   font-weight: 800;
   line-height: 0.92;
@@ -1582,7 +1582,7 @@ button {
   gap: 8px;
   padding: 18px;
   border-radius: 18px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -1613,7 +1613,7 @@ button {
     radial-gradient(circle at bottom right, rgba(10,132,255,0.10), transparent 32%),
     linear-gradient(180deg, #07080C 0%, #0B0D13 100%);
   color: var(--text);
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  font-family: var(--font-sans);
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
@@ -1770,7 +1770,7 @@ button {
 }
 
 .spm-presetlist-title {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 900;
   font-size: 24px;
   letter-spacing: -0.02em;
@@ -1828,7 +1828,7 @@ button {
 }
 
 .spm-preset-title {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 800;
   font-size: 15px;
   color: var(--text);
@@ -1913,7 +1913,7 @@ button {
 }
 
 .spm-week-label {
-  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 900;
   font-size: 20px;
   letter-spacing: -0.02em;
@@ -2026,7 +2026,7 @@ button {
 }
 
 .spm-complete-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-sans);
   font-size: clamp(48px, 13vw, 62px);
   font-weight: 900;
   line-height: 0.96;

@@ -1560,7 +1560,7 @@ export default function AdminCurriculumPage() {
     <div className="min-h-screen bg-[#F8FAFC] pb-[calc(6rem+env(safe-area-inset-bottom,0px))] text-slate-900 w-full">
       <style>{`
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-        * { font-family: "Pretendard Variable", sans-serif !important; letter-spacing: -0.025em; box-sizing: border-box; }
+        * { font-family: var(--font-sans) !important; letter-spacing: -0.025em; box-sizing: border-box; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         button, select, [onClick] { cursor: pointer !important; }
       `}</style>

@@ -14,7 +14,7 @@
   --radius-lg: var(--spokedu-marketing-radius-large, 2rem);
   color: var(--ink);
   background: #fff;
-  font-family: var(--spokedu-marketing-font-body, Pretendard, system-ui, sans-serif);
+  font-family: var(--font-sans);
 }
 
 @media (min-width: 768px) {
@@ -172,7 +172,7 @@
 .hero h1 {
   max-width: 10.5em;
   margin: 0;
-  font-family: var(--spokedu-marketing-font-display, Pretendard, system-ui, sans-serif);
+  font-family: var(--font-sans);
   font-size: clamp(2.5rem, 4.8vw, 4rem);
   font-weight: 700;
   line-height: 1.08;
@@ -271,7 +271,7 @@
 .productHeading h2,
 .expertiseIntro h2 {
   margin: 0;
-  font-family: var(--spokedu-marketing-font-display, Pretendard, system-ui, sans-serif);
+  font-family: var(--font-sans);
   font-size: clamp(2.125rem, 3.6vw, 3.625rem);
   font-weight: 700;
   line-height: 1.12;
@@ -766,7 +766,7 @@
 .labFeature h3 {
   max-width: 10em;
   margin: 0.75rem 0 1rem;
-  font-family: var(--spokedu-marketing-font-display, Pretendard, system-ui, sans-serif);
+  font-family: var(--font-sans);
   font-size: clamp(2rem, 3.2vw, 3.25rem);
   font-weight: 700;
   line-height: 1.1;
@@ -854,7 +854,7 @@
 
 .consult h2 {
   margin: 0;
-  font-family: var(--spokedu-marketing-font-display, Pretendard, system-ui, sans-serif);
+  font-family: var(--font-sans);
   font-size: clamp(2.25rem, 4.5vw, 4rem);
   font-weight: 700;
   line-height: 1.1;

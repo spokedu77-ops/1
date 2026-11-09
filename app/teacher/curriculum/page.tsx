@@ -504,7 +504,7 @@ useEffect(() => {
    <div className="w-full bg-[#F8FAFC] text-slate-900">
      <style>{`
        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-       * { font-family: "Pretendard Variable", sans-serif !important; letter-spacing: -0.025em; box-sizing: border-box; }
+       * { font-family: var(--font-sans) !important; letter-spacing: -0.025em; box-sizing: border-box; }
        .no-scrollbar::-webkit-scrollbar { display: none; }
        button, select, [onClick] { cursor: pointer !important; }
      `}</style>

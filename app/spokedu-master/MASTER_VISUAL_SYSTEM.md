@@ -133,6 +133,8 @@ True wide (1200+) only for real wide media / workspace. A 1220 canvas with spars
 
 Design type before cards.
 
+Shared web/app UI typeface: **SUIT**, resolved through `--font-ui` in `app/globals.css`. MASTER body and display tokens use that same family. Logos, specialized game lettering, and monospaced instruments retain their purpose-specific fonts; size and weight still follow each role below.
+
 | Role | Desktop | Mobile | Weight |
 |------|---------|--------|--------|
 | Home display | 36–40 | 30–32 | 600–700 |

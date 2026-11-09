@@ -11,16 +11,17 @@ const weights = [
   [800, 'Paperlogy-8ExtraBold.woff2'],
 ] as const;
 
-describe('Paperlogy one-family typography contract', () => {
-  it('maps every supported local weight and makes Paperlogy first in both tokens', () => {
+describe('shared SUIT typography contract', () => {
+  it('preserves local font assets and maps both product tokens to shared SUIT', () => {
     const css = read('app/globals.css');
     for (const [weight, filename] of weights) {
       expect(fs.existsSync(path.join(process.cwd(), 'public/fonts/paperlogy', filename))).toBe(true);
       expect(css).toContain(`url("/fonts/paperlogy/${filename}") format("woff2")`);
       expect(css).toMatch(new RegExp(`font-family: "Paperlogy";[\\s\\S]*?font-weight: ${weight};`));
     }
-    expect(css).toMatch(/--spm-font-body:\s*"Paperlogy"/);
-    expect(css).toMatch(/--spm-font-display:\s*"Paperlogy"/);
+    expect(css).toMatch(/--font-ui:\s*"SUIT"/);
+    expect(css).toMatch(/--spm-font-body:\s*var\(--font-ui\)/);
+    expect(css).toMatch(/--spm-font-display:\s*var\(--font-ui\)/);
     expect(css).toContain('font-synthesis: none;');
     expect(css).not.toMatch(/font-weight:\s*900/);
   });

@@ -1,5 +1,5 @@
 /* Implementation of the existing SPOMOVE Training palette, scoped to AssetHub. */
-.workspace { min-height: 100vh; color: #f1f5f9; background: #080c14; background-image: radial-gradient(at 0% 0%, rgb(59 130 246 / 8%) 0, transparent 50%), radial-gradient(at 100% 10%, rgb(244 63 94 / 6%) 0, transparent 50%); background-attachment: fixed; font-family: 'SUIT', system-ui, sans-serif; word-break: keep-all; overflow-wrap: break-word; }
+.workspace { min-height: 100vh; color: #f1f5f9; background: #080c14; background-image: radial-gradient(at 0% 0%, rgb(59 130 246 / 8%) 0, transparent 50%), radial-gradient(at 100% 10%, rgb(244 63 94 / 6%) 0, transparent 50%); background-attachment: fixed; font-family: var(--font-sans); word-break: keep-all; overflow-wrap: break-word; }
 .header { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgb(255 255 255 / 5%); background: rgb(8 12 20 / 85%); backdrop-filter: blur(24px); }
 .headerInner { max-width: 1280px; margin: auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brandGroup, .brand, .dots, .status, .headerActions, .nav, .eyebrow, .titleRow, .breadcrumb { display: flex; align-items: center; }

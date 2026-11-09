@@ -20,7 +20,7 @@
   --gym-pad: 20px;
   --gym-gap: 16px;
   /* 폰트 통일: 하나의 스택만 사용 */
-  --gym-font: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --gym-font: var(--font-sans);
   --gym-fs-xs: 12px;
   --gym-fs-sm: 13px;
   --gym-fs-base: 15px;

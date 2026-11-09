@@ -91,7 +91,7 @@ function ChallengeProgramInner() {
   return (
     <main
       className="min-h-screen bg-neutral-950 text-neutral-100"
-      style={{ fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif" }}
+      style={{ fontFamily: 'var(--font-sans)' }}
     >
       {!ready ? (
         <div className="flex min-h-screen items-center justify-center text-sm text-neutral-500">

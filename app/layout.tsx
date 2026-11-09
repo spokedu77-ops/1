@@ -22,15 +22,15 @@ import './globals.css';
 
 const fontVariables = {
   '--font-sans':
-    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    'var(--font-ui)',
   '--font-geist-sans':
-    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    'var(--font-ui)',
   '--font-geist-mono':
     '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
   '--font-plus-jakarta':
-    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    'var(--font-ui)',
   '--font-space-grotesk':
-    '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    'var(--font-ui)',
 } as CSSProperties;
 
 function RootLayoutShell({ children }: { children: ReactNode }) {

@@ -22,7 +22,7 @@
 
 .private-landing {
   margin: 0;
-  font-family: var(--font-kr), 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-sans);
   color: var(--pl-text);
   background: var(--pl-bg);
   line-height: 1.6;

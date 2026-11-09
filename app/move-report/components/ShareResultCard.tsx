@@ -85,7 +85,7 @@ function DefaultShareResultCard({
         minHeight: 1420,
         background: '#0A0A0A',
         color: '#fff',
-        fontFamily: 'Noto Sans KR, sans-serif',
+        fontFamily: 'var(--font-sans)',
         boxSizing: 'border-box',
         position: 'relative',
         overflow: 'hidden',
@@ -323,7 +323,7 @@ function ViralShareResultCard({
       aria-label={`${ownerLabel} MOVE REPORT`}
       style={{
         ['--poster-accent' as string]: p.col,
-        fontFamily: "'Noto Sans KR', sans-serif",
+        fontFamily: 'var(--font-sans)',
       }}
     >
       <div className="mr-poster-card-glow" aria-hidden />

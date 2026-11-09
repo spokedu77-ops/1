@@ -97,7 +97,7 @@ export default function Radar({ bd, col, maxWidthPx = 240 }: RadarProps) {
             dominantBaseline="middle"
             fill="#888"
             fontSize="10"
-            fontFamily="Noto Sans KR,sans-serif"
+            fontFamily="var(--font-sans)"
             fontWeight="600"
           >
             {l}

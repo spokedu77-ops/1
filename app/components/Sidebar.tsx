@@ -13,6 +13,7 @@ import {
   CheckCircle,
   ClipboardList,
   CreditCard,
+  ExternalLink,
   Settings,
   LayoutDashboard,
   LogOut,
@@ -21,7 +22,6 @@ import {
   PanelLeftOpen,
   Sparkles,
   User,
-  Users,
   X,
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -140,41 +140,34 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
 
   const adminMenuItems: MenuGroup[] = [
     {
-      group: '대시보드',
+      group: '',
       items: [{ name: '관리 홈', href: '/admin', icon: LayoutDashboard }],
     },
     {
-      group: '운영 관리',
+      group: '01 수업 운영',
       items: [
-        { name: '노트', href: '/admin/note', icon: ClipboardList },
-        { name: '수업 관리', href: '/admin/classes/calendar', icon: Calendar },
-        { name: '피드백 관리', href: '/admin/teachers-classes', icon: CheckCircle },
-        { name: 'DB 관리', href: '/admin/centers', icon: Building2 },
+        { name: '수업 일정', href: '/admin/classes/calendar', icon: Calendar },
+        { name: '기관·개인 관리', href: '/admin/centers', icon: Building2 },
+        { name: '수업 검수', href: '/admin/teachers-classes', icon: CheckCircle },
         { name: '교구·재고', href: '/admin/inventory', icon: Box },
+        ...(userEmail === 'choijihoon@spokedu.com' ? [{ name: '정산 관리', href: '/admin/master/reports', icon: CreditCard }] : []),
       ],
     },
     {
-      group: '콘텐츠',
+      group: '02 교육 콘텐츠',
       items: [
-        { name: '커리큘럼', href: '/admin/curriculum', icon: BookOpen },
-        { name: '현장 기록 관리', href: '/admin/field-records', icon: ClipboardList },
-        { name: 'SPOMOVE', href: '/admin/spomove/training', icon: Sparkles },
+        { name: '커리큘럼 관리', href: '/admin/curriculum', icon: BookOpen },
+        { name: '현장 사례', href: '/admin/field-records', icon: ClipboardList },
+        { name: 'SPOMOVE 관리', href: '/admin/spomove/training', icon: Sparkles },
       ],
     },
     {
-      group: '구독 서비스',
+      group: '03 LAB 구독 서비스',
       items: [
-        { name: 'LAB 라이브러리', href: '/admin/spokedu-lab/programs', icon: BookOpen },
-        { name: 'LAB 스포무브', href: '/admin/spokedu-lab/spomove', icon: Sparkles },
-        { name: 'SPOKEDU LAB', href: '/spokedu-lab/dashboard', icon: LayoutDashboard },
-        { name: 'LAB ADMIN', href: '/admin/spokedu-lab-admin', icon: Settings },
-      ],
-    },
-    {
-      group: '사람',
-      items: [
-        { name: '강사 관리', href: '/admin/users', icon: Users },
-        ...(userEmail === 'choijihoon@spokedu.com' ? [{ name: '정산 리포트', href: '/admin/master/reports', icon: CreditCard }] : []),
+        { name: 'LAB 프로그램 관리', href: '/admin/spokedu-lab/programs', icon: BookOpen },
+        { name: 'LAB SPOMOVE', href: '/admin/spokedu-lab/spomove', icon: Sparkles },
+        { name: 'LAB 운영 관리', href: '/admin/spokedu-lab-admin', icon: Settings },
+        { name: 'LAB 서비스 보기', href: '/spokedu-lab/dashboard', icon: ExternalLink },
       ],
     },
   ];
@@ -198,8 +191,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
       : 'md:-translate-x-full';
   const desktopOnlyDisplay = isAdminRoute ? 'min-[1200px]:flex' : 'md:flex';
   const desktopOnlyBlock = overlayOnly ? '' : isAdminRoute ? 'min-[1200px]:block' : 'md:block';
-  const desktopNavPadding = overlayOnly ? '' : isAdminRoute ? 'min-[1200px]:pt-3' : 'md:pt-3';
-  const drawerWidth = overlayOnly ? 'w-[min(84vw,320px)]' : isAdminRoute ? 'w-[min(84vw,320px)] min-[1200px]:w-[var(--admin-sidebar-width)]' : 'w-64';
+  const desktopNavPadding = overlayOnly ? '' : isAdminRoute ? 'min-[1200px]:pt-2' : 'md:pt-2';
+  const drawerWidth = overlayOnly ? 'w-[min(84vw,240px)]' : isAdminRoute ? 'w-[min(84vw,240px)] min-[1200px]:w-[var(--admin-sidebar-width)]' : 'w-64';
 
   if (!isAdminRoute && !isSubscriber) return null;
 
@@ -210,6 +203,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
       : adminMenuItems;
 
   const isActiveItem = (href: string) => {
+    if (href === '/admin/classes/calendar') return pathname === href;
       if (href === '/admin/spokedu-lab/programs') {
         return pathname === href || pathname.startsWith('/admin/spokedu-lab/library');
     }
@@ -219,7 +213,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
       if (href === '/spokedu-lab/dashboard') {
       return pathname.startsWith('/spokedu-master');
     }
-    if (href === '/admin/spokedu-master-admin') {
+    if (href === '/admin/spokedu-lab-admin') {
       return pathname.startsWith('/admin/spokedu-master-admin');
     }
     if (href === '/admin/spomove/training') {
@@ -235,6 +229,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLAnchorElement>, item: MenuItem) => {
+    setMobileOpen(false);
     if (item.disabled) {
       event.preventDefault();
       return;
@@ -279,25 +274,25 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${desktopSidebarTransform}`}
       >
-        <div className={`hidden border-b border-slate-700 px-5 py-4 text-left ${desktopOnlyBlock}`}>
+        <div className={`hidden border-b border-slate-700 px-4 py-3 text-left ${desktopOnlyBlock}`}>
           <BrandLogo onDark size="sm" />
           <p className="mt-1.5 text-[10px] font-medium uppercase leading-none text-slate-400">{isAdminRoute ? 'Admin Portal' : 'Warm-up Portal'}</p>
         </div>
 
-        <nav className={`scrollbar-hide min-h-0 flex-1 space-y-2 overflow-y-auto p-3 pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px)+0.75rem)] text-left ${desktopNavPadding}`}>
+        <nav className={`scrollbar-hide min-h-0 flex-1 overflow-y-auto p-2 pt-[calc(var(--app-header-height)+env(safe-area-inset-top,0px)+0.5rem)] text-left ${desktopNavPadding}`}>
           {groups.map((group, groupIndex) => (
-            <div key={group.group} className={`space-y-0.5 text-left ${groupIndex > 0 ? 'mt-2 border-t border-slate-700 pt-2' : ''}`}>
-              <h3 className="px-2.5 py-0.5 text-left text-[10px] font-semibold uppercase leading-4 tracking-widest text-slate-500">{group.group}</h3>
-              <div className="space-y-0.5">
+            <div key={group.group} className={`space-y-0 text-left ${groupIndex > 0 ? 'mt-2 border-t border-slate-700 pt-2' : ''}`}>
+              {group.group && <h3 className="px-2.5 py-0.5 text-left text-[11px] font-semibold leading-5 text-slate-400">{group.group}</h3>}
+              <div className="space-y-0">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = !item.disabled && isActiveItem(item.href);
-                  const baseClass = `group flex min-h-[44px] touch-manipulation items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all ${pathname.startsWith('/admin') ? 'min-[1200px]:min-h-[36px] min-[1200px]:py-1.5' : ''} ${
+                  const baseClass = `group flex min-h-[44px] touch-manipulation items-center gap-2 rounded-lg px-2 py-1.5 transition-all ${pathname.startsWith('/admin') ? 'min-[1200px]:min-h-[40px]' : ''} ${
                     item.disabled
                       ? 'pointer-events-none cursor-not-allowed text-slate-500 opacity-40'
                       : isActive
                         ? 'bg-blue-600 text-white shadow-lg'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-white active:bg-slate-700'
+                        : 'text-slate-200 hover:bg-slate-800 hover:text-white active:bg-slate-700'
                   }`;
 
                   if (item.disabled) {
@@ -313,7 +308,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
                   return (
                     <Link key={item.href} href={item.href} onClick={(event) => handleMenuClick(event, item)} className={baseClass}>
                       <Icon size={17} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
-                      <span className={`${isAdminRoute ? 'text-xs' : 'text-sm'} font-medium leading-5`}>{item.name}</span>
+                      <span className="text-sm font-medium leading-5">{item.name}</span>
                       {item.href === '/admin' && consultPendingCount > 0 && (
                         <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
                           +{consultPendingCount}
@@ -328,13 +323,13 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
         </nav>
 
         <div className="border-t border-slate-700 bg-slate-900/50 px-3 py-2">
-          <div className="flex items-center gap-2.5 border-b border-slate-800 px-1.5 py-2">
-            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
+          <div className="flex items-center gap-2 border-b border-slate-800 px-1.5 py-1">
+            <div className="rounded-lg bg-blue-500/10 p-1.5 text-blue-400">
               <User size={16} />
             </div>
             <div className="overflow-hidden text-left">
               <p className="text-left text-[9px] font-medium uppercase leading-3 tracking-tight text-slate-500">Account</p>
-              <p className="truncate text-left text-[11px] font-medium leading-4 text-slate-200">{userEmail || 'Admin'}</p>
+              <p className="truncate text-left text-xs font-medium leading-5 text-slate-200">{userEmail || 'Admin'}</p>
             </div>
           </div>
           <button onClick={handleLogout} className="group flex min-h-[44px] w-full touch-manipulation items-center gap-2.5 px-1.5 py-2 text-slate-500 transition-colors hover:text-rose-400">
