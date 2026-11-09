@@ -25,6 +25,7 @@ export const SPOMOVE_VARIANT_EMOTION_PACK_ID = 'spomove_variant_emotions';
 export const SPOMOVE_VARIANT_ANIMAL_PACK_ID = 'spomove_variant_animals';
 export const SPOMOVE_VARIANT_NATURE_PACK_ID = 'spomove_variant_nature';
 export const SPOMOVE_VARIANT_FOOD_PACK_ID = 'spomove_variant_food';
+export const SPOMOVE_VARIANT_DINOSAUR_PACK_ID = 'spomove_variant_dinosaurs';
 
 export const SPOMOVE_THEMED_SLOT_COUNT = 8 as const;
 
@@ -148,16 +149,24 @@ export function parseStoredVariantTheme(raw: string | null): SpomoveColorThemeId
   return 'color';
 }
 
-/** 기본 제공 공룡 이미지 — 빨강, 노랑, 초록, 파랑 순서. */
+/** 기본 제공 공룡 이미지 — 1~4, 5~8 각각 빨강, 노랑, 초록, 파랑 순서. */
 export const SPOMOVE_DINOSAUR_IMAGE_URLS = [
   '/spomove/variant/dinosaur/tyrannosaurus-red.png',
   '/spomove/variant/dinosaur/quetzalcoatlus-yellow.png',
   '/spomove/variant/dinosaur/brachiosaurus-green.png',
   '/spomove/variant/dinosaur/triceratops-blue.png',
+  '/spomove/variant/dinosaur/spinosaurus-red.png',
+  '/spomove/variant/dinosaur/stegosaurus-yellow.png',
+  '/spomove/variant/dinosaur/pachycephalosaurus-green.png',
+  '/spomove/variant/dinosaur/elasmosaurus-blue.png',
 ] as const;
 export const SPOMOVE_DINOSAUR_LABELS = [
   '1. 티라노사우르스 (빨강)',
   '2. 케차코아틀루스 (노랑)',
   '3. 브라키오사우르스 (초록)',
   '4. 트리케라톱스 (파랑)',
+  '5. 스피노사우르스 (빨강)',
+  '6. 스테고사우르스 (노랑)',
+  '7. 파키케팔로사우르스 (초록)',
+  '8. 엘라스모사우루스 (파랑)',
 ] as const;

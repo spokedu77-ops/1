@@ -7,33 +7,46 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { useSpomoveVariantSlidesForTraining } from '../hooks/useSpomoveVariantFruitSlidesForTraining';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
+  SPOMOVE_DINOSAUR_LABELS,
+  SPOMOVE_DINOSAUR_IMAGE_URLS,
+  SPOMOVE_VARIANT_DINOSAUR_PACK_ID,
   SPOMOVE_THEMED_PACK_BY_THEME,
   type SpomoveColorThemeId,
 } from '../lib/spomoveVariantThemeConfig';
 import { VARIANT_FRUIT_SLOT_LABELS, SPOMOVE_VARIANT_PACK_ID } from '../lib/variantFruitAssets';
 
 const BG = '#0b0b0b';
-const CARD = '#181818';
 const BORDER = 'rgba(255,255,255,0.09)';
 const TEXT = 'rgba(255,255,255,0.88)';
 const MUTED = 'rgba(255,255,255,0.38)';
 const ACCENT = '#3B82F6';
 
-type AppendixTheme = Exclude<SpomoveColorThemeId, 'color' | 'mix' | 'dinosaur'>;
-const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'animal', 'food', 'nature', 'vehicle'];
+type AppendixTheme = Exclude<SpomoveColorThemeId, 'color' | 'mix'>;
+const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'animal', 'food', 'nature', 'vehicle', 'dinosaur'];
 
 function getDefaultLabels(theme: AppendixTheme): string[] {
   if (theme === 'fruit') return [...VARIANT_FRUIT_SLOT_LABELS];
+  if (theme === 'dinosaur') return [...SPOMOVE_DINOSAUR_LABELS];
   return [...SPOMOVE_THEMED_PACK_BY_THEME[theme].slotLabels];
+}
+
+function resolveStoredLabel(theme: AppendixTheme, label: string, index: number, fallback: string): string {
+  if (theme !== 'dinosaur') return label;
+  // Correct the old swapped dinosaur names while retaining arbitrary custom labels.
+  const species = /티라노사우르스|케차코아틀루스|브라키오사우르스|트리케라톱스|스피노사우르스|스테고사우르스|파키케팔로사우르스|엘라스모사우루스|프테라노돈/;
+  const expected = SPOMOVE_DINOSAUR_LABELS[index]?.match(species)?.[0];
+  return expected && species.test(label) ? label.replace(species, expected) : label || fallback;
 }
 
 function getPackId(theme: AppendixTheme): string {
   if (theme === 'fruit') return SPOMOVE_VARIANT_PACK_ID;
+  if (theme === 'dinosaur') return SPOMOVE_VARIANT_DINOSAUR_PACK_ID;
   return SPOMOVE_THEMED_PACK_BY_THEME[theme].packId;
 }
 
 function getPackName(theme: AppendixTheme): string {
   if (theme === 'fruit') return 'SPOMOVE 연상 색지각 과일';
+  if (theme === 'dinosaur') return 'SPOMOVE 연상 색지각 공룡';
   return SPOMOVE_THEMED_PACK_BY_THEME[theme].packName;
 }
 
@@ -55,11 +68,12 @@ async function loadStoredLabels(theme: AppendixTheme): Promise<string[] | null> 
 async function saveStoredLabels(theme: AppendixTheme, labels: string[]): Promise<string | null> {
   const packId = getPackId(theme);
   const supabase = getSupabaseBrowserClient();
-  const { data: existing } = await supabase
+  const { data: existing, error: readError } = await supabase
     .from('think_asset_packs')
     .select('assets_json')
     .eq('id', packId)
     .maybeSingle();
+  if (readError) return readError.message;
   const existingJson = (existing?.assets_json ?? {}) as Record<string, unknown>;
 
   const res = await fetch('/api/admin/think-asset-pack', {
@@ -96,7 +110,7 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
     const defaults = getDefaultLabels(theme);
     void loadStoredLabels(theme).then((stored) => {
       if (loadGenRef.current !== gen || userEditedRef.current) return;
-      setLabels(stored ? defaults.map((def, i) => stored[i] ?? def) : defaults);
+      setLabels(stored ? defaults.map((def, i) => resolveStoredLabel(theme, stored[i] ?? def, i, def)) : defaults);
     });
   }, [theme]);
 
@@ -129,20 +143,24 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
     }
     setSaving(true);
     setSaveMsg(null);
-    const err = await saveStoredLabels(theme, nextLabels);
+    const err = await saveStoredLabels(theme, nextLabels).catch(() => '저장하지 못했습니다. 다시 시도해주세요.');
     setSaving(false);
     setSaveMsg(err ? `오류: ${err}` : '저장됨 ✓');
     setTimeout(() => setSaveMsg(null), 2500);
   };
 
   const items = labels
-    .map((label, i) => ({ label, imageUrl: (slides[i]?.imageUrl ?? '').trim(), index: i }))
+    .map((label, i) => ({
+      label,
+      imageUrl: (theme === 'dinosaur' ? SPOMOVE_DINOSAUR_IMAGE_URLS[i] ?? '' : slides[i]?.imageUrl ?? '').trim(),
+      index: i,
+    }))
     .filter((item) => item.imageUrl);
 
   return (
     <>
       {/* 이미지 그리드 — 남은 공간 전부 */}
-      <div style={{ flex: 1, minHeight: 0, padding: '1.5rem 2rem 0', overflow: 'hidden' }}>
+      <div style={{ flex: 1, minHeight: 0, padding: '0.5rem 0.75rem 0', overflow: 'hidden' }}>
         {status === 'loading' && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: MUTED, fontSize: '1rem' }}>
             로딩 중…
@@ -157,9 +175,9 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gridAutoRows: '1fr',
-              gap: '1.5rem',
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+              gridAutoRows: 'minmax(0, 1fr)',
+              gap: '0.75rem',
               height: '100%',
             }}
           >
@@ -170,8 +188,9 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0.65rem',
+                  gap: '0.25rem',
                   minHeight: 0,
+                  minWidth: 0,
                 }}
               >
                 {/* 이미지 — 셀 높이에서 이름 영역을 뺀 나머지 차지 */}
@@ -180,10 +199,8 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
                     flex: 1,
                     minHeight: 0,
                     width: '100%',
-                    borderRadius: '1.1rem',
-                    overflow: 'hidden',
-                    border: `1px solid ${BORDER}`,
-                    background: CARD,
+                    position: 'relative',
+                    background: '#fff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -192,7 +209,7 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
                   <img
                     src={imageUrl}
                     alt={label}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                   />
                 </div>
 
@@ -209,18 +226,20 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
                     }}
                     style={{
                       width: '100%',
-                      padding: '0.45rem 0.65rem',
+                      padding: '0.2rem 0.35rem',
                       borderRadius: '0.55rem',
                       border: `1.5px solid ${ACCENT}`,
                       background: '#1e293b',
                       color: TEXT,
-                      fontSize: '1.45rem',
+                      fontSize: 'clamp(0.875rem, 1.65vw, 1.3rem)',
                       fontWeight: 700,
                       fontFamily: 'inherit',
                       textAlign: 'center',
                       outline: 'none',
                       boxSizing: 'border-box',
                       flexShrink: 0,
+                      height: '44px',
+                      lineHeight: 1.3,
                     }}
                     autoFocus
                   />
@@ -228,21 +247,26 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
                   <button
                     type="button"
                     onClick={() => startEdit(index, label)}
-                    title="클릭하여 이름 수정"
+                    title={`${label} · 클릭하여 이름 수정`}
                     style={{
                       background: 'rgba(255,255,255,0.04)',
                       border: '1px solid transparent',
                       color: TEXT,
-                      fontSize: '1.45rem',
+                      fontSize: 'clamp(0.875rem, 1.65vw, 1.3rem)',
                       fontWeight: 700,
                       cursor: 'pointer',
                       textAlign: 'center',
                       fontFamily: 'inherit',
-                      padding: '0.3rem 0.65rem',
+                      padding: '0.2rem 0.35rem',
                       borderRadius: '0.5rem',
                       width: '100%',
                       flexShrink: 0,
                       lineHeight: 1.3,
+                      height: '44px',
+                      boxSizing: 'border-box',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER;
@@ -269,9 +293,9 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem',
-          padding: '0.9rem 2rem',
+          padding: '0.5rem 0.75rem',
           borderTop: `1px solid ${BORDER}`,
-          marginTop: '1rem',
+          marginTop: '0.5rem',
         }}
       >
         <span style={{ fontSize: '0.85rem', color: MUTED, flexShrink: 0 }}>
