@@ -22,8 +22,6 @@ Canonical entry order is `AGENTS.md` → Product Contract → Visual System → 
 | `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` | KEEP | Sole visual SSOT |
 | `app/spokedu-master/MASTER_SURFACE_MATRIX.md` | KEEP | Roles and 390/1440 rendered-QA ledger only |
 | `app/spokedu-master/MASTER_ART_DIRECTION.md` | POINTER | Compatibility pointer; no independent authority |
-| `app/spokedu-master/UI_FOUNDATION_V3_SURFACE_AUDIT.md` | ARCHIVE IN PLACE | Historical evidence; no implementation authority |
-| `docs/archive/spokedu-master-visual/MASTER_VISUAL_SYSTEM_v3.md` | ARCHIVE | Historical visual text |
 | `docs/SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md` | POINTER | Superseded product pointer |
 | `docs/SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md` | POINTER | Superseded decision pointer |
 | `docs/SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md` | HISTORICAL EVIDENCE | Product audit evidence, not authority |
