@@ -17,6 +17,8 @@ import {
   type SiteNavLink,
 } from '../data/site';
 import { BrandLogo } from './brand-logo';
+import { HomeFooter } from '../website/components/HomeFooter';
+import { isSpokeduHomePath } from '../data/public-routes';
 import { isExternalHref, externalLinkProps } from '../lib/external-link';
 import { lockSpokeduScroll, scrollSpokeduToTop, unlockSpokeduScroll } from '../lib/scroll';
 import { inferTrackFromHref } from '../lib/tracking';
@@ -339,6 +341,7 @@ export function SiteHeader() {
     <>
       <header
         data-spokedu-global-header="true"
+        data-home-v2={isSpokeduHomePath(pathname) ? 'true' : undefined}
         className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] transition-all duration-300 ${
           onHero
             ? 'border-b border-white/10 bg-[#0B1F46]/40 backdrop-blur-md'
@@ -461,6 +464,9 @@ export function SiteHeader() {
 }
 
 export function SiteFooter({ omitUnverifiedAddress = false }: { omitUnverifiedAddress?: boolean } = {}) {
+  const pathname = usePathname();
+  if (isSpokeduHomePath(pathname)) return <HomeFooter />;
+
   const socialLinks = getSocialLinks();
   const blogLink = socialLinks.find((c) => c.key === 'naver-blog');
   const kakaoLink = socialLinks.find((c) => c.key === 'kakao-channel');
