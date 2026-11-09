@@ -1,7 +1,7 @@
 'use client';
 
 import { ClipboardCopy, Save } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
@@ -37,7 +37,9 @@ export default function ReportPage() {
   const notice = editor && selected && editor.sessionId === selected.id ? editor.draft : '';
   const noticeDirty = Boolean(editor && selected && editor.sessionId === selected.id && isParentNoticeDirty(editor));
   const noticeDirtyRef = useRef(noticeDirty);
-  noticeDirtyRef.current = noticeDirty;
+  useLayoutEffect(() => {
+    noticeDirtyRef.current = noticeDirty;
+  }, [noticeDirty]);
 
   useEffect(() => {
     if (!requestedSessionId && !selectedId && selected) setSelectedId(selected.id);

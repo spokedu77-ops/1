@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -250,8 +250,10 @@ function AppShellContent({ children, basePath = '/spokedu-master' }: { children:
   const accessHardFetchRequestIdRef = useRef(0);
   const accessSoftFetchRequestIdRef = useRef(0);
   const accessGuardRef = useRef(accessGuard);
-  accessGuardRef.current = accessGuard;
-  pathnameRef.current = pathname;
+  useLayoutEffect(() => {
+    accessGuardRef.current = accessGuard;
+    pathnameRef.current = pathname;
+  }, [accessGuard, pathname]);
 
   const isAdmin = activeBasePath.startsWith('/admin');
   const isSession = pathname.startsWith(`${activeBasePath}/spomove/session`);

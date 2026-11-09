@@ -279,7 +279,8 @@ function PaymentContent() {
         });
         const result = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
         if (!response.ok || result?.ok !== true) throw new Error(result?.error ?? '업그레이드 결제에 실패했습니다.');
-        window.location.assign('/spokedu-lab/subscription?upgraded=1');
+        router.push('/spokedu-lab/subscription?upgraded=1');
+        router.refresh();
       } catch (upgradeError) {
         setError(upgradeError instanceof Error ? upgradeError.message : '업그레이드 결제에 실패했습니다.');
         checkoutLocked.current = false;
