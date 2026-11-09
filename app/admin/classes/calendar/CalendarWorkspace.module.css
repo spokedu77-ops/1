@@ -1,0 +1,9 @@
+.page { min-height: calc(100dvh - var(--app-header-height, 0px) - env(safe-area-inset-top, 0px)); }
+.tabs { position: sticky; top: calc(var(--app-header-height, 0px) + env(safe-area-inset-top, 0px)); z-index: 20; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-top: 16px; padding: 4px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }
+.tab { min-width: 0; min-height: 44px; padding: 8px; border-radius: 8px; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; }
+.tab[aria-selected='true'] { background: #0f172a; color: #fff; }
+.tab:hover:not([aria-selected='true']) { background: #f1f5f9; }
+.tab:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.panel { margin-top: 16px; min-width: 0; }
+@media (min-width: 1200px) { .page { min-height: 100dvh; } .tabs { top: 0; } }
+@media (max-width: 639px) { .page select { font-size: 16px; } }

@@ -14,6 +14,10 @@ type TierFeeRow = {
   fee_group: number | null;
   fee_center_main: number | null;
   fee_center_assist: number | null;
+  fee_private_90?: number | null;
+  fee_group_90?: number | null;
+  fee_center_main_90?: number | null;
+  fee_center_assist_90?: number | null;
 };
 
 export type TeacherTierFeeFetchResult = {
@@ -35,6 +39,8 @@ function buildMapFromRows(rows: TierFeeRow[]): TierFeeMap {
     const tier = row.tier_id;
     if (!TEACHER_TIER_IDS.includes(tier)) continue;
     map[tier] = {
+      ...map[tier],
+      ...Object.fromEntries(Object.entries(row).filter(([key, value]) => key.endsWith("_90") && value != null && Number.isSafeInteger(Number(value)) && Number(value) >= 0)),
       fee_private: feeOrFallback(row.fee_private, HARD_CODED_TIER_FEES[tier].fee_private),
       fee_group: feeOrFallback(row.fee_group, HARD_CODED_TIER_FEES[tier].fee_group),
       fee_center_main: feeOrFallback(row.fee_center_main, HARD_CODED_TIER_FEES[tier].fee_center_main),

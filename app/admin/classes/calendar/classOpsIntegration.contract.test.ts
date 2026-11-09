@@ -13,10 +13,10 @@ describe("Class Ops integrated calendar contract", () => {
     expect(page).toContain("ClassOpsTeacherDirectory");
   });
 
-  it("uses the V2 1024px monthly boundary and renders every monthly event", () => {
-    expect(desktop).toContain("min-[1024px]:block");
-    expect(mobile).toContain("min-[1024px]:hidden");
-    expect(page).toContain('(min-width: 1024px)');
+  it("uses the V2 900px monthly boundary and renders every monthly event", () => {
+    expect(desktop).toContain("min-[900px]:block");
+    expect(mobile).toContain("min-[900px]:hidden");
+    expect(page).toContain('(min-width: 900px)');
     expect(desktop).not.toContain("MAX_VISIBLE_EVENTS");
     expect(desktop).not.toContain("onOpenDay");
     expect(desktop).toContain('const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]');

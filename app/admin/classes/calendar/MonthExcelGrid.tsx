@@ -17,7 +17,7 @@ const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
 
 export function MonthExcelGrid({ weekRows, eventsByDay, todayWeekRowRef, onOpen, now: nowMs }: Props) {
   return (
-    <div data-class-ops-view="month" className="hidden min-[1024px]:block overflow-hidden rounded-2xl border border-slate-200 bg-slate-200">
+    <div data-class-ops-view="month" className="hidden min-[900px]:block overflow-hidden rounded-2xl border border-slate-200 bg-slate-200">
       <div className="grid grid-cols-7 gap-px border-b border-slate-300 bg-slate-300">
         {WEEKDAYS.map((weekday, index) => (
           <div key={weekday} className={`bg-slate-100 px-2 py-2.5 text-center text-xs font-extrabold ${index === 6 ? "text-rose-600" : index === 5 ? "text-blue-600" : "text-slate-600"}`}>

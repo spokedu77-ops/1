@@ -10,6 +10,7 @@ export type ClassOpsTeacher = {
   id: string;
   name: string;
   is_active: boolean;
+  ending_soon?: boolean;
   session_count: number | null;
   log_count: number;
   fee_private: number | null;

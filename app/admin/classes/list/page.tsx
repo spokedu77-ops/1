@@ -5,6 +5,7 @@ import { normalizeStaffSessionFees } from '@/app/lib/staffTeacherFees';
 import { toast } from 'sonner';
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -176,12 +177,12 @@ function ClassListPageContent() {
     };
   }, [isCreateOpen]);
   const createPreview = buildCreateSchedule(createForm, dayOverrides);
-  const assistDefault = (id: string) => resolveDefaultAssistSessionPrice(teachers.find((teacher) => teacher.id === id), createForm.type, tierFeeMap);
+  const assistDefault = (id: string, minutes = 60) => resolveDefaultAssistSessionPrice(teachers.find((teacher) => teacher.id === id), createForm.type, tierFeeMap, minutes);
 
   const resolveDefaultPrice = useCallback(
-    (teacherId: string, clsType: string): number => {
+    (teacherId: string, clsType: string, minutes = 60): number => {
       const selectedTeacher = teachers.find((t) => t.id === teacherId);
-      return resolveDefaultSessionPrice(selectedTeacher, clsType, tierFeeMap);
+      return resolveDefaultSessionPrice(selectedTeacher, clsType, tierFeeMap, minutes);
     },
     [teachers, tierFeeMap],
   );
@@ -473,8 +474,8 @@ function ClassListPageContent() {
     if (field === 'type') {
       setDayOverrides((prev) => Object.fromEntries(Object.entries(prev).map(([day, config]) => [day, {
         ...config,
-        price: resolveDefaultPrice(config.teacherId, String(value)),
-        assistants: config.assistants.map((teacher) => ({ ...teacher, price: resolveDefaultAssistSessionPrice(teachers.find((candidate) => candidate.id === teacher.id), String(value), tierFeeMap) })),
+        price: resolveDefaultPrice(config.teacherId, String(value), Number(config.durationMinutes)),
+        assistants: config.assistants.map((teacher) => ({ ...teacher, price: resolveDefaultAssistSessionPrice(teachers.find((candidate) => candidate.id === teacher.id), String(value), tierFeeMap, Number(config.durationMinutes)) })),
       }])));
     }
     setCreateForm((prev) => {
@@ -482,7 +483,7 @@ function ClassListPageContent() {
         next.teacherId
           ? {
               ...next,
-              price: resolveDefaultPrice(next.teacherId, next.type),
+              price: resolveDefaultPrice(next.teacherId, next.type, Number(next.durationMinutes)),
             }
           : next;
 
@@ -715,7 +716,7 @@ function ClassListPageContent() {
             <div className="absolute inset-0 bg-black/40" onClick={() => setIsCreateOpen(false)} />
             <div className="absolute inset-0 flex items-end justify-center p-0 md:items-center md:p-4">
               <div ref={createDialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="class-create-title" aria-busy={createLoading} className="flex h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-slate-100 bg-white shadow-2xl outline-none md:h-auto md:max-h-[calc(var(--viewport-height-px,100dvh)-2rem)] md:rounded-3xl">
-                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+                <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
                   <div>
                     <h2 id="class-create-title" className="text-lg font-black text-slate-900">수업 개설</h2>
                     <p className="text-xs text-slate-500 font-bold mt-1">
@@ -729,20 +730,21 @@ function ClassListPageContent() {
                       resetCreate();
                     }}
                     disabled={createLoading}
-                    className="min-h-[44px] min-w-11 shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+                    aria-label="수업 개설 닫기"
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
                   >
-                    닫기
+                    <X size={18} aria-hidden="true" />
                   </button>
                 </div>
 
-                <div className="p-4 sm:p-6 space-y-6 overflow-y-auto min-h-0">
+                <div className="p-3 sm:p-4 space-y-3 overflow-y-auto min-h-0">
                   {createStep === 1 ? <>
                     <fieldset><legend className="mb-2 text-xs font-semibold text-slate-600">수업 유형</legend><div className="flex flex-wrap gap-2">{SESSION_TYPE_OPTIONS.map((type) => <button key={type.value} type="button" aria-pressed={createForm.type === type.value} onClick={() => handleCreateChange('type', type.value)} className={`min-h-11 rounded-xl border px-3 text-sm font-bold ${createForm.type === type.value ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600'}`}>{type.label}</button>)}</div></fieldset>
                     <CreateScheduleFields form={createForm} overrides={dayOverrides} teachers={teachers}
                       onChange={handleCreateChange} onDays={toggleCreateDay}
                       onDayChange={(day, value) => setDayOverrides((prev) => ({ ...prev, [day]: value }))}
                       onPreset={applyCreatePreset} onCopy={copyFirstDaySettings}
-                      mainDefault={(id) => resolveDefaultPrice(id, createForm.type)} assistDefault={assistDefault} />
+                      mainDefault={(id, minutes) => resolveDefaultPrice(id, createForm.type, minutes)} assistDefault={assistDefault} />
                     <section aria-label="생성 일정 미리보기" className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                       <div className="mb-3 flex flex-wrap justify-between gap-2"><h3 className="text-sm font-bold">생성 일정 미리보기</h3><span className="text-xs text-slate-500">총 {createPreview.length}회 · 저장 전 확인</span></div>
                       <div className="max-h-64 overflow-y-auto">{createPreview.map((session) => <div key={session.roundIndex} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 border-t border-slate-200 py-2 text-xs">
@@ -752,9 +754,9 @@ function ClassListPageContent() {
                     </section>
                   </> : null}
 
-                  {createStep === 2 ? <CreateSessionEditor sessions={editableSessions} teachers={teachers} onChange={setEditableSessions} mainDefault={(id) => resolveDefaultPrice(id, createForm.type)} assistDefault={assistDefault} /> : null}
+                  {createStep === 2 ? <CreateSessionEditor sessions={editableSessions} teachers={teachers} onChange={setEditableSessions} mainDefault={(id, minutes) => resolveDefaultPrice(id, createForm.type, minutes)} assistDefault={assistDefault} /> : null}
                 </div>
-                  <div className="shrink-0 z-20 flex flex-col gap-3 border-t border-slate-100 bg-white/95 px-4 py-3 backdrop-blur md:flex-row md:items-center md:justify-between md:px-6">
+                  <div className="shrink-0 z-20 flex flex-col gap-2 border-t border-slate-100 bg-white/95 px-4 py-2 backdrop-blur md:flex-row md:items-center md:justify-between md:px-4">
                     <p className="text-xs font-semibold text-slate-600">총 {(createStep === 1 ? createPreview : editableSessions).length}회{(createStep === 1 ? createPreview : editableSessions).length ? ` · ${(createStep === 1 ? createPreview : editableSessions)[0]!.startAt.toLocaleDateString('ko-KR')} ~ ${(createStep === 1 ? createPreview : editableSessions).at(-1)!.startAt.toLocaleDateString('ko-KR')}` : ''}</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span

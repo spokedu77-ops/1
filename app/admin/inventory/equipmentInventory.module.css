@@ -11,7 +11,9 @@
   --eq-success: #059669;
   --eq-radius: 8px;
 
-  min-height: calc(100vh - 4rem);
+  height: calc(100dvh - var(--app-header-height, 0px) - env(safe-area-inset-top, 0px));
+  min-height: 0;
+  overflow: hidden;
   background: var(--eq-bg);
   color: var(--eq-text);
   display: flex;
@@ -32,6 +34,7 @@
 }
 
 .pageHeader {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -68,11 +71,13 @@
 }
 
 .tabs {
+  flex-shrink: 0;
   display: flex;
   gap: 20px;
   border-bottom: 1px solid var(--eq-border);
   margin-bottom: 12px;
   overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
 }
 
@@ -107,6 +112,7 @@
 }
 
 .toolbar {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -227,8 +233,7 @@
 
 .tableWrap {
   flex: 1;
-  min-height: 200px;
-  max-height: min(70vh, 720px);
+  min-height: 0;
   overflow: auto;
   border: 1px solid var(--eq-border);
   border-radius: var(--eq-radius);
@@ -349,6 +354,11 @@
 }
 
 .teacherGrid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 16px;
@@ -443,9 +453,9 @@
 }
 
 .thumb {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
   background: #f3f4f6;
   overflow: hidden;
   flex-shrink: 0;
@@ -467,21 +477,29 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-@media (min-width: 1024px) {
+.mobileCards > article { flex-shrink: 0; }
+.tabs::-webkit-scrollbar-button, .tableWrap::-webkit-scrollbar-button, .mobileCards::-webkit-scrollbar-button, .teacherGrid::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+@media (min-width: 1200px) { .shell { height: 100dvh; } }
+
+@media (min-width: 900px) {
   .mobileCards {
     display: none;
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 899px) {
   .desktopTable {
     display: none;
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 899px) {
   .pageSubtitle {
     display: none;
   }

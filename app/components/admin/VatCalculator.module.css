@@ -1,0 +1,23 @@
+.trigger { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 14px; border: 1px solid #dbe3ef; border-radius: 10px; background: white; color: #334155; font-size: 13px; font-weight: 650; white-space: nowrap; }
+.trigger:hover { background: #eff6ff; border-color: #93b4ff; }
+.dialog { width: min(420px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 18px; background: white; color: #0f172a; font-family: var(--font-sans); box-shadow: 0 20px 70px #0f172a33; }
+.dialog::backdrop { background: #0f172a66; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.header h2 { font-size: 18px; font-weight: 750; }
+.header button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; color: #64748b; }
+.header button:hover { background: #f1f5f9; }
+.hint { margin: 0 0 18px; color: #64748b; font-size: 12px; }
+.modes { display: flex; gap: 4px; padding: 4px; margin-bottom: 18px; background: #f1f5f9; border-radius: 10px; }
+.modes button { flex: 1; min-height: 44px; border-radius: 7px; font-size: 13px; color: #64748b; font-weight: 650; }
+.modes button[aria-pressed=true] { background: white; color: #1958f5; box-shadow: 0 1px 4px #0f172a14; }
+.label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 650; color: #475569; }
+.input { display: flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; }
+.input:focus-within { outline: 2px solid #2563eb; outline-offset: 2px; }
+.input input { width: 100%; min-width: 0; background: transparent; outline: none; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.input span { color: #64748b; font-size: 13px; }
+.results { margin-top: 18px; }
+.results > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 12px 0; border-bottom: 1px solid #edf1f7; }
+.results dt { font-size: 13px; color: #64748b; }
+.results dd { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.results small { margin-left: 4px; font-size: 12px; font-weight: 500; }
+.results > div:last-child { border: 0; color: #1958f5; }

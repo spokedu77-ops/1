@@ -210,17 +210,8 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
     </div>;
   };
 
-  return <div className="private-v11" aria-label="프라이빗 레슨 매니저 v11">
-    <header className="app-header"><div className="brand-wrap"><div><span className="brand-title">프라이빗 레슨 매니저</span><span className="brand-sub">v11 · 개인 수업 DB</span></div></div><div className="header-actions">
-      <button type="button" onClick={()=>setShowSettings(true)} title="모듈 사용 설정">⚙️</button>
-      <button type="button" disabled title="운영 DB에는 예시 데이터 입력을 허용하지 않습니다.">⚡</button>
-      <button type="button" onClick={exportJson} disabled={!!error||loading} title="백업 JSON 내려받기">💾</button>
-      <button type="button" disabled title="서버 전체 복원은 별도 승인 후 제공">📥</button>
-      <button type="button" onClick={exportCsv} disabled={!!error||loading} title="CSV">📊</button>
-      <button type="button" onClick={()=>window.print()} title="인쇄">🖨</button>
-      <button type="button" onClick={()=>void load()} disabled={loading||busy}>↻ 새로고침</button>
-    </div></header>
-    {backupDue&&!loading&&!error&&<div id="backupBanner" className="show"><span>⚠️ 마지막 백업이 7일 이상 지났거나 아직 백업하지 않았습니다.</span><button onClick={exportJson}>지금 백업</button></div>}
+  return <div className="private-v11" aria-label="개인 수업 관리 v11">
+    <header className="app-header"><div className="brand-wrap"><div><span className="brand-title">개인 수업 관리</span><span className="brand-sub">수강생·일정·결제</span></div></div></header>
     {savingText&&<div role="status" className="form-error">{savingText} · 저장 중</div>}
     {loading&&<p className="hint" role="status">개인 수업 DB를 불러오는 중입니다.</p>}
     {error&&<div role="alert" className="form-error">{error} <button type="button" onClick={()=>void load()}>다시 시도</button></div>}

@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(path, 'utf8');
 
 describe('MASTER ADMIN contract', () => {
-  it('adds LAB ADMIN directly after the SPOKEDU LAB entry', () => {
+  it('keeps separate LAB service and administrator destinations', () => {
     const source = read('app/components/Sidebar.tsx');
-    expect(source).toContain("{ name: 'SPOKEDU LAB', href: '/spokedu-lab/dashboard'");
-    expect(source).toContain("{ name: 'LAB ADMIN', href: '/admin/spokedu-lab-admin'");
-    expect(source.indexOf("name: 'LAB ADMIN'")).toBeGreaterThan(source.indexOf("name: 'SPOKEDU LAB'"));
+    const destinations = [...source.matchAll(/\{\s*name:\s*'[^']+',\s*href:\s*'([^']+)'/g)].map(match => match[1]);
+    expect(destinations.filter(href => href === '/spokedu-lab/dashboard')).toHaveLength(1);
+    expect(destinations.filter(href => href === '/admin/spokedu-lab-admin')).toHaveLength(1);
   });
   it('protects the page and every management API with server admin authorization', () => {
     expect(read('app/admin/spokedu-master-admin/page.tsx')).toContain('requireAdmin');

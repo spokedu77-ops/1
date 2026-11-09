@@ -11,6 +11,10 @@ export type TierDefaultFees = {
   fee_group: number;
   fee_center_main: number;
   fee_center_assist: number;
+  fee_private_90?: number;
+  fee_group_90?: number;
+  fee_center_main_90?: number;
+  fee_center_assist_90?: number;
 };
 
 export type TierFeeMap = Record<TeacherTierId, TierDefaultFees>;
@@ -28,19 +32,38 @@ const TIER_THRESHOLDS: { max: number | null; tier: TeacherTierId }[] = [
 
 export const HARD_CODED_TIER_FEES: TierFeeMap = {
   rookie: { fee_private: 30_000, fee_group: 35_000, fee_center_main: 42_500, fee_center_assist: 25_000 },
-  silver: { fee_private: 31_000, fee_group: 37_500, fee_center_main: 42_500, fee_center_assist: 27_500 },
+  silver: { fee_private: 31_000, fee_group: 37_500, fee_center_main: 42_500, fee_center_assist: 26_000 },
   gold: { fee_private: 32_000, fee_group: 40_000, fee_center_main: 45_000, fee_center_assist: 30_000 },
   diamond: { fee_private: 33_000, fee_group: 42_500, fee_center_main: 47_500, fee_center_assist: 32_500 },
   partner: { fee_private: 35_000, fee_group: 45_000, fee_center_main: 50_000, fee_center_assist: 35_000 },
 };
 
+export const TIER_FEES_90: Record<TeacherTierId, Required<Pick<TierDefaultFees, 'fee_private_90' | 'fee_group_90' | 'fee_center_main_90' | 'fee_center_assist_90'>>> = {
+  rookie: { fee_private_90: 40_000, fee_group_90: 45_000, fee_center_main_90: 55_000, fee_center_assist_90: 35_000 },
+  silver: { fee_private_90: 41_500, fee_group_90: 47_500, fee_center_main_90: 55_000, fee_center_assist_90: 36_000 },
+  gold: { fee_private_90: 43_000, fee_group_90: 52_500, fee_center_main_90: 60_000, fee_center_assist_90: 40_000 },
+  diamond: { fee_private_90: 45_000, fee_group_90: 55_000, fee_center_main_90: 65_000, fee_center_assist_90: 45_000 },
+  partner: { fee_private_90: 47_500, fee_group_90: 60_000, fee_center_main_90: 70_000, fee_center_assist_90: 50_000 },
+};
+
+export function getTier90Fees(tier: TeacherTierId, feeMap?: Partial<TierFeeMap>): TierDefaultFees {
+  const row = feeMap?.[tier];
+  const defaults = TIER_FEES_90[tier];
+  return {
+    fee_private: row?.fee_private_90 ?? defaults.fee_private_90,
+    fee_group: row?.fee_group_90 ?? defaults.fee_group_90,
+    fee_center_main: row?.fee_center_main_90 ?? defaults.fee_center_main_90,
+    fee_center_assist: row?.fee_center_assist_90 ?? defaults.fee_center_assist_90,
+  };
+}
+
 export function cloneTierFeeMap(source: TierFeeMap = HARD_CODED_TIER_FEES): TierFeeMap {
   return {
-    rookie: { ...source.rookie },
-    silver: { ...source.silver },
-    gold: { ...source.gold },
-    diamond: { ...source.diamond },
-    partner: { ...source.partner },
+    rookie: { ...TIER_FEES_90.rookie, ...source.rookie },
+    silver: { ...TIER_FEES_90.silver, ...source.silver },
+    gold: { ...TIER_FEES_90.gold, ...source.gold },
+    diamond: { ...TIER_FEES_90.diamond, ...source.diamond },
+    partner: { ...TIER_FEES_90.partner, ...source.partner },
   };
 }
 

@@ -1,10 +1,11 @@
 'use client';
 
 import { toast } from 'sonner';
+import styles from './MileageDetailModal.module.css';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Trash2, BookOpen, Calendar, ChevronDown } from 'lucide-react';
+import { X, Save, Trash2, BookOpen, Calendar, ChevronDown, RotateCcw } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
 import {
@@ -99,12 +100,19 @@ const ADDITIONAL_POINT_OPTIONS = [
 ];
 
 interface MileageDetailModalProps {
+  inline?: boolean;
   teacher: Teacher;
   supabase: SupabaseClient | null;
   onClose: () => void;
   onSaved?: () => void;
   /** true면 카운팅 관리 등에서 열었을 때 상단 「적용 기본 수업료」 블록 숨김 */
   hideAppliedFeePreview?: boolean;
+}
+
+function sessionCountDateIso(log: SessionCountLog, sessionStartById: Record<string, string>): string {
+  return (log.session_id ? sessionStartById[log.session_id] : undefined)
+    ?? log.sessions?.start_at
+    ?? log.created_at;
 }
 
 function SessionCountByMonth({
@@ -119,14 +127,18 @@ function SessionCountByMonth({
   const grouped = useMemo(() => {
     const map: Record<string, { total: number; items: SessionCountLog[] }> = {};
     for (const log of logs) {
-      const d = new Date(log.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const d = new Date(sessionCountDateIso(log, sessionStartById));
+      const parts = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit' }).formatToParts(d);
+      const key = `${parts.find(part => part.type === 'year')?.value}-${parts.find(part => part.type === 'month')?.value}`;
       if (!map[key]) map[key] = { total: 0, items: [] };
       map[key].total += log.count_change;
       map[key].items.push(log);
     }
+    for (const group of Object.values(map)) {
+      group.items.sort((a, b) => new Date(sessionCountDateIso(b, sessionStartById)).getTime() - new Date(sessionCountDateIso(a, sessionStartById)).getTime());
+    }
     return Object.entries(map).sort((a, b) => b[0].localeCompare(a[0]));
-  }, [logs]);
+  }, [logs, sessionStartById]);
 
   if (logs.length === 0) {
     return <div className="py-16 text-center text-slate-200 font-black italic text-sm tracking-tighter uppercase">No session logs found</div>;
@@ -144,7 +156,7 @@ function SessionCountByMonth({
               className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-16">{y}.{m}</span>
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-widest w-16">{y}.{m}</span>
                 <span className="text-sm font-black text-emerald-600">+{total}회</span>
                 <span className="text-[9px] text-slate-300 font-bold">{items.length}건</span>
               </div>
@@ -154,14 +166,11 @@ function SessionCountByMonth({
               <div className="border-t border-slate-50 divide-y divide-slate-50">
                 {items.map((log) => (
                   (() => {
-                    const resolvedDateIso =
-                      (log.session_id ? sessionStartById[log.session_id] : undefined)
-                      ?? log.sessions?.start_at
-                      ?? log.created_at;
+                    const resolvedDateIso = sessionCountDateIso(log, sessionStartById);
                     return (
                   <div key={log.id} className="flex items-center justify-between px-4 py-2.5 bg-slate-50/50">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-[10px] font-black text-slate-400 shrink-0">
+                      <span className="text-xs font-medium text-slate-500 shrink-0">
                         {new Date(resolvedDateIso).toLocaleDateString('ko-KR', {
                           month: 'numeric',
                           day: 'numeric',
@@ -192,6 +201,7 @@ export default function MileageDetailModal({
   onClose,
   onSaved,
   hideAppliedFeePreview = false,
+  inline = false,
 }: MileageDetailModalProps) {
   const [modalTab, setModalTab] = useState<'mileage' | 'sessions'>('mileage');
   const [teacherLogs, setTeacherLogs] = useState<MileageLog[]>([]);
@@ -207,10 +217,34 @@ export default function MileageDetailModal({
   const [lastAdditionalLog, setLastAdditionalLog] = useState<MileageLog | null>(null);
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const [mounted, setMounted] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (inline || !mounted) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.querySelector<HTMLButtonElement>('[aria-label="마일리지 상세 닫기"]')?.focus();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); onClose(); return; }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]') ?? []).filter(element => element.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [inline, mounted, onClose]);
 
   const tierFeePreview = useMemo(() => {
     if (hideAppliedFeePreview) return null;
@@ -313,7 +347,7 @@ export default function MileageDetailModal({
         setCountSessionStartById({});
       }
     }
-  }, [supabase, teacher?.id]);
+  }, [supabase, teacher.id]);
 
   useEffect(() => {
     setDisplayPoints(teacher.points || 0);
@@ -541,17 +575,17 @@ export default function MileageDetailModal({
 
   if (!mounted) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4 cursor-default" onClick={onClose}>
-      <div className="bg-white w-full max-w-xl rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-        <div className="p-6 sm:p-8 overflow-y-auto">
-          <div className="flex justify-between items-start mb-6">
+  const content = (
+    <div ref={dialogRef} role={inline ? 'region' : 'dialog'} aria-modal={inline ? undefined : true} aria-label="인정 회차 및 마일리지 관리" className={inline ? 'min-w-0' : 'fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4 cursor-default'} onClick={inline ? undefined : onClose}>
+      <div className={inline ? 'bg-white w-full min-w-0 rounded-xl border border-slate-200' : 'bg-white w-full max-w-[520px] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]'} onClick={e => e.stopPropagation()}>
+        <div className={inline ? 'p-4' : 'p-4 overflow-y-auto'}>
+          <div className="sticky top-0 z-10 flex justify-between items-start gap-3 mb-3 bg-white pb-2">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h2 className="text-xl font-black text-slate-950 italic uppercase tracking-tighter">{teacher.name} T</h2>
+                <h2 className="text-lg font-bold text-slate-950 tracking-tight">{teacher.name} 선생님</h2>
                 <TeacherTierBadge sessionCount={teacher.session_count} logCount={teacher.logCount} />
               </div>
-              <p className="text-blue-600 font-black text-2xl mt-1">{displayPoints.toLocaleString()} <span className="text-xs">P</span></p>
+              <p className="text-blue-600 font-bold text-xl mt-1">{displayPoints.toLocaleString()} <span className="text-xs">P</span></p>
               <p className="text-slate-400 font-bold text-sm mt-1 flex items-center gap-1 flex-wrap">
                 <BookOpen size={14} /> {((teacher.session_count || 0) + (teacher.logCount || 0)).toLocaleString()}회 수업 완료
                 {teacher.logCount !== undefined && teacher.logCount > 0 && (
@@ -574,19 +608,19 @@ export default function MileageDetailModal({
                 </div>
               )}
             </div>
-            <button onClick={onClose} className="min-h-[44px] min-w-[44px] hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400 flex items-center justify-center touch-manipulation"><X size={20}/></button>
+            <button type="button" onClick={onClose} aria-label="마일리지 상세 닫기" className="min-h-[44px] min-w-[44px] hover:bg-slate-100 p-2 rounded-full transition-colors cursor-pointer text-slate-400 flex items-center justify-center touch-manipulation"><X size={20}/></button>
           </div>
 
-          <div className="mb-4 space-y-3">
+          <div className="mb-3 space-y-2">
             <div>
               <div className="p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 shrink-0">변동 포인트</span>
+                <span className="text-xs font-medium text-slate-500 px-2 shrink-0">변동 포인트</span>
                 <input
                   type="number"
                   value={pointDeltaInput}
                   onChange={(e) => setPointDeltaInput(e.target.value)}
                   placeholder="예: 1000 또는 -1000"
-                  className="flex-1 bg-transparent px-4 py-2 font-black text-blue-600 text-lg outline-none cursor-text placeholder:text-blue-200 placeholder:font-bold placeholder:text-sm"
+                  className="min-w-0 flex-1 bg-transparent px-2 py-2 font-black text-blue-600 text-lg outline-none cursor-text placeholder:text-blue-200 placeholder:font-bold placeholder:text-sm"
                 />
                 <span className="text-[10px] font-black text-slate-300 pr-3 shrink-0">P</span>
               </div>
@@ -599,25 +633,25 @@ export default function MileageDetailModal({
                 </p>
               )}
               <div className="mt-2 p-1.5 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-2">
-                <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider px-3 shrink-0">변경 사유</span>
+                <span className="text-xs font-medium text-blue-600 px-2 shrink-0">변경 사유</span>
                 <input
                   type="text"
                   value={editReason}
                   onChange={(e) => setEditReason(e.target.value)}
                   placeholder="예: 베스트 수업안 보너스, 보고 누락 차감 등"
-                  className="flex-1 bg-transparent px-4 py-2 font-bold text-blue-700 text-sm outline-none cursor-text"
+                  className="min-w-0 flex-1 bg-transparent px-2 py-2 font-bold text-blue-700 text-sm outline-none cursor-text"
                 />
               </div>
               <button
                 onClick={() => void handleApplyMileageDelta()}
-                className="mt-2 w-full bg-slate-900 text-white px-5 py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-md cursor-pointer"
+                className="mt-2 w-full bg-slate-900 text-white min-h-11 px-3 py-2 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-md cursor-pointer"
               >
                 <Save size={14}/> 마일리지 반영
               </button>
             </div>
             <div className="p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
               <div className="px-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">기존 수업 수</span>
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">기존 수업 수</span>
                 {(teacher.logCount ?? 0) > 0 && (
                   <p className="text-[9px] text-slate-300 mt-0.5">신규 {teacher.logCount}회 별도 합산</p>
                 )}
@@ -626,18 +660,18 @@ export default function MileageDetailModal({
                 type="number"
                 value={editSessionCount}
                 onChange={(e) => setEditSessionCount(Number(e.target.value))}
-                className="flex-1 bg-transparent px-4 py-2 font-black text-emerald-600 text-lg outline-none cursor-text"
+                className="min-w-0 flex-1 bg-transparent px-2 py-2 font-black text-emerald-600 text-lg outline-none cursor-text"
               />
             </div>
             <button
               onClick={() => void handleSaveSessionCount()}
-              className="w-full bg-emerald-600 text-white px-5 py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md cursor-pointer"
+              className="w-full bg-emerald-600 text-white min-h-11 px-3 py-2 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md cursor-pointer"
             >
               <Save size={14}/> 기존 수업 수 저장
             </button>
           </div>
 
-          <div className="border-t border-slate-100 pt-6 mb-8">
+          <div className="border-t border-slate-100 pt-3 mb-4">
             <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">추가 항목</h4>
             <div className="space-y-2">
               <select
@@ -656,14 +690,14 @@ export default function MileageDetailModal({
                 <button
                   onClick={handleQuickAdditional}
                   disabled={!selectedAdditional}
-                  className="flex-1 bg-emerald-600 text-white px-5 py-3.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-emerald-600 text-white min-h-11 px-3 py-2 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   지급 실행
                 </button>
                 <button
                   onClick={handleUndoAdditional}
                   disabled={!lastAdditionalLog}
-                  className="px-5 py-3.5 bg-amber-100 text-amber-800 rounded-xl font-black text-xs hover:bg-amber-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="min-h-11 px-3 py-2 bg-amber-100 text-amber-800 rounded-xl font-black text-xs hover:bg-amber-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   title="최근 추가 항목 지급 취소"
                 >
                   롤백
@@ -672,7 +706,7 @@ export default function MileageDetailModal({
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-2 px-1">
               <Calendar size={14} className="text-slate-300"/>
               <h3 className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Activity History</h3>
@@ -708,39 +742,23 @@ export default function MileageDetailModal({
                     log,
                     formatSessionWithDate(log.session_title, dateIso),
                   );
+                  const datedTitle = primary.match(/^(.*?)\s*(\(\d{4}[^()]*\))$/);
+                  const title = datedTitle?.[1] || primary;
+                  const compactDate = new Date(dateIso).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\s/g, '').replace(/\.$/, '');
                   return (
-                  <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-white shadow-sm hover:border-blue-100 transition-all">
-                    <div className="flex items-center gap-4 sm:gap-6 min-w-0">
-                      <div className={`text-sm font-black w-20 sm:w-24 shrink-0 ${displayAmount >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                        {displayAmount > 0 ? '+' : ''}{displayAmount.toLocaleString()}P
+                    <div key={log.id} className={styles.logRow}>
+                      <div className={`${styles.amount} ${displayAmount >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                        {displayAmount > 0 ? '+' : ''}{displayAmount.toLocaleString('ko-KR')}P
                       </div>
-                      <div className="hidden xs:block h-6 w-[1px] bg-slate-100 shrink-0"></div>
-                      <div className="min-w-0">
-                        <p className="text-[12px] sm:text-[13px] font-black text-slate-800 leading-snug break-words">
-                          {primary}
-                        </p>
-                        {secondary && (
-                          <p className="text-[9px] font-bold text-slate-400 mt-0.5">{secondary}</p>
-                        )}
+                      <div className={styles.logText} title={[primary, secondary].filter(Boolean).join(' / ')}>
+                        <span className={styles.logTitle}>{title}</span>
+                        <span className={styles.sessionDate}>{compactDate}</span>
+                      </div>
+                      <div className={styles.actions}>
+                        {log.session_id && isSessionLinkedMileageReason(log.reason) && <button type="button" onClick={() => void handleCancelSessionSettlement(log)} className={styles.cancelSettlement} aria-label="이 수업의 연동 정산 전체 취소" title="이 수업의 연동 정산 전체 취소"><RotateCcw size={14} /></button>}
+                        <button type="button" onClick={() => void handleDeleteLog(log.id)} className={styles.deleteLog} aria-label={`${title} 로그 1건 취소`} title="이 강사 로그 1건만 취소"><Trash2 size={14} /></button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-bold text-slate-300 tabular-nums whitespace-nowrap">{new Date(log.created_at).toLocaleDateString()}</span>
-                      {log.session_id && isSessionLinkedMileageReason(log.reason) && (
-                        <button
-                          type="button"
-                          onClick={() => void handleCancelSessionSettlement(log)}
-                          className="text-[9px] font-black text-amber-600 hover:text-amber-800 px-1.5 py-0.5 rounded border border-amber-200"
-                          title="이 수업의 연동 정산 전체 취소"
-                        >
-                          정산 전체
-                        </button>
-                      )}
-                      <button onClick={() => void handleDeleteLog(log.id)} className="text-slate-200 hover:text-red-500 transition-colors p-1 cursor-pointer" title="이 강사 로그 1건만 취소">
-                        <Trash2 size={14}/>
-                      </button>
-                    </div>
-                  </div>
                   );
                 })
               ) : (
@@ -754,11 +772,8 @@ export default function MileageDetailModal({
             )}
           </div>
         </div>
-        <div className="p-6 pt-0">
-          <button onClick={onClose} className="w-full py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-xs hover:bg-slate-200 transition-all cursor-pointer">CLOSE</button>
-        </div>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
+  return inline ? content : createPortal(content, document.body);
 }

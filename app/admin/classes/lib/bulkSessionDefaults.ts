@@ -3,6 +3,7 @@ import { isCenterSessionType, isRegularGroupSessionType } from "@/app/admin/clas
 import {
   computeTier,
   effectiveFees,
+  getTier90Fees,
   totalLessonsFromCounts,
   type TierFeeMap,
 } from "@/app/lib/teacherTierSchedule";
@@ -41,14 +42,15 @@ export function dominantSessionType(rows: { session_type?: string | null }[]): s
 export function resolveDefaultSessionPrice(
   teacher: TeacherFeeRow | null | undefined,
   sessionType: string,
-  tierFeeMap: TierFeeMap
+  tierFeeMap: TierFeeMap,
+  durationMinutes = 60
 ): number {
   if (isZeroFeeStaff(teacher)) return 0;
   if (!teacher) return 30_000;
   const tier = computeTier(
     totalLessonsFromCounts(teacher.session_count ?? 0, teacher.logCount ?? 0)
   );
-  const fees = effectiveFees(
+  const fees = durationMinutes === 90 ? getTier90Fees(tier, tierFeeMap) : effectiveFees(
     tier,
     {
       fee_private: teacher.fee_private ?? null,
@@ -67,14 +69,15 @@ export function resolveDefaultSessionPrice(
 export function resolveDefaultAssistSessionPrice(
   teacher: TeacherFeeRow | null | undefined,
   sessionType: string,
-  tierFeeMap: TierFeeMap
+  tierFeeMap: TierFeeMap,
+  durationMinutes = 60
 ): number {
   if (isZeroFeeStaff(teacher)) return 0;
   if (!teacher) return 25_000;
   const tier = computeTier(
     totalLessonsFromCounts(teacher.session_count ?? 0, teacher.logCount ?? 0)
   );
-  const fees = effectiveFees(
+  const fees = durationMinutes === 90 ? getTier90Fees(tier, tierFeeMap) : effectiveFees(
     tier,
     {
       fee_private: teacher.fee_private ?? null,

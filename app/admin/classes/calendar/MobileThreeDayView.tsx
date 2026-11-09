@@ -14,7 +14,7 @@ type Props = {
 /** 모바일: 가운데 날짜 기준 전날·당일·다음날 */
 export function MobileThreeDayView({ days, eventsByDay, onOpen, now }: Props) {
   return (
-    <div data-class-ops-view="three-day" className="space-y-3 min-[1024px]:hidden">
+    <div data-class-ops-view="three-day" className="space-y-3 min-[900px]:hidden">
       {days.map((cell) => {
         const key = dayMapKey(cell);
         const dayEvents = eventsByDay.get(key) || [];

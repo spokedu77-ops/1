@@ -15,6 +15,13 @@ export type ClassOpsTeacherCandidate = {
   is_active?: boolean | null;
 };
 
+/** Directory display only; operational assignment options retain their own rules. */
+export function isActualClassOpsTeacher(row: ClassOpsTeacherCandidate): boolean {
+  const name = row.name?.trim() ?? '';
+  return row.role === 'teacher' && Boolean(name) && name !== '미정'
+    && !isRegisteredOperator(row) && isClassOpsTeacherOptionLabel(row);
+}
+
 function isRegisteredOperator(row: {
   name?: string | null;
   email?: string | null;

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 
-const COLUMNS = 'tier_id, fee_private, fee_group, fee_center_main, fee_center_assist';
+const COLUMNS = 'tier_id, fee_private, fee_group, fee_center_main, fee_center_assist, fee_private_90, fee_group_90, fee_center_main_90, fee_center_assist_90';
 
 export async function GET() {
   const auth = await requireAdmin();

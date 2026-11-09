@@ -6,10 +6,10 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
 import { clampRoundIndex } from '@/app/admin/classes-shared/lib/roundFields';
-import { BarChart3, Calendar, MessageSquare, Pin, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { BookOpen, Box, Building2, CheckCircle, ClipboardList, MessageSquare, Pin, RefreshCw, Plus, Users, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { StorageRecompressPanel } from './StorageRecompressPanel';
-import SettlementDashboardSummary from './SettlementDashboardSummary';
+import styles from './AdminDashboard.module.css';
+import VatCalculator from '@/app/components/admin/VatCalculator';
 
 // --- Interfaces ---
 interface IClassSession {
@@ -79,12 +79,6 @@ interface NoticePreview {
 
 interface ConsultSummary {
   pendingCount: number;
-  latestPending: {
-    parent_name: string;
-    child_age: string | null;
-    consult_type: string;
-    created_at: string;
-  } | null;
 }
 
 interface SessionRow {
@@ -99,9 +93,6 @@ interface SessionRow {
   group_id?: string | null;
   users?: { name?: string };
 }
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-
 async function readApiError(res: Response, fallback: string) {
   try {
     const json = (await res.json()) as { error?: unknown };
@@ -169,13 +160,13 @@ function MiniCalendar({
   return (
     <div className="select-none">
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-slate-100 cursor-pointer">
+        <button type="button" onClick={prevMonth} aria-label="이전 달" className="p-1 rounded hover:bg-slate-100 cursor-pointer">
           <ChevronLeft className="h-4 w-4 text-slate-500" />
         </button>
         <span className="text-sm font-semibold text-slate-700">
           {year}년 {month + 1}월
         </span>
-        <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-slate-100 cursor-pointer">
+        <button type="button" onClick={nextMonth} aria-label="다음 달" className="p-1 rounded hover:bg-slate-100 cursor-pointer">
           <ChevronRight className="h-4 w-4 text-slate-500" />
         </button>
       </div>
@@ -222,7 +213,6 @@ function MiniCalendar({
 
 // --- 메인 대시보드 ---
 export default function SpokeduHQDashboard() {
-  const [settlementRefreshKey, setSettlementRefreshKey] = useState(0);
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [todayClasses, setTodayClasses] = useState<IClassSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -249,11 +239,14 @@ export default function SpokeduHQDashboard() {
   const [weeklyBestPreviewLoading, setWeeklyBestPreviewLoading] = useState(true);
   const [consultSummary, setConsultSummary] = useState<ConsultSummary | null>(null);
   const [consultSummaryLoading, setConsultSummaryLoading] = useState(true);
-  const [moveReportCount, setMoveReportCount] = useState<number | null>(null);
-  const [moveReportLoading, setMoveReportLoading] = useState(true);
+  const [postponeError, setPostponeError] = useState(false);
+  const [noticePreviewError, setNoticePreviewError] = useState(false);
+  const [weeklyBestPreviewError, setWeeklyBestPreviewError] = useState(false);
+  const [, setClock] = useState(0);
 
   const fetchPostponeNotices = useCallback(async () => {
     setPostponeLoading(true);
+    setPostponeError(false);
     try {
       const res = await fetch('/api/admin/postpone-notices?limit=10&offset=0');
       if (!res.ok) throw new Error(await readApiError(res, 'Failed to load postpone notices.'));
@@ -262,6 +255,7 @@ export default function SpokeduHQDashboard() {
       setPostponeNotices(notices);
       setPostponeTotal(typeof json.total === 'number' ? json.total : notices.length);
     } catch (err) {
+      setPostponeError(true);
       devLogger.error('Postpone notices fetch error:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to load postpone notices.');
     } finally {
@@ -270,7 +264,6 @@ export default function SpokeduHQDashboard() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!supabaseUrl) return;
     setLoading(true);
     setUpcomingPostponedLoading(true);
     setFetchError(null);
@@ -306,8 +299,8 @@ export default function SpokeduHQDashboard() {
             id: c.id,
             startAt: c.start_at,
             endAt: c.end_at,
-            time: new Date(c.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
-            endTime: endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            time: new Date(c.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' }),
+            endTime: endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' }),
             title: c.title || '제목 없음',
             teacher: c.users?.name || '미정',
             isPostponed,
@@ -336,23 +329,10 @@ export default function SpokeduHQDashboard() {
     }
   }, []);
 
-  const fetchMoveReportMetric = useCallback(async () => {
-    setMoveReportLoading(true);
-    try {
-      const res = await fetch('/api/admin/move-report/submissions', { credentials: 'include' });
-      const json = (await res.json()) as { ok?: boolean; submissions?: unknown[] };
-      setMoveReportCount(json.ok ? json.submissions?.length ?? 0 : null);
-    } catch (err) {
-      devLogger.error('Move report metric fetch error:', err);
-      setMoveReportCount(null);
-    } finally {
-      setMoveReportLoading(false);
-    }
-  }, []);
-
   const fetchNoticePreviews = useCallback(async () => {
     if (!supabase) return;
     setNoticePreviewLoading(true);
+    setNoticePreviewError(false);
     try {
       const { data, error } = await supabase
         .from('notices')
@@ -364,6 +344,7 @@ export default function SpokeduHQDashboard() {
       if (error) throw error;
       setNoticePreviews((data as NoticePreview[]) ?? []);
     } catch (err) {
+      setNoticePreviewError(true);
       devLogger.error('[dashboard] notice previews fetch error:', err);
       setNoticePreviews([]);
     } finally {
@@ -374,6 +355,7 @@ export default function SpokeduHQDashboard() {
   const fetchWeeklyBestPreviews = useCallback(async () => {
     if (!supabase) return;
     setWeeklyBestPreviewLoading(true);
+    setWeeklyBestPreviewError(false);
     try {
       const { data, error } = await supabase
         .from('weekly_best')
@@ -384,6 +366,7 @@ export default function SpokeduHQDashboard() {
       if (error) throw error;
       setWeeklyBestPreviews((data as WeeklyBestPreview[]) ?? []);
     } catch (err) {
+      setWeeklyBestPreviewError(true);
       devLogger.error('[dashboard] weekly best previews fetch error:', err);
       setWeeklyBestPreviews([]);
     } finally {
@@ -398,11 +381,9 @@ export default function SpokeduHQDashboard() {
       const json = (await res.json()) as {
         ok?: boolean;
         pendingCount?: number;
-        latestPending?: ConsultSummary['latestPending'];
       };
-      setConsultSummary(json.ok ? {
-        pendingCount: typeof json.pendingCount === 'number' ? json.pendingCount : 0,
-        latestPending: json.latestPending ?? null,
+      setConsultSummary(res.ok && json.ok && typeof json.pendingCount === 'number' ? {
+        pendingCount: json.pendingCount,
       } : null);
     } catch (err) {
       devLogger.error('[dashboard] consult summary fetch error:', err);
@@ -415,11 +396,10 @@ export default function SpokeduHQDashboard() {
   useEffect(() => {
     fetchData();
     fetchPostponeNotices();
-    fetchMoveReportMetric();
     fetchNoticePreviews();
     fetchWeeklyBestPreviews();
     fetchConsultSummary();
-  }, [fetchData, fetchPostponeNotices, fetchMoveReportMetric, fetchNoticePreviews, fetchWeeklyBestPreviews, fetchConsultSummary]);
+  }, [fetchData, fetchPostponeNotices, fetchNoticePreviews, fetchWeeklyBestPreviews, fetchConsultSummary]);
 
   const openPostponeModal = async () => {
     setSelectedDate('');
@@ -517,470 +497,116 @@ export default function SpokeduHQDashboard() {
     return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' });
   };
 
-  const pinnedNoticePreviews = noticePreviews.filter((notice) => notice.is_pinned);
+  const pinnedNoticePreviews = noticePreviews
+    .filter((notice) => notice.is_pinned)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 1);
+  const recentDashboardFeed = [...weeklyBestPreviews]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 1)
+    .map((row) => ({ ...row, key: `wb-${row.id}` }));
 
-  /** 공지 + 주간베스트를 날짜순으로 섞은 뒤 3개. 주간베스트가 DB에 있는데 상위 3개에 없으면 최신 주간베스트를 포함하도록 보정 */
-  const recentDashboardFeed = React.useMemo(() => {
-    type FeedItem = { source: 'notice' | 'weekly_best'; key: string; title: string; created_at: string };
-    const noticeItems: FeedItem[] = noticePreviews.map((n) => ({
-      source: 'notice',
-      key: `n-${n.id}`,
-      title: n.title,
-      created_at: n.created_at,
-    }));
-    const wbItems: FeedItem[] = weeklyBestPreviews.map((w) => ({
-      source: 'weekly_best',
-      key: `wb-${w.id}`,
-      title: w.title,
-      created_at: w.created_at,
-    }));
-    const merged = [...noticeItems, ...wbItems].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
-    let top = merged.slice(0, 3);
-    const latestWb = wbItems[0];
-    if (latestWb && wbItems.length > 0 && !top.some((t) => t.source === 'weekly_best')) {
-      top = [latestWb, ...merged.filter((x) => x.key !== latestWb.key)].slice(0, 3);
-      top = [...top].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    }
-    return top;
-  }, [noticePreviews, weeklyBestPreviews]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock((value) => value + 1), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const isNoticeUrgent = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diff = Math.floor((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-    return diff <= 1;
+  const refresh = () => {
+    void fetchData(); void fetchPostponeNotices(); void fetchNoticePreviews();
+    void fetchWeeklyBestPreviews(); void fetchConsultSummary();
   };
+  const bucketLabels: Record<ClassTimeBucket, string> = { upcoming: '예정', ongoing: '진행', done: '완료', postponed: '연기', cancelled: '취소' };
+  const shortcuts = [
+    { name: '업무 노트', href: '/admin/note', icon: ClipboardList },
+    { name: '기관·개인 관리', href: '/admin/centers', icon: Building2 },
+    { name: '강사 관리', href: '/admin/users', icon: Users },
+    { name: '커리큘럼 관리', href: '/admin/curriculum', icon: BookOpen },
+    { name: '교구·재고', href: '/admin/inventory', icon: Box },
+  ];
 
-  if (loading && !fetchError) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-white">
-        <div className="w-10 h-10 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
-        <p className="text-sm font-bold text-slate-400">HQ INITIALIZING...</p>
-      </div>
-    );
-  }
-
-  if (fetchError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4 max-w-md px-4 text-center">
-          <p className="text-sm font-bold text-red-600">{fetchError}</p>
-          <button
-            type="button"
-            onClick={() => { setFetchError(null); fetchData(); }}
-            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 cursor-pointer"
-          >
-            다시 시도
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const scheduleChanges = [
+    ...postponeNotices.map((notice) => ({ kind: 'notice' as const, notice })),
+    ...upcomingPostponedClasses.map((session) => ({ kind: 'session' as const, session })),
+  ];
 
   return (
-    <div className="min-h-screen bg-white px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:p-6 md:p-8 sm:pt-6 flex flex-col items-center">
-      <div className="w-full max-w-6xl space-y-4 sm:space-y-8 md:space-y-12 min-w-0">
-
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 pb-3 sm:pb-8 border-slate-900">
-          <div>
-            <h1 className="mb-1 text-xl font-black leading-none tracking-tight text-slate-900 sm:text-4xl sm:italic sm:uppercase sm:tracking-tighter">
-              Spokedu HQ
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <p className="text-xs font-semibold text-slate-500">
-                Operational Control Center
-              </p>
-              <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                {new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' })}
-              </span>
-            </div>
-          </div>
-          <div className="flex gap-2 sm:gap-3">
-            <button
-              onClick={() => { setSettlementRefreshKey((value) => value + 1); fetchData(); fetchPostponeNotices(); fetchMoveReportMetric(); fetchNoticePreviews(); fetchWeeklyBestPreviews(); fetchConsultSummary(); }}
-              className="min-h-[44px] min-w-[44px] p-3 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all cursor-pointer group touch-manipulation flex items-center justify-center"
-              aria-label="새로고침"
-            >
-              <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" aria-hidden />
-            </button>
+    <div className={styles.dashboard}>
+      <div className={styles.content}>
+        <header className={styles.header}>
+          <div className={styles.titleRow}><h1>관리 홈</h1><span className={styles.date}>{new Date().toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', weekday: 'long' })}</span></div>
+          <div className={styles.headerActions}>
+            <VatCalculator className={styles.calculator} />
+            <button type="button" onClick={refresh} aria-label="운영 현황 새로고침" title="운영 현황 새로고침" className={styles.refresh}><RefreshCw size={18} /></button>
           </div>
         </header>
-
-        <SettlementDashboardSummary refreshKey={settlementRefreshKey} />
-        {/* 관리 홈: 패널 2개 — (1) 오늘 수업·연기·휴강 (2) 공지·상담·MOVE·안내 링크 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">
-
-          {/* 패널 1 */}
-          <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:space-y-6 sm:p-6">
-            <div>
-              <div className="mb-2 sm:mb-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <Calendar size={16} className="shrink-0 text-slate-400" />
-                    <h2 className="text-sm font-bold text-slate-700">Today Session Summary</h2>
-                  </div>
-                  <Link
-                    href="/admin/classes/calendar"
-                    className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-600 hover:text-blue-800"
-                  >
-                    캘린더
-                  </Link>
-                </div>
-                <p className="mt-1 text-xs font-medium leading-5 text-slate-500">
-                  완료 {todayClasses.filter((c) => getClassTimeBucket(c) === 'done').length}
-                  {' · '}
-                  진행 {todayClasses.filter((c) => getClassTimeBucket(c) === 'ongoing').length}
-                  {' · '}
-                  예정 {todayClasses.filter((c) => getClassTimeBucket(c) === 'upcoming').length}
-                  {' · '}
-                  연기 {todayClasses.filter((c) => c.isPostponed).length}
-                </p>
-              </div>
-              <div className="border-t border-slate-100 divide-y divide-slate-50 overflow-x-auto rounded-lg border border-slate-100">
-                {todayClasses.length > 0 ? todayClasses.map((cls) => {
-                  const bucket = getClassTimeBucket(cls);
-                  return (
-                  <div key={cls.id} className={`flex min-w-0 flex-col gap-1 px-1 py-3 sm:flex-row sm:items-center sm:justify-between ${
-                    bucket === 'done' ? 'opacity-20 grayscale' :
-                    bucket === 'postponed' ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
-                    bucket === 'cancelled' ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' :
-                    bucket === 'ongoing' ? 'bg-emerald-50/70 border-l-4 border-emerald-400 pl-3' : ''
-                  }`}>
-                    <div className="flex min-w-0 items-baseline gap-2">
-                      <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-500">{cls.time}–{cls.endTime}</span>
-                      <span className="min-w-0 truncate text-sm font-bold text-slate-800">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
-                      {cls.roundDisplay && (
-                        <span className="shrink-0 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-bold text-slate-600">{cls.roundDisplay}</span>
-                      )}
-                      {bucket === 'ongoing' && (
-                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700">진행중</span>
-                      )}
-                      {bucket === 'upcoming' && (
-                        <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[11px] font-bold text-sky-700">예정</span>
-                      )}
-                      {bucket === 'done' && (
-                        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-bold text-slate-500">완료</span>
-                      )}
-                      {bucket === 'postponed' && (
-                        <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-bold text-purple-600">연기됨</span>
-                      )}
-                      {bucket === 'cancelled' && (
-                        <span className="rounded bg-red-100 px-1.5 py-0.5 text-[11px] font-bold text-red-600">취소됨</span>
-                      )}
-                      <span className="text-xs font-medium text-slate-500">{cls.teacher}</span>
-                    </div>
-                  </div>
-                  );
-                }) : <p className="py-4 text-[11px] text-slate-300 italic px-2">No classes scheduled.</p>}
-              </div>
+        <nav aria-label="업무 바로가기" className={styles.shortcuts}>
+          <Link href="/admin/consult" className={styles.consult}><MessageSquare size={15} />미처리 상담<span className={styles.count}>{consultSummaryLoading ? '조회 중' : consultSummary ? `${consultSummary.pendingCount}건` : '조회 실패'}</span></Link>
+          <Link href="/admin/teachers-classes" className={styles.review}><CheckCircle size={15} />수업 검수</Link>
+          <span className={styles.divider} aria-hidden="true" />
+          {shortcuts.map(({ name, href, icon: Icon }) => <Link key={href} href={href}><Icon size={15} />{name}</Link>)}
+        </nav>
+        <div className={styles.grid}>
+          <section aria-labelledby="today-heading" className={`${styles.panel} ${styles.schedule}`}>
+            <div className={styles.panelHeader}>
+              <div><h2 id="today-heading">오늘의 수업 일정</h2><p>진행 상태는 수업 시간 기준으로 표시합니다.</p></div>
+              <Link href="/admin/classes/calendar" className={styles.calendarLink}>전체 일정<ChevronRight size={15} /></Link>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <h2 className="text-sm font-bold text-slate-700">수업 연기 알림</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-400">{postponeTotal}건</span>
-                  <button
-                    type="button"
-                    onClick={openPostponeModal}
-                    className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-rose-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer"
-                  >
-                    <Plus className="h-3 w-3" />
-                    등록
-                  </button>
-                </div>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
-                {postponeLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
-                  </div>
-                ) : postponeNotices.length === 0 ? (
-                  <p className="py-4 text-center text-[11px] text-slate-400 italic">연기 알림 없음</p>
-                ) : (
-                  <div className="space-y-2">
-                    {postponeNotices.map((n) => {
-                      const dateDisplay = getNoticeDateDisplay(n.start_date || n.notice_date, n.end_date);
-                      const urgent = isNoticeUrgent(n.notice_date);
-                      return (
-                        <div key={n.id} className="rounded-xl border border-rose-100 bg-rose-50/50 px-3 py-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-slate-900">{n.teacher_name}</p>
-                              <p className={`mt-1 text-xs font-semibold leading-5 ${urgent ? 'text-rose-800' : 'text-rose-600'}`}>
-                                {dateDisplay.includes(' ~ ') ? (
-                                  <>
-                                    {dateDisplay.split(' ~ ')[0]} ~
-                                    <br />
-                                    {dateDisplay.split(' ~ ')[1]}
-                                  </>
-                                ) : dateDisplay}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteNotice(n.id)}
-                              disabled={deletingNoticeId === n.id}
-                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
-                            >
-                              {deletingNoticeId === n.id
-                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                : <X className="h-3.5 w-3.5" />}
-                            </button>
-                          </div>
-                          {n.memo && (
-                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">{n.memo}</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-purple-100 bg-purple-50/50 p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <h3 className="text-sm font-bold text-purple-700">휴강 알림</h3>
-                <span className="text-[10px] text-purple-400">{upcomingPostponedClasses.length}건</span>
-              </div>
-              {upcomingPostponedLoading ? (
-                <div className="flex items-center justify-center py-5">
-                  <Loader2 className="h-4 w-4 animate-spin text-purple-300" />
-                </div>
-              ) : upcomingPostponedClasses.length === 0 ? (
-                <p className="py-3 text-center text-[11px] text-purple-300 italic">오늘 이후 휴강 수업 없음</p>
-              ) : (
-                <div className="space-y-2">
-                  {upcomingPostponedClasses.map((cls) => (
-                    <div key={cls.id} className="rounded-lg border border-purple-100 bg-white/80 px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold text-purple-600 shrink-0">
-                          {getClassDateDisplay(cls.startAt)}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 shrink-0">
-                          {cls.time}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <p className="min-w-0 truncate text-xs font-bold text-slate-800">
-                          {(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}
-                        </p>
-                        <span className="shrink-0 text-[9px] font-bold text-slate-400">
-                          {cls.teacher}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {loading ? <p role="status" className={styles.empty}><Loader2 size={18} className="animate-spin" />수업 일정을 불러오는 중입니다.</p> : fetchError ? <div role="alert" className={styles.error}>{fetchError}<button type="button" onClick={() => void fetchData()}>다시 시도</button></div> : todayClasses.length === 0 ? <p className={styles.empty}>오늘 등록된 수업이 없습니다.</p> : <div className={styles.scheduleBody}>
+              <div className={styles.tableHeader} aria-hidden="true"><span>시간</span><span>수업명</span><span>담당 강사</span><span>회차</span><span>진행 상태</span></div>
+              <div>{[...todayClasses].sort(compareTodayClasses).map((cls) => {
+                const bucket = getClassTimeBucket(cls);
+                return <div key={cls.id} className={styles.classRow} data-status={bucket}>
+                  <span className={styles.time}>{cls.time}–{cls.endTime}</span>
+                  <p className={styles.classTitle}>{cls.title.replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</p>
+                  <span className={styles.teacher}><span className={styles.mobileLabel}>강사</span>{cls.teacher}</span>
+                  <span className={styles.round}><span className={styles.mobileLabel}>회차</span>{cls.roundDisplay || '미등록'}</span>
+                  <span className={styles.status} data-status={bucket}>{bucketLabels[bucket]}</span>
+                </div>;
+              })}</div>
+            </div>}
           </section>
-
-          {/* 패널 2 */}
-          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 space-y-6">
-            <div>
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Pin className="h-3.5 w-3.5 text-rose-400" />
-                  <h2 className="text-sm font-bold text-slate-700">공지</h2>
+          <div className={styles.rightColumn}>
+            <section aria-labelledby="changes-heading" className={`${styles.panel} ${styles.changes}`}>
+              <div className={styles.panelHeader}>
+                <div><h2 id="changes-heading">일정 변경</h2><p>연기 알림 · 오늘 이후 휴강 일정</p></div>
+                <button type="button" onClick={openPostponeModal} className={styles.addNotice}><Plus size={15} />알림 등록</button>
+              </div>
+              {(postponeLoading || upcomingPostponedLoading) ? <p role="status" className={styles.empty}>일정 변경을 불러오는 중입니다.</p> : <>
+                {(postponeError || fetchError) && <p role="alert" className={styles.error}>일부 일정 변경을 불러오지 못했습니다.<button type="button" onClick={() => { void fetchData(); void fetchPostponeNotices(); }}>다시 시도</button></p>}
+                {scheduleChanges.length === 0 ? <p className={styles.empty}>{postponeError || fetchError ? '다시 조회해 주세요.' : '등록된 일정 변경이 없습니다.'}</p> : <ul className={styles.changeList}>
+                  {scheduleChanges.map((entry) => entry.kind === 'notice' ? <li key={`notice-${entry.notice.id}`} className={styles.changeCard}>
+                    <span className={styles.changeBadge}>연기</span>
+                    <div className={styles.changeText}><p>{entry.notice.teacher_name}</p><p>{getNoticeDateDisplay(entry.notice.start_date || entry.notice.notice_date, entry.notice.end_date)}</p>{entry.notice.memo && <p>{entry.notice.memo}</p>}</div>
+                    <button type="button" aria-label={`${entry.notice.teacher_name} 연기 알림 삭제`} onClick={() => void handleDeleteNotice(entry.notice.id)} disabled={deletingNoticeId === entry.notice.id} className={styles.deleteNotice}>{deletingNoticeId === entry.notice.id ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}</button>
+                  </li> : <li key={`session-${entry.session.id}`} className={styles.changeCard}><span className={styles.changeBadge} data-kind="closed">휴강</span><div className={styles.changeText}><p>{entry.session.title}</p><p>{getClassDateDisplay(entry.session.startAt)} · {entry.session.time} · {entry.session.teacher}</p></div></li>)}
+                </ul>}
+                <div className={styles.changeFooter}>
+                  <span>연기 알림 {postponeError ? '조회 실패' : `${postponeTotal}건`} · 휴강 {fetchError ? '조회 실패' : `${upcomingPostponedClasses.length}건 (최대 8건)`}</span>
                 </div>
-                <Link href="/admin/notice" className="text-[10px] font-semibold text-slate-400 hover:text-slate-700">
-                  전체 보기
-                </Link>
-              </div>
-              {noticePreviewLoading || weeklyBestPreviewLoading ? (
-                <div className="flex items-center justify-center py-5">
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-300" />
-                </div>
-              ) : pinnedNoticePreviews.length === 0 && recentDashboardFeed.length === 0 ? (
-                <p className="py-3 text-center text-[11px] text-slate-400 italic">등록된 공지 없음</p>
-              ) : (
-                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                  {pinnedNoticePreviews.length > 0 && (
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-bold text-rose-600">고정 · 필독</p>
-                      {pinnedNoticePreviews.map((notice) => (
-                        <Link
-                          key={notice.id}
-                          href="/admin/notice"
-                          className="flex items-center justify-between gap-2 rounded-lg border border-rose-100 bg-white px-3 py-2 hover:bg-rose-50/50"
-                        >
-                          <span className="min-w-0 truncate text-xs font-bold text-slate-800">{notice.title}</span>
-                          <Pin className="h-3 w-3 shrink-0 fill-rose-500 text-rose-500" />
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-
-                  {recentDashboardFeed.length > 0 && (
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-bold text-slate-500">최근 공지</p>
-                      {recentDashboardFeed.map((row) => (
-                        <Link
-                          key={row.key}
-                          href="/admin/notice"
-                          className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 hover:bg-slate-100"
-                        >
-                          <span className="flex min-w-0 flex-1 items-center gap-2">
-                            {row.source === 'weekly_best' ? (
-                              <span className="shrink-0 rounded border border-amber-100 bg-amber-50 px-1.5 py-0.5 text-[8px] font-black text-amber-700">
-                                주간베스트
-                              </span>
-                            ) : null}
-                            <span className="min-w-0 truncate text-xs font-bold text-slate-700">{row.title}</span>
-                          </span>
-                          <span className="shrink-0 text-[10px] font-bold tabular-nums text-slate-500">
-                            {formatNoticeShortMd(row.created_at)}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between mb-2 sm:mb-4">
-              <div className="flex items-center gap-2">
-                <MessageSquare size={14} className="text-emerald-500 shrink-0" />
-                <h2 className="text-sm font-bold text-slate-700">상담 신청</h2>
-                {typeof consultSummary?.pendingCount === 'number' && consultSummary.pendingCount > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
-                    +{consultSummary.pendingCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] text-slate-400">미처리 상담</span>
-            </div>
-            <Link
-              href="/admin/consult"
-              className="group mb-4 block rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-sm cursor-pointer"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-emerald-700">상담 신청 관리</p>
-                  <p className="mt-1 text-[11px] text-slate-500">새 상담 요청과 처리 상태를 확인합니다.</p>
-                </div>
-                <div className="rounded-xl bg-white p-2 text-emerald-600 shadow-sm">
-                  <MessageSquare className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="mt-3 sm:mt-6">
-                {consultSummaryLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    불러오는 중
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                      {consultSummary?.pendingCount?.toLocaleString() ?? '-'}
-                    </p>
-                    <p className="mt-1 text-[11px] font-medium text-slate-400">미처리 상담 수</p>
-                    {consultSummary?.latestPending && (
-                      <p className="mt-3 truncate text-[11px] text-emerald-700">
-                        최근: {consultSummary.latestPending.parent_name}
-                        {consultSummary.latestPending.child_age ? ` · ${consultSummary.latestPending.child_age}` : ''}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-              <p className="mt-5 text-[11px] font-semibold text-emerald-700 transition-colors group-hover:text-emerald-800">
-                상담 신청 열기
-              </p>
-            </Link>
-
-            <div className="flex items-center justify-between mb-2 sm:mb-4">
-              <div className="flex items-center gap-2">
-                <BarChart3 size={14} className="text-blue-400 shrink-0" />
-                <h2 className="text-sm font-bold text-slate-700">MOVE 리포트</h2>
-              </div>
-              <span className="text-[10px] text-slate-400">최근 제출</span>
-            </div>
-            <Link
-              href="/admin/move-report"
-              className="group block rounded-xl border border-blue-100 bg-blue-50/60 p-4 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm cursor-pointer"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-blue-600">MOVE 리포트 관리</p>
-                  <p className="mt-1 text-[11px] text-slate-500">결과 제출과 퍼널 지표를 확인합니다.</p>
-                </div>
-                <div className="rounded-xl bg-white p-2 text-blue-600 shadow-sm">
-                  <BarChart3 className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="mt-3 sm:mt-6">
-                {moveReportLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    불러오는 중
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                      {moveReportCount === null ? '-' : moveReportCount.toLocaleString()}
-                    </p>
-                    <p className="mt-1 text-[11px] font-medium text-slate-400">최근 제출 수</p>
-                  </>
-                )}
-              </div>
-              <p className="mt-5 text-[11px] font-semibold text-blue-600 transition-colors group-hover:text-blue-700">
-                리포트 대시보드 열기
-              </p>
-            </Link>
-
-            <div>
-              <h2 className="mb-2 text-sm font-bold text-slate-700">안내 페이지</h2>
-              <div className="grid gap-2">
-                {[
-                  { n: '0', label: 'SPOKEDU 홈페이지', href: '/spokedu' },
-                  { n: '1', label: '체육관', href: '/info/gym' },
-                  { n: '2', label: '과외', href: '/info/private' },
-                  { n: '3', label: '파견', href: '/info/dispatch.html' },
-                  { n: '4', label: '구독서비스', href: '/info/curriculum' },
-                ].map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-[13px] font-bold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50"
-                  >
-                    <span>
-                      {item.n}. {item.label}
-                    </span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" aria-hidden />
-                  </a>
-                ))}
-              </div>
-            </div>
-          </section>
-
+              </>}
+            </section>
+            <section aria-labelledby="notices-heading" className={`${styles.panel} ${styles.notices}`}>
+              <div className={styles.panelHeader}><h2 id="notices-heading">공지사항</h2><Link href="/admin/notice" className={styles.allNotices}>전체 보기<ChevronRight size={13} /></Link></div>
+              {(noticePreviewError || weeklyBestPreviewError) && <p role="alert" className={styles.error}>일부 공지를 불러오지 못했습니다.<button type="button" onClick={() => { void fetchNoticePreviews(); void fetchWeeklyBestPreviews(); }}>다시 시도</button></p>}
+              {noticePreviewLoading || weeklyBestPreviewLoading ? <p role="status" className={styles.empty}>공지를 불러오는 중입니다.</p> : <div className={styles.noticeGroups}>
+                <div>{pinnedNoticePreviews.length === 0 ? <p className={styles.noticeEmpty}>{noticePreviewError ? '고정 공지 조회 실패' : '고정 공지 없음'}</p> : <ul className={styles.noticeList}>{pinnedNoticePreviews.map((notice) => <li key={notice.id}><Link href="/admin/notice" className={styles.noticeCard}><span className={styles.pinnedBadge}><Pin size={11} />고정</span><span className={styles.noticeTitle}>{notice.title}</span></Link></li>)}</ul>}</div>
+                <div>{recentDashboardFeed.length === 0 ? <p className={styles.noticeEmpty}>{weeklyBestPreviewError ? '주간베스트 조회 실패' : '등록된 주간베스트 없음'}</p> : <ul className={styles.noticeList}>{recentDashboardFeed.map((row) => <li key={row.key}><Link href="/admin/notice" className={styles.noticeCard}><span className={styles.latestBadge}>주간베스트</span><span className={styles.noticeTitle}>{row.title}</span><span className={styles.noticeDate}>{formatNoticeShortMd(row.created_at)}</span></Link></li>)}</ul>}</div>
+              </div>}
+            </section>
+          </div>
         </div>
-
-        {/* Storage 정리 패널은 안내 카드 아래에서 독립된 한 칸으로 표시 */}
-        <StorageRecompressPanel />
-
       </div>
 
       {/* 수업 연기 알림 등록 모달 */}
       {isPostponeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl border border-slate-200 overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-label="수업 연기 알림 등록" className="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <h2 className="text-base font-semibold text-slate-900">수업 연기 알림 등록</h2>
               <button
                 type="button"
                 onClick={() => setIsPostponeModalOpen(false)}
+                aria-label="연기 알림 등록 닫기"
                 className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
               >
                 <X className="h-4 w-4" />
@@ -1021,12 +647,6 @@ export default function SpokeduHQDashboard() {
                 {selectedDate && !selectedEndDate && (
                   <p className="mt-1.5 text-xs font-bold text-indigo-600 text-center">
                     시작일: {selectedDate} · 종료일을 한 번 더 클릭하세요
-                  </p>
-                )}
-                {/* legacy single-date summary */}
-                {false && (
-                  <p className="mt-1.5 text-xs text-indigo-600 font-medium text-center">
-                    선택: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
                   </p>
                 )}
               </div>

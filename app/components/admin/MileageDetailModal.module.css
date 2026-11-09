@@ -1,0 +1,11 @@
+.logRow { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; align-items: center; gap: 8px; min-height: 44px; padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+.amount { min-width: 68px; font-size: 13px; font-weight: 700; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.logText { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; min-width: 0; }
+.logTitle { margin: 0; color: #1e293b; font-size: 13px; font-weight: 600; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+.sessionDate { color: #64748b; font-size: 12px; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.actions { display: flex; align-items: center; gap: 2px; }
+.cancelSettlement, .deleteLog { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+.cancelSettlement { color: #92400e; }
+.deleteLog { color: #64748b; }
+.deleteLog:hover { color: #e11d48; background: #fff1f2; }
+@media (pointer: coarse) { .cancelSettlement, .deleteLog { width: 44px; height: 44px; } }

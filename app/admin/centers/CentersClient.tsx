@@ -178,7 +178,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
         {isLoading ? <div role="status" className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
           : centers.length === 0 ? <p className="rounded-lg border border-slate-200 bg-white px-3 py-8 text-center text-sm text-slate-500">조건에 맞는 센터가 없습니다.</p>
           : <>
-          <div className="space-y-2 lg:hidden">
+          <div className="space-y-2 min-[900px]:hidden">
             {centers.map((c) => <article key={c.id} className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
               <Link href={`/admin/centers/${c.id}`} onClick={(event) => openDetail(event, c.id)} prefetch={false} title={centerDisplayName(c)} aria-label={centerDisplayName(c)}
                 className="flex min-h-12 min-w-0 items-center justify-between gap-2 px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-indigo-600">
@@ -197,7 +197,7 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
               </div>
             </article>)}
           </div>
-          <div className="hidden min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white lg:block">
+          <div className="hidden min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white min-[900px]:block">
             <table className="w-full table-fixed text-sm">
               <colgroup><col className="w-[31%]" /><col className="w-[11%]" /><col className="w-[15%]" /><col className="w-[24%]" /><col className="w-[13%]" /><col className="w-[6%]" /></colgroup>
               <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs text-slate-500"><tr>

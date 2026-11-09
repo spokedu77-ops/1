@@ -9,6 +9,7 @@ const TEACHER_COLUMNS = [
   'name',
   'role', 'email', 'is_admin',
   'is_active',
+  'ending_soon',
   'session_count',
   'fee_private',
   'fee_group',
@@ -21,6 +22,7 @@ type TeacherReferenceRow = {
   id: string;
   name: string;
   is_active: boolean | null;
+  ending_soon?: boolean;
   session_count: number | null;
   fee_private: number | null;
   fee_group: number | null;

@@ -1030,7 +1030,7 @@ export default function NoticePage() {
     <div className="min-h-screen bg-[#F9FBFF] pb-[calc(6rem+env(safe-area-inset-bottom,0px))] text-slate-900 w-full font-sans overflow-x-hidden text-left">
       <style>{`
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-        * { font-family: "Pretendard Variable", sans-serif !important; letter-spacing: -0.02em; }
+        * { font-family: var(--font-sans) !important; letter-spacing: -0.02em; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 

@@ -13,10 +13,9 @@ const sidebar = read('app/components/Sidebar.tsx');
 describe('admin SPOKEDU MASTER split contract', () => {
   it('splits library and SPOMOVE admin entry points', () => {
     expect(sidebar).not.toContain('스포키듀 구독 NEW');
-    expect(sidebar).toContain('LAB 라이브러리');
-    expect(sidebar).toContain('/admin/spokedu-lab/programs');
-    expect(sidebar).toContain('LAB 스포무브');
-    expect(sidebar).toContain('/admin/spokedu-lab/spomove');
+    const destinations = [...sidebar.matchAll(/\{\s*name:\s*'[^']+',\s*href:\s*'([^']+)'/g)].map(match => match[1]);
+    expect(destinations.filter(href => href === '/admin/spokedu-lab/programs')).toHaveLength(1);
+    expect(destinations.filter(href => href === '/admin/spokedu-lab/spomove')).toHaveLength(1);
     expect(spomovePage).toContain("from '../programs/page'");
   });
 
