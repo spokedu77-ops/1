@@ -11,7 +11,7 @@ import { ClipboardCheck, Flag, Info, LayoutGrid, Lightbulb, RotateCcw, Timer, Za
 import { CSS } from '../styles';
 import { useViewportScrollLock } from '../lib/lockViewportScroll';
 import styles from './TrainingResultScreen.module.css';
-import { TrainingResultActivityVisual } from './TrainingResultActivityVisual';
+import { TrainingResultEducation } from './TrainingResultEducation';
 
 type StudentBadge = { name: string; color: string };
 
@@ -52,7 +52,7 @@ function FactList({ items, summary = false }: { items: ResultFact[]; summary?: b
   const icons = [Timer, RotateCcw, Flag];
   return <dl className={summary ? styles.summaryFacts : styles.facts}>{items.map((item, index) => {
     const Icon = icons[index];
-    const value = summary ? /^(\d+(?:\/\d+)?)(초|회|개|라운드)$/.exec(item.value) : null;
+    const value = summary ? /^(\d+(?:\/\d+)?)(초|회|개|라운드|과제)$/.exec(item.value) : null;
     return <div key={item.id}><dt>{summary && Icon ? <Icon size={14} aria-hidden="true" /> : null}{item.label}</dt><dd>{value ? <>{value[1]}<small>{value[2]}</small></> : item.value}</dd></div>;
   })}</dl>;
 }
@@ -60,7 +60,8 @@ function FactList({ items, summary = false }: { items: ResultFact[]; summary?: b
 const POSITIONS = { red: '좌측 상단', yellow: '우측 상단', green: '좌측 하단', blue: '우측 하단' } as const;
 
 export function TrainingResultScreen(props: Props) {
-  const vm = buildTrainingResultPresentation(props);
+  const [educationSeed] = useState(() => Math.floor(Math.random() * 64));
+  const vm = buildTrainingResultPresentation(props, educationSeed);
   const [theme] = useState(() => typeof window !== 'undefined' && localStorage.getItem('spokedu_theme') === 'dark' ? 'dark' : 'light');
   useViewportScrollLock(true);
   return (
@@ -93,24 +94,24 @@ export function TrainingResultScreen(props: Props) {
               <div className={styles.sectionTitle}><span className={styles.sectionIcon}><LayoutGrid size={16} aria-hidden="true" /></span><h2 id="tr-record-title">{vm.recordTitle}</h2><span className={styles.sectionSubtitle}>{vm.recordSubtitle}</span></div>
               <span className={styles.layoutBadge}>{vm.recordBadge}</span>
             </div>
-            {vm.visual && vm.recordFacts.length ? <div className={styles.observedRecord}><h3>이번 활동의 실제 기록{props.glassBridge ? ' · 교사 입력' : ''}</h3><FactList items={vm.recordFacts} /></div> : null}
+            {vm.feedback && vm.recordFacts.length ? <div className={styles.observedRecord}><h3>이번 활동의 실제 기록{props.glassBridge ? ' · 교사 입력' : ''}</h3><FactList items={vm.recordFacts} /></div> : null}
             {vm.hasDistribution ? <ul className={styles.distribution} aria-label={vm.distributionTitle}>
               {vm.distribution.map((item, index) => <li key={item.id} data-color={vm.distributionKind === 'number' ? undefined : item.id} data-empty={item.count === 0}>
                 <div className={styles.colorLabel}><span className={styles.dot} aria-hidden="true">{vm.distributionKind === 'number' ? index + 1 : null}</span><div><div className={styles.zoneHeading}><strong>{item.label}</strong>{vm.distributionKind === 'zone' ? <span className={styles.position}>{POSITIONS[item.id]}</span> : null}</div><span className={styles.countLabel}>{item.count === 0 ? '이번 활동에서는 나오지 않았어요' : vm.distributionKind === 'zone' ? '목표가 제시된 구역' : '화면에 제시된 자극'}</span></div></div>
                 <div className={styles.zoneValue}><span className={styles.countBadge}>{item.count === 0 ? '출현 없음' : `${item.count}회 출현`}</span><strong>{item.count}<span>회</span></strong></div>
               </li>)}
-            </ul> : vm.visual ? <TrainingResultActivityVisual visual={vm.visual} /> : null}
+            </ul> : vm.feedback ? <TrainingResultEducation feedback={vm.feedback} /> : null}
             {vm.hasDistribution && vm.recordFacts.length ? <FactList items={vm.recordFacts} /> : null}
             {vm.hasDistribution && props.sessionSettings?.primary.trim() ? <p className={styles.settings}>{[props.sessionSettings.primary, props.sessionSettings.secondary].filter(Boolean).join(' · ')}</p> : null}
             {vm.note ? <p className={styles.note}><Info size={14} aria-hidden="true" />{vm.note}</p> : null}
           </section>
 
-          <div className={styles.bottom}>
-            <section className={`${styles.card} ${styles.education}`} aria-labelledby="tr-about-title">
+          <div className={vm.hasDistribution ? styles.bottom : styles.feedbackActions}>
+            {vm.hasDistribution ? <section className={`${styles.card} ${styles.education}`} aria-labelledby="tr-about-title">
               <h2 id="tr-about-title"><Lightbulb size={16} aria-hidden="true" />이 활동은?</h2>
               <p>{vm.activityDescription}</p>
               {vm.educationTags.length ? <ul className={styles.educationElements} aria-label="활동에서 경험하는 요소">{vm.educationTags.map(tag => <li key={tag}><span aria-hidden="true">#</span>{tag}</li>)}</ul> : null}
-            </section>
+            </section> : null}
             <nav className={styles.actions} aria-label="활동 결과 행동">
               <button type="button" className={styles.button} onClick={props.onBack}><List size={16} aria-hidden="true" />활동 목록으로</button>
               <button type="button" className={`${styles.button} ${styles.primary}`} onClick={props.onRetry}><RotateCcw size={17} aria-hidden="true" />{props.retryLabel ?? '다시 활동하기'}</button>

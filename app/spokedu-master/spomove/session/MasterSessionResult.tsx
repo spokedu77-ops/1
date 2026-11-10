@@ -14,6 +14,7 @@ import {
   resultLevelLabel,
   settingsToTrainingResultConfig,
   type ColorStimulusCounts,
+  type TrainingResultRuleSettings,
 } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
@@ -34,6 +35,7 @@ export function MasterSessionResult({
   engineLevel,
   activityId,
   flankerExtremeMode,
+  resultRules,
   rounds,
   executionVolume,
   diveActionMove = null,
@@ -59,6 +61,7 @@ export function MasterSessionResult({
   engineLevel: number;
   activityId?: TrainingActivityId;
   flankerExtremeMode?: 'theme' | 'arrow';
+  resultRules?: TrainingResultRuleSettings;
   rounds: number;
   cueSeconds: number;
   executionVolume: SpomoveExecutionVolume;
@@ -79,6 +82,7 @@ export function MasterSessionResult({
   const fromSession = Boolean(sessionReturnHref);
   const marking = markCompleteStatus === 'saving';
   const cfg = settingsToTrainingResultConfig({
+    ...resultRules,
     mode: engineMode,
     level: engineLevel,
     activityId,

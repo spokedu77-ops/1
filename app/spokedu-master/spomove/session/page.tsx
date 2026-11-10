@@ -1300,6 +1300,7 @@ function SpomoveSessionContent() {
             engineLevel={sessionResult.engineLevel}
             activityId={sessionResult.activityId}
             flankerExtremeMode={officialPreset.engine.flankerExtremeMode}
+            resultRules={officialPreset.engine}
             rounds={sessionRounds}
             cueSeconds={effectiveCueSeconds}
             executionVolume={executionVolume!}

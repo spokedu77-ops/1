@@ -53,7 +53,18 @@ export function addColorIdsToCounts(counts: ColorStimulusCounts, colorIds: strin
   return next;
 }
 
-export type TrainingResultConfig = {
+/** Execution rules needed to describe the activity accurately on Result. */
+export type TrainingResultRuleSettings = {
+  spatialArrowColorMode?: 'basic' | 'color';
+  flankerStimulusType?: 'color' | 'number';
+  stroopArrowResponse?: 'voice' | 'movement';
+  stroopWordResponse?: 'voice' | 'movement';
+  stroopWordRuleMode?: 'switch' | 'reverse';
+  stroopWordMode?: 'bg' | 'missing';
+  stroopWordDifficulty?: 'basic' | 'bg';
+};
+
+export type TrainingResultConfig = TrainingResultRuleSettings & {
   mode: string;
   level: number;
   activityId?: TrainingActivityId;
@@ -132,7 +143,7 @@ export function resultLevelLabel(mode: string | undefined, level: number, activi
   return selection.number ? `${selection.number}\uBC88` : selection.title;
 }
 
-export function settingsToTrainingResultConfig(cfg: {
+export function settingsToTrainingResultConfig(cfg: TrainingResultRuleSettings & {
   mode: string;
   level: number;
   activityId?: TrainingActivityId;
@@ -156,6 +167,13 @@ export function settingsToTrainingResultConfig(cfg: {
     level: cfg.level,
     activityId: cfg.activityId,
     flankerExtremeMode: cfg.flankerExtremeMode,
+    spatialArrowColorMode: cfg.spatialArrowColorMode,
+    flankerStimulusType: cfg.flankerStimulusType,
+    stroopArrowResponse: cfg.stroopArrowResponse,
+    stroopWordResponse: cfg.stroopWordResponse,
+    stroopWordRuleMode: cfg.stroopWordRuleMode,
+    stroopWordMode: cfg.stroopWordMode,
+    stroopWordDifficulty: cfg.stroopWordDifficulty,
     speed: cfg.speed,
     visualSearchStage: cfg.visualSearchStage,
     visualSearchTargetCount: cfg.visualSearchTargetCount,
