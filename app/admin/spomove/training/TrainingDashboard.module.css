@@ -141,7 +141,9 @@
   background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
         radial-gradient(at 100% 10%, rgba(244, 63, 94, 0.06) 0px, transparent 50%),
         radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
-  background-attachment: fixed;
+  /* Keep the gradients in the scrolling surface. A viewport-fixed background
+   * invalidates paint on every scroll frame, even with card blur disabled. */
+  background-attachment: scroll;
 }
 .root :global(.glass-card) {
   background: rgba(19, 29, 49, 0.7);
