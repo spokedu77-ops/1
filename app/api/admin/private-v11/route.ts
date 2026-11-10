@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
-import { MASTER_EMAIL } from '@/app/lib/constants/admin';
+import { isKnownPlatformAdminEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { asSnapshot, toEnrollmentRow, toLogRow } from '@/app/admin/centers/private-v11/codec';
 import { isRecord, uuid, validDay, validEnrollment, validLog, validUnit } from '@/app/admin/centers/private-v11/validation';
 import { getLastClassDate } from '@/app/admin/centers/private-v11/core';
@@ -15,12 +15,11 @@ export const dynamic = 'force-dynamic';
 const json = (payload: unknown, status=200) => {
   const res=NextResponse.json(payload,{status});res.headers.set('Cache-Control','private, no-store, max-age=0');return res;
 };
-const master = (email:string|null):boolean=>email?.toLowerCase()===MASTER_EMAIL;
 const tableMap = { enrollment:'admin_private_enrollments',log:'admin_private_logs',unit:'admin_private_units' } as const;
 type Entity = keyof typeof tableMap;
 async function authorize() {
   const a=await requireAdmin();
-  return !a.ok ? {ok:false as const,response:a.response} : !master(a.email) ? {ok:false as const,response:json({error:'MASTER_ONLY'},403)} : {ok:true as const};
+  return !a.ok ? {ok:false as const,response:a.response} : !isKnownPlatformAdminEmail(a.email) ? {ok:false as const,response:json({error:'ADMIN_ONLY'},403)} : {ok:true as const};
 }
 function handleError(error: {code?:string;message?:string}|null) {
   const message=String(error?.message||'');

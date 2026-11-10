@@ -4,7 +4,7 @@ import { feedbackListInput, markFeedbackPaste } from '@/app/lib/feedbackListInpu
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { 
   ChevronLeft, ChevronRight, 
   Camera, X, FileText, Paperclip, ChevronDown, ChevronUp, Copy 
@@ -23,6 +23,7 @@ import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { compressImageForUpload } from '@/app/lib/admin/assets/imageOptimizer';
 import { compressDocumentEmbeddedImages } from '@/app/lib/client/compressDocumentEmbeddedImages';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { copyLessonPlanForSchedule, lessonPlanScheduleHeader } from '@/app/lib/teacher/lessonPlan';
 
 /** Supabase Storage 버킷 한도보다 여유 있게 — 업로드 전 목표 용량 */
 const SESSION_PHOTO_MAX_BYTES = 1.5 * 1024 * 1024;
@@ -180,6 +181,8 @@ function MyClassesContent() {
   const [isLessonPlanModalOpen, setIsLessonPlanModalOpen] = useState(false);
   const [lessonPlanContent, setLessonPlanContent] = useState(LESSON_PLAN_DEFAULT_TEMPLATE);
   const [lessonPlanSaving, setLessonPlanSaving] = useState(false);
+  const [lessonPlanReady, setLessonPlanReady] = useState(false);
+  const lessonPlanRequest = useRef(0);
   const [currentSessionLessonPlanId, setCurrentSessionLessonPlanId] = useState<string | null>(null);
   const [previousPlans, setPreviousPlans] = useState<PreviousLessonPlan[]>([]);
   const [previousPlansExpandedId, setPreviousPlansExpandedId] = useState<string | null>(null);
@@ -537,48 +540,72 @@ function MyClassesContent() {
 
   const openLessonPlanModal = async () => {
     if (!supabase || !selectedEvent) return;
-    setLessonPlanContent(LESSON_PLAN_DEFAULT_TEMPLATE);
+    const requestId = ++lessonPlanRequest.current;
+    setLessonPlanReady(false);
+    const freshTemplate = LESSON_PLAN_DEFAULT_TEMPLATE.replace(
+      '2026.00.00.(요일) 00:00 ~ 00:00',
+      lessonPlanScheduleHeader(selectedEvent.start_at, selectedEvent.end_at),
+    );
+    setLessonPlanContent(freshTemplate);
     setCurrentSessionLessonPlanId(null);
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
     setIsLessonPlanModalOpen(true);
-    const session = await getSessionWithRefreshRecovery(supabase);
-    if (!session?.user) return;
-    const userId = session.user.id;
-    const baseTitle = getBaseTitle(selectedEvent.title);
+    try {
+      const session = await getSessionWithRefreshRecovery(supabase);
+      if (!session?.user) throw new Error('로그인을 확인한 뒤 수업안을 다시 열어 주세요.');
+      const userId = session.user.id;
+      const baseTitle = getBaseTitle(selectedEvent.title);
 
-    const [currentRes, sessionsRes] = await Promise.all([
-      supabase.from('lesson_plans').select('id, content').eq('session_id', selectedEvent.id).maybeSingle(),
-      supabase.from('sessions').select('id, title, start_at, group_id, lesson_plans(content)').eq('created_by', userId).order('start_at', { ascending: false }).limit(200)
-    ]);
-    const current = currentRes.data as { id: string; content: string } | null;
-    if (current) {
-      setLessonPlanContent(
-        typeof current.content === 'string' && current.content.trim().length > 0
-          ? current.content
-          : LESSON_PLAN_DEFAULT_TEMPLATE,
-      );
-      setCurrentSessionLessonPlanId(current.id);
+      const [currentRes, sessionsRes, historyRes] = await Promise.all([
+        supabase.from('lesson_plans').select('id, content').eq('session_id', selectedEvent.id).maybeSingle(),
+        supabase.from('sessions').select('id, title, start_at, group_id, lesson_plans(content)').eq('created_by', userId).order('start_at', { ascending: false }).limit(200),
+        fetch(`/api/teacher/lesson-plan?sessionId=${encodeURIComponent(selectedEvent.id)}`, { cache: 'no-store' })
+          .then(async (res) => res.ok ? await res.json() : null).catch(() => null),
+      ]);
+      if (requestId !== lessonPlanRequest.current) return;
+      if (currentRes.error) throw new Error('수업안을 불러오지 못했습니다. 수업안을 다시 열어 주세요.');
+      const current = currentRes.data as { id: string; content: string } | null;
+      if (current) {
+        setLessonPlanContent(
+          typeof current.content === 'string' && current.content.trim().length > 0
+            ? current.content
+            : freshTemplate,
+        );
+        setCurrentSessionLessonPlanId(current.id);
+      }
+      const sessionsWithPlans = (sessionsRes.data || []) as Array<{ id: string; title: string; start_at: string; group_id?: string | null; lesson_plans: { content?: string }[] }>;
+      const currentDay = localCalendarDayValue(new Date(selectedEvent.start_at));
+      const sameClass = sessionsWithPlans.filter(s => s.id !== selectedEvent.id && ((selectedEvent.group_id && s.group_id === selectedEvent.group_id) || getBaseTitle(s.title) === baseTitle));
+      const prev: PreviousLessonPlan[] = [];
+      sameClass.forEach(s => {
+        const raw = s.lesson_plans;
+        const lp = Array.isArray(raw) ? raw[0] : raw && typeof raw === 'object' ? raw : null;
+        const content = lp && typeof (lp as { content?: string }).content === 'string' ? (lp as { content: string }).content : '';
+        if (!content.trim()) return;
+        const listAt = previousPlanListAt(content, s.start_at);
+        if (!listAt || localCalendarDayValue(listAt) >= currentDay) return;
+        prev.push({ sessionId: s.id, start_at: listAt.toISOString(), content });
+      });
+      const archived = (historyRes?.plans ?? []) as Array<{ id: string; start_at: string; content: string }>;
+      archived.forEach((plan) => {
+        if (typeof plan.content !== 'string' || !plan.content.trim()) return;
+        const listAt = previousPlanListAt(plan.content, plan.start_at);
+        if (!listAt || localCalendarDayValue(listAt) >= currentDay) return;
+        prev.push({ sessionId: `archive:${plan.id}`, start_at: listAt.toISOString(), content: plan.content });
+      });
+      prev.sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
+      setPreviousPlans(prev);
+      setLessonPlanReady(true);
+    } catch (error) {
+      if (requestId === lessonPlanRequest.current) {
+        toast.error(error instanceof Error ? error.message : '수업안을 불러오지 못했습니다. 다시 열어 주세요.');
+      }
     }
-    const sessionsWithPlans = (sessionsRes.data || []) as Array<{ id: string; title: string; start_at: string; group_id?: string | null; lesson_plans: { content?: string }[] }>;
-    const currentDay = localCalendarDayValue(new Date(selectedEvent.start_at));
-    const sameClass = sessionsWithPlans.filter(s => s.id !== selectedEvent.id && ((selectedEvent.group_id && s.group_id === selectedEvent.group_id) || getBaseTitle(s.title) === baseTitle));
-    const prev: PreviousLessonPlan[] = [];
-    sameClass.forEach(s => {
-      const raw = s.lesson_plans;
-      const lp = Array.isArray(raw) ? raw[0] : raw && typeof raw === 'object' ? raw : null;
-      const content = lp && typeof (lp as { content?: string }).content === 'string' ? (lp as { content: string }).content : '';
-      if (!content.trim()) return;
-      const listAt = previousPlanListAt(content, s.start_at);
-      if (!listAt || localCalendarDayValue(listAt) >= currentDay) return;
-      prev.push({ sessionId: s.id, start_at: listAt.toISOString(), content });
-    });
-    prev.sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
-    setPreviousPlans(prev);
   };
 
   const saveLessonPlan = async () => {
-    if (!supabase || !selectedEvent) return;
+    if (!supabase || !selectedEvent || !lessonPlanReady) return;
     setLessonPlanSaving(true);
     try {
       const res = await fetch('/api/teacher/lesson-plan', {
@@ -636,7 +663,9 @@ function MyClassesContent() {
   };
 
   const copyPreviousToContent = (content: string) => {
-    setLessonPlanContent(content);
+    if (!selectedEvent) return;
+    setLessonPlanContent(copyLessonPlanForSchedule(content, selectedEvent.start_at, selectedEvent.end_at));
+    toast.info('이번 수업 날짜로 복사했습니다. 회차와 수업 내용을 확인해 주세요.');
     if (previousPlansExpandedId) setPreviousPlansExpandedId(null);
   };
 
@@ -1069,6 +1098,7 @@ function MyClassesContent() {
                 <textarea
                   className="w-full min-h-[280px] bg-white rounded-2xl p-6 text-sm leading-relaxed text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 shadow-sm border border-slate-100 resize-none transition-all"
                   value={lessonPlanContent}
+                  disabled={!lessonPlanReady || lessonPlanSaving}
                   onChange={(e) => setLessonPlanContent(e.target.value)}
                   placeholder="수업안을 작성하세요..."
                 />
@@ -1078,7 +1108,7 @@ function MyClassesContent() {
               {currentSessionLessonPlanId && (
                 <button type="button" onClick={deleteLessonPlan} disabled={lessonPlanSaving} className="flex-1 bg-rose-50 text-rose-500 py-5 rounded-[22px] font-black text-sm cursor-pointer hover:bg-rose-100 transition-all uppercase disabled:opacity-50">삭제</button>
               )}
-              <button type="button" onClick={saveLessonPlan} disabled={lessonPlanSaving} className={`flex-[2] py-5 rounded-[22px] font-black text-sm shadow-xl transition-all cursor-pointer active:scale-95 uppercase ${lessonPlanSaving ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-blue-600'}`}>
+              <button type="button" onClick={saveLessonPlan} disabled={lessonPlanSaving || !lessonPlanReady} className={`flex-[2] py-5 rounded-[22px] font-black text-sm shadow-xl transition-all cursor-pointer active:scale-95 uppercase ${lessonPlanSaving || !lessonPlanReady ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-white hover:bg-blue-600'}`}>
                 {lessonPlanSaving ? '저장 중...' : currentSessionLessonPlanId ? '수정' : '저장'}
               </button>
             </div>

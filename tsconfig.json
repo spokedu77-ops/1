@@ -34,15 +34,13 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "**/*.mts",
-    ".next/dev/types/**/*.ts",
-    ".next-phase6/types/**/*.ts",
-    ".next-phase6/dev/types/**/*.ts",
-    ".next-local-integration/types/**/*.ts",
-    ".next-local-integration/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "docs",
-    ".next/dev"
+    ".next/dev",
+    ".next-phase6",
+    ".next-local-integration"
   ]
 }

@@ -151,3 +151,69 @@
 
 .root .summaryFacts dd small { font-family:inherit; font-size:12px; line-height:16px; font-weight:600; margin-left:4px; color:var(--tr-muted); }
 .root .summaryFacts > div:last-child dd small { color:var(--tr-blue); }
+
+/* Activity examples share the existing Stitch result surface and theme. */
+.root .activityVisual { margin:0; color:var(--tr-text); }
+.root .visualCaption { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; font-size:13px; line-height:20px; }
+.root .visualCaption > span { color:var(--tr-muted); font-size:12px; }
+.root :is(.directionDiagram,.sequenceDiagram,.flankerDiagram,.movementDiagram,.memoryDiagram,.structureDiagram) { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:24px; padding:24px 0; min-height:180px; }
+.root :is(.signalExample,.sequenceStep,.movementStep,.structureResponse) { display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; font-size:13px; line-height:20px; }
+.root :is(.signalExample,.movementStep,.structureResponse) > svg { color:var(--tr-blue); }
+.root .diagramConnector { color:var(--tr-muted); flex-shrink:0; }
+.root .compass { display:grid; grid-template-columns:repeat(3,88px); grid-template-rows:repeat(3,64px); gap:8px; }
+.root .compass [data-direction='up'] { grid-area:1/2; }
+.root .compass [data-direction='left'] { grid-area:2/1; }
+.root .compass [data-direction='right'] { grid-area:2/3; }
+.root .compass [data-direction='down'] { grid-area:3/2; }
+.root .compassOrigin { grid-area:2/2; align-self:center; justify-self:center; color:var(--tr-muted); }
+.root .examplePad { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:4px; border-radius:12px; background:var(--tr-soft); border:1px solid var(--tr-border); min-width:88px; min-height:64px; font-size:12px; font-weight:600; }
+.root .sequenceStep .examplePad { width:112px; min-height:88px; }
+.root .examplePad > strong { font-size:32px; line-height:40px; }
+.root [data-pad-color='red'] { --example-color:#e11d48; }
+.root [data-pad-color='yellow'] { --example-color:#d97706; }
+.root [data-pad-color='green'] { --example-color:#059669; }
+.root [data-pad-color='blue'] { --example-color:#2563eb; }
+.root .examplePad[data-pad-color] { color:var(--example-color); background:color-mix(in srgb,var(--example-color) 8%,var(--tr-card)); border-color:color-mix(in srgb,var(--example-color) 35%,var(--tr-border)); }
+.root .stepOrder { color:var(--tr-muted); font-size:12px; }
+.root .bridgeDiagram { display:flex; align-items:flex-end; justify-content:center; gap:28px; padding:32px 0; min-height:180px; }
+.root .bridgeStage { display:flex; flex-direction:column; align-items:center; gap:12px; font-size:13px; }
+.root .bridgeSteps { display:flex; flex-direction:column; gap:5px; }
+.root .bridgeSteps > span { width:64px; height:12px; background:color-mix(in srgb,var(--tr-blue) 18%,var(--tr-card)); border:1px solid color-mix(in srgb,var(--tr-blue) 45%,var(--tr-border)); border-radius:4px; }
+.root :is(.targetStimulus,.distractorStimulus) { display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px 12px; border-radius:12px; font-size:12px; }
+.root .targetStimulus { color:var(--tr-blue); background:var(--tr-soft); outline:2px solid var(--tr-blue); }
+.root .distractorStimulus { color:var(--tr-muted); }
+.root .shapeStimulus { display:grid; place-items:center; width:42px; height:42px; font-size:36px; }
+.root .memoryGrid { display:grid; grid-template-columns:repeat(3,32px); gap:5px; }
+.root .memoryGrid > span { height:32px; border-radius:5px; background:var(--example-color); }
+.root .structureSignal { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:12px; color:var(--tr-muted); font-size:38px; font-weight:700; }
+.root .structureSignal [data-target='true'] { color:var(--tr-blue); border-bottom:3px solid currentColor; }
+.root .structureResponse { max-width:220px; }
+.root .movementTransition { display:flex; align-items:center; gap:16px; }
+.root .movementTransition > svg { color:var(--tr-muted); flex-shrink:0; }
+.root .activityFlow { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; list-style:none; padding:16px 0 0; border-top:1px solid var(--tr-border); margin:0; }
+.root .activityFlow li { display:flex; align-items:center; gap:8px; font-size:13px; line-height:20px; }
+.root .activityFlow li > span { display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--tr-soft); color:var(--tr-blue); font-weight:700; }
+.root .activityFlow li > svg { color:var(--tr-muted); }
+.root .observedRecord { margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--tr-border); }
+.root .observedRecord h3 { font-size:13px; line-height:20px; margin-bottom:12px; }
+.root[data-theme='dark'] [data-pad-color='red'] { --example-color:#fb7185; }
+.root[data-theme='dark'] [data-pad-color='yellow'] { --example-color:#fbbf24; }
+.root[data-theme='dark'] [data-pad-color='green'] { --example-color:#34d399; }
+.root[data-theme='dark'] [data-pad-color='blue'] { --example-color:#60a5fa; }
+@media(max-width:540px) {
+ .root .directionDiagram { flex-direction:column; gap:16px; }
+ .root .diagramConnector { transform:rotate(90deg); }
+ .root .compass { grid-template-columns:repeat(3,80px); }
+ .root .compass .examplePad { min-width:0; }
+ .root :is(.sequenceDiagram,.movementDiagram,.flankerDiagram,.memoryDiagram,.structureDiagram) { gap:10px; }
+ .root .sequenceStep .examplePad { min-width:60px; width:60px; min-height:72px; }
+ .root :is(.targetStimulus,.distractorStimulus) { padding:12px 2px; }
+ .root .flankerDiagram svg:not([role='img']) { width:36px; }
+ .root .shapeStimulus { width:36px; }
+ .root .bridgeDiagram { gap:14px; }
+ .root .bridgeSteps > span { width:40px; }
+ .root .movementStep { max-width:90px; }
+ .root .movementTransition { gap:10px; }
+ .root .activityFlow { flex-direction:column; gap:10px; }
+ .root .activityFlow li > svg { display:none; }
+}

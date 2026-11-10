@@ -11,6 +11,7 @@ import { ClipboardCheck, Flag, Info, LayoutGrid, Lightbulb, RotateCcw, Timer, Za
 import { CSS } from '../styles';
 import { useViewportScrollLock } from '../lib/lockViewportScroll';
 import styles from './TrainingResultScreen.module.css';
+import { TrainingResultActivityVisual } from './TrainingResultActivityVisual';
 
 type StudentBadge = { name: string; color: string };
 
@@ -87,21 +88,22 @@ export function TrainingResultScreen(props: Props) {
             <FactList summary items={vm.summary} />
           </section>
 
-          {vm.hasDistribution || vm.recordFacts.length ? <section className={`${styles.card} ${styles.record}`} aria-labelledby="tr-record-title">
+          <section className={`${styles.card} ${styles.record}`} aria-labelledby="tr-record-title">
             <div className={styles.sectionHeading}>
               <div className={styles.sectionTitle}><span className={styles.sectionIcon}><LayoutGrid size={16} aria-hidden="true" /></span><h2 id="tr-record-title">{vm.recordTitle}</h2><span className={styles.sectionSubtitle}>{vm.recordSubtitle}</span></div>
               <span className={styles.layoutBadge}>{vm.recordBadge}</span>
             </div>
+            {vm.visual && vm.recordFacts.length ? <div className={styles.observedRecord}><h3>이번 활동의 실제 기록{props.glassBridge ? ' · 교사 입력' : ''}</h3><FactList items={vm.recordFacts} /></div> : null}
             {vm.hasDistribution ? <ul className={styles.distribution} aria-label={vm.distributionTitle}>
               {vm.distribution.map((item, index) => <li key={item.id} data-color={vm.distributionKind === 'number' ? undefined : item.id} data-empty={item.count === 0}>
                 <div className={styles.colorLabel}><span className={styles.dot} aria-hidden="true">{vm.distributionKind === 'number' ? index + 1 : null}</span><div><div className={styles.zoneHeading}><strong>{item.label}</strong>{vm.distributionKind === 'zone' ? <span className={styles.position}>{POSITIONS[item.id]}</span> : null}</div><span className={styles.countLabel}>{item.count === 0 ? '이번 활동에서는 나오지 않았어요' : vm.distributionKind === 'zone' ? '목표가 제시된 구역' : '화면에 제시된 자극'}</span></div></div>
                 <div className={styles.zoneValue}><span className={styles.countBadge}>{item.count === 0 ? '출현 없음' : `${item.count}회 출현`}</span><strong>{item.count}<span>회</span></strong></div>
               </li>)}
-            </ul> : <FactList items={vm.recordFacts} />}
+            </ul> : vm.visual ? <TrainingResultActivityVisual visual={vm.visual} /> : null}
             {vm.hasDistribution && vm.recordFacts.length ? <FactList items={vm.recordFacts} /> : null}
             {vm.hasDistribution && props.sessionSettings?.primary.trim() ? <p className={styles.settings}>{[props.sessionSettings.primary, props.sessionSettings.secondary].filter(Boolean).join(' · ')}</p> : null}
             {vm.note ? <p className={styles.note}><Info size={14} aria-hidden="true" />{vm.note}</p> : null}
-          </section> : null}
+          </section>
 
           <div className={styles.bottom}>
             <section className={`${styles.card} ${styles.education}`} aria-labelledby="tr-about-title">

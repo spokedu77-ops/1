@@ -1,110 +1,69 @@
-/**
- * 선생님 수업안 저장/삭제 — 서버에서 담당 여부 검증 후 Service Role로 처리
- */
+/** Teacher identity is server-derived; the DB locks ownership and write together. */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { lessonPlanWriteError } from '@/app/lib/teacher/lessonPlan';
 
-type SaveBody = {
-  action: 'save';
-  sessionId?: unknown;
-  lessonPlanId?: unknown;
-  content?: unknown;
-};
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type DeleteBody = {
-  action: 'delete';
-  sessionId?: unknown;
-  lessonPlanId?: unknown;
-};
-
-type Body = SaveBody | DeleteBody;
+export async function GET(req: Request) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!(await canAccessTeacherMaterials(user, supabase))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    const sessionId = new URL(req.url).searchParams.get('sessionId') ?? '';
+    if (!UUID.test(sessionId)) return NextResponse.json({ error: 'Invalid session' }, { status: 400 });
+    const { data, error } = await getServiceSupabase().rpc('teacher_read_lesson_plan_history', {
+      p_session_id: sessionId, p_teacher_id: user.id,
+    });
+    if (error) {
+      const mapped = lessonPlanWriteError(error.message);
+      return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+    }
+    return NextResponse.json({ plans: data ?? [] }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch {
+    return NextResponse.json({ error: '이전 수업안을 불러오지 못했습니다.' }, { status: 500 });
+  }
+}
 
 export async function POST(req: Request) {
   try {
     const serverSupabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await serverSupabase.auth.getUser();
+    const { data: { user } } = await serverSupabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (!(await canAccessTeacherMaterials(user, serverSupabase))) {
       return NextResponse.json({ error: 'Forbidden', reason: 'inactive_teacher' }, { status: 403 });
     }
-
-    const body = (await req.json().catch(() => ({}))) as Body;
-    if (body.action !== 'save' && body.action !== 'delete') {
+    const body = await req.json().catch(() => null);
+    if (!body || (body.action !== 'save' && body.action !== 'delete')) {
       return NextResponse.json({ error: 'invalid_action' }, { status: 400 });
     }
-
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : '';
-    if (!sessionId) return NextResponse.json({ error: 'sessionId이 필요합니다.' }, { status: 400 });
-
-    const svc = getServiceSupabase();
-    const { data: sessionRow, error: sErr } = await svc
-      .from('sessions')
-      .select('id, created_by')
-      .eq('id', sessionId)
-      .maybeSingle();
-
-    if (sErr) {
-      devLogger.error('[teacher/lesson-plan] session fetch', sErr);
-      return NextResponse.json({ error: '세션을 불러오지 못했습니다.' }, { status: 500 });
+    const planId = typeof body.lessonPlanId === 'string' ? body.lessonPlanId.trim() : '';
+    if (!UUID.test(sessionId) || (planId && !UUID.test(planId)) || (body.action === 'delete' && !planId)) {
+      return NextResponse.json({ error: '수업 정보가 올바르지 않습니다. 수업을 다시 열어 주세요.' }, { status: 400 });
     }
-    if (!sessionRow) return NextResponse.json({ error: '세션을 찾을 수 없습니다.' }, { status: 404 });
-    if (String(sessionRow.created_by || '') !== String(user.id)) {
-      return NextResponse.json({ error: '이 수업을 수정할 권한이 없습니다.' }, { status: 403 });
-    }
-
-    if (body.action === 'delete') {
-      const lessonPlanId = typeof body.lessonPlanId === 'string' ? body.lessonPlanId.trim() : '';
-      if (!lessonPlanId) return NextResponse.json({ error: 'lessonPlanId이 필요합니다.' }, { status: 400 });
-
-      const { error: delErr } = await svc
-        .from('lesson_plans')
-        .delete()
-        .eq('id', lessonPlanId)
-        .eq('session_id', sessionId);
-
-      if (delErr) {
-        devLogger.error('[teacher/lesson-plan] delete', delErr);
-        return NextResponse.json({ error: delErr.message || '삭제에 실패했습니다.' }, { status: 500 });
-      }
-      return NextResponse.json({ ok: true });
-    }
-
-    // save
     const content = typeof body.content === 'string' ? body.content : '';
-    if (!content.trim()) return NextResponse.json({ error: 'content이 필요합니다.' }, { status: 400 });
-
-    const lessonPlanId = typeof body.lessonPlanId === 'string' ? body.lessonPlanId.trim() : '';
-    if (lessonPlanId) {
-      const { error: upErr } = await svc
-        .from('lesson_plans')
-        .update({ content, updated_at: new Date().toISOString() })
-        .eq('id', lessonPlanId)
-        .eq('session_id', sessionId);
-      if (upErr) {
-        devLogger.error('[teacher/lesson-plan] update', upErr);
-        return NextResponse.json({ error: upErr.message || '저장에 실패했습니다.' }, { status: 500 });
-      }
-      return NextResponse.json({ ok: true, lessonPlanId });
+    if (body.action === 'save' && !content.trim()) {
+      return NextResponse.json({ error: '수업안 내용을 입력해 주세요.' }, { status: 400 });
     }
-
-    const { data: inserted, error: insErr } = await svc
-      .from('lesson_plans')
-      .insert({ session_id: sessionId, content })
-      .select('id')
-      .single();
-
-    if (insErr) {
-      devLogger.error('[teacher/lesson-plan] insert', insErr);
-      return NextResponse.json({ error: insErr.message || '저장에 실패했습니다.' }, { status: 500 });
+    const { data, error } = await getServiceSupabase().rpc('teacher_write_lesson_plan', {
+      p_session_id: sessionId, p_teacher_id: user.id,
+      p_lesson_plan_id: planId || null, p_content: content, p_action: body.action,
+    });
+    if (error) {
+      const mapped = lessonPlanWriteError(error.message);
+      devLogger.error('[teacher/lesson-plan] write', { code: error.code, message: error.message });
+      return NextResponse.json({ error: mapped.message }, { status: mapped.status });
     }
-    return NextResponse.json({ ok: true, lessonPlanId: inserted?.id });
+    return NextResponse.json(data);
   } catch (err) {
     devLogger.error('[teacher/lesson-plan]', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: '수업안을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' }, { status: 500 });
   }
 }
