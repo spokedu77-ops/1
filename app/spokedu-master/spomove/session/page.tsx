@@ -7,6 +7,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { createPortal } from 'react-dom';
 
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
+import { SPOMOVE_BGM_VOLUME, SPOMOVE_BGM_FADE_MS } from '@/app/lib/spomove/audioSettings';
 import { isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
@@ -699,10 +700,10 @@ function SpomoveSessionContent() {
     const wantsSessionBgm = Boolean(audioChannels.bgmEnabled && selectedBgmPath && officialPreset.engine.mode !== 'flow');
     if (wantsSessionBgm && selectedBgmPath) {
       const player = new BgmPlayer();
-      player.init(getPublicUrl(selectedBgmPath), 0.35);
+      player.init(getPublicUrl(selectedBgmPath), SPOMOVE_BGM_VOLUME);
       bgmPlayerRef.current = player;
       void player.play().then(() => {
-        if (player.status === 'playing') player.fadeIn(180);
+        if (player.status === 'playing') player.fadeIn(SPOMOVE_BGM_FADE_MS);
         const fsBlocked =
           launchMode === 'projector' && typeof document !== 'undefined' && !document.fullscreenElement;
         const audioBlocked = player.status === 'blocked';

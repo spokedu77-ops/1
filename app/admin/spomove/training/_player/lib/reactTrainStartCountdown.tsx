@@ -45,6 +45,7 @@ export function ReactTrainStartCountdownOverlay({ countdown, variant = 'canvas',
       >
         <div
           key={countdown}
+          data-spomove-countdown={countdown}
           className="react-train-cd-pop"
           style={{
             fontFamily: 'var(--spm-font-display)',

@@ -4,8 +4,11 @@
  */
 
 const BEAT_STEP_SEC = 0.25; // 120BPM 기준 1/4 박자
+const MASTER_GAIN = 0.54;
 
-import { spomoveClearInterval as clearInterval, spomoveSetInterval as setInterval, subscribeSpomoveRuntimePause } from '../../lib/runtimeClock';
+import { SPOMOVE_BGM_VOLUME, SPOMOVE_BGM_LOAD_TIMEOUT_MS } from '@/app/lib/spomove/audioSettings';
+
+import { spomoveClearInterval as clearInterval, spomoveSetInterval as setInterval, subscribeSpomoveRuntimePause, isSpomoveRuntimePaused } from '../../lib/runtimeClock';
 import {
   registerActiveFlowAudioContext,
   releaseActiveFlowAudioContext,
@@ -33,6 +36,8 @@ export class FlowAudio {
   private unsubscribePause: (() => void) | null = null;
   private bgmEnabled = true;
   private sfxEnabled = true;
+  private bgmLoadGeneration = 0;
+  private bgmRequest: AbortController | null = null;
 
   async init({ bgmEnabled = true, sfxEnabled = true }: { bgmEnabled?: boolean; sfxEnabled?: boolean } = {}): Promise<void> {
     this.bgmEnabled = bgmEnabled;
@@ -50,11 +55,12 @@ export class FlowAudio {
     });
 
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.54;
+    this.masterGain.gain.value = MASTER_GAIN;
     this.masterGain.connect(this.ctx.destination);
 
     this.bgmGain = this.ctx.createGain();
-    this.bgmGain.gain.value = bgmEnabled ? 1.0 : 0;
+    // Compensate only BGM for master attenuation; preserve existing SFX gain.
+    this.bgmGain.gain.value = bgmEnabled ? SPOMOVE_BGM_VOLUME / MASTER_GAIN : 0;
     this.bgmGain.connect(this.masterGain);
 
     this.sfxGain = this.ctx.createGain();
@@ -72,23 +78,39 @@ export class FlowAudio {
     if (!this.bgmEnabled || !this.ctx || !storagePath) return false;
     const url = getStorageUrl(storagePath);
     if (!url) return false;
+    const context = this.ctx;
+    const generation = ++this.bgmLoadGeneration;
+    this.bgmRequest?.abort();
+    const controller = new AbortController();
+    this.bgmRequest = controller;
+    const timeout = globalThis.setTimeout(() => controller.abort(), SPOMOVE_BGM_LOAD_TIMEOUT_MS);
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) return false;
-      this.bgmBuffer = await this.ctx.decodeAudioData(await res.arrayBuffer());
+      const buffer = await context.decodeAudioData(await res.arrayBuffer());
+      if (controller.signal.aborted || generation !== this.bgmLoadGeneration || this.ctx !== context) return false;
+      this.bgmBuffer = buffer;
       return true;
     } catch {
       return false;
+    } finally {
+      globalThis.clearTimeout(timeout);
+      if (this.bgmRequest === controller) this.bgmRequest = null;
     }
   }
 
   resume(): Promise<void> {
+    if (isSpomoveRuntimePaused()) return Promise.resolve();
     return this.ctx?.resume() ?? Promise.resolve();
   }
+
+  isPlaybackBlocked(): boolean { return this.isSuspended() && !isSpomoveRuntimePaused(); }
 
   isSuspended(): boolean {
     return this.ctx?.state === 'suspended';
   }
+
+  hasLoadedBgm(): boolean { return this.bgmBuffer !== null; }
 
   setMasterVolume(v: number): void {
     if (this.masterGain) this.masterGain.gain.value = v;
@@ -360,6 +382,9 @@ export class FlowAudio {
   }
 
   dispose(): void {
+    this.bgmLoadGeneration++;
+    this.bgmRequest?.abort();
+    this.bgmRequest = null;
     this.unsubscribePause?.();
     this.unsubscribePause = null;
     this.stopMusic();

@@ -1,4 +1,5 @@
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { SPOMOVE_BGM_VOLUME } from '@/app/lib/spomove/audioSettings';
 
 /**
  * BGM 플레이어 클래스
@@ -22,7 +23,7 @@ export class BgmPlayer {
   private audio: HTMLAudioElement | null = null;
   private fadeInterval: number | null = null;
   private isInitialized = false;
-  private targetVolume: number = 0.65;
+  private targetVolume: number = SPOMOVE_BGM_VOLUME;
   private eventHandlers: { event: string; handler: EventListener }[] = [];
   private _status: BgmStatus = 'idle';
 
@@ -32,7 +33,7 @@ export class BgmPlayer {
    * BGM 초기화 (재생하지 않음)
    * 사용자 제스처에서 play()를 호출해야 재생됨
    */
-  init(srcUrl: string, volume = 0.65): void {
+  init(srcUrl: string, volume = SPOMOVE_BGM_VOLUME): void {
     // 기존 재생 중이면 반드시 stop() 후 교체
     if (this.audio && this.isInitialized) {
       this.stop();

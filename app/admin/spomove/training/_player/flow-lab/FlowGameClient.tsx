@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
+import { BgmRetryButton } from '../components/BgmRetryButton';
 import { FlowEngine, type FlowGamePhase, type FlowStats } from './engine/FlowEngine';
 import { FLOW_MODULES } from './engine/modules/flowModules';
 import type { FlowStageConfig } from './engine/modules/stageBuilder';
@@ -94,6 +95,7 @@ export default function FlowGameClient({
   const [stats,         setStats]        = useState<FlowStats | null>(null);
   const [totalProgress, setTotalProgress] = useState(0);
   const [initError,     setInitError]    = useState<string | null>(null);
+  const [bgmIssue, setBgmIssue] = useState(false);
   /** retry 트리거 — 증가할 때마다 엔진 useEffect가 재실행되어 새 엔진을 생성한다 */
   const [initKey,       setInitKey]      = useState(0);
   const [gateColorId,   setGateColorId]  = useState<GateColorId | null>(null);
@@ -176,6 +178,7 @@ export default function FlowGameClient({
             setTotalProgress(prog);
           },
           onInstruction:  () => { /* instruction 표시 제거 */ },
+          onBgmIssue: (issue) => { if (mountedRef.current) setBgmIssue(issue); },
           onComplete:     (s) => { setStats(s); onComplete(s); },
           onCameraShake:  () => {},
           onFlash:        () => {},
@@ -289,6 +292,7 @@ export default function FlowGameClient({
 
   return (
     <div style={S.root}>
+      {bgmIssue && bgmEnabled ? <BgmRetryButton onRetry={() => engineRef.current?.retryBgm() ?? Promise.resolve()} /> : null}
 
       {/* Three.js 렌더 타겟 */}
       <canvas ref={canvasRef} style={S.canvas} />
@@ -479,7 +483,7 @@ export default function FlowGameClient({
       {/* ─── 카운트다운 ──────────────────────────────────────────────────── */}
       {phase === 'countdown' && countdown !== null && (
         <div style={{ ...S.overlay, background: 'rgba(0,0,0,0.72)' }}>
-          <div style={{
+          <div data-spomove-countdown={countdown > 0 ? countdown : undefined} style={{
             fontSize: countdown > 0 ? '9rem' : '4rem',
             fontWeight: 800,
             color: countdown > 0 ? '#fff' : '#22d3ee',

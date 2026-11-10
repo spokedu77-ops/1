@@ -99,6 +99,7 @@ const THEMES: Record<string, {
 export type FlowGamePhase = 'idle' | 'countdown' | 'stage-intro' | 'speed-intro' | 'playing' | 'complete';
 
 export interface FlowEngineCallbacks {
+  onBgmIssue:     (issue: boolean) => void;
   onPhaseChange:  (phase: FlowGamePhase) => void;
   onCountdown:    (n: number) => void;
   onStageChange:  (stageIndex: number) => void;
@@ -155,6 +156,7 @@ interface BridgeObj extends FlowBridge {
 export class FlowEngine {
   private canvas: HTMLCanvasElement;
   private cb:     Partial<FlowEngineCallbacks>;
+  private bgmPath = '';
   private opts:   FlowEngineOptions;
 
   private scene:    THREE.Scene | null = null;
@@ -252,6 +254,7 @@ export class FlowEngine {
     this.canvas = canvas;
     this.cb     = cb;
     this.opts   = opts;
+    this.bgmPath = opts.bgmPath ?? '';
   }
 
   // ── 초기화 ───────────────────────────────────────────────────────────────
@@ -262,8 +265,11 @@ export class FlowEngine {
     this.motionScale  = Math.min(1, Math.max(0.25, this.opts.motionScale ?? 1));
 
     await this.audio.init({ bgmEnabled: this.opts.bgmEnabled, sfxEnabled: this.opts.sfxEnabled });
-    if (this.opts.bgmEnabled !== false && this.opts.bgmPath) await this.audio.loadBgm(this.opts.bgmPath);
-    await this.init3D(); // GLB 로드가 포함되므로 async
+    const bgmLoad = this.opts.bgmEnabled !== false && this.bgmPath
+      ? this.audio.loadBgm(this.bgmPath).then(loaded => { if (!this.disposed) this.cb.onBgmIssue?.(!loaded); })
+      : Promise.resolve();
+    // The song and scene are independent assets; prepare them in parallel.
+    await Promise.all([bgmLoad, this.init3D()]);
     if (this.disposed) return;
     // startCountdown은 start()에서 — 렌더 루프 시작 후 호출해야 blank screen 없음
   }
@@ -583,8 +589,13 @@ export class FlowEngine {
     // 동일하게 카운트다운이 보이는 순간부터 BGM을 재생한다.
     // BGM 목록이 비동기로 도착하는 경우에는 짧은 폴백 드럼을 먼저 틀지 않는다.
     // 실제 곡이 로드된 뒤 loadBgmLate가 한 번만 재생을 시작한다.
-    if (this.opts.bgmEnabled === false || this.opts.bgmPath) {
-      void this.audio.resume().then(() => this.audio.startMusic());
+    if (this.opts.bgmEnabled === false || this.bgmPath) {
+      if (this.audio.isPlaybackBlocked()) this.cb.onBgmIssue?.(true);
+      void this.audio.resume().then(() => {
+        if (!this.sessionStarted || this.disposed || this.phase === 'complete') return;
+        this.audio.startMusic();
+        this.cb.onBgmIssue?.(Boolean(this.bgmPath && !this.audio.hasLoadedBgm()));
+      }).catch(() => { if (!this.disposed) this.cb.onBgmIssue?.(true); });
     }
     const seconds = 3;
     const startedAt = performance.now();
@@ -1059,15 +1070,40 @@ export class FlowEngine {
 
   // ── 시작 / 종료 ──────────────────────────────────────────────────────────
 
-  start(): void { this.startLoop(); this.startCountdown(); }
+  private sessionStarted = false;
+
+  start(): void { this.sessionStarted = true; this.startLoop(); this.startCountdown(); }
 
   /** BGM 리스트가 늦게 로딩됐을 때 — init 이후 외부에서 호출 */
   async loadBgmLate(storagePath: string): Promise<void> {
-    await this.audio.loadBgm(storagePath);
-    if (this.phase === 'countdown' || this.phase === 'playing') this.audio.startMusic();
+    this.bgmPath = storagePath;
+    const loaded = await this.audio.loadBgm(storagePath);
+    // Music also belongs to stage/speed introductions. Never restart it after
+    // completion, stop or disposal while an asynchronous load was in flight.
+    if (loaded && this.sessionStarted && !this.disposed && this.phase !== 'complete') {
+      if (this.audio.isPlaybackBlocked()) this.cb.onBgmIssue?.(true);
+      try {
+        await this.audio.resume();
+        if (this.sessionStarted && !this.disposed && this.getPhase() !== 'complete') {
+          this.audio.startMusic();
+          this.cb.onBgmIssue?.(false);
+        }
+      } catch { if (!this.disposed) this.cb.onBgmIssue?.(true); }
+    } else if (!loaded && this.sessionStarted && !this.disposed) {
+      this.cb.onBgmIssue?.(true);
+    }
+  }
+
+  async retryBgm(): Promise<void> {
+    if (this.disposed || !this.sessionStarted || this.phase === 'complete') return;
+    try {
+      await this.audio.resume();
+      if (this.bgmPath) await this.loadBgmLate(this.bgmPath);
+    } catch { if (!this.disposed) this.cb.onBgmIssue?.(true); }
   }
 
   stop(): void {
+    this.sessionStarted = false;
     if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = 0; }
     if (this.countdownTimer) { clearTimeout(this.countdownTimer); this.countdownTimer = null; }
     this.audio.stopMusic();

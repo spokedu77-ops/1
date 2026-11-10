@@ -164,6 +164,8 @@ type Props = {
   effectsEnabled: boolean;
   bgmEnabled: boolean;
   selectedBgmPath: string;
+  visualSearchStage?: 1 | 2;
+  visualSearchTargetCount?: 1 | 2;
   variantColorTheme?: string;
   bodyLabelMode?: 'easy' | 'hard';
   hideBodyLabelModeControls?: boolean;
@@ -281,6 +283,8 @@ function EngineRuntime({
   colorMemoryGridMode,
   spatialMemoryResponse,
   intervalLaunch = null,
+  visualSearchStage,
+  visualSearchTargetCount,
   onComplete,
   onExit,
 }: Props) {
@@ -360,7 +364,8 @@ function EngineRuntime({
     );
   }
 
-  if (runtime === 'signals' || runtime === 'relative-compass' || runtime === 'shape-completion' || runtime === 'virus' || runtime === 'shell-tracking') {
+  if (runtime === 'signals' || runtime === 'relative-compass' || runtime === 'shape-completion' || runtime === 'virus' || runtime === 'shell-tracking'
+    || runtime === 'moving-number-reader' || runtime === 'visual-search') {
     const safeLevel = level;
     const effectiveSimonPole: 1 | 2 =
       mode === 'simon' && (safeLevel === 1 || safeLevel === 2 || safeLevel === 3) && simonPoleCount === 2 ? 2 : 1;
@@ -377,6 +382,8 @@ function EngineRuntime({
             warmup: 3,
             audioMode: effectsEnabled ? 'beep' : 'off',
             variantColorTheme: variantColorTheme as SpomoveColorThemeId | undefined,
+            visualSearchStage,
+            visualSearchTargetCount,
             bodyLabelMode: bodyLabelMode ?? 'easy',
             hideBodyLabelModeControls: hideBodyLabelModeControls ?? true,
             spatialArrowColorMode,

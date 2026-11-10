@@ -2618,7 +2618,7 @@ function CountdownScreen({ onDone }: { onDone: () => void }) {
         <div className="spm-g-vignette" />
         <div className="spm-g-grid" />
         <div className="spm-g-stage">
-          <span key={count} className="spm-countdown-num">{count}</span>
+          <span key={count} data-spomove-countdown={count > 0 ? count : undefined} className="spm-countdown-num">{count}</span>
         </div>
         <div className="spm-countdown-label">ready</div>
       </div>

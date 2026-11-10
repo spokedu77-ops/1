@@ -6,6 +6,7 @@ import { emptyColorStimulusCounts, type ColorStimulusCounts } from '../lib/train
 import { createNumberReaderTrial, normalizeNumberReaderReps, normalizeNumberReaderSeconds,
   numberReaderPhaseSeconds, NUMBER_READER_ZONES, type NumberReaderPhase } from '../lib/movingNumberReader';
 import { drawNumberReaderFrame } from '../lib/movingNumberReaderCanvas';
+import { ReactTrainStartCountdownOverlay, REACT_TRAIN_START_COUNTDOWN_SEC, runReactTrainStartCountdown } from '../lib/reactTrainStartCountdown';
 import { spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame,
   spomoveCancelAnimationFrame as cancelAnimationFrame } from '../lib/runtimeClock';
 
@@ -22,13 +23,14 @@ export function MovingNumberReaderTraining({ targetReps, flightSeconds, onProgre
   const callbacks = useRef({ onProgress, onComplete });
   useEffect(() => { callbacks.current = { onProgress, onComplete }; }, [onProgress, onComplete]);
   const [hud, setHud] = useState({ phase: 'READY' as NumberReaderPhase, round: 1, remaining: 1.5, number: 0 });
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const total = normalizeNumberReaderReps(targetReps);
   const seconds = normalizeNumberReaderSeconds(flightSeconds);
 
   useEffect(() => {
     const canvas = canvasRef.current!; const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('숫자 캡슐 Canvas를 시작할 수 없습니다.');
-    let done = false; let frame = 0; let round = 1; let presented = 0;
+    let done = false; let started = false; let frame = 0; let round = 1; let presented = 0;
     let phase: NumberReaderPhase = 'READY'; let phaseStart = performance.now();
     let trial = createNumberReaderTrial(); let shown = false; let flightStarted = false;
     let counts = emptyColorStimulusCounts(); let width = 1; let height = 1;
@@ -48,6 +50,7 @@ export function MovingNumberReaderTraining({ targetReps, flightSeconds, onProgre
     stopRef.current = () => finish(flightStarted ? 'stopped_early' : 'cancelled');
     const tick = () => {
       if (done) return;
+      if (!started) { frame = requestAnimationFrame(safeTick); return; }
       const now = performance.now();
       if (now - phaseStart >= numberReaderPhaseSeconds(phase, seconds) * 1000) {
         if (phase === 'READY') { phase = 'FLY'; flightStarted = true; }
@@ -75,11 +78,13 @@ export function MovingNumberReaderTraining({ targetReps, flightSeconds, onProgre
       frame = requestAnimationFrame(safeTick);
     };
     const safeTick = () => { try { tick(); } catch { finish('failed'); } };
+    const stopCountdown = runReactTrainStartCountdown({ onTick:setCountdown, onDone:() => { started = true; phaseStart = performance.now(); } });
     frame = requestAnimationFrame(safeTick);
-    return () => { done = true; cancelAnimationFrame(frame); observer.disconnect(); stopRef.current = null; };
+    return () => { done = true; stopCountdown(); cancelAnimationFrame(frame); observer.disconnect(); stopRef.current = null; };
   }, [seconds, total]);
 
-  return <section aria-label="움직이는 숫자 판별 실행" style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#020617', color: '#fff' }}>
+  return <section aria-label="움직이는 숫자 판별 실행" style={{ position:'relative', height: '100%', display: 'flex', flexDirection: 'column', background: '#020617', color: '#fff' }}>
+    <ReactTrainStartCountdownOverlay countdown={countdown} />
     <header style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: '12px 16px', alignItems: 'center', flexShrink: 0 }}>
       <strong>움직이는 숫자 판별</strong><span>{hud.round} / {total}회</span>
       <span style={{ marginLeft: 'auto', color: '#7dd3fc' }}>비행 {seconds}초</span>
