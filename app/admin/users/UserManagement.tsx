@@ -1,15 +1,16 @@
 'use client';
 
-import styles from './Users.module.css';
 import { WonInput } from '@/app/components/admin/WonInput';
 
 import { isZeroFeeStaff } from '@/app/lib/staffTeacherFees';
 
 import { toast } from 'sonner';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import MileageDetailModal from '@/app/components/admin/MileageDetailModal';
+import layoutStyles from './TeacherLayout.module.css';
+import { isActualClassOpsTeacher } from '@/app/admin/classes/lib/classOpsTeacherSelection';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import {
@@ -18,11 +19,9 @@ import {
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { fetchTeacherLogCounts } from './fetchTeacherLogCounts';
-import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
 import {
   cloneTierFeeMap,
   computeTier,
-  effectiveFees,
   getTierDefaultFees,
   HARD_CODED_TIER_FEES,
   TEACHER_TIER_IDS,
@@ -65,14 +64,10 @@ type UserManagementProps = { teacherId?: string; onChanged?: () => void; mode?: 
 export default function UserManagement({ teacherId, onChanged, mode = 'teacher' }: UserManagementProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedView = searchParams.get('teacherView');
-  const mainTab = requestedView === 'counting' ? 'counting' : 'info';
-  const setMainTab = (tab: 'info' | 'counting') => {
-    const query = new URLSearchParams(searchParams.toString());
-    query.set('workspace', 'teachers');
-    query.set('teacherView', tab);
-    router.replace(`/admin/classes/calendar?${query}`, { scroll: false });
-  };
+  const [mileageTeacherId, setMileageTeacherId] = useState<string | null>(() =>
+    mode === 'teacher' && searchParams.get('teacherView') === 'counting'
+      ? teacherId ?? searchParams.get('teacher')
+      : null);
 
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [users, setUsers] = useState<UserData[]>([]);
@@ -102,9 +97,65 @@ export default function UserManagement({ teacherId, onChanged, mode = 'teacher' 
   const [tierFeeDraft, setTierFeeDraft] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
   const [tierFeeSaving, setTierFeeSaving] = useState(false);
   const [tierFeeTableOpen, setTierFeeTableOpen] = useState(mode === 'fees');
-  /** 강사 카드별 「적용/기본 수업료」 블록 펼침 (기본 접힘) */
+  /** 강사 정보 수정 시 수업료 설정 펼침 (기본 접힘) */
   const [userFeeSectionOpen, setUserFeeSectionOpen] = useState<Record<string, boolean>>({});
+  const [teacherQuery, setTeacherQuery] = useState('');
+  const [showTierAchievedOnly, setShowTierAchievedOnly] = useState(false);
+  const [acknowledgedTiers, setAcknowledgedTiers] = useState<Record<string, boolean>>({});
+  const [acknowledgementsReady, setAcknowledgementsReady] = useState(false);
+  const [acknowledgementsError, setAcknowledgementsError] = useState(false);
+  const [savingAcknowledgements, setSavingAcknowledgements] = useState<Record<string, boolean>>({});
+  const [activity, setActivity] = useState<'active' | 'ending' | 'inactive' | 'all'>('active');
   const tierFeeFallbackNotifiedRef = useRef(false);
+  const acknowledgementGeneration = useRef(0);
+  const loadTierAcknowledgements = useCallback(async () => {
+    const generation = ++acknowledgementGeneration.current;
+    try {
+      const response = await fetch('/api/admin/teachers/tier-acknowledgements', { cache: 'no-store' });
+      if (!response.ok) throw new Error('fetch_failed');
+      const result = await response.json() as { acknowledgements: { teacher_id: string; tier_id: string }[] };
+      const next: Record<string, boolean> = {};
+      for (const row of result.acknowledgements) next[`${row.teacher_id}:${row.tier_id}`] = true;
+      if (generation !== acknowledgementGeneration.current) return;
+      setAcknowledgedTiers(next);
+      setAcknowledgementsReady(true);
+      setAcknowledgementsError(false);
+    } catch {
+      if (generation !== acknowledgementGeneration.current) return;
+      setAcknowledgementsError(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mode !== 'teacher') return;
+    void loadTierAcknowledgements();
+    const refresh = () => { void loadTierAcknowledgements(); };
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [mode, loadTierAcknowledgements]);
+
+  const acknowledgeTier = async (user: UserData) => {
+    const tier = computeTier(totalLessonsFromCounts(user.session_count, user.logCount));
+    const key = `${user.id}:${tier}`;
+    if (tier === 'rookie' || !acknowledgementsReady || savingAcknowledgements[key]) return;
+    setSavingAcknowledgements((previous) => ({ ...previous, [key]: true }));
+    try {
+      const response = await fetch('/api/admin/teachers/tier-acknowledgements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacherId: user.id, tierId: tier }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? '승급 확인을 저장하지 못했습니다.');
+      acknowledgementGeneration.current += 1;
+      setAcknowledgedTiers((previous) => ({ ...previous, [key]: true }));
+      toast.success(`${user.name} 선생님 ${tierLabelKo(tier)} 기준 달성 확인 완료`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '승급 확인을 저장하지 못했습니다.');
+    } finally {
+      setSavingAcknowledgements((previous) => ({ ...previous, [key]: false }));
+    }
+  };
   const assertUserMutation = (
     data: { id: string } | null,
     error: { message: string } | null
@@ -126,7 +177,7 @@ export default function UserManagement({ teacherId, onChanged, mode = 'teacher' 
         devLogger.error('[users] fetchUsers error:', error);
         throw error;
       }
-      const base = (data as UserData[]).map((u) => ({
+      const base = ((data ?? []) as UserData[]).filter(isActualClassOpsTeacher).map((u) => ({
         ...u,
         ...(isZeroFeeStaff(u) ? { fee_private: 0, fee_group: 0, fee_center_main: 0, fee_center_assist: 0 } : {}),
         is_active: u.is_active ?? true,
@@ -486,8 +537,18 @@ export default function UserManagement({ teacherId, onChanged, mode = 'teacher' 
     }
   };
 
-  const filteredUsers = users.filter(user => user.id === teacherId);
-  const selectedUser = filteredUsers[0];
+  const nameQuery = teacherQuery.trim().toLocaleLowerCase('ko-KR');
+  const filteredUsers = users.filter((user) => {
+    if (teacherId) return user.id === teacherId;
+    const matchesActivity = activity === 'all' || (activity === 'active' && user.is_active && !user.ending_soon) || (activity === 'ending' && user.is_active && user.ending_soon) || (activity === 'inactive' && !user.is_active);
+    const tier = computeTier(totalLessonsFromCounts(user.session_count, user.logCount));
+    const tierAchieved = acknowledgementsReady && tier !== 'rookie' && !acknowledgedTiers[`${user.id}:${tier}`];
+    return matchesActivity && (!showTierAchievedOnly || tierAchieved) && (!nameQuery || user.name.toLocaleLowerCase('ko-KR').includes(nameQuery));
+  });
+  const mileageTeacher = useMemo(() => {
+    const user = users.find((row) => row.id === mileageTeacherId);
+    return user ? { ...user, points: user.points ?? 0, session_count: user.session_count ?? 0 } : null;
+  }, [users, mileageTeacherId]);
 
 
   return (
@@ -558,40 +619,51 @@ export default function UserManagement({ teacherId, onChanged, mode = 'teacher' 
 
       <div hidden={mode !== 'teacher'}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div role="group" aria-label="강사 상세 항목" className="flex flex-wrap gap-1">
-          {([{ key: 'info', label: '기본 정보' }, { key: 'counting', label: '인정 회차·마일리지' }] as const).map(tab => <button key={tab.key} type="button" aria-pressed={mainTab === tab.key} onClick={() => setMainTab(tab.key)} className={`min-h-11 rounded-lg px-3 text-sm font-semibold ${mainTab === tab.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}>{tab.label}</button>)}
-        </div>
+        <p className="text-xs text-slate-500">강사 정보 · 인정 회차 · 마일리지</p>
+        <button type="button" onClick={() => setIsAddModalOpen(true)} className="min-h-11 shrink-0 rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white">+ 강사 추가</button>
       </div>
-      {!selectedUser && <p className="py-12 text-center text-sm text-slate-500">목록에서 강사를 선택해 주세요.</p>}
+      {!teacherId && <div className={layoutStyles.toolbar}>
+        <input value={teacherQuery} onChange={(event) => setTeacherQuery(event.target.value)} placeholder="강사명 검색" aria-label="강사명 검색" className={`${layoutStyles.search} h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none`} />
+        <div className={layoutStyles.filters} aria-label="활동 상태 필터">
+          {([{ key: 'active', label: '활동' }, { key: 'ending', label: '종료 예정' }, { key: 'inactive', label: '종료' }, { key: 'all', label: '전체' }] as const).map(option => <button key={option.key} type="button" aria-pressed={activity === option.key} onClick={() => setActivity(option.key)} className={`min-h-11 rounded-lg px-3 text-xs font-semibold ${activity === option.key ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>{option.label}</button>)}
+        </div>
+        <label className={layoutStyles.achievementFilter}>
+          <input type="checkbox" checked={showTierAchievedOnly} onChange={(event) => setShowTierAchievedOnly(event.target.checked)} />
+          승급 확인 필요만 <span>실버 이상</span>
+        </label>
+      </div>}
+      {acknowledgementsError && <p role="alert" className="mb-3 text-xs text-red-700">승급 확인 상태를 불러오지 못했습니다. <button type="button" className="min-h-11 px-2 underline" onClick={() => void loadTierAcknowledgements()}>다시 불러오기</button></p>}
+      {showTierAchievedOnly && !acknowledgementsReady && !acknowledgementsError && <p role="status" className="mb-3 text-xs text-slate-500">승급 확인 상태를 불러오는 중입니다.</p>}
       <main className="min-w-0">
-        {mode === 'teacher' && searchParams.get('workspace') === 'teachers' && mainTab === 'counting' && selectedUser && <MileageDetailModal key={selectedUser.id} teacher={{ ...selectedUser, points: selectedUser.points ?? 0, session_count: selectedUser.session_count ?? 0 }} supabase={supabase} hideAppliedFeePreview onClose={() => setMainTab('info')} onSaved={() => void fetchUsers()} />}
-          <div className="min-w-0">
+        {mode === 'teacher' && mileageTeacher && <MileageDetailModal key={mileageTeacher.id} teacher={mileageTeacher} supabase={supabase} hideAppliedFeePreview onClose={() => setMileageTeacherId(null)} onSaved={() => void fetchUsers()} />}
+          <div className={layoutStyles.cards}>
+        {filteredUsers.length === 0 && <p className="col-span-full py-12 text-center text-sm text-slate-500">조건에 맞는 강사가 없습니다.</p>}
         {filteredUsers.map((user) => {
           const feeOpen = userFeeSectionOpen[user.id] ?? false;
+          const totalLessons = totalLessonsFromCounts(user.session_count, user.logCount);
+          const tier = computeTier(totalLessons);
+          const acknowledgementKey = `${user.id}:${tier}`;
+          const tierPending = acknowledgementsReady && tier !== 'rookie' && !acknowledgedTiers[acknowledgementKey];
           return (
           <div
             key={user.id}
-            className={styles.teacherDetail}
+            data-tier={tier}
+            data-active={user.is_active}
+            data-tier-pending={tierPending}
+            className={layoutStyles.card}
           >
-            <div><div className={styles.cardHeader}>
-              <div className={styles.heading}>
-                <h3>{user.name} <span>선생님</span></h3>
-                <span className={`rounded-md px-2 py-1 text-xs font-semibold ${user.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{user.is_active ? '활동 중' : '종료'}</span>
-                {user.is_active && user.ending_soon && <span className="text-xs font-medium text-amber-700">종료 예정</span>}
+            <div className={layoutStyles.cardHeader}>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`rounded-lg px-2 py-1 text-[9px] font-black ${!user.is_active ? 'bg-slate-100 text-slate-500' : user.ending_soon ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>{!user.is_active ? '종료' : user.ending_soon ? '종료 예정' : '활동중'}</span>
               </div>
-              {currentUser?.role === 'admin' && <details className={styles.management} onKeyDown={event => {
-                if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
-              }} onClick={event => { if ((event.target as HTMLElement).closest('button')) event.currentTarget.open = false; }}>
-                <summary className={styles.managementToggle}>관리<ChevronDown size={14} aria-hidden="true" /></summary>
-                <div className={styles.managementList}>
-                  <button type="button" onClick={() => { if (editingId === user.id) { setEditingId(null); } else { setEditingId(user.id); setEditForm({ ...user }); } }}><Edit3 size={15} />{editingId === user.id ? '수정 닫기' : '정보 수정'}</button>
-                  {user.is_active && <button type="button" onClick={() => toggleEndingSoon(user)}><Clock size={15} />{user.ending_soon ? '종료 예정 해제' : '종료 예정으로 표시'}</button>}
-                  <button type="button" onClick={() => toggleActiveStatus(user)}><Power size={15} />{user.is_active ? '활동 종료' : '활동 재개'}</button>
-                  <button type="button" onClick={() => handleResetPassword(user)} disabled={!!resetPasswordLoadingId}>{resetPasswordLoadingId === user.id ? <Loader2 size={15} className="animate-spin" /> : <KeyRound size={15} />}비밀번호 재설정</button>
+              {currentUser?.role === 'admin' && (
+                <div className={layoutStyles.cardActions}>
+                  {user.is_active && <button type="button" aria-label={user.ending_soon ? '종료 예정 해제' : '종료 예정으로 표시'} title={user.ending_soon ? '종료 예정 해제' : '종료 예정으로 표시'} onClick={() => toggleEndingSoon(user)} className={`flex min-h-11 min-w-11 items-center justify-center rounded-xl ${(user.ending_soon ?? false) ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}><Clock className="h-3.5 w-3.5" /></button>}
+                  <button type="button" aria-label={user.is_active ? '활동 종료' : '활동 재개'} title={user.is_active ? '활동 종료' : '활동 재개'} onClick={() => toggleActiveStatus(user)} className={`flex min-h-11 min-w-11 items-center justify-center rounded-xl ${user.is_active ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}><Power className="h-3.5 w-3.5" /></button>
+                  <button type="button" aria-label={editingId === user.id ? '수정 닫기' : '정보 수정'} title={editingId === user.id ? '수정 닫기' : '정보 수정'} onClick={() => { if (editingId === user.id) setEditingId(null); else { setEditingId(user.id); setEditForm({ ...user }); } }} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-400"><Edit3 className="h-3.5 w-3.5" /></button>
+                  <button type="button" aria-label="비밀번호 재설정" title="비밀번호 재설정" onClick={() => handleResetPassword(user)} disabled={!!resetPasswordLoadingId} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-400 disabled:opacity-50">{resetPasswordLoadingId === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}</button>
                 </div>
-              </details>}
-            </div>
-
+              )}
             </div>
             <div>
             {editingId === user.id ? (
@@ -687,42 +759,53 @@ export default function UserManagement({ teacherId, onChanged, mode = 'teacher' 
                 <button onClick={() => handleSaveInfo(user.id)} className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black cursor-pointer">저장</button>
               </div>
             ) : (
-              <div className="min-w-0">
-                <div className={styles.identity}>
-                  <p><TeacherTierBadge sessionCount={user.session_count} logCount={user.logCount} /><span>누적 {totalLessonsFromCounts(user.session_count, user.logCount).toLocaleString('ko-KR')}회</span></p>
-                </div>
-                <dl className={styles.information}>
-                  <div><dt>학력</dt><dd>{user.organization || '-'}</dd></div>
-                  <div><dt>연락처</dt><dd>{user.phone || '-'}</dd></div>
-                  <div><dt>출발장소</dt><dd>{user.departure_location || '-'}</dd></div>
-                </dl>
-                <div className={styles.schedule}>
-                  <h4>수업 스케줄</h4>
-                  {(user.schedule || '').split(',').filter(item => item.trim()).length ? <div className={styles.scheduleItems}>{(user.schedule || '').split(',').filter(item => item.trim()).map((item, index) => <span key={index}>{item.trim()}</span>)}</div> : <p className="text-slate-500">등록된 스케줄 없음</p>}
+              <div className="min-w-0 flex-1">
+                <h3 className="mb-3 text-lg font-bold tracking-tight text-slate-900">{user.name} <span className="text-xs font-medium text-slate-400">선생님</span></h3>
+                <div className={layoutStyles.information}>
+                  <div className={layoutStyles.informationRow}><GraduationCap aria-hidden="true" /><span>학력</span><span>{user.organization || '-'}</span></div>
+                  <div className={layoutStyles.informationRow}><Smartphone aria-hidden="true" /><span>연락처</span><span>{user.phone || '-'}</span></div>
+                  <div className={layoutStyles.informationRow}><MapPin aria-hidden="true" /><span>출발장소</span><span>{user.departure_location || '-'}</span></div>
+                  <div>
+                    <div className="mb-1 flex items-center text-[11px] font-bold text-slate-400"><Clock className="mr-3 h-3.5 w-3.5 text-blue-500" />수업 스케줄</div>
+                    <div className="flex flex-wrap gap-1.5 pl-7">{(user.schedule || '').split(',').filter((item) => item.trim()).length ? (user.schedule || '').split(',').filter((item) => item.trim()).map((item, index) => <span key={index} className="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-600">{item.trim()}</span>) : <span className="text-[10px] text-slate-300">등록된 스케줄 없음</span>}</div>
+                  </div>
                 </div>
               </div>
             )}
 
             </div>
+            {tierPending && <div className={layoutStyles.achievementBanner}>
+              <div><strong>승급 기준 달성</strong><span>{tierLabelKo(tier)} · 확인 필요</span></div>
+              <label><input type="checkbox" checked={false} disabled={savingAcknowledgements[acknowledgementKey] || currentUser?.role !== 'admin'} onChange={() => void acknowledgeTier(user)} aria-label={`${user.name} ${tierLabelKo(tier)} 기준 달성 확인 완료`} /><span>{savingAcknowledgements[acknowledgementKey] ? '저장 중…' : '확인 완료'}</span></label>
+            </div>}
+            <div className={layoutStyles.metrics}>
+              <span><span className={layoutStyles.metricLabel}>등급</span><strong title={tierLabelKo(tier)}>{tier === 'partner' ? '파트너' : tierLabelKo(tier)}</strong></span>
+              <span><span className={layoutStyles.metricLabel}>누적 수업</span><strong>{totalLessons.toLocaleString('ko-KR')}<small>회</small></strong></span>
+              <button type="button" className={layoutStyles.mileageButton} onClick={() => setMileageTeacherId(user.id)} aria-label={`${user.name} 인정 회차·마일리지 관리`} title="클릭하여 인정 회차·마일리지 관리"><span className={layoutStyles.metricLabel}>마일리지 관리 ↗</span><strong>{(user.points ?? 0).toLocaleString('ko-KR')}<small>P</small></strong></button>
+            </div>
             {/* 서류 관리 섹션 */}
-            <div className={styles.documents}>
-              <details>
-                <summary className={styles.documentsSummary}><FileCheck size={14} aria-hidden="true" /><span>서류 {(user.documents || []).length}개</span><ChevronDown size={14} className={styles.documentsChevron} aria-hidden="true" /></summary>
-                <ul className={styles.documentList}>
-                  {(user.documents || []).map((doc, i) => <li key={i} className={styles.documentRow}>
-                    <FileText size={14} className="shrink-0 text-blue-500" aria-hidden="true" />
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700" title={doc.name}>{doc.name}</span>
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer" aria-label={`${doc.name} 열기`} className={styles.documentAction}><Download size={14} /></a>
-                    <button type="button" onClick={() => deleteDocument(user, i)} aria-label={`${doc.name} 삭제`} className={`${styles.documentAction} hover:text-rose-600`}><X size={14} /></button>
-                  </li>)}
-                  {!(user.documents || []).length && <li className="py-2 text-xs text-slate-400">등록된 서류가 없습니다.</li>}
-                </ul>
-              </details>
-              <label className={styles.documentUpload}>
-                {uploadingId === user.id ? <Loader2 size={14} className="animate-spin" /> : <span>+ 서류 추가</span>}
+            <details className={layoutStyles.documents}>
+              <summary className={layoutStyles.documentsToggle}>
+                <FileCheck size={14} aria-hidden="true" />
+                <span>서류 {(user.documents || []).length}개</span>
+                <ChevronDown size={16} className={layoutStyles.documentsChevron} aria-hidden="true" />
+              </summary>
+              <div className="mb-4 space-y-2">
+                {(user.documents || []).length ? (user.documents || []).map((doc, index) => (
+                  <div key={index} className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 p-2.5">
+                    <div className="flex min-w-0 items-center gap-3"><span className="rounded-lg bg-white p-1.5"><FileText className="h-3.5 w-3.5 text-blue-500" /></span><span className="truncate text-[11px] font-black text-slate-700" title={doc.name}>{doc.name}</span></div>
+                    <div className="flex shrink-0">
+                      <a href={doc.url} target="_blank" rel="noopener noreferrer" aria-label={`${doc.name} 열기`} className="flex h-11 w-11 items-center justify-center text-slate-400"><Download className="h-3.5 w-3.5" /></a>
+                      <button type="button" onClick={() => deleteDocument(user, index)} aria-label={`${doc.name} 삭제`} className="flex h-11 w-11 items-center justify-center text-slate-400"><X className="h-3.5 w-3.5" /></button>
+                    </div>
+                  </div>
+                )) : <p className="rounded-2xl border-2 border-dashed border-slate-100 py-4 text-center text-[10px] font-bold text-slate-300">등록된 서류가 없습니다.</p>}
+              </div>
+              <label className="flex min-h-11 w-full cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-slate-200">
+                {uploadingId === user.id ? <Loader2 className="h-4 w-4 animate-spin text-blue-500" /> : <span className="text-[10px] font-black uppercase text-slate-400">+ 서류 추가</span>}
                 <input aria-label={`${user.name} 서류 추가`} type="file" className="sr-only" onChange={(e) => handleFileUpload(e, user)} disabled={!!uploadingId} />
               </label>
-            </div>
+            </details>
           </div>
         );})}
           </div>

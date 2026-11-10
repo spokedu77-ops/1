@@ -10,7 +10,7 @@ describe("Class Ops integrated calendar contract", () => {
   it("keeps the existing detail panel and main/assistant teacher filtering path", () => {
     expect(page).toContain("<ClassBundlePanel");
     expect(page).toContain("setFilterTeacher");
-    expect(page).toContain("ClassOpsTeacherDirectory");
+    expect(page).toContain("<UserManagement");
   });
 
   it("uses the V2 900px monthly boundary and renders every monthly event", () => {

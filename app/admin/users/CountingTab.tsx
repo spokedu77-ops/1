@@ -7,6 +7,7 @@ import MileageDetailModal from '@/app/components/admin/MileageDetailModal';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fetchTeacherLogCounts } from './fetchTeacherLogCounts';
+import { isActualClassOpsTeacher } from '@/app/admin/classes/lib/classOpsTeacherSelection';
 
 interface Teacher {
   id: string;
@@ -34,17 +35,19 @@ export function CountingTab({ supabase }: CountingTabProps) {
   const fetchData = useCallback(async () => {
     if (!supabase) return;
     try {
-      const { data: userData } = await supabase
+      const { data: userData, error } = await supabase
         .from('users')
-        .select('id, name, points, session_count, fee_private, fee_group, fee_center_main, fee_center_assist')
+        .select('id, name, email, role, is_admin, points, session_count, fee_private, fee_group, fee_center_main, fee_center_assist')
+        .eq('role', 'teacher')
         .eq('is_active', true)
-        .not('name', 'in', '("최지훈","김구민","김윤기")')
         .order('name', { ascending: true });
+      if (error) throw error;
 
-      const teacherIds = (userData || []).map((u) => u.id);
+      const actualTeachers = (userData ?? []).filter(isActualClassOpsTeacher);
+      const teacherIds = actualTeachers.map((u) => u.id);
       const logCountByTeacher = await fetchTeacherLogCounts(supabase, teacherIds);
 
-      const teachersWithLogCount: Teacher[] = (userData || []).map((u) => ({
+      const teachersWithLogCount: Teacher[] = actualTeachers.map((u) => ({
         ...u,
         session_count: u.session_count ?? 0,
         logCount: logCountByTeacher[u.id] ?? 0,

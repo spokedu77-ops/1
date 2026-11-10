@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import UserManagement from "@/app/admin/users/UserManagement";
-import { isActualClassOpsTeacher } from "../lib/classOpsTeacherSelection";
 import styles from "./CalendarWorkspace.module.css";
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
@@ -14,7 +13,6 @@ import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
 import { resolveV2BundleFromSession } from "../lib/v2BundleResolve";
 import ClassBundlePanel from "../components/ClassBundlePanel";
 import { ClassOpsPolicyReference } from "./components/ClassOpsPolicyReference";
-import { ClassOpsTeacherDirectory } from "./components/ClassOpsTeacherDirectory";
 import { useClassOpsReferenceData } from "./hooks/useClassOpsReferenceData";
 import { MobileThreeDayView } from "./MobileThreeDayView";
 import { MonthExcelGrid } from "./MonthExcelGrid";
@@ -209,10 +207,7 @@ function ClassManagementCalendarContent() {
 
         </div>
         <div role="tabpanel" id="workspace-panel-teachers" aria-labelledby="workspace-tab-teachers" hidden={workspaceTab !== "teachers"} className={styles.panel}>
-        <ClassOpsTeacherDirectory teachers={reference.teachers} selectedTeacherId={filterTeacher} events={allEvents} tierFeeMap={reference.tierFeeMap} state={reference.state} onSelect={setFilterTeacher} onRetry={() => void reference.reload()} onBack={() => setFilterTeacher("ALL")} forceDetail={searchParams.get('createTeacher') === '1'} onCreate={() => {
-          const query = new URLSearchParams(searchParams.toString()); query.set('createTeacher', '1');
-          router.replace(`/admin/classes/calendar?${query}`, { scroll: false });
-        }} detail={<UserManagement teacherId={selectedTeacher && isActualClassOpsTeacher(selectedTeacher) ? selectedTeacher.id : undefined} onChanged={reference.reload} />} />
+        <UserManagement onChanged={reference.reload} />
         </div>
         <div role="tabpanel" id="workspace-panel-policy" aria-labelledby="workspace-tab-policy" hidden={workspaceTab !== "policy"} className={styles.panel}><ClassOpsPolicyReference /></div>
         <div role="tabpanel" id="workspace-panel-fees" aria-labelledby="workspace-tab-fees" hidden={workspaceTab !== "fees"} className={styles.panel}><UserManagement mode="fees" onChanged={reference.reload} /></div>

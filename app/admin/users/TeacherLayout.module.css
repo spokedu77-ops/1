@@ -1,0 +1,324 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search {
+  flex: 0 1 280px;
+  width: 280px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.filters {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.filters button {
+  flex-shrink: 0;
+  min-width: 52px;
+  white-space: nowrap;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  gap: 20px;
+  min-width: 0;
+}
+
+.cards[hidden] {
+  display: none;
+}
+
+.card {
+  --tier-bg: #edf5df;
+  --tier-border: #cedfb3;
+  --tier-ink: #526442;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--tier-border);
+  border-radius: 12px;
+  background: var(--tier-bg);
+}
+
+.card[data-tier='silver'] {
+  --tier-bg: #e6edf8;
+  --tier-border: #c1d0e8;
+  --tier-ink: #526784;
+}
+
+.card[data-tier='gold'] {
+  --tier-bg: #fff0c9;
+  --tier-border: #e8d096;
+  --tier-ink: #886b25;
+}
+
+.card[data-tier='diamond'] {
+  --tier-bg: #dff3f2;
+  --tier-border: #acd9d7;
+  --tier-ink: #347575;
+}
+
+.card[data-tier='partner'] {
+  --tier-bg: #eee1f8;
+  --tier-border: #d4b9e9;
+  --tier-ink: #795597;
+}
+
+.card[data-active='false'] {
+  border-style: dashed;
+}
+
+.card[data-tier-pending='true'] {
+  border-color: #d89b23;
+  box-shadow: inset 0 3px 0 #e3a72f;
+}
+
+.achievementBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid #e7bc60;
+  border-radius: 8px;
+  background: #fff3cf;
+  color: #785013;
+}
+
+.achievementBanner strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.achievementBanner > div > span {
+  font-size: 11px;
+}
+
+.achievementBanner label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.achievementBanner input {
+  width: 18px;
+  height: 18px;
+  accent-color: #a66a10;
+}
+.achievementFilter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 44px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.achievementFilter input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.achievementFilter span {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 8px;
+  margin-bottom: 8px;
+}
+
+.cardActions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+@media (pointer: fine) {
+  .cardActions button {
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 8px;
+  }
+}
+
+.information {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.informationRow {
+  display: grid;
+  grid-template-columns: 14px 48px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.informationRow svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: #3b82f6;
+}
+
+.informationRow > span:first-of-type {
+  color: #94a3b8;
+}
+
+.informationRow > span:last-child {
+  overflow-wrap: anywhere;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 8px;
+  width: 100%;
+  margin-top: auto;
+  padding: 12px 0;
+  border-top: 1px solid var(--tier-border);
+  text-align: left;
+  align-items: center;
+}
+
+.metrics > span {
+  min-width: 0;
+}
+
+.metricLabel {
+  display: block;
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.metrics strong {
+  color: var(--tier-ink);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.metrics small {
+  margin-left: 2px;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.mileageButton {
+  display: block;
+  min-width: 0;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid #a9bfe6;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgb(30 64 175 / 6%);
+}
+
+.mileageButton .metricLabel {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.mileageButton strong {
+  color: #1d4ed8;
+}
+
+.mileageButton:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.mileageButton:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.documents {
+  padding-top: 4px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.documentsToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.documentsToggle::-webkit-details-marker {
+  display: none;
+}
+
+.documentsToggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.documentsChevron {
+  margin-left: auto;
+  transition: transform 150ms ease;
+}
+
+.documents[open] .documentsChevron {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 599px) {
+  .search {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+}
