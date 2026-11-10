@@ -20,8 +20,8 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
         <div className="home-v2-container home-v2-hero-content">
           <HeroBadge>체육교육 전문 솔루션</HeroBadge>
           <h1 className="web-home-headline"><span>아이와 현장의 조건에 맞춰</span><span>움직이고 싶게 만드는</span><span>체육수업을 설계합니다.</span></h1>
-          <p className="home-v2-lead">{homeRefinement.lead}</p>
-          <div className="home-v2-actions"><Link className="home-v2-button" href={paths.contact}>수업 상담하기<ArrowRight size={18} aria-hidden /></Link><Link className="home-v2-button home-v2-secondary" href={paths.education}>수업 유형 살펴보기</Link></div>
+          <p className="home-v2-lead">{homeRefinement.lead[0]}<br />{homeRefinement.lead[1]}</p>
+          <div className="home-v2-actions"><Link className="home-v2-button" href={paths.contact}>수업 상담하기<ArrowRight size={18} aria-hidden /></Link><Link className="home-v2-button home-v2-secondary" href="#service-paths">수업 유형 살펴보기</Link></div>
           <figure className="home-v2-hero-frame"><div className="home-v2-hero-photo">
             <Image unoptimized loading="eager" src={homeRefinement.hero.src} alt={homeRefinement.hero.alt} width={2400} height={1800} fetchPriority="high" />
             <figcaption className="home-v2-hero-overlay"><div className="home-v2-field-badge"><strong>SPOKEDU FIELD</strong><span>학교·기관에서 직접 운영하는 체육수업</span></div><span className="home-v2-verified"><BadgeCheck size={18} aria-hidden />실제 현장 수업</span></figcaption>
@@ -37,7 +37,14 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
       </div></section>
       <section id="showcase" className="home-v2-showcases"><div className="home-v2-container">
         {homeRefinement.showcases.map((item, i) => <article className={`home-v2-showcase home-v2-showcase-${i + 1}`} key={item.number}>
-          <div className="web-home-showcase-copy"><span className="home-v2-number" aria-hidden="true">{item.number}</span><div className="home-v2-showcase-text"><span className="home-v2-pill">{item.label}</span><h2><span>{item.title[0]}</span><span>{item.title[1]}</span></h2><p>{item.body}</p><div className="web-home-showcase-tags">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div><Link className="home-v2-link" href={item.href}>{item.action}<ArrowRight size={18} aria-hidden /></Link></div></div>
+          <div className="web-home-showcase-copy"><span className="home-v2-number" aria-hidden="true">{item.number}</span><div className="home-v2-showcase-text"><span className="home-v2-pill">{item.label}</span><h2><span>{item.title[0]}</span><span>{item.title[1]}</span></h2><p>{item.body}</p>
+            {item.number === '03' && <dl className="home-v2-move-grid" aria-label="4MOVE 교육 영역">
+              {homeRefinement.moveAreas.map(area => <div className="home-v2-move-item" key={area.name}>
+                <dt className="home-v2-move-name">{area.name}</dt>
+                <dd className="home-v2-move-description">{area.description}</dd>
+              </div>)}
+            </dl>}
+            <div className="web-home-showcase-tags">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div><Link className="home-v2-link" href={item.href}>{item.action}<ArrowRight size={18} aria-hidden /></Link></div></div>
           <figure className={i === 2 ? 'home-v2-lab-frame' : 'home-v2-showcase-photo'}>
             {i === 2 && <div className="home-v2-browser"><span className="home-v2-browser-dots" aria-hidden="true"><i /><i /><i /></span><span><LockKeyhole size={12} aria-hidden />SPOKEDU LAB</span><span className="home-v2-pill">지도자 전용</span></div>}
             <Image unoptimized src={item.photo.src} alt={item.photo.alt} loading="lazy" width={i === 2 ? 1536 : 900} height={i === 2 ? 1004 : 1200} />
