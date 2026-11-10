@@ -16,7 +16,7 @@ export async function loadXlsx() {
   await new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    script.integrity = 'sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM+kK6VEJq/rLcJq88PQJ0VYNSm8O2VYdOXsKjHDQw==';
+    script.integrity = 'sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==';
     script.crossOrigin = 'anonymous'; script.onload = () => resolve(); script.onerror = () => reject(new Error('xlsx'));
     document.head.appendChild(script);
   });
