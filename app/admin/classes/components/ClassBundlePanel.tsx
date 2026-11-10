@@ -2498,13 +2498,13 @@ export default function ClassBundlePanel({
   return (
     <div className={`fixed inset-0 z-[400] transition ${visible ? "pointer-events-auto" : "pointer-events-none"}`}>
       <div
-        className={`absolute inset-0 bg-black/30 transition-opacity ${visible ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 bg-black/30 transition-opacity ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`}
         onClick={onClose}
       />
       <aside
         aria-label="수업 상세 관리"
         className={`absolute right-0 top-0 flex h-full w-full flex-col border-l border-slate-200 bg-slate-50 shadow-2xl transition-transform min-[1100px]:max-w-[1120px] ${
-          visible ? "translate-x-0" : "translate-x-full"
+          visible ? "translate-x-0" : "pointer-events-none translate-x-full"
         }`}
       >
         <header className="sticky top-0 z-20 flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-white/95 py-2 pl-14 pr-3 backdrop-blur sm:px-3">

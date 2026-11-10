@@ -33,8 +33,11 @@ function ClassManagementCalendarContent() {
   const searchParams = useSearchParams();
   type WorkspaceTab = 'calendar' | 'teachers' | 'policy' | 'fees';
   const requestedTab = searchParams.get('workspace');
-  const workspaceTab: WorkspaceTab = requestedTab === 'teachers' || requestedTab === 'policy' || requestedTab === 'fees' ? requestedTab : 'calendar';
+  const tabFromUrl: WorkspaceTab = requestedTab === 'teachers' || requestedTab === 'policy' || requestedTab === 'fees' ? requestedTab : 'calendar';
+  const [workspaceTab, setWorkspaceTabState] = useState<WorkspaceTab>(tabFromUrl);
+  useEffect(() => { setWorkspaceTabState(tabFromUrl); }, [tabFromUrl]);
   const setWorkspaceTab = (tab: WorkspaceTab) => {
+    setWorkspaceTabState(tab);
     const query = new URLSearchParams(searchParams.toString());
     query.set('workspace', tab);
     router.replace(`/admin/classes/calendar?${query}`, { scroll: false });
