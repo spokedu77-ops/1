@@ -8,6 +8,9 @@ export {isRecord,uuid};
 export const validDay=validDate;
 export function validUnit(x:unknown):x is Unit {
   if(!isRecord(x))return false;
+  if(x.gender!==undefined&&(typeof x.gender!=='string'||!['unknown','male','female','mixed'].includes(x.gender)))return false;
+  if([x.attendsGym,x.rainAvailable].some(value=>value!==undefined&&value!==null&&typeof value!=='boolean'))return false;
+  if(x.scheduleGroupIds!==undefined&&(!Array.isArray(x.scheduleGroupIds)||x.scheduleGroupIds.length>100||!x.scheduleGroupIds.every(uuid)||new Set(x.scheduleGroupIds).size!==x.scheduleGroupIds.length))return false;
   const time = (value: unknown) => typeof value === 'string' && (value === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(value));
   if (x.coachId != null && !uuid(x.coachId)) return false;
   if (x.schedules !== undefined && (!Array.isArray(x.schedules) || x.schedules.length > 14 || x.schedules.some(slot => !isRecord(slot) || !Number.isInteger(slot.day) || Number(slot.day) < 0 || Number(slot.day) > 6 || !time(slot.start) || !time(slot.end) || typeof slot.coach !== 'string' || (slot.coachId != null && !uuid(slot.coachId)) || (slot.start && slot.end && slot.end === slot.start)))) return false;

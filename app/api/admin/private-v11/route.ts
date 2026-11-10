@@ -10,6 +10,7 @@ import { fetchTeacherLogCounts } from '@/app/admin/users/fetchTeacherLogCounts';
 import { cloneTierFeeMap } from '@/app/lib/teacherTierSchedule';
 import { resolveDefaultSessionPrice } from '@/app/admin/classes/lib/bulkSessionDefaults';
 import { getPrivateSchedules } from '@/app/admin/centers/private-v11/core';
+import { summarizePrivateScheduleGroups, type ScheduleBalanceRow } from '@/app/admin/centers/private-v11/scheduleBalance';
 
 export const dynamic = 'force-dynamic';
 const json = (payload: unknown, status=200) => {
@@ -30,10 +31,40 @@ function handleError(error: {code?:string;message?:string}|null) {
   return json({error:'개인 수업 데이터를 처리하지 못했습니다.',code:'SERVER_ERROR'},500);
 }
 
+async function validateScheduleLinks(db:ReturnType<typeof getServiceSupabase>,ids:string[]){
+      if(ids.length){
+        const singles=await db.from('sessions').select('id').in('id',ids).is('group_id',null).in('session_type',['regular_private','one_day_private','regular_group']);
+        if(singles.error)return handleError(singles.error);
+        const found=new Set<string>((singles.data??[]).map(row=>row.id));
+        for(let offset=0;;offset+=1000){
+          const grouped=await db.from('sessions').select('id,group_id').in('group_id',ids).in('session_type',['regular_private','one_day_private','regular_group']).order('id').range(offset,offset+999);
+          if(grouped.error)return handleError(grouped.error);
+          for(const row of grouped.data??[])if(row.group_id)found.add(row.group_id);
+          if(!grouped.data||grouped.data.length<1000)break;
+        }
+        if(ids.some(id=>!found.has(id)))return json({error:'연결할 수업을 찾지 못했습니다. 일정을 다시 불러와 주세요.'},400);
+      }
+
+  return null;
+}
+
 export async function GET(request: Request){
   const a=await authorize(); if(!a.ok)return a.response;
   try {
     const db=getServiceSupabase();
+    if (new URL(request.url).searchParams.get('scope') === 'schedule-preview') {
+      const rows: ScheduleBalanceRow[] = [];
+      const pageSize = 1000;
+      for (let offset = 0; ; offset += pageSize) {
+        const result = await db.from('sessions').select('id,group_id,title,start_at,end_at,status,round_total,round_index')
+          .in('session_type', ['regular_private', 'one_day_private', 'regular_group'])
+          .order('id').range(offset, offset + pageSize - 1);
+        if (result.error) return handleError(result.error);
+        rows.push(...(result.data ?? []));
+        if (!result.data || result.data.length < pageSize) break;
+      }
+      return json({ groups: summarizePrivateScheduleGroups(rows) });
+    }
     if (new URL(request.url).searchParams.get('scope') === 'settlement-import') {
       const result = await db.from('admin_private_units')
         .select('id,name,class_type,coach,coach_id,status,neighborhood,schedule_days,schedule_time,schedules,week_pattern')
@@ -103,6 +134,36 @@ export async function POST(request:Request){
   const action=body.action;
   const db=getServiceSupabase();
   try {
+    if(action==='saveCardStatus'){
+      if(!uuid(body.id)||!Number.isSafeInteger(body.revision)||Number(body.revision)<1||typeof body.status!=='string'||!['active','paused','ended'].includes(body.status))return json({error:'INVALID_STATUS'},400);
+      const {data,error}=await db.from('admin_private_units').update({status:body.status,revision:Number(body.revision)+1,updated_at:new Date().toISOString()})
+        .eq('id',body.id).eq('revision',body.revision).is('deleted_at',null).select('id,revision').maybeSingle();
+      if(error)return handleError(error);
+      if(!data)return handleError({message:'REVISION_CONFLICT'});
+      return json({ok:true,result:data});
+    }
+    if(action==='saveCardProfile'){
+      const profile=body.profile;
+      if(!isRecord(profile)||!uuid(body.id)||!Number.isSafeInteger(body.revision)||Number(body.revision)<1||
+        typeof profile.gender!=='string'||!['unknown','male','female','mixed'].includes(profile.gender)||
+        ![profile.attendsGym,profile.rainAvailable].every(value=>value===null||typeof value==='boolean'))return json({error:'INVALID_PROFILE'},400);
+      const {data,error}=await db.from('admin_private_units').update({gender:profile.gender,attends_gym:profile.attendsGym,rain_available:profile.rainAvailable,revision:Number(body.revision)+1,updated_at:new Date().toISOString()})
+        .eq('id',body.id).eq('revision',body.revision).is('deleted_at',null).select('id,revision').maybeSingle();
+      if(error)return handleError(error);
+      if(!data)return handleError({message:'REVISION_CONFLICT'});
+      return json({ok:true,result:data});
+    }
+    if(action==='saveScheduleLinks'){
+      const ids=body.groupIds;
+      if(!uuid(body.id)||!Number.isSafeInteger(body.revision)||Number(body.revision)<1||!Array.isArray(ids)||ids.length>100||!ids.every(uuid)||new Set(ids).size!==ids.length)return json({error:'INVALID_SCHEDULE_LINK'},400);
+      const linkError=await validateScheduleLinks(db,ids);
+      if(linkError)return linkError;
+      const {data,error}=await db.from('admin_private_units').update({schedule_group_ids:ids,revision:Number(body.revision)+1,updated_at:new Date().toISOString()})
+        .eq('id',body.id).eq('revision',body.revision).is('deleted_at',null).select('id,revision').maybeSingle();
+      if(error)return handleError(error);
+      if(!data)return handleError({message:'REVISION_CONFLICT'});
+      return json({ok:true,result:data});
+    }
     if(action==='saveUnit'){
       const unit=body.unit;
       const guardian=guardianParam(body.guardian);
@@ -111,6 +172,7 @@ export async function POST(request:Request){
       if(!Array.isArray(add)||!Array.isArray(cancel)||add.some(x=>!isRecord(x)||!Number.isInteger(x.sessions)||Number(x.sessions)<1||!Number.isInteger(x.amount)||Number(x.amount)<0||!validDay(x.enrolledAt)||![x.paidAt,x.nextDueDate,x.expiresAt].every(v=>v==null||v===''||validDay(v)))||cancel.some(x=>!isRecord(x)||!uuid(x.id)||!Number.isInteger(x.revision)||Number(x.revision)<1))return json({error:'INVALID_ENROLLMENT'},400);
       const id=unit.id;
       if(id&&(!uuid(id)||!Number.isInteger(unit.revision)||Number(unit.revision)<1))return json({error:'INVALID_REVISION'},400);
+      if(unit.scheduleGroupIds!==undefined){const linkError=await validateScheduleLinks(db,unit.scheduleGroupIds);if(linkError)return linkError;}
       const teacherIds=[...new Set([unit.coachId,...(unit.schedules??[]).map(slot=>slot.coachId)].filter((value):value is string=>Boolean(value)))];
       if(teacherIds.length){
         const candidates=await db.from('users').select('id,name,email,role,is_admin,is_active').in('id',teacherIds);

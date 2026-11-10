@@ -325,3 +325,49 @@
 @media print{
 .private-v11 .student-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+.private-v11{container-name:private-workspace;container-type:inline-size}
+.private-v11 .student-grid{grid-template-columns:minmax(0,1fr);gap:16px;align-items:stretch}
+.private-v11 .student-grid .student-card{min-width:0;padding:16px;gap:12px}
+.private-v11 .student-grid .card-top-1{flex-wrap:wrap;gap:8px}
+.private-v11 .student-grid .card-name{white-space:normal;overflow-wrap:anywhere}
+.private-v11 .card-schedule-summary{font-size:12px;line-height:1.6;color:var(--text-sub);overflow-wrap:anywhere}
+.private-v11 .student-grid .card-top-2{padding-left:0;white-space:normal;overflow-wrap:anywhere}
+.private-v11 .student-profile-grid,.private-v11 .student-conditions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.private-v11 .student-profile-grid>div,.private-v11 .student-profile-grid>label{display:flex;flex-direction:column;gap:5px;min-width:0}
+.private-v11 .student-profile-grid>div>span,.private-v11 .student-profile-grid>label>span,.private-v11 .student-conditions>label>span{font-size:11px;color:var(--text-sub)}
+.private-v11 .student-profile-grid strong{display:flex;align-items:center;min-height:36px;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.private-v11 .student-profile-grid select,.private-v11 .student-conditions select{width:100%;min-width:0;min-height:36px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;font-size:13px}
+.private-v11 .student-condition-check{display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer}
+.private-v11 .student-condition-check input{width:18px;height:18px;flex-shrink:0;margin:0;accent-color:#16a34a;cursor:pointer}
+.private-v11 .student-condition-check small{display:block;font-size:10px;color:var(--muted)}
+.private-v11 .student-condition-check[data-confirmed='true']{border-color:#a7d9c2;background:#f0fdf4}
+.private-v11 .student-conditions>.student-condition-check[data-confirmed='true']>span{color:#166534;font-weight:600}
+.private-v11 .student-grid .payment-row{flex-wrap:wrap;gap:6px}
+.private-v11 .student-grid .payment-info{flex-wrap:wrap}
+.private-v11 .student-grid .card-actions{margin-top:auto}
+.private-v11 .schedule-balance{padding:10px;border:1px solid #cbdcf8;border-radius:9px;background:#f6f9ff;color:#1e3a5f}
+.private-v11 .schedule-balance>summary{cursor:pointer;font-size:12px;line-height:1.7}
+.private-v11 .schedule-balance>summary>strong{float:right;font-size:13px}
+.private-v11 .schedule-balance-body{display:grid;gap:8px;margin-top:10px}
+.private-v11 .schedule-balance-body p{margin:0;font-size:11px;line-height:1.6;color:var(--text-sub)}
+.private-v11 .schedule-balance-body select{width:100%;min-width:0;min-height:40px;border:1px solid var(--line);border-radius:7px;background:white;font:inherit;font-size:12px}
+.private-v11 .linked-schedule{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+.private-v11 .linked-schedule>span{min-width:0;overflow-wrap:anywhere}
+.private-v11 .linked-schedule>button{flex-shrink:0;min-height:36px;font-size:11px}
+@container private-workspace (min-width:660px){.private-v11 .student-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container private-workspace (min-width:1000px){.private-v11 .student-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media print{.private-v11 .student-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.private-v11 .student-grid .student-card{break-inside:avoid}}
+.private-v11 .student-status-header{justify-content:space-between;align-items:center}
+.private-v11 .student-identity{display:flex;align-items:center;gap:8px;min-width:0;padding:0;border:0;background:transparent;text-align:left}
+.private-v11 .student-identity:hover{background:transparent;border-color:transparent}
+.private-v11 .student-status-actions{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+.private-v11 .student-status-actions>button{min-height:34px;padding:6px 8px;font-size:11px;font-weight:600;border-radius:7px}
+.private-v11 .end-class{border-color:#fecaca;background:#fff7f7;color:#b91c1c}
+.private-v11 .end-class:hover{border-color:#f87171;background:#fef2f2;color:#991b1b}
+.private-v11 .resume-class{border-color:#bfdbfe;background:#eff6ff;color:#1d4ed8}
+.private-v11 .card-top{cursor:default}
+.private-v11 .unit-dialog .student-profile-editor{gap:12px}
+.private-v11 .unit-dialog .student-condition-check input[type='checkbox']{width:18px;height:18px;min-height:18px;padding:0;flex-shrink:0}
+.private-v11 .modal-linked-balance{display:grid;gap:10px}
+.private-v11 .unit-dialog .student-profile-grid input{width:100%;min-width:0;min-height:36px;border:1px solid var(--line);border-radius:8px}
+.private-v11 .linked-schedule small{display:block;margin-top:3px;color:var(--text-sub);font-size:11px;line-height:1.5}

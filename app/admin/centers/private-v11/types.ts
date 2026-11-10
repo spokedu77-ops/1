@@ -3,6 +3,10 @@ export type { PrivateAttendance, PrivateWeekPattern, PrivateClassStatus } from '
 export interface Unit {
   id: string; revision: number; name: string; ageGrade: string; classType: string; coach: string;
   coachId?: string | null;
+  gender?: 'unknown' | 'male' | 'female' | 'mixed';
+  attendsGym?: boolean | null;
+  rainAvailable?: boolean | null;
+  scheduleGroupIds?: string[];
   status: PrivateClassStatus; neighborhood: string; placeType: string; address: string;
   subject: string; scheduleDays: number[]; scheduleTime: string; weekPattern: PrivateWeekPattern;
   schedules?: PrivateSchedule[];
