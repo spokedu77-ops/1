@@ -26,6 +26,8 @@ import { StudentModal } from './components/StudentModal';
 import { StudentManageScreen } from './components/StudentManageScreen';
 import { SpeedSelector } from './components/SpeedSelector';
 import { SignalDisplay } from './components/SignalDisplay';
+import { createDirectionPresentationCollector, type DirectionPresentationRecord } from './lib/directionPresentation';
+import { resolveTrainingResultLayout } from './lib/trainingResultLayout';
 import type { ReactTrainCompleteStats } from './components/VisualReactionTraining';
 import { normalizeColorTrackerRounds, normalizeNumberCartRounds } from './lib/roundNormalization';
 import {
@@ -544,11 +546,16 @@ function MemoryGameRuntime({
     endedEarly: boolean;
     completionReason: SpomoveCompletionReason;
     stims?: number;
+    directionRecord?: DirectionPresentationRecord;
     glassBridge?: GlassBridgeResult;
   } | null>(null);
   /** ????????????????????????????????????????????????????????????????????????????????????????????????????????????????? ???????????2-1 ????????????????????????????????????????????????????????????????????????????*/
   const countRef = useRef(0);
   const colorCountsRef = useRef<ColorStimulusCounts>(emptyColorStimulusCounts());
+  const directionCollectorRef = useRef(createDirectionPresentationCollector());
+  const onDirectionPresented = useCallback((sig: Record<string, unknown>, key: number) => {
+    if (!resultDeliveredRef.current) directionCollectorRef.current.present(sig, key);
+  }, []);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trainingContainerRef = useRef<HTMLDivElement>(null);
   const visualReactionContainerRef = useRef<HTMLDivElement>(null);
@@ -904,13 +911,16 @@ function MemoryGameRuntime({
     cfg: Settings,
     elapsedMs: number,
     colorCounts: ColorStimulusCounts | null,
-    meta?: { endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult },
+    meta?: { endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult; directionRecord?: DirectionPresentationRecord },
   ) => {
     if (resultDeliveredRef.current) return;
     resultDeliveredRef.current = true;
     const completionReason = resolveTrainingCompletionReason({ completionReason: meta?.completionReason, stoppedEarly: meta?.endedEarly });
     const glassBridge = cfg.activityId === 'glass-bridge-memory' ? meta?.glassBridge ?? glassBridgeStatsRef.current : undefined;
-    const measuredStims = meta?.stims ?? (resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId }).runtime === 'signals' ? countRef.current : undefined);
+    const generatedStims = meta?.stims ?? (resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId }).runtime === 'signals' ? countRef.current : undefined);
+    const directionRecord = meta?.directionRecord ?? (resolveTrainingResultLayout(cfg.activityId, cfg) === 'direction'
+      ? directionCollectorRef.current.snapshot() : undefined);
+    const measuredStims = directionRecord && cfg.activityId !== 'go-no-go-action' ? directionRecord.signals : generatedStims;
     const payload: TrainingSessionResult = {
       cfg: settingsToTrainingResultConfig({ ...cfg, adminRounds: adminMemorySettings, adminSequenceTiming: adminMemorySettings && cfg.activityId === 'sequence-memory' }),
       elapsedMs,
@@ -918,13 +928,14 @@ function MemoryGameRuntime({
       stoppedEarly: completionReason === 'stopped_early',
       completionReason,
       stims: measuredStims,
+      directionRecord,
       glassBridge,
     };
     if (embed && onComplete) {
       onComplete(payload);
       return;
     }
-    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge });
+    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge, directionRecord });
     setScreen('result');
     onComplete?.(payload);
   }, [embed, onComplete, adminMemorySettings]);
@@ -1103,6 +1114,9 @@ function MemoryGameRuntime({
       sessionStartMsRef.current = 0; // ?????????????????????????????????????????????????????????????????????????????????????????????????????????(?????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐?????????????????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝?????????????????????????????????????????????????????????????????????????????????????????????????????????
       countRef.current = 0;
       colorCountsRef.current = emptyColorStimulusCounts();
+      directionCollectorRef.current = createDirectionPresentationCollector(
+        cfg.activityId === 'flanker-arrow' && cfg.flankerArrowMode === 'lr' ? ['left', 'right'] : undefined,
+      );
       setSignal(null);
       if (dupFlashClearRef.current != null) {
         clearTimeout(dupFlashClearRef.current);
@@ -1375,7 +1389,7 @@ function MemoryGameRuntime({
         { ...settings },
         elapsedMs,
         laneCountToColorStimulusCounts(stats.laneCount),
-        { completionReason: resolveTrainingCompletionReason(stats), stims: stats.stims },
+        { completionReason: resolveTrainingCompletionReason(stats), stims: stats.stims, directionRecord: stats.directionRecord },
       );
     },
     [deliverSessionResult, settings],
@@ -3045,7 +3059,7 @@ function MemoryGameRuntime({
         </div>
         <ReactTrainStartCountdownOverlay variant="standard" blocksInput countdown={countdown ?? 0} />
         <div style={{ position: 'absolute', inset: 0 }}>
-          {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} bodyLabelMode={quadBodyLevel ? 'easy' : undefined} /> : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: "2rem", fontWeight: 700 }}>Get ready</div>}
+          {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} bodyLabelMode={quadBodyLevel ? 'easy' : undefined} onPresented={settings.intervalMode && intervalPhase === 'rest' ? undefined : onDirectionPresented} /> : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: "2rem", fontWeight: 700 }}>Get ready</div>}
           {dupFlashVisible && countdown === null ? (
             <div
               key={dupFlashNonce}
@@ -3072,11 +3086,13 @@ function MemoryGameRuntime({
     };
     return (
       <TrainingResultScreen
+        enhancedFeedback
         cfg={settingsToTrainingResultConfig({ ...cfg, adminRounds: adminMemorySettings, adminSequenceTiming: adminMemorySettings && cfg.activityId === 'sequence-memory' })}
         completionReason={result.completionReason}
         elapsedMs={elapsedMs}
         colorCounts={colorCounts}
         stims={result.stims}
+        directionRecord={result.directionRecord}
         glassBridge={result.glassBridge}
         levelLabel={resultLevelLabel(cfg.mode, cfg.level, cfg.activityId)}
         programTitle={autoLaunch?.programTitle ?? (cfg.activityId === 'shape-completion' ? '맞는 조각 찾아가기' : cfg.activityId === 'relative-compass' ? '내 자리에서 방향 따라가기' : undefined)}

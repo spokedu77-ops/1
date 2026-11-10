@@ -1,7 +1,11 @@
 import type { ResultEducation } from '../lib/trainingResultEducation';
 import styles from './TrainingResultScreen.module.css';
 
-export function TrainingResultEducation({ feedback }: { feedback: ResultEducation }) {
+export function TrainingResultEducation({ feedback, experiencesOnly = false }: { feedback: ResultEducation; experiencesOnly?: boolean }) {
+  if (experiencesOnly) return <div className={styles.experiencePanel} data-education-profile={feedback.profileId}>
+    <h2 id="tr-about-title">이번 활동에서 경험한 것</h2>
+    <dl>{feedback.experiences.map(item => <div key={item.label}><dt>{item.label}</dt><dd>{item.description}</dd></div>)}</dl>
+  </div>;
   return <div className={styles.educationalFeedback} data-education-profile={feedback.profileId}>
     <section className={styles.feedbackIntro} aria-labelledby="tr-feedback-about">
       <h3 id="tr-feedback-about">어떤 활동인가요?</h3>

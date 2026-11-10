@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { PAD_POSITIONS } from '@/app/lib/admin/constants/padGrid';
 import type { FruitSlide, VariantPanelContent } from '../lib/signals';
 import { resolveStroopArrowMovementCue } from '../lib/resolveStroopArrowMoveTarget';
@@ -59,11 +59,29 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   signal,
   animKey,
   bodyLabelMode = 'easy',
+  onPresented,
 }: {
   signal: Record<string, unknown> | null;
   animKey: number;
   bodyLabelMode?: 'easy' | 'hard';
+  onPresented?: (signal: Record<string, unknown>, key: number) => void;
 }) {
+  const acknowledged = useRef<number | null>(null);
+  useEffect(() => {
+    if (!signal || !onPresented || acknowledged.current === animKey) return;
+    let secondFrame: number | undefined;
+    // The first frame paints the committed stimulus; acknowledge after that paint.
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        acknowledged.current = animKey;
+        onPresented(signal, animKey);
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame !== undefined) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [signal, animKey, onPresented]);
   if (!signal) return null;
   const type = signal.type as string;
   const content = signal.content as Record<string, unknown> | undefined;

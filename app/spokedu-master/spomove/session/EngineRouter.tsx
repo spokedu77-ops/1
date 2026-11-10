@@ -143,6 +143,7 @@ export function preloadSpomoveEngine(
 }
 
 export type EngineCompletePayload = {
+  directionRecord?: import('@/app/admin/spomove/training/_player/lib/directionPresentation').DirectionPresentationRecord;
   completionReason: SpomoveCompletionReason;
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
@@ -301,6 +302,7 @@ function EngineRuntime({
         engineLevel: level,
         activityId: selection.activityId,
         stims: stats.stims,
+        directionRecord: stats.directionRecord,
         maxCombo: stats.maxCombo,
         colorCounts: laneCountToColorStimulusCounts(stats.laneCount),
       });
@@ -316,6 +318,8 @@ function EngineRuntime({
         engineLevel: level,
         activityId: selection.activityId,
         elapsedMs: result.elapsedMs,
+        stims: result.stims,
+        directionRecord: result.directionRecord,
         colorCounts: result.colorCounts,
       });
     },

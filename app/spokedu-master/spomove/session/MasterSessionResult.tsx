@@ -29,6 +29,7 @@ export function MasterSessionResult({
   elapsedMs,
   colorCounts = null,
   stims,
+  directionRecord,
   settings,
   cueSeconds,
   engineMode,
@@ -57,6 +58,7 @@ export function MasterSessionResult({
   settings: string[];
   colorCounts?: ColorStimulusCounts | null;
   stims?: number;
+  directionRecord?: import('@/app/admin/spomove/training/_player/lib/directionPresentation').DirectionPresentationRecord;
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
   activityId?: TrainingActivityId;
@@ -97,11 +99,13 @@ export function MasterSessionResult({
   });
   return (
     <TrainingResultScreen
+      enhancedFeedback
       cfg={cfg}
       completionReason={completionReason}
       elapsedMs={elapsedMs}
       colorCounts={colorCounts}
       stims={stims}
+      directionRecord={directionRecord}
       sessionSettings={settings.length ? { title: '실행 설정', primary: settings.join(' · ') } : null}
       levelLabel={resultLevelLabel(engineMode, engineLevel, activityId)}
       title={completion.title}

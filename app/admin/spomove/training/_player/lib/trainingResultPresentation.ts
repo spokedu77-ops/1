@@ -1,7 +1,8 @@
 import { buildTrainingResultViewModel, type ResultFact, type TrainingResultViewInput } from './trainingResultViewModel';
 import { resolveTrainingSelection } from './trainingActivity';
-import { selectResultEducation, selectResultReflection } from './trainingResultEducation';
-import { buildDirectionResult, resolveTrainingResultLayout } from './trainingResultLayout';
+import { selectResultEducation, selectResultReflection, selectEnhancedResultEducation, selectEnhancedResultReflection } from './trainingResultEducation';
+import { buildDirectionResult, buildRecordedDirectionResult, resolveTrainingResultLayout } from './trainingResultLayout';
+import { validDirectionRecord } from './directionPresentation';
 import { colorMeta, RESULT_COLOR_ORDER } from './trainingResultSummary';
 
 const TITLES = {
@@ -16,17 +17,26 @@ export function buildTrainingResultPresentation(input: TrainingResultViewInput, 
   const vm = buildTrainingResultViewModel(input);
   const selection = resolveTrainingSelection(input.cfg.mode, input.cfg.level, { activityId: input.cfg.activityId });
   const id = selection.activityId;
-  const recorded = vm.facts.filter(item => item.id !== 'elapsed');
+  let recorded = vm.facts.filter(item => item.id !== 'elapsed');
   const hasDistribution = vm.distribution.length > 0;
   const layout = resolveTrainingResultLayout(id, input.cfg);
-  const showDistribution = layout === 'color' || layout === 'number';
-  const direction = layout === 'direction' ? buildDirectionResult(id, input.cfg, input.colorCounts, input.stims) : null;
+  const nonColorFeedback = input.enhancedFeedback === true && !(layout === 'color' && hasDistribution);
+  const showDistribution = (layout === 'color' || layout === 'number') && (!nonColorFeedback || hasDistribution);
+  const direction = layout === 'direction' ? nonColorFeedback ? buildRecordedDirectionResult(input.directionRecord)
+    : buildDirectionResult(id, input.cfg, input.colorCounts, input.stims) : null;
+  if (nonColorFeedback && layout === 'direction' && validDirectionRecord(input.directionRecord)) {
+    if (id !== 'go-no-go-action') recorded = [...recorded.filter(item => item.id !== 'presented'),
+      { id: 'presented', label: '진행', value: `${input.directionRecord.signals}회` }];
+    if (input.directionRecord.presented !== input.directionRecord.signals) recorded.push({
+      id: 'arrows', label: '목표 화살표 제시', value: `${input.directionRecord.presented}개`,
+    });
+  }
   const displayDistribution = hasDistribution ? vm.distribution : RESULT_COLOR_ORDER.map((key, index) => ({
     id: key, label: layout === 'number' ? `숫자 ${index + 1}` : colorMeta(key).name, count: null,
   }));
-  const education = selectResultEducation(input, educationSeed);
-  const feedback = layout === 'education' ? education : null;
-  const reflection = selectResultReflection(education, educationSeed);
+  const education = nonColorFeedback ? selectEnhancedResultEducation(input, educationSeed) : selectResultEducation(input, educationSeed);
+  const feedback = layout === 'education' || nonColorFeedback ? education : null;
+  const reflection = nonColorFeedback ? selectEnhancedResultReflection(education, educationSeed) : selectResultReflection(education, educationSeed);
   const isBridge = id === 'glass-bridge-memory';
   const observed = (key: string) => recorded.find(item => item.id === key);
   const progress = isBridge ? observed('success') ?? observed('completed') ?? observed('presented')
@@ -56,10 +66,10 @@ export function buildTrainingResultPresentation(input: TrainingResultViewInput, 
   // Keep only additional observed facts. Never create cards to fill the page.
   const summaryIds = new Set(summary.map(item => item.id));
   const recordFacts = recorded.filter(item => !summaryIds.has(item.id));
-  const recordTitle = direction ? '제시된 방향 신호' : feedback ? '활동 이해와 지도 포인트' : vm.distributionKind === 'zone' ? '목표가 나타난 구역' : vm.distributionTitle;
-  const recordSubtitle = direction ? direction.subtitle : feedback ? '프로그램의 교육적 경험' : !hasDistribution ? '활동 신호 안내 · 항목별 횟수 기록 없음' : vm.distributionKind === 'zone' ? 'SPOMAT 4구역 발판 배치 기준'
+  const recordTitle = direction ? '제시된 방향 신호' : nonColorFeedback ? '이번 활동의 기록' : feedback ? '활동 이해와 지도 포인트' : vm.distributionKind === 'zone' ? '목표가 나타난 구역' : vm.distributionTitle;
+  const recordSubtitle = direction ? direction.subtitle : nonColorFeedback ? '실제로 진행한 활동' : feedback ? '프로그램의 교육적 경험' : !hasDistribution ? '활동 신호 안내 · 항목별 횟수 기록 없음' : vm.distributionKind === 'zone' ? 'SPOMAT 4구역 발판 배치 기준'
     : vm.distributionKind === 'number' ? '숫자별 실제 제시 기록' : '화면에 제시된 색상 기록';
-  const recordBadge = direction ? direction.badge : feedback ? '교육 안내' : vm.distributionKind === 'zone' ? '2×2 매트' : vm.distributionKind === 'number' ? '숫자 기록' : '색상 기록';
+  const recordBadge = direction ? direction.badge : nonColorFeedback ? '활동 기록' : feedback ? '교육 안내' : vm.distributionKind === 'zone' ? '2×2 매트' : vm.distributionKind === 'number' ? '숫자 기록' : '색상 기록';
   const note = hasDistribution ? vm.distributionKind === 'zone' ? '목표가 화면에 나타난 구역별 횟수입니다.'
     : vm.distributionKind === 'number' ? '숫자가 화면에 제시된 횟수입니다.' : '색상 자극이 화면에 제시된 횟수입니다.'
     : isBridge && input.glassBridge ? '교사가 입력한 활동 기록입니다.' : null;
@@ -81,6 +91,7 @@ export function buildTrainingResultPresentation(input: TrainingResultViewInput, 
     : `${leaders.join(' · ')} 자극이 가장 많이 제시됐어요.`;
   return { ...vm, title: TITLES[vm.reason], description, summary, recordTitle, recordSubtitle, recordBadge,
     recordFacts, note, hasDistribution, layout, showDistribution, displayDistribution, direction,
-    feedback, reflection, distributionNote, activityDescription, educationTags,
+    feedback, reflection, distributionNote, activityDescription, educationTags, nonColorFeedback,
+    actualFacts: [...summary, ...recordFacts],
   };
 }

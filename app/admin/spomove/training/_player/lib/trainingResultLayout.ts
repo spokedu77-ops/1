@@ -1,6 +1,7 @@
 import { SPATIAL_ARROW_COLOR_BY_DIRECTION } from '../constants';
 import type { TrainingActivityId } from './trainingActivity';
 import type { TrainingResultConfig, ColorStimulusCounts } from './trainingResultSummary';
+import { validDirectionRecord, type DirectionPresentationRecord } from './directionPresentation';
 
 const ARROW_ACTIVITIES = new Set<TrainingActivityId>([
   'direction-cue', 'relative-compass', 'simon-arrow', 'flanker-arrow', 'stroop-arrow', 'go-no-go-action',
@@ -66,4 +67,14 @@ export function buildDirectionResult(id: TrainingActivityId, cfg: TrainingResult
   return { cells: cells.map(cell => ({ ...cell, mostFrequent: peak > 0 && cell.count === peak })), note,
     subtitle: id === 'relative-compass' ? '현재 위치를 기준으로 읽는 방향 신호' : '화면에 제시되는 방향 신호 · 4방향',
     badge: id === 'relative-compass' ? '상대 방향' : '방향 신호' };
+}
+
+/** New runs use direct presentation evidence; historical records are not backfilled. */
+export function buildRecordedDirectionResult(record: DirectionPresentationRecord | undefined) {
+  if (!validDirectionRecord(record)) return { cells: [], note: null, subtitle: '화면에 제시된 방향 기록', badge: '방향 신호' };
+  const peak = Math.max(0, ...record.directions.map(id => record.counts[id]!));
+  const cells = DIRECTIONS.filter(direction => record.directions.includes(direction.id)).map(direction => ({
+    ...direction, supported: true, count: record.counts[direction.id]!, mostFrequent: peak > 0 && record.counts[direction.id] === peak,
+  }));
+  return { cells, note: null, subtitle: `실제 제시된 목표 화살표 ${record.presented}개`, badge: `${cells.length}방향` };
 }

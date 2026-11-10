@@ -29,6 +29,9 @@ type Props = {
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
   stims?: number;
+  directionRecord?: import('../lib/directionPresentation').DirectionPresentationRecord;
+  /** Opt-in for Admin and LAB. Teacher-authored runs retain their existing report. */
+  enhancedFeedback?: boolean;
   glassBridge?: GlassBridgeResult;
   levelLabel: string;
   title?: string;
@@ -48,9 +51,9 @@ type Props = {
   retryLabel?: string;
 };
 
-function FactList({ items, summary = false }: { items: ResultFact[]; summary?: boolean }) {
+function FactList({ items, summary = false, plain = false }: { items: ResultFact[]; summary?: boolean; plain?: boolean }) {
   const icons = [Timer, RotateCcw, Flag];
-  return <dl className={summary ? styles.summaryFacts : styles.facts}>{items.map((item, index) => {
+  return <dl className={summary ? `${styles.summaryFacts} ${plain ? styles.readOnlySummary : ''}` : styles.facts}>{items.map((item, index) => {
     const Icon = icons[index];
     const value = summary ? /^(\d+(?:\/\d+)?)(초|회|개|라운드|과제)$/.exec(item.value) : null;
     return <div key={item.id}><dt>{summary && Icon ? <span className={styles.factIcon}><Icon size={19} aria-hidden="true" /></span> : null}{item.label}</dt><dd>{value ? <>{value[1]}<small>{value[2]}</small></> : item.value}</dd></div>;
@@ -62,7 +65,7 @@ const POSITIONS = { red: '좌측 상단', yellow: '우측 상단', green: '좌�
 export function TrainingResultScreen(props: Props) {
   const [educationSeed] = useState(() => Math.floor(Math.random() * 1024));
   const vm = buildTrainingResultPresentation(props, educationSeed);
-  const twoColumns = vm.showDistribution || vm.layout === 'direction';
+  const twoColumns = vm.nonColorFeedback || vm.showDistribution || vm.layout === 'direction';
   const RecordIcon = vm.layout === 'direction' ? Compass : LayoutGrid;
   const [theme] = useState(() => typeof window !== 'undefined' && localStorage.getItem('spokedu_theme') === 'dark' ? 'dark' : 'light');
   useViewportScrollLock(true);
@@ -78,23 +81,30 @@ export function TrainingResultScreen(props: Props) {
       </header>
       <main className={styles.scroll}>
         <div className={styles.board}>
-          <section className={`${styles.card} ${styles.mission}`} aria-labelledby="tr-mission-title">
+          <section className={`${styles.card} ${styles.mission} ${vm.nonColorFeedback ? styles.refinedMission : ''}`} aria-labelledby="tr-mission-title">
             <div className={styles.missionCopy}>
               <div className={styles.identity}><span className={styles.status}>{vm.status}</span><span className={styles.category}>시지각 움직임 활동</span></div>
               <h1 id="tr-mission-title">{vm.title} <span className={styles.activity}>{vm.activityTitle}</span></h1>
               <p className={styles.description}>{vm.description}</p>
             </div>
-            <FactList summary items={vm.summary} />
+            <FactList summary plain={vm.nonColorFeedback} items={vm.summary} />
           </section>
 
           <div className={twoColumns ? styles.contentGrid : undefined}>
-            <section className={`${styles.card} ${styles.record} ${twoColumns ? styles.distributionRecord : ''}`} aria-labelledby="tr-record-title">
+            <section className={`${styles.card} ${styles.record} ${twoColumns ? styles.distributionRecord : ''} ${vm.nonColorFeedback && !vm.direction && !vm.showDistribution ? styles.programRecord : ''}`} aria-labelledby="tr-record-title">
               <div className={styles.sectionHeading}>
                 <div className={styles.sectionTitle}><span className={styles.sectionIcon}><RecordIcon size={18} aria-hidden="true" /></span><div><h2 id="tr-record-title">{vm.recordTitle}</h2><p className={styles.sectionSubtitle}>{vm.recordSubtitle}</p></div></div>
                 <span className={styles.layoutBadge}>{vm.recordBadge}</span>
               </div>
-              {vm.feedback && vm.recordFacts.length ? <div className={styles.observedRecord}><h3>이번 활동의 실제 기록{props.glassBridge ? ' · 교사 입력' : ''}</h3><FactList items={vm.recordFacts} /></div> : null}
-              {vm.direction ? <>
+              {!vm.nonColorFeedback && vm.feedback && vm.recordFacts.length ? <div className={styles.observedRecord}><h3>이번 활동의 실제 기록{props.glassBridge ? ' · 교사 입력' : ''}</h3><FactList items={vm.recordFacts} /></div> : null}
+              {vm.nonColorFeedback && vm.direction ? <>
+                {vm.direction.cells.length ? <ul className={styles.directionCards} aria-label="방향별 실제 제시 횟수">
+                  {vm.direction.cells.map(item => <li key={item.id}>
+                    <span className={styles.directionSymbol} aria-hidden="true">{item.icon}</span>
+                    <span>{item.label}</span><strong>{item.count}<small>회</small></strong>
+                  </li>)}
+                </ul> : <FactList items={vm.actualFacts.filter(item => item.id !== 'volume')} />}
+              </> : vm.direction ? <>
                 <ul className={styles.directionGrid} aria-label="방향 신호 안내와 제시 기록">
                   {vm.direction.cells.map((item, index) => <React.Fragment key={item.id}>
                     {index === 4 ? <li className={styles.directionCenter}><Crosshair size={22} aria-hidden="true" /><strong>방향 기준</strong><span>화면 기준 안내</span></li> : null}
@@ -110,25 +120,28 @@ export function TrainingResultScreen(props: Props) {
                   <div className={styles.zoneHeading}><div className={styles.colorLabel}><span className={styles.dot} aria-hidden="true">{vm.distributionKind === 'number' ? index + 1 : null}</span><strong>{item.label}</strong></div>{vm.distributionKind === 'zone' ? <span className={styles.position}>{POSITIONS[item.id]}</span> : null}</div>
                   <div className={styles.zoneBottom}><span className={item.count === 0 || item.count === null ? styles.countLabel : styles.cueLabel}>{item.count === null ? '개별 기록 없음' : item.count === 0 ? '이번엔 나오지 않았어요' : vm.distributionKind === 'zone' ? '목표 출현' : '자극 제시'}</span><div className={styles.zoneValue}><strong>{item.count ?? '—'}{item.count !== null ? <span>회</span> : null}</strong></div></div>
                 </li>)}
-              </ul> : vm.feedback ? <TrainingResultEducation feedback={vm.feedback} /> : null}
+              </ul> : vm.nonColorFeedback ? <>
+                <FactList items={vm.actualFacts.filter(item => item.id !== 'volume')} />
+                {vm.settings.length ? <div className={styles.usedSettings}><h3>활동 구성</h3><dl>{vm.settings.map(item => <div key={item.id}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl></div> : null}
+              </> : vm.feedback ? <TrainingResultEducation feedback={vm.feedback} /> : null}
               {vm.showDistribution ? <p className={styles.note}><CheckCircle2 size={18} aria-hidden="true" />{vm.distributionNote}</p> : null}
-              {twoColumns && vm.recordFacts.length ? <div>{props.glassBridge ? <p className={styles.settings}>교사가 입력한 활동 기록</p> : null}<FactList items={vm.recordFacts} /></div> : null}
+              {twoColumns && (!vm.nonColorFeedback || vm.direction || vm.showDistribution) && vm.recordFacts.length ? <div>{props.glassBridge ? <p className={styles.settings}>교사가 입력한 활동 기록</p> : null}<FactList items={vm.recordFacts} /></div> : null}
               {twoColumns && props.sessionSettings?.primary.trim() ? <p className={styles.settings}>{[props.sessionSettings.primary, props.sessionSettings.secondary].filter(Boolean).join(' · ')}</p> : null}
               {!twoColumns && vm.note ? <p className={styles.note}><Info size={14} aria-hidden="true" />{vm.note}</p> : null}
             </section>
 
             {twoColumns ? <section className={`${styles.card} ${styles.education}`} aria-labelledby="tr-about-title">
-              <div className={styles.aboutActivity}>
+              {vm.nonColorFeedback && vm.feedback ? <TrainingResultEducation feedback={vm.feedback} experiencesOnly /> : <div className={styles.aboutActivity}>
                 <div className={styles.aboutHeading}><h2 id="tr-about-title"><Info size={18} aria-hidden="true" />이 활동은?</h2>
                   <ul className={styles.educationElements} aria-label="활동에서 경험하는 요소">{vm.educationTags.map(tag => <li key={tag}>#{tag}</li>)}</ul>
                 </div>
                 <p>{vm.activityDescription}</p>
-              </div>
+              </div>}
               <section className={styles.reflection} aria-labelledby="tr-reflection-title">
                 <div className={styles.reflectionHeading}><h3 id="tr-reflection-title"><Brain size={18} aria-hidden="true" />오늘의 생각 열기</h3><span>열린 생각</span></div>
                 <div className={styles.keyQuestion}><span>핵심 질문</span><p>{vm.reflection.question}</p></div>
                 <ol className={styles.reflectionPrompts}>{vm.reflection.prompts.map(prompt => <li key={prompt}>{prompt}</li>)}</ol>
-                <p className={styles.reflectionHint}><Lightbulb size={16} aria-hidden="true" /><span>{vm.reflection.hint}</span></p>
+                {vm.reflection.hint ? <p className={styles.reflectionHint}><Lightbulb size={16} aria-hidden="true" /><span>{vm.reflection.hint}</span></p> : null}
               </section>
             </section> : null}
           </div>

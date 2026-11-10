@@ -19,7 +19,7 @@ A user request or approved Sprint Brief may implement or improve a surface in an
 | LIBRARY DETAIL | Understand + Prepare | Editorial preparation | Canonical | PENDING | PENDING |
 | SPOMOVE HUB | Browse | Digital sports content | Canonical | PENDING | PENDING |
 | SPOMOVE START | Confirm then run | Digital execution gate | Canonical | PENDING | PENDING |
-| SPOMOVE RESULT | Reflect + review + retry | Shared child/instructor feedback | User-approved Stitch result reference | PENDING | PENDING |
+| SPOMOVE RESULT | Reflect + review + retry | Shared child/instructor feedback | User-approved Stitch result reference | RENDERED — REVIEW REQUIRED | RENDERED — REVIEW REQUIRED |
 | PROGRAMS | Discover programs | Editorial gateway | Surface role | PENDING | PENDING |
 | LIBRARY | Find activities | Catalog discovery | Surface role | PENDING | PENDING |
 | FAVORITES | Retrieve saved | Retrieval | Surface role | PENDING | PENDING |
@@ -30,6 +30,8 @@ A user request or approved Sprint Brief may implement or improve a surface in an
 | REPORT | Record / send | Document reading | Surface role | PENDING | PENDING |
 
 **WHY CLASS TOOLS IS DIFFERENT:** live utility needs 900-weight numerals; not a discovery surface.
+
+SPOMOVE Result (2026-11-10, direction records and educational feedback): Admin/LAB opt in to direct direction-presentation evidence, acknowledged after the stimulus paint and deduplicated per run. Flanker records response targets; simultaneous Simon targets count separately. Only the run's valid directions appear; historical results are not backfilled. Non-color reports place the read-only summary on the right at desktop/tablet widths, with actual records beside three educational experiences and open questions. Local component fixtures reviewed at 390/1024/1440; 24 cases include pixel-identical color and excluded teacher reports against HEAD, plus targeted layout review. Actual MemoryGameApp and EngineRouter fixtures each returned five presented cues with a matching direction sum; retry/stop returned a fresh one-cue record, and relative-direction runtime returned matching totals. Targeted tests: 48 passed. Evidence: `artifacts/direction-result-20261110/` (`report.json`, `layout-report.json`, screenshots). Fixtures do not verify authenticated Admin/LAB route E2E; human rendered approval remains pending. No generation, database, persistence, or teacher-authored flow changes.
 
 SPOMOVE Result (2026-11-10): current implementation follows the user-approved `stitch_spomove_visual_search_result_ui.zip` (`screen.png` + `code.html`). Demo program/status switchers are excluded from production. The final content refinement uses compact section spacing, omits empty statistics and unmeasured-performance notices, and forwards resolved LAB preset descriptions with 2–3 educational keywords. All 72 public IDs have naming entries; three existing Stroop public names imply jumping while their engines use verbal responses, so names remain unchanged and descriptions follow actual execution. Non-distribution activities show available progress without filler; teacher-entered glass-bridge results retain their recorded meaning. Runtime, persistence, terminal states and callbacks are unchanged. Current revision has not undergone rendered desktop/mobile or side-by-side review; the evidence below belongs to the previous revision.
 

@@ -23,6 +23,8 @@ import {
 } from '../lib/relativeCompass';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { SignalDisplay } from './SignalDisplay';
+import { createDirectionPresentationCollector } from '../lib/directionPresentation';
+import { compassPool } from '../lib/relativeCompass';
 
 export type { RelativeCompassDifficulty, RelativeCompassSeconds } from '../lib/relativeCompass';
 
@@ -70,6 +72,10 @@ export function RelativeCompassReactionTraining({
   const timersRef = useRef(new Set<number>());
   const rafRef = useRef<number | null>(null);
   const completedRef = useRef(0);
+  const directionCollector = useRef(createDirectionPresentationCollector(compassPool(difficulty)));
+  const onPresented = useCallback((next: Record<string, unknown>, key: number) => {
+    directionCollector.current.present(next, key);
+  }, []);
   const completeRef = useRef(onComplete);
   const exitRef = useRef(onExit);
   useEffect(() => { completeRef.current = onComplete; }, [onComplete]);
@@ -84,7 +90,8 @@ export function RelativeCompassReactionTraining({
   }, []);
   const finish = useCallback(() => {
     cancel();
-    completeRef.current({ stims: completedRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
+    const directionRecord = directionCollector.current.snapshot();
+    completeRef.current({ stims: directionRecord.signals, maxCombo: 0, laneCount: [0, 0, 0, 0], directionRecord });
   }, [cancel]);
   const stop = useCallback(() => finish(), [finish]);
 
@@ -159,7 +166,7 @@ export function RelativeCompassReactionTraining({
         <button type="button" onClick={stop} style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
       </div>
       <div style={{ position: 'absolute', inset: 0 }}>
-        {phase === 'COUNTDOWN' ? null : <SignalDisplay signal={signal} animKey={signalKey} />}
+        {phase === 'COUNTDOWN' ? null : <SignalDisplay signal={signal} animKey={signalKey} onPresented={onPresented} />}
       </div>
       {phase === 'ANSWER' ? (
         <div style={{ position: 'absolute', bottom: '12%', left: 0, right: 0, textAlign: 'center', zIndex: 20, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.8)', fontSize: 'clamp(24px, 5vw, 48px)', fontWeight: 800 }}>

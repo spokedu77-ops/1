@@ -5,7 +5,13 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { RelativeCompassReactionTraining } from './RelativeCompassReactionTraining';
 import { resetSpomoveRuntimeClock } from '../lib/runtimeClock';
 
-vi.mock('./SignalDisplay', () => ({ SignalDisplay: () => null }));
+vi.mock('./SignalDisplay', async () => {
+  const { useEffect } = await import('react');
+  return { SignalDisplay: ({ signal, animKey, onPresented }: { signal: Record<string, unknown> | null; animKey: number; onPresented?: (signal: Record<string, unknown>, key: number) => void }) => {
+    useEffect(() => { if (signal) onPresented?.(signal, animKey); }, [signal, animKey, onPresented]);
+    return null;
+  } };
+});
 
 let root: Root;
 let host: HTMLDivElement;
@@ -53,6 +59,7 @@ it('shows the final destination before completing once', async () => {
   await advance(2000);
   expect(complete).toHaveBeenCalledTimes(1);
   expect(complete.mock.calls[0][0].stims).toBe(1);
+  expect(complete.mock.calls[0][0].directionRecord.presented).toBe(1);
   await advance(10000);
   expect(complete).toHaveBeenCalledTimes(1);
 });

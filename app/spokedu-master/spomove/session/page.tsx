@@ -850,6 +850,7 @@ function SpomoveSessionContent() {
       elapsedMs: payload?.elapsedMs ?? fallbackElapsedMs,
       colorCounts: payload?.colorCounts ?? null,
       stims: payload?.stims,
+      directionRecord: payload?.directionRecord,
       maxCombo: payload?.maxCombo,
       initialMovement: movementStateRef.current.initialMovement,
       finalMovement: movementStateRef.current.currentMovement,
@@ -1297,6 +1298,7 @@ function SpomoveSessionContent() {
             elapsedMs={sessionResult.elapsedMs ?? 0}
             colorCounts={sessionResult.colorCounts ?? null}
             stims={sessionResult.stims}
+            directionRecord={sessionResult.directionRecord}
             engineMode={sessionResult.engineMode}
             engineLevel={sessionResult.engineLevel}
             activityId={sessionResult.activityId}

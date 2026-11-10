@@ -3,6 +3,7 @@ import { resolveTrainingSelection, type TrainingActivityId } from './trainingAct
 import { trainingActivityGuide } from './trainingActivityGuide';
 import { COLORS, MEMORY_ROUNDS, MODES } from '../constants';
 import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
+import type { DirectionPresentationRecord } from './directionPresentation';
 
 export function resolveTrainingCompletionReason(result: {
   completionReason?: SpomoveCompletionReason;
@@ -18,6 +19,7 @@ export type TrainingSessionResult = {
   stoppedEarly?: boolean;
   completionReason?: SpomoveCompletionReason;
   stims?: number;
+  directionRecord?: DirectionPresentationRecord;
   glassBridge?: GlassBridgeResult;
 };
 

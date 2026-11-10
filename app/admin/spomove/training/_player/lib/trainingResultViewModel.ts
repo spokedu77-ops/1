@@ -10,11 +10,13 @@ import { colorMeta, describeSessionVolume, formatElapsedSeconds, RESULT_COLOR_OR
 export type ResultFact = { id: string; label: string; value: string };
 export type ResultSessionSettings = { title?: string; primary: string; secondary?: string };
 export type TrainingResultViewInput = {
+  enhancedFeedback?: boolean;
   cfg: TrainingResultConfig;
   completionReason?: SpomoveCompletionReason;
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
   stims?: number;
+  directionRecord?: import('./directionPresentation').DirectionPresentationRecord;
   glassBridge?: GlassBridgeResult;
   programTitle?: string;
   education?: { description: string; tags: string[] };
