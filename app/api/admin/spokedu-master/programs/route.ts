@@ -15,6 +15,7 @@ import {
 } from '@/app/spokedu-master/lib/adminProgramEditorContract';
 import { loadSavedAdminProgram } from './savedProgram';
 import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
+import { recordPublishedMasterLessonDates } from '@/app/api/spokedu-master/programs/programCatalogHandlers';
 
 type MaterialStatus = 'incomplete' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -299,11 +300,12 @@ export async function POST(request: Request) {
         sm_tags: [],
         sm_display_order: displayOrder,
         sm_is_pro: true,
-        sm_is_new: true,
+        sm_is_new: false, // Legacy flag is not the automatic NEW source.
         sm_is_hot: false,
       }, { onConflict: 'curriculum_id' });
     if (metaErr) throw metaErr;
 
+    await recordPublishedMasterLessonDates(supabase, [curriculumId]);
     const data = await loadPrograms();
     const program = data.find((item) => item.curriculum.id === curriculumId);
     if (!program) throw new Error(`Created program ${curriculumId} could not be reloaded.`);
@@ -412,6 +414,8 @@ export async function PATCH(request: Request) {
       .upsert({ curriculum_id: curriculumId, ...metaPatch }, { onConflict: 'curriculum_id' });
     if (metaErr) throw metaErr;
     state.metaSaved = true;
+
+    await recordPublishedMasterLessonDates(supabase, [curriculumId]);
 
     failedStage = 'reload';
     const program = await loadSavedAdminProgram(curriculumId, {

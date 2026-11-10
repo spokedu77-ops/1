@@ -20,6 +20,7 @@ export type TrainingSessionResult = {
   completionReason?: SpomoveCompletionReason;
   stims?: number;
   directionRecord?: DirectionPresentationRecord;
+  goalkeeperRecord?: import('./goalkeeperResultRecord').GoalkeeperResultRecord;
   glassBridge?: GlassBridgeResult;
 };
 
@@ -57,6 +58,12 @@ export function addColorIdsToCounts(counts: ColorStimulusCounts, colorIds: strin
 
 /** Execution rules needed to describe the activity accurately on Result. */
 export type TrainingResultRuleSettings = {
+  colorMemoryGridSize?: 3 | 4 | 5;
+  colorMemoryGridMode?: 'flicker' | 'oneshot';
+  glassBridgeDifficulty?: 'easy' | 'hard';
+  goalkeeperTier?: 1 | 2;
+  variantColorTheme?: string;
+  accel?: boolean;
   spatialArrowColorMode?: 'basic' | 'color';
   flankerStimulusType?: 'color' | 'number';
   stroopArrowResponse?: 'voice' | 'movement';
@@ -165,6 +172,12 @@ export function settingsToTrainingResultConfig(cfg: TrainingResultRuleSettings &
   flowDuration?: number;
 }): TrainingResultConfig {
   return {
+    colorMemoryGridSize: cfg.colorMemoryGridSize,
+    colorMemoryGridMode: cfg.colorMemoryGridMode,
+    glassBridgeDifficulty: cfg.glassBridgeDifficulty,
+    goalkeeperTier: cfg.goalkeeperTier,
+    variantColorTheme: cfg.variantColorTheme,
+    accel: cfg.accel,
     mode: cfg.mode,
     level: cfg.level,
     activityId: cfg.activityId,

@@ -1,0 +1,8 @@
+.positionIcon { display:grid; grid-template-columns:repeat(2,1fr); align-self:center; justify-self:center; gap:6px; width:70px; height:70px; padding:5px; border:2px solid var(--spm-result-dot); border-radius:14px; background:var(--spm-result-surface); }
+.positionIcon > span { border:1px solid var(--spm-result-dot); border-radius:5px; background:var(--spm-result-canvas); }
+.positionIcon > span[data-selected='true'] { background:var(--spm-result-blue); border-color:var(--spm-result-blue); box-shadow:0 3px 0 color-mix(in srgb,var(--spm-result-blue) 65%,var(--spm-result-surface)); }
+.recordDetails { color:var(--spm-result-muted); font-size:12px; }
+.recordDetails dl { display:flex; flex-wrap:wrap; gap:8px 20px; margin:8px 0; }
+.recordDetails dl > div { display:flex; align-items:baseline; gap:8px; }
+.recordDetails dd { color:var(--spm-result-text); font-weight:800; font-variant-numeric:tabular-nums; }
+@media (max-width:700px) { .positionIcon { width:62px; height:62px; gap:5px; } .recordDetails { font-size:11px; } }

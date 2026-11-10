@@ -14,7 +14,7 @@ import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import { canAccessProgramLessonContent, getFreePreviewProgramId, selectWeeklyPrograms } from '@/app/spokedu-master/lib/commercialProgramAccess';
-import { isLessonCatalogNew } from '@/app/spokedu-master/lib/lessonCatalogNew';
+import { isLessonCatalogNew, LESSON_CATALOG_NEW_WINDOW_MS } from '@/app/spokedu-master/lib/lessonCatalogNew';
 import { selectCanonicalPublishedProgramOverlays } from './selectCanonicalOverlay';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
@@ -180,6 +180,8 @@ function redactProgramForAccess(program: Program, canAccessDetails: boolean): Pr
 
 type MetaRow = {
   curriculum_id: number;
+  sm_first_published_at?: string | null;
+  sm_publication_history?: 'unknown' | 'never' | 'published';
   sm_tags: string[] | null;
   sm_theme: string | null;
   sm_grade: string | null;
@@ -342,8 +344,8 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
     isPro: meta?.sm_is_pro ?? false,
     hasReferenceVideo: Boolean(normalizeVideoUrl(videoUrl)),
     hasSpomoveConnection: relatedSpomoveIds.length > 0,
-    listedAt: row.created_at ?? undefined,
-    isNew: isLessonCatalogNew(row.created_at),
+    listedAt: meta?.sm_first_published_at ?? undefined,
+    isNew: isLessonCatalogNew(meta?.sm_first_published_at),
     isHot: meta?.sm_is_hot ?? false,
     homeSortOrder: meta?.sm_display_order ?? (typeof row.display_order === 'number' ? row.display_order : 5000 + index),
     thumbnailUrl,
@@ -414,11 +416,14 @@ export type LoadedMasterProgramCatalog = {
 
 export async function loadPublishedMasterProgramsFromDb(
   supabase: ReturnType<typeof getServiceSupabase>,
+  onlyCurriculumIds?: number[],
 ): Promise<LoadedMasterProgramCatalog> {
-  const { data: curriculumRows, error: currErr } = await supabase
+  let curriculumQuery = supabase
     .from('curriculum')
     .select('id,display_order,created_at')
-    .eq('is_sub', false)
+    .eq('is_sub', false);
+  if (onlyCurriculumIds) curriculumQuery = curriculumQuery.in('id', onlyCurriculumIds);
+  const { data: curriculumRows, error: currErr } = await curriculumQuery
     .order('display_order', { ascending: true, nullsFirst: false })
     .order('id', { ascending: false });
 
@@ -436,7 +441,9 @@ export async function loadPublishedMasterProgramsFromDb(
     const [metaResult, overlayResult] = await Promise.all([
       supabase
         .from('spokedu_master_program_meta')
-        .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
+        // Optional publication columns are absent until the approved SQL is applied.
+        // Read the row without requiring those columns; absent history means no NEW.
+        .select('*')
         .in('curriculum_id', curriculumIds),
       supabase
         .from('spokedu_pro_programs')
@@ -490,6 +497,18 @@ const loadCachedPublishedMasterPrograms = wrapSpokeduMasterProgramSourceLoader(a
   return loaded.programs;
 });
 
+/** Admin writes only: use the exact customer catalog validation before recording publication. */
+export async function recordPublishedMasterLessonDates(supabase: ReturnType<typeof getServiceSupabase>, curriculumIds: number[]) {
+  if (curriculumIds.length === 0) return;
+  const { programs } = await loadPublishedMasterProgramsFromDb(supabase, curriculumIds);
+  if (programs.length === 0) return;
+  const { error } = await supabase.rpc('record_master_lesson_first_publication', {
+    p_curriculum_ids: programs.map((program) => program.curriculumId),
+  });
+  // Code may be reviewed locally before the separately approved SQL is installed.
+  if (error && !['PGRST202', '42883'].includes(error.code)) throw error;
+}
+
 export async function GET(request: Request) {
   const access = await requireSpokeduMasterCapability('libraryBrowse');
   if (!access.ok) return withPrivateNoStore(access.response);
@@ -506,8 +525,15 @@ export async function GET(request: Request) {
   }
 
   const freePreviewProgramId = getFreePreviewProgramId(programs);
+  // Derive after the source cache, so a cached boolean cannot extend the 30-day window.
+  const now = Date.now();
   const visiblePrograms = programs.map((program) =>
-    redactProgramForAccess(program, canAccessProgramDetails(access, program, freePreviewProgramId)),
+    redactProgramForAccess({
+      ...program,
+      isNew: isLessonCatalogNew(program.listedAt, now),
+      newRemainingMs: isLessonCatalogNew(program.listedAt, now)
+        ? Date.parse(program.listedAt!) + LESSON_CATALOG_NEW_WINDOW_MS - now : 0,
+    }, canAccessProgramDetails(access, program, freePreviewProgramId)),
   );
   const responsePrograms = request && new URL(request.url).searchParams.get('surface') === 'home'
     ? selectHomePrograms(visiblePrograms)
@@ -560,6 +586,7 @@ export async function PATCH(request: Request) {
       { status: 500 },
     );
   }
+  await recordPublishedMasterLessonDates(supabase, [curriculumId]);
   invalidateSpokeduMasterProgramSourceCache();
   return privateNoStoreJson({ data });
 }

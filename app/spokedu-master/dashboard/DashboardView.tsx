@@ -309,6 +309,7 @@ function WeeklyProgramCard({
       sizes="(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw"
       cleanSquareMedia
       isNew={program.isNew}
+      newTiming={program}
       presentation="home"
     />
   );
@@ -395,7 +396,7 @@ function SpomoveCard({
         sizes="(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw"
         priority={priority}
         presentation="home-cover-4-3"
-        className="!aspect-[3/2] rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95"
+        className="rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95"
         fallback={<SpomoveThumbnailPlaceholder />}
       />
       <div className="px-3.5 pb-3.5 pr-14 pt-2.5">

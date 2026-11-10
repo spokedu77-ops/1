@@ -39,6 +39,7 @@ const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간
 export type ReactTrainVariant = 'flow' | 'flash' | 'pattern' | 'balloonSimon';
 
 export type ReactTrainCompleteStats = {
+  goalkeeperRecord?: import('../lib/goalkeeperResultRecord').GoalkeeperResultRecord;
   directionRecord?: import('../lib/directionPresentation').DirectionPresentationRecord;
   stims: number;
   maxCombo: number;

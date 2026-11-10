@@ -156,6 +156,31 @@
   --spm-acc-glow: #f1f5f9;
   /* 전 제품 Primary CTA (실행/시작/저장·핵심 행동) — slate-950과 섞지 말 것 */
   --spm-cta: #2563eb;
+  /* Approved Stitch result V2 palette; scoped consumers only. */
+  --spm-result-canvas: #f3f7fd;
+  --spm-result-dot: #d6e4f8;
+  --spm-result-surface: #ffffff;
+  --spm-result-text: #0f172a;
+  --spm-result-muted: #475569;
+  --spm-result-edge: #dde7f5;
+  --spm-result-blue: #2563eb;
+  --spm-result-blue-deep: #1850b3;
+  --spm-result-red: #ff4757;
+  --spm-result-red-deep: #b51d2d;
+  --spm-result-yellow: #ffa502;
+  --spm-result-yellow-deep: #986000;
+  --spm-result-green: #2ed573;
+  --spm-result-green-deep: #14783c;
+  --spm-result-dark-canvas: #111c30;
+  --spm-result-dark-dot: #314666;
+  --spm-result-dark-surface: #1c2b43;
+  --spm-result-dark-text: #f1f5fc;
+  --spm-result-dark-muted: #c0cee2;
+  --spm-result-dark-edge: #0b1424;
+  --spm-result-dark-blue: #a9caff;
+  --spm-result-dark-red: #ffabb5;
+  --spm-result-dark-yellow: #ffd478;
+  --spm-result-dark-green: #90efb5;
   --spm-cta-hover: #1d4ed8;
   /* SPOMOVE discovery surface (Home 추천 / Hub header) — runtime·게임 화면과 분리 */
   --spm-spomove-surface: #18263f;

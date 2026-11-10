@@ -850,6 +850,8 @@ function SpomoveSessionContent() {
       elapsedMs: payload?.elapsedMs ?? fallbackElapsedMs,
       colorCounts: payload?.colorCounts ?? null,
       stims: payload?.stims,
+      goalkeeperRecord: payload?.goalkeeperRecord,
+      glassBridge: payload?.glassBridge,
       directionRecord: payload?.directionRecord,
       maxCombo: payload?.maxCombo,
       initialMovement: movementStateRef.current.initialMovement,
@@ -1289,6 +1291,7 @@ function SpomoveSessionContent() {
       {(state === 'done' || state === 'ended') && sessionResult ? (
         <div className="absolute inset-0 min-h-0 overflow-hidden bg-[#F1F5F9]">
           <MasterSessionResult
+            officialPresetId={officialPreset.id}
             completionReason={sessionResult.completionReason}
             initialMovement={sessionResult.initialMovement}
             finalMovement={sessionResult.finalMovement}
@@ -1298,6 +1301,8 @@ function SpomoveSessionContent() {
             elapsedMs={sessionResult.elapsedMs ?? 0}
             colorCounts={sessionResult.colorCounts ?? null}
             stims={sessionResult.stims}
+            goalkeeperRecord={sessionResult.goalkeeperRecord}
+            glassBridge={sessionResult.glassBridge}
             directionRecord={sessionResult.directionRecord}
             engineMode={sessionResult.engineMode}
             engineLevel={sessionResult.engineLevel}

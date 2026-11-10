@@ -13,6 +13,7 @@ import {
 } from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { staticPerfTier } from '../lib/reactTrainPerf';
+import { snapshotGoalkeeperResult, type GoalkeeperLaneCounts } from '../lib/goalkeeperResultRecord';
 
 const CORNERS = [
   { key: 'TL', lane: 0, hex: 0xff1744, css: '#ff1744', label: 'RED' },
@@ -153,6 +154,10 @@ type SpawnPhase = {
 };
 
 type GoalkeeperGame = {
+  tier: 1 | 2;
+  targetWaveCount: number | null;
+  baseTravelSeconds: number;
+  regularLaneCountAtBonus: GoalkeeperLaneCounts | null;
   running: boolean;
   timeLeft: number;
   endsAtMs: number;
@@ -368,7 +373,7 @@ export function GoalkeeperReactionTraining({
     g.stopCountdown?.();
     g.timeouts.forEach(clearTimeout);
     g.timeouts.clear();
-    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
+    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true, goalkeeperRecord: snapshotGoalkeeperResult(g) });
   }, []);
 
   const endGame = useCallback(() => {
@@ -384,6 +389,7 @@ export function GoalkeeperReactionTraining({
       stims: g.stims,
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
+      goalkeeperRecord: snapshotGoalkeeperResult(g),
     });
   }, []);
 
@@ -402,6 +408,10 @@ export function GoalkeeperReactionTraining({
     const baseSpeed = flightSpeedFromSec(travelSec, 1);
     const phases = buildPhases(tier >= 2);
     const g: GoalkeeperGame = {
+      tier,
+      targetWaveCount: roundTarget,
+      baseTravelSeconds: travelSec,
+      regularLaneCountAtBonus: null,
       running: true,
       timeLeft: duration,
       endsAtMs: Number.POSITIVE_INFINITY,
@@ -774,6 +784,7 @@ export function GoalkeeperReactionTraining({
         // Allow the final presented wave to arrive before completing or entering BONUS.
         if ((timedPhase && next <= 0) || (!timedPhase && roundTarget != null && g.waveCount >= roundTarget && g.projectiles.length === 0)) {
           if (bonusTimeEnabled && !g.bonusStarted) {
+            g.regularLaneCountAtBonus = [...g.laneCount];
             g.bonusStarted = true;
             g.bonusActive = true;
             setBonusActive(true);

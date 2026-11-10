@@ -443,6 +443,7 @@ async function fetchAndSetPrograms(
   cacheOption: RequestCache,
 ): Promise<void> {
   set({ programsLoading: true });
+  const newObservedAt = performance.now();
   try {
     const res = await fetch('/api/spokedu-master/programs', { cache: cacheOption });
     if (!res.ok) {
@@ -457,7 +458,7 @@ async function fetchAndSetPrograms(
     }
     const json = await res.json() as { data?: Program[] };
     if (Array.isArray(json.data)) {
-      const programs = enrichProgramsWithStaticVisuals(json.data);
+      const programs = enrichProgramsWithStaticVisuals(json.data.map((program) => ({ ...program, newObservedAt })));
       set((state) => ({
         programs,
         programsLoaded: true,
@@ -486,6 +487,7 @@ function shareProgramsLoad(set: StoreSet, get: StoreGet, cacheOption: RequestCac
 }
 
 async function fetchAndSetHomePrograms(set: StoreSet, cacheOption: RequestCache): Promise<void> {
+  const newObservedAt = performance.now();
   try {
     const res = await fetch('/api/spokedu-master/programs?surface=home', { cache: cacheOption });
     if (!res.ok) {
@@ -494,7 +496,7 @@ async function fetchAndSetHomePrograms(set: StoreSet, cacheOption: RequestCache)
     }
     const json = await res.json() as { data?: Program[] };
     if (Array.isArray(json.data)) {
-      set({ homePrograms: enrichProgramsWithStaticVisuals(json.data), homeProgramsLoaded: true, homeProgramsError: null });
+      set({ homePrograms: enrichProgramsWithStaticVisuals(json.data.map((program) => ({ ...program, newObservedAt }))), homeProgramsLoaded: true, homeProgramsError: null });
       return;
     }
   } catch {

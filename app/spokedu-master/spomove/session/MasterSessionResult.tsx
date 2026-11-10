@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { TrainingResultScreen } from '@/app/admin/spomove/training/_player/components/TrainingResultScreen';
+import { resolveTrainingResultKind } from '@/app/admin/spomove/training/_player/lib/trainingResultKind';
 import type { DiveActionMoveSession } from '@/app/admin/spomove/training/_player/lib/diveActionMoveReport';
 import {
   resultLevelLabel,
@@ -23,6 +24,7 @@ import type { SpomoveExecutionVolume } from './resolveSpomoveExecutionVolume';
 import type { MovementPick } from '../movements/movementTypes';
 
 export function MasterSessionResult({
+  officialPresetId,
   completionReason,
   activityTitle,
   education,
@@ -30,6 +32,8 @@ export function MasterSessionResult({
   colorCounts = null,
   stims,
   directionRecord,
+  goalkeeperRecord,
+  glassBridge,
   settings,
   cueSeconds,
   engineMode,
@@ -48,6 +52,7 @@ export function MasterSessionResult({
   onMarkCompleteAndReturn,
   onRetry,
 }: {
+  officialPresetId?: string;
   completionReason: SpomoveCompletionReason;
   initialMovement: MovementPick | null;
   finalMovement: MovementPick | null;
@@ -59,6 +64,8 @@ export function MasterSessionResult({
   colorCounts?: ColorStimulusCounts | null;
   stims?: number;
   directionRecord?: import('@/app/admin/spomove/training/_player/lib/directionPresentation').DirectionPresentationRecord;
+  goalkeeperRecord?: import('@/app/admin/spomove/training/_player/lib/goalkeeperResultRecord').GoalkeeperResultRecord;
+  glassBridge?: import('@/app/admin/spomove/training/_player/lib/glassBridgeMemory').GlassBridgeResult;
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
   activityId?: TrainingActivityId;
@@ -97,8 +104,10 @@ export function MasterSessionResult({
     intervalWork: executionVolume.interval?.workSeconds,
     intervalSets: executionVolume.interval?.sets,
   });
+  const usesResultV2 = Boolean(resolveTrainingResultKind(cfg));
   return (
     <TrainingResultScreen
+      officialPresetId={officialPresetId}
       enhancedFeedback
       cfg={cfg}
       completionReason={completionReason}
@@ -106,6 +115,8 @@ export function MasterSessionResult({
       colorCounts={colorCounts}
       stims={stims}
       directionRecord={directionRecord}
+      goalkeeperRecord={goalkeeperRecord}
+      glassBridge={glassBridge}
       sessionSettings={settings.length ? { title: '실행 설정', primary: settings.join(' · ') } : null}
       levelLabel={resultLevelLabel(engineMode, engineLevel, activityId)}
       title={completion.title}
@@ -117,7 +128,12 @@ export function MasterSessionResult({
       retryLabel="같은 설정으로 다시 준비"
       onBack={() => router.push(hubHref)}
       onRetry={onRetry}
-      footer={(
+      resultActions={usesResultV2 && sessionReturnHref ? <>
+        <Link href={sessionReturnHref}>수업으로 돌아가기</Link>
+        {canMarkComplete && onMarkCompleteAndReturn ? <button type="button" disabled={marking} onClick={onMarkCompleteAndReturn}>{marking ? '기록 중…' : '완료로 표시하고 수업으로'}</button> : <button type="button" onClick={onRetry}>다시 도전하기</button>}
+      </> : null}
+      resultNotice={usesResultV2 && fromSession && markCompleteStatus === 'error' ? <p role="status">완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.</p> : null}
+      footer={usesResultV2 ? null : (
         <div className="grid gap-2">
           {fromSession && markCompleteStatus === 'error' ? (
             <p role="status" className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">

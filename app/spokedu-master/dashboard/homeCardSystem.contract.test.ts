@@ -198,6 +198,6 @@ describe("MASTER Home content card system", () => {
     expect(homeMediaAdmin).not.toContain("SPOMOVE_THUMBNAIL_PACK_ID");
     expect(dashboard).toContain("object-[58%_40%] sm:object-[center_40%]");
     expect(dashboard).toContain("HomeScheduleThumb");
-    expect(dashboard).toContain("!aspect-[3/2]");
+    expect(dashboard).not.toContain("!aspect-[3/2]");
   });
 });

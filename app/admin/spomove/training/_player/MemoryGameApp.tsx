@@ -547,6 +547,7 @@ function MemoryGameRuntime({
     completionReason: SpomoveCompletionReason;
     stims?: number;
     directionRecord?: DirectionPresentationRecord;
+    goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'];
     glassBridge?: GlassBridgeResult;
   } | null>(null);
   /** ????????????????????????????????????????????????????????????????????????????????????????????????????????????????? ???????????2-1 ????????????????????????????????????????????????????????????????????????????*/
@@ -911,7 +912,7 @@ function MemoryGameRuntime({
     cfg: Settings,
     elapsedMs: number,
     colorCounts: ColorStimulusCounts | null,
-    meta?: { endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult; directionRecord?: DirectionPresentationRecord },
+    meta?: { endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult; directionRecord?: DirectionPresentationRecord; goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'] },
   ) => {
     if (resultDeliveredRef.current) return;
     resultDeliveredRef.current = true;
@@ -929,13 +930,14 @@ function MemoryGameRuntime({
       completionReason,
       stims: measuredStims,
       directionRecord,
+      goalkeeperRecord: meta?.goalkeeperRecord,
       glassBridge,
     };
     if (embed && onComplete) {
       onComplete(payload);
       return;
     }
-    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge, directionRecord });
+    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge, directionRecord, goalkeeperRecord: meta?.goalkeeperRecord });
     setScreen('result');
     onComplete?.(payload);
   }, [embed, onComplete, adminMemorySettings]);
@@ -1389,7 +1391,7 @@ function MemoryGameRuntime({
         { ...settings },
         elapsedMs,
         laneCountToColorStimulusCounts(stats.laneCount),
-        { completionReason: resolveTrainingCompletionReason(stats), stims: stats.stims, directionRecord: stats.directionRecord },
+        { completionReason: resolveTrainingCompletionReason(stats), stims: stats.stims, directionRecord: stats.directionRecord, goalkeeperRecord: stats.goalkeeperRecord },
       );
     },
     [deliverSessionResult, settings],
@@ -2661,10 +2663,10 @@ function MemoryGameRuntime({
   }
 
   // ???? MEMORY / TRAINING / RESULT ????
-  const handleMemoryComplete = () => {
+  const handleMemoryComplete = (patterns?: unknown[][]) => {
     if (document.fullscreenElement) exitFullscreenSafely();
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-    deliverSessionResult({ ...settings }, elapsedMs, null);
+    deliverSessionResult({ ...settings }, elapsedMs, null, settings.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : undefined);
   };
   const runtimeSuspense = (content: React.ReactNode) => (
     <TrainingRunErrorBoundary onError={handleRuntimeError}>
@@ -3093,6 +3095,7 @@ function MemoryGameRuntime({
         colorCounts={colorCounts}
         stims={result.stims}
         directionRecord={result.directionRecord}
+        goalkeeperRecord={result.goalkeeperRecord}
         glassBridge={result.glassBridge}
         levelLabel={resultLevelLabel(cfg.mode, cfg.level, cfg.activityId)}
         programTitle={autoLaunch?.programTitle ?? (cfg.activityId === 'shape-completion' ? '맞는 조각 찾아가기' : cfg.activityId === 'relative-compass' ? '내 자리에서 방향 따라가기' : undefined)}

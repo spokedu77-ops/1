@@ -15,6 +15,7 @@ import {
   normalizeImageSrc,
 } from '../../lib/program-media';
 import { splitLessonCardTitle } from './lessonTitle';
+import { useCatalogNewLifetime, type CatalogNewTiming } from '../../lib/useCatalogNewLifetime';
 
 export { splitLessonCardTitle } from './lessonTitle';
 
@@ -30,10 +31,12 @@ function shouldStretchToSquare(_width: number, _height: number, src: string) {
   return /\.svg(\?|#|$)/i.test(src);
 }
 
-export function LessonNewMark() {
+export function LessonNewMark({ timing }: { timing?: CatalogNewTiming } = {}) {
+  const active = useCatalogNewLifetime(timing);
+  if (!active) return null;
   return (
     <span
-      className="pointer-events-none rounded-[6px] bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-950"
+      className="pointer-events-none inline-flex shrink-0 rounded-[6px] bg-[var(--spm-s1)] px-1.5 py-0.5 text-[12px] font-semibold leading-4 text-[var(--spm-t)] ring-1 ring-[var(--spm-br)]"
       aria-label="신규 활동"
     >
       NEW
@@ -141,6 +144,7 @@ export type LessonCatalogCardProps = {
   primaryActionDisabled?: boolean;
   editorial?: boolean;
   isNew?: boolean;
+  newTiming?: CatalogNewTiming;
 };
 
 export function LessonCatalogCard({
@@ -170,6 +174,7 @@ export function LessonCatalogCard({
   primaryActionDisabled = false,
   editorial = false,
   isNew = false,
+  newTiming,
 }: LessonCatalogCardProps) {
   const articleProps = Object.fromEntries(
     Object.entries(dataAttrs ?? {}).filter((entry): entry is [string, string] => Boolean(entry[1])),
@@ -207,22 +212,24 @@ export function LessonCatalogCard({
               <CategoryIcon category={categoryFallback} size={36} color="rgba(15,23,42,0.45)" />
             </span>
           )}
-          {isNew || (previewEnabled && hasVideo) ? (
-            <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
-              {isNew ? <LessonNewMark /> : null}
-              {previewEnabled && hasVideo ? (
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
-                  <Play className="h-3 w-3 fill-current" aria-hidden />
-                </span>
-              ) : null}
+          {isNew ? (
+            <span className="pointer-events-none absolute left-3 top-3 flex max-w-[calc(100%_-_64px)] flex-wrap items-center gap-1.5">
+              {isNew ? <LessonNewMark timing={newTiming} /> : null}
             </span>
           ) : null}
         </span>
-        <span className="block px-3 pb-3.5 pt-2.5">
+        <span className={`relative block px-3 pb-3.5 pt-2.5 ${previewEnabled && hasVideo ? 'pr-14' : ''}`}>
           <ContentCardMetaLine primary={eyebrow} secondary={description} />
           <span className={`${MV_CONTENT_TITLE} mt-1.5 block line-clamp-1 transition-colors duration-200 ${previewEnabled ? 'group-hover:text-slate-700' : ''}`}>
             {title}
           </span>
+          {previewEnabled && hasVideo ? (
+            <span aria-hidden="true" className="pointer-events-none absolute bottom-1 right-1 inline-flex h-11 w-11 items-center justify-center">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-600">
+                <Play className="h-3.5 w-3.5 fill-current" />
+              </span>
+            </span>
+          ) : null}
         </span>
       </>
     );
@@ -380,8 +387,10 @@ export function LessonCatalogCard({
           </button>
         ) : null}
 
-        {previewEnabled && hasVideo ? (
-          <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5">
+        {isNew || (previewEnabled && hasVideo) ? (
+          <span className="pointer-events-none absolute left-2.5 top-2.5 flex max-w-[calc(100%_-_64px)] flex-wrap items-center gap-1.5">
+            {isNew ? <LessonNewMark timing={newTiming} /> : null}
+            {previewEnabled && hasVideo ? <>
             <span
               aria-hidden="true"
               className={`${variant === 'home' ? 'h-7 w-7' : 'h-8 w-8'} inline-flex items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 transition-transform duration-150 group-hover:scale-105`}
@@ -391,6 +400,7 @@ export function LessonCatalogCard({
             <span className="rounded-md bg-black/55 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               미리보기
             </span>
+            </> : null}
           </span>
         ) : previewEnabled ? (
           <span className="pointer-events-none absolute bottom-2.5 left-2.5 rounded-md bg-black/55 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">

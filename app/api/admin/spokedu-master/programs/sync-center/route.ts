@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
 import { buildMissingMasterMetaRows } from './metaRowContract';
+import { recordPublishedMasterLessonDates } from '@/app/api/spokedu-master/programs/programCatalogHandlers';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
@@ -204,7 +205,10 @@ async function applySync(changes: SyncChange[], overlayById: Map<number, Overlay
   const insertedCurriculumIds = changes
     .filter((change) => change.action === 'insert')
     .map((change) => change.curriculumId);
-  if (insertedCurriculumIds.length === 0) return;
+  if (insertedCurriculumIds.length === 0) {
+    await recordPublishedMasterLessonDates(supabase, changes.map((change) => change.curriculumId));
+    return;
+  }
 
   const { data: existingMetaRows, error: metaReadError } = await supabase
     .from('spokedu_master_program_meta')
@@ -216,7 +220,10 @@ async function applySync(changes: SyncChange[], overlayById: Map<number, Overlay
     changes,
     (existingMetaRows ?? []).map((row) => row.curriculum_id as number),
   );
-  if (metaRows.length === 0) return;
+  if (metaRows.length === 0) {
+    await recordPublishedMasterLessonDates(supabase, changes.map((change) => change.curriculumId));
+    return;
+  }
 
   const { error: metaInsertError } = await supabase
     .from('spokedu_master_program_meta')
@@ -225,6 +232,7 @@ async function applySync(changes: SyncChange[], overlayById: Map<number, Overlay
       ignoreDuplicates: true,
     });
   if (metaInsertError) throw metaInsertError;
+  await recordPublishedMasterLessonDates(supabase, changes.map((change) => change.curriculumId));
 }
 
 export async function GET() {

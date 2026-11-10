@@ -8,6 +8,7 @@ import { MV_CONTENT_TITLE, MV_HOME_CARD_META, MV_HOME_CARD_TITLE, MV_META } from
 import { CategoryIcon } from '../ui/ProgramThumb';
 import { LessonNewMark } from './LessonCatalogCard';
 import { ContentCardMetaLine } from '../content/ContentCardMetaLine';
+import type { CatalogNewTiming } from '../../lib/useCatalogNewLifetime';
 
 export function WeeklyEditorialCard({
   title,
@@ -27,6 +28,7 @@ export function WeeklyEditorialCard({
   sizes = '(min-width: 1280px) 250px, (min-width: 768px) 45vw, 82vw',
   cleanSquareMedia = false,
   isNew = false,
+  newTiming,
   presentation = 'default',
 }: {
   title: string;
@@ -46,6 +48,7 @@ export function WeeklyEditorialCard({
   sizes?: string;
   cleanSquareMedia?: boolean;
   isNew?: boolean;
+  newTiming?: CatalogNewTiming;
   presentation?: 'default' | 'home' | 'library-featured';
 }) {
   const type = category.trim();
@@ -78,23 +81,18 @@ export function WeeklyEditorialCard({
             <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
           </span>
         )}
-        {isNew || (previewEnabled && hasVideo) || accessBadge ? (
-          <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
+        {isNew || accessBadge ? (
+          <span className="pointer-events-none absolute left-3 top-3 flex max-w-[calc(100%_-_64px)] flex-wrap items-center gap-1.5">
             {accessBadge ? (
               <span className={`rounded-[6px] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${accessBadge === 'Free' ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-amber-950'}`}>
                 {accessBadge}
               </span>
             ) : null}
-            {isNew ? <LessonNewMark /> : null}
-            {previewEnabled && hasVideo ? (
-              <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-white/75 text-slate-700">
-                <Play className="h-3 w-3 fill-current" aria-hidden />
-              </span>
-            ) : null}
+            {isNew ? <LessonNewMark timing={newTiming} /> : null}
           </span>
         ) : null}
       </span>
-      <div className={isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'}>
+      <div className={`${isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'} ${previewEnabled && hasVideo ? 'pr-14' : ''}`}>
         <ContentCardMetaLine
           primary={type}
           secondary={support}
@@ -102,6 +100,13 @@ export function WeeklyEditorialCard({
         />
         <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 ${cardInteractive ? 'group-hover:text-slate-700' : ''}`}>{title}</span>
       </div>
+      {previewEnabled && hasVideo ? (
+        <span aria-hidden="true" className="pointer-events-none absolute bottom-1 right-1 inline-flex h-11 w-11 items-center justify-center">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-600">
+            <Play className="h-3.5 w-3.5 fill-current" />
+          </span>
+        </span>
+      ) : null}
     </>
   );
 

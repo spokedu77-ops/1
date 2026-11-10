@@ -144,8 +144,11 @@ export interface Program {
   colors: [string, string, string, string];
   isPro: boolean;
   isNew: boolean;
-  /** First catalog listed time. NEW is derived from this, not from content edits. */
+  /** Verified first customer publication time; never creation/edit time. */
   listedAt?: string;
+  /** Server-calculated remaining lifetime; observedAt is client monotonic time, never persisted. */
+  newRemainingMs?: number;
+  newObservedAt?: number;
   isHot?: boolean;
   /** 홈·라이브러리 노출 우선순위 (낮을수록 앞). API: sm_display_order */
   homeSortOrder?: number;

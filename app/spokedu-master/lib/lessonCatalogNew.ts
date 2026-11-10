@@ -1,4 +1,5 @@
-export const LESSON_CATALOG_NEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+// Shared by lesson and SPOMOVE catalogs. Call with authoritative server time.
+export const LESSON_CATALOG_NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function isLessonCatalogNew(listedAt: string | null | undefined, now = Date.now()): boolean {
   if (!listedAt) return false;

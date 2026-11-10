@@ -54,6 +54,8 @@ import {
 import { useSpomoveGuideVideo } from './useSpomoveGuideVideo';
 import { resolveSpomovePublicDisplayTitle } from './spomovePublicNaming';
 import { ContentCardMetaLine } from '../components/content/ContentCardMetaLine';
+import { LessonNewMark } from '../components/lesson/LessonCatalogCard';
+import { useSpomoveCatalogNew } from '../lib/useSpomoveCatalogNew';
 import {
   emptyHubFamilyFeaturedSlots,
   resolveHubFamilyFeaturedSpomove,
@@ -587,6 +589,7 @@ function CardVisual({
 
 function PresetCard({
   preset,
+  isNew = false,
   thumbnailUrl,
   thumbnailPending,
   priority,
@@ -602,6 +605,7 @@ function PresetCard({
   startHref,
 }: {
   preset: OfficialSpomovePreset;
+  isNew?: boolean;
   thumbnailUrl: string;
   thumbnailPending: boolean;
   priority?: boolean;
@@ -664,6 +668,7 @@ function PresetCard({
           priority={priority}
           onImageError={() => setImageFailed(true)}
         />
+        {isNew ? <span className="pointer-events-none absolute left-3 top-3 z-10"><LessonNewMark /></span> : null}
         <div className="w-full px-3.5 pb-3.5 pr-14 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={[card.publicMeta.core, card.publicMeta.difficulty].filter(Boolean).join(' · ')}>
           <ContentCardMetaLine primary={card.publicMeta.core} secondary={card.publicMeta.difficulty} />
           <h3 className="mt-1 line-clamp-2 text-[17px] font-semibold leading-snug text-slate-950">{card.title}</h3>
@@ -753,6 +758,7 @@ function SpomoveHubInner({
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [thumbnailPackLoaded, setThumbnailPackLoaded] = useState(false);
   const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const newPresetIds = useSpomoveCatalogNew();
   const [hubFamilyFeaturedSlots, setHubFamilyFeaturedSlots] = useState<SpomoveHubFamilyFeaturedSlots>(
     emptyHubFamilyFeaturedSlots,
   );
@@ -941,6 +947,7 @@ function SpomoveHubInner({
         <div key={preset.id} className={familyPreview ? 'w-[82vw] max-w-[320px] shrink-0 snap-start sm:w-auto sm:max-w-none' : ''}>
           <PresetCard
             preset={preset}
+            isNew={newPresetIds.has(preset.id)}
             thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
             thumbnailPending={!thumbnailPackLoaded}
             priority={index < 2}

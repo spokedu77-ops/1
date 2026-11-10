@@ -3,6 +3,7 @@ import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { resolveReferenceVideoForSeed } from '@/app/spokedu-master/lib/reference-videos';
 import { buildMissingMasterMetaRows } from '../sync-center/metaRowContract';
 import { invalidateSpokeduMasterProgramSourceCache } from '@/app/lib/server/spokeduMasterProgramSourceCache';
+import { recordPublishedMasterLessonDates } from '@/app/api/spokedu-master/programs/programCatalogHandlers';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
@@ -145,6 +146,7 @@ export async function POST(request: Request) {
           if (metaInsertError) throw metaInsertError;
         }
       }
+      await recordPublishedMasterLessonDates(supabase, candidates.map((item) => item.id));
       invalidateSpokeduMasterProgramSourceCache();
     }
 

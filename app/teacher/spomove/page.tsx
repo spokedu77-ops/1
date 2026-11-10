@@ -3089,6 +3089,7 @@ export default function SpomovePage() {
         colorCounts={presetResult.colorCounts}
         stims={presetResult.stims}
         glassBridge={presetResult.glassBridge}
+        goalkeeperRecord={presetResult.goalkeeperRecord}
         levelLabel={resultLevelLabel(selectedProgram.mode, selectedProgram.level)}
         programTitle={selectedProgram.title}
         onBack={() => {

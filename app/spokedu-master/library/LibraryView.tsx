@@ -227,6 +227,7 @@ function ProgramCard({
       primaryActionDisabled={primaryActionDisabled}
       editorial
       isNew={program.isNew}
+      newTiming={program}
     />
   );
 }
@@ -323,6 +324,7 @@ function RecommendationProgramCard({
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
       isNew={program.isNew}
+      newTiming={program}
       presentation="library-featured"
     />
   );

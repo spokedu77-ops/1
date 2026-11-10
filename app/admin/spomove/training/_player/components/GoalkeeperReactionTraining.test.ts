@@ -54,6 +54,9 @@ describe('Goalkeeper real engine schedule with a virtual clock', () => {
     expect(complete).toHaveBeenCalledTimes(1);
     expect(observed.waveTimes.size).toBe(30);
     expect(complete.mock.calls[0][0]).toMatchObject({ stims: 30 });
+    expect(complete.mock.calls[0][0].goalkeeperRecord).toMatchObject({ waveCount: 30, targetWaveCount: 30, stims: 30, baseTravelSeconds: 6, bonusStarted: false });
+    expect(complete.mock.calls[0][0].goalkeeperRecord.regularLaneCount).toEqual(complete.mock.calls[0][0].laneCount);
+    expect(complete.mock.calls[0][0].goalkeeperRecord.bonusLaneCount).toEqual([0, 0, 0, 0]);
     expect(complete.mock.calls[0][0].stoppedEarly).not.toBe(true);
   });
   it.each([10, 15, 20, 30].flatMap(rounds => [1, 2, 3, 4, 5, 6].flatMap(speed => [false, true].map(bonus => ({ rounds, speed, bonus })))))
@@ -88,6 +91,7 @@ describe('Goalkeeper real engine schedule with a virtual clock', () => {
     expect(observed.waveTimes.size).toBe(10);
     expect(complete).toHaveBeenCalledTimes(1);
     expect(complete.mock.calls[0][0].stims).toBe(20);
+    expect(complete.mock.calls[0][0].goalkeeperRecord).toMatchObject({ waveCount: 10, stims: 20, tier: 2 });
   });
   it('enters BONUS once after the final wave arrives and ends after the existing 15 seconds', () => {
     const complete = mount(10, 2, true);
@@ -103,6 +107,12 @@ describe('Goalkeeper real engine schedule with a virtual clock', () => {
     expect(complete).not.toHaveBeenCalled();
     advance(14800); expect(complete).not.toHaveBeenCalled();
     advance(200); expect(complete).toHaveBeenCalledTimes(1);
+    const record = complete.mock.calls[0][0].goalkeeperRecord;
+    expect(record.waveCount).toBe(10);
+    expect(record.regularLaneCount.reduce((sum: number, n: number) => sum + n, 0)).toBe(10);
+    expect(record.bonusStarted).toBe(true);
+    expect(record.bonusLaneCount.reduce((sum: number, n: number) => sum + n, 0)).toBeGreaterThan(0);
+    expect(record.laneCount).toEqual(record.regularLaneCount.map((n: number, lane: number) => n + record.bonusLaneCount[lane]));
     advance(30000); expect(complete).toHaveBeenCalledTimes(1);
   });
   it.each([0, 10000, 28000])('STOP at %ims remains early and releases timers', ms => {

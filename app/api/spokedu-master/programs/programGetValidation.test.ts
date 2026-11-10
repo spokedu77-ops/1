@@ -46,11 +46,14 @@ function createQueryResult(result: QueryResult) {
 }
 
 function mockProgramQueries(results: Record<string, QueryResult>) {
-  getServiceSupabase.mockReturnValue({
+  const client = {
     from: vi.fn((table: string) =>
       createQueryResult(results[table] ?? { data: [], error: null }),
     ),
-  });
+    rpc: vi.fn(async () => ({ error: null })),
+  };
+  getServiceSupabase.mockReturnValue(client);
+  return client;
 }
 
 function validMeta(overrides: Record<string, unknown> = {}) {
@@ -396,5 +399,41 @@ describe("SPOKEDU MASTER program GET validation", () => {
 
     expect(result.status).toBe(200);
     expect(result.body).toEqual({ data: [], total: 0 });
+  });
+
+  it.each([
+    [null, true, false],
+    ['2026-11-04T00:00:00Z', false, true],
+    ['2026-10-13T00:00:00Z', false, true],
+    ['2026-10-12T00:00:00Z', true, false],
+  ])('uses first publication %s, ignoring legacy flag %s and recent edits', async (firstPublished, legacyFlag, expected) => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-11T00:00:00Z'));
+    try {
+      mockProgramQueries({
+        curriculum: { data: [{ id: 101, created_at: '2026-11-11T00:00:00Z' }], error: null },
+        spokedu_master_program_meta: { data: [validMeta({ sm_first_published_at: firstPublished, sm_is_new: legacyFlag })], error: null },
+        spokedu_pro_programs: { data: [validOverlay({ updated_at: '2026-11-11T00:00:00Z' })], error: null },
+      });
+      const result = await getPrograms();
+      expect(result.status).toBe(200);
+      expect(result.body.data[0].isNew).toBe(expected);
+      expect(result.body.data[0].listedAt ?? null).toBe(firstPublished);
+    } finally { vi.restoreAllMocks(); }
+  });
+
+  it.each([
+    ['valid first publication', true, 'ALL', true],
+    ['hidden draft', false, 'ALL', false],
+    ['incomplete draft', true, null, false],
+  ])('records only customer-visible, validated writes: %s', async (_, published, grade, records) => {
+    const client = mockProgramQueries({
+      curriculum: { data: [{ id: 101, created_at: '2020-01-01T00:00:00Z' }], error: null },
+      spokedu_master_program_meta: { data: [validMeta({ sm_grade: grade, sm_publication_history: 'never' })], error: null },
+      spokedu_pro_programs: { data: [validOverlay({ is_published: published })], error: null },
+    });
+    const { recordPublishedMasterLessonDates } = await import('./programCatalogHandlers');
+    await recordPublishedMasterLessonDates(client as never, [101]);
+    if (records) expect(client.rpc).toHaveBeenCalledWith('record_master_lesson_first_publication', { p_curriculum_ids: [101] });
+    else expect(client.rpc).not.toHaveBeenCalled();
   });
 });

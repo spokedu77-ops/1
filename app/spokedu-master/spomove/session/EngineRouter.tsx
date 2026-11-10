@@ -143,6 +143,8 @@ export function preloadSpomoveEngine(
 }
 
 export type EngineCompletePayload = {
+  glassBridge?: import('@/app/admin/spomove/training/_player/lib/glassBridgeMemory').GlassBridgeResult;
+  goalkeeperRecord?: import('@/app/admin/spomove/training/_player/lib/goalkeeperResultRecord').GoalkeeperResultRecord;
   directionRecord?: import('@/app/admin/spomove/training/_player/lib/directionPresentation').DirectionPresentationRecord;
   completionReason: SpomoveCompletionReason;
   engineMode: OfficialSpomoveEngineMode;
@@ -302,6 +304,7 @@ function EngineRuntime({
         engineLevel: level,
         activityId: selection.activityId,
         stims: stats.stims,
+        ...(stats.goalkeeperRecord ? { goalkeeperRecord: stats.goalkeeperRecord } : {}),
         directionRecord: stats.directionRecord,
         maxCombo: stats.maxCombo,
         colorCounts: laneCountToColorStimulusCounts(stats.laneCount),
@@ -319,6 +322,8 @@ function EngineRuntime({
         activityId: selection.activityId,
         elapsedMs: result.elapsedMs,
         stims: result.stims,
+        ...(result.glassBridge ? { glassBridge: result.glassBridge } : {}),
+        ...(result.goalkeeperRecord ? { goalkeeperRecord: result.goalkeeperRecord } : {}),
         directionRecord: result.directionRecord,
         colorCounts: result.colorCounts,
       });
@@ -593,8 +598,10 @@ function EngineRuntime({
   }
 
   if (selection.mode === 'spatial') {
-    const handleSpatialComplete = () => {
-      onComplete({ completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null });
+    const handleSpatialComplete = (patterns?: unknown[][]) => {
+      onComplete({ completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
+        ...(selection.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : {}),
+      });
     };
     if (runtime === 'instant-memory') {
       const sp = speedSec ?? 3;

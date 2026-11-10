@@ -14,6 +14,7 @@ import {
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { validateSpomovePublishedGuidesForSave } from '@/app/lib/spomove/validateSpomovePublishedGuidesForSave';
+import { stampSpomoveFirstPublication } from '@/app/lib/server/spomoveCatalogPublication';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin({ scope: 'spomove' });
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
     const name = typeof body?.name === 'string' ? body.name.trim() : '';
     const theme = typeof body?.theme === 'string' ? body.theme.trim() : null;
-    const assets_json = body?.assets_json;
+    let assets_json = body?.assets_json;
     const expectedUpdatedAt =
       typeof body?.expected_updated_at === 'string' && body.expected_updated_at.trim()
         ? body.expected_updated_at.trim()
@@ -58,6 +59,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceSupabase();
     const updatedAt = new Date().toISOString();
+
+    if (id === SPOMOVE_CONTENT_PACK_ID) {
+      const { data: previous, error } = await supabase.from('think_asset_packs')
+        .select('assets_json').eq('id', id).maybeSingle();
+      if (error) throw error;
+      if (typeof assets_json !== 'object' || Array.isArray(assets_json)) {
+        return NextResponse.json({ error: 'Invalid content pack' }, { status: 400 });
+      }
+      assets_json = stampSpomoveFirstPublication(previous?.assets_json ?? null, assets_json, updatedAt);
+    }
 
     if (expectedUpdatedAt) {
       const { data: updatedRow, error: updateError } = await supabase
