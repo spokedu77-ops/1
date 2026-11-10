@@ -42,6 +42,9 @@ function validCounts(value: ColorStimulusCounts | null): value is ColorStimulusC
 const COLOR_DISTRIBUTION_ACTIVITIES = new Set<TrainingActivityId>([
   'wave-dodge', 'falling-bricks', 'balloon-pop', 'beat-wave', 'visual-camouflage',
   'mole', 'virus-outbreak', 'wormhole', 'motion-gate',
+  'simon-shape', 'simon-theme', 'simon-camouflage', 'simon-balloon',
+  'go-no-go-color', 'go-no-go-shape', 'go-no-go-mixed',
+  'task-switch-basic', 'task-switch-reverse', 'task-switch-mixed',
 ]);
 
 /** Presentation only: never infer child performance or alter runtime / persistence. */
@@ -59,7 +62,7 @@ export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
   // Number-reader and search reuse these counters with explicitly different meanings.
   const zoneActivity = ['color-tracker', 'number-cart', 'goalkeeper'].includes(id);
   const colorActivity = !directionOnly && !['direction-cue', 'relative-compass', 'shape-completion'].includes(id)
-    && !dive && cfg.mode !== 'spatial' && cfg.mode !== 'simon'
+    && !dive && cfg.mode !== 'spatial'
     && (['basic', 'flanker', 'stroop'].includes(cfg.mode) || COLOR_DISTRIBUTION_ACTIVITIES.has(id));
   const distributionSupported = search || numberReader || colorActivity || zoneActivity;
   const rawCounts = distributionSupported && validCounts(input.colorCounts) ? input.colorCounts : null;

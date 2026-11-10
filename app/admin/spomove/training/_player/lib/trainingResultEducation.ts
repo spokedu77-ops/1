@@ -7,6 +7,18 @@ type Concept = { label: string; descriptions: Four<string> };
 type Profile = { id: string; descriptions: Four<string>; concepts: readonly Concept[]; tips: Four<string> };
 export type ResultEducation = { profileId: string; description: string; experiences: { label: string; description: string }[]; tip: string };
 
+const movementContexts = [
+  '시지각–운동 협응은 눈으로 확인한 정보를 몸의 반응과 연결하는 과정입니다. 신호를 살펴보고 움직임을 선택하는 경험을 함께 다룹니다.',
+  '신체활동에서는 움직임에 앞서 주변 정보를 읽는 과정도 중요합니다. 시각적 단서를 확인하고 반응을 준비하는 흐름을 경험합니다.',
+  '지각과 행동은 하나의 흐름으로 연결됩니다. 무엇을 보았는지 확인하고, 규칙에 맞는 신체 반응으로 옮기는 과정을 연습합니다.',
+  '움직임의 속도뿐 아니라 반응을 선택하는 과정에도 주목해 보세요. 시각 정보를 구별하고 몸으로 표현하는 것이 활동의 교육적 맥락입니다.',
+] as const;
+
+export function selectResultMovementContext(seed: number): string {
+  const value = Number.isFinite(seed) ? Math.abs(Math.floor(seed)) : 0;
+  return movementContexts[value % movementContexts.length];
+}
+
 // Each concept has four explanations of a demand, never a measured outcome.
 const concepts = {
   direction: { label: '방향 인식', descriptions: ['화살표가 가리키는 방향을 구별하는 경험입니다.', '신호의 위·아래·왼쪽·오른쪽을 살펴봅니다.', '화살표의 모양에서 이동에 필요한 방향 정보를 읽습니다.', '방향 표시를 확인한 뒤 반응할 쪽을 정합니다.'] },
@@ -116,6 +128,17 @@ export function resolveResultEducationProfile(input: TrainingResultViewInput): P
   const { cfg } = input;
   const selection = resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId });
   const id = selection.activityId;
+  if (id === 'visual-search') return profile('visual-search', [
+    '여러 기호 속에서 목표의 색과 모양을 함께 확인하고 해당 구역으로 움직이는 활동입니다. 구역의 색은 목표 기호의 색이 아니라 발판 위치를 나타냅니다.',
+    '흰색·회색의 +와 ×를 살펴보고 안내된 목표 조합을 찾습니다. 찾은 목표가 놓인 화면 구역과 발판 위치를 연결합니다.',
+    '비슷하게 보이는 기호 사이에서 목표와 같은 색·모양 조합을 구별합니다. 목표가 있는 구역을 확인한 뒤 움직입니다.',
+    '목표 기호를 먼저 확인하고 여러 기호가 제시된 화면을 탐색합니다. 색과 모양을 함께 비교해 반응할 구역을 고릅니다.',
+  ], ['discrimination', 'attention', 'space'], [
+    '목표의 색과 모양을 먼저 짚어 보고, 화면에서 찾은 위치를 발판과 연결하도록 안내해 보세요.',
+    '빠르게 이동하기보다 목표 조합과 같은 기호인지 충분히 확인하도록 지도해 보세요.',
+    '기호의 색과 발판 구역의 색이 서로 다른 정보라는 점을 시작 전에 확인해 보세요.',
+    '목표를 찾을 때 화면의 어느 부분부터 살펴보는지 관찰하고, 탐색 방법을 함께 이야기해 보세요.',
+  ]);
   if (id === 'direction-cue' || id === 'simon-arrow') {
     if (id === 'direction-cue' && cfg.spatialArrowColorMode === 'color') return profile('direction-color', [
       '색이 채워진 화살표의 방향을 확인하고 해당 방향의 발판으로 이동하는 활동입니다. 방향별 색은 정해진 대응을 따릅니다.',
@@ -127,7 +150,7 @@ export function resolveResultEducationProfile(input: TrainingResultViewInput): P
       '화살표가 가리키는 방향을 확인하고 알맞은 방향으로 움직이는 활동입니다.',
       '화면에 제시되는 화살표를 보고 이동할 쪽을 선택합니다. 방향을 읽은 뒤 몸의 움직임으로 연결합니다.',
       '위·아래·왼쪽·오른쪽 화살표를 구별하고 그 방향에 맞춰 이동합니다. 화살표의 방향이 반응의 기준입니다.',
-      '중앙에 나타나는 화살표에서 방향 정보를 읽는 활동입니다. 확인한 방향과 실제 공간의 이동을 연결합니다.',
+      '화면에 나타나는 화살표에서 방향 정보를 읽는 활동입니다. 확인한 방향과 실제 공간의 이동을 연결합니다.',
     ], ['direction', 'choice', 'space'], directionTips);
   }
   if (id === 'relative-compass') return profile('relative-direction', [
@@ -269,4 +292,95 @@ export function selectResultEducation(input: TrainingResultViewInput, seed: numb
   return { profileId: data.id, description: data.descriptions[value % 4],
     experiences: data.concepts.map(concept => ({ label: concept.label, description: concept.descriptions[Math.floor(value / 4) % 4] })),
     tip: data.tips[Math.floor(value / 16) % 4] };
+}
+
+// Open conversation, with no answer collection or performance judgement.
+// Each pair stays together so the follow-up develops the same idea.
+const reflectionPairs = {
+  direction: [
+    ['화살표를 보았을 때 어떤 방향 정보부터 확인했나요?', '화면에서 본 방향을 몸으로 표현한다면 어떻게 보여 줄 수 있을까요?'],
+    ['움직이기 전에 화살표의 어느 부분을 살펴봤나요?', '화살표가 가리킨 쪽을 말이나 손짓으로 나타내 볼까요?'],
+    ['화면 속 방향과 내가 서 있는 공간을 어떻게 연결했나요?', '지금 자리에서 같은 방향을 가리킨다면 어느 쪽일까요?'],
+    ['다음 화살표를 기다릴 때 무엇을 준비하고 싶나요?', '방향을 충분히 확인할 수 있는 준비 자세를 함께 생각해 볼까요?'],
+  ],
+  search: [
+    ['여러 기호 중 목표를 찾을 때 무엇부터 살펴봤나요?', '색과 모양 중 어떤 특징을 먼저 확인했는지 이야기해 볼까요?'],
+    ['화면을 살펴볼 때 나만의 탐색 순서가 있었나요?', '한쪽부터 살폈는지, 화면 전체를 보았는지 떠올려 볼까요?'],
+    ['목표와 비슷한 기호를 어떻게 구별했나요?', '목표의 색과 모양을 함께 확인하는 방법을 이야기해 볼까요?'],
+    ['찾은 목표의 위치를 발판과 어떻게 연결했나요?', '화면의 구역과 실제 발판의 위치를 손으로 짚어 볼까요?'],
+  ],
+  flanker: [
+    ['여러 자극이 함께 나왔을 때 무엇을 반응 기준으로 삼았나요?', '주변 자극과 목표 자극을 나누어 이야기해 볼까요?'],
+    ['목표와 주변 정보가 다를 때 어떤 단서를 확인했나요?', '움직이기 전에 목표만 짚어 보는 방법은 어떨까요?'],
+    ['이번 활동에서 꼭 보아야 할 정보는 무엇이었나요?', '반응에 쓰지 않아도 되는 주변 정보도 떠올려 볼까요?'],
+    ['다음 신호에서는 어디에 시선을 두고 싶나요?', '목표를 확인한 다음 반응하는 순서를 함께 말해 볼까요?'],
+  ],
+  stroop: [
+    ['서로 다른 정보가 보일 때 어떤 규칙을 떠올렸나요?', '이번 응답에서 기준으로 삼은 정보를 말해 볼까요?'],
+    ['답하기 전에 어떤 단서를 먼저 확인했나요?', '눈에 먼저 들어온 정보와 응답에 쓴 정보를 나누어 볼까요?'],
+    ['이번 신호의 응답 기준을 한 문장으로 표현한다면요?', '같은 화면을 다시 본다면 무엇부터 확인하고 싶나요?'],
+    ['보이는 정보와 안내된 규칙을 어떻게 함께 생각했나요?', '바로 답하기 전에 규칙을 떠올릴 방법을 이야기해 볼까요?'],
+  ],
+  simon: [
+    ['자극이 나온 위치와 이동할 색을 어떻게 구별했나요?', '화면의 위치와 발판의 위치를 따로 짚어 볼까요?'],
+    ['이동할 곳을 고를 때 어떤 색 정보를 확인했나요?', '자극의 위치가 바뀌어도 같은 색이면 어디로 가야 할까요?'],
+    ['화면을 보자마자 움직이기 전에 무엇을 생각했나요?', '색을 확인하고 발판을 고르는 순서를 이야기해 볼까요?'],
+    ['이번 활동의 이동 규칙을 말로 설명한다면요?', '화면 위치와 색 중 반응에 필요한 정보를 골라 볼까요?'],
+  ],
+  memory: [
+    ['본 정보를 기억할 때 어떤 방법을 사용했나요?', '처음 떠오르는 정보부터 차례대로 이야기해 볼까요?'],
+    ['정보를 하나씩 기억했나요, 몇 개씩 묶어 보았나요?', '나에게 익숙한 기억 방법을 말이나 손짓으로 표현해 볼까요?'],
+    ['화면에서 사라진 정보를 어떻게 다시 떠올렸나요?', '기억을 꺼낼 때 출발점으로 삼은 단서를 이야기해 볼까요?'],
+    ['다음에 다시 본다면 어떤 부분을 먼저 기억하고 싶나요?', '기억할 내용을 확인하는 시간과 표현하는 시간을 나누어 볼까요?'],
+  ],
+  instant: [
+    ['색 배치를 보았을 때 어느 위치부터 기억했나요?', '한 칸씩 보았는지, 전체 모습을 떠올렸는지 이야기해 볼까요?'],
+    ['처음 배치와 다음 배치를 어떻게 비교했나요?', '기억나는 위치를 출발점으로 삼아 다시 살펴볼까요?'],
+    ['색과 위치를 함께 기억할 때 어떤 방법을 썼나요?', '화면의 한 부분을 말이나 손짓으로 표현해 볼까요?'],
+    ['바뀐 부분을 찾기 전에 어떤 장면을 떠올렸나요?', '전체 배치를 다시 볼 수 있다면 어디부터 살펴보고 싶나요?'],
+  ],
+  dive: [
+    ['새 동작 안내가 나왔을 때 무엇을 먼저 준비했나요?', '몸의 자세와 주변 공간을 확인하는 방법을 이야기해 볼까요?'],
+    ['한 동작에서 다음 동작으로 어떻게 이어 갔나요?', '동작이 바뀌기 전에 필요한 준비를 함께 떠올려 볼까요?'],
+    ['화면 안내와 몸의 움직임을 어떻게 연결했나요?', '기억나는 안내 하나를 골라 어떤 동작이었는지 표현해 볼까요?'],
+    ['다음 동작을 기다릴 때 어떤 자세가 편할까요?', '서두르지 않고 움직임을 전환하는 방법을 생각해 볼까요?'],
+  ],
+  tracking: [
+    ['목표가 움직이는 동안 무엇을 계속 살펴봤나요?', '처음 위치와 나중 위치를 이어서 떠올려 볼까요?'],
+    ['여러 대상 사이에서 목표를 어떻게 구별했나요?', '목표를 알아보는 데 쓴 특징을 이야기해 볼까요?'],
+    ['목표의 움직임을 어떤 순서로 따라갔나요?', '움직임의 시작과 끝을 손으로 표현해 볼까요?'],
+    ['다음에 목표를 다시 본다면 무엇부터 확인하고 싶나요?', '움직이는 동안에도 확인할 수 있는 단서를 생각해 볼까요?'],
+  ],
+  stop: [
+    ['움직일 신호와 기다릴 신호를 어떻게 구별했나요?', '멈춰 있어야 할 때 확인한 단서를 이야기해 볼까요?'],
+    ['신호를 보고 움직이기 전에 무엇을 확인했나요?', '반응하지 않는 선택이 필요한 순간을 떠올려 볼까요?'],
+    ['다음 신호를 기다릴 때 어떤 준비를 하고 싶나요?', '먼저 보고 움직임을 정하는 순서를 함께 말해 볼까요?'],
+    ['이번 활동의 움직임과 멈춤 규칙은 무엇이었나요?', '서로 다른 두 신호를 말이나 손짓으로 표현해 볼까요?'],
+  ],
+  general: [
+    ['이번 활동에서 어떤 신호를 먼저 확인했나요?', '반응을 선택할 때 사용한 단서를 이야기해 볼까요?'],
+    ['안내된 규칙을 어떤 방법으로 떠올렸나요?', '기억나는 신호 하나와 그때의 반응을 연결해 볼까요?'],
+    ['다음 신호를 볼 때 무엇부터 살펴보고 싶나요?', '보이는 정보 중 꼭 확인할 특징을 함께 골라 볼까요?'],
+    ['이번 활동을 친구에게 설명한다면 어떻게 말할까요?', '먼저 확인할 정보와 그다음 반응을 나누어 이야기해 볼까요?'],
+  ],
+} satisfies Record<string, Four<readonly [string, string]>>;
+
+export function selectResultReflection(education: ResultEducation, seed: number) {
+  const id = education.profileId;
+  const kind = id.includes('direction') ? 'direction' : id === 'visual-search' ? 'search'
+    : id.startsWith('flanker-') ? 'flanker' : id.startsWith('stroop-') ? 'stroop'
+    : id.startsWith('simon-') ? 'simon' : id === 'instant-memory' ? 'instant'
+    : ['sequence-memory', 'number-memory', 'glass-bridge'].includes(id) ? 'memory'
+    : id === 'dive' || id === 'motion-gate' ? 'dive' : id === 'go-no-go' ? 'stop'
+    : education.experiences.some(item => item.label === '시각 추적') ? 'tracking' : 'general';
+  const value = Number.isFinite(seed) ? Math.abs(Math.floor(seed)) : 0;
+  const pair = reflectionPairs[kind][Math.floor(value / 64) % 4];
+  const next = [
+    '다시 한다면 어떤 단서를 먼저 확인하고 싶나요?',
+    '다음 활동을 시작하기 전에 어떤 준비를 함께 해 볼까요?',
+    '이번 활동에서 사용한 방법 중 다시 시도해 보고 싶은 것은 무엇인가요?',
+    '나만의 확인 방법을 말이나 손짓으로 표현해 볼까요?',
+  ][Math.floor(value / 256) % 4];
+  return { question: pair[0], prompts: [pair[1], next],
+    hint: '정답을 고르지 않아도 괜찮아요. 신호를 보고 반응을 선택했던 과정을 자유롭게 이야기해 보세요.' };
 }
