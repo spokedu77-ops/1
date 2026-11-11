@@ -37,6 +37,14 @@ Existing implementation and tests are evidence of the current state, not a veto 
 
 ## Local development (one-shot)
 
+### Default account for local rendered QA
+
+- The user has authorized `spm.qa.admin@spokedu.test` as the default account for local screen inspection and rendered QA. Use this admin account directly; do not repeatedly ask which account to use.
+- Sign in normally using `SPM_QA_PASSWORD` from `.env.local`. Never print or commit passwords, tokens, or session cookies. The generic `SPOKEDU_MASTER_QA_ID` and secondary ID are customer QA accounts, not the default admin account.
+- Before admin/SPOMOVE QA, verify `/api/spokedu-master/access` returns `isAdmin: true` and the required capability. Do not change roles, subscriptions, grants, or access checks to make QA work.
+- Use installed Chrome (`channel: 'chrome'`) if Playwright's bundled browser is unavailable. On Windows use `npm.cmd run dev:local` when PowerShell blocks `npm.ps1`; explicitly set this repository as the working directory for elevated commands.
+- This authorization covers local QA with the existing account; it does not authorize production data changes or Git publishing.
+
 For `/admin/*`, rendered QA, or “로컬 켜줘” requests, start the app with **`npm run dev:local`** from this repo root (not bare `next dev`). It clears a stale port 3000 listener on Windows, checks `.env.local`, and waits until `http://127.0.0.1:3000` responds. **`npm run dev:local:check`** exits 0 if a healthy dev server is already up.
 
 ## Verification
