@@ -11,6 +11,15 @@ import { describeSessionVolume, emptyColorStimulusCounts } from './trainingResul
 import { resolveTrainingResultRichContent } from './trainingResultRichContent';
 
 const clock = vi.hoisted(() => ({ now: 0, next: 0, frames: new Map<number, FrameRequestCallback>() }));
+// Trial assertions start at READY; the shared pre-run countdown has its own tests.
+vi.mock('./reactTrainStartCountdown', async importOriginal => ({
+  ...await importOriginal<typeof import('./reactTrainStartCountdown')>(),
+  runReactTrainStartCountdown: ({ onTick, onDone }: { onTick: (value: number) => void; onDone: () => void }) => {
+    onTick(0);
+    onDone();
+    return () => {};
+  },
+}));
 vi.mock('./runtimeClock', () => ({
   spomovePerformance: { now: () => clock.now },
   spomoveRequestAnimationFrame: (callback: FrameRequestCallback) => { const id = ++clock.next; clock.frames.set(id, callback); return id; },
