@@ -157,7 +157,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
       group: '02 교육 콘텐츠',
       items: [
         { name: '커리큘럼 관리', href: '/admin/curriculum', icon: BookOpen },
-        { name: '현장 사례', href: '/admin/field-records', icon: ClipboardList },
+        { name: '블로그 원고', href: '/admin/blog-drafts', icon: ClipboardList },
         { name: 'SPOMOVE 관리', href: '/admin/spomove/training', icon: Sparkles },
       ],
     },
@@ -218,6 +218,9 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop, overlay
     }
     if (href === '/admin/spomove/training') {
       return pathname.startsWith('/admin/spomove');
+    }
+    if (href === '/admin/blog-drafts') {
+      return pathname.startsWith('/admin/blog-drafts') || pathname.startsWith('/admin/field-records');
     }
     if (href === '/admin/iiwarmup') {
       return pathname === '/admin/iiwarmup' || pathname.startsWith('/admin/iiwarmup/assets');
