@@ -52,9 +52,8 @@ function usePreferredLaunchMode(): 'projector' | 'mobile' {
  * Keep fixed 16:9 frame; never stretch preview height to the guide column.
  */
 function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
-  const [liteMedia, setLiteMedia] = useState(false);
+  const [liteMedia] = useState(preferLiteMedia);
   const embed = parseVideoEmbedUrl(videoUrl);
-  useEffect(() => setLiteMedia(preferLiteMedia()), []);
 
   const frameClassName =
     `mx-auto w-full overflow-hidden rounded-[14px] border border-slate-200/80 bg-slate-950 sm:rounded-[16px] ${MEDIA_SHADOW}`;
@@ -80,12 +79,14 @@ function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
     <div data-spm-spomove-media="video-preview" className={frameClassName}>
       <div className={ratioClassName}>
         <TrackedVideoIframe
-          src={embed.embedUrl}
+          src={embed.provider === 'youtube' ? `${embed.embedUrl}?playsinline=1&mute=1` : embed.embedUrl}
           title="SPOMOVE 화면 미리보기"
           className="h-full w-full bg-slate-950"
           posterCandidates={getVideoThumbnailCandidates(videoUrl, { lite: liteMedia })}
           posterObjectFit={SPOMOVE_VIDEO_POSTER_OBJECT_FIT}
-          deferUntilPlay
+          // Prepare the opened modal's YouTube player before the click, without autoplay.
+          // Keep constrained connections and other providers on the existing deferred path.
+          deferUntilPlay={liteMedia || embed.provider !== 'youtube'}
         />
       </div>
     </div>
