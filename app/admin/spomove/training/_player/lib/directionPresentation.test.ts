@@ -1,10 +1,13 @@
 // @vitest-environment happy-dom
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { SignalDisplay } from '../components/SignalDisplay';
-import { ALL_DIRECTIONS, createDirectionPresentationCollector, validDirectionRecord } from './directionPresentation';
-import { buildTrainingResultPresentation } from './trainingResultPresentation';
+import { ALL_DIRECTIONS, createDirectionPresentationCollector, shouldIncludeDirectionRecord, validDirectionRecord } from './directionPresentation';
+import { buildTrainingResultV2Model } from './trainingResultV2Model';
+import { DirectionRecordPanel } from '../components/result-v2/DirectionRecordPanel';
+import { TRAINING_ACTIVITIES, type TrainingActivityId } from './trainingActivity';
 import { selectEnhancedResultEducation, selectEnhancedResultReflection } from './trainingResultEducation';
 
 const arrow = (id: string) => ({ type: 'arrow', content: { id } });
@@ -27,10 +30,12 @@ describe('direction presentation evidence', () => {
   it('uses only the configured directions and does not manufacture historical records', () => {
     const collector = createDirectionPresentationCollector(ALL_DIRECTIONS);
     collector.present(arrow('up-right'), 1);
-    const vm = buildTrainingResultPresentation({ ...input, cfg: { ...input.cfg, activityId: 'relative-compass', level: 7 }, directionRecord: collector.snapshot() });
-    expect(vm.direction?.cells).toHaveLength(8);
-    expect(vm.direction?.cells.reduce((sum, cell) => sum + cell.count!, 0)).toBe(1);
-    expect(buildTrainingResultPresentation(input).direction?.cells).toEqual([]);
+    const record = collector.snapshot();
+    const html = renderToStaticMarkup(React.createElement(DirectionRecordPanel, { record, supportedDirections: ALL_DIRECTIONS }));
+    expect((html.match(/<strong>/g) ?? [])).toHaveLength(8);
+    expect(record.directions.reduce((sum, id) => sum + record.counts[id]!, 0)).toBe(1);
+    expect(buildTrainingResultV2Model(input).metrics[1].value).toBe('기록 없음');
+    expect(renderToStaticMarkup(React.createElement(DirectionRecordPanel, {}))).not.toContain('0회');
     const lr = createDirectionPresentationCollector();
     lr.present({ type: 'flanker_arrows', content: { targetArrowId: 'left', flankerArrowMode: 'lr' } }, 1);
     expect(lr.snapshot().directions).toEqual(['left', 'right']);
@@ -38,12 +43,13 @@ describe('direction presentation evidence', () => {
   it('uses presented screen count for progress and reports multiple targets separately', () => {
     const collector = createDirectionPresentationCollector();
     collector.present(arrow('up'), 1);
-    const vm = buildTrainingResultPresentation({ ...input, stims: 2, directionRecord: collector.snapshot(), completionReason: 'stopped_early' });
-    expect(vm.summary.find(item => item.id === 'presented')?.value).toBe('1/5회');
-    expect(vm.summary.some(item => item.id === 'volume')).toBe(false);
+    const vm = buildTrainingResultV2Model({ ...input, stims: 2, directionRecord: collector.snapshot(), completionReason: 'stopped_early' });
+    expect(vm.metrics[1].value).toBe('1 / 5회');
+    expect(vm.vm.reason).toBe('stopped_early');
     collector.present({ type: 'simon_arrow', content: { items: [{ arrowId: 'left' }, { arrowId: 'right' }] } }, 2);
-    const multiple = buildTrainingResultPresentation({ ...input, cfg: { ...input.cfg, mode: 'simon', level: 2, activityId: 'simon-arrow' }, directionRecord: collector.snapshot() });
-    expect(multiple.recordFacts.find(item => item.id === 'arrows')?.value).toBe('3개');
+    const multiple = buildTrainingResultV2Model({ ...input, cfg: { ...input.cfg, mode: 'simon', level: 2, activityId: 'simon-arrow' }, directionRecord: collector.snapshot() });
+    expect(multiple.metrics[1].value).toBe('2 / 5회');
+    expect(multiple.facts.find(item => item.id === 'arrows')?.value).toBe('3개');
   });
   it('acknowledges only a painted cue and cancels preparation/unmounted frames under StrictMode', () => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -65,10 +71,10 @@ describe('direction presentation evidence', () => {
   });
 });
 
-it('keeps color and teacher reports unchanged by the opt-in and provides four coherent non-color variants', () => {
+it('keeps V2 results independent of the retired feedback opt-in and preserves copy variants', () => {
   const color = { ...input, cfg: { ...input.cfg, activityId: 'full-screen-cue' as const, level: 3 }, colorCounts: { red: 1, yellow: 0, green: 0, blue: 0 }, stims: 1 };
-  expect(buildTrainingResultPresentation(color).nonColorFeedback).toBe(false);
-  expect(buildTrainingResultPresentation({ ...input, enhancedFeedback: undefined }).nonColorFeedback).toBe(false);
+  expect(buildTrainingResultV2Model(color)).toEqual(buildTrainingResultV2Model({ ...color, enhancedFeedback: undefined }));
+  expect(buildTrainingResultV2Model(input)).toEqual(buildTrainingResultV2Model({ ...input, enhancedFeedback: undefined }));
   const cases = [input, { ...input, cfg: { ...input.cfg, mode: 'stroop', level: 1, activityId: 'stroop-arrow' as const, stroopArrowResponse: 'voice' as const } }, { ...input, cfg: { ...input.cfg, mode: 'spatial', level: 1, activityId: 'sequence-memory' as const } }, { ...input, cfg: { ...input.cfg, mode: 'flow', level: 1, activityId: 'action-move' as const } }];
   for (const sample of cases) {
     const descriptions = [0, 4, 8, 12].map(seed => selectEnhancedResultEducation(sample, seed));
@@ -79,5 +85,14 @@ it('keeps color and teacher reports unchanged by the opt-in and provides four co
     expect(questions.every(item => item.prompts.length === 2 && item.prompts[0] !== item.prompts[1] && !item.hint)).toBe(true);
     expect(selectEnhancedResultReflection(descriptions[0], 128)).toEqual(questions[2]);
     if (sample.cfg.mode === 'stroop') expect(JSON.stringify(questions)).not.toMatch(/발판|이동|발을|몸으로/);
+  }
+});
+
+it('preserves the direction-record handoff decision for every canonical activity and extreme variant', () => {
+  const recorded = new Set(['direction-cue', 'relative-compass', 'simon-arrow', 'flanker-arrow', 'stroop-arrow', 'go-no-go-action']);
+  for (const id of Object.keys(TRAINING_ACTIVITIES) as TrainingActivityId[]) {
+    for (const flankerExtremeMode of ['theme', 'arrow'] as const) {
+      expect(shouldIncludeDirectionRecord(id, { flankerExtremeMode })).toBe(recorded.has(id) || (id === 'flanker-extreme' && flankerExtremeMode === 'arrow'));
+    }
   }
 });

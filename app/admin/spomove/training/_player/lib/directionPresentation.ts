@@ -1,3 +1,15 @@
+import type { TrainingActivityId } from './trainingActivity';
+import type { TrainingResultConfig } from './trainingResultSummary';
+
+const DIRECTION_RECORD_ACTIVITIES = new Set<TrainingActivityId>([
+  'direction-cue', 'relative-compass', 'simon-arrow', 'flanker-arrow', 'stroop-arrow', 'go-no-go-action',
+]);
+
+/** Preserve the existing result-handoff predicate; do not infer records from display layout. */
+export function shouldIncludeDirectionRecord(id: TrainingActivityId, cfg: Pick<TrainingResultConfig, 'flankerExtremeMode'>) {
+  return DIRECTION_RECORD_ACTIVITIES.has(id) || (id === 'flanker-extreme' && cfg.flankerExtremeMode === 'arrow');
+}
+
 export const CARDINAL_DIRECTIONS = ['up', 'down', 'left', 'right'] as const;
 export const ALL_DIRECTIONS = [...CARDINAL_DIRECTIONS, 'up-left', 'up-right', 'down-left', 'down-right'] as const;
 export type DirectionId = typeof ALL_DIRECTIONS[number];

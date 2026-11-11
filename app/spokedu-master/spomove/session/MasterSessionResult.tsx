@@ -4,12 +4,10 @@ import type { SpomoveResultEducation } from '../spomoveResultEducation';
 
 import type { TrainingActivityId } from '@/app/admin/spomove/training/_player/lib/trainingActivity';
 
-import { ClipboardList, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { TrainingResultScreen } from '@/app/admin/spomove/training/_player/components/TrainingResultScreen';
-import { resolveTrainingResultKind } from '@/app/admin/spomove/training/_player/lib/trainingResultKind';
 import type { DiveActionMoveSession } from '@/app/admin/spomove/training/_player/lib/diveActionMoveReport';
 import {
   resultLevelLabel,
@@ -18,7 +16,6 @@ import {
   type TrainingResultRuleSettings,
 } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
-import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 import { resolveSpomoveCompletionPresentation, type SpomoveCompletionReason } from './sessionResultModel';
 import type { SpomoveExecutionVolume } from './resolveSpomoveExecutionVolume';
 import type { MovementPick } from '../movements/movementTypes';
@@ -44,7 +41,6 @@ export function MasterSessionResult({
   rounds,
   executionVolume,
   diveActionMove = null,
-  recordHref,
   hubHref,
   sessionReturnHref,
   canMarkComplete = false,
@@ -104,7 +100,6 @@ export function MasterSessionResult({
     intervalWork: executionVolume.interval?.workSeconds,
     intervalSets: executionVolume.interval?.sets,
   });
-  const usesResultV2 = Boolean(resolveTrainingResultKind(cfg));
   return (
     <TrainingResultScreen
       officialPresetId={officialPresetId}
@@ -128,46 +123,11 @@ export function MasterSessionResult({
       retryLabel="같은 설정으로 다시 준비"
       onBack={() => router.push(hubHref)}
       onRetry={onRetry}
-      resultActions={usesResultV2 && sessionReturnHref ? <>
+      resultActions={sessionReturnHref ? <>
         <Link href={sessionReturnHref}>수업으로 돌아가기</Link>
         {canMarkComplete && onMarkCompleteAndReturn ? <button type="button" disabled={marking} onClick={onMarkCompleteAndReturn}>{marking ? '기록 중…' : '완료로 표시하고 수업으로'}</button> : <button type="button" onClick={onRetry}>다시 도전하기</button>}
       </> : null}
-      resultNotice={usesResultV2 && fromSession && markCompleteStatus === 'error' ? <p role="status">완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.</p> : null}
-      footer={usesResultV2 ? null : (
-        <div className="grid gap-2">
-          {fromSession && markCompleteStatus === 'error' ? (
-            <p role="status" className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
-              완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.
-            </p>
-          ) : null}
-          {sessionReturnHref ? (
-            <Link href={sessionReturnHref} className={`${SPM_PRIMARY_BTN} min-h-12 w-full`}>
-              수업으로 돌아가기
-            </Link>
-          ) : null}
-          {fromSession && canMarkComplete && onMarkCompleteAndReturn ? (
-            <button
-              type="button"
-              disabled={marking}
-              onClick={onMarkCompleteAndReturn}
-              className={`${SPM_SECONDARY_BTN} min-h-11 w-full disabled:opacity-55`}
-            >
-              {marking ? '기록 중…' : '완료로 표시하고 수업으로'}
-            </button>
-          ) : null}
-          {recordHref && !fromSession ? (
-            <Link href={recordHref} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 text-[15px] font-extrabold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
-              <ClipboardList className="mr-2 h-4 w-4" /> 수업 기록 남기기
-            </Link>
-          ) : null}
-          <button type="button" onClick={onRetry} className={`${fromSession || recordHref ? SPM_SECONDARY_BTN : SPM_PRIMARY_BTN} min-h-12 w-full`}>
-            <RefreshCw className="mr-2 h-4 w-4" /> 같은 설정으로 다시 준비
-          </button>
-          <Link href={hubHref} className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-[14px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
-            {fromSession ? 'SPOMOVE 활동 목록' : '활동 목록으로'}
-          </Link>
-        </div>
-      )}
+      resultNotice={fromSession && markCompleteStatus === 'error' ? <p role="status">완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.</p> : null}
     />
   );
 }

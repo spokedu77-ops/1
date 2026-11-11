@@ -1,13 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import { TRAINING_ACTIVITIES } from './trainingActivity';
 import { resolveTrainingResultKind, TRAINING_RESULT_KINDS } from './trainingResultKind';
-import { buildTrainingResultV2Model as build, validTeacherResult } from './trainingResultV2Model';
+import { buildTrainingResultV2Model as build, selectV2RecordDetails, validTeacherResult } from './trainingResultV2Model';
 import { OFFICIAL_SPOMOVE_LIBRARY } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import { createGlassBridgeState, advanceGlassBridge, answerGlassBridge, type GlassBridgeResult } from './glassBridgeMemory';
+import { resolveResultEducationProfile } from './trainingResultEducation';
 
 const base = { elapsedMs: 5000, colorCounts: null, cfg: { mode: 'spatial', level: 8, activityId: 'glass-bridge-memory' as const, timeMode: 'reps', targetReps: 20, duration: 0 } };
 const bridge: GlassBridgeResult = { startLength: 3, lastLength: 4, presentedRounds: 2, successRounds: 1, failureRounds: 1, teacherFailed: false, scoringMode: 'color-choice', completedRounds: 2, correctSteps: 5, incorrectSteps: 1, difficulty: 'hard' };
 describe('V2 exhaustive activity and real result semantics', () => {
+  it('keeps unique SPOMAT settings while removing only the stimulus time already shown above', () => {
+    const model = build({ ...base, cfg: { ...base.cfg, mode: 'basic', level: 4, activityId: 'two-panel-cue', speed: 5 }, sessionSettings: { title: '실행 설정', primary: 'SPOMAT 1장 · 자극 5초' } });
+    const original = structuredClone(model.settings);
+    expect(model.note).toBe('');
+    expect(selectV2RecordDetails(model).settings).toContainEqual({ id: 'session', label: '사용한 SPOMAT', value: '1장' });
+    expect(model.settings).toEqual(original);
+    model.settings.push({ id: 'session-detail', label: '추가 설정', value: 'SPOMAT 2장 · 자극 3초 · 고유 설정' });
+    expect(selectV2RecordDetails(model).settings.find(item => item.id === 'session-detail')?.value).toBe('SPOMAT 2장 · 자극 3초 · 고유 설정');
+  });
+  it('removes duplicate displays without deleting teacher judgments or changing the source model', () => {
+    const model = build({ ...base, glassBridge: bridge });
+    const before = structuredClone(model.facts);
+    const details = selectV2RecordDetails(model);
+    expect(details.facts).toEqual(model.facts);
+    expect(details.facts.map(item=>item.id)).toEqual(expect.arrayContaining(['presented','success','failure','length','correct','incorrect']));
+    expect(model.facts).toEqual(before);
+    const direction = build({...base,cfg:{...base.cfg,mode:'basic',level:1,activityId:'direction-cue'},stims:4,directionRecord:{directions:['up','down','left','right'],counts:{up:2,down:1,left:0,right:2},signals:4,presented:5}});
+    expect(direction.metrics[1].value).toBe('4 / 20회');
+    expect(selectV2RecordDetails(direction).facts).toEqual([{id:'arrows',label:'목표 화살표 제시',value:'5개'}]);
+    expect(direction.facts.some(item=>item.id==='progress')).toBe(true);
+  });
+  it('preserves educational copy variants and deterministic V2 selection for every activity', () => {
+    for (const [activityId, definition] of Object.entries(TRAINING_ACTIVITIES)) {
+      const route = definition.routes[0]!;
+      const input = { ...base, cfg: { ...base.cfg, mode: route.mode, level: route.levels[0]!, activityId: activityId as keyof typeof TRAINING_ACTIVITIES } };
+      const profile = resolveResultEducationProfile(input);
+      expect(new Set(profile.descriptions).size).toBeGreaterThanOrEqual(4);
+      expect(new Set(profile.tips).size).toBeGreaterThanOrEqual(4);
+      for (const concept of profile.concepts) expect(new Set(concept.descriptions).size).toBeGreaterThanOrEqual(4);
+      for (const seed of [0, 4, 64, 128, 440, 1023]) {
+        const model = build(input, seed);
+        expect(model.education.experiences).toHaveLength(3);
+        expect(model.education).toEqual(build(input, seed).education);
+        expect(model.reflection).toEqual(build(input, seed).reflection);
+      }
+    }
+  });
   it('maps all 100 official presets and 50 admin activity identities without changing publication state', () => {
     expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(100);
     expect(Object.keys(TRAINING_ACTIVITIES)).toHaveLength(50);

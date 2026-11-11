@@ -29,7 +29,7 @@ type Props = {
   colorCounts: ColorStimulusCounts | null;
   stims?: number;
   directionRecord?: import('../lib/directionPresentation').DirectionPresentationRecord;
-  /** Opt-in for Admin and LAB. Teacher-authored runs retain their existing report. */
+  /** Compatibility input; all shared result rendering now uses V2. */
   enhancedFeedback?: boolean;
   glassBridge?: GlassBridgeResult;
   levelLabel: string;
@@ -52,13 +52,15 @@ type Props = {
   retryLabel?: string;
 };
 
-/** One result entry point. Approved reference samples keep their exact rendering. */
+/** Single V2 entry point for Admin, Teacher presets and LAB; no legacy fallback.
+ * Common markup lives in ResultV2Frame; record panels keep activity-specific semantics.
+ */
 export function TrainingResultScreen(props: Props) {
   const [educationSeed] = useState(() => Math.floor(Math.random() * 1024));
   const [theme] = useState(() => typeof window !== 'undefined' && localStorage.getItem('spokedu_theme') === 'dark' ? 'dark' : 'light');
   useViewportScrollLock(true);
-  if (isColorResultV2(props.cfg)) return <ColorResultV2 {...props} theme={theme} />;
-  if (isDirectionResultV2(props.cfg, props.officialPresetId)) return <DirectionResultV2 {...props} theme={theme} />;
-  if (isZoneResultV2(props.cfg, props.officialPresetId)) return <ZoneResultV2 {...props} theme={theme} />;
+  if (isColorResultV2(props.cfg)) return <ColorResultV2 {...props} seed={educationSeed} theme={theme} />;
+  if (isDirectionResultV2(props.cfg, props.officialPresetId)) return <DirectionResultV2 {...props} seed={educationSeed} theme={theme} />;
+  if (isZoneResultV2(props.cfg, props.officialPresetId)) return <ZoneResultV2 {...props} seed={educationSeed} theme={theme} />;
   return <UnifiedResultV2 {...props} seed={educationSeed} theme={theme} />;
 }

@@ -2,15 +2,16 @@ import { resolveTrainingSelection } from './trainingActivity';
 import { resolveTrainingResultKind } from './trainingResultKind';
 import { buildTrainingResultViewModel, type TrainingResultViewInput, type ResultFact } from './trainingResultViewModel';
 import { selectEnhancedResultEducation, selectEnhancedResultReflection } from './trainingResultEducation';
-import { formatElapsedSeconds, RESULT_COLOR_ORDER } from './trainingResultSummary';
+import { RESULT_COLOR_ORDER } from './trainingResultSummary';
 import { NUMBER_READER_ZONES } from './movingNumberReader';
 import { validDirectionRecord } from './directionPresentation';
 import { GOALKEEPER_RESULT_ZONES, validGoalkeeperResult, type GoalkeeperResultRecord } from './goalkeeperResultRecord';
 import { resolveDiveActionMoveIds } from './diveActionMoveReport';
 import type { GlassBridgeResult } from './glassBridgeMemory';
+import { validResultCount, resultV2ElapsedMetric } from './trainingResultV2Shared';
 
 export type TrainingResultV2Input = TrainingResultViewInput & { goalkeeperRecord?: GoalkeeperResultRecord };
-export const validResultCount = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+export { validResultCount } from './trainingResultV2Shared';
 const fact = (id: string, label: string, value: string): ResultFact => ({ id, label, value });
 const countFact = (id: string, label: string, value: unknown, unit: string): ResultFact[] => validResultCount(value) ? [fact(id, label, `${value}${unit}`)] : [];
 
@@ -44,7 +45,7 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
   let progress: number | undefined;
   let progressLabel = '진행 기록';
   let progressUnit = '회';
-  let note = '실제로 전달된 기록만 표시합니다.';
+  let note = '';
   let feature: string | null = null;
   let zones: { id: string; label: string; count: number | null; position: number }[] = [];
   const countsValid = input.colorCounts !== null && RESULT_COLOR_ORDER.every(key => validResultCount(input.colorCounts?.[key]));
@@ -99,7 +100,7 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
   } else {
     progress = kind === 'direction' && validDirectionRecord(input.directionRecord) ? input.directionRecord.signals : validResultCount(input.stims) ? input.stims : undefined;
     progressLabel = id === 'visual-search' ? '탐색 과제 제시' : ['number-cart', 'color-tracker'].includes(id) ? '공개 완료' : ['shape-completion', 'target-tracking'].includes(id) ? '완료된 과제' : '신호 제시';
-    progressUnit = ['number-cart', 'color-tracker', 'shape-completion', 'target-tracking'].includes(id) ? '라운드' : '회';
+    progressUnit = id === 'visual-search' ? '과제' : ['number-cart', 'color-tracker', 'shape-completion', 'target-tracking'].includes(id) ? '라운드' : '회';
     if (kind === 'direction' && validDirectionRecord(input.directionRecord)) facts.push(fact('arrows', '목표 화살표 제시', `${input.directionRecord.presented}개`));
     if (kind === 'zone') {
       if (id === 'goalkeeper' && validGoalkeeperResult(input.goalkeeperRecord)) {
@@ -133,12 +134,27 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
   const configured = kind === 'time' ? timeVolume : input.volumeLabel ?? vm.volume;
   const speed = settings.find(item => ['timing', 'exposure'].includes(item.id))?.value ?? (cfg.speed != null && Number.isFinite(cfg.speed) && cfg.speed > 0 ? `${cfg.speed}초` : '기록 없음');
   const metrics = [
-    { label: '활동 시간', value: Number.isFinite(input.elapsedMs) && input.elapsedMs >= 0 ? input.elapsedMs === 0 ? '0초' : formatElapsedSeconds(input.elapsedMs) : '기록 없음', note: '실제 진행 시간' },
+    resultV2ElapsedMetric(input.elapsedMs),
     kind === 'time' ? { label: '활동 구성', value: input.diveActionMove ? '설정 구성' : '기록 없음', note: '계획된 단계·동작과 실제 수행량 구분' }
-      : { label: progressLabel, value: progress === undefined ? '기록 없음' : `${progress}${progressUnit}`, note: kind === 'sequence' ? '설정 분량과 실제 진행은 다릅니다' : '실제로 전달된 진행 기록' },
-    { label: kind === 'time' ? '설정 분량' : kind === 'instant' ? '사용한 격자' : kind === 'sequence' ? '기억 구성' : kind === 'number' ? '숫자 비행 시간' : id === 'visual-search' ? '탐색 설정 시간' : '사용한 설정',
+      : { label: kind === 'color' || kind === 'direction' ? '진행' : progressLabel, value: progress === undefined ? '기록 없음' : (kind === 'color' || kind === 'direction') && cfg.timeMode === 'reps' && validResultCount(cfg.targetReps) && cfg.targetReps > 0 ? `${progress} / ${cfg.targetReps}${progressUnit}` : `${progress}${progressUnit}`, note: kind === 'sequence' ? '설정 분량과 실제 진행은 다릅니다' : '실제로 전달된 진행 기록' },
+    { label: kind === 'time' ? '설정 분량' : kind === 'instant' ? '사용한 격자' : kind === 'sequence' ? '기억 구성' : kind === 'number' ? '숫자 비행 시간' : id === 'visual-search' ? '탐색 설정 시간' : kind === 'color' || kind === 'direction' ? '자극 시간' : '사용한 설정',
       value: kind === 'time' ? input.volumeLabel && cfg.duration > 0 ? `${cfg.duration}초` : input.diveActionMove ? '설정 구성' : '기록 없음' : kind === 'instant' ? cfg.colorMemoryGridSize ? `${cfg.colorMemoryGridSize}×${cfg.colorMemoryGridSize}` : '기록 없음' : kind === 'sequence' ? settings[0]?.value ?? '기록 없음' : speed,
-      note: kind === 'time' ? configured : '실제 수행 성과가 아닌 실행 설정' },
+      note: kind === 'time' ? configured : kind === 'color' || kind === 'direction' ? '설정 자극 시간' : '실제 수행 성과가 아닌 실행 설정' },
   ];
   return { kind, id, cfg, teacher, vm, education, reflection, facts, settings, zones, distribution, metrics, feature, note, horizontalZones: id === 'number-cart' };
+}
+
+/** Display deduplication only: the original model and all observed counters stay intact. */
+export function selectV2RecordDetails(model: ReturnType<typeof buildTrainingResultV2Model>) {
+  return {
+    facts: model.facts.filter(item => !['progress', 'progress-missing', 'rounds', 'elapsed'].includes(item.id)),
+    settings: model.settings
+      .filter(item => !(['cue', 'timing', 'exposure', 'grid', 'length', 'items'].includes(item.id) && item.value === model.metrics[2]?.value))
+      .map(item => {
+        if (!['session', 'session-detail'].includes(item.id)) return item;
+        const value = item.value.split(/\s*·\s*/).filter(part => !(model.metrics[2]?.label === '자극 시간' && part === `자극 ${model.metrics[2].value}`)).join(' · ');
+        const mat = /^SPOMAT\s+(\d+장)$/.exec(value);
+        return mat ? { ...item, label: '사용한 SPOMAT', value: mat[1]! } : { ...item, value };
+      }).filter(item => item.value.length > 0),
+  };
 }

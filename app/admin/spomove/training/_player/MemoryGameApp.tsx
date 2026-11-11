@@ -26,8 +26,7 @@ import { StudentModal } from './components/StudentModal';
 import { StudentManageScreen } from './components/StudentManageScreen';
 import { SpeedSelector } from './components/SpeedSelector';
 import { SignalDisplay } from './components/SignalDisplay';
-import { createDirectionPresentationCollector, type DirectionPresentationRecord } from './lib/directionPresentation';
-import { resolveTrainingResultLayout } from './lib/trainingResultLayout';
+import { createDirectionPresentationCollector, shouldIncludeDirectionRecord, type DirectionPresentationRecord } from './lib/directionPresentation';
 import type { ReactTrainCompleteStats } from './components/VisualReactionTraining';
 import { normalizeColorTrackerRounds, normalizeNumberCartRounds } from './lib/roundNormalization';
 import {
@@ -919,7 +918,7 @@ function MemoryGameRuntime({
     const completionReason = resolveTrainingCompletionReason({ completionReason: meta?.completionReason, stoppedEarly: meta?.endedEarly });
     const glassBridge = cfg.activityId === 'glass-bridge-memory' ? meta?.glassBridge ?? glassBridgeStatsRef.current : undefined;
     const generatedStims = meta?.stims ?? (resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId }).runtime === 'signals' ? countRef.current : undefined);
-    const directionRecord = meta?.directionRecord ?? (resolveTrainingResultLayout(cfg.activityId, cfg) === 'direction'
+    const directionRecord = meta?.directionRecord ?? (shouldIncludeDirectionRecord(cfg.activityId, cfg)
       ? directionCollectorRef.current.snapshot() : undefined);
     const measuredStims = directionRecord && cfg.activityId !== 'go-no-go-action' ? directionRecord.signals : generatedStims;
     const payload: TrainingSessionResult = {

@@ -439,3 +439,42 @@ export function selectEnhancedResultReflection(education: ResultEducation, seed:
   ][index] : experienceFollowups[kind][index];
   return { question: pair[0], prompts: [pair[1], second], hint: '' };
 }
+
+/** One mounted-result seed selects complete sentences, never clipped text or measured claims. */
+export function selectV2ResultCopy(input: TrainingResultViewInput, seed: number) {
+  const education = selectEnhancedResultEducation(input, seed);
+  const reflection = selectEnhancedResultReflection(education, seed);
+  const selection = resolveTrainingSelection(input.cfg.mode, input.cfg.level, { activityId: input.cfg.activityId });
+  const id = selection.activityId;
+  const index = Math.floor(Math.abs(Number.isFinite(seed) ? seed : 0) / 64) % 4;
+  const voice = input.cfg.stroopArrowResponse === 'voice' || input.cfg.stroopWordResponse === 'voice';
+  const movements = voice ? [
+    '기억나는 응답 규칙을 말로 표현해 볼까요?', '기억나는 신호와 답을 차례로 말해 볼까요?',
+    '신호를 보고 답을 정한 순서를 말해 볼까요?', '다음에 사용할 응답 규칙을 말해 볼까요?',
+  ] : education.profileId.includes('direction') ? [
+    '기억나는 방향 두 가지를 몸으로 표현해 볼까요?', '화살표가 가리킨 쪽을 손으로 나타내 볼까요?',
+    '지금 자리에서 기억나는 방향을 가리켜 볼까요?', '방향을 확인하고 반응할 준비 자세를 표현해 볼까요?',
+  ] : ['sequence-memory', 'glass-bridge-memory'].includes(id) ? [
+    '기억나는 순서를 몸의 움직임으로 표현해 볼까요?', '기억한 순서대로 손을 움직여 볼까요?',
+    '처음과 마지막 위치를 차례로 표현해 볼까요?', '기억한 순서 두 가지를 이어 표현해 볼까요?',
+  ] : ['color-number-memory', 'color-number-quiz'].includes(id) ? [
+    '기억나는 번호와 색의 연결을 몸으로 표현해 볼까요?', '번호에 연결된 색의 위치를 손으로 짚어 볼까요?',
+    '기억나는 색과 번호를 차례로 표현해 볼까요?', '색과 번호의 연결 두 가지를 표현해 볼까요?',
+  ] : id === 'instant-memory' ? [
+    '기억나는 위치 두 곳을 몸으로 표현해 볼까요?', '기억한 배치의 위치를 손으로 짚어 볼까요?',
+    '서로 다른 두 위치를 차례로 표현해 볼까요?', '기억한 색과 위치를 함께 나타내 볼까요?',
+  ] : id === 'action-move' ? [
+    '기억나는 움직임 두 가지를 이어서 표현해 볼까요?', '방향을 바꾼 동작을 천천히 표현해 볼까요?',
+    '다음 신호를 기다리는 자세를 표현해 볼까요?', '기억나는 동작의 순서를 몸으로 표현해 볼까요?',
+  ] : id === 'moving-number-reader' ? [
+    '숫자에 맞는 위치를 몸으로 짚어 볼까요?', '기억나는 숫자의 위치를 손으로 표현해 볼까요?',
+    '숫자를 확인한 뒤 움직일 위치를 나타내 볼까요?', '기억나는 두 숫자의 위치를 차례로 짚어 볼까요?',
+  ] : ['goalkeeper', 'color-tracker', 'number-cart', 'visual-search', 'target-tracking', 'shape-completion'].includes(id) ? [
+    '기억나는 목표 위치를 몸으로 표현해 볼까요?', '목표를 확인한 위치를 손으로 짚어 볼까요?',
+    '서로 다른 두 위치를 차례로 표현해 볼까요?', '목표를 보고 반응할 준비 자세를 표현해 볼까요?',
+  ] : [
+    '기억나는 색 두 가지를 찾아 움직여 볼까요?', '색을 확인하고 반응할 위치를 손으로 짚어 볼까요?',
+    '기억나는 신호와 움직임을 함께 표현해 볼까요?', '다음 신호를 기다리는 준비 자세를 표현해 볼까요?',
+  ];
+  return { education, question: reflection.question, extra: reflection.prompts[1], movement: movements[index] };
+}
