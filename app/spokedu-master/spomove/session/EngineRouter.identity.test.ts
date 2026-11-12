@@ -29,7 +29,7 @@ async function mount(mode: OfficialSpomoveEngineMode, level: number, activityId?
   const complete = vi.fn();
   await act(async () => {
     root.render(React.createElement(EngineRouter, {
-      runtimeState: 'running', mode, level, activityId,
+      key: `${mode}:${level}:${activityId ?? ''}`, runtimeState: 'running', mode, level, activityId,
       effectsEnabled: false, bgmEnabled: false, selectedBgmPath: '', onComplete: complete, onExit: vi.fn(),
     }));
   });

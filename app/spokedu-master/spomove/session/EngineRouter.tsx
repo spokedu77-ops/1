@@ -437,7 +437,6 @@ function EngineRuntime({
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
     const sp = speedSec ?? 3;
     const effectiveMoleLook = moleLookMode ?? resolved.moleLookMode ?? 'classic';
-    const effectiveCamouflage = camouflagePlacement === 'center' ? 'center' : 'variant';
     const effectiveNumberCartTier = numberCartTier ?? resolved.numberCartTier ?? 2;
     const effectiveColorTrackerTier = colorTrackerTier ?? resolved.colorTrackerTier ?? 1;
     const effectiveGoalkeeperTier: 1 | 2 = goalkeeperTier === 1 ? 1 : 2;

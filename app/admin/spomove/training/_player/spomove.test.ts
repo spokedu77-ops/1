@@ -926,8 +926,8 @@ describe('training result summary', () => {
       'Soccer Goalkeeper',
       'Hand and Foot Separate',
       'Color Tracker',
-      '(On Hold) Number Train',
-      '(On Hold) Virus Outbreak',
+      'Number Train',
+      'Virus Outbreak',
       'Target Tracking',
       'Moving Number Reader',
     ]);
@@ -939,8 +939,8 @@ describe('training result summary', () => {
       '축구 : 골키퍼',
       '손 따로, 발 따로',
       '흰 공 찾기',
-      '(보류) 숫자 연산 기차',
-      '(보류) 바이러스 폭증',
+      '숫자 연산 기차',
+      '바이러스 폭증',
       '목표 끝까지 따라가기',
       '움직이는 숫자 판별',
     ]);
@@ -948,7 +948,7 @@ describe('training result summary', () => {
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);
     expect(MODES.basic.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([2, 1, 5, 3, 4]);
-    expect(MODES.simon.levels.map((lv) => lv.name)).toEqual(['화살표', '도형', '풍선', '랜덤 테마', '카모플라쥬']);
+    expect(MODES.simon.levels.map((lv) => lv.name)).toEqual(['화살표', '도형', '풍선', '이미지 테마', '카모플라쥬']);
     // 신 카탈로그 passthrough
     expect(resolveReactTrainUiLevel(1).engineLevel).toBe(1);
     expect(resolveReactTrainUiLevel(9).engineLevel).toBe(9);

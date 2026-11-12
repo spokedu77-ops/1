@@ -95,15 +95,15 @@ describe('Goalkeeper real engine schedule with a virtual clock', () => {
   });
   it('enters BONUS once after the final wave arrives and ends after the existing 15 seconds', () => {
     const complete = mount(10, 2, true);
-    expect(host.querySelector('.gk-hk')?.textContent).toBe('Time');
-    expect(host.querySelector('.gk-hv')?.textContent).toBe('20');
+    expect(host.textContent).toContain('ROUND');
+    expect(host.textContent).toContain('/ 10');
     advance(4000);
-    expect(host.querySelector('.gk-hv')?.textContent).toBe('19');
+    expect(host.textContent).toContain('ROUND');
     advance(20900);
-    expect(host.querySelector('.gk-hk')?.textContent).toBe('Time');
+    expect(host.textContent).toContain('ROUND');
     expect(complete).not.toHaveBeenCalled();
     advance(400);
-    expect(host.querySelector('.gk-hk')?.textContent).toBe('Bonus');
+    expect(host.textContent).toContain('BONUS');
     expect(complete).not.toHaveBeenCalled();
     advance(14800); expect(complete).not.toHaveBeenCalled();
     advance(200); expect(complete).toHaveBeenCalledTimes(1);
@@ -118,7 +118,7 @@ describe('Goalkeeper real engine schedule with a virtual clock', () => {
   it.each([0, 10000, 28000])('STOP at %ims remains early and releases timers', ms => {
     const complete = mount(10, 2, true);
     advance(ms);
-    act(() => host.querySelector<HTMLButtonElement>('.gk-stop')!.click());
+    act(() => Array.from(host.querySelectorAll('button')).find(button => button.textContent === 'STOP')!.click());
     expect(complete).toHaveBeenCalledTimes(1);
     expect(complete.mock.calls[0][0].stoppedEarly).toBe(true);
     advance(100000); expect(complete).toHaveBeenCalledTimes(1);

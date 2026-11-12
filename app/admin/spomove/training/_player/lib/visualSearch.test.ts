@@ -20,6 +20,12 @@ vi.mock('./runtimeClock', () => ({
 
 let root: Root;
 let host: HTMLDivElement;
+function revealAnswer() {
+  const button = Array.from(host.querySelectorAll('button')).find(button => button.textContent === '정답 확인');
+  expect(button).toBeDefined();
+  act(() => button!.click());
+  step(0);
+}
 function step(ms: number) {
   act(() => {
     clock.now += ms;
@@ -92,7 +98,10 @@ describe('visual search runtime and records', () => {
       expect(host.textContent).toContain(`${normalizeSearchSeconds(seconds).toFixed(1)}초`);
       step(normalizeSearchSeconds(seconds) * 1000 - 1);
       expect(host.textContent).not.toContain('정답 ·');
-      step(1); expect(host.textContent).toContain('정답 ·');
+      step(1); expect(host.textContent).toContain('정답 확인');
+      step(10000); expect(host.textContent).not.toContain('정답 ·');
+      expect(complete).not.toHaveBeenCalled();
+      revealAnswer(); expect(host.textContent).toContain('정답 ·');
       expect(complete).not.toHaveBeenCalled(); step(3000);
     }
     expect(complete).toHaveBeenCalledOnce();
@@ -108,7 +117,7 @@ describe('visual search runtime and records', () => {
     render(1); act(() => host.querySelector('button')!.click());
     expect(complete.mock.lastCall![0]).toMatchObject({ stims: 0, completionReason: 'cancelled' });
     expect(clock.frames.size).toBe(0);
-    render(2); step(3000); step(5000); step(3000);
+    render(2); step(3000); step(5000); revealAnswer(); step(3000);
     act(() => host.querySelector('button')!.click());
     expect(complete.mock.lastCall![0]).toMatchObject({ stims: 2, completionReason: 'stopped_early' });
     expect(clock.frames.size).toBe(0);
@@ -215,13 +224,16 @@ describe('visual search runtime and records', () => {
     }
   });
 
-  it('automatically reveals two targets for three seconds without an instructor button and records ten tasks / twenty targets', () => {
+  it('waits for confirmation, reveals two targets for three seconds and records ten tasks / twenty targets', () => {
     const complete = vi.fn(); const progress = vi.fn();
     act(() => root.render(React.createElement(VisualSearchReactionTraining, { visualSearchStage: 2, visualSearchTargetCount: 2, searchSeconds: 1, targetReps: 10, onComplete: complete, onProgress: progress })));
     step(3000);
     for (let round = 1; round <= 10; round++) {
       step(999); expect(host.textContent).not.toContain('정답 ·');
-      step(1); expect(host.textContent).toContain('정답 · 표시된 2곳');
+      step(1); expect(host.textContent).toContain('정답 확인');
+      step(10000); expect(complete).not.toHaveBeenCalled();
+      expect(progress).toHaveBeenCalledTimes(round);
+      revealAnswer(); expect(host.textContent).toContain('정답 · 표시된 2곳');
       expect(host.querySelectorAll('button')).toHaveLength(1);
       expect(host.querySelector('button')?.textContent).toBe('STOP');
       step(2999); expect(progress).toHaveBeenCalledTimes(round);
@@ -235,10 +247,10 @@ describe('visual search runtime and records', () => {
     expect(stats).not.toHaveProperty('accuracy');
   });
 
-  it('can stop during automatic reveal without a duplicate callback', () => {
+  it('can stop during confirmed reveal without a duplicate callback', () => {
     const complete = vi.fn();
     act(() => root.render(React.createElement(VisualSearchReactionTraining, { visualSearchStage: 2, visualSearchTargetCount: 2, searchSeconds: 1, targetReps: 10, onComplete: complete, onProgress: vi.fn() })));
-    step(3000); step(1000);
+    step(3000); step(1000); revealAnswer();
     act(() => { host.querySelector('button')!.click(); host.querySelector('button')!.click(); }); step(60000);
     expect(complete).toHaveBeenCalledOnce();
     expect(complete.mock.lastCall![0]).toMatchObject({ stims: 1, completionReason: 'stopped_early' });

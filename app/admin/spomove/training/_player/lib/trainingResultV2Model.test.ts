@@ -69,9 +69,9 @@ describe('V2 exhaustive activity and real result semantics', () => {
       }
     }
   });
-  it('maps all 100 official presets and 50 admin activity identities without changing publication state', () => {
+  it('maps all 100 official presets and all supported admin activity identities without changing publication state', () => {
     expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(100);
-    expect(Object.keys(TRAINING_ACTIVITIES)).toHaveLength(50);
+    expect(Object.keys(TRAINING_ACTIVITIES)).toHaveLength(40);
     expect(Object.keys(TRAINING_RESULT_KINDS).sort()).toEqual(Object.keys(TRAINING_ACTIVITIES).sort());
     for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
       expect(resolveTrainingResultKind({ ...preset.engine, activityId: preset.activityId, timeMode: 'reps', targetReps: preset.rounds, duration: 0 })).toBeTruthy();

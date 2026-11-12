@@ -44,7 +44,12 @@ function mount(targetRounds = 1, difficulty: 'easy' | 'normal' | 'hard' = 'easy'
   return complete;
 }
 async function advance(ms: number) {
-  await act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+  // Flush each animation frame so every presented cue is acknowledged by React.
+  for (let elapsed = 0; elapsed < ms;) {
+    const delta = Math.min(50, ms - elapsed);
+    await act(async () => { await vi.advanceTimersByTimeAsync(delta); });
+    elapsed += delta;
+  }
 }
 
 it('waits for answer confirmation before revealing the destination and completing once', async () => {
