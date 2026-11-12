@@ -7,6 +7,7 @@ import {
   issueSpokeduMasterBillingKey,
   paySpokeduMasterBillingKey,
   findSpokeduMasterPaymentByOrderId,
+  assertSpokeduMasterBillingProviderAccess,
 } from './spokeduMasterBillingProvider';
 
 import { billingKeyPairDigest, SPOKEDU_BILLING_MID } from './spokeduMasterBillingConfiguration';
@@ -32,6 +33,37 @@ afterEach(() => {
 });
 
 describe('spokeduMasterBillingProvider', () => {
+  it('preserves the actual provider access-policy failure instead of treating it as no payment', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ code: 'API_KEY_ACCESS_DENIED', message: 'private provider details' }, { status: 403 })));
+    await expect(findSpokeduMasterPaymentByOrderId({ orderId: 'order-1', amount: 9900 }))
+      .rejects.toMatchObject({ code: 'API_KEY_ACCESS_DENIED', providerStatus: 403 });
+  });
+
+  it('checks readiness using only a GET for a fresh nonexistent order, without a charge', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    const fetchMock = vi.fn(async () => Response.json({ code: 'NOT_FOUND_PAYMENT' }, { status: 404 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(assertSpokeduMasterBillingProviderAccess()).resolves.toBeUndefined();
+    await expect(assertSpokeduMasterBillingProviderAccess()).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    for (const [url, init] of calls) {
+      expect(url).toMatch(/^https:\/\/api\.tosspayments\.com\/v1\/payments\/orders\/spm-readiness-[\da-f-]+$/);
+      expect(init.method).toBe('GET');
+      expect(init.body).toBeUndefined();
+    }
+    expect(calls[0][0]).not.toBe(calls[1][0]);
+  });
+
+  it('fails readiness on rejected server access and never retries a charge', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    const fetchMock = vi.fn(async () => Response.json({ code: 'API_KEY_ACCESS_DENIED' }, { status: 403 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(assertSpokeduMasterBillingProviderAccess()).rejects.toMatchObject({ code: 'API_KEY_ACCESS_DENIED' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('does not recover a DONE response without a valid original approval time', async () => {
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ mId: SPOKEDU_BILLING_MID, status: 'DONE', paymentKey: 'fixture-payment', orderId: 'spm-lite-initial-fixture', totalAmount: 9900 })));

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
-import { isSpokeduMasterBillingProviderConfigured } from '@/app/lib/server/spokeduMasterBillingProvider';
+import { assertSpokeduMasterBillingProviderAccess, isSpokeduMasterBillingProviderConfigured } from '@/app/lib/server/spokeduMasterBillingProvider';
+import { billingProviderDiagnostics } from '@/app/lib/server/spokeduMasterBillingDiagnostics';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,7 +29,18 @@ export async function POST() {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
-  const configured = isSpokeduMasterBillingProviderConfigured();
+  let configured = isSpokeduMasterBillingProviderConfigured();
+  let failureCode: string | undefined;
+  if (configured) {
+    try {
+      await assertSpokeduMasterBillingProviderAccess();
+    } catch (error) {
+      configured = false;
+      const diagnostics = billingProviderDiagnostics(error);
+      failureCode = diagnostics.providerCode;
+      await reportError(error, { context: 'spokedu_master.billing.health', tags: { stage: 'provider_access', ...diagnostics } });
+    }
+  }
   const checkedAt = new Date().toISOString();
   const service = getServiceSupabase();
   const { error } = await service
@@ -44,7 +57,7 @@ export async function POST() {
   }
 
   return NextResponse.json(
-    { ok: configured, requiresAdminAction: !configured },
+    { ok: configured, requiresAdminAction: !configured, ...(failureCode ? { code: failureCode } : {}) },
     { status: configured ? 200 : 503 },
   );
 }

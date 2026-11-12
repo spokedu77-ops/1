@@ -126,6 +126,23 @@ describe('billing issue recoverable charge flow', () => {
     });
   });
 
+  it('retains the actual lookup failure and stops before issuing or charging a billing key', async () => {
+    const state: State = { subscription: null, order: null };
+    installService(state);
+    mocks.claim.mockImplementation(async () => {
+      if (state.order) state.order.status = 'processing';
+      return { claimed: true, error: null };
+    });
+    mocks.findPayment.mockRejectedValueOnce(Object.assign(new Error('private provider message'), { code: 'API_KEY_ACCESS_DENIED', providerStatus: 403 }));
+    const response = await POST(request({ planId: 'lite', amount: 9900, authKey: 'one-time-auth-key', customerKey: `spm_${USER_ID.replaceAll('-', '')}` }));
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({ code: 'API_KEY_ACCESS_DENIED', stage: 'payment_lookup' });
+    expect(mocks.issueBillingKey).not.toHaveBeenCalled();
+    expect(mocks.pay).not.toHaveBeenCalled();
+    expect(mocks.markFailed).toHaveBeenCalledWith(expect.objectContaining({ lastErrorCode: 'payment_recovery_lookup_failed', recoverable: true }));
+    expect(mocks.reportError).toHaveBeenCalledWith(expect.any(Error), expect.objectContaining({ tags: expect.objectContaining({ providerCode: 'API_KEY_ACCESS_DENIED', providerStatus: 403 }) }));
+  });
+
   it('preserves paymentKey and Billing Key after apply failure, then retries apply without a duplicate charge or authKey reuse', async () => {
     const state: State = { subscription: null, order: null };
     installService(state);

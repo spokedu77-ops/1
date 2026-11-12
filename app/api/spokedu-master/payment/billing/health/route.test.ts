@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   getServiceSupabase: vi.fn(),
   requireAdmin: vi.fn(),
   providerConfigured: vi.fn(),
+  providerAccess: vi.fn(),
+  reportError: vi.fn(),
   upsert: vi.fn(),
 }));
 
@@ -13,13 +15,16 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
 }));
 vi.mock('@/app/lib/server/spokeduMasterBillingProvider', () => ({
   isSpokeduMasterBillingProviderConfigured: mocks.providerConfigured,
+  assertSpokeduMasterBillingProviderAccess: mocks.providerAccess,
 }));
+vi.mock('@/app/lib/monitoring/errorReporter', () => ({ reportError: mocks.reportError }));
 
 import { POST } from './route';
 
 describe('billing provider health recheck', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.providerAccess.mockResolvedValue(undefined);
     mocks.requireAdmin.mockResolvedValue({ ok: true, userId: 'admin', email: 'admin@example.test' });
     mocks.upsert.mockResolvedValue({ error: null });
     mocks.getServiceSupabase.mockReturnValue({
@@ -35,12 +40,23 @@ describe('billing provider health recheck', () => {
     const response = await POST();
     expect(response.status).toBe(403);
     expect(mocks.providerConfigured).not.toHaveBeenCalled();
+    expect(mocks.providerAccess).not.toHaveBeenCalled();
   });
 
   it('keeps the circuit blocked when Production provider configuration is invalid', async () => {
     mocks.providerConfigured.mockReturnValue(false);
     const response = await POST();
     expect(response.status).toBe(503);
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ status: 'misconfigured' }));
+    expect(mocks.providerAccess).not.toHaveBeenCalled();
+  });
+
+  it('does not declare valid-looking keys healthy when Toss denies the server IP', async () => {
+    mocks.providerConfigured.mockReturnValue(true);
+    mocks.providerAccess.mockRejectedValueOnce(Object.assign(new Error('provider rejected server'), { code: 'API_KEY_ACCESS_DENIED', providerStatus: 403 }));
+    const response = await POST();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ ok: false, requiresAdminAction: true, code: 'API_KEY_ACCESS_DENIED' });
     expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ status: 'misconfigured' }));
   });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BILLING_INTENT_COOKIE, verifyBillingIntent } from '@/app/lib/server/spokeduMasterBillingIntent';
 import { getBillingConfigurationError } from '@/app/lib/server/spokeduMasterBillingConfiguration';
+import { billingProviderDiagnostics } from '@/app/lib/server/spokeduMasterBillingDiagnostics';
 
 import { isMasterPremiumAssignedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { hashForMonitoring, reportError } from '@/app/lib/monitoring/errorReporter';
@@ -347,6 +348,7 @@ export async function POST(request: Request) {
     try {
       previouslyApprovedPayment = await findSpokeduMasterPaymentByOrderId({ orderId, amount });
     } catch (error) {
+      const diagnostics = billingProviderDiagnostics(error);
       await markSpokeduMasterBillingOrderFailed({
         service,
         orderId,
@@ -355,9 +357,9 @@ export async function POST(request: Request) {
       });
       await reportError(error, {
         context: 'spokedu_master.billing.issue',
-        tags: { provider: 'tosspayments', stage: 'payment_recovery_lookup', plan, status: 502 },
+        tags: { provider: 'tosspayments', stage: 'payment_recovery_lookup', plan, status: 502, ...diagnostics },
       });
-      return fail(502);
+      return fail(502, '결제 승인 상태를 확인하지 못했습니다. 재결제하지 말고 고객센터로 문의해 주세요.', diagnostics.providerCode, 'payment_lookup');
     }
     if (previouslyApprovedPayment) {
       if (claimedOrder.payment_key && claimedOrder.payment_key !== previouslyApprovedPayment.paymentKey) {
@@ -459,7 +461,7 @@ export async function POST(request: Request) {
       billing = await issueSpokeduMasterBillingKey({ authKey: body.authKey, customerKey: body.customerKey });
     } catch (error) {
       await markSpokeduMasterBillingOrderFailed({ service, orderId, lastErrorCode: 'billing_key_issue_failed' });
-      await reportError(error, { context: 'spokedu_master.billing.issue', tags: { provider: 'tosspayments', stage: 'billing_key_issue', plan, status: 502 } });
+      await reportError(error, { context: 'spokedu_master.billing.issue', tags: { provider: 'tosspayments', stage: 'billing_key_issue', plan, status: 502, ...billingProviderDiagnostics(error) } });
       const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
         && /^[A-Z0-9_]{1,80}$/.test(error.code) ? error.code : 'BILLING_KEY_ISSUE_FAILED';
       return fail(502, '자동결제 수단을 등록하지 못했습니다.', code, 'billing_key');
@@ -513,6 +515,7 @@ export async function POST(request: Request) {
       tags: {
         provider: 'tosspayments',
         stage: 'initial_payment',
+        ...billingProviderDiagnostics(error),
         plan,
         status: 502,
         orderHash: hashForMonitoring(orderId),

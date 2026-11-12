@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from 'next/constants';
 import configureNext from '../../../next.config';
 import { billingKeyPairDigest, SPOKEDU_BILLING_MID } from './spokeduMasterBillingConfiguration';
+import { readFileSync } from 'node:fs';
 
 beforeEach(() => {
   vi.stubEnv('VERCEL_ENV', 'production');
@@ -13,6 +14,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('production billing deployment preflight', () => {
+  it('keeps initial billing, renewals, readiness and webhook verification inside the permitted Korean server region', () => {
+    const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
+    expect(config.functions['app/api/spokedu-master/payment/**/route.ts'].regions).toEqual(['icn1']);
+    // Preserve the separate existing equipment region configuration.
+    expect(config.functions['app/api/admin/equipment/**/route.ts'].regions).toEqual(['icn1']);
+  });
   it('allows a pinned live configuration', () => {
     expect(configureNext(PHASE_PRODUCTION_BUILD)).toBeDefined();
   });

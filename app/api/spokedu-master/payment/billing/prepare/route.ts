@@ -4,6 +4,8 @@ import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getBillingConfigurationError } from '@/app/lib/server/spokeduMasterBillingConfiguration';
 import { BILLING_INTENT_COOKIE, BILLING_INTENT_MAX_AGE, createBillingIntent } from '@/app/lib/server/spokeduMasterBillingIntent';
 import { isSpokeduMasterPaidPlan } from '@/app/lib/server/spokeduMasterPayment';
+import { assertSpokeduMasterBillingProviderAccess } from '@/app/lib/server/spokeduMasterBillingProvider';
+import { billingProviderDiagnostics } from '@/app/lib/server/spokeduMasterBillingDiagnostics';
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
@@ -30,6 +32,13 @@ export async function POST(request: Request) {
   if (errorCode) {
     await reportError(new Error(errorCode), { context: 'spokedu_master.billing.prepare', tags: { stage: 'configuration', code: errorCode } });
     return NextResponse.json({ error: '자동결제 설정을 확인해야 합니다. 운영자에게 문의해 주세요.', code: errorCode, stage: 'prepare' }, { status: 503 });
+  }
+  try {
+    await assertSpokeduMasterBillingProviderAccess();
+  } catch (error) {
+    const diagnostics = billingProviderDiagnostics(error);
+    await reportError(error, { context: 'spokedu_master.billing.prepare', tags: { stage: 'provider_access', ...diagnostics } });
+    return NextResponse.json({ error: '결제 서버 연결을 확인하지 못했습니다. 잠시 후 다시 시도하거나 고객센터로 문의해 주세요.', code: diagnostics.providerCode, stage: 'provider_access' }, { status: 503 });
   }
   // Supabase user IDs are random UUIDs; retain the established provider mapping.
   const customerKey = `spm_${user.id.replaceAll('-', '')}`;

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { createSpokeduMasterOrderId, type SpokeduMasterPaidPlan } from './spokeduMasterPayment';
 import { getBillingKeyFormatError, SPOKEDU_BILLING_MID } from './spokeduMasterBillingConfiguration';
 
@@ -41,8 +42,23 @@ function readNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+async function providerFailure(response: Response, message: string): Promise<Error> {
+  const failure = readRecord(await response.json().catch(() => null));
+  const code = typeof failure.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(failure.code)
+    ? failure.code : 'BILLING_PROVIDER_HTTP_ERROR';
+  return Object.assign(new Error(`${message}:${response.status}:${code}`), { code, providerStatus: response.status });
+}
+
 export function isSpokeduMasterBillingProviderConfigured(): boolean {
   return Boolean(getTossSecretKey());
+}
+
+/** Check the server's real egress policy before opening card auth. Never charges or writes orders. */
+export async function assertSpokeduMasterBillingProviderAccess(): Promise<void> {
+  if (!isSpokeduMasterBillingProviderConfigured()) {
+    throw Object.assign(new Error('billing_provider_unconfigured'), { code: 'BILLING_PROVIDER_UNCONFIGURED' });
+  }
+  await findSpokeduMasterPaymentByOrderId({ orderId: `spm-readiness-${randomUUID()}`, amount: 0 });
 }
 
 export async function issueSpokeduMasterBillingKey(input: {
@@ -67,9 +83,7 @@ export async function issueSpokeduMasterBillingKey(input: {
   });
 
   if (!response.ok) {
-    const failure = readRecord(await response.json().catch(() => null));
-    const code = typeof failure.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(failure.code) ? failure.code : 'BILLING_KEY_ISSUE_FAILED';
-    throw Object.assign(new Error(`toss_billing_key_issue_failed:${response.status}:${code}`), { code });
+    throw await providerFailure(response, 'toss_billing_key_issue_failed');
   }
   const json = readRecord(await response.json());
   const billingKey = readString(json.billingKey);
@@ -112,7 +126,7 @@ export async function paySpokeduMasterBillingKey(input: {
 
   if (!response.ok) {
     if (response.status === 400 || response.status === 422) return null;
-    throw new Error(`toss_billing_approval_indeterminate:${response.status}`);
+    throw await providerFailure(response, 'toss_billing_approval_indeterminate');
   }
   const json = readRecord(await response.json());
   const paymentKey = readString(json.paymentKey);
@@ -157,7 +171,7 @@ export async function findSpokeduMasterPaymentByOrderId(input: {
   // be collapsed into null, because callers may otherwise charge again.
   if (response.status === 404) return null;
   if (!response.ok) {
-    throw new Error(`toss_order_lookup_indeterminate:${response.status}`);
+    throw await providerFailure(response, 'toss_order_lookup_indeterminate');
   }
   const json = readRecord(await response.json());
   const paymentKey = readString(json.paymentKey);
