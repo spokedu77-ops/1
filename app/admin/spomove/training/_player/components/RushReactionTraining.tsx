@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
@@ -43,7 +43,6 @@ type Particle = {
 
 type RushState = {
   running: boolean;
-  timeLeft: number;
   stims: number;
   combo: number;
   maxCombo: number;
@@ -54,7 +53,6 @@ type RushState = {
   lastTime: number;
   segments: Seg[];
   particles: Particle[];
-  timer: ReturnType<typeof setInterval> | null;
   raf: number | null;
   W: number;
   H: number;
@@ -90,8 +88,7 @@ ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 type Props = {
-  durationSec: number;
-  targetReps?: number;
+  targetReps: number;
   speedLevel: number;
   speedSec: number;
   onExit: () => void;
@@ -105,7 +102,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, targetReps, speedSec, onComplete }: Props) {
+export function RushReactionTraining({ targetReps, speedSec, onComplete }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
@@ -113,28 +110,25 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
-  const hudTimeRef = useRef<HTMLDivElement>(null);
+  const totalRounds = Math.max(1, Math.round(Number(targetReps) || 20));
   const hudStimsRef = useRef<HTMLDivElement>(null);
   const hudMaxRef = useRef<HTMLDivElement>(null);
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLDivElement>(null);
-  const [warn, setWarn] = useState(false);
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
 
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
     g.running = false;
-    if (g.timer) clearInterval(g.timer);
     if (g.raf != null) cancelAnimationFrame(g.raf);
     onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
-    if (!g) return;
+    if (!g?.running) return;
     g.running = false;
-    if (g.timer) clearInterval(g.timer);
     if (g.raf != null) cancelAnimationFrame(g.raf);
     onCompleteRef.current({
       stims: g.stims,
@@ -157,7 +151,6 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
 
     const g: RushState = {
       running: true,
-      timeLeft: Math.max(1, durationSec),
       stims: 0,
       combo: 0,
       maxCombo: 0,
@@ -168,7 +161,6 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
       lastTime: performance.now(),
       segments: [],
       particles: [],
-      timer: null,
       raf: null,
       W: 0,
       H: 0,
@@ -201,16 +193,9 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
       g.railVPHalfW = w * 0.018;
     };
 
-    const updateHudTime = () => {
-      const m = String(Math.floor(g.timeLeft / 60)).padStart(2, '0');
-      const s = String(g.timeLeft % 60).padStart(2, '0');
-      if (hudTimeRef.current) hudTimeRef.current.textContent = `${m}:${s}`;
-      setWarn(g.timeLeft <= 10);
-    };
-
     const onStim = (lane: number) => {
       g.stims += 1;
-      if (targetReps && g.stims === targetReps) setTimeout(endGame, 0);
+
       g.combo += 1;
       g.laneCount[lane] += 1;
       if (g.combo > g.maxCombo) g.maxCombo = g.combo;
@@ -282,6 +267,7 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
     };
 
     const spawnSegment = () => {
+      if (g.stims + g.segments.length >= totalRounds) return;
       const active = new Set(g.segments.map((s) => s.ci));
       const avail = [0, 1, 2, 3].filter((i) => !active.has(i));
       if (!avail.length) return;
@@ -471,6 +457,7 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
           s.fired = true;
           s.dead = true;
           onStim(s.ci);
+          if (g.stims >= totalRounds) { endGame(); return; }
         }
         if (s.z + s.len < -0.1) s.dead = true;
         if (!s.dead) drawSegment(s);
@@ -484,26 +471,12 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
     };
 
     resize();
-    updateHudTime();
     if (hudStimsRef.current) hudStimsRef.current.textContent = '0';
     if (hudMaxRef.current) hudMaxRef.current.textContent = '0';
 
     const beginGame = () => {
       if (!gRef.current?.running) return;
       g.lastTime = performance.now();
-      const endsAtMs = performance.now() + durationSec * 1000;
-      g.timer = setInterval(() => {
-        const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
-        if (g.timeLeft !== newLeft) {
-          g.timeLeft = newLeft;
-          updateHudTime();
-        }
-        if (targetReps == null && g.timeLeft <= 0) {
-          if (g.timer) clearInterval(g.timer);
-          g.timer = null;
-          endGame();
-        }
-      }, 250);
       g.raf = requestAnimationFrame(loop);
     };
 
@@ -517,10 +490,9 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
       stopCountdown();
       unbindResize();
       g.running = false;
-      if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, speedSec, targetReps]);
+  }, [endGame, speedSec, totalRounds]);
 
   return (
     <div className="rrt">
@@ -533,12 +505,8 @@ export function RushReactionTraining({ durationSec, targetReps, speedSec, onComp
       <style>{css}</style>
       <div className="rrt-hud">
         <div className="rrt-hc">
-          <div className="rrt-hk">Time</div>
-          <div ref={hudTimeRef} className={`rrt-hv${warn ? ' warn' : ''}`} />
-        </div>
-        <div className="rrt-hc">
-          <div className="rrt-hk">Stims</div>
-          <div ref={hudStimsRef} className="rrt-hv" />
+          <div className="rrt-hk">ROUND</div>
+          <div className="rrt-hv"><span ref={hudStimsRef} /> / {totalRounds}</div>
         </div>
         <div className="rrt-hc grow">
           <div className="rrt-hk">Max Streak</div>

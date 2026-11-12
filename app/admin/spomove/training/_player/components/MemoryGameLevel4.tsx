@@ -28,7 +28,7 @@ export function MemoryGameLevel4({
   spatialMemoryResponse,
 }: {
   onExit: () => void;
-  onComplete: () => void;
+  onComplete: (patterns?: unknown[][]) => void;
   audioMode: string;
   speedSec: number;
   startDelayMs?: number;
@@ -118,9 +118,9 @@ export function MemoryGameLevel4({
         setPhase('qa_question');
       }
     } else if (p === 'done') {
-      onComplete();
+      onComplete([items]);
     }
-  }, [onComplete]);
+  }, [onComplete, items]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

@@ -23,6 +23,8 @@ type Props = {
 export function VisualSearchReactionTraining({ targetReps, searchSeconds, visualSearchStage, visualSearchTargetCount, onComplete, onProgress }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finishRef = useRef<((stopped: boolean) => void) | null>(null);
+  const revealRef = useRef<(() => void) | null>(null);
+  const answersRef = useRef<import('../lib/roundAnswerRecord').RoundAnswerRecord>([]);
   const callbacks = useRef({ onComplete, onProgress });
   useEffect(() => { callbacks.current = { onComplete, onProgress }; }, [onComplete, onProgress]);
   const [hud, setHud] = useState({ round: 0, remaining: REACT_TRAIN_START_COUNTDOWN_SEC, phase: 'countdown', zones: [] as number[], shapeCount: 0 });
@@ -32,6 +34,7 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
   const seconds = normalizeSearchSeconds(searchSeconds);
 
   useEffect(() => {
+    answersRef.current = [];
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('시각탐색 Canvas를 시작할 수 없습니다.');
@@ -40,7 +43,7 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
     let done = false;
     let round = 0;
     let presented = 0;
-    let phase: 'countdown' | 'search' | 'reveal' = 'countdown';
+    let phase: 'countdown' | 'search' | 'waiting' | 'reveal' = 'countdown';
     const targetVariantOffset = stage === 2 ? Math.floor(Math.random() * 4) : 0;
     let phaseStart = performance.now();
     let shapes: ReturnType<typeof generateSearchShapes> = [];
@@ -60,14 +63,20 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
     const finish = (stopped: boolean, failed = false) => {
       if (done) return;
       done = true;
+      revealRef.current = null;
       stopCountdown();
       cancelAnimationFrame(frame);
       observer.disconnect();
-      callbacks.current.onComplete({ stims: presented, maxCombo: 0,
+      callbacks.current.onComplete({ roundAnswers: answersRef.current.map(answer => ({ ...answer })), stims: presented, maxCombo: 0,
         laneCount: [counts.red, counts.blue, counts.green, counts.yellow],
         completionReason: failed ? 'failed' : stopped ? (presented === 0 ? 'cancelled' : 'stopped_early') : 'natural_complete' });
     };
     finishRef.current = finish;
+    revealRef.current = () => {
+      if (done || phase !== 'waiting') return;
+      phase = 'reveal'; phaseStart = performance.now();
+      answersRef.current.push({ round, summary: shapes.filter(shape => shape.target).map(shape => VISUAL_SEARCH_ZONES[shape.zone]!.name).join(' + ') });
+    };
     const startRound = (now: number) => {
       round += 1;
       shapes = generateSearchShapes({ stage, targetCount, round, totalRounds: total, targetVariantOffset });
@@ -77,7 +86,7 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
       if (done) return;
       const now = performance.now();
       let elapsed = (now - phaseStart) / 1000;
-      if (phase === 'search' && elapsed >= seconds) { phase = 'reveal'; phaseStart = now; }
+      if (phase === 'search' && elapsed >= seconds) { phase = 'waiting'; phaseStart = now; }
       else if (phase === 'reveal' && elapsed >= VISUAL_SEARCH_REVEAL_SECONDS) {
         if (round >= total) { finish(false); return; }
         startRound(now);
@@ -85,7 +94,7 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
       elapsed = (now - phaseStart) / 1000;
       const reveal = phase === 'reveal';
       const zones = shapes.filter(shape => shape.target).map(shape => shape.zone);
-      const remaining = Math.max(0, (phase === 'search' ? seconds : 3) - elapsed);
+      const remaining = phase === 'waiting' ? 0 : Math.max(0, (phase === 'search' ? seconds : VISUAL_SEARCH_REVEAL_SECONDS) - elapsed);
       ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, width, height);
       for (let i = 0; i < 4; i++) {
         const pad = VISUAL_SEARCH_ZONES[i]!;
@@ -98,7 +107,7 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
       }
       // Paint the target last so another stimulus cannot fully obscure it.
       for (const shape of [...shapes.filter(shape => !shape.target), ...shapes.filter(shape => shape.target)]) {
-        const p = searchShapePosition(shape, stage, reveal ? seconds : elapsed);
+        const p = searchShapePosition(shape, stage, reveal || phase === 'waiting' ? seconds : elapsed);
         const x = p.x * width; const y = p.y * height;
         const radius = Math.min(width, height) * 0.022;
         ctx.globalAlpha = reveal && !shape.target ? 0.15 : 1;
@@ -128,7 +137,7 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
       },
     });
     frame = requestAnimationFrame(safeTick);
-    return () => { done = true; stopCountdown(); cancelAnimationFrame(frame); observer.disconnect(); finishRef.current = null; };
+    return () => { done = true; stopCountdown(); cancelAnimationFrame(frame); observer.disconnect(); finishRef.current = null; revealRef.current = null; };
   }, [seconds, total, stage, targetCount]);
 
   const symbolOnly = isSearchSymbolOnlyRound(stage, Math.max(1, hud.round), total);
@@ -139,7 +148,8 @@ export function VisualSearchReactionTraining({ targetReps, searchSeconds, visual
     <div role="status" style={{ textAlign: 'center', padding: '8px 12px', minHeight: 56, flexShrink: 0, fontWeight: 700, fontSize: 'clamp(14px, 2vw, 18px)', visibility: hud.phase === 'countdown' ? 'hidden' : 'visible' }}>
       {hud.phase === 'countdown' ? `준비 ${Math.ceil(hud.remaining)}` : hud.phase === 'reveal'
         ? `정답 · 표시된 ${targetCount}곳으로 이동하세요`
-        : `다른 기호 ${targetCount}개를 찾아 이동하세요 · ${hud.remaining.toFixed(1)}초`}
+        : hud.phase === 'waiting' ? '찾은 위치를 확인한 뒤 정답을 공개하세요.' : `다른 기호 ${targetCount}개를 찾아 이동하세요 · ${hud.remaining.toFixed(1)}초`}
+      {hud.phase === 'waiting' ? <div style={{ marginTop: 12 }}><button type="button" onClick={() => revealRef.current?.()} style={{ minHeight: 48, padding: '10px 24px', borderRadius: 12, border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', font: 'inherit', fontWeight: 700, cursor: 'pointer' }}>정답 확인</button></div> : null}
       <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 5 }}>{stage}단계 · {stage === 1 ? '고정형' : '이동형'} · 목표 {targetCount}개 · 도형 {hud.shapeCount}개</div>
       <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 5 }}>{symbolOnly ? '모양으로 찾기' : '색·모양으로 찾기'} · 탐색 {seconds}초 · 정답 공개 {VISUAL_SEARCH_REVEAL_SECONDS}초</div>
     </div>

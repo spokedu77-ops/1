@@ -16,6 +16,9 @@ export type TrainingResultViewInput = {
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
   stims?: number;
+  shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
+  moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   directionRecord?: import('./directionPresentation').DirectionPresentationRecord;
   glassBridge?: GlassBridgeResult;
   programTitle?: string;
@@ -42,11 +45,9 @@ function validCounts(value: ColorStimulusCounts | null): value is ColorStimulusC
 
 // Canonical activity identities, not runtime names (balloon-pop runs as `balloon`).
 const COLOR_DISTRIBUTION_ACTIVITIES = new Set<TrainingActivityId>([
-  'wave-dodge', 'falling-bricks', 'balloon-pop', 'beat-wave', 'visual-camouflage',
-  'mole', 'virus-outbreak', 'wormhole', 'motion-gate',
+  'wave-dodge', 'falling-bricks', 'balloon-pop',
+  'mole', 'virus-outbreak', 'motion-gate',
   'simon-shape', 'simon-theme', 'simon-camouflage', 'simon-balloon',
-  'go-no-go-color', 'go-no-go-shape', 'go-no-go-mixed',
-  'task-switch-basic', 'task-switch-reverse', 'task-switch-mixed',
 ]);
 
 /** Presentation only: never infer child performance or alter runtime / persistence. */
@@ -121,7 +122,7 @@ export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
       add('failure', '오답이 있던 라운드', bridge.failureRounds, '라운드');
       setting('plan', '길이 구성', `3→4→5→6→7칸 · 길이별 ${cfg.targetReps / 5}라운드`);
       limitations.push('맞힌/틀린 발판은 교사가 입력한 색과 정답을 비교한 기록입니다. 오답 후에도 계속 진행합니다.');
-      if (bridge.difficulty === 'easy') setting('cue', '설정 제시 방식', '쉬움 · 전체 패턴 20초');
+      if (bridge.difficulty === 'easy') setting('cue', '설정 제시 방식', cfg.speed == null ? '설정 미전달' : `쉬움 · 전체 패턴 ${cfg.speed}초`);
       else if (bridge.difficulty === 'hard' && cfg.speed != null) setting('cue', '설정 제시 방식', `어려움 · 발판당 ${cfg.speed}초`);
       progress = count(bridge.completedRounds) ? `${bridge.completedRounds}라운드 공개 완료` : '공개 완료 기록 미전달';
     } else {
@@ -174,7 +175,7 @@ export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
   if (cfg.adminRounds && cfg.timeMode === 'reps') volume = `${cfg.targetReps}라운드`;
   if (id === 'glass-bridge-memory') volume = `${cfg.targetReps}라운드`;
   if (cfg.speed != null && id !== 'glass-bridge-memory' && id !== 'sequence-memory' && !dive) {
-    setting('cue', numberReader ? '설정 비행 시간' : search ? '설정 탐색 시간' : '설정 자극 시간', `${cfg.speed}초`);
+    setting('cue', id === 'virus-outbreak' ? '설정 관찰 시간' : id === 'shape-completion' || id === 'relative-compass' ? '설정 반응 시간' : numberReader ? '설정 비행 시간' : search ? '설정 탐색 시간' : '설정 자극 시간', `${cfg.speed}초`);
   }
   if (input.sessionSettings?.primary.trim()) {
     setting('session', input.sessionSettings.title ?? '사용한 설정', input.sessionSettings.primary);

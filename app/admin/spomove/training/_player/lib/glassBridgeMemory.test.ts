@@ -64,21 +64,23 @@ describe('glass bridge color choices and fixed round schedule', () => {
       expect(answered).toBe(total * 5);
     }
   });
-  it('uses the full common three-second countdown and shows easy patterns together for exactly twenty seconds', () => {
-    let state = createGlassBridgeState(3, 1, 5, 0, () => 0, 'easy');
+  it('uses the full common three-second countdown and shows easy patterns for the configured six seconds', () => {
+    let state = createGlassBridgeState(3, 6, 5, 0, () => 0, 'easy');
     expect(advanceGlassBridge(state, 2999).phase).toBe('READY');
     state = advanceGlassBridge(state, 3000); expect(state.phase).toBe('SHOWING');
     expect(glassBridgeShowsAll(state, 3000)).toBe(true);
-    expect(glassBridgeShowsAll(state, 22999)).toBe(true);
+    expect(glassBridgeShowsAll(state, 8999)).toBe(true);
     expect(glassBridgeLitIndex(state, 4000)).toBe(-1);
-    expect(glassBridgeShowsAll(state, 23000)).toBe(false);
-    expect(advanceGlassBridge(state, 23499).phase).toBe('SHOWING');
-    state = advanceGlassBridge(state, 23500); expect(state.phase).toBe('WAITING');
-    expect(state.answers).toHaveLength(0); expect(glassBridgeShowsAll(state, 23500)).toBe(false);
+    expect(glassBridgeShowsAll(state, 9000)).toBe(false);
+    expect(advanceGlassBridge(state, 9499).phase).toBe('SHOWING');
+    state = advanceGlassBridge(state, 9500); expect(state.phase).toBe('WAITING');
+    expect(state.answers).toHaveLength(0); expect(glassBridgeShowsAll(state, 9500)).toBe(false);
   });
   it('normalizes restored settings and creates nonadjacent patterns within mobile bounds', () => {
     expect(normalizeGlassBridgeRounds(5)).toBe(5); expect(normalizeGlassBridgeRounds(999)).toBe(20);
-    expect(normalizeGlassBridgeSeconds(10)).toBe(6); expect(normalizeGlassBridgeLength(6)).toBe(3);
+    expect(normalizeGlassBridgeSeconds(10)).toBe(6);
+    expect(normalizeGlassBridgeSeconds(10, 'easy')).toBe(10);
+    expect(normalizeGlassBridgeSeconds(1, 'easy')).toBe(2); expect(normalizeGlassBridgeLength(6)).toBe(3);
     expect(glassBridgeRoundLength(99, 5)).toBe(7);
     const pattern = createGlassBridgePattern(99, () => 0); expect(pattern).toHaveLength(7);
     expect(pattern.every((color, i) => i === 0 || color !== pattern[i - 1])).toBe(true);

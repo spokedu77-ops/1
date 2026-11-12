@@ -70,7 +70,14 @@
 .status[data-status='postponed'] { border-color: #7e22ce80; background: #a855f71a; color: #d8b4fe; }
 .status[data-status='cancelled'] { border-color: #be123c80; background: #f43f5e1a; color: #fda4af; }
 .changeList, .noticeList { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.changeList { gap: 6px; }
+.changeList { gap: 6px; scrollbar-width: thin; }
+.changeList::-webkit-scrollbar { width: 3px; }
+.changeList::-webkit-scrollbar-track { background: transparent; }
+.changeList::-webkit-scrollbar-thumb { background: #64748b; border-radius: 999px; }
+.changeList::-webkit-scrollbar-button { display: none; }
+@supports selector(::-webkit-scrollbar) {
+  .changeList { scrollbar-width: auto; }
+}
 .changes .panelHeader { margin-bottom: 10px; padding-bottom: 10px; }
 .changeCard { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 5px 10px; border: 1px solid var(--border); border-radius: 10px; background: #1e293b66; }
 .changeBadge, .pinnedBadge, .latestBadge { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; padding: 3px 7px; border: 1px solid #a1620780; border-radius: 5px; background: #f59e0b1a; color: #fcd34d; font-size: 11px; font-weight: 600; }
@@ -120,7 +127,7 @@
   .tableHeader { position: sticky; top: 0; z-index: 1; background: #111827; }
   .rightColumn { min-height: 0; }
   .changes { flex: 1; }
-  .changeList { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; align-content: start; overscroll-behavior-y: contain; scrollbar-width: thin; }
+  .changeList { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; align-content: start; overscroll-behavior-y: contain; }
   .changeFooter { flex-shrink: 0; }
   .notices { flex: 0 1 auto; max-height: 45%; }
   .noticeGroups { min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; scrollbar-width: thin; }

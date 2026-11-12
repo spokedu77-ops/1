@@ -175,6 +175,7 @@ export function ColorMemoryGridReactionTraining({
   const centerRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<Game | null>(null);
+  const answersRef = useRef<import('../lib/roundAnswerRecord').RoundAnswerRecord>([]);
   const onCompleteRef = useRef(onComplete);
   const centerTextRef = useRef('');
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
@@ -190,7 +191,7 @@ export function ColorMemoryGridReactionTraining({
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (flashRef.current) flashRef.current.classList.remove('on');
     const completedRounds = stoppedEarly ? Math.max(0, g.round - 1) : g.totalRounds;
-    onCompleteRef.current({
+    onCompleteRef.current({ roundAnswers: answersRef.current.map(answer => ({ ...answer })),
       stims: completedRounds,
       maxCombo: completedRounds,
       laneCount: [...g.laneCount],
@@ -447,6 +448,7 @@ export function ColorMemoryGridReactionTraining({
           g.laneCount[newIdx]++;
           const ans = COLORS[newIdx]!;
           const prev = COLORS[oldIdx]!;
+          answersRef.current.push({ round: g.round, summary: `${prev.name} → ${ans.name}`, steps: [`${Math.floor(g.targetIdx / g.gridSize) + 1}행 ${g.targetIdx % g.gridSize + 1}열`, `${prev.name} → ${ans.name}`] });
           if (g.gameMode === 'oneshot') {
             showMessage(`${prev.name} → ${ans.name}`, 'pill');
             if (centerRef.current) centerRef.current.style.color = ans.glow;

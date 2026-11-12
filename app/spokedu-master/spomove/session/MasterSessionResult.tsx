@@ -29,6 +29,9 @@ export function MasterSessionResult({
   colorCounts = null,
   stims,
   directionRecord,
+  shapeCompletionRecord,
+  roundAnswers,
+  moleRecord,
   goalkeeperRecord,
   glassBridge,
   settings,
@@ -60,6 +63,9 @@ export function MasterSessionResult({
   colorCounts?: ColorStimulusCounts | null;
   stims?: number;
   directionRecord?: import('@/app/admin/spomove/training/_player/lib/directionPresentation').DirectionPresentationRecord;
+  shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
+  moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('@/app/admin/spomove/training/_player/lib/goalkeeperResultRecord').GoalkeeperResultRecord;
   glassBridge?: import('@/app/admin/spomove/training/_player/lib/glassBridgeMemory').GlassBridgeResult;
   engineMode: OfficialSpomoveEngineMode;
@@ -110,6 +116,9 @@ export function MasterSessionResult({
       colorCounts={colorCounts}
       stims={stims}
       directionRecord={directionRecord}
+      shapeCompletionRecord={shapeCompletionRecord}
+      roundAnswers={roundAnswers}
+      moleRecord={moleRecord}
       goalkeeperRecord={goalkeeperRecord}
       glassBridge={glassBridge}
       sessionSettings={settings.length ? { title: '실행 설정', primary: settings.join(' · ') } : null}

@@ -20,6 +20,9 @@ export type TrainingSessionResult = {
   completionReason?: SpomoveCompletionReason;
   stims?: number;
   directionRecord?: DirectionPresentationRecord;
+  shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
+  moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('./goalkeeperResultRecord').GoalkeeperResultRecord;
   glassBridge?: GlassBridgeResult;
 };
@@ -58,6 +61,8 @@ export function addColorIdsToCounts(counts: ColorStimulusCounts, colorIds: strin
 
 /** Execution rules needed to describe the activity accurately on Result. */
 export type TrainingResultRuleSettings = {
+  shapeCompletionResponseSeconds?: number;
+  relativeCompassResponseSeconds?: number;
   colorMemoryGridSize?: 3 | 4 | 5;
   colorMemoryGridMode?: 'flicker' | 'oneshot';
   glassBridgeDifficulty?: 'easy' | 'hard';
@@ -189,7 +194,10 @@ export function settingsToTrainingResultConfig(cfg: TrainingResultRuleSettings &
     stroopWordRuleMode: cfg.stroopWordRuleMode,
     stroopWordMode: cfg.stroopWordMode,
     stroopWordDifficulty: cfg.stroopWordDifficulty,
-    speed: cfg.speed,
+    shapeCompletionResponseSeconds: cfg.shapeCompletionResponseSeconds,
+    relativeCompassResponseSeconds: cfg.relativeCompassResponseSeconds,
+    speed: cfg.activityId === 'shape-completion' ? cfg.shapeCompletionResponseSeconds
+      : cfg.activityId === 'relative-compass' ? cfg.relativeCompassResponseSeconds : cfg.speed,
     visualSearchStage: cfg.visualSearchStage,
     visualSearchTargetCount: cfg.visualSearchTargetCount,
     adminRounds: cfg.adminRounds,

@@ -21,14 +21,14 @@ export function directionRecordFeature(record?: DirectionPresentationRecord) {
     : `${leaders.join('·')} 방향 신호가 ${leaders.length > 1 ? '같은 횟수로 ' : ''}가장 많이 제시되었어요.`;
 }
 
-/** Cardinal records use a compact grid; diagonals retain their spatial positions. */
+/** Match the mat's cardinal diamond; diagonal records retain the full compass. */
 export function DirectionRecordPanel({ record, supportedDirections = CARDINAL_DIRECTIONS }: { record?: DirectionPresentationRecord; supportedDirections?: readonly DirectionId[] }) {
   const valid = validDirectionRecord(record);
   const recordedDirections = record?.directions.filter(id => Object.hasOwn(DIRECTIONS, id));
   const directions = recordedDirections?.length ? [...new Set(recordedDirections)] : supportedDirections;
   const spatial = directions.some(id => id.includes('-'));
-  return <div className={`${styles.colorGrid} ${directionStyles.compass}`} data-direction-layout={spatial ? 'compass' : 'grid'} aria-label="방향별 실제 제시 횟수">
-    {directions.map(id => { const item = DIRECTIONS[id]; const Icon = DIRECTION_ICONS[id]; return <div key={id} className={directionStyles.card} style={spatial ? { gridRow: item.row, gridColumn: item.column } : undefined}>
+  return <div className={`${styles.colorGrid} ${directionStyles.compass}`} data-direction-layout={spatial ? 'compass' : 'diamond'} aria-label="방향별 실제 제시 횟수">
+    {directions.map(id => { const item = DIRECTIONS[id]; const Icon = DIRECTION_ICONS[id]; return <div key={id} className={directionStyles.card} data-direction={id} style={spatial ? { gridRow: item.row, gridColumn: item.column } : undefined}>
       <div className={styles.colorHeading}><strong><Icon className={directionStyles.arrow} aria-hidden="true" />{item.name}</strong></div><div className={styles.recordCount}>{valid ? <><span>{record.counts[id]}</span><small>회</small></> : <small>기록 없음</small>}</div>
     </div>; })}
   </div>;

@@ -1,4 +1,13 @@
 .compass { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(85px,1fr)); }
+.compass[data-direction-layout='diamond'] { position:relative; display:block; width:min(100%, 400px); align-self:center; aspect-ratio:1; max-height:none; flex:0 0 auto; padding:0; border:0; border-radius:0; background:none; box-shadow:none; }
+.compass[data-direction-layout='diamond'] .card { position:absolute; width:35.355%; height:35.355%; padding:0; border-radius:4px; transform:translate(-50%,-50%) rotate(45deg); display:flex; align-items:center; justify-content:center; gap:0; box-shadow:none; }
+.compass[data-direction-layout='diamond'] .card[data-direction='up'] { left:50%; top:25%; }
+.compass[data-direction-layout='diamond'] .card[data-direction='left'] { left:25%; top:50%; }
+.compass[data-direction-layout='diamond'] .card[data-direction='right'] { left:75%; top:50%; }
+.compass[data-direction-layout='diamond'] .card[data-direction='down'] { left:50%; top:75%; }
+.compass[data-direction-layout='diamond'] .card > div { transform:rotate(-45deg); }
+.compass[data-direction-layout='diamond'] .card > div:first-child { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-45deg) translateY(-20px); white-space:nowrap; }
+.compass[data-direction-layout='diamond'] .card > div:last-child { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-45deg) translateY(16px); }
 .compass[data-direction-layout='compass'] { max-height:none; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(3,minmax(75px,1fr)); }
 .card { --deep:#1B5CCB; --card-top:#F0F6FF; --card-border:#CCE2FD; display:flex; flex-direction:column; align-items:stretch; justify-content:space-between; gap:8px; padding:14px; border:1px solid #CCE2FD; border-radius:24px; background:linear-gradient(#F0F6FF,#E3EFFF); box-shadow:0 2px 6px rgba(15,23,42,.06); }
 .arrow { flex-shrink:0; width:16px; height:16px; color:var(--deep); stroke-width:2.5; }

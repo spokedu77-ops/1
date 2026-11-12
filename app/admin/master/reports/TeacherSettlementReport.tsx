@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import VatCalculator from '@/app/components/admin/VatCalculator';
 import styles from './TeacherSettlementReport.module.css';
 import { loadXlsx } from './settlementXlsx';
+import { prepareSettlementSessions } from './prepareSettlementSessions';
 import MonthlySettlementSummary, { type MonthlySettlementRow } from './MonthlySettlementSummary';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -103,6 +104,8 @@ export default function TeacherSettlementReport() {
     setLoadError(false);
     setIssues([]);
     try {
+      await prepareSettlementSessions();
+      if (generation !== requestGeneration.current) return;
       const now = new Date();
       const lastDay = new Date(year, month, 0).getDate();
       const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
@@ -205,11 +208,14 @@ export default function TeacherSettlementReport() {
   useEffect(() => {
     void fetchReport();
     const refresh = () => { void fetchReport(); };
+    const refreshVisible = () => { if (!document.hidden) refresh(); };
     const invalidate = () => { requestGeneration.current++; };
     window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refreshVisible);
     window.addEventListener('classes-auto-finish-completed', refresh);
     return () => {
       invalidate();
+      document.removeEventListener('visibilitychange', refreshVisible);
       window.removeEventListener('focus', refresh);
       window.removeEventListener('classes-auto-finish-completed', refresh);
     };
@@ -223,6 +229,8 @@ export default function TeacherSettlementReport() {
     setTaxSummaryError(false);
     setTaxSummaryData([]);
     try {
+      await prepareSettlementSessions();
+      if (generation !== taxSummaryGeneration.current) return;
       const lastDay = new Date(year, month, 0).getDate();
 
       const bounds = settlementPeriodBounds(year, month, 1, lastDay);
@@ -275,7 +283,17 @@ export default function TeacherSettlementReport() {
     if (view !== 'month') return;
     void fetchTaxSummary();
     const generationRef = taxSummaryGeneration;
-    return () => { generationRef.current++; };
+    const refresh = () => { void fetchTaxSummary(); };
+    const refreshVisible = () => { if (!document.hidden) refresh(); };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('classes-auto-finish-completed', refresh);
+    document.addEventListener('visibilitychange', refreshVisible);
+    return () => {
+      generationRef.current++;
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('classes-auto-finish-completed', refresh);
+      document.removeEventListener('visibilitychange', refreshVisible);
+    };
   }, [view, fetchTaxSummary]);
 
   // 대시보드 합계: Total Gross = 세션 수업료 + 기타정산 (단일 기준). Net/Tax는 여기서 파생해 상단 카드가 항상 일치하도록 함
@@ -487,9 +505,9 @@ export default function TeacherSettlementReport() {
           <select aria-label="정산 월" value={month} onChange={(e) => { setMonth(Number(e.target.value)); taxSummaryGeneration.current++; }} className="p-2 text-indigo-600 outline-none bg-transparent cursor-pointer text-xs font-black">
             {Array.from({length: 12}, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
           </select>
-          {view === 'period' && <div className="flex bg-slate-50 p-1 rounded-2xl gap-1">
-            <button onClick={() => setPeriod('first')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${period === 'first' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>1-15일</button>
-            <button onClick={() => setPeriod('second')} className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${period === 'second' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>16-말일</button>
+          {view === 'period' && <div className={styles.periodTabs}>
+            <button type="button" aria-pressed={period === 'first'} onClick={() => setPeriod('first')}>1-15일</button>
+            <button type="button" aria-pressed={period === 'second'} onClick={() => setPeriod('second')}>16-말일</button>
           </div>}
         </div>
       </div>
@@ -565,21 +583,19 @@ export default function TeacherSettlementReport() {
                 }
               }}
               onClick={() => setExpandedTeacher(expandedTeacher === teacher.id ? null : teacher.id)}
-              className={`bg-white rounded-xl border p-4 flex justify-between items-center transition-all cursor-pointer shadow-sm ${
-                expandedTeacher === teacher.id ? 'border-blue-500 ring-2 ring-blue-50' : 'border-slate-200 hover:border-blue-300'
-              } ${teacher.netPay === 0 ? 'opacity-60' : ''}`}
+              className={styles.teacherCard}
             >
               <div className="flex min-w-0 items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs ${teacher.netPay > 0 ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                <div className={styles.avatar} data-paying={teacher.netPay > 0}>
                   {teacher.name.slice(0, 1)}
                 </div>
-                <div className="font-black">
+                <div className={styles.teacherIdentity}>
                   <h3 className="text-[15px] text-slate-900 leading-tight">{teacher.name} {teacher.is_active === false && <span className="text-xs text-amber-700">(비활성 · 과거 정산 포함)</span>}</h3>
                   <p className="text-[11px] text-slate-500">{teacher.count}회 수업</p>
                 </div>
               </div>
-              <div className="text-right font-black">
-                <p className={`text-xl tracking-tight tabular-nums ${teacher.netPay > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
+              <div className={styles.teacherPay}>
+                <p data-paying={teacher.netPay > 0}>
                   {(teacher.netPay || 0).toLocaleString()}<span className="text-xs ml-1 not-italic">원</span>
                 </p>
                 <p className="text-[11px] text-slate-400 font-bold not-italic mt-0.5">실수령액</p>
@@ -587,7 +603,7 @@ export default function TeacherSettlementReport() {
             </div>
 
             {expandedTeacher === teacher.id && (
-              <div className="bg-white rounded-xl border border-blue-200 p-4 space-y-4">
+              <div className={styles.teacherDetail}>
                 <div className="flex flex-wrap gap-3 justify-between items-center border-b border-slate-100 pb-3">
                   <div className="flex flex-wrap gap-2 text-xs text-slate-600">
                     <span>세전 {(teacher.grossTotal || 0).toLocaleString()}원</span>
@@ -596,12 +612,12 @@ export default function TeacherSettlementReport() {
                   <button onClick={() => downloadImage(teacher)} className="text-[11px] font-black px-4 py-2 border border-slate-200 rounded-lg min-h-11 hover:bg-black hover:text-white transition-all flex items-center gap-2"><Download size={12}/> 명세서</button>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-3xl space-y-2">
+                <div className={styles.adjustmentForm}>
                   <div className="flex gap-2">
                     <input type="number" placeholder="금액" value={inputStates[teacher.id]?.amount || ''} onChange={(e) => setInputStates({...inputStates, [teacher.id]: {...inputStates[teacher.id], amount: e.target.value}})} className="w-24 bg-white rounded-xl p-3 text-xs font-black outline-none border border-slate-100" />
                     <input type="text" placeholder="기타 정산 사유" value={inputStates[teacher.id]?.reason || ''} onChange={(e) => setInputStates({...inputStates, [teacher.id]: {...inputStates[teacher.id], reason: e.target.value}})} className="flex-1 min-w-0 bg-white rounded-xl p-3 text-xs font-black outline-none border border-slate-100" />
                   </div>
-                  <button onClick={() => addAdjItem(teacher.id)} className="w-full bg-indigo-600 text-white py-3 rounded-xl text-xs font-black hover:bg-black transition-all">정산 항목 추가</button>
+                  <button onClick={() => addAdjItem(teacher.id)} className={styles.addAdjustment}>정산 항목 추가</button>
                 </div>
 
                 <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
@@ -609,7 +625,7 @@ export default function TeacherSettlementReport() {
                   {teacher.details.map((s: SessionRow) => {
                     const fee = teacherSessionFee(s, teacher.id, new Set());
                     return (
-                      <div key={s.id} className="flex justify-between items-center p-4 bg-slate-50/50 rounded-2xl text-[11px] font-black group-hover:bg-white transition-colors">
+                      <div key={s.id} className={styles.sessionRow}>
                         <span className="text-slate-300 italic">{(s.start_at || '').slice(8, 10)}일</span>
                         <span className="flex-1 text-slate-700 truncate mx-4">{displaySessionTitle(s.title)}</span>
                         <span className="text-slate-900">{(fee || 0).toLocaleString()}원</span>
@@ -617,7 +633,7 @@ export default function TeacherSettlementReport() {
                     );
                   })}
                   {teacher.adjs.map((a: SettlementRow) => (
-                    <div key={a.id} className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-2xl text-[11px] font-black text-indigo-600 border border-indigo-100/20">
+                    <div key={a.id} className={styles.adjustmentRow}>
                       <span className="flex-1 truncate mx-2">[기타] {a.reason}</span>
                       <div className="flex items-center gap-3">
                         <span>{(a.amount ?? 0) > 0 ? '+' : ''}{(Number(a.amount ?? 0)).toLocaleString()}원</span>
@@ -635,11 +651,11 @@ export default function TeacherSettlementReport() {
         ))}
       </div>
 
-      <div className="mt-10 p-6 bg-blue-50/50 rounded-3xl border border-blue-100/30 flex items-start gap-4">
-        <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg"><Info size={16}/></div>
+      <div className={styles.settlementGuide}>
+        <div><Info size={16}/></div>
         <div>
-          <h4 className="text-xs font-bold text-blue-900 mb-1">정산 안내</h4>
-          <p className="text-xs font-bold text-blue-700 leading-relaxed">
+          <h4>정산 안내</h4>
+          <p>
             모든 강사료는 프리랜서 사업소득(3.3%) 원천징수 후 지급됩니다. 활동이 없는 강사님도 누락 방지를 위해 명단에 포함되어 있으며, 최종 지급액이 0원인 경우 별도의 명세서가 발행되지 않습니다.
           </p>
         </div>

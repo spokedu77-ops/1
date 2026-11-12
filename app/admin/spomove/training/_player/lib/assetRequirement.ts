@@ -40,7 +40,7 @@ export function getAssetRequirement(params: {
 }): AssetRequirement {
   const { mode, level, theme, simonPoleCount } = params;
 
-  // 사이먼 3번: 전 테마 이미지 풀 — 테마 선택 없음
+  // 사이먼 이미지 테마: 선택한 이미지 풀에서 한 극/두 극에 필요한 자산을 검증.
   if (mode === 'simon' && level === 3) {
     return {
       minimumCount: simonPoleCount === 2 ? 2 : 1,

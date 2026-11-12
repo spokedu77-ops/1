@@ -955,7 +955,7 @@ describe('training result summary', () => {
     expect(resolveReactTrainUiLevel(10).engineLevel).toBe(10);
     // 구 전용 id
     expect(resolveReactTrainUiLevel(11).engineLevel).toBe(10);
-    expect(resolveReactTrainUiLevel(41)).toEqual({ engineLevel: 5, camouflagePlacement: 'variant' });
+    expect(resolveReactTrainUiLevel(41)).toEqual({ engineLevel: 41 });
     expect(resolveReactTrainUiLevel(71)).toEqual({ engineLevel: 6, moleLookMode: 'variant' });
     expect(resolveReactTrainUiLevel(91)).toEqual({ engineLevel: 8, numberCartTier: 1 });
     expect(resolveReactTrainUiLevel(103)).toEqual({ engineLevel: 9, colorTrackerTier: 3 });

@@ -9,6 +9,7 @@ import { GOALKEEPER_RESULT_ZONES, validGoalkeeperResult, type GoalkeeperResultRe
 import { resolveDiveActionMoveIds } from './diveActionMoveReport';
 import type { GlassBridgeResult } from './glassBridgeMemory';
 import { validResultCount, resultV2ElapsedMetric } from './trainingResultV2Shared';
+import { validMoleResult } from './moleResultRecord';
 
 export type TrainingResultV2Input = TrainingResultViewInput & { goalkeeperRecord?: GoalkeeperResultRecord };
 export { validResultCount } from './trainingResultV2Shared';
@@ -35,6 +36,8 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
   const kind = resolveTrainingResultKind(cfg);
   const timeVolume = input.volumeLabel ?? (input.diveActionMove?.stageDurationSec != null ? `단계당 ${input.diveActionMove.stageDurationSec}초` : '기록 없음');
   const id = selection.activityId;
+  const moleRecord = validMoleResult(input.moleRecord) ? input.moleRecord : undefined;
+  const keeperRecord = validGoalkeeperResult(input.goalkeeperRecord) ? input.goalkeeperRecord : undefined;
   const teacher = kind === 'teacher' && validTeacherResult(input.glassBridge) ? input.glassBridge : undefined;
   const safeInput = { ...input, cfg, glassBridge: teacher };
   const vm = buildTrainingResultViewModel(safeInput);
@@ -87,7 +90,7 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
     if (progress !== undefined) facts.push(...countFact('rounds', '완료된 제시 라운드', progress, '라운드'));
     if (cfg.colorMemoryGridSize) feature = `설정된 격자는 ${cfg.colorMemoryGridSize}×${cfg.colorMemoryGridSize}예요.`;
   } else if (kind === 'time') {
-    note = '단계·동작은 사용한 설정입니다. 실제 동작 횟수나 완료 단계 수를 자동 측정한 기록이 아닙니다.';
+    note = '실행 시간은 실제 기록이며, 위 동작은 이번에 선택한 구성입니다. 동작별 수행 횟수는 측정하지 않습니다.';
     if (input.diveActionMove) {
       const actions = resolveDiveActionMoveIds(input.diveActionMove);
       const labels = { SIDE: '방향 전환', JUMP: '점프', DUCK: '숙이기', BONUS: '보너스' };
@@ -99,14 +102,22 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
     facts.push(fact('elapsed', '실제 활동 시간', vm.elapsed));
   } else {
     progress = kind === 'direction' && validDirectionRecord(input.directionRecord) ? input.directionRecord.signals : validResultCount(input.stims) ? input.stims : undefined;
-    progressLabel = id === 'visual-search' ? '탐색 과제 제시' : ['number-cart', 'color-tracker'].includes(id) ? '공개 완료' : ['shape-completion', 'target-tracking'].includes(id) ? '완료된 과제' : '신호 제시';
-    progressUnit = id === 'visual-search' ? '과제' : ['number-cart', 'color-tracker', 'shape-completion', 'target-tracking'].includes(id) ? '라운드' : '회';
+    progressLabel = id === 'visual-search' ? '탐색 과제 제시' : ['number-cart', 'color-tracker'].includes(id) ? '공개 완료' : ['shape-completion', 'target-tracking', 'virus-outbreak'].includes(id) ? '완료된 과제' : '신호 제시';
+    progressUnit = id === 'visual-search' ? '과제' : ['number-cart', 'color-tracker', 'shape-completion', 'target-tracking', 'virus-outbreak'].includes(id) ? '라운드' : '회';
+    if (id === 'mole' && moleRecord) {
+      progress = moleRecord.regularRounds; progressLabel = '일반 라운드 제시'; progressUnit = '라운드';
+      facts.push(fact('regular-targets', '일반 두더지 제시', `${moleRecord.regularLaneCount.reduce((a, b) => a + b, 0)}마리`),
+        fact('bonus-rounds', '보너스 라운드 제시', `${moleRecord.bonusRounds}라운드`),
+        fact('bonus-targets', '보너스 두더지 제시', `${moleRecord.bonusLaneCount.reduce((a, b) => a + b, 0)}마리`),
+        fact('all-targets', '전체 두더지 제시', `${moleRecord.stims}마리`));
+      note = '라운드는 등장 묶음 수입니다. 한 라운드에 두 마리가 나올 수 있으며, 색상별 기록에는 보너스도 포함됩니다.';
+    }
     if (kind === 'direction' && validDirectionRecord(input.directionRecord)) facts.push(fact('arrows', '목표 화살표 제시', `${input.directionRecord.presented}개`));
     if (kind === 'zone') {
       if (id === 'goalkeeper' && validGoalkeeperResult(input.goalkeeperRecord)) {
         const record = input.goalkeeperRecord;
         zones = GOALKEEPER_RESULT_ZONES.map((zone, position) => ({ id: zone.id, label: zone.label, count: record.laneCount[zone.lane], position }));
-        progress = record.waveCount; progressLabel = '시작된 일반 웨이브';
+        progress = record.waveCount; progressLabel = '일반 라운드 제시'; progressUnit = '라운드';
         facts.push(fact('targets', '전체 목표 도착', `${record.stims}회`), fact('regular', '일반 목표 도착', `${record.regularLaneCount.reduce((a, b) => a + b, 0)}회`), fact('bonus', '보너스 목표 도착', record.bonusStarted ? `${record.bonusLaneCount.reduce((a, b) => a + b, 0)}회` : '진행 전'));
         note = '도착 구역 기준 집계입니다. 구역 기록에는 진행된 보너스가 포함되며, 일반 웨이브 수와 목표 수는 다릅니다.';
       } else if (['visual-search', 'color-tracker', 'number-cart', 'goalkeeper'].includes(id)) {
@@ -134,11 +145,16 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
   const configured = kind === 'time' ? timeVolume : input.volumeLabel ?? vm.volume;
   const speed = settings.find(item => ['timing', 'exposure'].includes(item.id))?.value ?? (cfg.speed != null && Number.isFinite(cfg.speed) && cfg.speed > 0 ? `${cfg.speed}초` : '기록 없음');
   const metrics = [
-    resultV2ElapsedMetric(input.elapsedMs),
-    kind === 'time' ? { label: '활동 구성', value: input.diveActionMove ? '설정 구성' : '기록 없음', note: '계획된 단계·동작과 실제 수행량 구분' }
+    id === 'relative-compass'
+      ? { ...resultV2ElapsedMetric(input.directionRecord?.executionMs ?? NaN), label: '실행 시간', note: '준비·정답 대기·정답 공개 제외' }
+      : { ...resultV2ElapsedMetric(input.elapsedMs), ...((id === 'mole' && moleRecord?.bonusStarted || id === 'goalkeeper' && keeperRecord?.bonusStarted) ? { note: '보너스를 포함한 실제 진행 시간' } : {}) },
+    id === 'mole' ? { label: moleRecord ? '일반 라운드' : '전체 목표 제시', value: moleRecord ? moleRecord.targetRounds === null ? `${moleRecord.regularRounds}라운드` : `${moleRecord.regularRounds} / ${moleRecord.targetRounds}라운드` : validResultCount(input.stims) ? `${input.stims}마리` : '기록 없음', note: moleRecord ? '보너스 제외 · 시작된 일반 라운드' : '일반·보너스 분리 기록 미전달' }
+      : id === 'goalkeeper' && keeperRecord ? { label: '일반 라운드', value: keeperRecord.targetWaveCount === null ? `${keeperRecord.waveCount}라운드` : `${keeperRecord.waveCount} / ${keeperRecord.targetWaveCount}라운드`, note: '보너스 제외 · 시작된 일반 웨이브' }
+      : id === 'relative-compass' ? { label: '완료 라운드', value: validResultCount(input.directionRecord?.completedRounds) ? `${input.directionRecord.completedRounds} / ${cfg.targetReps}라운드` : '기록 없음', note: '정답 확인까지 마친 라운드' }
+      : kind === 'time' ? { label: '선택한 동작', value: settings.some(item => ['actions', 'modules'].includes(item.id)) ? `${new Set(settings.filter(item => ['actions', 'modules'].includes(item.id)).flatMap(item => item.value.split(' · ')).filter(label => label !== '보너스')).size}가지` : '기록 없음', note: '이번 활동에 설정한 움직임 종류' }
       : { label: kind === 'color' || kind === 'direction' ? '진행' : progressLabel, value: progress === undefined ? '기록 없음' : (kind === 'color' || kind === 'direction') && cfg.timeMode === 'reps' && validResultCount(cfg.targetReps) && cfg.targetReps > 0 ? `${progress} / ${cfg.targetReps}${progressUnit}` : `${progress}${progressUnit}`, note: kind === 'sequence' ? '설정 분량과 실제 진행은 다릅니다' : '실제로 전달된 진행 기록' },
-    { label: kind === 'time' ? '설정 분량' : kind === 'instant' ? '사용한 격자' : kind === 'sequence' ? '기억 구성' : kind === 'number' ? '숫자 비행 시간' : id === 'visual-search' ? '탐색 설정 시간' : kind === 'color' || kind === 'direction' ? '자극 시간' : '사용한 설정',
-      value: kind === 'time' ? input.volumeLabel && cfg.duration > 0 ? `${cfg.duration}초` : input.diveActionMove ? '설정 구성' : '기록 없음' : kind === 'instant' ? cfg.colorMemoryGridSize ? `${cfg.colorMemoryGridSize}×${cfg.colorMemoryGridSize}` : '기록 없음' : kind === 'sequence' ? settings[0]?.value ?? '기록 없음' : speed,
+    id === 'virus-outbreak' ? { label: '관찰 시간', value: speed, note: '증식 완료 후 화면을 유지한 설정 시간' } : { label: id === 'shape-completion' || id === 'relative-compass' ? '반응 시간' : kind === 'time' ? '단계별 설정 시간' : kind === 'instant' ? '사용한 격자' : kind === 'sequence' ? '기억 구성' : kind === 'number' ? '숫자 비행 시간' : id === 'visual-search' ? '탐색 설정 시간' : kind === 'color' || kind === 'direction' ? '자극 시간' : '사용한 설정',
+      value: kind === 'time' ? settings.find(item => item.id === 'stage')?.value ?? '기록 없음' : kind === 'instant' ? cfg.colorMemoryGridSize ? `${cfg.colorMemoryGridSize}×${cfg.colorMemoryGridSize}` : '기록 없음' : kind === 'sequence' ? settings[0]?.value ?? '기록 없음' : speed,
       note: kind === 'time' ? configured : kind === 'color' || kind === 'direction' ? '설정 자극 시간' : '실제 수행 성과가 아닌 실행 설정' },
   ];
   return { kind, id, cfg, teacher, vm, education, reflection, facts, settings, zones, distribution, metrics, feature, note, horizontalZones: id === 'number-cart' };

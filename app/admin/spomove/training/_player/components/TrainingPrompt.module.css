@@ -1,0 +1,23 @@
+/* Must outrank the late-injected .spomove-player-root * reset. */
+.prompt.prompt {
+  box-sizing: border-box;
+  max-width: calc(100% - 32px);
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 12px;
+  background: rgba(8, 15, 25, .88);
+  color: #f8fafc;
+  font-family: var(--font-sans), 'Malgun Gothic', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { adminJson, blogDraftError, draftRow, rejectForeignOrigin } from '@/app/lib/server/blogDraftsAdmin';
+import { adminJson, blogDraftError, draftRow, recordDraftRevision, rejectForeignOrigin } from '@/app/lib/server/blogDraftsAdmin';
 import { BLOG_DRAFT_CATEGORIES, blogDraftWriteSchema } from '@/app/lib/blog-drafts/contract';
 
 const PAGE_SIZE = 8;
@@ -71,8 +71,8 @@ export async function POST(request: Request) {
     const db = getServiceSupabase();
     const { data, error } = await db.from('blog_drafts').insert(row).select('id,revision,updated_at,status').single();
     if (error || !data) return adminJson({ error: '원고를 저장하지 못했습니다.' }, 503);
-    await db.from('blog_draft_revisions').insert({ draft_id: data.id, content: input.content, revision_number: 1, created_by: auth.userId });
-    return adminJson({ draft: data }, 201);
+    const revisionSaved = await recordDraftRevision(data.id, input.content, 1, auth.userId);
+    return adminJson({ draft: data, revisionSaved }, 201);
   } catch (error) {
     return blogDraftError(error);
   }

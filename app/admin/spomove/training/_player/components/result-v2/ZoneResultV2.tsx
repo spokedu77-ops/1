@@ -49,8 +49,8 @@ export function ZoneResultV2(props: {
     <ResultV2Banner status={status} title={title} activity={props.programTitle ?? '시지각 반응 · 골키퍼 · 쉬움'} student={props.student?.name}
       description={reason === 'stopped_early' ? '여기까지 진행한 내용을 살펴보세요.' : reason === 'cancelled' || reason === 'failed' ? '종료 전까지 기록된 내용을 살펴보세요.' : '목표의 이동 경로와 도착 구역을 살펴보고 움직임으로 연결하는 활동이에요.'} />
     <ResultV2Metrics items={[
-      resultV2ElapsedMetric(props.elapsedMs),
-      { label: record ? '일반 웨이브' : '목표 도착', value: waves !== undefined ? target != null ? `${waves} / ${target}회` : `${waves}회` : arrived !== null ? `${arrived}회` : '기록 없음', note: record ? '시작된 일반 웨이브 · 보너스 제외' : '도착 시점에 집계된 목표 신호', progress: waves !== undefined && target != null && target > 0 && waves <= target ? { current: waves, total: target } : undefined },
+      { ...resultV2ElapsedMetric(props.elapsedMs), ...(record?.bonusStarted ? { note: '보너스를 포함한 실제 진행 시간' } : {}) },
+      { label: record ? '일반 라운드' : '목표 도착', value: waves !== undefined ? target != null ? `${waves} / ${target}라운드` : `${waves}라운드` : arrived !== null ? `${arrived}회` : '기록 없음', note: record ? '시작된 일반 웨이브 · 보너스 제외' : '도착 시점에 집계된 목표 신호', progress: waves !== undefined && target != null && target > 0 && waves <= target ? { current: waves, total: target } : undefined },
       { label: '기본 이동 시간', value: speed === null ? '기록 없음' : `${speed}초`, note: '일반 진행의 목표 이동 설정' },
     ]} />
     <div className={styles.contentGrid}><ResultV2RecordFrame featureTitle="가장 많이 도착한 구역" subtitle="목표가 도착한 구역을 기준으로 집계한 기록입니다." badge="목표 구역별 기록" feature={goalkeeperZoneFeature(record)}>

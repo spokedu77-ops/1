@@ -2,8 +2,8 @@ import { MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, resolveReact
 
 export type TrainingRuntime =
   | 'signals' | 'sequence-memory' | 'color-number-memory' | 'color-number-quiz' | 'instant-memory'
-  | 'flow' | 'rush' | 'falling-bricks' | 'balloon' | 'beat-wave' | 'camouflage' | 'mole'
-  | 'wormhole' | 'number-cart' | 'color-tracker' | 'goalkeeper' | 'virus' | 'shell-tracking'
+  | 'flow' | 'rush' | 'falling-bricks' | 'balloon' | 'mole'
+  | 'number-cart' | 'color-tracker' | 'goalkeeper' | 'virus' | 'shell-tracking'
   | 'glass-bridge-memory' | 'moving-number-reader' | 'visual-search' | 'relative-compass' | 'shape-completion' | 'simon-camouflage' | 'simon-balloon';
 
 type Route = { mode: string; levels: readonly number[] };
@@ -32,10 +32,7 @@ export const TRAINING_ACTIVITIES = {
   'wave-dodge': { routes: [route('reactTrain', 1)], catalog: catalog('reactTrain', 1), runtime: 'rush' },
   'falling-bricks': { routes: [route('reactTrain', 2)], catalog: catalog('reactTrain', 2), runtime: 'falling-bricks' },
   'balloon-pop': { routes: [route('reactTrain', 3)], catalog: catalog('reactTrain', 3), runtime: 'balloon' },
-  'beat-wave': { routes: [route('reactTrain', 4)], runtime: 'beat-wave', title: '리듬 반응' },
-  'visual-camouflage': { routes: [route('reactTrain', 5, 41)], runtime: 'camouflage', title: '매직 아이' },
   'mole': { routes: [route('reactTrain', 6, 71)], catalog: catalog('reactTrain', 6), runtime: 'mole' },
-  'wormhole': { routes: [route('reactTrain', 7)], runtime: 'wormhole', title: '웜홀' },
   'number-cart': { routes: [route('reactTrain', 8, 91, 92, 93)], catalog: catalog('reactTrain', 8), runtime: 'number-cart' },
   'color-tracker': { routes: [route('reactTrain', 9, 101, 102, 103)], catalog: catalog('reactTrain', 9), runtime: 'color-tracker' },
   'goalkeeper': { routes: [route('reactTrain', 10, 11)], catalog: catalog('reactTrain', 10), runtime: 'goalkeeper' },
@@ -63,13 +60,6 @@ export const TRAINING_ACTIVITIES = {
   'instant-memory': { routes: [route('spatial', 7)], catalog: catalog('spatial', 7), runtime: 'instant-memory' },
   'action-move': { routes: [route('flow', 1)], catalog: catalog('flow', 1), runtime: 'flow' },
   'motion-gate': { routes: [route('flow', 2)], catalog: catalog('flow', 2), runtime: 'flow' },
-  'go-no-go-color': { routes: [route('gonogo', 1)], runtime: 'signals', title: '색상 Go/No-Go' },
-  'go-no-go-shape': { routes: [route('gonogo', 2)], runtime: 'signals', title: '도형 Go/No-Go' },
-  'go-no-go-action': { routes: [route('gonogo', 3)], runtime: 'signals', title: '동작 Go/No-Go' },
-  'go-no-go-mixed': { routes: [route('gonogo', 4)], runtime: 'signals', title: '혼합 Go/No-Go' },
-  'task-switch-basic': { routes: [route('taskswitch', 1)], runtime: 'signals', title: '규칙 전환' },
-  'task-switch-reverse': { routes: [route('taskswitch', 2)], runtime: 'signals', title: '반대 규칙 전환' },
-  'task-switch-mixed': { routes: [route('taskswitch', 3)], runtime: 'signals', title: '혼합 규칙 전환' },
 } as const satisfies Record<string, Definition>;
 export type TrainingActivityId = keyof typeof TRAINING_ACTIVITIES;
 export type TrainingActivityInput = {

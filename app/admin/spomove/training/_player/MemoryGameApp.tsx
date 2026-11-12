@@ -1,7 +1,8 @@
 'use client';
 
-import { catalogTrainingActivity, resolveTrainingActivity, resolveTrainingSelection, resolveCatalogTrainingSelection, trainingActivityForLevelChange, trainingActivityPresentation, type TrainingActivityId, type TrainingActivityInput } from './lib/trainingActivity';
+import { resolveTrainingActivity, resolveTrainingSelection, type TrainingActivityId, type TrainingActivityInput } from './lib/trainingActivity';
 
+import { memoryRoundAnswers } from './lib/roundAnswerRecord';
 import { settingsToExitResume } from './lib/trainingLaunchSnapshot';
 export { settingsToExitResume } from './lib/trainingLaunchSnapshot';
 
@@ -22,9 +23,7 @@ import { playBeep } from './lib/audio';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from './lib/runtimeClock';
 import { tts } from './lib/tts';
 import { exitFullscreenSafely } from './lib/fullscreen';
-import { StudentModal } from './components/StudentModal';
-import { StudentManageScreen } from './components/StudentManageScreen';
-import { SpeedSelector } from './components/SpeedSelector';
+
 import { SignalDisplay } from './components/SignalDisplay';
 import { createDirectionPresentationCollector, shouldIncludeDirectionRecord, type DirectionPresentationRecord } from './lib/directionPresentation';
 import type { ReactTrainCompleteStats } from './components/VisualReactionTraining';
@@ -36,11 +35,12 @@ import {
   type ShellTrackingShuffleCount,
 } from './components/TargetTrackingReactionTraining';
 import { RelativeCompassReactionTraining, type RelativeCompassDifficulty, type RelativeCompassSeconds } from './components/RelativeCompassReactionTraining';
+
 import { GlassBridgeMemoryTraining } from './components/GlassBridgeMemoryTraining';
 import { normalizeGlassBridgeLength, normalizeGlassBridgeSeconds, normalizeGlassBridgeRounds, normalizeGlassBridgeDifficulty, type GlassBridgeResult, type GlassBridgeComplete } from './lib/glassBridgeMemory';
 import { MovingNumberReaderTraining } from './components/MovingNumberReaderTraining';
 import { normalizeNumberReaderSeconds, normalizeNumberReaderReps } from './lib/movingNumberReader';
-import { ADMIN_TRAINING_ROUNDS, normalizeAdminTrainingRounds } from './lib/adminTrainingRounds';
+import { normalizeAdminTrainingRounds } from './lib/adminTrainingRounds';
 import { MemoryRoundSeries } from './components/MemoryRoundSeries';
 import { TrainingRuntimeHud } from './components/TrainingRuntimeHud';
 import { ReactTrainStartCountdownOverlay } from './lib/reactTrainStartCountdown';
@@ -49,10 +49,8 @@ import { normalizeSearchSeconds, normalizeSearchReps, normalizeSearchStage, norm
 import { ShapeCompletionReactionTraining } from './components/ShapeCompletionReactionTraining';
 import { normalizeShapeCompletionDifficulty, normalizeShapeCompletionSeconds, type ShapeCompletionDifficulty, type ShapeCompletionSeconds } from './lib/shapeCompletionPuzzle';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
-import { TrainingGuideScreen } from './components/TrainingGuideScreen';
-import { VariantImageGallery } from './components/VariantImageAppendix';
-import { ColorGatePoseAppendix } from './components/ColorGatePoseAppendix';
-import { CSS, S } from './styles';
+
+import { CSS } from './styles';
 import type { ColorGateCategoryFilter, ColorGateDifficultySelection, ColorGateSelectableCategory } from './flow-lab/engine/modules/colorGateGuides';
 import { buildStages } from './flow-lab/engine/modules/stageBuilder';
 import {
@@ -60,42 +58,12 @@ import {
   normalizeMemoryColorSlots,
   type SpomoveMemoryColorId,
 } from './lib/memoryColorSlots';
-import { MemoryColorSlotsPicker } from './components/MemoryColorSlotsPicker';
-import { SELECTABLE_MODULE_KEYS, FLOW_MODULES } from './flow-lab/engine/modules/flowModules';
-import {
-  diveActionMoveDurationSec,
-  formatDiveActionMoveDuration,
-  formatDiveActionMoveDurationDetail,
-} from '@/app/lib/spomove/diveActionMoveTiming';
-import {
-  DIVE_THEME_UI,
-  isDiveActionMoveUnityTheme,
-  normalizeDiveThemeId,
-  resolveDiveUnityThemeId,
-  resolveDivePanoramaUrls,
-  type DiveThemeId,
-} from '@/app/lib/spomove/diveThemes';
 
-import {
-  COLORS,
-  MODES,
-  SPOMOVE_CATALOG_SLOT_IDS,
-  normalizeLegacyTrainingMode,
-  resolveReactTrainUiLevel,
-  reactTrainEngineLevelForUi,
-  isModifiedQuadrantLevel,
-  isFront3PanelLevel,
-  isColorSequenceLevel,
-  ADMIN_SEQUENCE_OPTIONS,
-  isColorNumberLevel,
-  isInstantMemoryLevel,
-  modifiedQuadrantStage,
-  modifiedQuadrantLevelFromStage,
-  colorSequenceOption,
-  colorSequenceLevelFromOption,
-  type ColorSequenceOption,
-  type SpatialArrowColorMapping,
-} from './constants';
+import { SELECTABLE_MODULE_KEYS } from './flow-lab/engine/modules/flowModules';
+import { diveActionMoveDurationSec } from '@/app/lib/spomove/diveActionMoveTiming';
+import { isDiveActionMoveUnityTheme, normalizeDiveThemeId, resolveDiveUnityThemeId, resolveDivePanoramaUrls, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+
+import { COLORS, MODES, normalizeLegacyTrainingMode, type SpatialArrowColorMapping } from './constants';
 
 import { TrainingResultScreen } from './components/TrainingResultScreen';
 import type { DupStats, FruitSlide } from './lib/signals';
@@ -118,23 +86,15 @@ import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
 import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
 import { useSpomoveAllVariantSlidesForTraining, useSpomoveVariantSlidesForTraining } from './hooks/useSpomoveVariantFruitSlidesForTraining';
 import { evaluateAssetReadiness } from './lib/assetRequirement';
-import {
-  SPOMOVE_COLOR_THEME_LABELS,
-  SPOMOVE_COLOR_THEME_ORDER,
-  SPOMOVE_VARIANT_THEME_LS_KEY,
-  type SpomoveColorThemeId,
-} from './lib/spomoveVariantThemeConfig';
-import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './lib/flowPresets';
+import { SPOMOVE_VARIANT_THEME_LS_KEY, type SpomoveColorThemeId } from './lib/spomoveVariantThemeConfig';
 
 const MemoryGame = React.lazy(() => import('./components/MemoryGame').then((m) => ({ default: m.MemoryGame })));
 const MemoryGameLevel4 = React.lazy(() => import('./components/MemoryGameLevel4').then((m) => ({ default: m.MemoryGameLevel4 })));
 const MemoryGameLevel5 = React.lazy(() => import('./components/MemoryGameLevel5').then((m) => ({ default: m.MemoryGameLevel5 })));
 const VisualReactionTraining = React.lazy(() => import('./components/VisualReactionTraining').then((m) => ({ default: m.VisualReactionTraining })));
-const BeatWaveReactionTraining = React.lazy(() => import('./components/BeatWaveReactionTraining').then((m) => ({ default: m.BeatWaveReactionTraining })));
 const CamouflageReactionTraining = React.lazy(() => import('./components/CamouflageReactionTraining').then((m) => ({ default: m.CamouflageReactionTraining })));
 const RushReactionTraining = React.lazy(() => import('./components/RushReactionTraining').then((m) => ({ default: m.RushReactionTraining })));
 const RobloxMoleReactionTraining = React.lazy(() => import('./components/RobloxMoleReactionTraining').then((m) => ({ default: m.RobloxMoleReactionTraining })));
-const WormholeReactionTraining = React.lazy(() => import('./components/WormholeReactionTraining').then((m) => ({ default: m.WormholeReactionTraining })));
 const NumberCartReactionTraining = React.lazy(() => import('./components/NumberCartReactionTraining').then((m) => ({ default: m.NumberCartReactionTraining })));
 const ColorTrackerReactionTraining = React.lazy(() => import('./components/ColorTrackerReactionTraining').then((m) => ({ default: m.ColorTrackerReactionTraining })));
 const GoalkeeperReactionTraining = React.lazy(() => import('./components/GoalkeeperReactionTraining').then((m) => ({ default: m.GoalkeeperReactionTraining })));
@@ -157,16 +117,8 @@ function renderRuntimeSuspense(content: React.ReactNode) {
   );
 }
 
-function modeLevelRangeLabel(modeId: string, levelCount: number): string {
-  if (modeId === 'flow') return '1';
-  return levelCount <= 1 ? '1' : `1~${levelCount}`;
-}
-
 type Screen =
-  | 'home'
-  | 'setup'
-  | 'guide'
-  | 'students'
+  | 'loading'
   | 'training'
   | 'memory'
   | 'visualReaction'
@@ -449,7 +401,6 @@ export type TrainingExitResume = {
   launch: MemoryGameAutoLaunch & { activityId: TrainingActivityId };
 };
 
-
 function MemoryGameRuntime({
   initialMode,
   initialLevel,
@@ -485,7 +436,7 @@ function MemoryGameRuntime({
   /** initialMode??????????? MODES??????????????????(?????????????????????????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝????????????????????????????????????????????????????????????????????????????????????????????????????????????????? ??????????????????????????????????????????????????????*/
   onUnavailable?: () => void;
 }) {
-  const [screen, setScreen] = useState<Screen>('home');
+  const [screen, setScreen] = useState<Screen>('loading');
   useViewportScrollLock(
     screen === 'training'
     || screen === 'memory'
@@ -516,13 +467,9 @@ function MemoryGameRuntime({
     }
     setSettings((s) => ({ ...s, variantColorTheme: 'color', basicNumberOverlay: 'none' }));
   }, [autoLaunch?.variantColorTheme]);
-  const { students, add: addStudent, remove: removeStudent, rename: renameStudent } = useStudents();
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [showStudentModal, setShowStudentModal] = useState(false);
-  const [theme, setTheme] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('spokedu_theme') || 'light' : 'light'));
-  const [isOffline, setIsOffline] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [showVariantAppendix, setShowVariantAppendix] = useState(false);
+  const { students } = useStudents();
+  const [selectedStudentId] = useState<string | null>(null);
+  const [theme] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('spokedu_theme') || 'light' : 'light'));
   const settingsRef = useRef(settings);
 
   const [isTraining, setIsTraining] = useState(false);
@@ -546,6 +493,9 @@ function MemoryGameRuntime({
     completionReason: SpomoveCompletionReason;
     stims?: number;
     directionRecord?: DirectionPresentationRecord;
+    shapeCompletionRecord?: TrainingSessionResult['shapeCompletionRecord'];
+  roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
+  moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
     goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'];
     glassBridge?: GlassBridgeResult;
   } | null>(null);
@@ -565,25 +515,9 @@ function MemoryGameRuntime({
   const flowEngineApiRef = useRef<{ loadBgmLate: (path: string) => Promise<void> } | null>(null);
 
   // ???? Flow ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹??????????????????????????釉먮폁???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-  const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => loadFlowPresets());
-  const saveFlowPreset = () => {
-    const name = prompt('Preset name', `Preset ${flowPresets.length + 1}`);
-    if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], sportsArenaFeatures: [...settings.sportsArenaFeatures], environmentTheme: settings.diveEnvironmentTheme, duration: settings.flowDuration, includeBonus: settings.flowIncludeBonus, colorGateCategory: settings.colorGateCategory, colorGateCategories: settings.colorGateCategories, colorGateDifficulties: settings.colorGateDifficulties }];
-    setFlowPresets(next);
-    saveFlowPresets(next);
-  };
-  const loadFlowPreset = (p: FlowPreset) => {
-    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), sportsArenaFeatures: new Set(p.sportsArenaFeatures ?? []), diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all', colorGateCategories: p.colorGateCategories ?? s.colorGateCategories, colorGateDifficulties: p.colorGateDifficulties ?? s.colorGateDifficulties }));
-  };
-  const deleteFlowPreset = (id: string) => {
-    const next = flowPresets.filter((p) => p.id !== id);
-    setFlowPresets(next);
-    saveFlowPresets(next);
-  };
+
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   /** startSession ??????????????????????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝??????????????????????????????????????????????????????????????????????????????????????????????????????????????onExit ???????????????????????????????????????????????????????????home?????????????????????????????????????????????椰??????????????????????????????????????????????????????????????????????산뭐???????????????home????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲??????????????????????????????????????????????????????????????????????????????????????????????????????????? */
-  const sessionLaunchedRef = useRef(false);
   const [sessionLaunched, setSessionLaunched] = useState(false);
 
   const { list: spomoveBgmList, loading: spomoveBgmLoading } = useSpomoveTrainingBGM();
@@ -616,7 +550,6 @@ function MemoryGameRuntime({
     [settings.diveEnvironmentTheme, diveEnvData.themes, getDivePreviewUrl],
   );
 
-
   useEffect(() => {
     onThemeChange?.(theme === 'dark' ? 'dark' : 'light');
     if (typeof window !== 'undefined') localStorage.setItem('spokedu_theme', theme);
@@ -626,22 +559,7 @@ function MemoryGameRuntime({
     settingsRef.current = settings;
   }, [settings]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const onOffline = () => setIsOffline(true);
-    const onOnline = () => setIsOffline(false);
-    window.addEventListener('offline', onOffline);
-    window.addEventListener('online', onOnline);
-    return () => {
-      window.removeEventListener('offline', onOffline);
-      window.removeEventListener('online', onOnline);
-    };
-  }, []);
-
-  const simonMixedVariantLevel = settings.mode === 'simon' && settings.level === 3;
-  const flankerThemeLevel =
-    settings.mode === 'flanker' &&
-    (settings.level === 2 || settings.level === 6 || (settings.level === 3 && settings.flankerExtremeMode !== 'arrow'));
+  const simonMixedVariantLevel = settings.mode === 'simon' && settings.level === 3 && (settings.variantColorTheme === 'mix' || settings.variantColorTheme === 'color');
 
   const { slides: allVariantSlides, status: allAssetStatus, reload: reloadAllAssets } =
     useSpomoveAllVariantSlidesForTraining(simonMixedVariantLevel);
@@ -669,7 +587,6 @@ function MemoryGameRuntime({
    * sessionSlidesRef??startSession????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????곕춴??????????椰???????????耀붾굝????????????????stop/onFinish????????????????????????????????????????????????????????????????????????袁⑸즴筌?씛彛???돗??????????????癲ル슢二??곸젞???????????????????????됰Ŧ?????????????????????대첐??????????????????????????????????????????????????????
    */
   const [sessionSlides, setSessionSlides] = useState<FruitSlide[] | undefined>(undefined);
-
 
   // ??????????????????????????????????????癲????????????釉먮폁???????????곕츥???꿔꺂????용끏????????????????????????????????????????????????????????????????????????????????????????????????????????????? ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????猷몄굣????????????????????????????????????????????????????산뭐?????????????????????
   const effectiveSlides = isTraining ? (sessionSlides ?? variantSignalSlides) : variantSignalSlides;
@@ -708,24 +625,11 @@ function MemoryGameRuntime({
     void preloadVariantFruitImages(variantFruitUrls);
   }, [variantFruitUrls]);
 
-  const basicVariantLevel = useMemo(
-    () =>
-      settings.mode === 'basic' &&
-      (settings.level === 2 ||
-        settings.level === 3 ||
-        settings.level === 4 ||
-        settings.level === 5 ||
-        settings.level === 6),
-    [settings.mode, settings.level],
-  );
-
   /** basic 변형 사분할(engine 7~10): 부위 아이콘(easy) 고정 */
   const quadBodyLevel = useMemo(
     () => settings.mode === 'basic' && settings.level >= 7 && settings.level <= 10,
     [settings.mode, settings.level],
   );
-
-  const sortedColorThemeIds = useMemo(() => [...SPOMOVE_COLOR_THEME_ORDER], []);
 
   const reloadVariantAssets = useCallback(() => {
     if (simonMixedVariantLevel) void reloadAllAssets();
@@ -741,14 +645,6 @@ function MemoryGameRuntime({
   }, [initialMode, initialLevel, onUnavailable]);
 
   /** autoLaunch ?????????????????????????????????????????????????????????????????????????????????home/result?????????????????????????????????ㅻ깹???????????????????????????????????????????????ш끽維뽳쭩?뱀땡???얩맪???????????????????轅붽틓??섑떊???⑤챷?????????????????????????嫄???????????????????????筌?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????*/
-  useEffect(() => {
-    if (!autoLaunch) return;
-    if (screen === 'home') {
-      if (!sessionLaunchedRef.current) return;
-      if (countdown !== null) return;
-      onExit?.();
-    }
-  }, [autoLaunch, screen, onExit, countdown]);
 
   useEffect(() => {
     if (!initialMode) return;
@@ -837,7 +733,7 @@ function MemoryGameRuntime({
       }
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
-      // setScreen('setup') ?????????????????????????????????????home ????????????????? ???????????????????????early-return??????????????????????????????????????????????????猷몄굣???????????????????
+      // setScreen('loading') ?????????????????????????????????????home ????????????????? ???????????????????????early-return??????????????????????????????????????????????????猷몄굣???????????????????
       setPendingAutoStart(true);
     } else {
       setSettings((s) => ({
@@ -849,31 +745,9 @@ function MemoryGameRuntime({
         ...(initialSelection.activityId === 'visual-search' ? { speed: 5, targetReps: 20, visualSearchStage: 1 as const, visualSearchTargetCount: 1 as const } : {}),
         stroopWordMode: legacyStroopMissing ? 'missing' : s.stroopWordMode,
       }));
-      setScreen('setup');
+      setScreen('loading');
     }
   }, [initialMode, initialLevel, autoLaunch]);
-
-  const set = useCallback((key: keyof Settings, value: unknown) => {
-    setSettings((s) => {
-      const next = { ...s, [key]: value } as Settings;
-      if (key === 'level' && s.mode === 'reactTrain' && typeof value === 'number') {
-        const mapped = resolveReactTrainUiLevel(value);
-        if (mapped.moleLookMode) next.moleLookMode = mapped.moleLookMode;
-        if (mapped.numberCartTier) next.numberCartTier = mapped.numberCartTier;
-        if (mapped.colorTrackerTier) next.colorTrackerTier = mapped.colorTrackerTier;
-        if (mapped.goalkeeperTier) next.goalkeeperTier = mapped.goalkeeperTier;
-        if (mapped.camouflagePlacement) next.camouflagePlacement = 'variant';
-        if (value === 201 && (next.handFootDifficulty !== 'easy' && next.handFootDifficulty !== 'normal' && next.handFootDifficulty !== 'hard')) next.handFootDifficulty = 'easy';
-        next.reactTrainConcurrent = 2;
-      }
-      if (key === 'level' && typeof value === 'number') next.activityId = trainingActivityForLevelChange(s.mode, value, s.activityId);
-      if (key === 'variantColorTheme' && typeof window !== 'undefined' && typeof value === 'string') {
-        localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, value);
-        if (value !== 'color') next.basicNumberOverlay = 'none';
-      }
-      return next;
-    });
-  }, []);
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
@@ -884,9 +758,7 @@ function MemoryGameRuntime({
         : String(sig.bg ?? '');
     const dupFlashColorBg =
       sig.type === 'full_color' ||
-      sig.type === 'gonogo_color' ||
-      sig.type === 'think_quad' ||
-      (sig.type === 'task_switch' && (sig.content as { stimulusKind?: string })?.stimulusKind === 'color');
+      sig.type === 'think_quad';
     if (dupFlashColorBg && dupKey === prevBgRef.current) {
       setDupFlashNonce((n) => n + 1);
       setDupFlashVisible(true);
@@ -911,7 +783,7 @@ function MemoryGameRuntime({
     cfg: Settings,
     elapsedMs: number,
     colorCounts: ColorStimulusCounts | null,
-    meta?: { endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult; directionRecord?: DirectionPresentationRecord; goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'] },
+    meta?: { moleRecord?: TrainingSessionResult['moleRecord']; roundAnswers?: import('./lib/roundAnswerRecord').RoundAnswerRecord; shapeCompletionRecord?: TrainingSessionResult['shapeCompletionRecord']; endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult; directionRecord?: DirectionPresentationRecord; goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'] },
   ) => {
     if (resultDeliveredRef.current) return;
     resultDeliveredRef.current = true;
@@ -920,7 +792,7 @@ function MemoryGameRuntime({
     const generatedStims = meta?.stims ?? (resolveTrainingSelection(cfg.mode, cfg.level, { activityId: cfg.activityId }).runtime === 'signals' ? countRef.current : undefined);
     const directionRecord = meta?.directionRecord ?? (shouldIncludeDirectionRecord(cfg.activityId, cfg)
       ? directionCollectorRef.current.snapshot() : undefined);
-    const measuredStims = directionRecord && cfg.activityId !== 'go-no-go-action' ? directionRecord.signals : generatedStims;
+    const measuredStims = directionRecord ? directionRecord.signals : generatedStims;
     const payload: TrainingSessionResult = {
       cfg: settingsToTrainingResultConfig({ ...cfg, adminRounds: adminMemorySettings, adminSequenceTiming: adminMemorySettings && cfg.activityId === 'sequence-memory' }),
       elapsedMs,
@@ -930,13 +802,15 @@ function MemoryGameRuntime({
       stims: measuredStims,
       directionRecord,
       goalkeeperRecord: meta?.goalkeeperRecord,
+      shapeCompletionRecord: meta?.shapeCompletionRecord,
+      roundAnswers: meta?.roundAnswers, moleRecord: meta?.moleRecord,
       glassBridge,
     };
     if (embed && onComplete) {
       onComplete(payload);
       return;
     }
-    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge, directionRecord, goalkeeperRecord: meta?.goalkeeperRecord });
+    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge, directionRecord, goalkeeperRecord: meta?.goalkeeperRecord, shapeCompletionRecord: meta?.shapeCompletionRecord, roundAnswers: meta?.roundAnswers, moleRecord: meta?.moleRecord });
     setScreen('result');
     onComplete?.(payload);
   }, [embed, onComplete, adminMemorySettings]);
@@ -1096,13 +970,12 @@ function MemoryGameRuntime({
       if (completionFeedbackRef.current !== null) { clearTimeout(completionFeedbackRef.current); completionFeedbackRef.current = null; }
       resultDeliveredRef.current = false;
       glassBridgeStatsRef.current = undefined;
-      sessionLaunchedRef.current = true;
       setSessionLaunched(true);
       // ?????????????????????????????? ???????????????????????????????????????????????????????????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲??????????????????????????????????????????????????????????????????????????????????????reactTrain) ???????????????????????????????????????????????????????????????????곕춴??????????椰???????????耀붾굝????????????????reps??????????
-      if (cfg.mode !== 'reactTrain' && cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
+      if (cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
       // ??????????????????????????????????????????????????밸븶筌믩끃??獄???????멥렑???????????????????耀붾굝?????臾먮뼁?????쇨덫?????????????????????????濾???????????????????????癲??????????????????????????????????????????????????????????????????밸븶筌믩끃??獄???????멥렑???????????????????耀붾굝?????臾먮뼁?????쇨덫?????????????????????????濾???????????????????????癲?????????????????4??????????
       // O4: preserve autoLaunch/user intervalSets (do not force 4)
-      if (cfg.activityId === 'glass-bridge-memory') cfg = { ...cfg, glassBridgeStartLength: normalizeGlassBridgeLength(cfg.glassBridgeStartLength), speed: normalizeGlassBridgeSeconds(cfg.speed), targetReps: normalizeGlassBridgeRounds(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
+      if (cfg.activityId === 'glass-bridge-memory') cfg = { ...cfg, glassBridgeStartLength: normalizeGlassBridgeLength(cfg.glassBridgeStartLength), speed: normalizeGlassBridgeSeconds(cfg.speed, cfg.glassBridgeDifficulty), targetReps: normalizeGlassBridgeRounds(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
       if (cfg.activityId === 'moving-number-reader') cfg = { ...cfg, speed: normalizeNumberReaderSeconds(cfg.speed), targetReps: normalizeNumberReaderReps(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
       if (cfg.activityId === 'visual-search') cfg = { ...cfg, visualSearchStage: normalizeSearchStage(cfg.visualSearchStage), visualSearchTargetCount: normalizeSearchTargetCount(cfg.visualSearchStage, cfg.visualSearchTargetCount), speed: normalizeSearchSeconds(cfg.speed), targetReps: normalizeSearchReps(cfg.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
       if (adminMemorySettings) cfg = { ...cfg,
@@ -1161,9 +1034,6 @@ function MemoryGameRuntime({
         bgmMode === 'stroop' ||
         bgmMode === 'simon' ||
         bgmMode === 'flanker' ||
-        bgmMode === 'executive' ||
-        bgmMode === 'gonogo' ||
-        bgmMode === 'taskswitch' ||
         bgmMode === 'reactTrain';
       if (!disableBgm && shouldTryBgmParent) {
         if (spomoveBgmList.length === 0) {
@@ -1354,7 +1224,7 @@ function MemoryGameRuntime({
       return;
     }
     // ??????????admin/memory-game: ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????? setup???????????????????????????????????????ㅻ깹???????????????????????????????????????????????ш끽維뽳쭩?뱀땡???얩맪???????????????????轅붽틓??섑떊???⑤챷?????????????????????????嫄???????????????????????筌??????????????????????????????????????????????????????
-    setScreen('setup');
+    setScreen('loading');
   }, [autoLaunch, countdown, deliverSessionResult, onExit, screen, settings]);
 
   const handleFlowComplete = useCallback(() => {
@@ -1390,7 +1260,7 @@ function MemoryGameRuntime({
         { ...settings },
         elapsedMs,
         laneCountToColorStimulusCounts(stats.laneCount),
-        { completionReason: resolveTrainingCompletionReason(stats), stims: stats.stims, directionRecord: stats.directionRecord, goalkeeperRecord: stats.goalkeeperRecord },
+        { completionReason: resolveTrainingCompletionReason(stats), stims: stats.stims, directionRecord: stats.directionRecord, goalkeeperRecord: stats.goalkeeperRecord, shapeCompletionRecord: stats.shapeCompletionRecord, roundAnswers: stats.roundAnswers, moleRecord: stats.moleRecord },
       );
     },
     [deliverSessionResult, settings],
@@ -1441,7 +1311,7 @@ function MemoryGameRuntime({
   // autoLaunch ??????????????????????????? home/setup/result ????????????????? ???????????????????????????????????????????????????????????ㅻ깹??????????????????????????釉먮폁?????????????????????????????????????????
   // (pendingAutoStart ??startSession?????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
   // result ?????????????????????????????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝????????????????????????????????????????????????????????????????????????????????????????????????????????????onExit effect??????????? ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????獄쏅챶留덌┼??????????????筌롈살젔??????????????????????븐뼐????????쑩?젆???????ㅻ쑋?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-  if (autoLaunch && !sessionLaunched && (screen === 'home' || screen === 'setup' || screen === 'result')) {
+  if (autoLaunch && !sessionLaunched && (screen === 'loading' || screen === 'result')) {
     return (
       <div
         style={{
@@ -1472,1200 +1342,10 @@ function MemoryGameRuntime({
   }
 
   // ???? HOME ????
-  if (screen === 'home') {
-    return (
-      <div style={{ minHeight: '100dvh', background: '#080C14', fontFamily: 'var(--spm-font-body)', color: '#fff', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-        <style>{CSS}</style>
-        <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: '60vw', height: '60vw', maxWidth: 700, maxHeight: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-15%', right: '-15%', width: '55vw', height: '55vw', maxWidth: 600, maxHeight: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 'clamp(1.8rem,5vw,3rem) clamp(1.5rem,5vw,3rem)', maxWidth: 520, margin: '0 auto', width: '100%', gap: '1.8rem', boxSizing: 'border-box' }}>
-          {isOffline && (
-            <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.75rem', padding: '0.55rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.96rem', fontWeight: 700, color: '#FCA5A5' }}>
-              <span>!</span>
-              <span>Offline mode. Some assets may not load.</span>
-            </div>
-          )}
-          <div className="home-fadein" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 'clamp(0.6rem,1.5vw,0.72rem)', fontWeight: 700, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Cognitive ??Physical ??Education</div>
-              <div style={{ fontSize: 'clamp(1.5rem,4.5vw,2rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>SPOKEDU</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <button type="button" onClick={() => setShowStudentModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.65rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
-                {(() => {
-                  const s = students.find((st) => st.id === selectedStudentId);
-                  if (s) return <><div style={{ width: 18, height: 18, borderRadius: '50%', background: s.color }} /><span>{s.name}</span></>;
-                  return <><span>Student</span><span>Select</span></>;
-                })()}
-              </button>
-              <button type="button" onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))} style={{ width: 36, height: 36, borderRadius: "0.6rem", background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0, cursor: "pointer" }}>{theme === "light" ? "D" : "L"}</button>
-            </div>
-          </div>
-          <div className="home-fadein-1" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(1rem,3vw,1.5rem)' }}>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              {['PLAY', 'THINK', 'FLOW'].map((w, i) => (
-                <React.Fragment key={w}>
-                  <span style={{ fontSize: 'clamp(0.68rem,1.8vw,0.82rem)', fontWeight: 800, letterSpacing: '0.15em', color: i === 0 ? '#F97316' : i === 1 ? '#3B82F6' : '#22C55E' }}>{w}</span>
-                  {i < 2 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.7rem" }}>/</span>}
-                </React.Fragment>
-              ))}
-            </div>
-            <h1 style={{ fontSize: 'clamp(2.2rem,9vw,4rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.08, margin: 0 }}>
-              SPOMOVE Training<br />
-              <span style={{ color: "#F97316" }}>Move and React</span>
-            </h1>
-            <p style={{ fontSize: "clamp(0.92rem,2.2vw,1.05rem)", color: "rgba(255,255,255,0.4)", lineHeight: 1.75, fontWeight: 400 }}>Choose a training mode, set the options, and start the SPOMOVE session.</p>
-            <div className="home-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !MODES[id]?.isHidden).map((id) => {
-                const m = MODES[id];
-                if (!m) return null;
-                const rgbMap: Record<string, string> = {
-                  '#3B82F6': '59,130,246',
-                  '#A855F7': '168,85,247',
-                  '#22C55E': '34,197,94',
-                  '#F97316': '249,115,22',
-                  '#E11D48': '225,29,72',
-                  '#EC4899': '236,72,153',
-                  '#06B6D4': '6,182,212',
-                  '#6366F1': '99,102,241',
-                };
-                const rgb = rgbMap[m.accent] ?? '249,115,22';
-                const active = settings.mode === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => {
-                      setSettings((s) => ({
-                        ...s,
-                        mode: m.id,
-                        activityId: catalogTrainingActivity(m.id, m.levels[0]?.id ?? 1),
-                        level: m.levels[0]?.id ?? 1,
-                        ...(m.id === 'reactTrain' ? { timeMode: 'time' as const, duration: 60 } : {}),
-                      }));
-                      setScreen('setup');
-                    }}
-                    style={{ background: active ? `rgba(${rgb},0.14)` : 'rgba(255,255,255,0.04)', border: `2px solid ${active ? m.accent : 'rgba(255,255,255,0.08)'}`, borderRadius: '0.85rem', padding: 'clamp(0.6rem,2vw,0.85rem)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.15s' }}
-                  >
-                    <div style={{ fontSize: 'clamp(1rem,2.5vw,1.2rem)', marginBottom: '0.25rem' }}>{m.icon}</div>
-                    <div style={{ fontSize: 'clamp(0.72rem,1.8vw,0.82rem)', fontWeight: 800, color: active ? m.accent : 'rgba(255,255,255,0.8)', lineHeight: 1.2 }}>{m.title}</div>
-                    <div style={{ fontSize: 'clamp(0.58rem,1.4vw,0.65rem)', color: 'rgba(255,255,255,0.28)', marginTop: '0.12rem', fontWeight: 500 }}>{m.en}</div>
-                    <div style={{ fontSize: 'clamp(0.55rem,1.3vw,0.62rem)', color: 'rgba(255,255,255,0.2)', marginTop: '0.2rem', fontWeight: 600 }}>{modeLevelRangeLabel(m.id, m.levels.length)}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="home-fadein-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-              <button type="button" onClick={() => setScreen("guide")} style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.85rem", padding: "clamp(0.7rem,2vw,0.9rem)", fontSize: "clamp(0.78rem,2vw,0.86rem)", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Training Guide</button>
-            </div>
-            <div className="home-fadein-3" style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: "clamp(0.62rem,1.6vw,0.7rem)", color: "rgba(255,255,255,0.18)", fontWeight: 500, lineHeight: 1.6 }}>SPOMOVE training tools for movement and cognition.</p>
-            </div>
-          </div>
-        </div>
-        {showStudentModal && (
-          <StudentModal
-            students={students}
-            selectedId={selectedStudentId}
-            onSelect={(id) => { setSelectedStudentId(id); setShowStudentModal(false); }}
-            onClose={() => setShowStudentModal(false)}
-            onManage={() => { setShowStudentModal(false); setScreen('students'); }}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // ???? STUDENTS / HISTORY / GUIDE (delegate to components) ????
-  if (screen === 'students') return <StudentManageScreen students={students} onAdd={addStudent} onRemove={removeStudent} onRename={renameStudent} onBack={() => setScreen('home')} />;
-
-  if (screen === 'guide') return <TrainingGuideScreen onBack={() => setScreen('home')} />;
-
-  // ???? SETUP (abbreviated: only mode/level/speed/start to keep file size down; full setup can be added in same pattern)
-  if (screen === 'setup') {
-    const stepNum = (n: number, label: string) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 800, flexShrink: 0, border: '2px solid #F97316' }}>{n}</div>
-        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>{label}</span>
-      </div>
-    );
-    const stepSpeed = 3;
-    const stepReps = 4;
-    const spatialBasicRandomSpeed =
-      settings.mode === 'spatial' && settings.level >= 1 && settings.level <= 3;
-    return (
-      <div style={S.page}>
-        <style>{CSS}</style>
-        <div style={S.scroll}>
-          <div style={{ ...S.card, maxWidth: '34rem' }}>
-            {!embed ? <button type="button" style={S.back} onClick={() => setScreen("home")}>Back</button> : null}
-            <h2 style={S.ctitle}>Training Settings</h2>
-            <p style={S.csub}>Choose a mode, level, speed, and session options.</p>
-            <div style={S.sec}>
-              {stepNum(1, "Choose a training mode")}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
-                {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !MODES[id]?.isHidden).map((id) => {
-                  const m = MODES[id];
-                  if (!m) return null;
-                  return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => {
-                      setSettings((s) => ({
-                        ...s,
-                        mode: m.id,
-                        activityId: catalogTrainingActivity(m.id, m.levels[0]?.id ?? 1),
-                        level: m.levels[0]?.id ?? 1,
-                        audioMode: 'off',
-                        // ??????????????????????????????????????????????????밸븶筌믩끃??獄???????멥렑???????????????????耀붾굝?????臾먮뼁?????쇨덫?????????????????????????濾???????????????????????癲??????????????????????????????????????????????????????????????????밸븶筌믩끃??獄???????멥렑???????????????????耀붾굝?????臾먮뼁?????쇨덫?????????????????????????濾???????????????????????癲?????????????????4??????????
-                        intervalSets: 4,
-                      }));
-                    }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '0.85rem 0.95rem', borderRadius: '1rem', border: `2px solid ${settings.mode === m.id ? m.accent : 'var(--border)'}`, background: settings.mode === m.id ? `${m.accent}10` : 'var(--subtle-bg)', cursor: 'pointer', gap: '0.15rem', fontFamily: 'inherit', transition: 'all 0.13s' }}
-                  >
-                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{m.icon}</span>
-                    <span style={{ fontWeight: 800, fontSize: '0.84rem', color: settings.mode === m.id ? m.accent : 'var(--text)', marginTop: '0.3rem', lineHeight: 1.2 }}>{m.title}</span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>{m.en}</span>
-                  </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={S.sec}>
-              {stepNum(2, "Choose a level")}
-              <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {M.levels.map((lv, lvIdx) => {
-                  const presentation = trainingActivityPresentation(settings.activityId);
-                  const active = presentation.catalogMode === settings.mode && presentation.catalogLevel === lv.id;
-                  return (
-                  <button
-                    key={lv.id}
-                    type="button"
-                    aria-pressed={active}
-                    data-level-active={active ? 'true' : 'false'}
-                    onClick={() => setSettings(current => {
-                      const chosen = resolveCatalogTrainingSelection(current.mode, lv.id, current);
-                      return {
-                        ...current,
-                        ...chosen.optionDefaults,
-                        level: chosen.level,
-                        activityId: chosen.activityId,
-                        ...(current.mode === 'reactTrain' ? { reactTrainConcurrent: 2 as const } : {}),
-                      };
-                    })}
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${active ? M.accent : 'var(--border)'}`, background: active ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
-                  >
-                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.82rem", color: active ? "#fff" : "var(--text)", background: active ? M.accent : "var(--subtle-bg)", border: active ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>{lvIdx + 1}</div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>{lv.enName}</span>
-                      </div>
-                      <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>{lv.desc}</div>
-                    </div>
-                  </button>
-                  );
-                })}
-                {settings.mode === 'basic' && (
-                  <button
-                    type="button"
-                    onClick={() => setShowVariantAppendix((v) => !v)}
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${showVariantAppendix ? M.accent : 'var(--border)'}`, background: showVariantAppendix ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
-                  >
-                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.75rem", color: showVariantAppendix ? "#fff" : "var(--text)", background: showVariantAppendix ? M.accent : "var(--subtle-bg)", border: showVariantAppendix ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>Info</div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text)" }}>Variant image guide</div>
-                      <div style={{ fontSize: "0.86rem", color: "var(--text-muted)", lineHeight: 1.55 }}>Check uploaded category images and names.</div>
-                    </div>
-                  </button>
-                )}
-              </div>
-              {settings.mode === 'basic' && isModifiedQuadrantLevel(settings.level) && settings.activityId === 'hand-foot' ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>단계</div>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {([1, 2, 3] as const).map((stage) => {
-                      const active = modifiedQuadrantStage(settings.level) === stage;
-                      return (
-                        <button
-                          key={stage}
-                          type="button"
-                          onClick={() => setSettings((current) => ({ ...current, level: modifiedQuadrantLevelFromStage(stage), activityId: 'hand-foot' }))}
-                          style={{
-                            flex: 1,
-                            padding: '0.55rem 0.4rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                            background: active ? `${M.accent}12` : 'var(--card)',
-                            color: active ? M.accent : 'var(--text)',
-                            fontWeight: active ? 800 : 600,
-                            fontSize: '0.95rem',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          {stage}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-              {settings.mode === 'basic' && isFront3PanelLevel(settings.level) ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>색 구성</div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                    {settings.level === 5
-                      ? '3분할 자극은 세 패널에 서로 다른 신호가 항상 표시됩니다.'
-                      : '랜덤분할 자극은 전면 20%, 2패널 30%, 3패널 50% 확률로 표시됩니다.'}
-                  </div>
-                </div>
-              ) : null}
-              {settings.mode === 'stroop' && (settings.level === 1 || settings.level === 2) ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>난이도</div>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {([
-                      { id: 'basic' as const, label: '보통 · 기본' },
-                      { id: 'bg' as const, label: '어려움 · 배경 간섭' },
-                    ]).map((opt) => {
-                      const active =
-                        settings.level === 1
-                          ? settings.stroopArrowMode === opt.id
-                          : settings.stroopWordDifficulty === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => {
-                            if (settings.level === 1) set('stroopArrowMode', opt.id);
-                            else set('stroopWordDifficulty', opt.id);
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: '0.55rem 0.75rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                            background: active ? `${M.accent}12` : 'var(--card)',
-                            color: active ? M.accent : 'var(--text)',
-                            fontWeight: active ? 800 : 600,
-                            fontSize: '0.88rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-              {settings.mode === 'stroop' && (settings.level === 4 || settings.level === 5) ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>4단계 옵션</div>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {([
-                      { id: 'bg' as const, label: '기본 · 단어+배경' },
-                      { id: 'missing' as const, label: '누락 색상 찾기' },
-                    ]).map((opt) => {
-                      const active = (settings.stroopWordMode ?? 'bg') === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => {
-                            set('level', 4);
-                            set('stroopWordMode', opt.id);
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: '0.55rem 0.75rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                            background: active ? `${M.accent}12` : 'var(--card)',
-                            color: active ? M.accent : 'var(--text)',
-                            fontWeight: active ? 800 : 600,
-                            fontSize: '0.88rem',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-              {settings.mode === 'spatial' && isColorSequenceLevel(settings.level) ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>난이도</div>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
-                    {adminMemorySettings ? '쉬움은 3색, 보통은 5색입니다.' : '쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개, 어려움은 직접 지정 10색입니다.'}
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.4rem' }}>
-                    {(adminMemorySettings ? ADMIN_SEQUENCE_OPTIONS : [
-                      { id: 3 as const, label: '쉬움', detail: '3개' },
-                      { id: 5 as const, label: '보통', detail: '5개' },
-                      { id: 'ramp' as const, label: '쉬움→보통→어려움', detail: '3~7개' },
-                      { id: 'custom10' as const, label: '어려움', detail: '직접 지정 10색' },
-                    ] satisfies { id: ColorSequenceOption; label: string; detail: string }[]).map((opt) => {
-                      const active = colorSequenceOption(settings.level) === opt.id;
-                      return (
-                        <button
-                          key={String(opt.id)}
-                          type="button"
-                          onClick={() => set('level', colorSequenceLevelFromOption(opt.id))}
-                          style={{
-                            flex: 1,
-                            padding: '0.55rem 0.4rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                            background: active ? `${M.accent}12` : 'var(--card)',
-                            color: active ? M.accent : 'var(--text)',
-                            fontWeight: active ? 800 : 600,
-                            fontSize: '0.95rem',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          <span style={{ display: 'block' }}>{opt.label}</span>
-                          <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: active ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>{opt.detail}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-              {settings.mode === 'spatial' && isColorNumberLevel(settings.level) ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>난이도</div>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {([
-                      { id: 4, label: '어려움 · 퀴즈' },
-                      { id: 5, label: '어려움 · 전체 공개' },
-                    ] as const).map((opt) => {
-                      const active = settings.level === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => set('level', opt.id)}
-                          style={{
-                            flex: 1,
-                            padding: '0.55rem 0.75rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                            background: active ? `${M.accent}12` : 'var(--card)',
-                            color: active ? M.accent : 'var(--text)',
-                            fontWeight: active ? 800 : 600,
-                            fontSize: '0.88rem',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-              {settings.mode === 'spatial' && isInstantMemoryLevel(settings.level) ? (
-                <>
-                  <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>타일 개수</div>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
-                      기억 후 단 한 칸만 색이 바뀝니다. 그리드가 클수록 찾기 어렵습니다.
-                    </p>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      {([
-                        { id: 3 as const, label: '3×3', detail: '입문' },
-                        { id: 4 as const, label: '4×4', detail: '보통' },
-                        { id: 5 as const, label: '5×5', detail: '어려움' },
-                      ]).map((opt) => {
-                        const active = settings.colorMemoryGridSize === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            onClick={() => set('colorMemoryGridSize', opt.id)}
-                            style={{
-                              flex: 1,
-                              padding: '0.55rem 0.4rem',
-                              borderRadius: '0.75rem',
-                              border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                              background: active ? `${M.accent}12` : 'var(--card)',
-                              color: active ? M.accent : 'var(--text)',
-                              fontWeight: active ? 800 : 600,
-                              fontSize: '0.95rem',
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            <span style={{ display: 'block' }}>{opt.label}</span>
-                            <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: active ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>{opt.detail}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>진행 방식</div>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
-                      깜빡이는 원본·변경 색을 번갈아 보여 주고, 원샷은 한 번만 바꾼 뒤 유지합니다.
-                    </p>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      {([
-                        { id: 'flicker' as const, label: '깜빡이', detail: '추천' },
-                        { id: 'oneshot' as const, label: '원샷', detail: '하드코어' },
-                      ]).map((opt) => {
-                        const active = settings.colorMemoryGridMode === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            onClick={() => set('colorMemoryGridMode', opt.id)}
-                            style={{
-                              flex: 1,
-                              padding: '0.55rem 0.4rem',
-                              borderRadius: '0.75rem',
-                              border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                              background: active ? `${M.accent}12` : 'var(--card)',
-                              color: active ? M.accent : 'var(--text)',
-                              fontWeight: active ? 800 : 600,
-                              fontSize: '0.95rem',
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            <span style={{ display: 'block' }}>{opt.label}</span>
-                            <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: active ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>{opt.detail}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
-              ) : null}
-              {settings.mode === 'basic' && showVariantAppendix && <VariantImageGallery />}
-              {settings.mode === 'simon' && settings.level === 3 ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text)", marginBottom: "0.35rem" }}>Mixed gallery images</div>
-                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: 0, lineHeight: 1.55 }}>
-                    Asset Hub variant images are mixed automatically in this Simon level.
-                  </p>
-                </div>
-              ) : null}
-              {basicVariantLevel || flankerThemeLevel ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text)", marginBottom: "0.35rem" }}>
-                    {flankerThemeLevel ? '이미지 테마' : 'Variant image theme'}
-                  </div>
-                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    {flankerThemeLevel
-                      ? '연상 색지각과 동일한 8가지 테마를 고릅니다. 색상은 이미지 없이 원만 사용합니다.'
-                      : 'Select the Asset Hub theme used for associative color-perception signals.'}
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                    {sortedColorThemeIds.map((tid) => (
-                      <button
-                        key={tid}
-                        type="button"
-                        onClick={() => set('variantColorTheme', tid)}
-                        style={{
-                          padding: '0.55rem 0.95rem',
-                          borderRadius: '0.75rem',
-                          border: `2px solid ${settings.variantColorTheme === tid ? M.accent : 'var(--border)'}`,
-                          background: settings.variantColorTheme === tid ? `${M.accent}12` : 'var(--card)',
-                          color: settings.variantColorTheme === tid ? M.accent : 'var(--text)',
-                          fontWeight: settings.variantColorTheme === tid ? 800 : 600,
-                          fontSize: '0.88rem',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                        }}
-                      >
-                        {settings.variantColorTheme === tid ? '✓ ' : ''}
-                        {SPOMOVE_COLOR_THEME_LABELS[tid]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {settings.mode === 'basic' && settings.level === 1 ? (
-                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>난이도</div>
-                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    쉬움은 흰 화살표, 보통은 위 빨·좌 초·우 노·아래 파로 채워진 색상 화살표입니다.
-                  </p>
-                  <div style={{ display: 'flex', gap: '0.45rem' }}>
-                    {([
-                      { value: 'basic' as const, label: '쉬움', sub: '화살표' },
-                      { value: 'color' as const, label: '보통', sub: '색상 화살표' },
-                    ]).map(({ value, label, sub }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => set('spatialArrowColorMode', value)}
-                        style={{
-                          flex: 1,
-                          padding: '0.55rem 0.95rem',
-                          borderRadius: '0.75rem',
-                          border: `2px solid ${settings.spatialArrowColorMode === value ? M.accent : 'var(--border)'}`,
-                          background: settings.spatialArrowColorMode === value ? `${M.accent}12` : 'var(--card)',
-                          color: settings.spatialArrowColorMode === value ? M.accent : 'var(--text)',
-                          fontWeight: settings.spatialArrowColorMode === value ? 800 : 600,
-                          fontSize: '0.88rem',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                        }}
-                      >
-                        <span style={{ display: 'block', fontWeight: 800 }}>
-                          {settings.spatialArrowColorMode === value ? '✓ ' : ''}{label}
-                        </span>
-                        <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: settings.spatialArrowColorMode === value ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>
-                          {sub}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-            {settings.mode === 'flow' && (
-              <>
-                <div style={S.sec}>
-                  {stepNum(3, 'Environment theme')}
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
-                    Asset Hub 파노라마와 연결됩니다. 저사양 기기는 자동으로 가벼운 모드로 실행됩니다.
-                  </p>
-                  <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
-                    {DIVE_THEME_UI.map(({ id, label }) => {
-                      const active = settings.diveEnvironmentTheme === id;
-                      const hasHub = Boolean(diveEnvData.themes[id]);
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setSettings((s) => ({ ...s, diveEnvironmentTheme: id, flowDuration: isDiveActionMoveUnityTheme(id) && ![15, 20, 25, 30, 35].includes(s.flowDuration) ? 20 : s.flowDuration }))}
-                          style={{
-                            flex: '1 1 88px',
-                            padding: '0.65rem 0.5rem',
-                            borderRadius: '0.9rem',
-                            border: `2px solid ${active ? '#8B5CF6' : 'var(--border)'}`,
-                            background: active ? 'rgba(139,92,246,0.12)' : 'var(--card)',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            textAlign: 'center',
-                          }}
-                          title={hasHub ? 'Hub 파노라마 사용' : '정적 폴백 이미지 사용'}
-                        >
-                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#8B5CF6' : 'var(--text)' }}>
-                            {active ? '✓ ' : ''}{label}
-                          </div>
-                          {!hasHub ? (
-                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>폴백</div>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div style={S.sec}>
-                  {stepNum(4, 'Choose DIVE actions')}
-                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
-                    Selected obstacle actions are added to DIVE stages.
-                  </p>
-                  {isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                      {([
-                        ['side', '↔️', 'SIDE', '좌·우 이동'],
-                        ['jump', '⬆️', 'JUMP', '장애물 뛰어넘기'],
-                        ['duck', '⬇️', 'DUCK', '숙여 통과하기'],
-                      ] as const).map(([key, icon, label, desc]) => {
-                        const active = settings.sportsArenaFeatures.has(key);
-                        return (
-                          <button key={key} type="button" onClick={() => setSettings((current) => {
-                            const next = new Set(current.sportsArenaFeatures);
-                            if (next.has(key)) next.delete(key); else next.add(key);
-                            return { ...current, sportsArenaFeatures: next };
-                          })} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem 0.9rem', borderRadius: '1rem', border: `2px solid ${active ? '#22C55E' : 'var(--border)'}`, background: active ? 'rgba(34,197,94,0.08)' : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                            <span style={{ fontSize: '1.3rem', lineHeight: 1 }}>{icon}</span>
-                            <div><div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#16A34A' : 'var(--text)' }}>{active ? '✓ ' : ''}{label}</div><div style={{ marginTop: '0.15rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{desc}</div></div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                  <div style={{ display: isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) ? 'none' : 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                    {SELECTABLE_MODULE_KEYS.map((key) => {
-                      const mod = FLOW_MODULES[key];
-                      const icon = mod.icon;
-                      const label = key === 'colorGate' ? '모션 게이트' : mod.label;
-                      const desc = key === 'colorGate'
-                        ? '모션 게이트는 액션 무브와 분리되어 색 포즈 관문만 진행합니다.'
-                        : mod.shortInstruction;
-                      const active = settings.flowFeatures.has(key as FlowFeatureKey);
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => {
-                            setSettings((s) => {
-                              const next = new Set(s.flowFeatures);
-                              if (next.has(key as FlowFeatureKey)) next.delete(key as FlowFeatureKey);
-                              else next.add(key as FlowFeatureKey);
-                              return { ...s, flowFeatures: next };
-                            });
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '0.75rem',
-                            padding: '0.75rem 0.9rem',
-                            borderRadius: '1rem',
-                            border: `2px solid ${active ? '#22C55E' : 'var(--border)'}`,
-                            background: active ? 'rgba(34,197,94,0.08)' : 'var(--card)',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            textAlign: 'left',
-                            transition: 'all 0.13s',
-                          }}
-                        >
-                          <span style={{ fontSize: '1.3rem', lineHeight: 1, marginTop: '0.05rem' }}>{icon}</span>
-                          <div>
-                            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#16A34A' : 'var(--text)', marginBottom: '0.15rem' }}>
-                              {active ? '✓ ' : ''}{label}
-                            </div>
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{desc}</div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div style={{ ...S.sec, display: isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) ? 'none' : undefined }}>
-                  {stepNum(5, '모션 게이트')}
-                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
-                    모션 게이트는 브릿지 없이 공유 배경에서 색 포즈 관문만 진행합니다.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSettings((s) => {
-                        const next = new Set(s.flowFeatures);
-                        if (next.has('colorGate')) next.delete('colorGate');
-                        else next.add('colorGate');
-                        return { ...s, flowFeatures: next };
-                      });
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem',
-                      width: '100%',
-                      padding: '0.75rem 0.9rem',
-                      borderRadius: '1rem',
-                      border: `2px solid ${settings.flowFeatures.has('colorGate') ? '#38BDF8' : 'var(--border)'}`,
-                      background: settings.flowFeatures.has('colorGate') ? 'rgba(56,189,248,0.10)' : 'var(--card)',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <span style={{ fontSize: '1.3rem', lineHeight: 1, marginTop: '0.05rem' }}>🎯</span>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: settings.flowFeatures.has('colorGate') ? '#38BDF8' : 'var(--text)', marginBottom: '0.15rem' }}>
-                        {settings.flowFeatures.has('colorGate') ? '✓ ' : ''}모션 게이트
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                        모션 게이트 전용: 색 게이트, 포즈 신호, 브릿지 없음.
-                      </div>
-                    </div>
-                  </button>
-                </div>
-                {!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && (
-                  <div style={S.sec}>
-                    {stepNum(5, '모션 게이트 옵션')}
-                    <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>유형</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem', marginBottom: '0.85rem' }}>
-                      {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더'], ['family', '패밀리']] as const).map(([value, label]) => {
-                        const soloCategories = ['strength', 'flexibility', 'balance', 'power-jump'] as const;
-                        const active = value === 'all'
-                          ? soloCategories.every((category) => settings.colorGateCategories.includes(category))
-                          : settings.colorGateCategories.includes(value);
-                        return (
-                        <button key={value} type="button" onClick={() => setSettings((s) => {
-                          const next = value === 'family'
-                            ? (s.colorGateCategories.includes('family')
-                                ? s.colorGateCategories.filter((category) => category !== 'family')
-                                : [...s.colorGateCategories.filter((category) => category === 'together'), 'family'] as ColorGateSelectableCategory[])
-                            : value === 'all'
-                            ? (soloCategories.every((category) => s.colorGateCategories.includes(category))
-                                ? []
-                                : [...soloCategories])
-                            : s.colorGateCategories.includes(value)
-                              ? s.colorGateCategories.filter((category) => category !== value)
-                              : [...s.colorGateCategories, value];
-                          return next.length ? { ...s, colorGateCategories: next } : s;
-                        })}
-                          aria-pressed={active}
-                          style={{ minWidth: 0, minHeight: 48, padding: '0.65rem 0.35rem', borderRadius: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', color: active ? '#38BDF8' : 'var(--text)', fontWeight: 800, fontSize: '0.8rem', lineHeight: 1.25, wordBreak: 'keep-all', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
-                          {label}
-                        </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>난이도</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.5rem' }}>
-                      {([
-                        ['single', '단일', '기본 동작'],
-                        ['compound', '복합', '전체 동작'],
-                      ] as const).map(([value, label, detail]) => {
-                        const familyOnly = settings.colorGateCategories.includes('family') && !settings.colorGateCategories.includes('together');
-                        const active = familyOnly ? value === 'single' : settings.colorGateDifficulties.includes(value);
-                        return (
-                        <button key={value} type="button" disabled={familyOnly} onClick={() => setSettings((s) => {
-                          const next = s.colorGateDifficulties.includes(value)
-                            ? s.colorGateDifficulties.filter((difficulty) => difficulty !== value)
-                            : [...s.colorGateDifficulties, value];
-                          return next.length ? { ...s, colorGateDifficulties: next } : s;
-                        })}
-                          aria-pressed={active}
-                          style={{ padding: '0.75rem', borderRadius: '0.8rem', textAlign: 'left', cursor: familyOnly ? 'default' : 'pointer', opacity: familyOnly && value !== 'single' ? 0.45 : 1, fontFamily: 'inherit', color: 'var(--text)', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
-                          <strong>{label}</strong>
-                          <span style={{ display: 'block', marginTop: '0.2rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>{detail}</span>
-                        </button>
-                        );
-                      })}
-                    </div>
-                    <ColorGatePoseAppendix />
-                  </div>
-                )}
-                <div style={S.sec}>
-                  {stepNum(6, !isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') ? '반복 횟수' : 'Stage duration')}
-                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    {!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') ? '모션 게이트에서 통과할 목표 횟수를 선택하세요.' : 'Select the duration for each DIVE stage.'}
-                  </p>
-                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    {(!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1
-                      ? (adminMemorySettings ? ADMIN_TRAINING_ROUNDS : [10, 15, 20, 30])
-                      : [15, 20, 25, 30, 35]
-                    ).map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setSettings((s) => !isDiveActionMoveUnityTheme(s.diveEnvironmentTheme) && s.flowFeatures.has('colorGate') ? ({ ...s, timeMode: 'reps', targetReps: n }) : ({ ...s, flowDuration: n }))}
-                        style={{
-                          flex: 1, minWidth: '48px', padding: '0.55rem 0.4rem', borderRadius: '0.75rem', border: `2px solid ${(!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? settings.targetReps : settings.flowDuration) === n ? '#3B82F6' : 'var(--border)'}`, background: (!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? settings.targetReps : settings.flowDuration) === n ? 'rgba(59,130,246,0.12)' : 'var(--card)', color: (!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? settings.targetReps : settings.flowDuration) === n ? '#3B82F6' : 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.88rem', textAlign: 'center',
-                        }}
-                      >
-                        {n}{!isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1 ? '회' : '초'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div style={S.sec}>
-                  <button type="button" onClick={() => setSettings((current) => ({ ...current, flowIncludeBonus: !current.flowIncludeBonus }))} style={{ width: '100%', minHeight: 48, borderRadius: '0.8rem', border: `2px solid ${settings.flowIncludeBonus ? '#F59E0B' : 'var(--border)'}`, background: settings.flowIncludeBonus ? 'rgba(245,158,11,0.10)' : 'var(--card)', color: settings.flowIncludeBonus ? '#F59E0B' : 'var(--text)', fontWeight: 800, cursor: 'pointer' }}>
-                    {settings.flowIncludeBonus ? '✓ ' : ''}BONUS · 60초
-                  </button>
-                  {isDiveActionMoveUnityTheme(settings.diveEnvironmentTheme) ? <p style={{ margin: '0.65rem 0 0', fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)', wordBreak: 'keep-all' }}>예상 활동 시간 <span style={{ whiteSpace: 'nowrap' }}>{formatDiveActionMoveDuration(diveActionMoveDurationSec({ side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }, settings.flowDuration))}</span>{formatDiveActionMoveDurationDetail({ side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }, settings.flowDuration) ? <span style={{ display: 'block', marginTop: 4, fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{formatDiveActionMoveDurationDetail({ side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }, settings.flowDuration)}</span> : null}</p> : null}
-                </div>
-                <div style={S.sec}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                    <div style={{ fontWeight: 800, fontSize: "0.9rem" }}>DIVE presets</div>
-                    <button
-                      type="button"
-                      onClick={saveFlowPreset}
-                      style={{ padding: '0.3rem 0.8rem', borderRadius: '0.6rem', border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.78rem' }}
-                    >
-                      + Save current settings
-                    </button>
-                  </div>
-                  {flowPresets.length === 0 ? (
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>No saved presets.</p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                      {flowPresets.map((p) => (
-                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border)', background: 'var(--card)' }}>
-                          <button type="button" onClick={() => loadFlowPreset(p)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', color: 'var(--text)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.86rem' }}>
-                            {p.name}
-                            <span style={{ marginLeft: "0.5rem", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 400 }}>{p.features.length} actions ??{p.duration}s</span>
-                          </button>
-                          <button type="button" onClick={() => deleteFlowPreset(p.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: "0.9rem", padding: "0.15rem 0.3rem", borderRadius: "0.4rem", fontFamily: "inherit" }}>Delete</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-            {settings.mode !== 'flow' && (
-              <>
-                {((settings.activityId === 'relative-compass' || settings.activityId === 'shape-completion')) || (settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9 || reactTrainEngineLevelForUi(settings.level) === 14)) ? null : spatialBasicRandomSpeed || (adminMemorySettings && settings.mode === 'spatial' && isColorSequenceLevel(settings.level)) ? (
-                  <div style={S.sec}>
-                    {stepNum(stepSpeed, "Signal speed")}
-                    <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600 }}>
-                      {adminMemorySettings && isColorSequenceLevel(settings.level) ? '색상별 1~2.5초 랜덤 제시' : 'Stimulus duration is randomized between 1 and 3 seconds.'}
-                    </p>
-                  </div>
-                ) : settings.mode === 'spatial' && isInstantMemoryLevel(settings.level) ? (
-                  <div style={S.sec}>
-                    {stepNum(stepSpeed, '기억 시간')}
-                    <p style={{ margin: '0 0 0.75rem', fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                      첫 화면(그리드)을 보여주는 시간입니다. 이후 답 고르는 시간은 3초로 고정됩니다.
-                    </p>
-                    <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
-                  </div>
-                ) : (
-                  <div style={S.sec}>
-                    {stepNum(stepSpeed, "Signal speed")}
-                    <SpeedSelector
-                      value={settings.speed}
-                      onChange={(v) => set('speed', v)}
-                      showPresets={false}
-                      max={settings.flowFeatures.has('colorGate') ? 10 : 6}
-                    />
-                  </div>
-                )}
-
-                {settings.activityId === 'relative-compass' ? (
-                  <>
-                    <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>쉬움은 흰 화살표, 보통은 색상 화살표, 어려움은 대각선이 포함됩니다. 화살표는 한 번에 하나만 나옵니다.</p><div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움', '화살표'], ['normal', '보통', '색상 화살표'], ['hard', '어려움', '대각선']] as const).map(([value, label, sub]) => <button key={value} type="button" onClick={() => set('relativeCompassDifficulty', value)} style={{ flex: 1, padding: '0.55rem 0.75rem', borderRadius: '0.75rem', border: `2px solid ${settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.relativeCompassDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}><span style={{ display: 'block', fontWeight: 800 }}>{label}</span><span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--text-muted)', fontWeight: 800 }}>{sub}</span></button>)}</div></div>
-                    <div style={S.sec}>{stepNum(stepSpeed + 1, '시작 위치 확인 · 반응 시간')}<SpeedSelector value={settings.relativeCompassStartSeconds} min={2} max={6} step={1} showPresets={false} onChange={(value) => setSettings((current) => ({ ...current, relativeCompassStartSeconds: value as RelativeCompassSeconds, relativeCompassResponseSeconds: value as RelativeCompassSeconds }))} /></div>
-                  </>
-                ) : null}
-
-                {settings.activityId === 'shape-completion' ? (
-                  <>
-                    <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => set('shapeCompletionDifficulty', value)} style={{ flex: 1, padding: '0.65rem', borderRadius: '0.75rem', border: `2px solid ${settings.shapeCompletionDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.shapeCompletionDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}>{label}</button>)}</div></div>
-                    <div style={S.sec}>{stepNum(stepSpeed + 1, '반응 시간')}<SpeedSelector value={settings.shapeCompletionResponseSeconds} min={2} max={6} step={1} showPresets={false} onChange={(value) => set('shapeCompletionResponseSeconds', normalizeShapeCompletionSeconds(value))} /></div>
-                  </>
-                ) : null}
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
-                  <div style={S.sec}>
-                    {stepNum(stepSpeed, 'Choose speed')}
-                    <p style={{ margin: '0 0 0.75rem', fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                      Slow uses 9 balls. Fast uses 13 balls plus a brief full-screen flash.
-                    </p>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      {([
-                        { id: 1 as const, label: '느림 · 공 9개' },
-                        { id: 3 as const, label: '빠름 · 공 13개' },
-                      ]).map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => set('colorTrackerTier', opt.id)}
-                          style={{
-                            flex: 1,
-                            padding: '0.65rem 0.75rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${(settings.colorTrackerTier === 3 ? 3 : 1) === opt.id ? '#F97316' : 'var(--border)'}`,
-                            background: (settings.colorTrackerTier === 3 ? 3 : 1) === opt.id ? '#FFF7ED' : 'var(--card)',
-                            color: 'var(--text)',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 14 ? (
-                  <>
-                    {([
-                      { label: '섞기 속도', key: 'shellTrackingDifficulty' as const, values: [['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const },
-                      { label: '목표 확인', key: 'shellTrackingTargetSeconds' as const, values: [2, 3, 4, 5, 6] as const },
-                      { label: '섞기 횟수', key: 'shellTrackingShuffleCount' as const, values: [4, 6, 8, 10, 12] as const },
-                      { label: '반응 시간', key: 'shellTrackingResponseSeconds' as const, values: [2, 3, 4, 5, 6] as const },
-                    ] as const).map((group) => (
-                      <div style={S.sec} key={group.key}>
-                        {stepNum(stepSpeed, group.label)}
-                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          {group.values.map((raw) => {
-                            const value = Array.isArray(raw) ? raw[0] : raw;
-                            const label = Array.isArray(raw) ? raw[1] : `${raw}${group.key === 'shellTrackingShuffleCount' ? '회' : '초'}`;
-                            const active = settings[group.key] === value;
-                            return (
-                              <button key={String(value)} type="button" onClick={() => set(group.key, value)} style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem', border: `2px solid ${active ? '#F97316' : 'var(--border)'}`, background: active ? '#FFF7ED' : 'var(--card)', color: 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                {label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                    <div style={S.sec}>
-                      {stepNum(stepReps, '반복 횟수')}
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        {[5, 10, 15, 20].map((n) => (
-                          <button key={n} type="button" onClick={() => setSettings((s) => ({ ...s, timeMode: 'reps', targetReps: n }))} style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem', border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`, background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)', color: 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                            {n}회
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : null}
-
-                {settings.mode === 'spatial' && settings.level === 6 ? (
-                  <div style={S.sec}>
-                    {stepNum(stepSpeed + 1, "Choose 1-10 slot colors")}
-                    <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                      Assign a color to each memory slot.
-                    </p>
-                    <MemoryColorSlotsPicker
-                      slots={settings.memoryColorSlots}
-                      onChange={(next) => setSettings((s) => ({ ...s, memoryColorSlots: next }))}
-                      accent={M.accent}
-                      borderColor="var(--border)"
-                      mutedColor="var(--text-muted)"
-                      textColor="var(--text)"
-                      cardBg="var(--card)"
-                    />
-                  </div>
-                ) : null}
-
-                {/* ??????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲?????????????????????????????????????????????????????????????????????????????????????? ???????????????????????????????????????????9??0?? / ??????????*/}
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 8 ? (
-                  <div style={S.sec}>
-                    {stepNum(stepReps, "Choose rounds")}
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {[3, 5, 7, 10].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => {
-                            setSettings((s) => ({ ...s, timeMode: 'reps', targetReps: n }));
-                          }}
-                          style={{
-                            padding: '0.6rem 1rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`,
-                            background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            color: 'var(--text)',
-                          }}
-                        >
-                          {n}???????????????????????????????????????????
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
-                  <div style={S.sec}>
-                    {stepNum(stepReps, "Choose rounds")}
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {[2, 3, 5, 10].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => {
-                            setSettings((s) => ({ ...s, timeMode: 'reps', targetReps: n }));
-                          }}
-                          style={{
-                            padding: '0.6rem 1rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`,
-                            background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            color: 'var(--text)',
-                          }}
-                        >
-                          {n}???????????????????????????????????????????
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                {adminMemorySettings && settings.mode === 'spatial' && <div style={S.sec}>
-                  <p>목표 라운드</p><div style={{ display: 'flex', gap: 8 }}>{ADMIN_TRAINING_ROUNDS.map(n => <button key={n} type="button" aria-pressed={settings.targetReps === n} onClick={() => setSettings(s => ({ ...s, timeMode: 'reps', targetReps: n }))}>{n}라운드</button>)}</div>
-                </div>}
-                {((settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 8 && reactTrainEngineLevelForUi(settings.level) !== 9 && reactTrainEngineLevelForUi(settings.level) !== 14) ||
-                  (settings.mode === 'spatial' && isInstantMemoryLevel(settings.level))) && !adminMemorySettings ? (
-                  <div style={S.sec}>
-                    {stepNum(stepReps, "Choose duration")}
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {[30, 60, 120, 180].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => {
-                            setSettings((s) => ({ ...s, timeMode: 'time', duration: n }));
-                          }}
-                          style={{
-                            padding: '0.6rem 1rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${settings.duration === n ? '#F97316' : 'var(--border)'}`,
-                            background: settings.duration === n ? '#FFF7ED' : 'var(--card)',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            color: 'var(--text)',
-                          }}
-                        >
-                          {n < 60 ? `${n}s` : `${n / 60}m`}
-                        </button>
-                      ))}
-                    </div>
-                    {settings.mode === 'reactTrain' ? (
-                    <div style={{ marginTop: '0.75rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => set('kidsSafeMode', !settings.kidsSafeMode)}
-                        style={{
-                          width: '100%',
-                          padding: '0.6rem 0.9rem',
-                          borderRadius: '0.75rem',
-                          border: `2px solid ${settings.kidsSafeMode ? '#F97316' : 'var(--border)'}`,
-                          background: settings.kidsSafeMode ? '#FFF7ED' : 'var(--card)',
-                          color: settings.kidsSafeMode ? '#C2410C' : 'var(--text)',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          textAlign: 'left',
-                        }}
-                      >
-                        Kids safe mode: {settings.kidsSafeMode ? "On" : "Off"}
-                      </button>
-                    </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                {settings.mode !== 'spatial' && settings.mode !== 'reactTrain' && (
-                  <div style={S.sec}>
-                    {stepNum(stepReps, "Choose repetitions")}
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {(adminMemorySettings ? ADMIN_TRAINING_ROUNDS : [10, 20, 30, 40]).map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => {
-                            // UI???????????????????????????????????????????????????????????????????timeMode??reps??????????
-                            if (settings.timeMode !== 'reps') set('timeMode', 'reps');
-                            set('targetReps', n);
-                          }}
-                          style={{
-                            padding: '0.6rem 1rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`,
-                            background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            color: 'var(--text)',
-                          }}
-                        >
-                          {n}??
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div style={S.sec}>
-                  <button type="button" onClick={() => setAdvancedOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.65rem 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.96rem', fontWeight: 700, color: '#64748B' }}>
-                    <span>{advancedOpen ? "v" : ">"}</span>
-                    <span>Advanced settings</span>
-                  </button>
-                  {advancedOpen && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #E2E8F0' }}>
-                      <div>
-                        <div style={{ fontSize: "0.96rem", fontWeight: 700, color: "#64748B", marginBottom: "0.35rem" }}>Warmup</div>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>{(adminMemorySettings ? [3] : [0, 3, 5]).map((n) => (
-                          <button key={n} type="button" onClick={() => set("warmup", n)} style={{ padding: "0.5rem 0.8rem", borderRadius: "0.6rem", border: `2px solid ${settings.warmup === n ? "#0F172A" : "#E2E8F0"}`, background: settings.warmup === n ? "#0F172A" : "#fff", color: settings.warmup === n ? "#fff" : "#475569", fontWeight: 600, fontSize: "0.96rem", cursor: "pointer", fontFamily: "inherit" }}>{n === 0 ? "None" : `${n}s`}</button>
-                        ))}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: "0.96rem", fontWeight: 700, color: "#64748B", marginBottom: "0.35rem" }}>Interval mode</div>
-                        <button type="button" onClick={() => set("intervalMode", !settings.intervalMode)} style={{ padding: "0.5rem 0.9rem", borderRadius: "0.6rem", border: `2px solid ${settings.intervalMode ? "#22C55E" : "#E2E8F0"}`, background: settings.intervalMode ? "#F0FDF4" : "#fff", fontWeight: 600, fontSize: "0.96rem", cursor: "pointer", fontFamily: "inherit" }}>{settings.intervalMode ? "On" : "Off"}</button>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: "0.96rem", fontWeight: 700, color: "#64748B", marginBottom: "0.35rem" }}>Acceleration</div>
-                        <button type="button" onClick={() => set("accel", !settings.accel)} style={{ padding: "0.5rem 0.9rem", borderRadius: "0.6rem", border: `2px solid ${settings.accel ? "#22C55E" : "#E2E8F0"}`, background: settings.accel ? "#F0FDF4" : "#fff", fontWeight: 600, fontSize: "0.96rem", cursor: "pointer", fontFamily: "inherit" }}>{settings.accel ? "On" : "Off"}</button>
-                        <p style={{ fontSize: '0.82rem', color: '#94A3B8', marginTop: '0.35rem', lineHeight: 1.5 }}>
-                          Gradually increases signal speed during the session.
-                          <br />
-                          Use this after students are comfortable with the base speed.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-            {(() => {
-              const needsImageAssets = readiness.requirement.minimumCount > 0;
-              const assetBlocking = needsImageAssets && readiness.status !== 'ready';
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {needsImageAssets && readiness.status === 'loading' && (
-                    <div style={{ fontSize: '0.82rem', color: '#64748B', textAlign: 'center' }}>
-                      Loading image assets... Minimum required: {readiness.requirement.minimumCount}
-                    </div>
-                  )}
-                  {needsImageAssets && readiness.status === 'error' && (
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                      <span style={{ fontSize: "0.82rem", color: "#EF4444", flex: 1 }}>Failed to load image assets.</span>
-                      <button type="button" onClick={() => void reloadVariantAssets()} style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem", borderRadius: "0.4rem", border: "1px solid #EF4444", background: "transparent", color: "#EF4444", cursor: "pointer", fontFamily: "inherit" }}>Retry</button>
-                    </div>
-                  )}
-                  {needsImageAssets && readiness.status === 'insufficient' && (
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.82rem', color: '#F59E0B', flex: 1 }}>
-                        Need {readiness.requirement.minimumCount} image assets. Currently available: {readiness.usableAssets.length}.
-
-                      </span>
-                      <button type="button" onClick={() => void reloadVariantAssets()} style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem", borderRadius: "0.4rem", border: "1px solid #F59E0B", background: "transparent", color: "#F59E0B", cursor: "pointer", fontFamily: "inherit" }}>Retry</button>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                      type="button"
-                      disabled={assetBlocking}
-                      style={{ ...S.btn, ...S.bPrimary, flex: 3, fontSize: '1.05rem', padding: '1.1rem', opacity: assetBlocking ? 0.5 : 1, cursor: assetBlocking ? 'not-allowed' : 'pointer' }}
-                      onClick={() => {
-                        if (assetBlocking) return;
-                        // ??????????????????????????????????????????????????????????????????????fullscreen ????????(useEffect ???????????????????????????????
-                        if (document.fullscreenEnabled) {
-                          document.documentElement.requestFullscreen().catch((err: Error) => {
-                            console.warn('[SPOMOVE] fullscreen request failed:', err.message);
-                          });
-                        }
-                        startSession();
-                      }}
-                    >
-                      {readiness.status === "loading" && needsImageAssets ? "Loading..." : "Start training"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ???? MEMORY / TRAINING / RESULT ????
   const handleMemoryComplete = (patterns?: unknown[][]) => {
     if (document.fullscreenElement) exitFullscreenSafely();
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-    deliverSessionResult({ ...settings }, elapsedMs, null, settings.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : undefined);
+    deliverSessionResult({ ...settings }, elapsedMs, null, { roundAnswers: memoryRoundAnswers(patterns), ...(settings.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : {}) });
   };
   const runtimeSuspense = (content: React.ReactNode) => (
     <TrainingRunErrorBoundary onError={handleRuntimeError}>
@@ -2747,9 +1427,8 @@ function MemoryGameRuntime({
           />
         ) : visualRuntime === 'virus' ? (
           <VirusOutbreakReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
+            targetRounds={settings.targetReps}
+            observationSeconds={settings.speed}
             effectsEnabled={settings.audioMode !== 'off'}
             difficulty={
               settings.virusOutbreakDifficulty === 'easy' || settings.virusOutbreakDifficulty === 'hard'
@@ -2772,7 +1451,7 @@ function MemoryGameRuntime({
         ) : visualRuntime === 'goalkeeper' ? (
           <GoalkeeperReactionTraining
             durationSec={Math.max(1, settings.duration ?? 120)}
-            targetReps={settings.timeMode === 'reps' ? settings.targetReps : undefined}
+            targetReps={settings.targetReps}
             speedSec={safeReactSpeedSec}
             goalkeeperTier={settings.goalkeeperTier === 1 ? 1 : 2}
             bonusTimeEnabled={settings.goalkeeperBonusTimeEnabled}
@@ -2797,18 +1476,10 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : visualRuntime === 'wormhole' ? (
-          <WormholeReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
-            onExit={stop}
-            onComplete={handleReactTrainComplete}
-          />
         ) : visualRuntime === 'mole' ? (
           <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
-            targetReps={settings.timeMode === 'reps' ? settings.targetReps : undefined}
+            targetReps={settings.targetReps}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
             lookMode={settings.moleLookMode}
@@ -2816,28 +1487,9 @@ function MemoryGameRuntime({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : visualRuntime === 'camouflage' ? (
-          <CamouflageReactionTraining
-            targetReps={adminMemorySettings && settings.timeMode === 'reps' ? settings.targetReps : undefined}
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
-            placementMode="variant"
-            onExit={stop}
-            onComplete={handleReactTrainComplete}
-          />
-        ) : visualRuntime === 'beat-wave' ? (
-          <BeatWaveReactionTraining
-            effectsEnabled={settings.audioMode !== 'off'}
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
-            onExit={stop}
-            onComplete={handleReactTrainComplete}
-          />
         ) : visualRuntime === 'rush' ? (
           <RushReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
+            targetReps={settings.targetReps}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
             onExit={stop}
@@ -2845,7 +1497,7 @@ function MemoryGameRuntime({
           />
         ) : visualRuntime === 'falling-bricks' || visualRuntime === 'balloon' ? (
           <VisualReactionTraining
-            targetReps={adminMemorySettings && settings.timeMode === 'reps' ? settings.targetReps : undefined}
+            targetReps={settings.targetReps}
             variant={visualRuntime === 'falling-bricks' ? 'flow' : 'flash'}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedSec={safeReactSpeedSec}
@@ -2959,61 +1611,7 @@ function MemoryGameRuntime({
     return (
       <div ref={trainingContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, background: bg, overflow: 'hidden', transition: 'background 0.06s' }}>
         <style>{CSS}</style>
-        {engineMode === 'gonogo' && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: EMBED_SAFE_BOTTOM,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 20,
-              maxWidth: 'min(94vw, 36rem)',
-              textAlign: 'center',
-              background: 'rgba(0,0,0,0.55)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '2rem',
-              padding: '0.5rem 1.2rem',
-              color: 'rgba(255,255,255,0.88)',
-              fontSize: 'clamp(0.7rem, 2vw, 0.88rem)',
-              fontWeight: 600,
-              lineHeight: 1.45,
-              border: '1px solid rgba(255,255,255,0.12)',
-            }}
-          >
-            {engineLevel === 1 && 'Go: red, blue, yellow / No-Go: green'}
-            {engineLevel === 2 && 'Go: circle / No-Go: X'}
-            {engineLevel === 3 && 'Follow the action cue'}
-            {engineLevel === 4 && 'Go and No-Go cues are mixed'}
-          </div>
-        )}
-        {engineMode === 'taskswitch' && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: EMBED_SAFE_BOTTOM,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 20,
-              maxWidth: 'min(94vw, 38rem)',
-              textAlign: 'center',
-              background: 'rgba(0,0,0,0.55)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '2rem',
-              padding: '0.5rem 1.2rem',
-              color: 'rgba(255,255,255,0.88)',
-              fontSize: 'clamp(0.68rem, 1.9vw, 0.85rem)',
-              fontWeight: 600,
-              lineHeight: 1.45,
-              border: '1px solid rgba(255,255,255,0.12)',
-            }}
-          >
-            {engineLevel === 1 && 'Switch by rule: color or position.'}
 
-            {engineLevel === 2 && 'Reverse rule cues are included.'}
-            {engineLevel === 3 && 'Mixed image cues are included.'}
-
-          </div>
-        )}
         {simonMixedVariantLevel && (
           <div
             style={{
@@ -3083,7 +1681,7 @@ function MemoryGameRuntime({
         onExit?.(settingsToExitResume(cfg));
         return;
       }
-      setScreen('setup');
+      setScreen('loading');
     };
     return (
       <TrainingResultScreen
@@ -3094,6 +1692,9 @@ function MemoryGameRuntime({
         colorCounts={colorCounts}
         stims={result.stims}
         directionRecord={result.directionRecord}
+        shapeCompletionRecord={result.shapeCompletionRecord}
+        roundAnswers={result.roundAnswers}
+        moleRecord={result.moleRecord}
         goalkeeperRecord={result.goalkeeperRecord}
         glassBridge={result.glassBridge}
         levelLabel={resultLevelLabel(cfg.mode, cfg.level, cfg.activityId)}

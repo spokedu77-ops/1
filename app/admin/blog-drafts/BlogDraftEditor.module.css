@@ -169,3 +169,90 @@
 .shortcutDialog::backdrop, .previewDialog::backdrop { background: rgb(20 27 43 / 35%); backdrop-filter: blur(3px); }
 .previewDialog { width: calc(100% - 40px); max-width: 872px; max-height: calc(100dvh - 48px); margin: auto; overflow-y: auto; border: 0; border-radius: 12px; padding: 40px; background: var(--draft-paper); color: var(--draft-text); font-family: var(--font-ui); box-shadow: 0 12px 40px rgb(20 27 43 / 15%); }
 @media (max-width: 640px) { .previewDialog { padding: 24px 20px; } }
+
+/* SPOKEDU Editorial Light V3 — editor-only overrides; no global admin changes. */
+.editorWorkspace {
+  --draft-accent: #2f77b5;
+  --draft-tint: #f2f6fa;
+  --draft-line: #e4e9ed;
+}
+.editorWorkspace .editorTopbar { max-width: 900px; margin-inline: auto; margin-bottom: 16px; }
+.editorWorkspace .paper {
+  max-width: 860px;
+  margin-inline: auto;
+  padding: 36px 52px;
+  border: 1px solid #edf0f2;
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgb(18 38 59 / 3%);
+}
+.editorWorkspace .titleInput {
+  font-size: 30px;
+  line-height: 1.48;
+  letter-spacing: -.05em;
+  font-weight: 760;
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+.editorWorkspace .richText {
+  max-width: 700px;
+  margin-inline: auto;
+  color: #384755;
+  font-size: 16px;
+  line-height: 1.95;
+  letter-spacing: -.017em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+.editorWorkspace .richText p { margin-bottom: 17px; }
+.editorWorkspace .richText h1,
+.editorWorkspace .richText h2,
+.editorWorkspace .richText h3 { color: #22374a; word-break: keep-all; overflow-wrap: break-word; }
+.editorWorkspace .richText h2 {
+  margin: 36px 0 18px;
+  padding-left: 14px;
+  border-left: 3px solid #78a8d2;
+  font-size: 21px;
+  line-height: 1.55;
+  letter-spacing: -.042em;
+  font-weight: 760;
+}
+.editorWorkspace .richText h1 { margin: 34px 0 20px; font-size: 24px; line-height: 1.5; }
+.editorWorkspace .richText h3 { margin: 26px 0 12px; font-size: 17px; line-height: 1.58; }
+.editorWorkspace .richText blockquote {
+  margin: 29px 0 34px;
+  padding: 18px 21px;
+  border-left: 3px solid #a4bed4;
+  border-radius: 0 3px 3px 0;
+  background: #f6f8fa;
+  color: #354c5e;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1.84;
+}
+.editorWorkspace .richText img { max-height: 540px; object-fit: contain; margin: 24px auto 12px; border-radius: 3px; }
+.editorWorkspace .inlineImage { border-radius: 4px; background: #f6f8fa; }
+.editorWorkspace .inlineImage figcaption { background: transparent; padding: 9px 5px; color: #87939e; }
+.editorWorkspace .richText hr { margin: 26px 0; border-color: #e4e9ed; }
+.editorWorkspace .editorFooter { max-width: 860px; margin-inline: auto; }
+.editorWorkspace .previewDialog {
+  width: min(980px, calc(100% - 24px));
+  max-width: none;
+  padding: 15px;
+  background: #f6f8fa;
+  border-radius: 8px;
+}
+@media (max-width: 700px) {
+  .editorWorkspace .paper { padding: 26px 20px; border: 0; border-radius: 0; }
+  .editorWorkspace .titleInput { font-size: 26px; line-height: 1.46; }
+  .editorWorkspace .richText { font-size: 15px; line-height: 1.92; }
+  .editorWorkspace .richText h2 { font-size: 20px; margin-top: 33px; }
+  .editorWorkspace .previewDialog { width: calc(100% - 12px); padding: 6px; }
+}
+
+
+/* V3.1 preview copy actions */
+.v3PreviewActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px solid #e4e9ed; }
+.v3PreviewActions p { color: #728392; font-size: 12px; line-height: 1.6; margin: 0; word-break: keep-all; }
+.v3PreviewActions button { flex: none; color: #2f77b5; background: #f4f8fb; border: 1px solid #dce9f3; border-radius: 6px; padding: 7px 11px; font-size: 12px; font-weight: 650; cursor: pointer; }
+.v3PreviewActions button:hover { background: #e8f2fa; }

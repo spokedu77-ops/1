@@ -6,7 +6,6 @@ import {
   generateSignal,
   createBasicSignalGenerator,
   createModeColorDupGenerator,
-  createTaskSwitchSignalGenerator,
   createSimonSignalGenerator,
   type DupStats,
   type FruitSlide,
@@ -103,7 +102,6 @@ export function useTrainingTimer({
   const genRef = useRef<
     | ReturnType<typeof createBasicSignalGenerator>
     | ReturnType<typeof createModeColorDupGenerator>
-    | ReturnType<typeof createTaskSwitchSignalGenerator>
     | ReturnType<typeof createSimonSignalGenerator>
     | null
   >(null);
@@ -131,10 +129,7 @@ export function useTrainingTimer({
       const getSlidesRef = () => fruitSlidesRef.current;
       const pole: 1 | 2 = simonPoleCount === 2 ? 2 : 1;
       genRef.current = createSimonSignalGenerator(engineLevel, colors, getSlidesRef, pole);
-    } else if (engineMode === 'taskswitch') {
-      const fruitOpts = fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined;
-      genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
-    } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {
+    } else if (engineMode === 'stroop' || engineMode === 'flanker') {
       const fruitOpts = {
         ...(fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : {}),
         ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode } : {}),
@@ -168,7 +163,7 @@ export function useTrainingTimer({
 
     const emitSignal = (elapsed: number) => {
       const sig =
-        engineMode === 'basic' || engineMode === 'simon' || engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo' || engineMode === 'taskswitch'
+        engineMode === 'basic' || engineMode === 'simon' || engineMode === 'stroop' || engineMode === 'flanker'
           ? genRef.current?.next() ?? null
           : generateSignal(engineMode, engineLevel, colors, fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined);
       if (sig) {

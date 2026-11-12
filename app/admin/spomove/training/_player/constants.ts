@@ -48,14 +48,6 @@ export function spatialArrowFillForDirection(
   return pool[Math.floor(Math.random() * pool.length)]?.bg ?? '#FFFFFF';
 }
 
-export const DUAL_TWO_COLORS = COLORS.filter((c) => c.id === 'red' || c.id === 'blue');
-export const DUAL_LR_ARROWS = ARROWS.filter((a) => a.id === 'left' || a.id === 'right');
-
-export const NUMBERS = Array.from({ length: 9 }, (_, i) => ({
-  label: String(i + 1),
-  voice: ['하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉'][i],
-}));
-
 export const MEMORY_ROUNDS = 10;
 
 type SpomoveMode = {
@@ -99,8 +91,8 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 10, name: '축구 : 골키퍼', enName: 'Soccer Goalkeeper', desc: '난이도 쉬움/보통. 쉬움은 공 1개, 보통은 공 1개 50%·2개 50%로 날아옵니다. 보너스타임 ON 시 본 활동 뒤 15초 동안 점점 빠르게 다중 슛이 날아옵니다.' },
       { id: 201, name: '손 따로, 발 따로', enName: 'Hand and Foot Separate', desc: '난이도 쉬움/보통/어려움. 기존 변형 4분할 프로그램을 시지각 반응으로 이관합니다.' },
       { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '난이도 보통(1패널)/어려움(2패널)과 속도 느림(9개)/빠름(13개)을 고릅니다. 흰 공 1개를 검은 공들 속에서 추적합니다.' },
-      { id: 8, name: '(보류) 숫자 연산 기차', enName: '(On Hold) Number Train', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
-      { id: 13, name: '(보류) 바이러스 폭증', enName: '(On Hold) Virus Outbreak', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
+      { id: 8, name: '숫자 연산 기차', enName: 'Number Train', desc: '숫자 연산 규칙에 맞는 기차를 찾아 이동합니다.' },
+      { id: 13, name: '바이러스 폭증', enName: 'Virus Outbreak', desc: '증식한 바이러스의 양을 비교하고 정답 색으로 이동합니다.' },
       { id: 14, name: '목표 끝까지 따라가기', enName: 'Target Tracking', desc: '처음 표시된 목표를 끝까지 추적한 뒤 마지막 위치에 해당하는 SPOMAT으로 이동합니다.' },
       { id: 15, name: '움직이는 숫자 판별', enName: 'Moving Number Reader', desc: '움직이는 숫자 캡슐을 눈으로 추적하고 숫자에 해당하는 구역으로 이동하는 활동입니다.' },
     ],
@@ -144,7 +136,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 2, name: '화살표', enName: 'Arrow', desc: '화살표가 가리키는 방향과 색 규칙을 구분합니다.' },
       { id: 1, name: '도형', enName: 'Shape', desc: '도형의 위치와 색을 분리해서 판단합니다.' },
       { id: 5, name: '풍선', enName: 'Balloon', desc: '화면 어디에나 나타나는 색 풍선이 터질 때 해당 색 위치로 이동합니다.' },
-      { id: 3, name: '랜덤 테마', enName: 'Random Theme', desc: '과일·동물 등 변형 색상 이미지가 섞여 극단 위치에 나타납니다. 이미지 색(패드) 위치로 이동합니다.' },
+      { id: 3, name: '이미지 테마', enName: 'Image Theme', desc: '선택한 테마의 이미지가 극단 위치에 나타납니다. 이미지 색에 해당하는 패드로 이동합니다.' },
       { id: 4, name: '카모플라쥬', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 화면 극단에 드러날 때 해당 색을 찾습니다.' },
     ],
   },
@@ -261,7 +253,6 @@ export type ReactTrainUiLevelDefaults = {
  */
 const LEGACY_REACT_TRAIN_LEVEL_REMAP: Record<number, number> = {
   11: 10, // 구 골키퍼
-  41: 5, // 구 매직 아이 L2
   71: 6, // 구 두더지 L2
   91: 8,
   92: 8,
@@ -280,11 +271,6 @@ export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaul
   switch (level) {
     case 201:
       return { engineMode: 'basic', engineLevel: 7 };
-    case 41:
-      return { engineLevel: 5, camouflagePlacement: 'variant' };
-    case 5:
-      // 레거시 reactTrain 매직 아이 — 카탈로그에서는 사이먼 4번으로 이동, 극단만
-      return { engineLevel: 5, camouflagePlacement: 'variant' };
     case 71:
       return { engineLevel: 6, moleLookMode: 'variant' };
     case 6:
@@ -428,19 +414,7 @@ export function reactTrainEngineLevelForUi(uiLevel: number): number {
 }
 
 export function resolveTrainingEngine(mode: string, level: number): { engineMode: string; engineLevel: number } {
-  if (mode === 'executive') {
-    const lv = Math.min(7, Math.max(1, Math.floor(level)));
-    if (lv <= 4) return { engineMode: 'gonogo', engineLevel: lv };
-    return { engineMode: 'taskswitch', engineLevel: lv - 4 };
-  }
-  if (mode === 'gonogo') {
-    const lv = Math.min(4, Math.max(1, Math.floor(level)));
-    return { engineMode: 'gonogo', engineLevel: lv };
-  }
-  if (mode === 'taskswitch') {
-    const lv = Math.min(3, Math.max(1, Math.floor(level)));
-    return { engineMode: 'taskswitch', engineLevel: lv };
-  }
+
   if (mode === 'stroop' && level === 5) {
     // 레거시 5단계 → 4단계 + 누락 모드
     return { engineMode: 'stroop', engineLevel: 4 };
@@ -459,14 +433,7 @@ export function normalizeLegacyTrainingMode(mode: string | undefined, level: num
   if (!mode) return { mode: 'basic', level: 1 };
   // 구 시지각 반응 · 색 기억 그리드(12) → 순차 기억 · 순간 기억(7)
   if (mode === 'reactTrain' && level === 12) return { mode: 'spatial', level: 7 };
-  if (mode === 'gonogo') return { mode: 'gonogo', level: Math.min(4, Math.max(1, level)) };
-  if (mode === 'taskswitch') return { mode: 'taskswitch', level: Math.min(3, Math.max(1, level)) };
-  if (mode === 'executive') {
-    const lv = Math.min(7, Math.max(1, Math.floor(level)));
-    if (lv <= 4) return { mode: 'gonogo', level: lv };
-    return { mode: 'taskswitch', level: lv - 4 };
-  }
-  if (mode === 'dual') return { mode: 'gonogo', level: 1 };
+
   return { mode, level };
 }
 
@@ -494,9 +461,8 @@ export function isKnownTrainingLevel(mode: string, level: number): boolean {
     return isColorSequenceLevel(level) || isColorNumberLevel(level) || isInstantMemoryLevel(level);
   }
   if (mode === 'reactTrain') {
-    if (level >= 1 && level <= 10) return true;
     // 구 딥링크·티어 전용 id
-    return level === 11 || level === 41 || level === 71
+    return level === 11 || level === 71
       || level === 91 || level === 92 || level === 93
       || level === 101 || level === 102 || level === 103;
   }

@@ -2,7 +2,7 @@ import type { TrainingActivityId } from './trainingActivity';
 import type { TrainingResultConfig } from './trainingResultSummary';
 
 const DIRECTION_RECORD_ACTIVITIES = new Set<TrainingActivityId>([
-  'direction-cue', 'relative-compass', 'simon-arrow', 'flanker-arrow', 'stroop-arrow', 'go-no-go-action',
+  'direction-cue', 'relative-compass', 'simon-arrow', 'flanker-arrow', 'stroop-arrow',
 ]);
 
 /** Preserve the existing result-handoff predicate; do not infer records from display layout. */
@@ -14,6 +14,10 @@ export const CARDINAL_DIRECTIONS = ['up', 'down', 'left', 'right'] as const;
 export const ALL_DIRECTIONS = [...CARDINAL_DIRECTIONS, 'up-left', 'up-right', 'down-left', 'down-right'] as const;
 export type DirectionId = typeof ALL_DIRECTIONS[number];
 export type DirectionPresentationRecord = {
+  executionMs?: number;
+  journey?: import('./relativeCompass').RelativeCompassJourney;
+  journeys?: import('./relativeCompass').RelativeCompassJourney[];
+  completedRounds?: number;
   directions: DirectionId[];
   counts: Partial<Record<DirectionId, number>>;
   signals: number;
@@ -31,8 +35,6 @@ export function presentedDirectionIds(signal: Record<string, unknown>): Directio
   if (signal.type === 'stroop_arrow') values = [content.arrowId];
   if (signal.type === 'simon_arrow') values = Array.isArray(content.items)
     ? content.items.map(item => (item as { arrowId?: unknown }).arrowId) : [content.arrowId];
-  if (signal.type === 'gonogo_action' && content.kind === 'arrow') values = [content.arrowId];
-  if (signal.type === 'task_switch' && content.stimulusKind === 'arrow') values = [content.arrowId];
   return values.filter(isDirection);
 }
 

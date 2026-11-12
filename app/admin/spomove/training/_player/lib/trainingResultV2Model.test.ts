@@ -9,6 +9,29 @@ import { resolveResultEducationProfile } from './trainingResultEducation';
 const base = { elapsedMs: 5000, colorCounts: null, cfg: { mode: 'spatial', level: 8, activityId: 'glass-bridge-memory' as const, timeMode: 'reps', targetReps: 20, duration: 0 } };
 const bridge: GlassBridgeResult = { startLength: 3, lastLength: 4, presentedRounds: 2, successRounds: 1, failureRounds: 1, teacherFailed: false, scoringMode: 'color-choice', completedRounds: 2, correctSteps: 5, incorrectSteps: 1, difficulty: 'hard' };
 describe('V2 exhaustive activity and real result semantics', () => {
+  it('keeps goalkeeper bonus arrivals out of regular round progress', () => {
+    const model = build({ ...base, cfg: { ...base.cfg, mode: 'reactTrain', level: 11, activityId: 'goalkeeper', targetReps: 5 }, stims: 18,
+      goalkeeperRecord: { tier: 2, waveCount: 5, targetWaveCount: 5, stims: 18,
+        laneCount: [5, 4, 4, 5], regularLaneCount: [2, 2, 1, 2], bonusLaneCount: [3, 2, 3, 3],
+        bonusStarted: true, baseTravelSeconds: 3 } });
+    expect(model.metrics[1].value).toBe('5 / 5라운드');
+    expect(model.metrics[0].note).toBe('보너스를 포함한 실제 진행 시간');
+    expect(model.facts).toContainEqual({ id: 'bonus', label: '보너스 목표 도착', value: '11회' });
+  });
+  it('does not add bonus mole targets to the regular-round numerator', () => {
+    const model = build({ ...base, cfg: { ...base.cfg, mode: 'reactTrain', level: 6, activityId: 'mole', targetReps: 5 }, stims: 18,
+      colorCounts: { red: 5, blue: 4, green: 4, yellow: 5 },
+      moleRecord: { regularRounds: 5, bonusRounds: 7, targetRounds: 5, bonusStarted: true, stims: 18,
+        laneCount: [5, 4, 4, 5], regularLaneCount: [2, 2, 1, 2], bonusLaneCount: [3, 2, 3, 3] } });
+    expect(model.metrics[1].value).toBe('5 / 5라운드');
+    expect(model.facts).toContainEqual({ id: 'bonus-targets', label: '보너스 두더지 제시', value: '11마리' });
+  });
+  it('reports virus completion in rounds and the configured observation time', () => {
+    const model = build({ ...base, cfg: { ...base.cfg, mode: 'reactTrain', level: 13, activityId: 'virus-outbreak', targetReps: 5, speed: 6 }, stims: 5 });
+    expect(model.metrics[1].value).toBe('5 / 5라운드');
+    expect(model.metrics[2].label).toBe('관찰 시간');
+    expect(model.metrics[2].value).toBe('6초');
+  });
   it('keeps unique SPOMAT settings while removing only the stimulus time already shown above', () => {
     const model = build({ ...base, cfg: { ...base.cfg, mode: 'basic', level: 4, activityId: 'two-panel-cue', speed: 5 }, sessionSettings: { title: '실행 설정', primary: 'SPOMAT 1장 · 자극 5초' } });
     const original = structuredClone(model.settings);
@@ -124,7 +147,7 @@ describe('V2 exhaustive activity and real result semantics', () => {
   it('uses time and authored motions for DIVE, not fictitious signal counts', () => {
     const model = build({ ...base, cfg: { ...base.cfg, mode: 'flow', level: 1, activityId: 'action-move' }, stims: 99, diveActionMove: { completed: false, stageDurationSec: 20, flowFeatures: ['punch', 'duck'], flowIncludeBonus: true } });
     expect(model.kind).toBe('time');
-    expect(model.metrics[1].label).toBe('활동 구성');
+    expect(model.metrics[1].label).toBe('선택한 동작');
     expect(model.facts.map(item => item.id)).not.toContain('progress');
   });
 });

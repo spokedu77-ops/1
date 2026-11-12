@@ -853,6 +853,8 @@ function SpomoveSessionContent() {
       goalkeeperRecord: payload?.goalkeeperRecord,
       glassBridge: payload?.glassBridge,
       directionRecord: payload?.directionRecord,
+      shapeCompletionRecord: payload?.shapeCompletionRecord,
+      roundAnswers: payload?.roundAnswers, moleRecord: payload?.moleRecord,
       maxCombo: payload?.maxCombo,
       initialMovement: movementStateRef.current.initialMovement,
       finalMovement: movementStateRef.current.currentMovement,
@@ -1304,6 +1306,9 @@ function SpomoveSessionContent() {
             goalkeeperRecord={sessionResult.goalkeeperRecord}
             glassBridge={sessionResult.glassBridge}
             directionRecord={sessionResult.directionRecord}
+            shapeCompletionRecord={sessionResult.shapeCompletionRecord}
+            roundAnswers={sessionResult.roundAnswers}
+            moleRecord={sessionResult.moleRecord}
             engineMode={sessionResult.engineMode}
             engineLevel={sessionResult.engineLevel}
             activityId={sessionResult.activityId}

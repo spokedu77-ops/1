@@ -1,5 +1,5 @@
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { adminJson, assertOwnedMedia, blogDraftError, draftRow, mediaIdsInDoc, rejectForeignOrigin } from '@/app/lib/server/blogDraftsAdmin';
+import { adminJson, assertOwnedMedia, blogDraftError, draftRow, mediaIdsInDoc, recordDraftRevision, rejectForeignOrigin } from '@/app/lib/server/blogDraftsAdmin';
 import { blogDraftWriteSchema } from '@/app/lib/blog-drafts/contract';
 
 type Params = { params: Promise<{ id: string }> };
@@ -39,8 +39,8 @@ export async function PUT(request: Request, { params }: Params) {
     const { data, error } = await db.from('blog_drafts').update({ ...patch, revision: input.revision + 1 }).eq('id', id).eq('revision', input.revision).select('id,revision,updated_at,status').maybeSingle();
     if (error) return adminJson({ error: '원고를 저장하지 못했습니다.' }, 503);
     if (!data) throw new Error('REVISION_CONFLICT');
-    await db.from('blog_draft_revisions').insert({ draft_id: id, content: input.content, revision_number: data.revision, created_by: auth.userId });
-    return adminJson({ draft: data });
+    const revisionSaved = await recordDraftRevision(id, input.content, data.revision, auth.userId);
+    return adminJson({ draft: data, revisionSaved });
   } catch (error) {
     return blogDraftError(error);
   }

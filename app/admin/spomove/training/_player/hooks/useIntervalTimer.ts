@@ -6,7 +6,6 @@ import {
   generateSignal,
   createBasicSignalGenerator,
   createModeColorDupGenerator,
-  createTaskSwitchSignalGenerator,
   createSimonSignalGenerator,
   type DupStats,
   type FruitSlide,
@@ -83,7 +82,6 @@ export function useIntervalTimer({
   const genRef = useRef<
     | ReturnType<typeof createBasicSignalGenerator>
     | ReturnType<typeof createModeColorDupGenerator>
-    | ReturnType<typeof createTaskSwitchSignalGenerator>
     | ReturnType<typeof createSimonSignalGenerator>
     | null
   >(null);
@@ -132,9 +130,7 @@ export function useIntervalTimer({
     } else if (engineMode === 'simon') {
       const pole: 1 | 2 = simonPoleCount === 2 ? 2 : 1;
       genRef.current = createSimonSignalGenerator(engineLevel, colors, fruitSlides, pole);
-    } else if (engineMode === 'taskswitch') {
-      genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
-    } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {
+    } else if (engineMode === 'stroop' || engineMode === 'flanker') {
       genRef.current = createModeColorDupGenerator(engineMode, engineLevel, colors, fruitOpts);
     } else {
       genRef.current = null;
@@ -193,7 +189,7 @@ export function useIntervalTimer({
         if (sigIdx > lastSignalRef.current) {
           lastSignalRef.current = sigIdx;
           const sig =
-            engineMode === 'basic' || engineMode === 'simon' || engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo' || engineMode === 'taskswitch'
+            engineMode === 'basic' || engineMode === 'simon' || engineMode === 'stroop' || engineMode === 'flanker'
               ? genRef.current?.next() ?? null
               : generateSignal(engineMode, engineLevel, colors, fruitSlides ? { fruitSlides } : undefined);
           if (sig) {

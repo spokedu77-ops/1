@@ -2,7 +2,7 @@
  * 신호 생성: 메모리 패턴, 일반 신호 (basic/stroop/dual)
  */
 
-import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection, SPATIAL_ARROW_COLOR_BY_DIRECTION, type SpatialArrowColorMapping } from '../constants';
+import { COLORS, ARROWS, spatialArrowFillForDirection, SPATIAL_ARROW_COLOR_BY_DIRECTION, type SpatialArrowColorMapping } from '../constants';
 import { resolveStroopArrowMoveTarget, STROOP_ARROW_MOVE_TASK_CUE } from './resolveStroopArrowMoveTarget';
 import { resolveStroopWordMoveTarget, resolveStroopWordMovementCue } from './resolveStroopWordMoveTarget';
 import {
@@ -87,21 +87,6 @@ function generateColorsWithPerMax(
   // 폴백: 라운드로빈
   return Array.from({ length: count }, (_, i) => pool[i % pool.length]!);
 }
-
-/** Task Switching 「반대로」 — 보이는 색/방향의 짝 반대(콘 기준) */
-export const TASK_SWITCH_OPPOSITE_COLOR_ID: Record<string, string> = {
-  red: 'green',
-  green: 'red',
-  blue: 'yellow',
-  yellow: 'blue',
-};
-
-export const TASK_SWITCH_OPPOSITE_ARROW_ID: Record<string, string> = {
-  up: 'down',
-  down: 'up',
-  left: 'right',
-  right: 'left',
-};
 
 function fisherYates<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -326,8 +311,6 @@ export type GenerateSignalOptions = {
   excludeVariantPanelImageUrls?: (string | null)[] | null;
   /** Asset Hub 업로드 반영 슬롯(미지정 시 빈 배열 — 기본 외부 이미지 없음) */
   fruitSlides?: FruitSlide[];
-  /** Task Switching 1단계: 직전 trial 규칙(연속 반대로 방지·약 30% 반대로 비율) */
-  taskSwitchPrevRule?: 'color' | 'position' | 'reverse' | null;
   /** basic 3번 + 색상 테마: 전면 색상 위에 오버레이할 숫자 범위 */
   basicNumberOverlay?: 'none' | '2' | '3';
   flankerStimulusType?: 'color' | 'number';
@@ -363,13 +346,6 @@ export function generateSignal(
 ): Record<string, unknown> | null {
   const activeColors = colors.length >= 2 ? colors : COLORS;
   const usesImageTheme = Array.isArray(opts?.fruitSlides);
-
-  // 실행 조절: UI는 7레벨, 엔진은 gonogo(1~4) + taskswitch(1~3)
-  if (mode === 'executive') {
-    const lv = Math.min(7, Math.max(1, Math.floor(level)));
-    if (lv <= 4) return generateSignal('gonogo', lv, colors, opts);
-    return generateSignal('taskswitch', lv - 4, colors, opts);
-  }
 
   if (mode === 'basic') {
     if (level === 1) {
@@ -764,18 +740,6 @@ export function generateSignal(
     }
   }
 
-  if (mode === 'dual') {
-    const lv = level === 2 ? 2 : 1;
-    if (lv === 1) {
-      const c = r(activeColors);
-      const n = r(NUMBERS);
-      return { type: 'dual_num', bg: c.bg, content: { color: c, number: n }, voice: null };
-    }
-    const c = r(DUAL_TWO_COLORS);
-    const a = r(DUAL_LR_ARROWS);
-    return { type: 'dual_color_arrow', bg: c.bg, content: { color: c, arrow: a }, voice: null };
-  }
-
   if (mode === 'flanker') {
     const numberMode = opts?.flankerStimulusType === 'number';
     const maybeNumberCircles = (circles: { id: string; bg: string; text: string }[]) =>
@@ -952,156 +916,8 @@ export function generateSignal(
   }
 
   /** Go/No-Go: 억제 통제 — Go는 이동, No-Go는 제자리(멈춤) */
-  if (mode === 'gonogo') {
-    const goColorIds = new Set(['red', 'blue', 'yellow']);
-    if (level === 1) {
-      const poolGo = COLORS.filter((c) => goColorIds.has(c.id)).filter((c) => activeColors.some((a) => a.id === c.id));
-      const green = COLORS.find((c) => c.id === 'green');
-      const poolNg = green && activeColors.some((a) => a.id === 'green') ? [green] : [];
-      const pack = (c: ColorItem, isGo: boolean) => ({
-        type: 'gonogo_color' as const,
-        bg: c.bg,
-        content: {
-          colorId: c.id,
-          symbol: c.symbol,
-          textColor: c.text,
-          name: c.name,
-          isGo,
-        },
-        voice: null,
-      });
-      if (poolGo.length > 0 && poolNg.length > 0) {
-        if (Math.random() < 0.5) return pack(r(poolGo), true);
-        return pack(poolNg[0]!, false);
-      }
-      if (poolGo.length > 0) return pack(r(poolGo), true);
-      if (poolNg.length > 0) return pack(poolNg[0]!, false);
-      const c = r(activeColors);
-      return pack(c, goColorIds.has(c.id));
-    }
-    if (level === 2) {
-      const isGo = Math.random() < 0.5;
-      const shape = isGo ? ('circle' as const) : ('triangle' as const);
-      const fill = r(COLORS);
-      return {
-        type: 'gonogo_shape',
-        bg: '#0F172A',
-        content: { shape, isGo, fillHex: fill.bg },
-        voice: null,
-      };
-    }
-    if (level === 3) {
-      const isGo = Math.random() < 0.5;
-      if (isGo) {
-        const a = r(ARROWS);
-        return {
-          type: 'gonogo_action',
-          bg: '#0F172A',
-          content: {
-            kind: 'arrow' as const,
-            arrowId: a.id,
-            icon: a.icon,
-            label: a.label,
-            isGo: true,
-          },
-          voice: null,
-        };
-      }
-      return {
-        type: 'gonogo_action',
-        bg: '#0F172A',
-        content: { kind: 'stop' as const, isGo: false },
-        voice: null,
-      };
-    }
-    if (level === 4) {
-      const isGo = Math.random() < 0.5;
-      const shape = isGo ? ('circle' as const) : ('triangle' as const);
-      const randomBg = r(COLORS).bg;
-      return {
-        type: 'gonogo_dual',
-        bg: randomBg,
-        content: { shape, isGo },
-        voice: null,
-      };
-    }
-    return null;
-  }
 
   /** Task Switching: 규칙(색 / 위치 / 반대로) + cue 표현 단계(1=글자 2=아이콘 3=테두리) */
-  if (mode === 'taskswitch') {
-    const cueTier = level >= 1 && level <= 3 ? level : 1;
-    type TsRule = 'color' | 'position' | 'reverse';
-    const prevRule = opts?.taskSwitchPrevRule ?? null;
-    let rule: TsRule;
-    if (level === 1) {
-      const u = Math.random();
-      if (prevRule === 'reverse') {
-        /** 연속 「반대로」 방지 — 색/위치만 */
-        rule = u < 0.5 ? 'color' : 'position';
-      } else {
-        /** 약 30% 반대로, 나머지는 색·위치 균등 */
-        if (u < 0.3) rule = 'reverse';
-        else if (u < 0.65) rule = 'color';
-        else rule = 'position';
-      }
-    } else {
-      rule = (['color', 'position', 'reverse'] as const)[Math.floor(Math.random() * 3)]!;
-    }
-
-    const pack = (tsRule: TsRule, sk: 'color' | 'arrow', payload: Record<string, unknown>): Record<string, unknown> => {
-      const { bg: bgVal, ...rest } = payload;
-      return {
-        type: 'task_switch' as const,
-        bg: (bgVal as string) ?? '#0F172A',
-        content: {
-          cueTier,
-          rule: tsRule,
-          stimulusKind: sk,
-          ...rest,
-        },
-        voice: null,
-      };
-    };
-
-    if (rule === 'color') {
-      const c = r(activeColors);
-      return pack('color', 'color', {
-        bg: c.bg,
-        colorId: c.id,
-        symbol: c.symbol,
-        textColor: c.text,
-        name: c.name,
-      });
-    }
-    if (rule === 'position') {
-      const a = r(ARROWS);
-      return pack('position', 'arrow', {
-        bg: '#0F172A',
-        arrowId: a.id,
-        icon: a.icon,
-        label: a.label,
-      });
-    }
-    const useColor = Math.random() < 0.5;
-    if (useColor) {
-      const c = r(activeColors);
-      return pack('reverse', 'color', {
-        bg: c.bg,
-        colorId: c.id,
-        symbol: c.symbol,
-        textColor: c.text,
-        name: c.name,
-      });
-    }
-    const a = r(ARROWS);
-    return pack('reverse', 'arrow', {
-      bg: '#0F172A',
-      arrowId: a.id,
-      icon: a.icon,
-      label: a.label,
-    });
-  }
 
   /** 사이먼: 위치는 createSimonSignalGenerator에서 양극단 순환으로만 생성 */
   if (mode === 'simon') return null;
@@ -1434,32 +1250,7 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     const ids = (c.arrows ?? []).map((x) => x.id).join(',');
     return `fka:${c.targetArrowId ?? ''}:${c.flankerArrowMode ?? ''}:${ids}`;
   }
-  if (t === 'gonogo_color') {
-    const c = sig.content as { colorId?: string; isGo?: boolean };
-    return `gnc:${c.colorId ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'gonogo_shape') {
-    const c = sig.content as { shape?: string; isGo?: boolean };
-    return `gns:${c.shape ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'gonogo_action') {
-    const c = sig.content as { kind?: string; arrowId?: string; isGo?: boolean };
-    return `gna:${c.kind ?? ''}:${c.arrowId ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'gonogo_dual') {
-    const c = sig.content as { shape?: string; isGo?: boolean };
-    return `gnd:${c.shape ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'task_switch') {
-    const c = sig.content as {
-      cueTier?: number;
-      rule?: string;
-      stimulusKind?: string;
-      colorId?: string;
-      arrowId?: string;
-    };
-    return `ts:${c.cueTier ?? 0}:${c.rule ?? ''}:${c.stimulusKind ?? ''}:${c.colorId ?? ''}:${c.arrowId ?? ''}`;
-  }
+
   return `raw:${t}`;
 }
 
@@ -1485,9 +1276,7 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
   if (t === 'full_color') {
     return uniqueColorKeys([content?.colorId as string | undefined, colorIdFromHex(sig.bg)]);
   }
-  if (t === 'gonogo_dual') {
-    return uniqueColorKeys([colorIdFromHex(sig.bg)]);
-  }
+
   if (!content) return [];
 
   if (t === 'think_quad') return uniqueColorKeys([content.colorId as string | undefined]);
@@ -1568,9 +1357,7 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
     const colorId = SPATIAL_ARROW_COLOR_BY_DIRECTION[arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION];
     return uniqueColorKeys([colorId]);
   }
-  if (t === 'gonogo_color') return uniqueColorKeys([content.colorId as string | undefined]);
-  if (t === 'gonogo_shape') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
-  if (t === 'task_switch') return uniqueColorKeys([content.colorId as string | undefined]);
+
   return [];
 }
 
@@ -1777,25 +1564,7 @@ export function colorDupFingerprint(sig: Record<string, unknown>): string {
     const c = sig.content as { targetArrowId?: string };
     return `cd:fka:${c.targetArrowId ?? ''}`;
   }
-  if (t === 'gonogo_color') {
-    const c = sig.content as { colorId?: string; isGo?: boolean };
-    return `cd:gn:c:${c.colorId ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'gonogo_shape') {
-    const c = sig.content as { shape?: string; isGo?: boolean };
-    return `cd:gn:s:${c.shape ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'gonogo_action') {
-    const c = sig.content as { kind?: string; arrowId?: string; isGo?: boolean };
-    return `cd:gn:a:${c.kind ?? ''}:${c.arrowId ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'gonogo_dual') {
-    const c = sig.content as { shape?: string; isGo?: boolean };
-    return `cd:gn:d:${c.shape ?? ''}:${String(c.isGo)}`;
-  }
-  if (t === 'task_switch') {
-    return `cd:${signalFingerprint(sig)}`;
-  }
+
   if (t === 'dual_num' || t === 'dual_color_arrow') {
     const col = (sig.content as { color?: { id?: string } })?.color;
     return `cd:${col?.id ?? ''}`;
@@ -1915,23 +1684,3 @@ export function createModeColorDupGenerator(
 /**
  * Task Switching: 1단계에서 직전 규칙을 넘겨 연속 「반대로」를 막고 약 30% 비율을 맞춤.
  */
-export function createTaskSwitchSignalGenerator(level: number, colors: ColorItem[], opts?: GenerateSignalOptions) {
-  let lastRule: 'color' | 'position' | 'reverse' | null = null;
-  const base = createColorDupConstrainedGenerator(
-    () => generateSignal('taskswitch', level, colors, { ...opts, taskSwitchPrevRule: lastRule }),
-    colorDupFingerprint,
-    undefined,
-    Math.max(1, colors.length || COLORS.length)
-  );
-  return {
-    next(): Record<string, unknown> | null {
-      const sig = base.next();
-      if (sig && (sig.type as string) === 'task_switch') {
-        const r = (sig.content as { rule?: string }).rule;
-        if (r === 'color' || r === 'position' || r === 'reverse') lastRule = r;
-      }
-      return sig;
-    },
-    getStats: base.getStats,
-  };
-}

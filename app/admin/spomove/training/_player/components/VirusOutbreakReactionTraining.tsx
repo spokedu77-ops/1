@@ -7,8 +7,10 @@
  * — 정답 = 가장 많거나(적게) 증식한 4색 중 하나 (회색 돌연변이는 무시)
  */
 
+import promptStyles from './TrainingPrompt.module.css';
+import { TrainingRuntimeHud } from './TrainingRuntimeHud';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval } from '../lib/runtimeClock';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { setupCanvas } from '../lib/canvasUtils';
 import { getAudioCtx } from '../lib/audio';
@@ -37,7 +39,7 @@ const REVEAL_MS = 4000;
 
 export type VirusOutbreakDifficulty = 'easy' | 'normal' | 'hard';
 
-type Phase = 'ANNOUNCE' | 'OUTBREAK' | 'SHUTTER' | 'COUNTDOWN' | 'REVEAL';
+type Phase = 'ANNOUNCE' | 'OUTBREAK' | 'OBSERVE' | 'SHUTTER' | 'COUNTDOWN' | 'REVEAL';
 type QuestionType = 'MOST' | 'LEAST';
 
 type Virus = {
@@ -56,7 +58,8 @@ type Game = {
   phase: Phase;
   phaseStartMs: number;
   round: number;
-  durationLeft: number;
+  completedRounds: number;
+  answers: import('../lib/roundAnswerRecord').RoundAnswerRecord;
   difficulty: VirusOutbreakDifficulty;
   viruses: Virus[];
   targetCounts: number[];
@@ -68,16 +71,14 @@ type Game = {
   lastCountdownSec: number;
   laneCount: [number, number, number, number];
   raf: number | null;
-  timer: ReturnType<typeof setInterval> | null;
   cx: number;
   cy: number;
   dishR: number;
 };
 
 type Props = {
-  durationSec: number;
-  speedLevel: number;
-  speedSec: number;
+  targetRounds: number;
+  observationSeconds: number;
   difficulty?: VirusOutbreakDifficulty;
   effectsEnabled?: boolean;
   onExit: () => void;
@@ -87,23 +88,17 @@ type Props = {
 const css = `
 .vburst{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#050a0f;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden;user-select:none;touch-action:none}
 .vburst,.vburst *{box-sizing:border-box}
-.vburst-hud{height:72px;display:flex;align-items:stretch;background:rgba(5,10,15,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.1);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
-.vburst-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.1)}
-.vburst-hc.grow{flex:1;align-items:center;border-right:none}
-.vburst-hk{font-size:9px;font-weight:800;letter-spacing:.18em;color:rgba(255,255,255,.45);text-transform:uppercase}
-.vburst-hv{font-size:clamp(22px,3.5vw,34px);font-weight:1000;letter-spacing:.04em;color:#fff;line-height:1.1;text-shadow:0 0 18px rgba(255,255,255,.22)}
-.vburst-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.45);background:rgba(220,38,38,.16);color:rgba(255,255,255,.82);font-size:13px;font-weight:800;letter-spacing:.12em;cursor:pointer;font-family:inherit}
 .vburst-play{position:relative;flex:1;min-height:0}
 .vburst-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .vburst-lens{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(circle,transparent 40%,rgba(0,0,0,.9) 80%,#000 100%)}
-.vburst-mission{position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .28s ease,transform .28s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(22px,5vw,52px);line-height:1.1;font-weight:1000;color:#fff;background:rgba(0,0,0,.7);padding:.45em 1.1em;border-radius:999px;border:2px solid rgba(255,255,255,.2);backdrop-filter:blur(10px)}
-.vburst-mission.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.vburst-mission{position:absolute;left:50%;top:12px;z-index:24;transform:translateX(-50%);opacity:0;transition:opacity .2s;width:max-content}
+.vburst-mission.show{opacity:1;transform:translateX(-50%)}
 .vburst-count{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:22;pointer-events:none;transform:translate(-50%,-50%);font-size:clamp(80px,22vw,200px);font-weight:400;color:#ff3333;text-shadow:0 0 50px #f00,0 0 20px #f00;opacity:0;transition:opacity .1s}
 .vburst-count.show{opacity:1}
 .vburst-warn{position:absolute;left:50%;top:12%;z-index:20;pointer-events:none;transform:translateX(-50%) scale(.85);opacity:0;transition:all .3s;padding:8px 18px;border-radius:999px;border:2px dashed #a3a3a3;background:rgba(0,0,0,.8);color:#a3a3a3;font-size:clamp(12px,2.4vw,22px);font-weight: 800;white-space:nowrap}
 .vburst-warn.show{opacity:1;transform:translateX(-50%) scale(1);animation:vburstMutant 1s infinite alternate}
 @keyframes vburstMutant{from{border-color:#a3a3a3;color:#a3a3a3;text-shadow:none}to{border-color:#fff;color:#fff;text-shadow:0 0 10px #fff}}
-.vburst-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:6px 16px;border-radius:999px;background:rgba(5,10,15,.68);border:1px solid rgba(255,255,255,.16);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#67e8f9;white-space:nowrap;backdrop-filter:blur(10px)}
+.vburst-status{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:20;width:max-content}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
@@ -202,15 +197,17 @@ function makeVirus(
 }
 
 export function VirusOutbreakReactionTraining({
-  durationSec,
+  targetRounds,
+  observationSeconds,
   difficulty: difficultyProp = 'normal',
   effectsEnabled = true,
   onComplete,
 }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
-  const roundRef = useRef<HTMLDivElement>(null);
-  const timeRef = useRef<HTMLDivElement>(null);
+  const roundRef = useRef<HTMLSpanElement>(null);
+  const totalRounds = Math.max(1, Math.round(targetRounds));
+  const observationMs = Math.max(0.5, Math.min(6, Number.isFinite(observationSeconds) ? observationSeconds : 3)) * 1000;
   const statusRef = useRef<HTMLDivElement>(null);
   const missionRef = useRef<HTMLDivElement>(null);
   const countRef = useRef<HTMLDivElement>(null);
@@ -224,15 +221,16 @@ export function VirusOutbreakReactionTraining({
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  const complete = useCallback(() => {
+  const complete = useCallback((stoppedEarly = false) => {
     const g = gRef.current;
     if (!g?.running) return;
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
     onCompleteRef.current({
-      stims: Math.max(0, g.round - 1),
-      maxCombo: Math.max(0, g.round - 1),
+      stims: g.completedRounds,
+      roundAnswers: g.answers.map(answer => ({ ...answer })),
+      stoppedEarly,
+      maxCombo: g.completedRounds,
       laneCount: [...g.laneCount],
     });
   }, []);
@@ -249,7 +247,8 @@ export function VirusOutbreakReactionTraining({
       phase: 'ANNOUNCE',
       phaseStartMs: performance.now(),
       round: 1,
-      durationLeft: Math.max(5, Math.round(durationSec)),
+      completedRounds: 0,
+      answers: [],
       difficulty: normalizeDifficulty(difficultyProp),
       viruses: [],
       targetCounts: [0, 0, 0, 0, 0],
@@ -261,17 +260,16 @@ export function VirusOutbreakReactionTraining({
       lastCountdownSec: -1,
       laneCount: [0, 0, 0, 0],
       raf: null,
-      timer: null,
       cx: 0,
       cy: 0,
       dishR: 0,
     };
     gRef.current = g;
 
-    const setStatus = (text: string, color = '#67e8f9') => {
+    const setStatus = (text: string, _color = '#67e8f9') => {
       if (!statusRef.current) return;
       statusRef.current.textContent = text;
-      statusRef.current.style.color = color;
+
     };
 
     const syncGeom = () => {
@@ -325,21 +323,17 @@ export function VirusOutbreakReactionTraining({
       if (countRef.current) countRef.current.classList.remove('show');
       if (missionRef.current) {
         missionRef.current.classList.remove('show');
-        missionRef.current.style.borderColor = 'rgba(255,255,255,0.2)';
-        missionRef.current.style.boxShadow = 'none';
-        missionRef.current.style.color = '#fff';
       }
       if (warnRef.current) warnRef.current.classList.remove('show');
 
       generateTargetCounts();
       g.phase = 'ANNOUNCE';
-      g.phaseStartMs = performance.now();
       if (roundRef.current) roundRef.current.textContent = String(g.round);
+      g.phaseStartMs = performance.now();
 
       const mission = g.questionType === 'MOST' ? '가장 [많이] 증식한 색깔은?' : '가장 [조금] 증식한 색깔은?';
       if (missionRef.current) {
         missionRef.current.textContent = mission;
-        missionRef.current.style.color = g.questionType === 'LEAST' ? '#ffd633' : '#fff';
         missionRef.current.classList.add('show');
       }
       if (g.hasMutants && warnRef.current) warnRef.current.classList.add('show');
@@ -459,6 +453,12 @@ export function VirusOutbreakReactionTraining({
           }
         }
         if (elapsed >= OUTBREAK_MS) {
+          g.phase = 'OBSERVE';
+          g.phaseStartMs = now;
+          setStatus('관찰 · 전체 화면을 살펴보세요', '#67e8f9');
+        }
+      } else if (g.phase === 'OBSERVE') {
+        if (elapsed >= observationMs) {
           g.phase = 'SHUTTER';
           g.phaseStartMs = now;
           playSfx('shutter', effectsEnabled);
@@ -505,14 +505,16 @@ export function VirusOutbreakReactionTraining({
         }
         if (elapsed > SHUTTER_MS && missionRef.current) {
           const ans = COLORS[g.targetColorId]!;
+          if (!g.answers.some(answer => answer.round === g.round)) {
+            g.answers.push({ round: g.round, summary: `${g.questionType === 'MOST' ? '최다' : '최소'} · ${ans.name}`, color: ans.hex });
+          }
           missionRef.current.innerHTML = `정답: <span style="color:${ans.hex}">${ans.name}</span>`;
-          missionRef.current.style.color = '#fff';
-          missionRef.current.style.borderColor = ans.hex;
-          missionRef.current.style.boxShadow = `0 0 30px ${ans.glow}`;
           missionRef.current.classList.add('show');
           setStatus(`${ans.name} · ${g.questionType === 'MOST' ? '최다' : '최소'}`, '#e5e7eb');
         }
         if (elapsed >= REVEAL_MS) {
+          g.completedRounds += 1;
+          if (g.completedRounds >= totalRounds) { complete(); return; }
           g.round += 1;
           startRound();
         }
@@ -531,18 +533,12 @@ export function VirusOutbreakReactionTraining({
     };
     const unbind = bindViewportResize(play, resize);
     if (effectsEnabled) getAudioCtx();
-    if (timeRef.current) timeRef.current.textContent = String(g.durationLeft);
 
     const beginGame = () => {
       if (!gRef.current?.running) return;
       startRound();
       g.raf = requestAnimationFrame(draw);
-      g.timer = setInterval(() => {
-        if (!g.running) return;
-        g.durationLeft -= 1;
-        if (timeRef.current) timeRef.current.textContent = String(Math.max(0, g.durationLeft));
-        if (g.durationLeft <= 0) complete();
-      }, 1000);
+
     };
 
     const stopCountdown = runReactTrainStartCountdown({
@@ -555,38 +551,23 @@ export function VirusOutbreakReactionTraining({
       unbind();
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
-      if (g.timer) clearInterval(g.timer);
     };
-  }, [complete, difficultyProp, durationSec, effectsEnabled]);
+  }, [complete, difficultyProp, totalRounds, observationMs, effectsEnabled]);
 
   return (
     <div className="vburst">
       <style>{css}</style>
-      <div className="vburst-hud">
-        <div className="vburst-hc">
-          <div className="vburst-hk">ROUND</div>
-          <div className="vburst-hv" ref={roundRef}>1</div>
-        </div>
-        <div className="vburst-hc grow">
-          <div className="vburst-hv" style={{ fontSize: 'clamp(13px,2vw,20px)' }}>바이러스 폭증</div>
-          <div className="vburst-hk">Visual Reaction 9</div>
-        </div>
-        <div className="vburst-hc">
-          <div className="vburst-hk">TIME</div>
-          <div className="vburst-hv" ref={timeRef}>0</div>
-        </div>
-        <div className="vburst-hc" style={{ borderRight: 'none' }}>
-          <button type="button" className="vburst-stop" onClick={complete}>STOP</button>
-        </div>
-      </div>
+      <TrainingRuntimeHud onStop={() => complete(true)} flow>
+        <span style={{ color: '#86EFAC' }}>ROUND</span><span ref={roundRef}>1</span><span>/ {totalRounds}</span>
+      </TrainingRuntimeHud>
       <div ref={playRef} className="vburst-play">
         <canvas className="vburst-canvas" ref={cvRef} />
         <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="vburst-lens" aria-hidden />
         <div className="vburst-warn" ref={warnRef}>회색 돌연변이를 무시하세요!</div>
-        <div className="vburst-mission" ref={missionRef} />
+        <div className={`vburst-mission ${promptStyles.prompt}`} ref={missionRef} />
         <div className="vburst-count" ref={countRef} aria-hidden />
-        <div className="vburst-status" ref={statusRef} />
+        <div className={`vburst-status ${promptStyles.prompt}`} ref={statusRef} />
       </div>
     </div>
   );

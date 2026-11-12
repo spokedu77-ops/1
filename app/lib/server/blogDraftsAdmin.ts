@@ -39,6 +39,19 @@ export async function assertOwnedMedia(draftId: string, mediaIds: string[]) {
   if (error || data.length !== ids.length) throw new Error('MEDIA_NOT_OWNED');
 }
 
+// The draft row and its revision are separate writes without a transaction. A failed
+// history insert must surface to the editor instead of reporting a clean save.
+export async function recordDraftRevision(draftId: string, content: BlogDraftWrite['content'], revisionNumber: number, userId: string) {
+  const db = getServiceSupabase();
+  const row = { draft_id: draftId, content, revision_number: revisionNumber, created_by: userId };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const { error } = await db.from('blog_draft_revisions').insert(row);
+    if (!error) return true;
+    if (error.code === '23505') return true;
+  }
+  return false;
+}
+
 export function mediaIdsInDoc(node: unknown, found: string[] = []): string[] {
   if (!node || typeof node !== 'object') return found;
   const current = node as { type?: string; attrs?: { src?: string }; content?: unknown[] };

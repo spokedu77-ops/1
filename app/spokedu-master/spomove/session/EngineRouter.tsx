@@ -1,4 +1,5 @@
 'use client';
+import { memoryRoundAnswers } from '@/app/admin/spomove/training/_player/lib/roundAnswerRecord';
 
 import { lazy, Suspense, useCallback, useEffect } from 'react';
 import { setSpomoveRuntimePaused } from '@/app/admin/spomove/training/_player/lib/runtimeClock';
@@ -30,12 +31,6 @@ const VisualReactionTraining = lazy(() =>
   })),
 );
 
-const BeatWaveReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/BeatWaveReactionTraining').then((m) => ({
-    default: m.BeatWaveReactionTraining,
-  })),
-);
-
 const CamouflageReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining').then((m) => ({
     default: m.CamouflageReactionTraining,
@@ -51,12 +46,6 @@ const RushReactionTraining = lazy(() =>
 const RobloxMoleReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/RobloxMoleReactionTraining').then((m) => ({
     default: m.RobloxMoleReactionTraining,
-  })),
-);
-
-const WormholeReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/WormholeReactionTraining').then((m) => ({
-    default: m.WormholeReactionTraining,
   })),
 );
 
@@ -120,7 +109,7 @@ export function preloadSpomoveEngine(
     case 'glass-bridge-memory': throw new Error('Glass bridge memory is an admin-only activity');
     case 'moving-number-reader': throw new Error('Moving number reader is an admin-only activity');
     case 'visual-search': throw new Error('Visual search is an admin-only activity');
-    case 'simon-camouflage': case 'camouflage': return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
+    case 'simon-camouflage': return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
     case 'simon-balloon': case 'falling-bricks': case 'balloon': return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
     case 'flow': return Promise.all([
       import('@/app/admin/spomove/training/_player/MemoryGameApp'),
@@ -129,9 +118,7 @@ export function preloadSpomoveEngine(
     case 'signals': case 'relative-compass': case 'shape-completion': case 'virus': case 'shell-tracking':
       return import('@/app/admin/spomove/training/_player/MemoryGameApp');
     case 'rush': return import('@/app/admin/spomove/training/_player/components/RushReactionTraining');
-    case 'beat-wave': return import('@/app/admin/spomove/training/_player/components/BeatWaveReactionTraining');
     case 'mole': return import('@/app/admin/spomove/training/_player/components/RobloxMoleReactionTraining');
-    case 'wormhole': return import('@/app/admin/spomove/training/_player/components/WormholeReactionTraining');
     case 'number-cart': return import('@/app/admin/spomove/training/_player/components/NumberCartReactionTraining');
     case 'color-tracker': return import('@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining');
     case 'goalkeeper': return import('@/app/admin/spomove/training/_player/components/GoalkeeperReactionTraining');
@@ -144,6 +131,9 @@ export function preloadSpomoveEngine(
 
 export type EngineCompletePayload = {
   glassBridge?: import('@/app/admin/spomove/training/_player/lib/glassBridgeMemory').GlassBridgeResult;
+  shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
+  moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('@/app/admin/spomove/training/_player/lib/goalkeeperResultRecord').GoalkeeperResultRecord;
   directionRecord?: import('@/app/admin/spomove/training/_player/lib/directionPresentation').DirectionPresentationRecord;
   completionReason: SpomoveCompletionReason;
@@ -306,6 +296,8 @@ function EngineRuntime({
         stims: stats.stims,
         ...(stats.goalkeeperRecord ? { goalkeeperRecord: stats.goalkeeperRecord } : {}),
         directionRecord: stats.directionRecord,
+        shapeCompletionRecord: stats.shapeCompletionRecord,
+        roundAnswers: stats.roundAnswers, moleRecord: stats.moleRecord,
         maxCombo: stats.maxCombo,
         colorCounts: laneCountToColorStimulusCounts(stats.laneCount),
       });
@@ -325,6 +317,8 @@ function EngineRuntime({
         ...(result.glassBridge ? { glassBridge: result.glassBridge } : {}),
         ...(result.goalkeeperRecord ? { goalkeeperRecord: result.goalkeeperRecord } : {}),
         directionRecord: result.directionRecord,
+        shapeCompletionRecord: result.shapeCompletionRecord,
+        roundAnswers: result.roundAnswers, moleRecord: result.moleRecord,
         colorCounts: result.colorCounts,
       });
     },
@@ -454,7 +448,6 @@ function EngineRuntime({
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <RushReactionTraining
-            durationSec={dur}
               targetReps={rounds ?? 20}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
@@ -493,36 +486,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (runtime === 'beat-wave') {
-      return (
-        <Suspense fallback={<LoadingOverlay />}>
-          <BeatWaveReactionTraining
-            effectsEnabled={effectsEnabled}
-            showLocalSoundToggle={false}
-            durationSec={dur}
-            speedLevel={reactSpeedLevel}
-            speedSec={sp}
-            onExit={onExit}
-            onComplete={handleReactTrainComplete}
-          />
-        </Suspense>
-      );
-    }
-    if (runtime === 'camouflage') {
-      return (
-        <Suspense fallback={<LoadingOverlay />}>
-          <CamouflageReactionTraining
-            durationSec={dur}
-            targetReps={rounds ?? 20}
-            speedLevel={reactSpeedLevel}
-            speedSec={sp}
-            placementMode={effectiveCamouflage}
-            onExit={onExit}
-            onComplete={handleReactTrainComplete}
-          />
-        </Suspense>
-      );
-    }
+
     if (runtime === 'mole') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
@@ -539,19 +503,7 @@ function EngineRuntime({
         </Suspense>
       );
     }
-    if (runtime === 'wormhole') {
-      return (
-        <Suspense fallback={<LoadingOverlay />}>
-          <WormholeReactionTraining
-            durationSec={dur}
-            speedLevel={reactSpeedLevel}
-            speedSec={sp}
-            onExit={onExit}
-            onComplete={handleReactTrainComplete}
-          />
-        </Suspense>
-      );
-    }
+
     if (runtime === 'number-cart') {
       return (
         <Suspense fallback={<LoadingOverlay />}>
@@ -599,7 +551,8 @@ function EngineRuntime({
 
   if (selection.mode === 'spatial') {
     const handleSpatialComplete = (patterns?: unknown[][]) => {
-      onComplete({ completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
+      onComplete({
+        roundAnswers: memoryRoundAnswers(patterns), completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
         ...(selection.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : {}),
       });
     };

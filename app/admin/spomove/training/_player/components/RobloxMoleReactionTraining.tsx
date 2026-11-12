@@ -1,5 +1,6 @@
 'use client';
 
+import { snapshotMoleResult } from '../lib/moleResultRecord';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 
@@ -218,6 +219,9 @@ export function RobloxMoleReactionTraining({
     lastHolePairA: number;
     lastHolePairB: number;
     spawnCount: number;
+    targetRounds: number | null;
+    regularSpawnCountAtBonus: number | null;
+    regularLaneCountAtBonus: [number, number, number, number] | null;
     bonusActive: boolean;
     bonusStarted: boolean;
     endsAtMs: number;
@@ -257,16 +261,16 @@ export function RobloxMoleReactionTraining({
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     clearSpawnTimers();
-    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
+    onCompleteRef.current({ moleRecord: snapshotMoleResult(g), stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, [clearSpawnTimers]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
-    if (!g) return;
+    if (!g?.running) return;
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     clearSpawnTimers();
-    onCompleteRef.current({
+    onCompleteRef.current({ moleRecord: snapshotMoleResult(g),
       stims: g.stims,
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
@@ -313,6 +317,9 @@ export function RobloxMoleReactionTraining({
       lastHolePairA: -1,
       lastHolePairB: -1,
       spawnCount: 0,
+      targetRounds: targetReps ?? null,
+      regularSpawnCountAtBonus: null as number | null,
+      regularLaneCountAtBonus: null as [number, number, number, number] | null,
       bonusActive: false,
       bonusStarted: false,
       endsAtMs: Number.POSITIVE_INFINITY,
@@ -326,8 +333,8 @@ export function RobloxMoleReactionTraining({
     const setHud = () => {
       const m = String(Math.floor(g.timeLeft / 60)).padStart(2, '0');
       const s = String(g.timeLeft % 60).padStart(2, '0');
-      if (hudTimeLabelRef.current) hudTimeLabelRef.current.textContent = g.bonusActive ? 'Bonus' : 'Time';
-      if (hudTimeRef.current) hudTimeRef.current.textContent = `${m}:${s}`;
+      if (hudTimeLabelRef.current) hudTimeLabelRef.current.textContent = g.bonusActive ? 'BONUS' : targetReps != null ? 'ROUND' : 'TIME';
+      if (hudTimeRef.current) hudTimeRef.current.textContent = !g.bonusActive && targetReps != null ? `${g.spawnCount} / ${targetReps}` : `${m}:${s}`;
       setWarn(g.timeLeft <= 10);
     };
 
@@ -435,6 +442,8 @@ export function RobloxMoleReactionTraining({
         }
         if (((targetReps == null || g.bonusActive) && g.timeLeft <= 0) || (!g.bonusActive && targetReps != null && g.spawnCount >= targetReps && g.hideTimer == null)) {
           if (bonusTimeEnabled && !g.bonusStarted) {
+            g.regularSpawnCountAtBonus = g.spawnCount;
+            g.regularLaneCountAtBonus = [...g.laneCount];
             g.bonusStarted = true;
             g.bonusActive = true;
             g.timeLeft = BONUS_TIME_SEC;

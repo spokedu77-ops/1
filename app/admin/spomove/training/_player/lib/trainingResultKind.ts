@@ -7,16 +7,14 @@ export type TrainingResultKind = 'color' | 'direction' | 'zone' | 'number' | 'se
 export const TRAINING_RESULT_KINDS = {
   'direction-cue': 'direction', 'quadrant-cue': 'color', 'full-screen-cue': 'color', 'two-panel-cue': 'color',
   'three-panel-cue': 'color', 'random-panel-cue': 'color', 'relative-compass': 'direction', 'shape-completion': 'zone',
-  'hand-foot': 'color', 'wave-dodge': 'color', 'falling-bricks': 'color', 'balloon-pop': 'color', 'beat-wave': 'color',
-  'visual-camouflage': 'color', mole: 'color', wormhole: 'color', 'number-cart': 'zone', 'color-tracker': 'zone',
+  'hand-foot': 'color', 'wave-dodge': 'color', 'falling-bricks': 'color', 'balloon-pop': 'color',
+  mole: 'color', 'number-cart': 'zone', 'color-tracker': 'zone',
   goalkeeper: 'zone', 'virus-outbreak': 'color', 'moving-number-reader': 'number', 'target-tracking': 'zone',
   'simon-shape': 'color', 'simon-arrow': 'direction', 'simon-theme': 'color', 'simon-camouflage': 'color', 'simon-balloon': 'color',
   'visual-search': 'zone', 'flanker-arrow': 'direction', 'flanker-theme': 'color', 'flanker-extreme': 'color', 'flanker-nested': 'color',
   'stroop-arrow': 'direction', 'stroop-word': 'color', 'stroop-word-advanced': 'color', 'stroop-background-word': 'color',
   'sequence-memory': 'sequence', 'color-number-memory': 'sequence', 'color-number-quiz': 'sequence',
   'glass-bridge-memory': 'teacher', 'instant-memory': 'instant', 'action-move': 'time', 'motion-gate': 'color',
-  'go-no-go-color': 'color', 'go-no-go-shape': 'color', 'go-no-go-action': 'direction', 'go-no-go-mixed': 'color',
-  'task-switch-basic': 'color', 'task-switch-reverse': 'color', 'task-switch-mixed': 'color',
 } as const satisfies Record<TrainingActivityId, TrainingResultKind>;
 
 export function resolveTrainingResultKind(cfg: TrainingResultConfig): TrainingResultKind {

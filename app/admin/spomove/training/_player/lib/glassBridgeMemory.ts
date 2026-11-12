@@ -43,8 +43,8 @@ export type GlassBridgeState = {
 export function normalizeGlassBridgeLength(_value?: number): 3 {
   return 3;
 }
-export function normalizeGlassBridgeSeconds(value?: number) {
-  return Number.isFinite(value) ? Math.min(6, Math.max(1, Math.round(value! * 2) / 2)) : 2;
+export function normalizeGlassBridgeSeconds(value?: number, difficulty: GlassBridgeDifficulty = 'hard') {
+  return Number.isFinite(value) ? Math.min(difficulty === 'easy' ? 10 : 6, Math.max(difficulty === 'easy' ? 2 : 1, Math.round(value! * 2) / 2)) : 2;
 }
 export const GLASS_BRIDGE_ROUNDS = ADMIN_TRAINING_ROUNDS;
 export function normalizeGlassBridgeRounds(value?: number) { return (GLASS_BRIDGE_ROUNDS as readonly number[]).includes(value ?? 0) ? value! : 20; }
@@ -65,7 +65,7 @@ export function createGlassBridgePattern(length: number, random = Math.random): 
 export function createGlassBridgeState(startLength: number, cueSeconds: number, totalRounds: number, now: number, random = Math.random, difficulty: GlassBridgeDifficulty = 'hard'): GlassBridgeState {
   const length = normalizeGlassBridgeLength(startLength);
   return { phase: 'READY', phaseStarted: now, round: 1, length, pattern: createGlassBridgePattern(length, random),
-    totalRounds: normalizeGlassBridgeRounds(totalRounds), cueSeconds: normalizeGlassBridgeSeconds(cueSeconds),
+    totalRounds: normalizeGlassBridgeRounds(totalRounds), cueSeconds: normalizeGlassBridgeSeconds(cueSeconds, difficulty),
     presentationCounted: false, answerIndex: 0, answers: [], roundHadError: false, difficulty,
     result: { startLength: length, lastLength: length, presentedRounds: 0, successRounds: 0, failureRounds: 0, teacherFailed: false,
       scoringMode: 'color-choice', completedRounds: 0, correctSteps: 0, incorrectSteps: 0, difficulty } };
@@ -75,7 +75,7 @@ export function advanceGlassBridge(state: GlassBridgeState, now: number, random 
   const elapsed = now - state.phaseStarted;
   if (state.phase === 'READY' && elapsed >= (state.round === 1 ? REACT_TRAIN_START_COUNTDOWN_SEC * 1000 : 2500)) return { ...state, phase: 'SHOWING', phaseStarted: now };
   if (state.phase === 'SHOWING') {
-    const duration = state.difficulty === 'easy' ? 20000 : state.pattern.length * state.cueSeconds * 1000;
+    const duration = state.difficulty === 'easy' ? state.cueSeconds * 1000 : state.pattern.length * state.cueSeconds * 1000;
     let next = state;
     if (elapsed >= duration && !state.presentationCounted) next = { ...state, presentationCounted: true,
       result: { ...state.result, presentedRounds: state.result.presentedRounds + 1 } };
@@ -119,7 +119,7 @@ export function glassBridgeLitIndex(state: GlassBridgeState, now: number) {
 }
 
 export function glassBridgeShowsAll(state: GlassBridgeState, now: number) {
-  return state.phase === 'SHOWING' && state.difficulty === 'easy' && now - state.phaseStarted < 20000;
+  return state.phase === 'SHOWING' && state.difficulty === 'easy' && now - state.phaseStarted < state.cueSeconds * 1000;
 }
 
 /** First panel is the bottom step. Even ten steps stay within the available height. */

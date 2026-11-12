@@ -69,7 +69,7 @@ describe('result feedback units and evidence', () => {
     expect(vm.reason).toBe('natural_complete');
     expect(vm.progress).toBe('5라운드 공개 완료');
     expect(vm.facts).toContainEqual({ id: 'incorrect', label: '틀린 발판', value: '5개' });
-    expect(vm.settings).toContainEqual({ id: 'cue', label: '설정 제시 방식', value: '쉬움 · 전체 패턴 20초' });
+    expect(vm.settings).toContainEqual({ id: 'cue', label: '설정 제시 방식', value: '쉬움 · 전체 패턴 2초' });
     expect(JSON.stringify(vm)).not.toMatch(/성공 목표|같은 단계 재도전|성공률/);
   });
 

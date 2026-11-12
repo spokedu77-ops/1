@@ -53,7 +53,8 @@ describe('activity identity across legacy and catalog boundaries', () => {
   it('does not carry a special activity into another mode or engine level', () => {
     expect(() => resolveTrainingActivity('reactTrain', 7, { activityId: 'relative-compass' })).toThrow();
     expect(() => resolveTrainingActivity('basic', 8, { activityId: 'relative-compass' })).toThrow();
-    expect(resolveTrainingActivity('reactTrain', 7)).toBe('wormhole');
+    expect(() => resolveTrainingActivity('reactTrain', 7)).toThrow();
+    expect(() => resolveTrainingActivity('reactTrain', 4)).toThrow();
     expect(catalogTrainingActivity('basic', 1)).toBe('direction-cue');
   });
 
@@ -158,22 +159,26 @@ describe('whole-program identity contract', () => {
     }
   });
 
-  it('keeps hand-foot, wormhole and relative compass separate at the same number', () => {
+  it('keeps supported identities distinct and rejects removed legacy addresses', () => {
     expect(resolveTrainingSelection('reactTrain', 201).runtime).toBe('signals');
     expect(resolveTrainingSelection('reactTrain', 201).engineMode).toBe('basic');
-    expect(resolveTrainingSelection('reactTrain', 7).runtime).toBe('wormhole');
+    expect(() => resolveTrainingSelection('reactTrain', 7)).toThrow();
     expect(resolveTrainingSelection('basic', 7, { activityId: 'relative-compass' }).runtime).toBe('relative-compass');
     expect(trainingActivityGuide('reactTrain', 201)?.name).toBe('손 따로, 발 따로');
     expect(trainingActivityGuide('basic', 7, { activityId: 'relative-compass' })?.name).toBe('내 자리에서 방향 따라가기');
-    expect(trainingActivityGuide('reactTrain', 7)).toBeUndefined();
+    expect(() => trainingActivityGuide('reactTrain', 7)).toThrow();
   });
 
   it('preserves memory sublevels and normalizes cross-mode legacy addresses', () => {
     expect(trainingActivityForLevelChange('spatial', 6, 'sequence-memory')).toBe('sequence-memory');
     expect(trainingActivityForLevelChange('spatial', 5, 'color-number-memory')).toBe('color-number-quiz');
     expect(resolveTrainingSelection('reactTrain', 12).activityId).toBe('instant-memory');
-    expect(resolveTrainingSelection('executive', 6).activityId).toBe('task-switch-reverse');
-    expect(resolveTrainingSelection('dual', 4).activityId).toBe('go-no-go-color');
+    expect(() => resolveTrainingSelection('executive', 6)).toThrow();
+    expect(() => resolveTrainingSelection('dual', 4)).toThrow();
+    expect(() => resolveTrainingSelection('gonogo', 1)).toThrow();
+    expect(() => resolveTrainingSelection('taskswitch', 1)).toThrow();
+    expect(() => resolveTrainingSelection('reactTrain', 5)).toThrow();
+    expect(() => resolveTrainingSelection('reactTrain', 41)).toThrow();
     expect(normalizeLegacyTrainingMode('reactTrain', 12)).toEqual({ mode: 'spatial', level: 7 });
     expect(resolveTrainingSelection('reactTrain', 71).optionDefaults).toMatchObject({ moleLookMode: 'variant' });
     expect(resolveTrainingSelection('reactTrain', 93).optionDefaults).toMatchObject({ numberCartTier: 3 });
@@ -196,6 +201,6 @@ describe('whole-program identity contract', () => {
     expect(() => resolveTrainingSelection('', 1)).toThrow();
     expect(() => resolveTrainingSelection('basic', 999)).toThrow();
     expect(() => catalogTrainingActivity('reactTrain', 7)).toThrow();
-    expect(() => resolveTrainingSelection('reactTrain', 201, { activityId: 'wormhole' })).toThrow();
+    expect(() => resolveTrainingSelection('reactTrain', 201, { activityId: 'direction-cue' })).toThrow();
   });
 });

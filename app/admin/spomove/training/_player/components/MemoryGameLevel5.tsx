@@ -19,7 +19,7 @@ export function MemoryGameLevel5({
   startDelayMs = 600,
 }: {
   onExit: () => void;
-  onComplete: () => void;
+  onComplete: (patterns?: unknown[][]) => void;
   audioMode: string;
   speedSec: number;
   startDelayMs?: number;
@@ -90,9 +90,9 @@ export function MemoryGameLevel5({
     } else if (p === 'reveal') {
       setPhase('done');
     } else if (p === 'done') {
-      onComplete();
+      onComplete([items]);
     }
-  }, [onComplete]);
+  }, [onComplete, items]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

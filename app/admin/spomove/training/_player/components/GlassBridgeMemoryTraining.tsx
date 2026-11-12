@@ -19,7 +19,7 @@ type Props = {
 };
 
 export function GlassBridgeMemoryTraining({ difficulty = 'hard', startLength, cueSeconds, targetRounds, effectsEnabled, onProgress, onComplete }: Props) {
-  const length = normalizeGlassBridgeLength(startLength); const seconds = normalizeGlassBridgeSeconds(cueSeconds);
+  const length = normalizeGlassBridgeLength(startLength); const seconds = normalizeGlassBridgeSeconds(cueSeconds, difficulty);
   const total = normalizeGlassBridgeRounds(targetRounds);
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,7 +82,7 @@ export function GlassBridgeMemoryTraining({ difficulty = 'hard', startLength, cu
   const waiting = view.phase === 'WAITING';
   const completed = view.result.completedRounds ?? 0;
   const message = view.phase === 'READY' ? '순서를 기억하세요' : waiting ? `${view.answerIndex + 1}번째 발판 · 이동한 색을 선택하세요`
-    : view.phase === 'SUCCESS' ? '정답입니다!' : view.phase === 'SHATTER' ? '정답을 확인하고 다음 발판으로!' : difficulty === 'easy' ? '전체 색상을 20초 동안 기억하세요' : '색상 순서를 기억하세요';
+    : view.phase === 'SUCCESS' ? '정답입니다!' : view.phase === 'SHATTER' ? '정답을 확인하고 다음 발판으로!' : difficulty === 'easy' ? `전체 색상을 ${seconds}초 동안 기억하세요` : '색상 순서를 기억하세요';
   return <section aria-label="기억의 유리 다리 실행" style={{ height: '100%', position: 'relative', boxSizing: 'border-box', paddingTop: 88, display: 'flex', flexDirection: 'column', background: '#05050a', color: '#fff', overflowY: 'auto', wordBreak: 'keep-all' }}>
     <TrainingRuntimeHud onStop={() => actions.current?.stop()}>
       <span style={{ color: '#86EFAC' }}>REPS</span> {total - completed}

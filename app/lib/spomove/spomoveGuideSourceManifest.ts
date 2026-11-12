@@ -100,7 +100,7 @@ export const SPOMOVE_GUIDE_SOURCE_CLUSTERS: readonly SpomoveGuideSourceClusterDe
   {
     id: 'flankerSignals',
     files: ['app/admin/spomove/training/_player/lib/signals.ts'],
-    extracts: [{ start: "if (mode === 'flanker')", end: "if (mode === 'gonogo')" }],
+    extracts: [{ start: "if (mode === 'flanker')", end: "if (mode === 'simon') return null;" }],
   },
   {
     id: 'stroopSignals',

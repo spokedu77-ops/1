@@ -39,6 +39,9 @@ const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간
 export type ReactTrainVariant = 'flow' | 'flash' | 'pattern' | 'balloonSimon';
 
 export type ReactTrainCompleteStats = {
+  shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
+  moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('../lib/goalkeeperResultRecord').GoalkeeperResultRecord;
   directionRecord?: import('../lib/directionPresentation').DirectionPresentationRecord;
   stims: number;
@@ -1111,17 +1114,17 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       />
       <style>{css}</style>
       <div id="vrt-hud">
-        <div className="vrt-hc">
+        {targetReps == null && variant !== 'flash' && <div className="vrt-hc">
           <div className="vrt-hk">Time</div>
           <div
             className={`vrt-hv${hudTimeWarn ? ' warn' : ''}`}
             ref={hudTimeRef}
             id="vrt-mtime"
           />
-        </div>
+        </div>}
         <div className="vrt-hc">
-          <div className="vrt-hk">Stims</div>
-          <div className="vrt-hv" ref={hudStimsRef} id="vrt-sst" />
+          <div className="vrt-hk">{targetReps != null ? 'ROUND' : 'Stims'}</div>
+          <div className="vrt-hv"><span ref={hudStimsRef} id="vrt-sst" />{targetReps != null ? ` / ${targetReps}` : null}</div>
         </div>
         <div className="vrt-hc vrt-cen">
           <div id="vrt-badge" className="vrt-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>

@@ -28,8 +28,8 @@ describe('SPOMOVE STOP result payload', () => {
     expect(router).toContain("result.stoppedEarly ? 'stopped_early' : 'natural_complete'");
 
     const engines = [
-      'VisualReactionTraining', 'BeatWaveReactionTraining', 'CamouflageReactionTraining',
-      'RushReactionTraining', 'RobloxMoleReactionTraining', 'WormholeReactionTraining',
+      'VisualReactionTraining', 'CamouflageReactionTraining',
+      'RushReactionTraining', 'RobloxMoleReactionTraining',
       'NumberCartReactionTraining', 'ColorTrackerReactionTraining',
       'GoalkeeperReactionTraining', 'ColorMemoryGridReactionTraining',
     ];

@@ -21,6 +21,9 @@ export type TrainingResultSessionSettings = {
 
 type Props = {
   officialPresetId?: string;
+  shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
+  moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('../lib/goalkeeperResultRecord').GoalkeeperResultRecord;
   cfg: TrainingResultConfig;
   /** Canonical terminal state shared by Admin, Teacher and MASTER/LAB. */

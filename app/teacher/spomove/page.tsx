@@ -3090,6 +3090,9 @@ export default function SpomovePage() {
         stims={presetResult.stims}
         glassBridge={presetResult.glassBridge}
         goalkeeperRecord={presetResult.goalkeeperRecord}
+        shapeCompletionRecord={presetResult.shapeCompletionRecord}
+        roundAnswers={presetResult.roundAnswers}
+        moleRecord={presetResult.moleRecord}
         levelLabel={resultLevelLabel(selectedProgram.mode, selectedProgram.level)}
         programTitle={selectedProgram.title}
         onBack={() => {

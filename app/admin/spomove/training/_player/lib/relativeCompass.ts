@@ -2,7 +2,14 @@ import { COLORS, spatialArrowFillForDirection } from '../constants';
 
 export type RelativeCompassDifficulty = 'easy' | 'normal' | 'hard';
 export type RelativeCompassSeconds = 2 | 3 | 4 | 5 | 6;
+export function relativeCompassCuesPerRound(difficulty: RelativeCompassDifficulty): number {
+  return difficulty === 'easy' ? 5 : difficulty === 'normal' ? 10 : 15;
+}
 export type RelativeCompassPosition = { x: 0 | 1; y: 0 | 1 };
+export type RelativeCompassJourney = {
+  start: RelativeCompassPosition;
+  steps: { direction: RelativeDirection; destination: RelativeCompassPosition; completed: boolean }[];
+};
 export type RelativeDirection =
   | 'up'
   | 'down'

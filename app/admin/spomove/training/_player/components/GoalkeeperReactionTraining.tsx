@@ -1,5 +1,6 @@
 'use client';
 
+import { TrainingRuntimeHud } from './TrainingRuntimeHud';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import * as THREE from 'three';
@@ -291,15 +292,7 @@ function bonusPhaseForProgress(progress: number): SpawnPhase {
 const css = `
 .gk{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#02030a;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden}
 .gk,.gk *{box-sizing:border-box}
-.gk-hud{height:72px;display:flex;align-items:stretch;background:rgba(2,3,10,.9);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.06);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
-.gk-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
-.gk-hc.grow{flex:1;align-items:center;border-right:none;text-align:center}
-.gk-hk{font-size:9px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.34);text-transform:uppercase}
-.gk-hv{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
-.gk-hv.warn{animation:gkw .5s ease-in-out infinite}
-@keyframes gkw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
-.gk-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.46);font-size:13px;font-weight:800;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
-.gk-stop:hover{background:rgba(255,255,255,.07);color:#fff}
+.gk-stats{position:absolute;left:1.25rem;bottom:max(1.25rem,env(safe-area-inset-bottom));z-index:30;display:flex;flex-wrap:wrap;gap:12px;padding:8px 12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(0,0,0,.52);color:#cbd5e1;font-size:12px;font-weight:600;pointer-events:none}.gk-stats strong{margin-left:6px;color:#fff}
 .gk-play{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(circle at 50% 50%,#071326 0%,#02030a 58%,#000 100%);transition:transform .06s linear}
 .gk-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:5}
 .gk-ui{position:absolute;inset:0;z-index:12;pointer-events:none}
@@ -344,16 +337,16 @@ export function GoalkeeperReactionTraining({
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<GoalkeeperGame | null>(null);
-  const hudTimeRef = useRef<HTMLDivElement>(null);
-  const hudScoreRef = useRef<HTMLDivElement>(null);
-  const hudComboRef = useRef<HTMLDivElement>(null);
+  const hudRoundRef = useRef<HTMLSpanElement>(null);
+  const hudTimeRef = useRef<HTMLSpanElement>(null);
+  const hudScoreRef = useRef<HTMLElement>(null);
+  const hudComboRef = useRef<HTMLSpanElement>(null);
   const cueRefs = useRef<Record<CornerKey, HTMLDivElement | null>>({ TL: null, TR: null, BL: null, BR: null });
   const calloutRef = useRef<HTMLDivElement>(null);
   const actionRootRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
-  const [warn, setWarn] = useState(false);
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [bonusActive, setBonusActive] = useState(false);
 
@@ -619,6 +612,7 @@ export function GoalkeeperReactionTraining({
 
     const spawnRandomWave = (phase: SpawnPhase) => {
       if (!g.bonusActive) g.waveCount += 1;
+      if (hudRoundRef.current) hudRoundRef.current.textContent = String(g.waveCount);
       g.currentSpeed = flightSpeedFromSec(travelSec, phase.speedMult);
       const isDouble = g.bonusActive
         ? phase.doubleChance > 0 && Math.random() < phase.doubleChance
@@ -779,7 +773,6 @@ export function GoalkeeperReactionTraining({
         if (next !== g.timeLeft) {
           g.timeLeft = next;
           updateTime();
-          setWarn(next <= 10);
         }
         // Allow the final presented wave to arrive before completing or entering BONUS.
         if ((timedPhase && next <= 0) || (!timedPhase && roundTarget != null && g.waveCount >= roundTarget && g.projectiles.length === 0)) {
@@ -788,7 +781,6 @@ export function GoalkeeperReactionTraining({
             g.bonusStarted = true;
             g.bonusActive = true;
             setBonusActive(true);
-            setWarn(false);
             g.timeLeft = BONUS_TIME_SEC;
             g.startedAt = performance.now();
             g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
@@ -861,29 +853,11 @@ export function GoalkeeperReactionTraining({
   return (
     <div className="gk">
       <style>{css}</style>
-      <div className="gk-hud">
-        <div className="gk-hc">
-          <div className="gk-hk">{bonusActive ? 'Bonus' : 'Time'}</div>
-          <div className={`gk-hv${warn ? ' warn' : ''}`} ref={hudTimeRef} />
-        </div>
-        <div className="gk-hc">
-          <div className="gk-hk">Defense</div>
-          <div className="gk-hv" ref={hudScoreRef} />
-        </div>
-        <div className="gk-hc grow">
-          <div className="gk-hk">시지각 반응</div>
-          <div className="gk-hv" ref={hudComboRef} style={{ fontSize: 'clamp(12px,2vw,19px)' }} />
-        </div>
-        <div className="gk-hc" style={{ borderRight: 'none', borderLeft: '1px solid rgba(255,255,255,.05)' }}>
-          <button type="button" className="gk-stop" onClick={stopGame}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14" aria-hidden>
-              <rect x="6" y="6" width="4" height="12" rx="1" />
-              <rect x="14" y="6" width="4" height="12" rx="1" />
-            </svg>
-            STOP
-          </button>
-        </div>
-      </div>
+      <TrainingRuntimeHud onStop={stopGame}>
+        <span style={{ color: bonusActive ? '#FCA5A5' : '#86EFAC' }}>{bonusActive ? 'BONUS' : targetReps != null ? 'ROUND' : 'TIME'}</span>
+        {!bonusActive && targetReps != null ? <><span ref={hudRoundRef}>0</span><span>/ {targetReps}</span></> : <span ref={hudTimeRef}>0</span>}
+      </TrainingRuntimeHud>
+      <div className="gk-stats"><span>DEFENSE <strong ref={hudScoreRef}>0</strong></span><span ref={hudComboRef}>READY</span></div>
       <div ref={playRef} className="gk-play">
         <canvas ref={cvRef} className="gk-canvas" />
         <ReactTrainStartCountdownOverlay countdown={countdown} />

@@ -382,7 +382,7 @@ export function CamouflageReactionTraining({
       <style>{css}</style>
       <div className="camo-hud">
         <div className="camo-hc">
-          <div className="camo-hk">{targetReps ? 'Reps' : 'Time'}</div>
+          <div className="camo-hk">{targetReps ? 'ROUND' : 'Time'}</div>
           <div className={`camo-hv${warn ? ' warn' : ''}`} ref={hudTimeRef} />
         </div>
         <div className="camo-hc">

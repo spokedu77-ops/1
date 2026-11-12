@@ -2,7 +2,7 @@
 
 import { Fragment, useRef, useState, type ComponentType } from 'react';
 
-type RecallProps = { onComplete: () => void; onExit: () => void; audioMode: string; speedSec: number; startDelayMs: number };
+type RecallProps = { onComplete: (patterns?: unknown[][]) => void; onExit: () => void; audioMode: string; speedSec: number; startDelayMs: number };
 
 /** Repeat an existing complete recall exercise without changing its internal rules. */
 export function MemoryRoundSeries({ rounds, onComplete, component: Round, ...recallProps }: {
@@ -12,14 +12,16 @@ export function MemoryRoundSeries({ rounds, onComplete, component: Round, ...rec
   audioMode: string;
   speedSec: number;
   startDelayMs: number;
-  onComplete: () => void;
+  onComplete: (patterns?: unknown[][]) => void;
 }) {
   const [round, setRound] = useState(1);
   const completed = useRef(new Set<number>());
-  const finishRound = () => {
+  const records = useRef<unknown[][]>([]);
+  const finishRound = (patterns?: unknown[][]) => {
     if (completed.current.has(round)) return;
     completed.current.add(round);
-    if (round >= rounds) onComplete();
+    records.current.push(...(patterns ?? []));
+    if (round >= rounds) onComplete(records.current);
     else setRound(round + 1);
   };
   return <>

@@ -190,9 +190,6 @@ export class FlowEngine {
   private activeBridge: BridgeObj | null = null;
   private lastJumpBridgeId = -1;
   private bridgeIdCnt      = 0;
-  private bridgeLaneIdx    = 0; // 빨강(1)→노랑(2)→초록(0) 순환
-  // 브릿지 레인 순서: 빨강(center=1) → 노랑(right=2) → 초록(left=0)
-  private static readonly BRIDGE_LANE_SEQ = [1, 2, 0] as const;
 
   // ── 카메라 입력용 엔진 상태 ───────────────────────────────────────────────
   private targetX        = 0;
@@ -495,9 +492,10 @@ export class FlowEngine {
       spawnZ = -8000;
     }
 
-    const randLane = FlowEngine.BRIDGE_LANE_SEQ[this.bridgeLaneIdx % 3]!;
-    this.bridgeLaneIdx++;
+    // Independent choices allow both lane changes and same-position jumps on every color.
+    const randLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
     const bridgeX  = (randLane - 1) * LANE_WIDTH;
+    if (isFirst) this.targetX = bridgeX;
 
     const visual = this.bridgeRenderer.createBridge({
       lane: randLane,
@@ -635,7 +633,6 @@ export class FlowEngine {
       b.instructionFired = false;
       b.preJumpFired = false;
     }
-    this.bridgeLaneIdx = 0; // 스테이지마다 빨강부터 다시 시작
     this.activeBridge = null;
     if (stage.isColorGate) {
       this.clearBridges();

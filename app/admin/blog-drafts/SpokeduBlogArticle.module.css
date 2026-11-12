@@ -1,0 +1,37 @@
+/* SPOKEDU editorial light — scoped. No global admin/sidebar changes. */
+.page{--ink:#233344;--body:#384755;--muted:#788794;--line:#e4e9ed;--blue:#2f77b5;color:var(--ink);background:#f6f8fa;padding:22px 16px 56px;font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page *{box-sizing:border-box}.page a{color:#256ba5;text-decoration:none}.page a:hover{text-decoration:underline}
+.main{max-width:860px;margin:auto;padding:45px 56px 48px;background:#fff;border:1px solid #edf0f2;border-radius:5px}
+.copyWidth{max-width:700px;margin:0 auto}
+.kicker{color:var(--blue);font-size:12px;font-weight:650;letter-spacing:-.02em;margin:0 0 11px}
+.title{font-size:30px;line-height:1.48;letter-spacing:-.05em;font-weight:760;margin:0;word-break:keep-all;overflow-wrap:break-word;text-wrap:pretty}
+.meta{display:flex;align-items:center;flex-wrap:wrap;gap:9px;font-size:12px;color:var(--muted);margin:16px 0 26px}
+.dot{width:3px;height:3px;border-radius:50%;background:#aab5be;flex:none}
+.hero{margin:0 0 32px}.hero img{display:block;width:100%;height:auto;max-height:500px;object-fit:contain;border-radius:4px}.hero figcaption,.fieldPhoto figcaption{font-size:12px;color:#87939e;text-align:center;margin:10px 0 0;line-height:1.65;word-break:keep-all}
+.leadArea{margin:0 0 6px}.lead,.bodyCopy,.list{color:var(--body);font-weight:400;font-size:16px;line-height:1.95;letter-spacing:-.017em;word-break:keep-all;overflow-wrap:break-word;text-wrap:pretty;margin:0 0 17px}
+.bodyCopy strong,.lead strong,.list strong{font-weight:730;color:#213b50}
+.chapterGroup{margin:0}
+.chapter{margin:37px 0 18px}
+.chapterHeading{font-size:21px;line-height:1.55;letter-spacing:-.042em;font-weight:760;color:#22374a;margin:0;padding-left:14px;border-left:3px solid #78a8d2;word-break:keep-all;overflow-wrap:break-word;text-wrap:pretty}
+.subHeading{font-size:17px;line-height:1.58;letter-spacing:-.03em;margin:26px 0 12px;font-weight:700;color:#2d4457;word-break:keep-all;overflow-wrap:break-word}
+.list{padding-left:24px}.list li{padding:2px 0}.rule{border:0;border-top:1px solid var(--line);margin:26px 0}
+.fieldPhoto{margin:25px auto 31px}.fieldPhoto img{display:block;max-width:100%;height:auto;max-height:540px;object-fit:contain;margin:0 auto;border-radius:3px}
+.insight{border-left:3px solid #a4bed4;background:#f6f8fa;border-radius:0 3px 3px 0;padding:18px 21px;margin:29px 0 34px}
+.insight p{color:#354c5e;font-size:15px;line-height:1.84;font-weight:600;letter-spacing:-.018em;margin:0;word-break:keep-all;overflow-wrap:break-word}
+.insightPlain{font-size:15px;color:var(--body);padding-left:18px;border-left:2px solid #d0dce5;margin:24px 0;font-style:italic;line-height:1.9}
+.ctaSection{border-top:1px solid var(--line);margin:43px 0 0;padding:24px 0 0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.ctaText{font-size:13px;line-height:1.85;color:#687986;margin:0;word-break:keep-all;max-width:510px}
+.ctaText strong{display:block;font-size:14px;font-weight:700;color:#304557;margin-bottom:4px}
+.ctaLink{flex:none;font-size:13px;font-weight:700;color:#2d73ab!important;white-space:nowrap;padding-top:4px}
+.related{border-top:1px solid var(--line);margin-top:28px;padding-top:20px}.related h3{font-size:14px;font-weight:720;color:#3e5162;margin:0 0 10px}
+.relatedList{display:flex;flex-direction:column;gap:8px}.relatedItem{font-size:13px;line-height:1.6;color:#4c6478!important;text-decoration:none;word-break:keep-all}
+.relatedItem:hover{text-decoration:underline}
+@media(max-width:700px){.page{padding:0;background:#fff}.main{padding:29px 20px 37px;border:0;border-radius:0}.title{font-size:26px;line-height:1.46}.meta{margin:14px 0 22px}.hero{margin-bottom:26px}.lead,.bodyCopy,.list{font-size:15px;line-height:1.92}.chapter{margin-top:33px;margin-bottom:16px}.chapterHeading{font-size:20px}.fieldPhoto{margin:22px 0 29px}.ctaSection{margin-top:36px;flex-direction:column;gap:8px}.ctaLink{padding:0}.insight{padding:16px 17px}.insight p{font-size:14px}}
+@media print{.page{padding:0;background:#fff}.main{border:0;padding:0}.ctaSection{break-inside:avoid}}
+
+.taskList{list-style:none;margin:18px 0 22px;padding:0;display:flex;flex-direction:column;gap:10px;color:var(--body);font-size:15px;line-height:1.8}
+.taskList li{display:flex;gap:10px;align-items:baseline}
+.taskList input{accent-color:#2f77b5;flex:none}
+.codeBlock{overflow-x:auto;background:#f4f7f9;border:1px solid #e4e9ed;border-radius:5px;padding:17px;color:#354b5c;font-size:13px;line-height:1.7}
+.tableScroll{max-width:100%;overflow-x:auto;margin:22px 0}.tableScroll table{border-collapse:collapse;width:100%;font-size:14px}.tableScroll td,.tableScroll th{border:1px solid #e2e8ee;padding:10px 12px;text-align:left}.tableScroll th{background:#f4f7fa;font-weight:700}
+.insight p+p,.insightPlain p+p{margin-top:8px}

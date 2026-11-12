@@ -89,7 +89,7 @@ it('keeps V2 results independent of the retired feedback opt-in and preserves co
 });
 
 it('preserves the direction-record handoff decision for every canonical activity and extreme variant', () => {
-  const recorded = new Set(['direction-cue', 'relative-compass', 'simon-arrow', 'flanker-arrow', 'stroop-arrow', 'go-no-go-action']);
+  const recorded = new Set(['direction-cue', 'relative-compass', 'simon-arrow', 'flanker-arrow', 'stroop-arrow']);
   for (const id of Object.keys(TRAINING_ACTIVITIES) as TrainingActivityId[]) {
     for (const flankerExtremeMode of ['theme', 'arrow'] as const) {
       expect(shouldIncludeDirectionRecord(id, { flankerExtremeMode })).toBe(recorded.has(id) || (id === 'flanker-extreme' && flankerExtremeMode === 'arrow'));

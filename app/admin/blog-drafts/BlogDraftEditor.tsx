@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import styles from './BlogDraftEditor.module.css';
+import SpokeduBlogArticle, { type EditorNode } from './SpokeduBlogArticle';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
@@ -11,9 +12,8 @@ import TaskItem from '@tiptap/extension-task-item';
 import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
 import { ArrowLeft, Archive, Bold, ChevronDown, Clock3, Code2, Copy, Eye, ImagePlus, ImageIcon, Italic, Keyboard, Link2, List, ListChecks, ListOrdered, Minus, Quote, Send, Sigma, Strikethrough, TextCursorInput, X } from 'lucide-react';
-import DOMPurify from 'isomorphic-dompurify';
 import { BLOG_DRAFT_CATEGORIES, blogDraftStatusLabel, type BlogDraftWrite } from '@/app/lib/blog-drafts/contract';
-import { DraftImage, DraftModal, DraftStarterKit, draftMarkdown, draftPresentationHtml } from './BlogDraftEditorParts';
+import { DraftImage, DraftModal, DraftStarterKit, draftMarkdown } from './BlogDraftEditorParts';
 
 type Status = BlogDraftWrite['status'];
 type DraftResponse = {
@@ -55,6 +55,8 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSymbols, setShowSymbols] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const previewArticleRef = useRef<HTMLDivElement>(null);
+  const [copyStatus, setCopyStatus] = useState('');
   const idRef = useRef(creating ? '' : draftId);
   const revisionRef = useRef(1);
   const saving = useRef(false);
@@ -154,11 +156,12 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
       const unchanged = JSON.stringify({ ...latest, revision: undefined, status: body.status }) === sent;
       setDirty(!unchanged);
       if (!unchanged) queued.current = true;
-      setNotice('');
-      setRevisionCount(count => count + (existing ? 1 : 0));
+      const revisionSaved = result.revisionSaved !== false;
+      setNotice(revisionSaved ? '' : '본문은 저장했지만 수정 이력을 기록하지 못했습니다. 다음 저장 때 다시 기록됩니다.');
+      if (revisionSaved) setRevisionCount(count => count + (existing ? 1 : 0));
       if (!existing) {
         idRef.current = result.draft.id;
-        setRevisionCount(1);
+        setRevisionCount(revisionSaved ? 1 : 0);
         router.replace(`/admin/blog-drafts/${result.draft.id}`);
       }
       return true;
@@ -227,8 +230,49 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
     return () => observer.disconnect();
   }, [title, ready, editor]);
 
+  // Copy the exact V3 preview DOM. CSS is inlined for portability; private
+  // admin media URLs are not transferred as broken external <img> links.
+  const copyEditorialPreview = async () => {
+    const article = previewArticleRef.current?.querySelector('article');
+    if (!article) { setCopyStatus('미리보기를 불러오지 못했습니다.'); return; }
+    const clone = article.cloneNode(true) as HTMLElement;
+    const originals = [article, ...Array.from(article.querySelectorAll<HTMLElement>('*'))];
+    const copies = [clone, ...Array.from(clone.querySelectorAll<HTMLElement>('*'))];
+    const inlineProps = ['color', 'background-color', 'font-family', 'font-size', 'font-weight',
+      'line-height', 'letter-spacing', 'text-align', 'margin', 'padding', 'border',
+      'border-radius', 'display', 'width', 'max-width', 'box-sizing', 'word-break'];
+    originals.forEach((source, index) => {
+      const computed = window.getComputedStyle(source);
+      const dest = copies[index];
+      if (!dest) return;
+      for (const prop of inlineProps) {
+        const value = computed.getPropertyValue(prop);
+        if (value) dest.style.setProperty(prop, value);
+      }
+    });
+    let externalImages = 0;
+    clone.querySelectorAll('img').forEach(image => {
+      // Authenticated /api images are not valid external blog image URLs.
+      const source = image.getAttribute('src') || '';
+      if (source.startsWith('/api/admin/blog-drafts/media/')) {
+        image.remove();
+        externalImages += 1;
+      }
+    });
+    const html = clone.outerHTML;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([article.innerText], { type: 'text/plain' }),
+      })]);
+      setCopyStatus(externalImages ? `V3 서식을 복사했습니다. 관리자 전용 사진 ${externalImages}장은 외부 편집기에 따로 업로드해야 합니다.` : 'V3 서식을 복사했습니다.');
+    } catch {
+      setCopyStatus('V3 서식 복사에 실패했습니다. 브라우저 클립보드 권한을 확인해 주세요.');
+    }
+  };
+
   const previewDraft = () => {
-    if (editor) setPreview(DOMPurify.sanitize(draftPresentationHtml(editor.getHTML())));
+    if (editor) { setCopyStatus(''); setPreview('editorial-v3'); }
   };
 
   if (!ready || !editor) return <p role="status">원고를 불러오는 중…</p>;
@@ -311,7 +355,7 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
         <button type="button" className="rounded-full border px-4 py-2 text-sm" onClick={() => void save('review')}>검토 중</button>
         <button type="button" className="rounded-full border px-4 py-2 text-sm" onClick={() => void save('complete')}>작성 완료</button>
 
-        <button type="button" className="rounded-full border px-4 py-2 text-sm" onClick={() => void copyDraft(draftPresentationHtml(editor.getHTML()), editor.getText(), true)}>서식 복사</button>
+        <button type="button" className="rounded-full border px-4 py-2 text-sm" onClick={previewDraft}>V3 서식 확인·복사</button>
         <button type="button" className="rounded-full border px-4 py-2 text-sm" onClick={() => void copyDraft(editor.getHTML(), editor.getText(), false)}>텍스트 복사</button>
         {!creating && <button type="button" className={styles.deleteAction} onClick={() => void removeDraft(idRef.current, router)}>삭제</button>}
       </div>
@@ -321,8 +365,18 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
       {preview && (
         <DraftModal label="원고 미리보기" className={styles.previewDialog} onClose={() => setPreview('')}>
             <div className="mb-4 flex justify-between"><h2 className="text-lg font-bold">원고 미리보기</h2><button type="button" autoFocus onClick={() => setPreview('')}>닫기</button></div>
-            <h1 className={styles.previewTitle}>{title || '제목 없는 원고'}</h1>
-            <article className={`blog-draft-preview ${styles.richText}`} dangerouslySetInnerHTML={{ __html: preview }} />
+            <div className={styles.v3PreviewActions}>
+              <p role="status" aria-live="polite">{copyStatus || '블로그 미리보기 · 외부 편집기에 따라 서식이 달라질 수 있습니다.'}</p>
+              <button type="button" onClick={() => void copyEditorialPreview()}>V3 서식 복사</button>
+            </div>
+            <div ref={previewArticleRef}>
+              <SpokeduBlogArticle
+                draft={{ title: title || '제목 없는 원고', category,
+                  content: editor.getJSON() as EditorNode,
+                  published_at: publishedAt ? new Date(publishedAt).toISOString() : null }}
+                hero={featuredImage ? { src: `/api/admin/blog-drafts/media/${featuredImage}`, alt: title || '수업 대표사진' } : null}
+              />
+            </div>
         </DraftModal>
       )}
 

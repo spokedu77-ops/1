@@ -83,9 +83,7 @@ export const ACTIVITY_FAMILIES: Record<string, ActivityFamilyDefinition> = {
   'visual-mole': family('visual-mole', 'visualSearch', 'legacyFixed', {
     recommendedMovement: pick('footTap', 'free'),
   }),
-  'visual-wormhole': family('visual-wormhole', 'visualSearch', 'legacyFixed', {
-    recommendedMovement: pick('footTap', 'free'),
-  }),
+
   'visual-number-cart': family('visual-number-cart', 'gameSpecific', 'legacyFixed', {
     recommendedMovement: pick('footTap', 'free'),
   }),

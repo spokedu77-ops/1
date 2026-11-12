@@ -7,8 +7,10 @@
 .visual h3 { font-size:18px; }
 .visual p { color:var(--spm-result-muted); font-size:13px; text-align:center; }
 .number { display:grid; place-items:center; color:var(--spm-result-blue-deep); font-size:40px; font-weight:700; align-self:center; }
-.doors { display:flex; overflow-x:auto; min-height:190px; }
-.doors > li { flex:1 0 150px; }
+.doors { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:auto; min-height:190px; max-height:none; }
+.doors > li { min-width:0; padding:12px 10px; }
+.doors > li strong { max-width:100%; padding:4px 6px; flex-wrap:wrap; }
+@media (max-width:700px) { .doors { grid-template-columns:repeat(2,minmax(0,1fr)); min-height:0; } }
 .note { color:var(--spm-result-muted); font-size:12px; }
 .compact { padding:7px 9px; border:0; background:transparent; }
 .compact dl { display:flex; flex-wrap:wrap; gap:6px 16px; }

@@ -98,12 +98,7 @@ const otherDescriptions: Partial<Record<string, Four<string>>> = {
     '추적할 대상을 먼저 확인한 뒤 그 움직임을 살펴봅니다. 멈춘 장면에서 목표가 어디에 있는지 찾아봅니다.',
     '목표를 정한 후 다른 대상과 함께 이동하는 과정을 봅니다. 목표가 이동한 경로와 현재 위치를 이어서 확인합니다.',
   ],
-  'visual-camouflage': [
-    '노이즈 속에서 서서히 드러나는 색 자극을 찾아 반응합니다. 주변 무늬와 목표의 특징을 구별합니다.',
-    '복잡한 화면에서 목표가 드러나는 과정을 살펴봅니다. 구별한 색을 해당 발판 위치와 연결합니다.',
-    '주변 색 블록 사이에서 목표의 색과 모양을 확인합니다. 목표를 충분히 본 뒤 반응할 위치를 고릅니다.',
-    '처음에는 잘 드러나지 않는 시각 정보를 살펴보는 활동입니다. 점차 나타나는 단서를 모아 목표를 구별합니다.',
-  ],
+
   'virus-outbreak': [
     '화면에 증식하는 바이러스의 색별 양을 비교합니다. 안내된 많은 색·적은 색 기준에 따라 목표를 고릅니다.',
     '여러 색의 바이러스가 나타나는 장면을 본 뒤 색별 양을 떠올립니다. 회색 돌연변이는 비교 대상에서 제외합니다.',
@@ -116,12 +111,7 @@ const otherDescriptions: Partial<Record<string, Four<string>>> = {
     '화면의 관문과 그때의 동작 안내를 함께 살펴봅니다. 신호 확인과 움직임 준비를 연결하는 활동입니다.',
     '이어지는 관문의 신호에 맞춰 반응할 동작을 선택합니다. 관문 사이에서는 다음 안내를 볼 준비를 합니다.',
   ],
-  'beat-wave': [
-    '화면의 색 신호와 이동 안내를 보고 해당 발판으로 움직입니다. 반복되는 안내의 흐름에 맞춰 다음 반응을 준비합니다.',
-    '색 자극을 확인하고 이동 신호에 맞춰 반응하는 활동입니다. 신호의 흐름과 몸의 움직임을 연결합니다.',
-    '다음 이동을 준비하다가 화면의 안내가 나오면 움직입니다. 현재 신호의 색과 반응할 위치를 함께 확인합니다.',
-    '화면에서 이어지는 색 신호를 보고 이동할 위치를 고릅니다. 한 반응 뒤에는 다음 안내를 기다립니다.',
-  ],
+
 };
 
 export function resolveResultEducationProfile(input: TrainingResultViewInput): Profile {
@@ -258,18 +248,7 @@ export function resolveResultEducationProfile(input: TrainingResultViewInput): P
     '다음 활동에서는 각 동작을 먼저 확인한 뒤 연결해서 움직이도록 안내해 보세요.',
     '동작을 급하게 이어 가기보다 안내의 흐름에 맞춰 준비하고 전환하도록 도와주세요.',
   ]);
-  if (id.startsWith('go-no-go-')) return profile('go-no-go', [
-    '신호에 따라 움직이거나 멈추는 활동입니다. 제시된 자극을 확인한 뒤 반응 여부를 고릅니다.',
-    '반응해야 하는 신호와 반응하지 않아야 하는 신호를 구별합니다. 움직이지 않고 기다리는 것도 과제의 일부입니다.',
-    '신호를 보자마자 움직이기보다 실행할 조건인지 먼저 확인합니다. 조건에 따라 움직임과 멈춤을 선택합니다.',
-    '두 종류의 신호를 구별하고 정해진 실행·억제 규칙을 적용합니다. 신호 확인과 반응 결정을 나누어 경험합니다.',
-  ], ['discrimination', 'rule', 'stop'], attentionTips);
-  if (id.startsWith('task-switch-')) return profile('task-switch', [
-    '신호가 안내하는 현재 규칙을 확인하고 그 기준으로 반응하는 활동입니다. 규칙이 바뀌면 같은 정보도 다르게 해석합니다.',
-    '색·위치·반대 규칙의 전환 단서를 읽고 반응 기준을 고릅니다. 이전 규칙과 지금의 규칙을 구별합니다.',
-    '자극 자체뿐 아니라 어떤 규칙으로 볼 것인지 함께 확인합니다. 전환 안내에 따라 반응을 새로 선택합니다.',
-    '화면의 규칙 단서를 살펴보고 그때의 기준에 맞춰 움직입니다. 반복되는 자극 속에서 적용할 규칙을 바꾸어 봅니다.',
-  ], ['attention', 'rule', 'switch'], attentionTips);
+
   // Other activities retain their authored mechanism, with four contextual readings.
   const goal = input.education?.description.trim() || trainingActivityGuide(cfg.mode, cfg.level, { activityId: id })?.goal;
   const mechanism = goal && !/보류|안내 예정|미공개/.test(goal)
@@ -371,7 +350,7 @@ export function selectResultReflection(education: ResultEducation, seed: number)
     : id.startsWith('flanker-') ? 'flanker' : id.startsWith('stroop-') ? 'stroop'
     : id.startsWith('simon-') ? 'simon' : id === 'instant-memory' ? 'instant'
     : ['sequence-memory', 'number-memory', 'glass-bridge'].includes(id) ? 'memory'
-    : id === 'dive' || id === 'motion-gate' ? 'dive' : id === 'go-no-go' ? 'stop'
+    : id === 'dive' || id === 'motion-gate' ? 'dive'
     : education.experiences.some(item => item.label === '시각 추적') ? 'tracking' : 'general';
   const value = Number.isFinite(seed) ? Math.abs(Math.floor(seed)) : 0;
   const pair = reflectionPairs[kind][Math.floor(value / 64) % 4];
@@ -428,7 +407,7 @@ export function selectEnhancedResultReflection(education: ResultEducation, seed:
     : id.startsWith('flanker-') ? 'flanker' : id.startsWith('stroop-') ? 'stroop'
     : id.startsWith('simon-') ? 'simon' : id === 'instant-memory' ? 'instant'
     : ['sequence-memory', 'number-memory', 'glass-bridge'].includes(id) ? 'memory'
-    : id === 'dive' || id === 'motion-gate' ? 'dive' : id === 'go-no-go' ? 'stop'
+    : id === 'dive' || id === 'motion-gate' ? 'dive'
     : education.experiences.some(item => item.label === '시각 추적') ? 'tracking' : 'general';
   const value = Number.isFinite(seed) ? Math.abs(Math.floor(seed)) : 0;
   const index = Math.floor(value / 64) % 4;

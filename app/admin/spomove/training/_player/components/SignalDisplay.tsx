@@ -6,6 +6,9 @@ import type { FruitSlide, VariantPanelContent } from '../lib/signals';
 import { resolveStroopArrowMovementCue } from '../lib/resolveStroopArrowMoveTarget';
 import { resolveStroopWordMovementCue } from '../lib/resolveStroopWordMoveTarget';
 import { BodyActionIcon, BODY_ACTION_LABELS, type BodyActionId } from './BodyActionIcons';
+import { SPOMOVE_DINOSAUR_IMAGE_URLS } from '../lib/spomoveVariantThemeConfig';
+
+const DINOSAUR_IMAGE_URLS = new Set<string>(SPOMOVE_DINOSAUR_IMAGE_URLS);
 
 /** 설치 글꼴만 사용한다. 웹폰트를 나중에 바꾸면 시작 순간 다른 글꼴이 보였다 교체된다. */
 const STROOP_WORD_FONT_FAMILY = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
@@ -45,7 +48,8 @@ function VariantFruitImg({ slide }: { slide: FruitSlide }) {
         height: '100%',
         flex: 1,
         minHeight: 0,
-        objectFit: 'cover',
+        objectFit: DINOSAUR_IMAGE_URLS.has(slide.imageUrl.trim()) ? 'contain' : 'cover',
+        backgroundColor: DINOSAUR_IMAGE_URLS.has(slide.imageUrl.trim()) ? '#fff' : undefined,
         objectPosition: 'center',
         display: 'block',
         userSelect: 'none',
@@ -158,8 +162,6 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
   }
 
-
-
   if (type === 'think_quad_body') {
     const cells = (content?.cells as { colorId: string; fillHex: string; bodyActionId: BodyActionId }[] | undefined) ?? [];
     const cellMap = new Map(cells.map(c => [c.colorId, c]));
@@ -251,7 +253,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
   }
 
-  if (type === 'full_color' || type === 'gonogo_color') {
+  if (type === 'full_color') {
     const overlayNumber = (content as { overlayNumber?: number } | undefined)?.overlayNumber;
     return (
       <div key={animKey} className="signal-blink" style={C}>
@@ -301,111 +303,6 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             </span>
           </div>
         )}
-      </div>
-    );
-  }
-
-  if (type === 'gonogo_shape') {
-    const shape = content?.shape as 'circle' | 'triangle' | undefined;
-    const fill = (content?.fillHex as string) ?? '#F8FAFC';
-    const box = 'min(52vmin, 78vw)';
-    return (
-      <div key={animKey} className="signal-blink" style={C}>
-        <div
-          style={{
-            width: box,
-            height: box,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-          }}
-        >
-          {shape === 'circle' ? (
-            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: fill, boxShadow: '0 12px 48px rgba(0,0,0,0.35)' }} />
-          ) : (
-            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block', filter: 'drop-shadow(0 12px 48px rgba(0,0,0,0.35))' }} aria-hidden>
-              <polygon points="50,8 94,92 6,92" fill={fill} />
-            </svg>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'gonogo_action') {
-    const kind = content?.kind as string | undefined;
-    if (kind === 'arrow') {
-      const arrowId = content?.arrowId as string | undefined;
-      const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
-      return (
-        <div key={animKey} className="signal-blink" style={C}>
-          <svg
-            viewBox="0 0 100 130"
-            preserveAspectRatio="xMidYMid meet"
-            style={{
-              width: 'clamp(9rem, 58vmin, min(98vw, 98vh))',
-              height: 'clamp(9rem, 58vmin, min(98vw, 98vh))',
-              filter: 'drop-shadow(0 10px 48px rgba(0,0,0,0.5))',
-            }}
-            aria-hidden
-          >
-            <g transform={`rotate(${rot} 50 67)`}>
-              <path
-                d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
-                fill="#FFFFFF"
-                stroke="rgba(255,255,255,0.26)"
-                strokeWidth={5}
-                strokeLinejoin="round"
-              />
-            </g>
-          </svg>
-        </div>
-      );
-    }
-    return (
-      <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '0.35rem' }}>
-        <div
-          style={{
-            fontSize: 'clamp(100px, 28vw, 300px)',
-            lineHeight: 1,
-            fontWeight: 800,
-            color: '#F87171',
-            textShadow: '0 6px 40px rgba(0,0,0,0.45)',
-            userSelect: 'none',
-          }}
-        >
-          ✕
-        </div>
-        <div style={{ fontSize: 'clamp(22px,5vw,40px)', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>멈춤</div>
-      </div>
-    );
-  }
-
-  if (type === 'gonogo_dual') {
-    const shape = content?.shape as 'circle' | 'triangle' | undefined;
-    const fill = '#FFFFFF';
-    const box = 'min(48vmin, 72vw)';
-    return (
-      <div key={animKey} className="signal-blink" style={C}>
-        <div
-          style={{
-            width: box,
-            height: box,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-          }}
-        >
-          {shape === 'circle' ? (
-            <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: fill, boxShadow: '0 12px 48px rgba(0,0,0,0.25)' }} />
-          ) : (
-            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block', filter: 'drop-shadow(0 12px 48px rgba(0,0,0,0.25))' }} aria-hidden>
-              <polygon points="50,8 94,92 6,92" fill={fill} />
-            </svg>
-          )}
-        </div>
       </div>
     );
   }
@@ -684,81 +581,6 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           }}
         >
           {arr?.icon}
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'task_switch') {
-    const cueTier = typeof content?.cueTier === 'number' ? content.cueTier : 1;
-    const rule = (content?.rule as string) ?? 'color';
-    const stimulusKind = (content?.stimulusKind as string) ?? 'color';
-    const ruleTextK = rule === 'color' ? '색' : rule === 'position' ? '위치' : '반대로';
-    const frameTier3: React.CSSProperties =
-      cueTier === 3
-        ? rule === 'color'
-          ? { border: '21px solid rgba(255,255,255,0.94)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
-          : rule === 'position'
-            ? { border: '21px dashed rgba(255,255,255,0.9)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
-            : { border: '36px double rgba(255,255,255,0.92)', borderRadius: '1.35rem', boxSizing: 'border-box' as const }
-        : {};
-    const stimulus =
-      stimulusKind === 'color' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', userSelect: 'none' }}>
-          <div style={{ fontSize: 'clamp(80px,18vw,180px)', lineHeight: 1, color: content?.textColor as string, opacity: 0.35 }}>{content?.symbol as string}</div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 'clamp(120px, 30vw, 320px)', color: '#fff', lineHeight: 1, fontWeight: 800, textShadow: '0 4px 50px rgba(0,0,0,0.4)' }}>{content?.icon as string}</div>
-        </div>
-      );
-    return (
-      <div
-        key={animKey}
-        className="signal-blink"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          justifyContent: 'flex-start',
-          padding: 'clamp(8px, 2vw, 20px)',
-          boxSizing: 'border-box',
-        }}
-      >
-        {cueTier === 1 && (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '0.6rem 0 1rem',
-              fontSize: 'clamp(4.8rem, 19vw, 8.2rem)',
-              fontWeight: 800,
-              color: 'rgba(255,255,255,0.98)',
-              textShadow: '0 3px 18px rgba(0,0,0,0.45)',
-              letterSpacing: '0.14em',
-            }}
-          >
-            {ruleTextK}
-          </div>
-        )}
-        {cueTier === 2 && (
-          <div style={{ textAlign: 'center', padding: '0.35rem 0 0.75rem', fontSize: 'clamp(9rem, 33vw, 15rem)', lineHeight: 1 }}>
-            {rule === 'color' ? '🎨' : rule === 'position' ? '📍' : '⇄'}
-          </div>
-        )}
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: cueTier === 3 ? 'clamp(10px, 2vmin, 20px)' : 0,
-            ...frameTier3,
-          }}
-        >
-          {stimulus}
         </div>
       </div>
     );

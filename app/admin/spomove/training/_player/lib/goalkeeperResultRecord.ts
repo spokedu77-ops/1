@@ -41,7 +41,7 @@ export function validGoalkeeperResult(record?: GoalkeeperResultRecord): record i
   const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
   const lanes = (value: unknown): value is GoalkeeperLaneCounts => Array.isArray(value) && value.length === 4 && value.every(count);
   return !!record && (record.tier === 1 || record.tier === 2) && count(record.waveCount) && count(record.stims)
-    && (record.targetWaveCount === null || count(record.targetWaveCount) && record.targetWaveCount > 0)
+    && (record.targetWaveCount === null || count(record.targetWaveCount) && record.targetWaveCount > 0 && record.waveCount <= record.targetWaveCount)
     && Number.isFinite(record.baseTravelSeconds) && record.baseTravelSeconds > 0 && typeof record.bonusStarted === 'boolean'
     && lanes(record.laneCount) && lanes(record.regularLaneCount) && lanes(record.bonusLaneCount)
     && record.laneCount.reduce((sum, value) => sum + value, 0) === record.stims

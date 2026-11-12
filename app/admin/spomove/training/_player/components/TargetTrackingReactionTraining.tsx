@@ -18,7 +18,7 @@ export type ShellTrackingShuffleCount = 4 | 6 | 8 | 10 | 12;
 
 type PositionIndex = 0 | 1 | 2 | 3;
 type NodeId = PositionIndex;
-type Phase = 'COUNTDOWN' | 'TARGET' | 'HIDE' | 'TRACK' | 'RESPONSE' | 'ANSWER' | 'NEXT_ROUND';
+type Phase = 'COUNTDOWN' | 'TARGET' | 'HIDE' | 'TRACK' | 'RESPONSE' | 'WAIT_ANSWER' | 'ANSWER' | 'NEXT_ROUND';
 
 type TrackingNode = {
   id: NodeId;
@@ -119,7 +119,9 @@ export function TargetTrackingReactionTraining({
   const [startCountdown, setStartCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const playRef = useRef<HTMLDivElement>(null);
   const runTokenRef = useRef(0);
+  const answerGateRef = useRef<((reveal: boolean) => void) | null>(null);
   const timersRef = useRef(new Set<number>());
+  const answersRef = useRef<import('../lib/roundAnswerRecord').RoundAnswerRecord>([]);
   const completedRoundsRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
@@ -131,7 +133,7 @@ export function TargetTrackingReactionTraining({
     runTokenRef.current += 1;
     timersRef.current.forEach(clearTimeout);
     timersRef.current.clear();
-    onCompleteRef.current({
+    onCompleteRef.current({ roundAnswers: answersRef.current.map(answer => ({ ...answer })),
       stims: completedRoundsRef.current,
       maxCombo: 0,
       laneCount: [0, 0, 0, 0],
@@ -140,9 +142,11 @@ export function TargetTrackingReactionTraining({
 
   const stop = useCallback(() => {
     runTokenRef.current += 1;
+    answerGateRef.current?.(false);
+    answerGateRef.current = null;
     timersRef.current.forEach(clearTimeout);
     timersRef.current.clear();
-    onCompleteRef.current({ stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
+    onCompleteRef.current({ roundAnswers: answersRef.current.map(answer => ({ ...answer })), stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
   }, []);
 
   useEffect(() => {
@@ -183,7 +187,12 @@ export function TargetTrackingReactionTraining({
 
       const targetNode = roundNodes.find((node) => node.id === targetId);
       if (!targetNode) return;
+      setPhase('WAIT_ANSWER');
+      const reveal = await new Promise<boolean>(resolve => { answerGateRef.current = resolve; });
+      answerGateRef.current = null;
+      if (!reveal || tokenRef.current !== token) return;
       setAnswerPos(targetNode.currentPosIdx);
+      answersRef.current.push({ round: roundNumber, summary: QUADRANTS[targetNode.currentPosIdx]!.name });
       setPhase('ANSWER');
       if (!(await wait(ANSWER_DURATION_MS, token, tokenRef, timers))) return;
 
@@ -203,6 +212,8 @@ export function TargetTrackingReactionTraining({
 
     return () => {
       mounted = false;
+      answerGateRef.current?.(false);
+      answerGateRef.current = null;
       stopCountdown();
       unbindResize();
       tokenRef.current += 1;
@@ -239,6 +250,7 @@ export function TargetTrackingReactionTraining({
         </div>
       </div>
       <div className="ttrk-play" ref={playRef}>
+        {phase === 'WAIT_ANSWER' ? <button type="button" onClick={() => { const reveal = answerGateRef.current; answerGateRef.current = null; reveal?.(true); }} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 50, minHeight: 56, padding: '14px 28px', borderRadius: 14, border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: 'pointer' }}>정답 확인</button> : null}
         <div className="ttrk-board">
           {QUADRANTS.map((quadrant, index) => (
             <div
