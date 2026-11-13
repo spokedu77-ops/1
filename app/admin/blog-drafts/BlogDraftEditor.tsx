@@ -11,9 +11,10 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
-import { ArrowLeft, Archive, Bold, ChevronDown, Clock3, Code2, Copy, Eye, ImagePlus, ImageIcon, Italic, Keyboard, Link2, List, ListChecks, ListOrdered, Minus, Quote, Send, Sigma, Strikethrough, TextCursorInput, X } from 'lucide-react';
+import { ArrowLeft, Archive, Bold, ChevronDown, Clock3, Code2, Compass, Copy, Eye, ImagePlus, ImageIcon, Italic, Keyboard, Link2, List, ListChecks, ListOrdered, Minus, Quote, Send, Sigma, Strikethrough, TextCursorInput, X } from 'lucide-react';
 import { BLOG_DRAFT_CATEGORIES, blogDraftStatusLabel, type BlogDraftWrite } from '@/app/lib/blog-drafts/contract';
 import { DraftImage, DraftModal, DraftStarterKit, draftMarkdown } from './BlogDraftEditorParts';
+import { BlogStrategyModal } from './BlogStrategyModal';
 
 type Status = BlogDraftWrite['status'];
 type DraftResponse = {
@@ -54,6 +55,7 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
   const [mode, setMode] = useState<'edit' | 'markdown'>('edit');
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSymbols, setShowSymbols] = useState(false);
+  const [strategyDraftId, setStrategyDraftId] = useState<string | null>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const previewArticleRef = useRef<HTMLDivElement>(null);
   const [copyStatus, setCopyStatus] = useState('');
@@ -283,6 +285,7 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
         <Link href="/admin/blog-drafts" onClick={event => { if (dirty && !window.confirm('저장하지 않은 변경이 있습니다. 목록으로 이동할까요?')) event.preventDefault(); }} className={styles.backLink}><ArrowLeft size={18} />원고 목록으로</Link>
         <p role="status" className={styles.saveStatus} data-dirty={dirty} data-saved={Boolean(savedAt)}>{dirty ? '저장되지 않은 변경' : savedAt ? <>원고 저장됨 <time dateTime={savedAt}>({new Date(savedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })})</time></> : '새 원고 · 첫 저장 전'}</p>
         <div className={styles.topActions}>
+          <button type="button" className={styles.secondary} disabled={creating && !savedAt} title={creating && !savedAt ? '원고 저장 후 이용할 수 있습니다' : undefined} onClick={() => { if (idRef.current) setStrategyDraftId(idRef.current); }}><Compass size={16} />집필 전략 분석</button>
           <button type="button" className={styles.secondary} onClick={() => void save()}><Archive size={16} />원고 저장</button>
           <button type="button" className={styles.secondary} onClick={previewDraft}><Eye size={16} />미리보기</button>
           <button type="button" className={styles.primary} onClick={() => void save('published')}><Send size={16} />발행 완료로 표시</button>
@@ -379,7 +382,17 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
             </div>
         </DraftModal>
       )}
-
+      {strategyDraftId && (
+        <BlogStrategyModal
+          draftId={strategyDraftId}
+          title={title}
+          tags={tags}
+          content={editor.getJSON()}
+          featuredImage={featuredImage}
+          dirty={dirty}
+          onClose={() => setStrategyDraftId(null)}
+        />
+      )}
     </section>
   );
 }
