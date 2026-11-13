@@ -1,4 +1,5 @@
 import { HOME_SECTION03_PEOPLE } from '../components/home-web/home-section03-people';
+import { SPOKEDU_IMAGES } from './images';
 import { aboutFounder } from './about-founder';
 import { PUBLIC_PROGRAM_COPY, PUBLIC_TEAM_ROLES } from './public-brand-copy';
 import type { HomeMediaKey } from './home-media';
@@ -11,13 +12,42 @@ import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 export const aboutPage = {
   sectionOrder: ['intro', 'whatWeDo', 'approach', 'team', 'history', 'closing'] as const,
 
+  // Public ABOUT presentation; legacy content below remains available to its consumers.
+  showcase: [
+    {
+      number: '01', label: '01. 우리의 시작',
+      title: ['2020년, 아이들의 움직임을 위한', '체육교육을 시작했습니다.'],
+      body: 'SPOKEDU는 2020년 아동·청소년 체육교육 브랜드로 출발했습니다. 이후 학교와 키움센터 등 다양한 교육 현장에서 직접 수업을 운영하며 아이들의 발달 수준과 참여 특성에 맞는 지도 경험을 축적해 왔습니다.',
+      image: SPOKEDU_IMAGES.home.fieldEditorialHero,
+    },
+    {
+      number: '02', label: '02. 우리의 교육 방식',
+      title: ['교육의 전문성은', '실제 수업을 운영하는 과정에서 드러납니다.'],
+      body: '아이의 발달 수준과 과제 이해 정도를 살피고 수업 공간과 참여 인원에 맞게 활동을 구성합니다. 전문 지도자가 현장에서 움직임을 관찰하며 과제의 난이도와 지도 방식을 조정합니다.',
+      image: SPOKEDU_IMAGES.dispatch.groupClass,
+    },
+    {
+      number: '03', label: '03. 우리의 발자취',
+      title: ['현장의 경험이 쌓이며', '교육의 영역도 넓어졌습니다.'],
+      body: '학교와 키움센터에서 시작한 체육교육은 복지기관·가족 체육·특수체육 등 다양한 현장으로 확대됐습니다. 축적된 수업 경험을 바탕으로 4MOVE 교육과정과 SPOMOVE 콘텐츠를 발전시키고 지도자의 수업 자료 활용을 지원하는 SPOKEDU LAB으로 교육 지원 영역을 확장하고 있습니다.',
+      image: SPOKEDU_IMAGES.home.fieldEditorialCaseGeneral,
+    },
+  ] as const,
+
+  classGuide: {
+    titleLines: ['SPOKEDU와 함께', '아이에게 맞는 체육교육을 만들어갑니다.'],
+    description: '아이의 발달 수준과 교육 현장의 조건에 맞는 수업을 확인해 보세요.',
+    href: SPOKEDU_PATHS.private, label: '개인·소그룹 수업',
+    secondary: { href: SPOKEDU_PATHS.education, label: '기관·학교 체육교육' },
+  },
+
   intro: {
     id: 'intro',
-    eyebrow: 'ABOUT SPOKEDU',
-    titleLines: ['움직임으로', '아이의 성장을 설계합니다.'] as const,
+    eyebrow: '스포키듀 소개',
+    titleLines: ['현장에서 시작한 체육교육을', '교육과정과 시스템으로 발전시킵니다.'] as const,
     lead: '스포키듀는 아동·청소년 전문 체육교육 브랜드입니다.',
     body:
-      '아이들의 발달 수준과 특성을 고려한 체육수업을 운영하며, 현장의 경험을 교육 콘텐츠와 기술로 확장합니다.',
+      '스포키듀는 2020년 설립 이후 아동·청소년 체육수업을 직접 운영해 왔습니다. 실제 수업에서 축적한 경험을 바탕으로 교육과정과 지도자용 콘텐츠를 발전시키고 있습니다.',
     mediaKey: 'homeHeroField' as HomeMediaKey,
   },
 
@@ -82,7 +112,7 @@ export const aboutPage = {
 
   team: {
     id: 'team',
-    eyebrow: 'OUR PEOPLE',
+    eyebrow: '함께하는 사람들',
     title: '교육을 설계하고 현장을 움직이는 사람들',
     description: 'SPOKEDU의 교육과정과 현장 운영을 책임지는 전문 운영진을 소개합니다.',
     members: [
@@ -212,4 +242,19 @@ export function isAboutHubBranchWithLinks(
   branch: AboutHubBranch,
 ): branch is AboutHubBranchWithLinks {
   return 'links' in branch && Array.isArray((branch as { links?: unknown }).links);
+}
+
+/** Curated summaries of selected canonical records; never rewrite yearGroups to merge years. */
+export function getAboutHistoryHighlights() {
+  const groups = aboutPage.history.yearGroups;
+  const select = (years: readonly string[]) => groups.filter(group => years.includes(group.year));
+  const highlights = [
+    { years: ['2020'], year: '2020', text: 'SPOKEDU 설립 및 아동·청소년 체육교육 시작' },
+    { years: ['2021'], year: '2021', text: '종로·성북 거점형 키움센터 체육교육 운영 시작' },
+    { years: ['2023'], year: '2023', text: 'KBS 「슈퍼맨이 돌아왔다」 체력측정 자문 출연 및 동작거점형 키움센터 체육교육 운영 시작' },
+    { years: ['2024', '2025'], year: '2024~2025', text: '복지기관·가족 체육·학교 체육교육 및 특수체육 운영 확대' },
+    { years: ['2026'], year: '2026', text: '서울시·중구 찾아가는 동행 체육교실 등 공공 체육교육 사업 확대' },
+  ];
+  return highlights.map(({ years, ...highlight }) => ({ ...highlight, sourceGroups: select(years) }))
+    .filter(highlight => highlight.sourceGroups.length > 0);
 }

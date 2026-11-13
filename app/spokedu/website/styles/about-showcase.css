@@ -1,22 +1,87 @@
-/* ABOUT 01–03 only; hero, profiles and closing CTA are outside this scope. */
+/* Public ABOUT presentation only. */
 .website-content .web-about-showcase-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: center; }
 .website-content .web-about-showcase-copy { display: grid; gap: 20px; min-width: 0; order: 1; }
 .website-content .web-about-showcase-copy > * { margin: 0; }
 .website-content .web-about-showcase-label { grid-row: 1; }
-.website-content .web-about-showcase-copy > .web-about-showcase-number { position: relative; top: auto; left: auto; grid-row: 2; display: block; line-height: 1; margin-bottom: -44px; transform: translateY(-12px); }
+.website-content .web-about-showcase-copy > .web-about-showcase-number { position: relative; top: auto; left: auto; grid-row: 2; display: block; font-size: 64px; line-height: .95; margin: 0; }
 .website-content .web-about-showcase-copy > h2 { position: relative; z-index: 1; grid-row: 3; }
 .website-content .web-about-showcase-copy h2 > span { display: block; white-space: pre-line; }
-.website-content .web-about-showcase-keywords { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
-.website-content .web-about-showcase-keywords li { padding: 4px 14px; border-radius: 999px; background: #fff; border: 1px solid #e2e8f0; color: #475569; }
 .website-content .web-about-showcase-media { margin: 0; min-width: 0; order: 2; }
-.website-content .web-about-showcase-photo-label { position: absolute; top: 24px; left: 24px; padding: 8px 16px; border-radius: 999px; background: rgb(255 255 255 / 90%); color: #004ac6; backdrop-filter: blur(12px); box-shadow: 0 1px 3px rgb(19 27 46 / 8%); }
 .website-content .web-about-showcase-copy > a { justify-self: start; min-height: 44px; }
 .website-content .web-about-showcase-item :is(h2, p, a) { overflow-wrap: break-word; }
 @media (min-width: 1024px) {
   .website-content .web-about-showcase-item { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 64px; }
   .website-content .web-about-showcase-copy { grid-column: 1 / span 5; grid-row: 1; }
-  .website-content .web-about-showcase-copy > .web-about-showcase-number { margin-bottom: -60px; }
+  .website-content .web-about-showcase-copy > .web-about-showcase-number { font-size: 80px; }
   .website-content .web-about-showcase-media { grid-column: 6 / span 7; grid-row: 1; }
   .website-content .web-about-showcase-reversed .web-about-showcase-copy { grid-column: 8 / span 5; }
   .website-content .web-about-showcase-reversed .web-about-showcase-media { grid-column: 1 / span 7; }
+}
+
+.website-content .web-about-page :is(h1, h2, h3, p, a, summary, li) { word-break: keep-all; line-break: strict; overflow-wrap: normal; }
+.website-content .web-about-hero-title { max-width: 1120px; font-size: clamp(36px, 4.4vw, 60px); line-height: 1.25; }
+.website-content .web-about-hero-title > span,
+.website-content .web-about-cta-title-line { display: block; }
+.website-content .web-about-showcase-copy h2 { text-wrap: pretty; }
+.website-content .web-about-timeline { grid-column: 1 / -1; order: 3; list-style: none; padding: 0 0 0 26px; margin: 24px 0 0 8px; border-left: 2px solid #c7d8f4; }
+.website-content .web-about-timeline li { position: relative; display: grid; gap: 8px; padding: 0 0 36px 4px; }
+.website-content .web-about-timeline li:last-child { padding-bottom: 0; }
+.website-content .web-about-timeline li::before { content: ''; position: absolute; left: -34px; top: 8px; width: 12px; height: 12px; border: 3px solid #f8f9ff; border-radius: 50%; background: #004ac6; box-sizing: content-box; }
+.website-content .web-about-timeline-year { margin: 0; color: #004ac6; font-size: 22px; font-weight: 700; line-height: 1.5; }
+.website-content .web-about-timeline-description { margin: 0; color: #334155; font-size: 17px; line-height: 1.8; }
+.website-content .web-about-class-guide a { text-align: center; }
+@media (min-width: 768px) {
+  .website-content .web-about-timeline li { grid-template-columns: 132px minmax(0, 1fr); gap: 20px; align-items: baseline; }
+}
+
+/* Final presentation adjustments, scoped to the existing ABOUT surface. */
+.website-content .web-about-page #brand { padding-block: 72px 64px; }
+.website-content .web-about-hero-title { margin-bottom: 24px; text-wrap: balance; }
+.website-content .web-about-page #brand > div > p { max-width: 720px; color: #475569; font-size: 19px; line-height: 1.85; text-wrap: pretty; }
+.website-content .web-about-showcase { padding-block: 72px; }
+.website-content .web-about-showcase > div > article + article { margin-top: 88px; }
+.website-content .web-about-showcase-item { gap: 32px; }
+.website-content .web-about-showcase-copy { gap: 18px; }
+.website-content .web-about-showcase-copy h2 { font-weight: 800; line-height: 1.35; letter-spacing: -.035em; }
+.website-content .web-about-showcase-copy > p:last-child { color: #475569; font-size: 18px; line-height: 1.85; text-wrap: pretty; }
+.website-content .web-about-showcase-media > div { aspect-ratio: 4 / 3; }
+.website-content .web-about-showcase-01 img { object-position: 50% 58%; }
+.website-content .web-about-showcase-02 img { object-position: 50% 50%; }
+.website-content .web-about-showcase-03 img { object-position: center; object-fit: contain; }
+.website-content .web-about-timeline { margin-top: 8px; padding-left: 28px; }
+.website-content .web-about-timeline li { gap: 6px; padding-bottom: 32px; }
+.website-content .web-about-timeline-year { font-size: 26px; font-weight: 800; line-height: 1.4; }
+.website-content .web-about-timeline-description { color: #0f2747; font-size: 20px; font-weight: 600; line-height: 1.7; text-wrap: pretty; }
+.website-content .web-about-class-guide { padding-bottom: 72px; }
+.website-content .web-about-class-guide > div > div { padding: 48px 32px; }
+.website-content .web-about-class-guide h2 { margin-bottom: 20px; line-height: 1.4; text-wrap: balance; }
+.website-content .web-about-class-guide p { margin-bottom: 28px; font-size: 17px; line-height: 1.75; }
+.website-content .web-about-class-guide > div > div > div > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 600px; gap: 16px; }
+.website-content .web-about-class-guide a { min-width: 0; min-height: 56px; height: 100%; padding: 16px 20px; font-size: 16px; line-height: 1.5; }
+@media (min-width: 1024px) {
+  .website-content .web-about-showcase-item { column-gap: 48px; row-gap: 40px; }
+  .website-content .web-about-showcase-03 .web-about-showcase-copy { grid-column: 1 / span 7; }
+  .website-content .web-about-showcase-03 .web-about-showcase-media { grid-column: 9 / span 4; }
+  .website-content .web-about-timeline li { column-gap: 20px; }
+}
+@media (max-width: 639px) {
+  .website-content .web-about-page #brand { padding-block: 48px; }
+  .website-content .web-about-hero-title { font-size: clamp(27px, 7.2vw, 36px); line-height: 1.4; letter-spacing: -.04em; }
+  .website-content .web-about-page #brand > div > p { font-size: 17px; }
+  .website-content .web-about-showcase { padding-block: 48px; }
+  .website-content .web-about-showcase > div > article + article { margin-top: 60px; }
+  .website-content .web-about-showcase-copy h2 { font-size: clamp(26px, 7vw, 30px); }
+  .website-content .web-about-showcase-copy > p:last-child { font-size: 17px; }
+  .website-content .web-about-timeline { padding-left: 24px; margin-left: 6px; }
+  .website-content .web-about-timeline li::before { left: -32px; }
+  .website-content .web-about-timeline-year { font-size: 24px; }
+  .website-content .web-about-timeline-description { font-size: 18px; }
+  .website-content .web-about-class-guide { padding-bottom: 48px; }
+  .website-content .web-about-class-guide > div > div { padding: 36px 20px; }
+  .website-content .web-about-class-guide h2 { font-size: 27px; letter-spacing: -.035em; }
+  .website-content .web-about-class-guide > div > div > div > div { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+@media (max-width: 639px) {
+  .website-content .web-about-hero-title { font-size: 36px; letter-spacing: -0.035em; }
+  .website-content .web-about-showcase-copy h2 { font-size: 30px; line-height: 1.4; }
 }

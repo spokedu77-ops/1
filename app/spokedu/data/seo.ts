@@ -107,9 +107,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '학교·기관과 개인·소그룹 체육수업, 화면 신호와 움직임을 연결하는 SPOMOVE·SPOMAT, 지도자의 수업 준비·운영·기록을 돕는 SPOKEDU LAB을 안내합니다.',
   },
   about: {
-    title: '스포키듀 소개 | 현장 체육교육 · SPOMOVE · 구독시스템',
+    title: '스포키듀 소개 | 설립 · 교육 운영 · 연혁 · 운영진',
     description:
-      '현장 체육교육에서 시작해 콘텐츠와 시스템으로 확장하는 SPOKEDU. 체육교육·SPOMOVE·구독시스템의 관계와 주요 연혁을 안내합니다.',
+      '2020년 설립 이후 아동·청소년 체육수업을 직접 운영해 온 SPOKEDU의 교육 방식, 주요 연혁과 전문 운영진을 소개합니다.',
   },
   education: {
     title: '기관 체육수업 | 학교·복지관·키움센터 체육교육 SPOKEDU',
