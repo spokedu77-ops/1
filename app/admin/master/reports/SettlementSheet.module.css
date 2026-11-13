@@ -303,7 +303,8 @@
 .settlementGrid .vatValue { display: flex; min-height: 34px; align-items: center; justify-content: flex-end; padding: 6px 4px; }
 .profitValue { display: block; min-height: 34px; padding: 6px 4px; font-weight: 750; text-align: right; white-space: nowrap; }
 .vatDetails { position: relative; min-width: 0; }
-.vatMenu { position: absolute; top: 100%; right: 0; z-index: 10; display: grid; gap: 6px; width: 160px; border: 1px solid var(--sheet-line); border-radius: 8px; padding: 8px; background: white; box-shadow: 0 8px 24px -8px rgba(15,35,28,.3); }
+.vatMenu { display: grid; gap: 6px; width: 160px; max-width: 100%; margin-top: 4px; border: 1px solid var(--sheet-line); border-radius: 8px; padding: 8px; background: white; }
+.vatDetails:not([open]) > .vatMenu { display: none; }
 .settlementGrid .vatMenu select { border-color: var(--sheet-line); }
 .profitAmount { display: block; min-height: 34px; border-radius: 6px; padding: 6px 4px; cursor: pointer; list-style: none; font-weight: 750; text-align: right; white-space: nowrap; }
 .profitAmount::-webkit-details-marker { display: none; }
