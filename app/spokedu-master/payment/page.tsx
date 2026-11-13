@@ -1,19 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Loader2, Lock, Mail, Shield } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { toMasterClientError } from '../lib/clientErrors';
 import {
-  MASTER_CENTER_INQUIRY_HREF,
   MASTER_PRODUCT_CATALOG,
   getDirectPurchaseMasterProducts,
-  getMasterProductPaymentDescription,
-  getMasterProductPaymentFeatureLabels,
-  type MasterProductCatalogItem,
 } from '../lib/productCatalog';
 import {
   canStartPaidPlanCheckout,
@@ -27,15 +21,14 @@ import { buildMasterLoginHref } from '../lib/masterLoginReturn';
 import { isTossClientKeyAllowed } from './tossClientKey';
 import type { TossPaymentsSDK } from '@tosspayments/tosspayments-sdk';
 import { trackMasterFunnelEvent } from '../lib/funnelEvents';
+import { useMasterStore } from '../store';
+import { BILLING_AUTH_CANCEL_MESSAGE, isBillingAuthUserCancellation } from './planPresentation';
+import { PaymentPlanSelection } from './PaymentPlanSelection';
 
 type PaidPlanId = 'lite' | 'premium';
 
 type UpgradeQuote = { amountDueNow: number; nextBillingAt: string; nextBillingAmount: number };
 type TossSdkStatus = 'loading' | 'ready' | 'missing-config' | 'load-error';
-
-function formatBillingDate(value: string) {
-  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Seoul' }).format(new Date(value));
-}
 
 const BILLING_NOTICE = [
   '선택 즉시 첫 결제가 진행됩니다.',
@@ -65,92 +58,8 @@ function appendGateContext(params: URLSearchParams, context: MasterGateContext) 
   if (context.gateSurface) params.set('gateSurface', context.gateSurface);
 }
 
-function formatKrw(value: number | null) {
-  return value == null ? MASTER_PRODUCT_CATALOG.center.priceLabel : `월 ${value.toLocaleString('ko-KR')}원`;
-}
-
 function buildCustomerKey(userId: string) {
   return `spm_${userId.replaceAll('-', '')}`;
-}
-
-function productShortName(product: MasterProductCatalogItem) {
-  return product.displayName.replace('SPOKEDU LAB ', '');
-}
-
-function PlanCard({
-  product,
-  selected,
-  disabled,
-  working,
-  actionLabel,
-  disabledHint,
-  onSelect,
-}: {
-  product: MasterProductCatalogItem;
-  selected: boolean;
-  disabled: boolean;
-  working: boolean;
-  actionLabel?: string;
-  disabledHint?: string;
-  onSelect: () => void;
-}) {
-  const planId = product.serverPlanKey;
-
-  return (
-    <section
-      className="relative flex min-w-0 flex-col overflow-hidden rounded-[16px] bg-white p-6"
-      style={{
-        border: selected ? '1.5px solid var(--spm-acc-a68)' : '1px solid var(--spm-br2)',
-      }}
-    >
-      <span className="absolute inset-x-0 top-0 h-1" style={{ background: selected ? 'var(--spm-acc)' : 'var(--spm-br2)' }} aria-hidden="true" />
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="text-[20px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
-            {productShortName(product)}
-          </h2>
-          <p className="mt-2 text-[28px] font-extrabold leading-tight tracking-[-0.03em]" style={{ color: 'var(--spm-t)' }}>
-            {formatKrw(product.monthlyPriceKrw)}
-          </p>
-        </div>
-        {selected ? (
-          <span className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-extrabold" style={{ background: 'var(--spm-acc-a10)', color: 'var(--spm-acc)' }}>
-            <CheckCircle2 size={16} aria-hidden /> 선택됨
-          </span>
-        ) : null}
-      </div>
-
-      <p className="mt-3 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-        {getMasterProductPaymentDescription(product)}
-      </p>
-
-      <ul className="mt-4 flex-1 space-y-2 border-t pt-4" style={{ borderColor: 'var(--spm-br2)' }}>
-        {getMasterProductPaymentFeatureLabels(product).map((item) => (
-          <li key={item} className="flex gap-2 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-            <CheckCircle2 size={14} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
-            <span className="min-w-0">{item}</span>
-          </li>
-        ))}
-      </ul>
-
-      <button
-        type="button"
-        disabled={disabled || working || !planId}
-        onClick={onSelect}
-        aria-pressed={selected}
-        className="spm-btn-primary mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-3 text-[13px] font-extrabold focus-visible:outline-none disabled:opacity-50"
-        data-plan-id={planId ?? undefined}
-      >
-        {working && selected ? <Loader2 size={15} className="animate-spin" /> : null}
-        {actionLabel ?? `${productShortName(product)} 구독 선택`}
-      </button>
-      {disabled && disabledHint ? (
-        <p className="mt-3 text-center text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-          {disabledHint}
-        </p>
-      ) : null}
-    </section>
-  );
 }
 
 function PaymentContent() {
@@ -161,6 +70,10 @@ function PaymentContent() {
     () => (gateContext.mode === 'gated' && gateContext.intent ? buildMasterGateDisplayModel(gateContext) : null),
     [gateContext],
   );
+  const programs = useMasterStore(state => state.programs);
+  const loadPrograms = useMasterStore(state => state.loadPrograms);
+  const selectedLessonTitle = gateContext.resource.kind === 'program' ? programs.find(program => program.id === gateContext.resource.id)?.title : undefined;
+  useEffect(() => { if (gateContext.resource.kind === 'program') void loadPrograms(); }, [gateContext.resource.kind, loadPrograms]);
   const requestedPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : 'lite';
   const initialPlan = gateContext.allowedPlans.includes(requestedPlan) ? requestedPlan : gateContext.minimumPlan;
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanId>(initialPlan);
@@ -330,217 +243,26 @@ function PaymentContent() {
     } catch (cause) {
       const code = cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string'
         && /^[A-Z0-9_]{1,80}$/.test(cause.code) ? cause.code : 'MODULE_OR_NETWORK_ERROR';
-      setError(`${code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED' ? '카드 등록을 취소했습니다.' : '결제창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.'} [${stage} / ${code}]`);
+      setError(isBillingAuthUserCancellation(code) ? BILLING_AUTH_CANCEL_MESSAGE : `결제창을 열지 못했습니다. 잠시 후 다시 시도해 주세요. [${stage} / ${code}]`);
     } finally {
       checkoutLocked.current = false;
       setWorkingPlan(null);
     }
   };
 
-  return (
-    <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-      <header className="mx-auto flex w-full max-w-[1080px] items-center gap-3 px-5 pb-4 pt-5 sm:px-8">
-        <button type="button" onClick={() => { if (window.history.length > 1) router.back(); else router.replace(gateContext.mode === 'gated' ? gateContext.next : '/spokedu-lab/subscription'); }} className="grid h-11 w-11 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="이전 화면">
-          <ArrowLeft size={18} color="var(--spm-t2)" />
-        </button>
-        <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU LAB</p>
-          <h1 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            {paymentPageMode === 'liteUpgrade'
-              ? 'Premium으로 이어가기'
-              : gateDisplay?.intent === 'start_spomove'
-                ? 'SPOMOVE 이용 안내'
-                : gateDisplay
-                  ? '하던 작업 이어가기'
-                  : '구독 선택'}
-          </h1>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-[1080px] space-y-5 px-5 pb-16 sm:px-8">
-        {gateDisplay ? (
-          <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>{gateDisplay.eyebrow}</p>
-            <h2 className="mt-2 max-w-[760px] break-keep text-[22px] font-extrabold leading-[1.35] tracking-[-0.02em] sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)' }}>
-              {gateDisplay.title}
-            </h2>
-            <p className="mt-3 max-w-[680px] break-keep text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              {gateDisplay.description}
-            </p>
-            <Link href={gateContext.next} className="mt-3 inline-flex min-h-11 items-center text-[13px] font-extrabold" style={{ color: 'var(--spm-acc)' }}>
-              이전 화면으로 돌아가기
-            </Link>
-          </section>
-        ) : (
-          <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <h2 className="text-[28px] font-extrabold leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
-              {paymentPageMode === 'liteUpgrade'
-                ? 'SPOMOVE로 수업 콘텐츠를 확장하세요'
-                : '좋은 콘텐츠를 찾고, 실제 수업과 다음 수업까지 이어가세요'}
-            </h2>
-            <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              {paymentPageMode === 'liteUpgrade'
-                ? 'Lite의 수업관리 기능은 그대로 유지됩니다. Premium에서는 SPOMOVE 공식 활동과 전체 화면 실행을 추가로 이용할 수 있습니다.'
-                : '라이트는 놀이체육, 반·학생·일정·출석, 기록과 안내문까지 수업관리 흐름을 모두 제공합니다. 프리미엄은 라이트 전체 기능에 SPOMOVE 디지털 움직임 콘텐츠를 더합니다.'}
-            </p>
-          </section>
-        )}
-
-        {loading ? (
-          <section className="flex h-28 items-center justify-center rounded-[18px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <Loader2 size={22} className="animate-spin" color="var(--spm-t3)" />
-          </section>
-        ) : !showPlanSelection ? (
-          <section className="rounded-[18px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            {gateDisplay?.intent === 'start_spomove'
-              ? <Lock size={36} className="mx-auto text-[var(--spm-acc)]" />
-              : <CheckCircle2 size={44} color="var(--spm-grn)" className="mx-auto" />}
-            <h2 className="mt-3 break-keep text-[20px] font-extrabold">
-              {gateDisplay?.intent === 'start_spomove'
-                ? '현재 이용권에서는 SPOMOVE를 실행할 수 없습니다.'
-                : `${subscriptionDisplay.planLabel} 이용 중`}
-            </h2>
-            <p className="mx-auto mt-2 max-w-[520px] break-keep text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-              {gateDisplay?.intent === 'start_spomove'
-                ? `현재 ${subscriptionDisplay.planLabel} 이용권이 적용되어 있습니다. 이용 가능한 플랜을 확인해 주세요.`
-                : subscriptionDisplay.state === 'cancelScheduled'
-                  ? subscriptionDisplay.description
-                  : '현재 이용권이 활성화되어 있습니다.'}
-            </p>
-            <Link href="/spokedu-lab/subscription" className="spm-btn-primary mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
-              {gateDisplay?.intent === 'start_spomove' ? '이용권 확인하기' : '구독 관리'}
-            </Link>
-          </section>
-        ) : (
-          <>
-            {paymentPageMode === 'liteUpgrade' ? (
-              <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
-                <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 놀이체육, 수업 운영, 기록과 안내문을 모두 이용할 수 있습니다. 프리미엄으로 올리면 SPOMOVE 공식 활동과 전체 화면 실행이 추가됩니다. 오늘 결제액은 라이트 잔여 기간을 반영한 차액이며, 프리미엄 정가를 새로 1개월 결제하지 않습니다.
-                </p>
-              </section>
-            ) : null}
-            {paymentPageMode !== 'liteUpgrade' && tossSdkStatus !== 'ready' ? (
-              <section className="rounded-[14px] border px-4 py-3" style={{ background: tossSdkStatus === 'loading' ? 'var(--spm-acc-a10)' : 'rgba(239,68,68,0.08)', borderColor: tossSdkStatus === 'loading' ? 'var(--spm-acc-a28)' : 'rgba(239,68,68,0.22)' }} aria-live="polite">
-                <p className="text-[13px] font-bold leading-6" style={{ color: tossSdkStatus === 'loading' ? 'var(--spm-t2)' : 'var(--spm-red)' }}>
-                  {tossSdkStatus === 'loading'
-                    ? '안전한 결제창을 준비하고 있습니다.'
-                    : tossSdkStatus === 'missing-config'
-                      ? '결제 설정이 완료되지 않아 지금은 결제를 시작할 수 없습니다.'
-                      : '결제 모듈을 불러오지 못했습니다. 네트워크 상태를 확인한 뒤 새로고침해 주세요.'}
-                </p>
-                {tossSdkStatus === 'load-error' ? (
-                  <button type="button" onClick={() => window.location.reload()} className="mt-2 min-h-11 text-[13px] font-extrabold underline underline-offset-4" style={{ color: 'var(--spm-red)' }}>
-                    결제 모듈 다시 불러오기
-                  </button>
-                ) : null}
-              </section>
-            ) : null}
-            <div className="grid gap-5 lg:grid-cols-2">
-              {directProducts.map((product) => {
-                const planId = product.serverPlanKey as PaidPlanId;
-                const planAllowedForIntent = gateContext.allowedPlans.includes(planId);
-                const sdkReadyForPlan = paymentPageMode === 'liteUpgrade' || tossSdkStatus === 'ready';
-                const canCheckout = subscription !== null && workingPlan === null && planAllowedForIntent && canStartPaidPlanCheckout(subscription, planId) && sdkReadyForPlan;
-                return (
-                  <PlanCard
-                    key={product.id}
-                    product={product}
-                    selected={selectedPlan === product.id}
-                    disabled={!canCheckout}
-                    working={workingPlan === product.id}
-                    actionLabel={
-                      paymentPageMode === 'liteUpgrade' && planId === 'premium'
-                        ? '프리미엄으로 업그레이드'
-                        : undefined
-                    }
-                    disabledHint={
-                      !planAllowedForIntent
-                        ? gateContext.intent === 'start_spomove'
-                          ? '현재 이용하려는 SPOMOVE 기능은 프리미엄에서 사용할 수 있습니다.'
-                          : `${gateDisplay?.title ?? '현재 작업'}에 ${gateContext.minimumPlan === 'premium' ? '프리미엄' : '라이트'} 이용권이 필요합니다.`
-                        : !sdkReadyForPlan
-                          ? tossSdkStatus === 'loading' ? '결제창을 준비하고 있습니다.' : '결제 설정을 확인해 주세요.'
-                        : paymentPageMode === 'liteUpgrade' && planId === 'lite'
-                          ? '현재 라이트 이용 중입니다.'
-                          : undefined
-                    }
-                    onSelect={() => void startBillingAuth(planId)}
-                  />
-                );
-              })}
-            </div>
-
-            {error ? (
-              <p role="alert" className="rounded-[12px] p-3 text-[13px] font-bold leading-6" style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.22)', color: 'var(--spm-red)' }}>
-                {error}
-              </p>
-            ) : null}
-
-            <section className="rounded-[18px] p-5 sm:p-6" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>PAYMENT SUMMARY</p>
-              <h3 className="mt-2 text-[19px] font-extrabold">결제 예정 정보</h3>
-              <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>선택 상품</dt><dd className="mt-1 text-[15px] font-extrabold">{productShortName(selectedProduct)}</dd></div>
-                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{paymentPageMode === 'liteUpgrade' ? '오늘 결제하는 차액' : '오늘 결제 예정 금액'}</dt><dd className="mt-1 text-[15px] font-extrabold">{paymentPageMode === 'liteUpgrade' ? (upgradeQuote ? `${upgradeQuote.amountDueNow.toLocaleString('ko-KR')}원` : '서버 견적 확인 중') : `${selectedProduct.monthlyPriceKrw?.toLocaleString('ko-KR')}원`}</dd></div>
-                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{paymentPageMode === 'liteUpgrade' ? '다음 결제일' : '결제 방식'}</dt><dd className="mt-1 text-[15px] font-extrabold">{paymentPageMode === 'liteUpgrade' ? (upgradeQuote ? formatBillingDate(upgradeQuote.nextBillingAt) : '견적 확인 후 표시') : selectedProduct.billingCycleLabel}</dd></div>
-                <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s2)' }}><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{paymentPageMode === 'liteUpgrade' ? '다음 결제 금액' : '다음 자동결제'}</dt><dd className="mt-1 text-[15px] font-extrabold">{paymentPageMode === 'liteUpgrade' ? (upgradeQuote ? `${upgradeQuote.nextBillingAmount.toLocaleString('ko-KR')}원` : '견적 확인 후 표시') : '최초 결제일 기준 매월'}</dd></div>
-              </dl>
-              <p className="mt-4 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                {paymentPageMode === 'liteUpgrade'
-                  ? '현재 라이트의 남은 이용기간 가치를 반영한 서버 견적이며, 결제 성공 즉시 프리미엄이 적용됩니다.'
-                  : '첫 결제가 승인되면 선택한 상품이 활성화되고, 이후 매월 같은 기준일에 자동결제됩니다.'}
-              </p>
-            </section>
-
-            <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <Shield size={18} color="var(--spm-grn)" />
-              <h3 className="mt-3 text-[15px] font-extrabold">정기결제 · 해지 안내</h3>
-              <ul className="mt-3 space-y-2">
-                {(paymentPageMode === 'liteUpgrade' ? UPGRADE_BILLING_NOTICE : BILLING_NOTICE).map((item) => (
-                  <li key={item} className="flex gap-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                    <CheckCircle2 size={14} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                <Link href="/spokedu-lab/terms" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>이용약관</Link>
-                <span className="mx-1">및</span>
-                <Link href="/spokedu-lab/privacy" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>개인정보처리방침</Link>
-                <span className="mx-1">·</span>
-                <Link href="/spokedu-lab/terms#refund" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>해지·환불정책</Link>
-                <span>을 확인해 주세요.</span>
-              </p>
-            </section>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <Mail size={18} color="var(--spm-acc)" />
-                <h3 className="mt-3 text-[15px] font-extrabold">센터·기관에서 사용하시나요?</h3>
-                <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>이용 인원과 운영 방식에 맞춰 별도로 안내합니다.</p>
-                <a href={MASTER_CENTER_INQUIRY_HREF} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-extrabold" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>센터·기관 도입 문의</a>
-              </section>
-              <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <p className="text-[13px] font-extrabold">결제 계정</p>
-                <div className="mt-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
-                  <p className="break-all text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{userEmail}</p>
-                  <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>금액은 서버의 상품 계약으로 다시 계산하고 검증합니다.</p>
-                </div>
-              </section>
-            </div>
-          </>
-        )}
-
-      </main>
-    </div>
-  );
+  return <PaymentPlanSelection
+    gateContext={gateContext} gateDisplay={gateDisplay} selectedLessonTitle={selectedLessonTitle}
+    selectedPlan={selectedPlan} selectedProduct={selectedProduct} directProducts={directProducts}
+    subscription={subscription} subscriptionDisplay={subscriptionDisplay} paymentPageMode={paymentPageMode}
+    showPlanSelection={showPlanSelection} loading={loading} workingPlan={workingPlan}
+    tossSdkStatus={tossSdkStatus} upgradeQuote={upgradeQuote} error={error} userEmail={userEmail}
+    billingNotices={paymentPageMode === 'liteUpgrade' ? UPGRADE_BILLING_NOTICE : BILLING_NOTICE}
+    onChoose={plan => { if (!checkoutLocked.current) setSelectedPlan(plan); }}
+    onCheckout={planId => void startBillingAuth(planId)}
+    onBack={() => { if (window.history.length > 1) router.back(); else router.replace(gateContext.mode === 'gated' ? gateContext.next : '/spokedu-lab/subscription'); }}
+  />;
 }
 
 export default function PaymentPage() {
-  return (
-    <Suspense>
-      <PaymentContent />
-    </Suspense>
-  );
+  return <Suspense><PaymentContent /></Suspense>;
 }
