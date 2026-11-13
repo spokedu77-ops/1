@@ -18,6 +18,7 @@ export function useSessionActivities({
   session,
   activeSession,
   initialProgramId,
+  initialProgramCompleted = true,
   data,
   canUseSpomove,
   saving,
@@ -31,6 +32,7 @@ export function useSessionActivities({
   session: MasterSessionDto | null;
   activeSession: MasterSessionDto | null;
   initialProgramId?: string | null;
+  initialProgramCompleted?: boolean;
   data: OperationalData;
   canUseSpomove: boolean;
   saving: boolean;
@@ -60,9 +62,9 @@ export function useSessionActivities({
     if (!item) return;
     setPrograms((current) => current.some((program) => program.sourceType === 'program' && String(program.programId) === initialProgramId)
       ? current
-      : [{ id: `draft:program:${item.id}`, sourceType: 'program', programId: Number(item.id), spomovePresetId: null, programTitle: item.title, sortOrder: 0, isCompleted: true }, ...current.map((program, index) => ({ ...program, sortOrder: index + 1 }))]);
+      : [{ id: `draft:program:${item.id}`, sourceType: 'program', programId: Number(item.id), spomovePresetId: null, programTitle: item.title, sortOrder: 0, isCompleted: initialProgramCompleted }, ...current.map((program, index) => ({ ...program, sortOrder: index + 1 }))]);
     setDirty(true);
-  }, [activeSession, initialProgramId, libraryPrograms, programsLoaded, session, setDirty]);
+  }, [activeSession, initialProgramCompleted, initialProgramId, libraryPrograms, programsLoaded, session, setDirty]);
 
   useEffect(() => {
     if (!session || saving || dirty) return;

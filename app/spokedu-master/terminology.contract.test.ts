@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { getEntitlementPrimaryCtaLabel } from './lib/masterAccessModel';
 
 /** BOM·인코딩 노이즈로 assertion 메시지가 깨지지 않게 정규화 */
 const read = (path: string) =>
@@ -11,6 +12,7 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/dashboard/EntitlementPreviewHome.tsx',
   'app/spokedu-master/library/LibraryView.tsx',
   'app/spokedu-master/library/[id]/LibraryDetailView.tsx',
+  'app/spokedu-master/library/[id]/components/DetailLessonGuideV2.tsx',
   'app/spokedu-master/activity/page.tsx',
   'app/spokedu-master/manage/ManageView.tsx',
   'app/spokedu-master/manage/ScheduleTab.tsx',
@@ -26,6 +28,7 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/class-record/page.tsx',
   'app/spokedu-master/components/lesson/LessonCatalogCard.tsx',
   'app/spokedu-master/components/lesson/ProgramPreviewModal.tsx',
+  'app/spokedu-master/components/lesson/LessonAccessModal.tsx',
   'app/spokedu-master/report/page.tsx',
   'app/spokedu-master/spomove/page.tsx',
   'app/spokedu-master/spomove/SpomoveHubView.tsx',
@@ -35,6 +38,8 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/landing/CommercialLanding.tsx',
   'app/spokedu-master/onboarding/page.tsx',
   'app/spokedu-master/payment/page.tsx',
+  'app/spokedu-master/payment/PaymentPlanSelection.tsx',
+  'app/spokedu-master/payment/PlanComparison.tsx',
   'app/spokedu-master/profile/page.tsx',
   'app/spokedu-master/terms/page.tsx',
   'app/spokedu-master/privacy/page.tsx',
@@ -89,7 +94,8 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).not.toContain('수업 관리 열기');
     expect(source).toContain('수업 일정 보기');
     expect(source).toContain('수업 관리');
-    expect(source).toContain('구독 선택');
+    // The dashboard renders this shared label dynamically rather than inlining it.
+    expect(getEntitlementPrimaryCtaLabel(null)).toBe('구독 선택');
     expect(source).toContain('프리미엄');
   });
 

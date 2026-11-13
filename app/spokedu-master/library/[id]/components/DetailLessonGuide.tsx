@@ -15,7 +15,7 @@ import {
 } from '../../../lib/program-media';
 import type { RelatedLessonVideo } from '../../relatedLessonVideos';
 
-type VideoProps = {
+export type VideoProps = {
   embedUrl?: string;
   directUrl?: string;
   sourceUrl?: string;
@@ -63,7 +63,7 @@ export function splitLessonTitle(title: string): {
   return { koreanTitle, englishTitle };
 }
 
-function SetupImage({ title, src }: { title: string; src: string }) {
+export function SetupImage({ title, src }: { title: string; src: string }) {
   const [open, setOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -152,9 +152,9 @@ function SetupImage({ title, src }: { title: string; src: string }) {
   );
 }
 
-function LessonVideo({ model, video }: { model: LessonDisplayModel; video: VideoProps }) {
+export function LessonVideo({ model, video, preserveVideoRatio = false }: { model: LessonDisplayModel; video: VideoProps; preserveVideoRatio?: boolean }) {
   const [liteMedia, setLiteMedia] = useState(false);
-  const balancedGuideRatio = model.variationMethod.length > 0 ? 'min-[900px]:aspect-[4/3]' : '';
+  const balancedGuideRatio = !preserveVideoRatio && model.variationMethod.length > 0 ? 'min-[900px]:aspect-[4/3]' : '';
 
   useEffect(() => {
     setLiteMedia(preferLiteMedia());
@@ -187,6 +187,7 @@ function LessonVideo({ model, video }: { model: LessonDisplayModel; video: Video
           className="relative z-10 h-full w-full bg-slate-950"
           onPlaybackStarted={video.onPlaybackStarted}
           posterUrl={dedicatedPoster}
+          posterObjectFit={preserveVideoRatio ? 'contain' : 'cover'}
           posterCandidates={posterCandidates}
           deferUntilPlay={!video.autoplay}
         />

@@ -1,7 +1,7 @@
 'use client';
 
 import { Bookmark, Heart, Play } from 'lucide-react';
-import Link from 'next/link';
+import { LessonAccessLink } from './LessonAccessModal';
 
 import { InstructionalThumb } from '../media/InstructionalThumb';
 import { MV_CONTENT_TITLE, MV_HOME_CARD_META, MV_HOME_CARD_TITLE, MV_META } from '../../lib/masterUiClasses';
@@ -123,9 +123,9 @@ export function WeeklyEditorialCard({
           {cardContent}
         </button>
       ) : lockedLinkEnabled ? (
-        <Link href={lockedHref!} className={cardClassName} aria-label={`${title} Lite 이용 안내`}>
+        <LessonAccessLink title={title} href={lockedHref!} className={cardClassName} aria-label={`${title} Lite 이용 안내`}>
           {cardContent}
-        </Link>
+        </LessonAccessLink>
       ) : (
         <div data-preview-disabled="" className={cardClassName}>
           {cardContent}

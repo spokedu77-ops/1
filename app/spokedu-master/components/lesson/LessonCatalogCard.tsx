@@ -3,6 +3,7 @@
 import { ArrowRight, BookOpen, Check, Heart, Lock, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { LessonAccessLink } from './LessonAccessModal';
 import { useState } from 'react';
 import { CategoryIcon } from '../ui/ProgramThumb';
 import { InstructionalThumb } from '../media/InstructionalThumb';
@@ -271,12 +272,12 @@ export function LessonCatalogCard({
         {locked || onPrimaryAction ? (
           <div className="border-t border-slate-100 px-3 py-3">
             {locked ? (
-              <Link
+                <LessonAccessLink title={title}
                 href={lockHref}
                 className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-semibold text-amber-800"
               >
                 {lockLabel}
-              </Link>
+                </LessonAccessLink>
             ) : (
               <button
                 type="button"
@@ -424,12 +425,12 @@ export function LessonCatalogCard({
         </div>
 
         {locked ? (
-          <Link
+            <LessonAccessLink title={title}
             href={lockHref}
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
           >
             {lockLabel}
-          </Link>
+            </LessonAccessLink>
         ) : onPrimaryAction ? (
           <button
             type="button"

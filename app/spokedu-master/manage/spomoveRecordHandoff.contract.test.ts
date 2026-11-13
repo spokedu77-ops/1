@@ -13,7 +13,8 @@ describe('SPOMOVE result to MASTER record handoff', () => {
     expect(manage).toContain('resolveSpomoveRecordHandoff(searchParams, profile?.id)');
     expect(manage).toContain('spomoveHandoff?.runId');
     expect(sheet).toContain('initialMemo: spomoveHandoff?.draft');
-    expect(sheet).toContain('initialProgramId: spomoveHandoff?.programId');
+    expect(sheet).toContain('initialProgramId: initialLibraryProgramId ?? spomoveHandoff?.programId');
+    expect(sheet).toContain('initialProgramCompleted: !initialLibraryProgramId');
     expect(draft).toContain("canUseRecords ? initialMemo ?? '' : ''");
     expect(activities).toContain('program.id === initialProgramId');
   });

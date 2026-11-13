@@ -22,4 +22,13 @@ describe('Library detail load states', () => {
     expect(source).toContain('buildProgramLessonGateHref(program.id, detailCurrentPath)');
     expect(source).not.toContain('href="/spokedu-lab/library"');
   });
+
+  it('uses V2 for every library program only after the existing entitlement gate', () => {
+    expect(source.indexOf('if (programLocked)')).toBeLessThan(source.indexOf('<DetailLessonGuideV2 model={model}'));
+    expect(source).toContain('targetSessionId={fromSession ? sessionId : null}');
+    expect(source).toContain('returnHref={fromSession ? workReturnHref : null}');
+    expect(source).toContain('formatLessonPlanText(model)');
+    expect(source).not.toContain('LIBRARY_DETAIL_V2_PROGRAM_ID');
+    expect(source).not.toContain('<DetailLessonGuide\n');
+  });
 });

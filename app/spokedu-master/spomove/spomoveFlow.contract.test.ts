@@ -285,7 +285,10 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).toContain("/spokedu-lab/activity");
     expect(masterResult).toContain("같은 설정으로 다시 준비");
     expect(session).toContain("reopenStartConfirmation");
-    expect(masterResult).toContain("활동 목록으로");
+    expect(masterResult).toContain('onBack={() => router.push(hubHref)}');
+    expect(read('app/admin/spomove/training/_player/components/result-v2/ResultV2Frame.tsx')).toContain('활동 목록으로');
+    expect(masterResult).toContain('href={sessionReturnHref}');
+    expect(masterResult).toContain('수업으로 돌아가기');
   });
 
   it("returns an exact Session build to its preserved work context without creating a Session", () => {
