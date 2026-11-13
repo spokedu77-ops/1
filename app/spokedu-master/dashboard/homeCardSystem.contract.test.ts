@@ -168,7 +168,10 @@ describe("MASTER Home content card system", () => {
     expect(programsGateway).toMatch(
       /const spomoveHeroSrc = !gatewayMediaLoaded\s+\? null/,
     );
-    expect(programsGateway).toContain("animate-pulse bg-gradient-to-br");
+    expect(programsGateway).toContain('className={styles.placeholder} aria-hidden="true"');
+    const gatewayStyles = readFileSync('app/spokedu-master/programs/Programs.module.css', 'utf8');
+    expect(gatewayStyles).toMatch(/\.placeholder\s*\{[^}]*background:#f1f5f9/);
+    expect(gatewayStyles.match(/\.placeholder\s*\{[^}]*\}/)?.[0]).not.toContain('url(');
     expect(dashboard).toContain("SpomoveThumbnailPlaceholder");
     expect(dashboard).not.toContain("SPOMOVE_PAD_GRID_HEX");
   });

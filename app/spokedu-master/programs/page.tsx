@@ -7,7 +7,8 @@ import { useEffect, useState } from 'react';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
-import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
+import { ArrowRight, Lightbulb } from 'lucide-react';
+import styles from './Programs.module.css';
 import { nextImageUnoptimized } from '../lib/mediaPreferences';
 import {
   normalizeProgramGatewayMedia,
@@ -84,85 +85,48 @@ export default function ProgramsPage() {
     : resolveProgramGatewayHero({ lessonHero: null, spomoveHero: null }, 'spomoveHero');
 
   return (
-    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-24 lg:pb-0">
-      <MasterPageShell
-        variant="editorial"
-        className="flex min-h-full max-w-[1120px] flex-col pb-10 sm:pb-12 lg:pb-14"
-      >
-        <MasterPageHeader title="프로그램" description="수업에 맞는 프로그램을 선택하세요." />
-
-        <div className="flex flex-1 items-start py-10 sm:py-12 lg:items-center lg:pb-24 lg:pt-10">
-          <div className="grid w-full gap-5 md:grid-cols-2 lg:gap-6">
-            <ProgramGatewayCard
-              title="놀이체육"
-              tier="Lite"
-              description="다양한 교구와 움직임으로 구성하는 현장 체육활동"
-              action="놀이체육 둘러보기"
-              href="/spokedu-lab/library"
-              image={lessonHeroSrc}
-            />
-            <ProgramGatewayCard
-              title="SPOMOVE"
-              tier="Premium"
-              description="화면 자극과 움직임을 연결하는 시지각 움직임 프로그램"
-              action="SPOMOVE 둘러보기"
-              href="/spokedu-lab/spomove"
-              image={spomoveHeroSrc}
-            />
-          </div>
+    <main className={styles.page} data-program-gateway>
+      <div className={styles.shell}>
+        <header className={styles.header}>
+          <h1>프로그램 선택</h1>
+          <p className={styles.desktopIntro}>수업 환경과 목표에 맞는 프로그램을 선택해 보세요.</p>
+          <p className={styles.mobileIntro}>수업에 활용할 프로그램을 선택해 보세요.</p>
+        </header>
+        <div className={styles.grid}>
+          <ProgramGatewayCard title="놀이체육" tier="라이트 · 프리미엄"
+            materials="활동별 교구"
+            description="다양한 교구와 움직임을 활용하는 체육 활동"
+            href="/spokedu-lab/library" image={lessonHeroSrc} />
+          <ProgramGatewayCard title="SPOMOVE" tier="프리미엄 전용"
+            materials="화면 출력 장치"
+            description="시각정보를 인지하고 움직임으로 반응하는 놀이체육"
+            href="/spokedu-lab/spomove" image={spomoveHeroSrc} digital />
         </div>
-      </MasterPageShell>
+        <aside className={styles.assist}>
+          <span className={styles.assistIcon}><Lightbulb size={22} aria-hidden="true" /></span>
+          <div><h2>놀이체육과 SPOMOVE의 연계 수업</h2><p>두 프로그램을 수업 목표와 환경에 맞게 함께 활용할 수 있습니다.</p></div>
+        </aside>
+      </div>
     </main>
   );
 }
 
-function ProgramGatewayCard({
-  title,
-  tier,
-  description,
-  action,
-  href,
-  image,
-}: {
-  title: string;
-  tier: 'Lite' | 'Premium';
-  description: string;
-  action: string;
-  href: string;
-  image: string | null;
+function ProgramGatewayCard({ title, tier, materials, description, href, image, digital = false }: {
+  title: string; tier: string; description: string;
+  materials: string;
+  href: string; image: string | null; digital?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      aria-label={`${title} · ${tier} 프로그램 둘러보기`}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-slate-200/80 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
-    >
-      <div className="relative aspect-[16/9] overflow-hidden bg-slate-200">
-        {image ? (
-          <Image
-            src={image}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 40vw, 100vw"
-            loading="eager"
-            unoptimized={nextImageUnoptimized(image)}
-            className="object-contain"
-          />
-        ) : (
-          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100" aria-hidden="true" />
-        )}
+    <article className={`${styles.card} ${digital ? styles.digital : ''}`}>
+      <div className={styles.cardHeader}><span className={styles.tier}>{tier}</span></div>
+      <div className={styles.hero}>
+        {image ? <Image src={image} alt="" fill sizes="(min-width: 1024px) 504px, 50vw" loading="eager" unoptimized={nextImageUnoptimized(image)} className={styles.photo} /> : <div className={styles.placeholder} aria-hidden="true" />}
       </div>
-      <div className="flex min-h-[166px] flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[24px] font-semibold leading-tight tracking-[-0.02em] text-slate-950">{title}</h2>
-          <span className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold text-white ${tier === 'Premium' ? 'bg-violet-600' : 'bg-blue-600'}`}>{tier}</span>
-        </div>
-        <p className="mt-2 text-[15px] font-normal leading-6 text-slate-600">{description}</p>
-        <span className="mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-3 text-[14px] font-semibold text-slate-600 transition-colors group-hover:text-slate-950 sm:pt-4">
-          {action}
-          <span aria-hidden="true">→</span>
-        </span>
+      <div className={styles.body}>
+        <div><div className={styles.title}><h2>{title}</h2></div><p className={styles.description}>{description}</p></div>
+        <dl className={styles.specs}><div><dt>대상</dt><dd>{digital ? '유아 · 초등 · 특수체육' : '유아 · 초등'}</dd></div><div><dt>공간</dt><dd>{digital ? '체육관 · 교실' : '체육관 · 교실 · 운동장'}</dd></div><div><dt>준비물</dt><dd>{materials}</dd></div></dl>
+        <Link href={href} className={styles.action}>{title} 시작하기<ArrowRight size={18} aria-hidden="true" /></Link>
       </div>
-    </Link>
+    </article>
   );
 }
