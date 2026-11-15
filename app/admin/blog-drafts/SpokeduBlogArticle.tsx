@@ -75,37 +75,80 @@ function inline(nodes: EditorNode[] = []): React.ReactNode {
   });
 }
 
-function isLegacyContactParagraph(node: EditorNode): boolean {
+function paragraphPlainText(node: EditorNode): string {
+  return textOf(node).replace(/\s+/g, " ").trim();
+}
+
+/** Exact generic footer boilerplate only — never article-specific CTAs. */
+function isGenericFooterDuplicate(node: EditorNode): boolean {
   if (node.type !== "paragraph") return false;
-  const value = textOf(node).replace(/\s+/g, " ").trim();
-  if (value.length < 10 || value.length > 300) return false;
-  // Only suppress a standalone legacy contact sentence in the *last* paragraphs.
-  // Other mentions of SPOKEDU or spokedu.kr within educational content stay untouched.
-  return /(spokedu\.kr|스포키듀|SPOKEDU)/i.test(value) &&
-    /(문의|상담|출강|프로그램.*확인|홈페이지|자세한 내용)/.test(value);
+  const value = paragraphPlainText(node);
+  return /아이와 현장의 조건에 맞는 체육수업/.test(value)
+    || /^프로그램 살펴보기/.test(value);
+}
+
+function isRelatedSectionHeading(node: EditorNode): boolean {
+  return node.type === "heading" && /함께 읽어볼/.test(paragraphPlainText(node));
+}
+
+function isTeachingPoint(node: EditorNode): boolean {
+  return node.type === "blockquote" && /^TEACHING POINT/i.test(paragraphPlainText(node));
+}
+
+/**
+ * Closing CTAs sit after the last TEACHING POINT and before the related-articles
+ * heading. Mid-article "스포키듀는 …" narrative sentences stay untouched.
+ */
+function isClosingCustomCta(node: EditorNode, index: number, nodes: EditorNode[]): boolean {
+  if (node.type !== "paragraph") return false;
+  const value = paragraphPlainText(node);
+  if (value.length < 10 || value.length > 360) return false;
+  if (!/(spokedu\.kr|스포키듀|SPOKEDU)/i.test(value)) return false;
+  if (isGenericFooterDuplicate(node)) return false;
+  const relatedAt = nodes.findIndex(isRelatedSectionHeading);
+  const lastTeachingAt = nodes.reduce((last, item, i) => (isTeachingPoint(item) ? i : last), -1);
+  if (relatedAt !== -1 && index >= relatedAt) return false;
+  if (lastTeachingAt !== -1 && index <= lastTeachingAt) return false;
+  // Fallback when TEACHING POINT is missing: only the last brand paragraph before related links.
+  if (lastTeachingAt === -1) {
+    const windowEnd = relatedAt === -1 ? nodes.length : relatedAt;
+    for (let i = windowEnd - 1; i >= 0; i -= 1) {
+      const candidate = nodes[i];
+      if (candidate.type !== "paragraph") continue;
+      const text = paragraphPlainText(candidate);
+      if (/(spokedu\.kr|스포키듀|SPOKEDU)/i.test(text)) return i === index;
+    }
+    return false;
+  }
+  return true;
 }
 
 function isBoldSectionParagraph(node: EditorNode): boolean {
   if (node.type !== "paragraph" || !node.content?.length) return false;
   const heading = textOf(node).trim();
-  if (heading.length < 8 || heading.length > 95 || isLegacyContactParagraph(node)) return false;
+  if (heading.length < 8 || heading.length > 95 || isGenericFooterDuplicate(node)) return false;
   return node.content.every(child => child.type === "text" &&
     child.marks?.some(mark => mark.type === "bold"));
 }
 
 function stripRepeatedClosingContact(nodes: EditorNode[]): EditorNode[] {
-  // Do not mutate stored TipTap JSON; preview/export-only suppression.
+  // Preview/export only. Keep manuscript-specific CTAs; remove only trailing
+  // generic footer duplicates that would collide with the shared CTA block.
   const result = [...nodes];
-  const inspectStart = Math.max(0, nodes.length - 4);
+  const inspectStart = Math.max(0, nodes.length - 6);
   for (let i = result.length - 1; i >= inspectStart; i -= 1) {
     const item = result[i];
     if (item.type === "horizontalRule" && i === result.length - 1) {
       result.splice(i, 1);
-    } else if (isLegacyContactParagraph(item)) {
+    } else if (isGenericFooterDuplicate(item)) {
       result.splice(i, 1);
     }
   }
   return result;
+}
+
+function hasEmbeddedCustomCta(nodes: EditorNode[]): boolean {
+  return nodes.some((node, index) => isClosingCustomCta(node, index, nodes));
 }
 
 function textOf(node?: EditorNode): string {
@@ -177,6 +220,7 @@ export default function SpokeduBlogArticle({
     const sections: Array<{ title: string; nodes: EditorNode[] }> = [];
     const nodes = Array.isArray(draft.content?.content) ? draft.content.content : [];
     const cleaned = stripRepeatedClosingContact(nodes);
+    const customCta = hasEmbeddedCustomCta(cleaned);
     const hasH1orH2 = cleaned.some(node => node.type === "heading" && Number(node.attrs?.level ?? 3) <= 2);
     const hasAnyHeading = cleaned.some(node => node.type === "heading");
     for (const node of cleaned) {
@@ -193,7 +237,7 @@ export default function SpokeduBlogArticle({
         intro.push(node);
       }
     }
-    return { intro, sections };
+    return { intro, sections, customCta };
   }, [draft.content]);
 
   const cover = hero ? imageSrc(hero.src, imageUrls) : undefined;
@@ -229,14 +273,17 @@ export default function SpokeduBlogArticle({
           {section.nodes.map((node, j) => render(node, `section-${i}-${j}`))}
         </section>)}
         {insight && !highlightUsed && <blockquote className={styles.insight}><p>{insight}</p></blockquote>}
+        {/* Custom manuscript CTAs stay in the body above. Shared footer text is omitted to avoid duplication. */}
         <footer className={styles.ctaSection}>
-          <p className={styles.ctaText}><strong>SPOKEDU · 스포키듀</strong>아이와 현장의 조건에 맞는 체육수업을 설계합니다.</p>
+          {!document.customCta && (
+            <p className={styles.ctaText}><strong>SPOKEDU · 스포키듀</strong>아이와 현장의 조건에 맞는 체육수업을 설계합니다.</p>
+          )}
           <a href="https://spokedu.kr" className={styles.ctaLink} target="_blank" rel="noopener noreferrer">프로그램 살펴보기 →</a>
         </footer>
         {related.length > 0 && <aside className={styles.related}>
           <h3>관련 콘텐츠</h3>
           <div className={styles.relatedList}>
-            {related.slice(0, 2).map((item, i) => {
+            {related.slice(0, 3).map((item, i) => {
               const href = safeUrl(item.url);
               if (!href) return null;
               return <a className={styles.relatedItem} href={href} key={i}
