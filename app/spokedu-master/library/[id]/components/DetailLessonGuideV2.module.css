@@ -47,8 +47,10 @@
 
 .videoHeading { padding:20px; border-bottom:1px solid #f1f5f9; }
 .videoHeading h2 { display:flex; align-items:center; gap:10px; }
-.videoDot { width:10px; height:10px; background:#ef4444; border-radius:50%; }
-.video > div:last-child { border-radius:0; }
+.videoDot { width:8px; height:20px; flex-shrink:0; background:#ef4444; border-radius:999px; }
+.video > div:last-child { border-radius:16px; overflow:hidden; }
+.video > div { aspect-ratio:4 / 3; }
+.video > div > button img { object-fit:cover; }
 .setupHeading { padding:20px; border-bottom:1px solid #f1f5f9; }
 .setupHeading h2 { display:flex; align-items:center; gap:8px; }
 .setupHeading h2::before { content:''; width:8px; height:20px; flex-shrink:0; border-radius:999px; background:#8b5cf6; }
@@ -85,7 +87,7 @@
 .script { margin-top:16px; }
 .script h3 { display:flex; align-items:center; gap:6px; }
 .script h3 svg { color:#047857; }
-.speechTurn { margin-top:6px; }
+.speechTurn { margin-top:8px; }
 .root .speechBubble { padding:14px; border:1px solid var(--v2-border); border-radius:12px; background:var(--v2-muted); color:var(--v2-text); font-size:14px; font-weight:400; line-height:24px; text-indent:0; }
 .script .speechBubble + .speechBubble { margin-top:16px; }
 .coaching { margin-top:16px; padding:12px; border-radius:12px; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; font-size:12px; line-height:20px; }
@@ -126,9 +128,6 @@
 .method,.variations,.guidance { padding:24px; border-left:1px solid var(--v2-border); }
 .guidance:not(:first-child) { margin-top:0; padding-top:24px; border-top:1px solid var(--v2-border); }
 .card { overflow:visible; }
-.video > div:last-child { border-radius:16px; overflow:hidden; }
-.video > div { aspect-ratio:4 / 3; }
-.video > div > button img { object-fit:cover; }
 .video > div > button > span { color:#0f172a; box-shadow:0 2px 8px rgb(15 23 42 / .12); }
 .badges .categoryBadge { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
 .badges .targetBadge { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
@@ -157,10 +156,14 @@
 .equipment h3 { flex-basis:100%; }
 .equipment > div { flex:1; min-width:130px; padding:12px; border:1px solid var(--v2-border); border-radius:10px; background:var(--v2-muted); }
 .briefing li,.coaching { font-size:14px; line-height:24px; }
+.briefing ol { gap:12px; }
+.briefing li { display:grid; grid-template-columns:22px minmax(0,1fr); gap:10px; }
 .briefing li > span { width:22px; height:22px; font-size:12px; }
-.relatedBody > p { display:inline-block; padding:3px 7px; border-radius:5px; background:#eff6ff; color:#1d4ed8; }
-.relatedCard:nth-child(2) .relatedBody > p { background:#ecfdf5; color:#047857; }
-.relatedCard:nth-child(3) .relatedBody > p { background:#faf5ff; color:#7e22ce; }
+.relatedBody > p { display:inline-block; padding:3px 7px; border-radius:5px; background:#eff6ff; color:#1d4ed8; font-size:12px; line-height:18px; }
+.relatedBody > p[data-reason='같은 교구'] { background:#ecfdf5; color:#047857; }
+.relatedBody > p[data-reason='동작 패턴 유사'] { background:#faf5ff; color:#7e22ce; }
+.relatedBody > p[data-reason='관련 활동'] { background:var(--v2-muted); color:var(--v2-secondary); }
+.relatedBody > h3 { margin-top:8px; }
 .thumbnail svg { fill:none; margin:0; }
 @media(max-width:1023px) {
  .columns { grid-template-columns:1fr; gap:24px; }

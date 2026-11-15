@@ -29,19 +29,19 @@
 @media(min-width:601px) and (max-width:1100px) { .card { padding:20px; } .cardHeader { flex-wrap:wrap; } .description { min-height:44px; } }
 @media(max-width:600px) {
  .page { background:#f7f8fc; }
- .shell { padding:24px 12px; }
+ .shell { padding:24px 12px calc(100px + env(safe-area-inset-bottom)); }
  .header { margin-bottom:24px; }
  .header h1 { font-size:26px; line-height:34px; }
  .header .desktopIntro { display:none; }
  .header .mobileIntro { display:block; font-size:14px; line-height:22px; margin-top:4px; }
- .grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
- .card { border-radius:16px; padding:12px 8px; }
+ .grid { grid-template-columns:minmax(0,1fr); gap:16px; }
+ .card { border-radius:16px; padding:16px; }
  .cardHeader { padding:0 0 10px; margin-bottom:10px; min-height:35px; }
- .tier { padding:4px 6px; font-size:11px; line-height:16px; }
+ .tier { padding:4px 8px; font-size:12px; line-height:16px; }
  .description,.specs,.assist { display:none; }
  .hero { height:auto; aspect-ratio:16/9; border-radius:8px; }
  .body { margin-top:12px; gap:14px; }
  .title h2 { font-size:18px; line-height:26px; }
- .action { padding:10px 3px; gap:2px; font-size:12px; line-height:20px; min-height:44px; border-radius:10px; }
- .action svg { width:14px; flex-shrink:0; }
+ .action { padding:12px 16px; gap:8px; font-size:14px; line-height:20px; min-height:46px; border-radius:10px; }
+ .action svg { width:18px; flex-shrink:0; }
 }

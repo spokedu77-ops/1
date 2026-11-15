@@ -120,7 +120,7 @@ function ProgramGatewayCard({ title, tier, materials, description, href, image, 
     <article className={`${styles.card} ${digital ? styles.digital : ''}`}>
       <div className={styles.cardHeader}><span className={styles.tier}>{tier}</span></div>
       <div className={styles.hero}>
-        {image ? <Image src={image} alt="" fill sizes="(min-width: 1024px) 504px, 50vw" loading="eager" unoptimized={nextImageUnoptimized(image)} className={styles.photo} /> : <div className={styles.placeholder} aria-hidden="true" />}
+        {image ? <Image src={image} alt="" fill sizes="(max-width: 600px) calc(100vw - 58px), (min-width: 1024px) 504px, 50vw" loading="eager" unoptimized={nextImageUnoptimized(image)} className={styles.photo} /> : <div className={styles.placeholder} aria-hidden="true" />}
       </div>
       <div className={styles.body}>
         <div><div className={styles.title}><h2>{title}</h2></div><p className={styles.description}>{description}</p></div>

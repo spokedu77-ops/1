@@ -10,12 +10,12 @@ import type { RelatedLessonVideo } from '../../relatedLessonVideos';
 import { LessonVideo, SetupImage, splitCoachScriptParagraphs, splitLessonTitle, type VideoProps } from './DetailLessonGuide';
 import styles from './DetailLessonGuideV2.module.css';
 
-// Only this registered explanation has an explicitly approved presentation classification.
-const SWITCH_RUNNING_PROGRAM_ID = '198';
-
-// Presentation-only classification of the pilot's registered explanation.
-// Other entries retain their original order and are never inferred from position.
-const PILOT_VARIATION_EXPERIENCE = '동작별로 이동 방향과 신체 사용 방법이 달라져 민첩성, 균형감각, 하체 협응력, 신체 조절 능력을 다양하게 높일 수 있습니다.';
+// Exact registered explanations with an approved presentation classification.
+// Unmatched text stays in the variation area; position is never classification evidence.
+const REGISTERED_VARIATION_EXPERIENCES: Readonly<Record<string, string>> = {
+  '198': '동작별로 이동 방향과 신체 사용 방법이 달라져 민첩성, 균형감각, 하체 협응력, 신체 조절 능력을 다양하게 높일 수 있습니다.',
+  '50': '이동 방법과 방향이 달라져 균형감각, 하체 근지구력, 공간 인지력, 방향 조절 능력을 함께 높일 수 있습니다.',
+};
 
 export function DetailLessonGuideV2({ model, actions, video, relatedVideos, personalizedContext, heroTitleRef, libraryHref }: {
   model: LessonDisplayModel;
@@ -30,8 +30,7 @@ export function DetailLessonGuideV2({ model, actions, video, relatedVideos, pers
   const hasVideo = Boolean(video.embedUrl || video.directUrl || video.externalUrl);
   const hasSetup = Boolean(model.setupImageUrl || model.equipment.length || model.setupNotes.length || model.safetyNotes.length);
   const hasGuide = Boolean(model.coachScript || model.briefingNotes.length || model.fieldTips.length);
-  const experience = model.id === SWITCH_RUNNING_PROGRAM_ID
-    ? model.variationMethod.find(item => item === PILOT_VARIATION_EXPERIENCE) : undefined;
+  const experience = model.variationMethod.find(item => item === REGISTERED_VARIATION_EXPERIENCES[model.id]);
   const variations = model.variationMethod.filter(item => item !== experience);
   const scriptParagraphs = splitCoachScriptParagraphs(model.coachScript);
   const trimmedScript = model.coachScript.trim();
@@ -104,7 +103,7 @@ export function DetailLessonGuideV2({ model, actions, video, relatedVideos, pers
         <div className={styles.relatedHeading}><div><h2>함께 활용하면 좋은 활동</h2><p>움직임의 특성과 사용 교구를 고려한 연계 활동입니다.</p></div><Link href={libraryHref}>놀이체육 목록 보기 <ArrowRight /></Link></div>
         <div className={styles.relatedGrid}>{relatedVideos.map(item => <Link key={item.id} href={item.href} className={styles.relatedCard}>
           <div className={styles.thumbnail}>{item.thumbnailUrl ? <Image src={item.thumbnailUrl} alt="" fill sizes="(min-width: 1024px) 380px, 100vw" className="object-cover" unoptimized={item.thumbnailUrl.includes('img.youtube.com') || nextImageUnoptimized(item.thumbnailUrl)} /> : null}<span><ArrowRight aria-hidden="true" /></span></div>
-          <div className={styles.relatedBody}><p>{item.reason}</p><h3>{item.title}</h3></div>
+          <div className={styles.relatedBody}><p data-reason={item.reason}>{item.reason}</p><h3>{item.title}</h3></div>
         </Link>)}</div>
       </section> : null}
     </div>
