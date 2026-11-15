@@ -1,5 +1,8 @@
 'use client';
 
+import { createMemoryProgressCollector, type MemoryProgressRecord } from '../lib/memoryProgress';
+import { memoryRoundAnswers } from '../lib/roundAnswerRecord';
+
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { spomoveClearTimeout as clearTimeout, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
@@ -22,11 +25,13 @@ type L4Phase = 'idle' | 'showing' | 'qa_ready' | 'qa_question' | 'qa_answer' | '
 export function MemoryGameLevel4({
   onExit,
   onComplete,
+  onProgress,
   audioMode,
   speedSec,
   startDelayMs = 600,
   spatialMemoryResponse,
 }: {
+  onProgress?: (record: MemoryProgressRecord) => void;
   onExit: () => void;
   onComplete: (patterns?: unknown[][]) => void;
   audioMode: string;
@@ -42,6 +47,7 @@ export function MemoryGameLevel4({
   const [qaItems, setQaItems] = useState<Level4Item[]>([]);
   const [qaIdx, setQaIdx] = useState(0);
 
+  const progressCollector = useRef(createMemoryProgressCollector());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevColorRef = useRef<string | null>(null);
   const phaseRef = useRef<L4Phase>('idle');
@@ -132,6 +138,17 @@ export function MemoryGameLevel4({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handleAction]);
+
+  useLayoutEffect(() => {
+    const collector = progressCollector.current;
+    if (phase === 'showing' && showIdx >= 0 && !memFlash) collector.present(0, showIdx);
+    if (['qa_ready', 'qa_question', 'qa_answer', 'done'].includes(phase)) collector.completePresentation(0);
+    if (phase === 'qa_answer' && qaItems[qaIdx]) {
+      const answer = memoryRoundAnswers([[qaItems[qaIdx]]])[0];
+      if (answer) collector.reveal(String(qaIdx), answer);
+    }
+    onProgress?.(collector.snapshot());
+  }, [phase, showIdx, memFlash, qaItems, qaIdx, onProgress]);
 
   const currentItem = showIdx >= 0 ? items[showIdx] : null;
   const currentQA = qaItems[qaIdx];

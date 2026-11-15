@@ -136,7 +136,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 2, name: '화살표', enName: 'Arrow', desc: '화살표가 가리키는 방향과 색 규칙을 구분합니다.' },
       { id: 1, name: '도형', enName: 'Shape', desc: '도형의 위치와 색을 분리해서 판단합니다.' },
       { id: 5, name: '풍선', enName: 'Balloon', desc: '화면 어디에나 나타나는 색 풍선이 터질 때 해당 색 위치로 이동합니다.' },
-      { id: 3, name: '이미지 테마', enName: 'Image Theme', desc: '선택한 테마의 이미지가 극단 위치에 나타납니다. 이미지 색에 해당하는 패드로 이동합니다.' },
+      { id: 3, name: '연상 이미지', enName: 'Image Theme', desc: '선택한 테마의 이미지가 극단 위치에 나타납니다. 이미지 색에 해당하는 패드로 이동합니다.' },
       { id: 4, name: '카모플라쥬', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 화면 극단에 드러날 때 해당 색을 찾습니다.' },
     ],
   },

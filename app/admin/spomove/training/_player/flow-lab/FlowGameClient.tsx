@@ -39,7 +39,7 @@ interface FlowGameClientProps {
   colorGateDifficulties?: readonly import('./engine/modules/colorGateGuides').ColorGateDifficultySelection[];
   onComplete:        (stats: FlowStats) => void;
   onExit:            () => void;
-  onEngineReady?:    (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
+  onEngineReady?:    (api: { loadBgmLate: (path: string) => Promise<void>; getStatsSnapshot: () => FlowStats }) => void;
 }
 
 const S = {
@@ -205,7 +205,7 @@ export default function FlowGameClient({
 
     engine.init(flashRef.current).then(() => {
       if (!mountedRef.current || initGen !== initGenRef.current) { engine.dispose(); return; }
-      onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p) });
+      onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p), getStatsSnapshot: () => engine.getStatsSnapshot() });
       // async init 완료 후 실제 뷰포트 크기로 재조정 (iOS Safari 초기화 타이밍 보정)
       engine.resize(window.innerWidth, window.innerHeight);
       engine.start();

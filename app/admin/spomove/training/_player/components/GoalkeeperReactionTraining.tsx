@@ -284,7 +284,7 @@ function bonusPhaseForProgress(progress: number): SpawnPhase {
     curveChance: 0.22 + p * 0.28,
     doubleChance: 0.38 + p * 0.44,
     intervalMul: [Math.max(0.22, 0.58 - p * 0.34), Math.max(0.34, 0.82 - p * 0.38)],
-    msg: '',
+    msg: `보너스타임 · ${BONUS_TIME_SEC}초`,
     col: '#ffd600',
   };
 }

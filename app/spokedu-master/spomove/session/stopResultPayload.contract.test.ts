@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('SPOMOVE STOP result payload', () => {
   it('preserves MemoryGame elapsed time and measured color counts on embedded STOP', () => {
     const source = read('app/admin/spomove/training/_player/MemoryGameApp.tsx');
-    expect(source).toContain('const stoppedColorCounts = { ...colorCountsRef.current }');
+    expect(source).toContain('const stoppedColorCounts = { ...(flowStats?.colorGateColorCounts ?? colorCountsRef.current) }');
     expect(source).toContain('performance.now() - sessionStartMsRef.current');
     expect(source).toMatch(/deliverSessionResult\(cfg, elapsedMs, counts, \{\s*endedEarly:\s*true\b/);
     expect(source).not.toContain('if (embed && onExit) {\n      onExit(settingsToExitResume(settings));');

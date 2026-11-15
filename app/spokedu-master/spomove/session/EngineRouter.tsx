@@ -1,7 +1,8 @@
 'use client';
+import { emptyMemoryProgress } from '@/app/admin/spomove/training/_player/lib/memoryProgress';
 import { memoryRoundAnswers } from '@/app/admin/spomove/training/_player/lib/roundAnswerRecord';
 
-import { lazy, Suspense, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import { setSpomoveRuntimePaused } from '@/app/admin/spomove/training/_player/lib/runtimeClock';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
 import {
@@ -132,6 +133,7 @@ export function preloadSpomoveEngine(
 export type EngineCompletePayload = {
   glassBridge?: import('@/app/admin/spomove/training/_player/lib/glassBridgeMemory').GlassBridgeResult;
   shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  memoryProgress?: import('@/app/admin/spomove/training/_player/lib/memoryProgress').MemoryProgressRecord;
   roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
   moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('@/app/admin/spomove/training/_player/lib/goalkeeperResultRecord').GoalkeeperResultRecord;
@@ -281,6 +283,8 @@ function EngineRuntime({
   onComplete,
   onExit,
 }: Props) {
+  const memoryProgressRef = useRef(emptyMemoryProgress());
+  const onMemoryProgress = useCallback((record: import('@/app/admin/spomove/training/_player/lib/memoryProgress').MemoryProgressRecord) => { memoryProgressRef.current = record; }, []);
   const selection = resolveTrainingSelection(mode, level, { activityId });
   const { runtime } = selection;
   useEffect(() => {
@@ -318,6 +322,7 @@ function EngineRuntime({
         ...(result.goalkeeperRecord ? { goalkeeperRecord: result.goalkeeperRecord } : {}),
         directionRecord: result.directionRecord,
         shapeCompletionRecord: result.shapeCompletionRecord,
+        memoryProgress: result.memoryProgress,
         roundAnswers: result.roundAnswers, moleRecord: result.moleRecord,
         colorCounts: result.colorCounts,
       });
@@ -463,7 +468,7 @@ function EngineRuntime({
             variant="flow"
             concurrent={effectiveConcurrent}
             durationSec={dur}
-            targetReps={(rounds ?? 20) * effectiveConcurrent}
+            targetReps={rounds ?? 20}
             speedSec={sp}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
@@ -551,9 +556,17 @@ function EngineRuntime({
   if (selection.mode === 'spatial') {
     const handleSpatialComplete = (patterns?: unknown[][]) => {
       onComplete({
+        memoryProgress: memoryProgressRef.current,
         roundAnswers: memoryRoundAnswers(patterns), completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
         ...(selection.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : {}),
       });
+    };
+    const handleMemoryExit = () => {
+      const memoryProgress = memoryProgressRef.current;
+      onComplete({ completionReason: memoryProgress.presentedItems > 0 ? 'stopped_early' : 'cancelled',
+        engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
+        memoryProgress, roundAnswers: memoryProgress.roundAnswers,
+        ...(selection.activityId === 'sequence-memory' ? { stims: memoryProgress.completedPresentations } : {}) });
     };
     if (runtime === 'instant-memory') {
       const sp = speedSec ?? 3;
@@ -578,7 +591,8 @@ function EngineRuntime({
         <Suspense fallback={<LoadingOverlay />}>
           <StartCountdownGate>
             <MemoryGameLevel5
-              onExit={onExit}
+              onExit={handleMemoryExit}
+              onProgress={onMemoryProgress}
               onComplete={handleSpatialComplete}
               audioMode={effectsEnabled ? 'beep' : 'off'}
               speedSec={speedSec ?? 1.2}
@@ -593,7 +607,8 @@ function EngineRuntime({
         <Suspense fallback={<LoadingOverlay />}>
           <StartCountdownGate>
             <MemoryGameLevel4
-              onExit={onExit}
+              onExit={handleMemoryExit}
+              onProgress={onMemoryProgress}
               onComplete={handleSpatialComplete}
               audioMode={effectsEnabled ? 'beep' : 'off'}
               speedSec={speedSec ?? 1.2}
@@ -609,7 +624,8 @@ function EngineRuntime({
         <StartCountdownGate>
           <MemoryGame
             level={safeLevel}
-            onExit={onExit}
+            onExit={handleMemoryExit}
+            onProgress={onMemoryProgress}
             onComplete={handleSpatialComplete}
             audioMode={effectsEnabled ? 'beep' : 'off'}
             speedSec={speedSec ?? 1.2}

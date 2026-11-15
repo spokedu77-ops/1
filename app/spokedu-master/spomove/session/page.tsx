@@ -854,6 +854,7 @@ function SpomoveSessionContent() {
       glassBridge: payload?.glassBridge,
       directionRecord: payload?.directionRecord,
       shapeCompletionRecord: payload?.shapeCompletionRecord,
+      memoryProgress: payload?.memoryProgress,
       roundAnswers: payload?.roundAnswers, moleRecord: payload?.moleRecord,
       maxCombo: payload?.maxCombo,
       initialMovement: movementStateRef.current.initialMovement,
@@ -1307,6 +1308,7 @@ function SpomoveSessionContent() {
             glassBridge={sessionResult.glassBridge}
             directionRecord={sessionResult.directionRecord}
             shapeCompletionRecord={sessionResult.shapeCompletionRecord}
+            memoryProgress={sessionResult.memoryProgress}
             roundAnswers={sessionResult.roundAnswers}
             moleRecord={sessionResult.moleRecord}
             engineMode={sessionResult.engineMode}

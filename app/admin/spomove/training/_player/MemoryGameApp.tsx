@@ -1,5 +1,7 @@
 'use client';
 
+import { emptyMemoryProgress, type MemoryProgressRecord } from './lib/memoryProgress';
+
 import { resolveTrainingActivity, resolveTrainingSelection, type TrainingActivityId, type TrainingActivityInput } from './lib/trainingActivity';
 
 import { memoryRoundAnswers } from './lib/roundAnswerRecord';
@@ -494,12 +496,15 @@ function MemoryGameRuntime({
     stims?: number;
     directionRecord?: DirectionPresentationRecord;
     shapeCompletionRecord?: TrainingSessionResult['shapeCompletionRecord'];
+    memoryProgress?: MemoryProgressRecord;
   roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
   moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
     goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'];
     glassBridge?: GlassBridgeResult;
   } | null>(null);
   /** ????????????????????????????????????????????????????????????????????????????????????????????????????????????????? ???????????2-1 ????????????????????????????????????????????????????????????????????????????*/
+  const memoryProgressRef = useRef(emptyMemoryProgress());
+  const onMemoryProgress = useCallback((record: MemoryProgressRecord) => { memoryProgressRef.current = record; }, []);
   const countRef = useRef(0);
   const colorCountsRef = useRef<ColorStimulusCounts>(emptyColorStimulusCounts());
   const directionCollectorRef = useRef(createDirectionPresentationCollector());
@@ -512,7 +517,7 @@ function MemoryGameRuntime({
   const flowCompleteGuardRef = useRef(false);
   const flowBgmPathRef = useRef<string | undefined>(undefined);
   const [sessionFlowBgmPath, setSessionFlowBgmPath] = useState<string | undefined>(undefined);
-  const flowEngineApiRef = useRef<{ loadBgmLate: (path: string) => Promise<void> } | null>(null);
+  const flowEngineApiRef = useRef<{ loadBgmLate: (path: string) => Promise<void>; getStatsSnapshot: () => import('./flow-lab/engine/FlowEngine').FlowStats } | null>(null);
 
   // ???? Flow ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹??????????????????????????釉먮폁???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 
@@ -777,13 +782,13 @@ function MemoryGameRuntime({
     () => resolveTrainingSelection(settings.mode, settings.level, { activityId: settings.activityId }),
     [settings.mode, settings.level, settings.activityId],
   );
-  const { engineMode, engineLevel } = selectedActivity;
+
 
   const deliverSessionResult = useCallback((
     cfg: Settings,
     elapsedMs: number,
     colorCounts: ColorStimulusCounts | null,
-    meta?: { moleRecord?: TrainingSessionResult['moleRecord']; roundAnswers?: import('./lib/roundAnswerRecord').RoundAnswerRecord; shapeCompletionRecord?: TrainingSessionResult['shapeCompletionRecord']; endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult; directionRecord?: DirectionPresentationRecord; goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'] },
+    meta?: { memoryProgress?: MemoryProgressRecord; moleRecord?: TrainingSessionResult['moleRecord']; roundAnswers?: import('./lib/roundAnswerRecord').RoundAnswerRecord; shapeCompletionRecord?: TrainingSessionResult['shapeCompletionRecord']; endedEarly?: boolean; completionReason?: SpomoveCompletionReason; stims?: number; glassBridge?: GlassBridgeResult; directionRecord?: DirectionPresentationRecord; goalkeeperRecord?: TrainingSessionResult['goalkeeperRecord'] },
   ) => {
     if (resultDeliveredRef.current) return;
     resultDeliveredRef.current = true;
@@ -803,6 +808,7 @@ function MemoryGameRuntime({
       directionRecord,
       goalkeeperRecord: meta?.goalkeeperRecord,
       shapeCompletionRecord: meta?.shapeCompletionRecord,
+      memoryProgress: meta?.memoryProgress,
       roundAnswers: meta?.roundAnswers, moleRecord: meta?.moleRecord,
       glassBridge,
     };
@@ -810,7 +816,7 @@ function MemoryGameRuntime({
       onComplete(payload);
       return;
     }
-    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, glassBridge, directionRecord, goalkeeperRecord: meta?.goalkeeperRecord, shapeCompletionRecord: meta?.shapeCompletionRecord, roundAnswers: meta?.roundAnswers, moleRecord: meta?.moleRecord });
+    setResult({ cfg, elapsedMs, colorCounts, endedEarly: completionReason !== 'natural_complete', completionReason, stims: measuredStims, memoryProgress: meta?.memoryProgress, glassBridge, directionRecord, goalkeeperRecord: meta?.goalkeeperRecord, shapeCompletionRecord: meta?.shapeCompletionRecord, roundAnswers: meta?.roundAnswers, moleRecord: meta?.moleRecord });
     setScreen('result');
     onComplete?.(payload);
   }, [embed, onComplete, adminMemorySettings]);
@@ -986,6 +992,7 @@ function MemoryGameRuntime({
 
       setSettings(cfg);
       sessionStartMsRef.current = 0; // ?????????????????????????????????????????????????????????????????????????????????????????????????????????(?????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐?????????????????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝?????????????????????????????????????????????????????????????????????????????????????????????????????????
+      memoryProgressRef.current = emptyMemoryProgress();
       countRef.current = 0;
       colorCountsRef.current = emptyColorStimulusCounts();
       directionCollectorRef.current = createDirectionPresentationCollector(
@@ -1177,7 +1184,8 @@ function MemoryGameRuntime({
   }, [flowBgmEnabled, screen, spomoveBgmLoading, spomoveBgmList]);
 
   const stop = useCallback(() => {
-    const stoppedColorCounts = { ...colorCountsRef.current };
+    const flowStats = settingsRef.current.activityId === 'motion-gate' ? flowEngineApiRef.current?.getStatsSnapshot() : undefined;
+    const stoppedColorCounts = { ...(flowStats?.colorGateColorCounts ?? colorCountsRef.current) };
     // 색 집계 0이어도 훈련 중 종료면 결과로 보낸다.
     // reactTrain(visualReaction)·순차기억·DIVE도 STOP 시 결과 화면이 나와야 한다.
     const shouldShowPartialResult =
@@ -1209,12 +1217,14 @@ function MemoryGameRuntime({
     if (shouldShowPartialResult) {
       const cfg = { ...settingsRef.current };
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-      const counts =
-        totalColorStimulusCount(stoppedColorCounts) > 0 ? stoppedColorCounts : null;
+      const isMemory = ['sequence-memory', 'color-number-memory', 'color-number-quiz'].includes(cfg.activityId);
+      const memoryProgress = isMemory ? memoryProgressRef.current : undefined;
+      const partial = { ...(memoryProgress ? { memoryProgress, roundAnswers: memoryProgress.roundAnswers, ...(cfg.activityId === 'sequence-memory' ? { stims: memoryProgress.completedPresentations } : {}) } : {}), ...(flowStats ? { stims: flowStats.colorGatePassCount ?? 0 } : {}), ...(cfg.activityId === 'visual-search' ? { stims: countRef.current } : {}) };
+      const counts = flowStats?.colorGateColorCounts ? stoppedColorCounts : totalColorStimulusCount(stoppedColorCounts) > 0 ? stoppedColorCounts : null;
       if (countdown !== null) {
-        deliverSessionResult(cfg, elapsedMs, counts, { completionReason: 'cancelled', ...(cfg.activityId === 'visual-search' ? { stims: countRef.current } : {}) });
+        deliverSessionResult(cfg, elapsedMs, counts, { completionReason: 'cancelled', ...partial });
       } else {
-        deliverSessionResult(cfg, elapsedMs, counts, { endedEarly: true, ...(cfg.activityId === 'visual-search' ? { stims: countRef.current } : {}) });
+        deliverSessionResult(cfg, elapsedMs, counts, { endedEarly: true, ...partial });
       }
       return;
     }
@@ -1345,7 +1355,7 @@ function MemoryGameRuntime({
   const handleMemoryComplete = (patterns?: unknown[][]) => {
     if (document.fullscreenElement) exitFullscreenSafely();
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-    deliverSessionResult({ ...settings }, elapsedMs, null, { roundAnswers: memoryRoundAnswers(patterns), ...(settings.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : {}) });
+    deliverSessionResult({ ...settings }, elapsedMs, null, { memoryProgress: memoryProgressRef.current, roundAnswers: memoryRoundAnswers(patterns), ...(settings.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : {}) });
   };
   const runtimeSuspense = (content: React.ReactNode) => (
     <TrainingRunErrorBoundary onError={handleRuntimeError}>
@@ -1360,15 +1370,15 @@ function MemoryGameRuntime({
         effectsEnabled={settings.audioMode !== 'off'} onProgress={stats => { glassBridgeStatsRef.current = stats; }} onComplete={handleGlassBridgeComplete} />,
     );
     if (selectedActivity.runtime === 'color-number-memory')
-      return runtimeSuspense(adminMemorySettings ? <MemoryRoundSeries component={MemoryGameLevel4} rounds={settings.targetReps} onComplete={handleMemoryComplete} onExit={stop} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} /> : <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
+      return runtimeSuspense(adminMemorySettings ? <MemoryRoundSeries component={MemoryGameLevel4} rounds={settings.targetReps} onProgress={onMemoryProgress} onComplete={handleMemoryComplete} onExit={stop} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} /> : <MemoryGameLevel4 onExit={stop} onProgress={onMemoryProgress} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
     if (selectedActivity.runtime === 'color-number-quiz')
-      return runtimeSuspense(adminMemorySettings ? <MemoryRoundSeries component={MemoryGameLevel5} rounds={settings.targetReps} onComplete={handleMemoryComplete} onExit={stop} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} /> : <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
+      return runtimeSuspense(adminMemorySettings ? <MemoryRoundSeries component={MemoryGameLevel5} rounds={settings.targetReps} onProgress={onMemoryProgress} onComplete={handleMemoryComplete} onExit={stop} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} /> : <MemoryGameLevel5 onExit={stop} onProgress={onMemoryProgress} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
     return runtimeSuspense(
       <MemoryGame
         adminUniformTiming={adminMemorySettings}
         level={settings.level}
         onExit={stop}
-        onComplete={handleMemoryComplete}
+        onProgress={onMemoryProgress} onComplete={handleMemoryComplete}
         audioMode={settings.audioMode}
         speedSec={settings.speed}
         startDelayMs={0}
@@ -1528,14 +1538,16 @@ function MemoryGameRuntime({
       includeBonus: settings.flowIncludeBonus,
     });
 
-    const handleFlowDone = (stats?: { colorGateColorCounts?: ColorStimulusCounts }) => {
+    const handleFlowDone = (stats?: { colorGateColorCounts?: ColorStimulusCounts; colorGatePassCount?: number }) => {
       if (flowCompleteGuardRef.current) return;
       flowCompleteGuardRef.current = true;
       if (document.fullscreenElement) exitFullscreenSafely();
       const cfg = { ...settings };
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
       const flowColorCounts = stats?.colorGateColorCounts ?? null;
-      deliverSessionResult(cfg, elapsedMs, flowColorCounts && totalColorStimulusCount(flowColorCounts) > 0 ? flowColorCounts : null);
+      deliverSessionResult(cfg, elapsedMs,
+        flowColorCounts && (cfg.activityId === 'motion-gate' || totalColorStimulusCount(flowColorCounts) > 0) ? flowColorCounts : null,
+        stats?.colorGatePassCount !== undefined && cfg.activityId === 'motion-gate' ? { stims: stats.colorGatePassCount } : undefined);
     };
 
     return runtimeSuspense(
@@ -1693,6 +1705,7 @@ function MemoryGameRuntime({
         stims={result.stims}
         directionRecord={result.directionRecord}
         shapeCompletionRecord={result.shapeCompletionRecord}
+        memoryProgress={result.memoryProgress}
         roundAnswers={result.roundAnswers}
         moleRecord={result.moleRecord}
         goalkeeperRecord={result.goalkeeperRecord}

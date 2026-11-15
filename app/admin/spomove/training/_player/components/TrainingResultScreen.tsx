@@ -22,6 +22,7 @@ export type TrainingResultSessionSettings = {
 type Props = {
   officialPresetId?: string;
   shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  memoryProgress?: import('@/app/admin/spomove/training/_player/lib/memoryProgress').MemoryProgressRecord;
   roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
   moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('../lib/goalkeeperResultRecord').GoalkeeperResultRecord;
