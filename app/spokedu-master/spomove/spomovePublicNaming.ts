@@ -152,6 +152,15 @@ export function resolveSpomovePublicDisplayTitle(
   return fallbackTitle?.trim() || 'SPOMOVE';
 }
 
+export function stripMatchingSpomoveDifficultySuffix(title: string, difficulty: string): string {
+  const labelPrefix = '난이도 ';
+  const grade = difficulty.startsWith(labelPrefix) ? difficulty.slice(labelPrefix.length) : difficulty;
+  if (!grade) return title;
+  const value = title.trimEnd();
+  const suffix = ` (${grade})`;
+  return value.endsWith(suffix) ? value.slice(0, -suffix.length).trimEnd() : title;
+}
+
 export function getPublicCardVariant(naming: SpomovePublicNaming | undefined): string {
   if (!naming || naming.status !== 'applied') return '';
   return naming.variant?.trim() ?? '';

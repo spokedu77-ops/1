@@ -14,6 +14,7 @@ import CharacterCount from '@tiptap/extension-character-count';
 import { ArrowLeft, Archive, Bold, ChevronDown, Clock3, Code2, Compass, Copy, Eye, ImagePlus, ImageIcon, Italic, Keyboard, Link2, List, ListChecks, ListOrdered, Minus, Quote, Send, Sigma, Strikethrough, TextCursorInput, X } from 'lucide-react';
 import { BLOG_DRAFT_CATEGORIES, blogDraftStatusLabel, type BlogDraftWrite } from '@/app/lib/blog-drafts/contract';
 import { DraftImage, DraftModal, DraftStarterKit, draftMarkdown } from './BlogDraftEditorParts';
+import { chapterStructureRegressed } from '@/app/lib/blog-drafts/chapterStructure';
 import { BlogStrategyModal } from './BlogStrategyModal';
 
 type Status = BlogDraftWrite['status'];
@@ -64,6 +65,7 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
   const saving = useRef(false);
   const queued = useRef(false);
   const hydrating = useRef(false);
+  const loadedContentRef = useRef<BlogDraftWrite['content'] | null>(null);
   const fieldsRef = useRef({ title, category, tags, status, featuredImage, publishedUrl, publishedAt });
   useLayoutEffect(() => {
     fieldsRef.current = { title, category, tags, status, featuredImage, publishedUrl, publishedAt };
@@ -101,8 +103,12 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
     setSavedAt(draft.updated_at);
     setRevisionCount(draft.revision_count);
     hydrating.current = true;
+    loadedContentRef.current = draft.content;
     editor?.commands.setContent(draft.content);
     hydrating.current = false;
+    if (editor && chapterStructureRegressed(draft.content, editor.getJSON())) {
+      setNotice('편집기가 Chapter 제목이나 구분선을 그대로 열지 못했습니다. 이 상태로 저장하지 마세요.');
+    }
     setDirty(false);
   }, [editor]);
 
@@ -118,6 +124,10 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
 
   const save = useCallback(async (nextStatus?: Status) => {
     if (!editor) return false;
+    if (loadedContentRef.current && chapterStructureRegressed(loadedContentRef.current, editor.getJSON())) {
+      setNotice('Chapter 제목이나 구분선이 줄었습니다. 저장하지 않았습니다.');
+      return false;
+    }
     if (saving.current) { queued.current = true; return false; }
     saving.current = true;
     const currentBody = (override?: Status): BlogDraftWrite => {

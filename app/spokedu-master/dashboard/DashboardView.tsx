@@ -499,9 +499,11 @@ function RecentSpomoveReuseCard({
 function RecentLessonReuseCard({
   activity,
   program,
+  isLab,
 }: {
   activity: RecentProgramActivity;
   program: Program;
+  isLab: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
   const recentHref = buildProgramResumeHref(activity.programId, activity.action);
@@ -511,7 +513,7 @@ function RecentLessonReuseCard({
       <HomeContinueCard
         kicker="최근 활동"
         title={model.title}
-        meta={activity.action === 'video_started' ? '놀이체육 · 영상' : '놀이체육 · 준비'}
+        meta={activity.action === 'video_started' ? '놀이체육 · 영상' : isLab ? '놀이체육' : '놀이체육 · 준비'}
         actionLabel={activity.action === 'video_started' ? '이어 보기' : '다시 보기'}
         href={recentHref}
         media={(
@@ -878,8 +880,8 @@ function EntitledDashboardView() {
 
   return (
     <main data-dashboard-root="true" className={`h-full overflow-y-auto bg-[var(--spm-bg)] ${isLab ? styles.labHome : ''}`}>
-      <section data-dashboard-chapter="opening" className="min-[1200px]:px-4 min-[1200px]:pt-4">
-        <div data-home-hero="true" className={`${MV_HOME_FEATURE_WIDTH} relative isolate flex overflow-hidden bg-slate-950 min-[1200px]:min-h-[328px] min-[1200px]:rounded-[20px]`}>
+      <section data-dashboard-chapter="opening" className={isLab ? 'pt-3 min-[1200px]:px-4 min-[1200px]:pt-4' : 'min-[1200px]:px-4 min-[1200px]:pt-4'}>
+        <div data-home-hero="true" className={`${MV_HOME_FEATURE_WIDTH} relative isolate flex overflow-hidden bg-slate-950 ${isLab ? 'rounded-[16px]' : ''} min-[1200px]:min-h-[328px] min-[1200px]:rounded-[20px]`}>
         <Image
           src={homeHeroSrc}
           alt="SPOKEDU 체육 수업 현장"
@@ -974,7 +976,7 @@ function EntitledDashboardView() {
                     launchMode={launchMode}
                   />
                 ) : latestRecentActivity && latestLessonProgram ? (
-                  <RecentLessonReuseCard activity={latestRecentActivity} program={latestLessonProgram} />
+                  <RecentLessonReuseCard activity={latestRecentActivity} program={latestLessonProgram} isLab={isLab} />
                 ) : (
                   <HomeContinueCard
                     kicker="최근 활동"
@@ -1005,7 +1007,7 @@ function EntitledDashboardView() {
                 <HomeContinueCard
                   kicker={isLab && !lastClassTool ? '수업 도구 바로가기' : '최근 수업도구'}
                   title={recentClassTool.label}
-                  meta={recentClassTool.compactDescription}
+                  meta={isLab && recentClassTool.id === 'stopwatch' ? undefined : recentClassTool.compactDescription}
                   actionLabel="도구 열기"
                   href={buildClassToolHref(recentClassTool.id)}
                   media={(

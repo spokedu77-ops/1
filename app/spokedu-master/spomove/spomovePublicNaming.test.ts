@@ -15,6 +15,7 @@ import {
   SPOMOVE_PUBLIC_NAMING_BY_ID,
   getSpomovePublicNaming,
   resolveSpomovePublicDisplayTitle,
+  stripMatchingSpomoveDifficultySuffix,
 } from './spomovePublicNaming';
 
 const publicLibrary = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.catalogStatus !== 'hold');
@@ -143,13 +144,23 @@ describe('SPOMOVE public naming apply', () => {
     expect(matchesQuery('stroop-arrow-reverse-08', '화살표 방향 말고 색으로 점프')).toBe(true);
   });
 
-  it('keeps favorites card title difficulty-free and aria on displayTitle', () => {
+  it('uses the normalized favorite title for visible and accessible labels', () => {
     const source = readFileSync(join(process.cwd(), 'app/spokedu-master/favorites/FavoritesView.tsx'), 'utf8');
     expect(source).toContain('title: card.title');
-    expect(source).toContain('accessTitle: model.displayTitle');
-    expect(source).toContain('primaryMeta: card.publicMeta.core');
-    expect(source).toContain('secondaryMeta: card.publicMeta.difficulty');
+    expect(source).toContain('accessTitle: card.title');
+    expect(source).toContain('primaryMeta: card.publicMeta.difficulty');
+    expect(source).toContain('secondaryMeta: card.publicMeta.core');
     expect(source).not.toContain('resolveSpomovePublicCardSupport');
+  });
+
+  it('uses the same difficulty-first card meta and title in home, catalog, favorites, and preparation', () => {
+    const home = readFileSync(join(process.cwd(), 'app/spokedu-master/dashboard/DashboardView.tsx'), 'utf8');
+    const hub = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/SpomoveHubView.tsx'), 'utf8');
+    const guide = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx'), 'utf8');
+    expect(home).toContain('primary={displayModel.difficulty} secondary={displayModel.typeLabel}');
+    expect(hub).toContain('data-spm-spomove-card-meta={[card.publicMeta.difficulty, card.publicMeta.core]');
+    expect(hub).toContain('primary={card.publicMeta.difficulty} secondary={card.publicMeta.core}');
+    expect(guide).toContain('title={userDisplayTitle}');
   });
 
   it('does not put SPOMAT movement copy on color-number public naming', () => {
@@ -160,6 +171,12 @@ describe('SPOMOVE public naming apply', () => {
   });
 });
 describe('SPOMOVE public card meta contract', () => {
+  it('removes only an exact matching trailing difficulty from user display titles', () => {
+    expect(stripMatchingSpomoveDifficultySuffix('두더지 잡기 (보통)', '난이도 보통')).toBe('두더지 잡기');
+    expect(stripMatchingSpomoveDifficultySuffix('두더지 잡기 (쉬움)', '난이도 보통')).toBe('두더지 잡기 (쉬움)');
+    expect(stripMatchingSpomoveDifficultySuffix('한눈에 색 배치 기억하기 (3X3)', '난이도 보통')).toBe('한눈에 색 배치 기억하기 (3X3)');
+  });
+
   it('covers core and difficulty for all public 72 cards', () => {
     let bareDifficulty = 0;
     let difficultyInVariant = 0;
@@ -266,7 +283,7 @@ describe('SPOMOVE public card meta contract', () => {
     }
   });
 
-  it('shows mole and goalkeeper difficulty in both title and metadata', () => {
+  it('shows mole and goalkeeper difficulty in metadata with a shared title', () => {
     const pairs = [
       ['visual-reaction-mole-l1', 'visual-reaction-mole-normal-skeleton'],
       ['visual-reaction-goalkeeper-easy-skeleton', 'visual-reaction-goalkeeper-42'],
@@ -274,9 +291,7 @@ describe('SPOMOVE public card meta contract', () => {
     for (const [easyId, normalId] of pairs) {
       const easy = getSpomoveCardDisplayModel(findPublic(easyId));
       const normal = getSpomoveCardDisplayModel(findPublic(normalId));
-      expect(easy.title).not.toBe(normal.title);
-      expect(easy.title).toContain('(쉬움)');
-      expect(normal.title).toContain('(보통)');
+      expect(easy.title).toBe(normal.title);
       expect(easy.publicMeta.difficulty).toBe('난이도 쉬움');
       expect(normal.publicMeta.difficulty).toBe('난이도 보통');
     }

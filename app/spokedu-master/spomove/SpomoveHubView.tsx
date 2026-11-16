@@ -31,7 +31,6 @@ import {
 import {
   buildSpomovePresetSearchHaystack,
   getSpomoveCardDisplayModel,
-  getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
   buildSpomoveProgramGroupSections,
 } from './spomovePresetDisplayModel';
@@ -621,7 +620,6 @@ function PresetCard({
   startHref?: string;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
 
   const inner = (
@@ -657,7 +655,7 @@ function PresetCard({
           if (!preset.isReady) return;
           onPreview();
         }}
-        aria-label={`${displayModel.displayTitle} 미리보기 열기`}
+        aria-label={`${card.title} 미리보기 열기`}
         className="relative flex min-h-0 w-full flex-1 cursor-pointer flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual
@@ -669,8 +667,8 @@ function PresetCard({
           onImageError={() => setImageFailed(true)}
         />
         {isNew ? <span className="pointer-events-none absolute left-3 top-3 z-10"><LessonNewMark /></span> : null}
-        <div className="w-full px-3.5 pb-3.5 pr-14 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={[card.publicMeta.core, card.publicMeta.difficulty].filter(Boolean).join(' · ')}>
-          <ContentCardMetaLine primary={card.publicMeta.core} secondary={card.publicMeta.difficulty} />
+        <div className="w-full px-3.5 pb-3.5 pr-14 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={[card.publicMeta.difficulty, card.publicMeta.core].filter(Boolean).join(' · ')}>
+          <ContentCardMetaLine primary={card.publicMeta.difficulty} secondary={card.publicMeta.core} />
           <h3 className="mt-1 line-clamp-2 text-[17px] font-semibold leading-snug text-slate-950">{card.title}</h3>
         </div>
       </button>
@@ -1057,7 +1055,7 @@ function SpomoveHubInner({
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {recentSpomoveActivities.map((activity) => {
                 const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId && isHubListedPreset(item));
-                const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
+                const title = preset ? getSpomoveCardDisplayModel(preset).title : resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
                 const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
                 const recentOptions = preset ? recentSpomoveSessionOptions(activity, preset) : null;
                 const recentHref = preset

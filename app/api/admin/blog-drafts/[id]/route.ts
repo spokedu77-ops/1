@@ -1,5 +1,5 @@
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { adminJson, assertOwnedMedia, blogDraftError, draftRow, mediaIdsInDoc, recordDraftRevision, rejectForeignOrigin } from '@/app/lib/server/blogDraftsAdmin';
+import { adminJson, assertOwnedMedia, blogDraftError, chapterStructureRegressed, draftRow, mediaIdsInDoc, recordDraftRevision, rejectForeignOrigin } from '@/app/lib/server/blogDraftsAdmin';
 import { blogDraftWriteSchema } from '@/app/lib/blog-drafts/contract';
 
 type Params = { params: Promise<{ id: string }> };
@@ -33,6 +33,11 @@ export async function PUT(request: Request, { params }: Params) {
     if (input.featuredImage) mediaIds.push(input.featuredImage);
     await assertOwnedMedia(id, mediaIds);
     const db = getServiceSupabase();
+    const { data: stored, error: storedError } = await db.from('blog_drafts').select('content').eq('id', id).maybeSingle();
+    if (storedError) return adminJson({ error: '원고를 저장하지 못했습니다.' }, 503);
+    if (stored && chapterStructureRegressed(stored.content, input.content)) {
+      return adminJson({ error: 'Chapter 제목이나 구분선이 줄었습니다. 저장하지 않았습니다.' }, 409);
+    }
     const next = draftRow(input, auth.userId);
     const patch = { ...next };
     Reflect.deleteProperty(patch, 'author_id');

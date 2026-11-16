@@ -25,7 +25,6 @@ import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import {
   getSpomoveCardDisplayModel,
-  getSpomovePresetDisplayModel,
 } from '../spomove/spomovePresetDisplayModel';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
 import { FavoriteRetrievalCard } from './FavoriteRetrievalCard';
@@ -156,16 +155,15 @@ export default function FavoritesView() {
 
       const preset = spomoveById.get(ref.id);
       if (!preset) continue;
-      const model = getSpomovePresetDisplayModel(preset, contentOverrides[preset.id]);
       const card = getSpomoveCardDisplayModel(preset, contentOverrides[preset.id]);
       items.push({
         type: 'spomove',
         ref,
         key: `spomove:${ref.id}`,
         title: card.title,
-        accessTitle: model.displayTitle,
-        primaryMeta: card.publicMeta.core,
-        secondaryMeta: card.publicMeta.difficulty,
+        accessTitle: card.title,
+        primaryMeta: card.publicMeta.difficulty,
+        secondaryMeta: card.publicMeta.core,
         preset,
       });
     }

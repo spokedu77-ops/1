@@ -17,11 +17,15 @@ export async function GET(_request: Request, { params }: Params) {
   ]);
   if (draftError || strategyError) return adminJson({ error: '집필 전략을 불러오지 못했습니다.' }, 503);
   if (!draft) return adminJson({ error: '원고를 찾을 수 없습니다.' }, 404);
+  const analysis = strategy?.analysis ?? null;
+  const strategyRevisionMatch = Boolean(strategy) && Number(strategy?.source_revision) === Number(draft.revision);
   return adminJson({
-    strategy: strategy?.analysis ?? null,
+    strategy: analysis,
     sourceRevision: strategy?.source_revision ?? null,
     currentRevision: draft.revision,
-    needsReview: strategy ? Number(strategy.source_revision) !== Number(draft.revision) : true,
+    needsReview: !strategyRevisionMatch,
+    strategyRevisionMatch,
+    searchDemandRecorded: Boolean(analysis && typeof analysis === 'object' && analysis.search_demand_audit_20261116),
     updatedAt: strategy?.updated_at ?? null,
   });
 }

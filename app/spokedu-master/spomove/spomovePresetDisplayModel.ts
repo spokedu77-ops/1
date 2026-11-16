@@ -33,6 +33,7 @@ import {
   getAppliedSpomovePublicNaming,
   getPublicCardVariant,
   getSpomovePublicNaming,
+  stripMatchingSpomoveDifficultySuffix,
   type SpomovePublicCardMeta,
 } from './spomovePublicNaming';
 
@@ -556,7 +557,10 @@ export function getSpomoveCardDisplayModel(
   });
   return {
     programLabel: base.programLabel,
-    title: resolveSpomoveCardPairKey(base.rootTitle),
+    title: stripMatchingSpomoveDifficultySuffix(
+      resolveSpomoveCardPairKey(base.rootTitle),
+      publicMeta.difficulty,
+    ),
     variantLabel: publicMeta.variant ?? '',
     publicMeta,
     meta,

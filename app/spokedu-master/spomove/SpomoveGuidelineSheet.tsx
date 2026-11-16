@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { Bookmark } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -20,7 +20,8 @@ import { getActivityFamily } from './movements/activityFamilies';
 import { buildDeclaredOperation, resolveRequiredMatGuidance } from './operations';
 import { formatSpomoveCueLabel, resolveSessionCueSeconds } from './spomoveCueSpeed';
 import { resolveSpomoveBriefingReadiness } from '@/app/lib/spomove/spomoveBriefingReadiness';
-import { buildSpomoveGuideDisplayModel, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
+import { buildSpomoveGuideDisplayModel, getSpomoveCardDisplayModel, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
+import { stripMatchingSpomoveDifficultySuffix } from './spomovePublicNaming';
 import {
   SPOMOVE_VIDEO_FRAME_ASPECT_CLASS,
   SPOMOVE_VIDEO_POSTER_OBJECT_FIT,
@@ -344,6 +345,8 @@ export function SpomoveGuidelineSheet({
   const favorite = favoriteRefs.some((ref) => ref.type === 'spomove' && ref.id === preset.id);
 
   const display = getSpomovePresetDisplayModel(preset, contentOverride);
+  const cardDisplay = getSpomoveCardDisplayModel(preset, contentOverride);
+  const userDisplayTitle = stripMatchingSpomoveDifficultySuffix(display.displayTitle, cardDisplay.publicMeta.difficulty);
   const family = preset.activityFamilyId ? getActivityFamily(preset.activityFamilyId) : null;
   const operationProfileId = preset.operationProfileId ?? family?.operationProfileId;
   const declaredOperation =
@@ -403,7 +406,7 @@ export function SpomoveGuidelineSheet({
   return (
     <BottomSheet
       open
-      title={display.displayTitle}
+      title={userDisplayTitle}
       onClose={onClose}
       size="preview"
       headerActions={(
@@ -416,7 +419,7 @@ export function SpomoveGuidelineSheet({
           title={!ownerId ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
           disabled={!ownerId}
         >
-          <Bookmark className={`h-[17px] w-[17px] ${favorite ? 'fill-current' : ''}`} aria-hidden />
+          <Heart className={`h-[17px] w-[17px] ${favorite ? 'fill-current' : ''}`} aria-hidden />
         </button>
       )}
       footer={(

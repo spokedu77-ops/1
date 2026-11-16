@@ -33,6 +33,7 @@ describe("library card and preview favorite synchronization", () => {
 
   it("places preview favorite in the modal header instead of the lesson badges", () => {
     expect(previewSource).toContain("headerActions={!locked && onFavorite ?");
+    expect(previewSource).toContain("import { Heart, BookOpen, CheckCircle2, Lock } from 'lucide-react'");
     expect(previewSource).toContain(
       "title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}",
     );
@@ -82,6 +83,7 @@ describe("detail favorite source of truth and return context", () => {
       detailSource.match(/toggleFavoriteProgram\(ownerId, program\.id\)/g),
     ).toHaveLength(1);
     expect(detailSource).toContain("aria-pressed={favorite}");
+    expect(detailSource).toContain("<Heart size={14}");
   });
 
   it("does not expose or mutate prior owner data when owner is unresolved", () => {

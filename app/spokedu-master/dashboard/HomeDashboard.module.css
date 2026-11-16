@@ -6,6 +6,7 @@
 .labHome [data-home-hero-content] {
   align-items: center;
   padding-block: 20px;
+  padding-inline: 16px;
 }
 
 .labHome [data-home-hero] h1 {
@@ -19,7 +20,7 @@
 }
 
 .labHome [data-home-hero-shade] {
-  background: linear-gradient(90deg, rgb(2 6 23 / 92%), rgb(2 6 23 / 65%) 48%, rgb(2 6 23 / 12%));
+  background: linear-gradient(90deg, rgb(2 6 23 / 92%), rgb(2 6 23 / 68%) 52%, rgb(2 6 23 / 32%));
 }
 
 /* The running child's hair starts near the top of the original photo.
@@ -51,6 +52,10 @@
   overflow-wrap: anywhere;
 }
 
+.labHome [data-dashboard-operational-cta] {
+  margin-top: auto;
+}
+
 /* Size columns against the actual scroll container, including shell chrome. */
 .labHome [data-dashboard-grid='weekly'],
 .labHome [data-dashboard-grid='spomove'] {
@@ -76,7 +81,7 @@
   flex: 1;
   flex-direction: column;
   min-width: 0;
-  padding: 12px 14px 24px;
+  padding: 12px 14px 20px;
 }
 
 .labHome [data-weekly-editorial] > :first-child > :first-child,
@@ -86,9 +91,15 @@
 
 .labHome [data-home-card-body] > :last-child {
   margin-top: 4px;
-  margin-right: 36px;
   padding-top: 0;
+  max-height: 2.6em;
+  overflow: hidden;
   overflow-wrap: anywhere;
+}
+
+.labHome [data-weekly-editorial]:has([data-home-play-hint]) [data-home-card-body] > :last-child,
+.labHome [data-spomove-preset] [data-home-card-body] > :last-child {
+  margin-right: 36px;
 }
 
 .labHome [data-home-card-body] > p {
@@ -112,8 +123,14 @@
 
 .labHome [data-weekly-editorial] > button[aria-pressed] > span,
 .labHome [data-spomove-preset] > button[aria-pressed] > span {
-  border: 1px solid rgb(148 163 184 / 30%);
-  box-shadow: 0 1px 4px rgb(15 23 42 / 14%);
+  border: 1px solid rgb(100 116 139 / 16%);
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 8%);
+}
+
+.labHome [data-weekly-editorial] > button[aria-pressed] > span > svg,
+.labHome [data-spomove-preset] > button[aria-pressed] > span > svg {
+  filter: drop-shadow(0 1px 1px rgb(255 255 255 / 90%));
 }
 
 @container (min-width: 560px) {

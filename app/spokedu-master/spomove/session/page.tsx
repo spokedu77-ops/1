@@ -37,8 +37,8 @@ import {
 } from '../officialSpomovePresets';
 import { canLaunchInternalSpomoveCandidate } from '../internalSpomoveCandidateAccess';
 import { canAccessSpomovePreset } from '../../lib/spomoveTrialAccess';
-import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
-import { resolveSpomovePublicDisplayTitle } from '../spomovePublicNaming';
+import { getSpomoveCardDisplayModel, getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
+import { resolveSpomovePublicDisplayTitle, stripMatchingSpomoveDifficultySuffix } from '../spomovePublicNaming';
 import { parseSpomoveHubReturnHref } from '../spomoveHubNavigation';
 import {
   buildActivitySessionHref,
@@ -1103,6 +1103,10 @@ function SpomoveSessionContent() {
 
   if (!officialPreset || !canLaunchPreset) return <UnsupportedPreset />;
   const sessionDisplayTitle = displayModel?.displayTitle ?? resolveSpomovePublicDisplayTitle(officialPreset.id, officialPreset.title);
+  const setupDisplayTitle = stripMatchingSpomoveDifficultySuffix(
+    sessionDisplayTitle,
+    getSpomoveCardDisplayModel(officialPreset).publicMeta.difficulty,
+  );
 
   if (state === 'idle' && !recoveryChecked) {
     return <main className="min-h-dvh bg-slate-950" aria-label="이전 훈련 확인 중" />;
@@ -1251,7 +1255,7 @@ function SpomoveSessionContent() {
     >
       {showBriefing ? (
         <TopBar
-          drillName={sessionDisplayTitle}
+          drillName={setupDisplayTitle}
           mode={launchMode}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
@@ -1262,7 +1266,7 @@ function SpomoveSessionContent() {
       {showBriefing ? (
         <SessionSetupShell
           programLabel={displayModel?.programLabel ?? officialPreset.programTitle}
-          displayTitle={sessionDisplayTitle}
+          displayTitle={setupDisplayTitle}
         >
           <SettingsBriefing
             matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}

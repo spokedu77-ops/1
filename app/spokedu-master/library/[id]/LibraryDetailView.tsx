@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bookmark, Copy, FileText } from 'lucide-react';
+import { ArrowLeft, Heart, Copy, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LessonAccessModal } from '../../components/lesson/LessonAccessModal';
@@ -251,7 +251,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           actions={<div className={v2Styles.actionStack}>
             <AssignProgramToSessionButton program={program} label="내 수업에 추가" targetSessionId={fromSession ? sessionId : null} returnHref={fromSession ? workReturnHref : null} className={v2Styles.primary} />
             <button type="button" onClick={() => void copyLessonPlan()} className={v2Styles.secondary}><Copy size={16} />{planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}</button>
-            <button type="button" className={v2Styles.favorite} disabled={!favoriteEnabled} aria-pressed={favorite} onClick={() => toggleFavoriteProgram(ownerId, program.id)}><Bookmark size={14} fill={favorite ? 'currentColor' : 'none'} />즐겨찾기</button>
+            <button type="button" className={v2Styles.favorite} disabled={!favoriteEnabled} aria-pressed={favorite} onClick={() => toggleFavoriteProgram(ownerId, program.id)}><Heart size={14} fill={favorite ? 'currentColor' : 'none'} />즐겨찾기</button>
             <span role="status" className="sr-only">{planCopyStatus === 'success' ? '지도안을 복사했습니다.' : planCopyStatus === 'error' ? '복사하지 못했습니다. 다시 시도해 주세요.' : ''}</span>
           </div>}
         />

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, BookOpen, CheckCircle2, Lock } from 'lucide-react';
+import { Heart, BookOpen, CheckCircle2, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { LessonAccessLink, LessonAccessModal } from './LessonAccessModal';
 
@@ -131,7 +131,7 @@ export function ProgramPreviewModal({
           aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
           title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
         >
-          <Bookmark className={`h-3.5 w-3.5 ${favorite ? 'fill-current' : ''}`} />
+          <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} aria-hidden />
         </button>
       ) : undefined}
     >

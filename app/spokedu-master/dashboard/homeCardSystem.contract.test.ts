@@ -99,7 +99,7 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).toContain("HomeContinueCard");
     expect(dashboard).toContain("RecentLessonReuseCard");
     expect(dashboard).toContain('kicker="내 다음 수업"');
-    expect(dashboard).toContain('kicker="최근 수업도구"');
+    expect(dashboard).toContain("kicker={isLab && !lastClassTool ? '수업 도구 바로가기' : '최근 수업도구'}");
     expect(dashboard).toContain("buildClassToolHref(recentClassTool.id)");
     expect(dashboard).toContain(
       "media={<HomeScheduleThumb startAt={nextSession.startAt} />}",
@@ -150,8 +150,8 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).not.toContain("놀이체육이나 SPOMOVE를 열면 여기에 이어집니다");
     expect(dashboard).not.toContain("수업 일정을 만들면 여기에 이어집니다");
     expect(dashboard).toContain("meta={compactMeta}");
-    expect(dashboard).toContain("meta={recentClassTool.compactDescription}");
-    expect(dashboard).toContain("놀이체육 · 준비");
+    expect(dashboard).toContain("meta={isLab && recentClassTool.id === 'stopwatch' ? undefined : recentClassTool.compactDescription}");
+    expect(dashboard).toContain("meta={activity.action === 'video_started' ? '놀이체육 · 영상' : isLab ? '놀이체육' : '놀이체육 · 준비'}");
     expect(dashboard).toContain("놀이체육 · 영상");
   });
 

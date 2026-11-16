@@ -105,6 +105,18 @@ export type LegacyPublicationDecision = {
   publication_action?: string;
   new_post_publication_approved?: boolean;
 };
+export type SearchDemandAudit = {
+  source?: string;
+  keyword?: string;
+  purpose?: string;
+  decision?: string;
+  work_scope?: string;
+  title_action?: string;
+  retrieved_date?: string;
+  evidence_quality?: string;
+  naver_serp_verified?: boolean;
+  monthly_pc_mobile_total?: string | number;
+};
 export type PublicationReadiness = {
   notes?: string;
   status?: string;
@@ -150,11 +162,18 @@ export type Strategy = {
   final_keyword_selection?: FinalKeywordSelection | null;
   legacy_publication_decision?: LegacyPublicationDecision | null;
   publication_readiness?: PublicationReadiness | null;
+  search_demand_audit_20261116?: SearchDemandAudit | null;
   source_revision?: number;
 };
+
+function asList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
 type Response = {
   strategy: Strategy | null;
   needsReview: boolean;
+  strategyRevisionMatch?: boolean;
+  searchDemandRecorded?: boolean;
   sourceRevision: number | null;
   currentRevision: number;
   updatedAt: string | null;
@@ -276,6 +295,20 @@ type VolumeRow = {
 
 function buildVolumeRows(analysis: Strategy): VolumeRow[] {
   const rows: VolumeRow[] = [];
+  const audit = analysis.search_demand_audit_20261116;
+  if (audit?.keyword || audit?.monthly_pc_mobile_total != null) {
+    rows.push({
+      key: `audit-${audit.keyword || 'selected'}`,
+      keyword: audit.keyword || analysis.primary_keyword || '선정 검색어',
+      role: '현재 선정 검색어',
+      pc: '합산',
+      mobile: '합산',
+      total: audit.monthly_pc_mobile_total == null || audit.monthly_pc_mobile_total === ''
+        ? '미확인'
+        : String(audit.monthly_pc_mobile_total),
+      note: audit.evidence_quality,
+    });
+  }
   const demand = analysis.monthly_keyword_demand;
   if (demand?.keyword || demand?.pc != null || demand?.mobile != null) {
     rows.push({
@@ -374,6 +407,14 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
     };
   }, [content, featuredImage]);
   const analysis = data?.strategy;
+  const relatedKeywords = asList(analysis?.related_keywords);
+  const exposureFactors = asList(analysis?.exposure_factors);
+  const risks = asList(analysis?.risks);
+  const improvements = asList(analysis?.improvements);
+  const audit = analysis?.search_demand_audit_20261116 ?? null;
+  const searchDemandRecorded = data?.searchDemandRecorded ?? Boolean(audit);
+  const strategyRevisionMatch = data?.strategyRevisionMatch ?? (data ? !data.needsReview : false);
+  const keywordChanged = Boolean(audit?.keyword && analysis?.primary_keyword && audit.keyword !== analysis.primary_keyword);
   const evidence = analysis?.competitive_evidence ?? null;
   const naver = analysis?.naver_serp_snapshot ?? null;
   const trust = analysis ? evidenceTrust(analysis) : null;
@@ -397,12 +438,13 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
     `원고: ${title}`,
     `집필 이유: ${analysis.writing_reason}`,
     `주요 검색어: ${analysis.primary_keyword}`,
-    `연관 검색어: ${analysis.related_keywords.join(', ')}`,
-    `대상 독자: ${analysis.target_audience}`,
-    `검색에 유리한 요소: ${analysis.exposure_factors.join(' / ')}`,
-    `차별점: ${analysis.brand_differentiation}`,
-    `제약과 위험: ${analysis.risks.join(' / ')}`,
-    `보완 방향: ${analysis.improvements.join(' / ')}`,
+    `연관 검색어: ${relatedKeywords.join(', ')}`,
+    `대상 독자: ${analysis.target_audience ?? ''}`,
+    `검색에 유리한 요소: ${exposureFactors.join(' / ')}`,
+    `차별점: ${analysis.brand_differentiation ?? ''}`,
+    `제약과 위험: ${risks.join(' / ')}`,
+    `보완 방향: ${improvements.join(' / ')}`,
+    audit ? `선정 검색어: ${audit.keyword ?? ''} / 월간 합산: ${audit.monthly_pc_mobile_total ?? ''} / 조회일: ${audit.retrieved_date ?? ''}` : '',
     `주의: ${analysis.verification_note}`,
     evidence?.competitors?.length ? `웹 색인 경쟁 문서: ${evidence.competitors.map(item => item.title).filter(Boolean).join(' / ')}` : '',
     naver?.observed_results?.length ? `네이버 검색 화면 확인: ${naver.observed_results.map(item => item.title).filter(Boolean).join(' / ')}` : '',
@@ -422,14 +464,19 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
       {!error && !data && <p role="status" className={styles.loading}>분석 내용을 불러오는 중…</p>}
       {data && <>
         {dirty && <p role="status" className={styles.info}>저장 전 변경사항 있음. 아래 구조 점검은 현재 편집 화면 기준이며, 저장된 분석은 자동으로 바뀌지 않습니다.</p>}
-        {data.needsReview && <p role="status" className={styles.warning}>{analysis ? '원고 수정 버전이 분석 버전과 다릅니다. 최신 원고를 기준으로 검색 전략을 다시 검토해야 합니다.' : '이 원고의 검색 전략 분석이 아직 없습니다. 분석이 완료되기 전까지 검색 경쟁 근거로 사용하지 마세요.'}</p>}
+        <div className={styles.badges} role="status">
+          <span className={searchDemandRecorded ? styles.badgeWeb : styles.badgeUnverified}>검색량 데이터: {searchDemandRecorded ? '기록 있음' : '없음'}</span>
+          <span className={strategyRevisionMatch ? styles.badgeNaver : styles.badgeUnverified}>원고·집필 전략 버전: {strategyRevisionMatch ? '일치' : '재검토 필요'}</span>
+        </div>
+        {searchDemandRecorded && <p className={styles.meta}>검색량 데이터는 기존 원고에 연결된 검색량 조사 기록입니다. 최신 원고 전체가 검증 완료됐다는 뜻이 아닙니다.</p>}
+        {!strategyRevisionMatch && <p role="status" className={styles.warning}>{analysis ? '원고 수정 버전과 집필 전략 버전이 다릅니다. 기존 집필 전략이 현재 원고와 다를 수 있습니다.' : '저장된 집필 전략이 없습니다. 원고 버전과 맞춰 재검토해야 합니다.'}</p>}
         {analysis ? <>
           <div className={styles.sections}>
             <section><h3>01. 이 글을 작성한 이유</h3><p>{analysis.writing_reason}</p><p className={styles.meta}>주요 독자: {analysis.target_audience}</p></section>
-            <section><h3>02. 핵심 검색 전략</h3><p><strong>주력 검색어</strong> {analysis.primary_keyword}</p><p><strong>연관 검색어</strong> {analysis.related_keywords.join(' · ')}</p><p><strong>검색 의도</strong> {analysis.search_intent}</p></section>
-            <section><h3>03. 노출에 유리할 수 있는 요소</h3><ul>{analysis.exposure_factors.map((v, i) => <li key={i}>{v}</li>)}</ul><p className={styles.meta}>SPOKEDU 차별점: {analysis.brand_differentiation}</p></section>
-            <section><h3>04. 약점 · 위험 요인</h3><ul>{analysis.risks.map((v, i) => <li key={i}>{v}</li>)}</ul></section>
-            <section><h3>05. 다음 개선 작업</h3><ul>{analysis.improvements.map((v, i) => <li key={i}>{v}</li>)}</ul></section>
+            <section><h3>02. 핵심 검색 전략</h3><p><strong>주력 검색어</strong> {analysis.primary_keyword || '미기록'}</p><p><strong>연관 검색어</strong> {relatedKeywords.join(' · ') || '없음'}</p><p><strong>검색 의도</strong> {analysis.search_intent || '미기록'}</p></section>
+            <section><h3>03. 노출에 유리할 수 있는 요소</h3>{exposureFactors.length ? <ul>{exposureFactors.map((v, i) => <li key={i}>{v}</li>)}</ul> : <p>저장된 항목이 없습니다.</p>}<p className={styles.meta}>SPOKEDU 차별점: {analysis.brand_differentiation || '미기록'}</p></section>
+            <section><h3>04. 약점 · 위험 요인</h3>{risks.length ? <ul>{risks.map((v, i) => <li key={i}>{v}</li>)}</ul> : <p>저장된 항목이 없습니다.</p>}</section>
+            <section><h3>05. 다음 개선 작업</h3>{improvements.length ? <ul>{improvements.map((v, i) => <li key={i}>{v}</li>)}</ul> : <p>저장된 항목이 없습니다.</p>}</section>
           </div>
 
           <section className={styles.competition} aria-labelledby="competition-heading">
@@ -506,11 +553,11 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
               <div>
                 <h4>차별화되는 정보</h4>
                 <p>{analysis.brand_differentiation}</p>
-                <ul>{analysis.exposure_factors.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                <ul>{exposureFactors.map((item, index) => <li key={index}>{item}</li>)}</ul>
               </div>
               <div>
                 <h4>추가로 보완할 정보</h4>
-                <ul>{analysis.improvements.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                <ul>{improvements.map((item, index) => <li key={index}>{item}</li>)}</ul>
               </div>
               <div>
                 <h4>검증되지 않은 지표</h4>
@@ -526,6 +573,19 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
           <section className={styles.competition} aria-labelledby="volume-heading">
             <div className={styles.competitionHeader}>
               <h3 id="volume-heading">07. 월간 검색량</h3>
+            </div>
+            {audit && (
+              <div className={styles.evidenceBlock}>
+                <p><strong>현재 선정 검색어</strong> {audit.keyword || '미기록'}</p>
+                {keywordChanged && <p className={styles.meta}>기존 분석 검색어: {analysis.primary_keyword}</p>}
+                <p><strong>PC·모바일 합산</strong> {audit.monthly_pc_mobile_total == null || audit.monthly_pc_mobile_total === '' ? '미확인' : String(audit.monthly_pc_mobile_total)}</p>
+                <p className={styles.meta}>조회일 {audit.retrieved_date || '미기록'} · 출처 {audit.source || '미기록'}</p>
+                <p className={styles.meta}>선정 이유: {audit.decision || '미기록'}</p>
+                <p className={styles.meta}>검증 범위: {audit.evidence_quality || '미기록'}{audit.purpose ? ` · ${audit.purpose}` : ''}</p>
+                <p className={styles.meta}>이 수치는 검색량 조사 기록입니다. 네이버 실제 상위 노출 검증: {audit.naver_serp_verified ? '확인됨' : '아님'}</p>
+              </div>
+            )}
+            <div className={styles.competitionHeader}>
               <div className={styles.badges}>
                 {publicationTrack && <span className={publicationTrack.label.startsWith('신규') ? styles.badgeNaver : styles.badgeWeb}>{publicationTrack.label}</span>}
                 {needsFreshSerp && <span className={styles.badgeUnverified}>새 검색어 재검증 필요</span>}

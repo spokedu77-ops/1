@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { getServiceSupabase } from './adminAuth';
 import { isFieldRecordSameOrigin } from '@/app/lib/field-records/request-origin';
 import { excerptFromText, plainTextFromDoc, type BlogDraftWrite } from '@/app/lib/blog-drafts/contract';
+import { chapterStructureRegressed } from '@/app/lib/blog-drafts/chapterStructure';
+
+export { chapterStructureRegressed };
 
 export const BLOG_DRAFT_MEDIA_BUCKET = 'blog-draft-media';
 export const noStoreHeaders = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' };

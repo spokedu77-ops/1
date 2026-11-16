@@ -66,6 +66,7 @@ describe('spomove preset display model', () => {
 
     expect(getSpomovePresetDisplayModel(moleNormal!).programLabel).toBe('시지각 반응');
     expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기 (보통)');
+    expect(getSpomoveCardDisplayModel(moleNormal!).title).toBe('두더지 잡기');
     expect(getSpomoveCardDisplayModel(moleNormal!).publicMeta).toEqual({
       core: '시각 반응',
       difficulty: '난이도 보통',
