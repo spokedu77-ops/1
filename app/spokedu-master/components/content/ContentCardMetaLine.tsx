@@ -4,14 +4,26 @@ export function ContentCardMetaLine({
   primary,
   secondary,
   className,
+  wrap = false,
 }: {
   primary: string;
   secondary?: string;
   className?: string;
+  wrap?: boolean;
 }) {
   const first = primary.trim();
   const rest = secondary?.trim() ?? '';
   if (!first && !rest) return null;
+
+  if (wrap) {
+    return (
+      <p className={`${MV_META} min-w-0 break-keep [overflow-wrap:anywhere] ${className ?? ''}`.trim()}>
+        {first ? <span className="text-blue-700">{first}</span> : null}
+        {first && rest ? <span className="text-slate-300" aria-hidden> · </span> : null}
+        {rest ? <span className="text-slate-500">{rest}</span> : null}
+      </p>
+    );
+  }
 
   return (
     <p className={`${MV_META} flex min-w-0 items-center overflow-hidden ${className ?? ''}`.trim()}>

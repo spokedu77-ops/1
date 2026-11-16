@@ -18,8 +18,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
+import styles from './HomeDashboard.module.css';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { nextImageUnoptimized } from '../lib/mediaPreferences';
@@ -246,7 +248,7 @@ function HomeEmptyScheduleThumb() {
 
 function HomeEmptyRecentThumb() {
   return (
-    <span className="grid h-full w-full place-items-center bg-slate-50 text-slate-400" aria-hidden>
+    <span data-home-empty-recent="true" className="grid h-full w-full place-items-center bg-slate-50 text-slate-400" aria-hidden>
       <Play size={22} strokeWidth={1.8} />
     </span>
   );
@@ -264,6 +266,7 @@ const HOME_CLASS_TOOL_ICONS: Record<ClassToolId, typeof Timer> = {
 };
 
 function WeeklyProgramCard({
+  refinedHome = false,
   program,
   locked,
   onPreview,
@@ -275,6 +278,7 @@ function WeeklyProgramCard({
   accessBadge,
   priority = false,
 }: {
+  refinedHome?: boolean;
   program: Program;
   locked: boolean;
   onPreview?: (program: Program) => void;
@@ -306,11 +310,12 @@ function WeeklyProgramCard({
       onFavorite={locked ? undefined : onFavorite}
       accessBadge={accessBadge}
       priority={priority}
-      sizes="(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw"
+      sizes={refinedHome ? '(min-width: 1200px) 262px, (min-width: 560px) 45vw, 90vw' : '(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw'}
       cleanSquareMedia
       isNew={program.isNew}
       newTiming={program}
       presentation="home"
+      refinedHome={refinedHome}
     />
   );
 }
@@ -354,6 +359,7 @@ function FirstStartGuide({ canUseAttendance, freePreviewProgramId, onFreePreview
 }
 
 function SpomoveCard({
+  refinedHome = false,
   preset,
   thumbnailUrl,
   contentOverride,
@@ -366,6 +372,7 @@ function SpomoveCard({
   liteTrial = false,
   priority = false,
 }: {
+  refinedHome?: boolean;
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   contentOverride?: SpomovePresetContentOverride;
@@ -393,15 +400,15 @@ function SpomoveCard({
     <>
       <SpomoveLayeredThumb
         src={thumbnailUrl}
-        sizes="(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw"
+        sizes={refinedHome ? '(min-width: 1200px) 262px, (min-width: 560px) 45vw, 90vw' : '(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw'}
         priority={priority}
         presentation="home-cover-4-3"
         className="rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95"
         fallback={<SpomoveThumbnailPlaceholder />}
       />
-      <div className="px-3.5 pb-3.5 pr-14 pt-2.5">
-        <ContentCardMetaLine primary={displayModel.difficulty} secondary={displayModel.typeLabel} className={MV_HOME_CARD_META} />
-        <h3 className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
+      <div data-home-card-body="true" className="px-3.5 pb-3.5 pr-14 pt-2.5">
+        <ContentCardMetaLine primary={displayModel.difficulty} secondary={displayModel.typeLabel} wrap={refinedHome} className={MV_HOME_CARD_META} />
+        <h3 title={refinedHome ? displayModel.title : undefined} className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
       </div>
     </>
   );
@@ -636,6 +643,8 @@ export default function DashboardView() {
 }
 
 function EntitledDashboardView() {
+  const pathname = usePathname();
+  const isLab = pathname.startsWith('/spokedu-lab/');
   const accessSnapshot = useMasterAccessSnapshot();
   const {
     homePrograms: programs,
@@ -868,9 +877,9 @@ function EntitledDashboardView() {
   const showContinuityChapter = !isFirstUser;
 
   return (
-    <main data-dashboard-root="true" className="h-full overflow-y-auto bg-[var(--spm-bg)]">
+    <main data-dashboard-root="true" className={`h-full overflow-y-auto bg-[var(--spm-bg)] ${isLab ? styles.labHome : ''}`}>
       <section data-dashboard-chapter="opening" className="min-[1200px]:px-4 min-[1200px]:pt-4">
-        <div className={`${MV_HOME_FEATURE_WIDTH} relative isolate flex overflow-hidden bg-slate-950 min-[1200px]:min-h-[328px] min-[1200px]:rounded-[20px]`}>
+        <div data-home-hero="true" className={`${MV_HOME_FEATURE_WIDTH} relative isolate flex overflow-hidden bg-slate-950 min-[1200px]:min-h-[328px] min-[1200px]:rounded-[20px]`}>
         <Image
           src={homeHeroSrc}
           alt="SPOKEDU 체육 수업 현장"
@@ -880,8 +889,8 @@ function EntitledDashboardView() {
           unoptimized={nextImageUnoptimized(homeHeroSrc)}
           className="-z-20 object-cover object-[58%_40%] sm:object-[center_40%]"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" aria-hidden />
-        <div className={`${MV_EDITORIAL_WIDTH} flex items-end pb-5 pt-7 min-[768px]:pb-8 min-[768px]:pt-10 min-[1200px]:pb-9 min-[1200px]:pt-14`}>
+        <div data-home-hero-shade="true" className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" aria-hidden />
+        <div data-home-hero-content="true" className={`${MV_EDITORIAL_WIDTH} flex items-end pb-5 pt-7 min-[768px]:pb-8 min-[768px]:pt-10 min-[1200px]:pb-9 min-[1200px]:pt-14`}>
           <header className="max-w-[610px] text-white">
             <p className="text-[12px] font-semibold leading-5 text-white/70 sm:text-[13px]">
               SPOKEDU LAB · MOVEMENT BECOMES LEARNING
@@ -892,9 +901,11 @@ function EntitledDashboardView() {
             >
               {'움직임이 배움이 되는\n오늘의 수업을 준비하세요'}
             </h1>
-            <p className="mt-3 max-w-[520px] text-[15px] font-normal leading-6 text-white/80 sm:text-[16px]">
-              놀이체육과 SPOMOVE를 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
-            </p>
+            {!isLab ? (
+              <p className="mt-3 max-w-[520px] text-[15px] font-normal leading-6 text-white/80 sm:text-[16px]">
+                놀이체육과 SPOMOVE를 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
+              </p>
+            ) : null}
             <div data-dashboard-hero-actions="true" className="mt-5 grid grid-cols-2 gap-2.5 min-[768px]:flex min-[768px]:flex-wrap">
               {primaryAction.kind === 'freePreview' && freePreviewProgram ? (
                 <button data-dashboard-primary-cta="true" type="button" onClick={() => openPreview(freePreviewProgram)} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
@@ -913,14 +924,16 @@ function EntitledDashboardView() {
                   놀이체육 찾기 <ArrowRight size={15} aria-hidden />
                 </Link>
               )}
-              {accessSnapshot.canUseAttendance ? (
+              {!isLab && accessSnapshot.canUseAttendance ? (
                 <Link href="/spokedu-lab/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   수업 일정 보기
                 </Link>
               ) : null}
-              <Link href="/spokedu-lab/class-tools" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                수업 도구 열기
-              </Link>
+              {!isLab ? (
+                <Link href="/spokedu-lab/class-tools" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  수업 도구 열기
+                </Link>
+              ) : null}
             </div>
           </header>
         </div>
@@ -941,8 +954,8 @@ function EntitledDashboardView() {
             <SectionHeader
               title="이어서 준비"
               titleId="continuity-heading"
-              href="/spokedu-lab/activity"
-              action="전체 보기"
+              href={isLab ? undefined : '/spokedu-lab/activity'}
+              action={isLab ? undefined : '전체 보기'}
             />
             <div data-dashboard-grid="operational" className="grid grid-cols-1 items-stretch gap-3 min-[768px]:grid-cols-3 min-[768px]:gap-4">
               {!continuitySettled ? (
@@ -990,7 +1003,7 @@ function EntitledDashboardView() {
                   />
                 )}
                 <HomeContinueCard
-                  kicker="최근 수업도구"
+                  kicker={isLab && !lastClassTool ? '수업 도구 바로가기' : '최근 수업도구'}
                   title={recentClassTool.label}
                   meta={recentClassTool.compactDescription}
                   actionLabel="도구 열기"
@@ -1028,6 +1041,7 @@ function EntitledDashboardView() {
                 {weeklyPrograms.slice(0, 4).map((program, index) => (
                   <div key={program.id} data-dashboard-card="weekly" className="h-full min-w-0">
                     <WeeklyProgramCard
+                      refinedHome={isLab}
                       program={program}
                       locked={isProgramLocked(program)}
                       lockedHref={isProgramLocked(program) ? buildProgramLessonGateHref(program.id, undefined, `home_weekly_${program.id}`) : undefined}
@@ -1068,7 +1082,7 @@ function EntitledDashboardView() {
         <SectionHeader
           title="SPOMOVE 추천"
           titleId="spomove-heading"
-          description="놀이체육을 디지털 자극 활동으로 확장합니다."
+          description={isLab ? undefined : '놀이체육을 디지털 자극 활동으로 확장합니다.'}
           href="/spokedu-lab/spomove"
           action="SPOMOVE 더 보기"
         />
@@ -1079,6 +1093,7 @@ function EntitledDashboardView() {
             return (
                 <div key={preset.id} data-dashboard-card="spomove" className="flex h-full min-w-0">
                 <SpomoveCard
+                  refinedHome={isLab}
                   preset={preset}
                   thumbnailUrl={thumbnail}
                   contentOverride={spomoveContentMap[preset.id]}

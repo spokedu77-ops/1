@@ -1,0 +1,151 @@
+/* Only attached to the LAB home. Shared MASTER and Library defaults stay intact. */
+.labHome {
+  container-type: inline-size;
+}
+
+.labHome [data-home-hero-content] {
+  align-items: center;
+  padding-block: 20px;
+}
+
+.labHome [data-home-hero] h1 {
+  margin-top: 8px;
+  font-size: clamp(26px, 3.2vw, 38px);
+}
+
+.labHome [data-dashboard-hero-actions] {
+  display: flex;
+  margin-top: 12px;
+}
+
+.labHome [data-home-hero-shade] {
+  background: linear-gradient(90deg, rgb(2 6 23 / 92%), rgb(2 6 23 / 65%) 48%, rgb(2 6 23 / 12%));
+}
+
+/* The running child's hair starts near the top of the original photo.
+   Move the visible window upward without changing cover scale or hero height. */
+.labHome [data-home-hero] > img {
+  object-position: 70% 18%;
+}
+
+.labHome [data-home-empty-recent] {
+  background: #eff6ff;
+  color: #64748b;
+}
+
+.labHome [data-home-empty-recent] > svg {
+  width: 30px;
+  height: 30px;
+}
+
+.labHome [data-dashboard-operational-card]:has([data-home-empty-recent]) h3 {
+  margin-top: 4px;
+}
+
+.labHome [data-dashboard-section='spomove-extension'] {
+  padding-top: 48px;
+}
+
+.labHome [data-dashboard-operational-meta] {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Size columns against the actual scroll container, including shell chrome. */
+.labHome [data-dashboard-grid='weekly'],
+.labHome [data-dashboard-grid='spomove'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.labHome [data-weekly-editorial] {
+  display: flex;
+  height: 100%;
+}
+
+.labHome [data-weekly-editorial] > :first-child,
+.labHome [data-spomove-preset] > :first-child {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.labHome [data-home-card-body] {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px 14px 24px;
+}
+
+.labHome [data-weekly-editorial] > :first-child > :first-child,
+.labHome [data-spomove-preset] [data-spm-spomove-media] {
+  flex-shrink: 0;
+}
+
+.labHome [data-home-card-body] > :last-child {
+  margin-top: 4px;
+  margin-right: 36px;
+  padding-top: 0;
+  overflow-wrap: anywhere;
+}
+
+.labHome [data-home-card-body] > p {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.labHome [data-home-play-hint] > span,
+.labHome [data-spm-spomove-card-action] > span {
+  width: 34px;
+  height: 34px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.labHome [data-home-play-hint] svg,
+.labHome [data-spm-spomove-card-action] svg {
+  width: 15px;
+  height: 15px;
+}
+
+.labHome [data-weekly-editorial] > button[aria-pressed] > span,
+.labHome [data-spomove-preset] > button[aria-pressed] > span {
+  border: 1px solid rgb(148 163 184 / 30%);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 14%);
+}
+
+@container (min-width: 560px) {
+  .labHome [data-dashboard-grid='weekly'],
+  .labHome [data-dashboard-grid='spomove'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 1040px) {
+  .labHome [data-dashboard-grid='weekly'],
+  .labHome [data-dashboard-grid='spomove'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) {
+  .labHome [data-home-hero] > img {
+    object-position: center 18%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .labHome [data-home-hero] > img {
+    object-position: center 12%;
+  }
+
+  .labHome [data-home-hero] {
+    min-height: 210px;
+  }
+
+  .labHome [data-dashboard-chapter='continuity'] {
+    padding-top: 40px;
+  }
+}

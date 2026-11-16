@@ -30,6 +30,7 @@ export function WeeklyEditorialCard({
   isNew = false,
   newTiming,
   presentation = 'default',
+  refinedHome = false,
 }: {
   title: string;
   heroImageUrl?: string | null;
@@ -50,7 +51,9 @@ export function WeeklyEditorialCard({
   isNew?: boolean;
   newTiming?: CatalogNewTiming;
   presentation?: 'default' | 'home' | 'library-featured';
+  refinedHome?: boolean;
 }) {
+  const refineHome = presentation === 'home' && refinedHome;
   const type = category.trim();
   const support = (supportMeta ?? '').trim();
   const isHomeFamily = presentation === 'home' || presentation === 'library-featured';
@@ -92,16 +95,17 @@ export function WeeklyEditorialCard({
           </span>
         ) : null}
       </span>
-      <div className={`${isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'} ${previewEnabled && hasVideo ? 'pr-14' : ''}`}>
+      <div data-home-card-body="true" className={`${isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'} ${previewEnabled && hasVideo ? 'pr-14' : ''}`}>
         <ContentCardMetaLine
           primary={type}
           secondary={support}
+          wrap={refineHome}
           className={isHomeFamily ? MV_HOME_CARD_META : MV_META}
         />
-        <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 ${cardInteractive ? 'group-hover:text-slate-700' : ''}`}>{title}</span>
+        <span title={refineHome ? title : undefined} className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 ${cardInteractive ? 'group-hover:text-slate-700' : ''}`}>{title}</span>
       </div>
       {previewEnabled && hasVideo ? (
-        <span aria-hidden="true" className="pointer-events-none absolute bottom-1 right-1 inline-flex h-11 w-11 items-center justify-center">
+        <span data-home-play-hint="true" aria-hidden="true" className="pointer-events-none absolute bottom-1 right-1 inline-flex h-11 w-11 items-center justify-center">
           <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-600">
             <Play className="h-3.5 w-3.5 fill-current" />
           </span>
