@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
-const payment = read('app/spokedu-master/payment/page.tsx');
+const payment = read('app/spokedu-master/payment/page.tsx') + read('app/spokedu-master/payment/PaymentPlanSelection.tsx');
 const success = read('app/spokedu-master/payment/success/page.tsx');
 const cancel = read('app/spokedu-master/payment/cancel/page.tsx');
 const subscription = read('app/spokedu-master/subscription/page.tsx');
@@ -24,7 +24,7 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(catalog).toContain('Lite의 모든 기능');
     expect(catalog).toContain('색상 · 방향 · 이미지 신호에 반응하는 움직임 활동');
     expect(payment).toContain('getDirectPurchaseMasterProducts');
-    expect(payment).toContain('getMasterProductPaymentFeatureLabels(product)');
+    expect(payment).toContain('PAYMENT_PLAN_COPY[planId]');
     expect(payment).toContain('MASTER_CENTER_INQUIRY_HREF');
     expect(payment).not.toContain('product={MASTER_PRODUCT_CATALOG.center}');
   });
@@ -56,8 +56,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
 
   it('uses only lite and premium plan IDs for payment CTAs', () => {
     expect(payment).toContain("type PaidPlanId = 'lite' | 'premium'");
-    expect(payment).toContain('data-plan-id={planId ?? undefined}');
-    expect(payment).toContain('const planId = product.serverPlanKey as PaidPlanId');
+    expect(payment).toContain('data-plan-id={planId}');
+    expect(payment).toContain('const planId = product.serverPlanKey');
     expect(payment).toContain('startBillingAuth(planId)');
     expect(payment).not.toContain("payment?plan=pro");
     expect(payment).not.toContain("payment?plan=team");

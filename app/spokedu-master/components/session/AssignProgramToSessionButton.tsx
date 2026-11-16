@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarPlus } from 'lucide-react';
+import { CalendarPlus, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -11,6 +11,7 @@ import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { Program } from '../../types';
 import type { MasterSessionDto } from '../../types/operational';
 import { BottomSheet } from '../ui/BottomSheet';
+import { SessionDetailSheet } from '../../manage/SessionDetailSheet';
 
 type AssignmentAvailability = {
   allowed: boolean;
@@ -47,17 +48,20 @@ function sessionLabel(session: MasterSessionDto) {
 export function AssignProgramToSessionButton({
   program,
   className,
+  label = '수업에 추가',
   targetSessionId,
   returnHref,
 }: {
   program: Program;
   className?: string;
+  label?: string;
   targetSessionId?: string | null;
   returnHref?: string | null;
 }) {
   const router = useRouter();
   const data = useOperationalData();
   const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [date, setDate] = useState(getSeoulToday());
   const [showDateSearch, setShowDateSearch] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -74,6 +78,14 @@ export function AssignProgramToSessionButton({
     .sort((left, right) => left.startAt.localeCompare(right.startAt))
     .slice(0, 8), [data.sessions]);
   const sessions = showDateSearch ? dateSessions : upcomingSessions;
+  const canCreate = data.status === 'ready' && validProgramId;
+  const openCreate = () => { setOpen(false); setCreating(true); };
+  const handleCreated = (created: MasterSessionDto) => {
+    setCreating(false);
+    setOpen(true);
+    setAssignedSessionId(created.id);
+    setMessage({ tone: 'success', text: `${sessionLabel(created)} 수업을 만들고 활동을 추가했습니다.` });
+  };
   const targetSession = targetSessionId ? data.sessions.find((session) => session.id === targetSessionId) : null;
   const targetAvailability = targetSession && validProgramId
     ? getProgramAssignmentAvailability(targetSession, numericProgramId)
@@ -149,7 +161,7 @@ export function AssignProgramToSessionButton({
       className={className ?? `${SPM_PRIMARY_BTN} h-12`}
     >
       <CalendarPlus size={16} />
-      {targetAvailability?.alreadyAssigned ? '추가됨' : directLoading ? '수업 확인 중' : '수업에 추가'}
+        {targetAvailability?.alreadyAssigned ? '추가됨' : directLoading ? '수업 확인 중' : label}
     </button>
     {targetSessionId && directReason && !message ? (
       <div className="mt-2 text-xs font-semibold text-slate-600">
@@ -211,13 +223,17 @@ export function AssignProgramToSessionButton({
                   );
                 })}
                 {!sessions.length ? (
-                  <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-semibold text-slate-500">
-                    {showDateSearch ? '이 날짜에는 추가 가능한 수업이 없습니다.' : '다가오는 추가 가능한 예정 수업이 없습니다. 다른 날짜를 찾아보세요.'}
-                  </p>
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center">
+                    <p className="text-sm font-semibold text-slate-800">{showDateSearch ? '이 날짜에 예정된 수업이 없습니다.' : '다가오는 예정 수업이 없습니다.'}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">새 수업을 만들면 이 활동이 미리 담깁니다.</p>
+                    <button type="button" disabled={!canCreate} onClick={openCreate} className={`mt-4 ${SPM_PRIMARY_BTN} min-h-11 rounded-[10px] px-4 text-sm font-semibold`}><Plus size={16} />새 수업 만들기</button>
+                  </div>
                 ) : null}
               </>
             )}
           </div>
+
+          {canCreate && sessions.length > 0 ? <div className="mt-4 border-t border-slate-100 pt-4"><button type="button" onClick={openCreate} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"><Plus size={16} />새 수업 만들기</button></div> : null}
 
           {message ? (
             <p role="status" className={`mt-3 rounded-xl p-3 text-xs font-bold ${message.tone === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-700'}`}>{message.text}</p>
@@ -230,5 +246,6 @@ export function AssignProgramToSessionButton({
         </div>
       </BottomSheet>
     ) : null}
+    {creating ? <SessionDetailSheet session={null} initialDay={showDateSearch ? date : getSeoulToday()} initialLibraryProgramId={program.id} sheetPresentation="modal" legacyCapture={false} onClose={() => { setCreating(false); setOpen(true); }} onCreated={handleCreated} onSessionCreated={(created) => router.push(`/spokedu-lab/activity?session=${encodeURIComponent(created.id)}`)} /> : null}
   </>;
 }

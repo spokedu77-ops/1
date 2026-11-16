@@ -91,8 +91,10 @@ const css = `
 .vburst-play{position:relative;flex:1;min-height:0}
 .vburst-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .vburst-lens{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(circle,transparent 40%,rgba(0,0,0,.9) 80%,#000 100%)}
-.vburst-mission{position:absolute;left:50%;top:12px;z-index:24;transform:translateX(-50%);opacity:0;transition:opacity .2s;width:max-content}
+.vburst-mission{position:absolute;left:50%;top:12px;z-index:24;transform:translateX(-50%);opacity:0;transition:opacity .2s,top .35s ease,transform .35s ease,font-size .35s ease;width:max-content}
 .vburst-mission.show{opacity:1;transform:translateX(-50%)}
+.vburst .vburst-mission.announce{top:50%;transform:translate(-50%,-50%);font-size:clamp(26px,5vw,56px)}
+@media(prefers-reduced-motion:reduce){.vburst-mission{transition:opacity .2s}}
 .vburst-count{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:22;pointer-events:none;transform:translate(-50%,-50%);font-size:clamp(80px,22vw,200px);font-weight:400;color:#ff3333;text-shadow:0 0 50px #f00,0 0 20px #f00;opacity:0;transition:opacity .1s}
 .vburst-count.show{opacity:1}
 .vburst-warn{position:absolute;left:50%;top:12%;z-index:20;pointer-events:none;transform:translateX(-50%) scale(.85);opacity:0;transition:all .3s;padding:8px 18px;border-radius:999px;border:2px dashed #a3a3a3;background:rgba(0,0,0,.8);color:#a3a3a3;font-size:clamp(12px,2.4vw,22px);font-weight: 800;white-space:nowrap}
@@ -266,7 +268,7 @@ export function VirusOutbreakReactionTraining({
     };
     gRef.current = g;
 
-    const setStatus = (text: string, _color = '#67e8f9') => {
+    const setStatus = (text: string) => {
       if (!statusRef.current) return;
       statusRef.current.textContent = text;
 
@@ -334,12 +336,12 @@ export function VirusOutbreakReactionTraining({
       const mission = g.questionType === 'MOST' ? '가장 [많이] 증식한 색깔은?' : '가장 [조금] 증식한 색깔은?';
       if (missionRef.current) {
         missionRef.current.textContent = mission;
+        missionRef.current.classList.add('announce');
         missionRef.current.classList.add('show');
       }
       if (g.hasMutants && warnRef.current) warnRef.current.classList.add('show');
       setStatus(
         `배양 · ${g.difficulty === 'easy' ? '1단계' : g.difficulty === 'normal' ? '2단계' : '3단계'}`,
-        '#67e8f9',
       );
     };
 
@@ -440,7 +442,8 @@ export function VirusOutbreakReactionTraining({
         if (elapsed >= ANNOUNCE_MS) {
           g.phase = 'OUTBREAK';
           g.phaseStartMs = now;
-          setStatus('증식 중', '#86efac');
+          missionRef.current?.classList.remove('announce');
+          setStatus('증식 중');
         }
       } else if (g.phase === 'OUTBREAK') {
         const progress = Math.min(elapsed / OUTBREAK_MS, 1);
@@ -455,7 +458,7 @@ export function VirusOutbreakReactionTraining({
         if (elapsed >= OUTBREAK_MS) {
           g.phase = 'OBSERVE';
           g.phaseStartMs = now;
-          setStatus('관찰 · 전체 화면을 살펴보세요', '#67e8f9');
+          setStatus('관찰 · 전체 화면을 살펴보세요');
         }
       } else if (g.phase === 'OBSERVE') {
         if (elapsed >= observationMs) {
@@ -463,7 +466,7 @@ export function VirusOutbreakReactionTraining({
           g.phaseStartMs = now;
           playSfx('shutter', effectsEnabled);
           warnRef.current?.classList.remove('show');
-          setStatus('셔터 · 해당 색 패드로', '#fbbf24');
+          setStatus('셔터 · 해당 색 패드로');
         }
       } else if (g.phase === 'SHUTTER') {
         g.shutterProgress = Math.min(elapsed / SHUTTER_MS, 1);
@@ -510,7 +513,7 @@ export function VirusOutbreakReactionTraining({
           }
           missionRef.current.innerHTML = `정답: <span style="color:${ans.hex}">${ans.name}</span>`;
           missionRef.current.classList.add('show');
-          setStatus(`${ans.name} · ${g.questionType === 'MOST' ? '최다' : '최소'}`, '#e5e7eb');
+          setStatus(`${ans.name} · ${g.questionType === 'MOST' ? '최다' : '최소'}`);
         }
         if (elapsed >= REVEAL_MS) {
           g.completedRounds += 1;

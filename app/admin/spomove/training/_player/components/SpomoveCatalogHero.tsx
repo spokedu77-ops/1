@@ -29,7 +29,7 @@ const HERO_ANIM_CSS = `
  * MemoryGameApp 홈 상단과 동일한 브랜딩·학생 선택·PLAY/THINK/FLOW·헤드라인 블록.
  * SPOMOVE Training 카탈로그(/admin/spomove/training) 상단에서 사용.
  */
-export function SpomoveCatalogHero() {
+export function SpomoveCatalogHero({ compact = false }: { compact?: boolean }) {
   const { students, add: addStudent, remove: removeStudent, rename: renameStudent } = useStudents();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -113,7 +113,7 @@ export function SpomoveCatalogHero() {
         style={{
           maxWidth: 960,
           margin: '0 auto',
-          padding: 'clamp(1.25rem,4vw,2rem) clamp(1rem,4vw,1.5rem) clamp(1.35rem,4vw,1.85rem)',
+          padding: compact ? 0 : 'clamp(1.25rem,4vw,2rem) clamp(1rem,4vw,1.5rem) clamp(1.35rem,4vw,1.85rem)',
           position: 'relative',
           boxSizing: 'border-box',
         }}
@@ -124,7 +124,7 @@ export function SpomoveCatalogHero() {
             margin: '0 auto',
             width: '100%',
             maxWidth: 1120,
-            padding: 'clamp(1.1rem,3vw,1.5rem) clamp(1rem,3vw,1.4rem)',
+            padding: compact ? 0 : 'clamp(1.1rem,3vw,1.5rem) clamp(1rem,3vw,1.4rem)',
             borderRadius: 18,
             border: '1px solid rgba(255,255,255,0.09)',
             background: 'linear-gradient(180deg, rgba(249,115,22,0.11) 0%, rgba(255,255,255,0.03) 24%, rgba(255,255,255,0.01) 100%)',
@@ -181,7 +181,7 @@ export function SpomoveCatalogHero() {
               ›
             </button>
           </div>
-          <div aria-label="배너 선택" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div aria-label="배너 선택" style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: compact ? 6 : 0 }}>
             {SPOKEDU_PROMO_BANNERS.map((src, index) => (
               <button
                 key={src}

@@ -1072,6 +1072,10 @@ export class FlowEngine {
   start(): void { this.sessionStarted = true; this.startLoop(); this.startCountdown(); }
 
   /** BGM 리스트가 늦게 로딩됐을 때 — init 이후 외부에서 호출 */
+  getStatsSnapshot(): FlowStats {
+    return { ...this.stats, totalSec: this.sessionSec, colorGateColorCounts: this.stats.colorGateColorCounts ? { ...this.stats.colorGateColorCounts } : undefined };
+  }
+
   async loadBgmLate(storagePath: string): Promise<void> {
     this.bgmPath = storagePath;
     const loaded = await this.audio.loadBgm(storagePath);

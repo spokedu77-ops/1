@@ -64,6 +64,7 @@ type GameState = {
   objs: (FlowTile | FlashBubble | SimonBalloon)[];
   particles: Particle[];
   stims: number;
+  stimuliPerRound: number;
   combo: number;
   maxCombo: number;
   laneCount: [number, number, number, number];
@@ -655,7 +656,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
     padRefs.current.forEach((p) => p?.classList.remove('lit'));
     const stats: ReactTrainCompleteStats = {
       completionReason,
-      stims: g.stims,
+      stims: Math.floor(g.stims / g.stimuliPerRound),
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
     };
@@ -671,7 +672,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
     laneExplRefs.current.forEach((el) => { if (el) el.style.opacity = '0'; });
     padRefs.current.forEach((p) => p?.classList.remove('lit'));
     onCompleteRef.current({
-      stims: g.stims,
+      stims: Math.floor(g.stims / g.stimuliPerRound),
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
       stoppedEarly: true,
@@ -684,12 +685,14 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       const g = gRef.current;
       const cv = cvRef.current;
       if (!g || !cv) return;
+      if (targetReps && g.stims >= targetReps * g.stimuliPerRound) return;
       g.stims++;
-      if (targetReps && g.stims >= targetReps) setTimeout(endGame, 0);
+      const completedRounds = Math.floor(g.stims / g.stimuliPerRound);
+      if (targetReps && completedRounds >= targetReps) setTimeout(endGame, 0);
       g.combo++;
       if (g.combo > g.maxCombo) g.maxCombo = g.combo;
       g.laneCount[lane]++;
-      if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
+      if (hudStimsRef.current) hudStimsRef.current.textContent = String(completedRounds);
 
       const el = laneExplRefs.current[lane];
       if (el && g.mode !== 'flash' && g.mode !== 'balloonSimon') {
@@ -797,6 +800,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       objs: [],
       particles: [],
       stims: 0,
+      stimuliPerRound: variant === 'flow' ? concurrent : 1,
       combo: 0,
       maxCombo: 0,
       laneCount: [0, 0, 0, 0],

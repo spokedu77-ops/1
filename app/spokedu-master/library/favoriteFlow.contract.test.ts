@@ -77,10 +77,10 @@ describe("detail favorite source of truth and return context", () => {
     expect(detailSource).not.toContain("isFavoriteByOwner");
   });
 
-  it("uses responsive favorite actions with shared state", () => {
+  it("uses one responsive favorite action with shared state", () => {
     expect(
       detailSource.match(/toggleFavoriteProgram\(ownerId, program\.id\)/g),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     expect(detailSource).toContain("aria-pressed={favorite}");
   });
 

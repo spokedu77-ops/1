@@ -21,6 +21,7 @@ export type TrainingSessionResult = {
   stims?: number;
   directionRecord?: DirectionPresentationRecord;
   shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  memoryProgress?: import('@/app/admin/spomove/training/_player/lib/memoryProgress').MemoryProgressRecord;
   roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
   moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('./goalkeeperResultRecord').GoalkeeperResultRecord;

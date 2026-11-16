@@ -55,6 +55,8 @@ const css = `
 .rmt-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.45);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer}
 .rmt-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 .rmt-play{position:relative;flex:1;min-height:0;display:flex;padding:0}
+.rmt-bonus-notice{position:absolute;left:50%;top:16px;transform:translateX(-50%);z-index:45;max-width:calc(100% - 32px);padding:10px 20px;border:1px solid rgba(250,204,21,.6);border-radius:16px;background:rgba(12,22,10,.94);color:#facc15;font-size:clamp(18px,3vw,28px);font-weight:800;text-align:center;pointer-events:none;word-break:keep-all}
+.rmt-bonus-notice.intro{top:50%;transform:translate(-50%,-50%);width:max-content;padding:24px 32px;font-size:clamp(28px,6vw,64px)}
 .rmt-field{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(ellipse 120% 80% at 50% 100%,#2d4a22 0%,#1a2e14 55%,#0f1a0c 100%)}
 .rmt-field::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:18px 18px;pointer-events:none;opacity:.6}
 .rmt-hole-wrap{position:absolute;width:clamp(76px,13vw,128px);height:clamp(76px,13vw,128px);transform:translate(-50%,-50%);z-index:2}
@@ -235,6 +237,7 @@ export function RobloxMoleReactionTraining({
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
+  const [bonusNotice, setBonusNotice] = useState<'off' | 'intro' | 'active'>('off');
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [activeMap, setActiveMap] = useState<Map<number, ActiveMole>>(() => new Map());
   const onCompleteRef = useRef(onComplete);
@@ -329,6 +332,7 @@ export function RobloxMoleReactionTraining({
       nextTimer: null as ReturnType<typeof setTimeout> | null,
     };
     gRef.current = g;
+    setBonusNotice('off');
 
     const setHud = () => {
       const m = String(Math.floor(g.timeLeft / 60)).padStart(2, '0');
@@ -362,6 +366,7 @@ export function RobloxMoleReactionTraining({
     };
 
     const triggerMixed = () => {
+      if (g.bonusActive && g.spawnCount === 0) setBonusNotice('active');
       g.spawnCount += 1;
       const spawnPair = g.bonusActive
         ? Math.random() < 0.72
@@ -452,6 +457,7 @@ export function RobloxMoleReactionTraining({
             g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
             clearSpawnTimers();
             setActiveMap(new Map());
+            setBonusNotice('intro');
             setHud();
             scheduleNext(getBonusDelayMs());
             return;
@@ -500,6 +506,11 @@ export function RobloxMoleReactionTraining({
 
       <div className="rmt-play">
         <MoleField uid={uid} holes={MOLE_HOLES_SINGLE} activeMap={activeMap} />
+        {bonusNotice !== 'off' ? (
+          <div className={`rmt-bonus-notice${bonusNotice === 'intro' ? ' intro' : ''}`} role="status">
+            {bonusNotice === 'intro' ? `보너스타임 · ${BONUS_TIME_SEC}초` : '보너스타임'}
+          </div>
+        ) : null}
         <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="rmt-combo" ref={comboRef}>
           <div className="rmt-combo-n" ref={comboNRef}>

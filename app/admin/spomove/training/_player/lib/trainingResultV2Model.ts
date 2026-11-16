@@ -1,5 +1,6 @@
 import { resolveTrainingSelection } from './trainingActivity';
 import { resolveTrainingResultKind } from './trainingResultKind';
+import { validMemoryProgress } from './memoryProgress';
 import { buildTrainingResultViewModel, type TrainingResultViewInput, type ResultFact } from './trainingResultViewModel';
 import { selectEnhancedResultEducation, selectEnhancedResultReflection } from './trainingResultEducation';
 import { RESULT_COLOR_ORDER } from './trainingResultSummary';
@@ -78,7 +79,15 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
       settings.push(fact('timing', '색상당 노출 시간', cfg.adminSequenceTiming ? '1~2.5초 랜덤' : cfg.level <= 3 ? '1~3초 랜덤' : cfg.speed != null ? `${cfg.speed}초` : '기록 없음'));
     } else settings.push(fact('items', '설정된 연합 구성', id === 'color-number-memory' ? '색·번호 10개 + 퀴즈 5문항' : '색·번호 기억 퀴즈'));
     settings.push(fact('volume', '설정 분량', input.volumeLabel ?? vm.volume));
-    if (id === 'sequence-memory' && validResultCount(input.stims)) {
+    if (validMemoryProgress(input.memoryProgress)) {
+      const record = input.memoryProgress;
+      progress = id === 'sequence-memory' ? record.startedRounds : record.presentedItems;
+      progressLabel = id === 'sequence-memory' ? '진행 라운드' : '제시 항목';
+      progressUnit = id === 'sequence-memory' ? '라운드' : '개';
+      facts.push(fact('memory-items', '실제 제시 항목', `${record.presentedItems}개`),
+        fact('memory-presentations', '제시 완료', `${record.completedPresentations}라운드`),
+        fact('memory-reveals', '정답 공개', `${record.revealedAnswers}${id === 'color-number-memory' ? '문항' : '회'}`));
+    } else if (id === 'sequence-memory' && validResultCount(input.stims)) {
       progress = input.stims; progressLabel = '완료된 제시'; progressUnit = '라운드';
       facts.push(fact('progress', '실제 진행 라운드', `${input.stims}라운드`));
     } else facts.push(fact('progress-missing', '실제 진행 라운드', '기록 없음'));
@@ -132,6 +141,7 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
       } else note = '진행 기록만 제공됩니다. 개별 목표의 구역 기록은 전달되지 않았습니다.';
     }
     if (progress !== undefined) facts.unshift(fact('progress', progressLabel, `${progress}${progressUnit}`));
+    if (id === 'falling-bricks') note = '진행은 동시 낙하 묶음 기준입니다. 색상별 기록은 도착한 벽돌을 각각 집계합니다.';
     if (kind === 'number') note = '화면에 실제로 표시된 숫자 캡슐을 집계합니다. 캡슐의 색이 아니라 숫자 1~4의 기록입니다.';
   }
   if (!settings.length) settings.push(...vm.settings);
@@ -152,7 +162,7 @@ export function buildTrainingResultV2Model(input: TrainingResultV2Input, seed = 
       : id === 'goalkeeper' && keeperRecord ? { label: '일반 라운드', value: keeperRecord.targetWaveCount === null ? `${keeperRecord.waveCount}라운드` : `${keeperRecord.waveCount} / ${keeperRecord.targetWaveCount}라운드`, note: '보너스 제외 · 시작된 일반 웨이브' }
       : id === 'relative-compass' ? { label: '완료 라운드', value: validResultCount(input.directionRecord?.completedRounds) ? `${input.directionRecord.completedRounds} / ${cfg.targetReps}라운드` : '기록 없음', note: '정답 확인까지 마친 라운드' }
       : kind === 'time' ? { label: '선택한 동작', value: settings.some(item => ['actions', 'modules'].includes(item.id)) ? `${new Set(settings.filter(item => ['actions', 'modules'].includes(item.id)).flatMap(item => item.value.split(' · ')).filter(label => label !== '보너스')).size}가지` : '기록 없음', note: '이번 활동에 설정한 움직임 종류' }
-      : { label: kind === 'color' || kind === 'direction' ? '진행' : progressLabel, value: progress === undefined ? '기록 없음' : (kind === 'color' || kind === 'direction') && cfg.timeMode === 'reps' && validResultCount(cfg.targetReps) && cfg.targetReps > 0 ? `${progress} / ${cfg.targetReps}${progressUnit}` : `${progress}${progressUnit}`, note: kind === 'sequence' ? '설정 분량과 실제 진행은 다릅니다' : '실제로 전달된 진행 기록' },
+      : { label: kind === 'color' || kind === 'direction' ? '진행' : progressLabel, value: progress === undefined ? '기록 없음' : (kind === 'color' || kind === 'direction') && cfg.timeMode === 'reps' && validResultCount(cfg.targetReps) && cfg.targetReps > 0 ? `${progress} / ${cfg.targetReps}${progressUnit}` : `${progress}${progressUnit}`, note: kind === 'sequence' ? validMemoryProgress(input.memoryProgress) ? `실제 제시 항목 ${input.memoryProgress.presentedItems}개 · 제시 완료 ${input.memoryProgress.completedPresentations}라운드 · 정답 공개 ${input.memoryProgress.revealedAnswers}${id === 'color-number-memory' ? '문항' : '회'}` : '설정 분량과 실제 진행은 다릅니다' : '실제로 전달된 진행 기록' },
     id === 'virus-outbreak' ? { label: '관찰 시간', value: speed, note: '증식 완료 후 화면을 유지한 설정 시간' } : { label: id === 'shape-completion' || id === 'relative-compass' ? '반응 시간' : kind === 'time' ? '단계별 설정 시간' : kind === 'instant' ? '사용한 격자' : kind === 'sequence' ? '기억 구성' : kind === 'number' ? '숫자 비행 시간' : id === 'visual-search' ? '탐색 설정 시간' : kind === 'color' || kind === 'direction' ? '자극 시간' : '사용한 설정',
       value: kind === 'time' ? settings.find(item => item.id === 'stage')?.value ?? '기록 없음' : kind === 'instant' ? cfg.colorMemoryGridSize ? `${cfg.colorMemoryGridSize}×${cfg.colorMemoryGridSize}` : '기록 없음' : kind === 'sequence' ? settings[0]?.value ?? '기록 없음' : speed,
       note: kind === 'time' ? configured : kind === 'color' || kind === 'direction' ? '설정 자극 시간' : '실제 수행 성과가 아닌 실행 설정' },

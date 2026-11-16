@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createMemoryProgressCollector, type MemoryProgressRecord } from '../lib/memoryProgress';
+import { memoryRoundAnswers } from '../lib/roundAnswerRecord';
+
+import React, { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { spomoveClearTimeout as clearTimeout, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';
 import { playBeep } from '../lib/audio';
@@ -47,6 +50,7 @@ export function MemoryGame({
   level,
   onExit,
   onComplete,
+  onProgress,
   audioMode,
   speedSec,
   startDelayMs = 500,
@@ -55,6 +59,7 @@ export function MemoryGame({
   adminUniformTiming = false,
 }: {
   level: number;
+  onProgress?: (record: MemoryProgressRecord) => void;
   onExit: () => void;
   onComplete: (patterns: ColorItem[][]) => void;
   audioMode: string;
@@ -83,6 +88,7 @@ export function MemoryGame({
   const [phase, setPhase] = useState<Phase>('idle');
   const [colorIndex, setColorIndex] = useState(-1);
   const [flashWhite, setFlashWhite] = useState(false);
+  const progressCollector = useRef(createMemoryProgressCollector());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phaseRef = useRef<Phase>('idle');
   const roundRef = useRef(0);
@@ -193,6 +199,17 @@ export function MemoryGame({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [advance]);
+
+  useLayoutEffect(() => {
+    const collector = progressCollector.current;
+    if (phase === 'showing' && colorIndex >= 0 && !flashWhite) collector.present(round, colorIndex);
+    if (['waiting', 'reveal', 'summaryIntro', 'summary', 'done'].includes(phase)) collector.completePresentation(round);
+    if (phase === 'reveal') {
+      const answer = memoryRoundAnswers([patterns[round] ?? []])[0];
+      if (answer) collector.reveal(String(round), answer);
+    }
+    onProgress?.(collector.snapshot());
+  }, [phase, colorIndex, flashWhite, round, patterns, onProgress]);
 
   const bgColor = flashWhite ? '#FFFFFF' : showingColor ? showingColor.bg : '#0F172A';
   const textOnColor = showingColor?.bg === '#FACC15' ? '#111827' : '#FFFFFF';

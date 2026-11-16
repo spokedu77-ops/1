@@ -2,10 +2,12 @@
 
 import { ArrowLeft, Bookmark, Copy, FileText } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { LessonAccessModal } from '../../components/lesson/LessonAccessModal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { DetailLessonGuide } from './components/DetailLessonGuide';
+import { DetailLessonGuideV2 } from './components/DetailLessonGuideV2';
+import v2Styles from './components/DetailLessonGuideV2.module.css';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import { formatLessonPlanText } from '../../lib/lessonPlanExport';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
@@ -21,7 +23,6 @@ import { isProgramFullDetailLocked } from '../../lib/commercialProgramAccess';
 import { buildProgramLessonGateHref } from '../../lib/masterGateIntent';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { AssignProgramToSessionButton } from '../../components/session/AssignProgramToSessionButton';
-import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 import { getLibraryReturnHref } from '../libraryNavigation';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
 import { selectRelatedLessonVideos } from '../relatedLessonVideos';
@@ -62,6 +63,7 @@ function LibraryDetailLoading() {
 }
 
 export default function LibraryDetailView({ id }: { id: string }) {
+  const router = useRouter();
   const operationalData = useOperationalData();
   const programs = useMasterStore((state) => state.programs);
   const programsLoaded = useMasterStore((state) => state.programsLoaded);
@@ -82,7 +84,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const openedProgramRef = useRef<string | null>(null);
   const videoReportedRef = useRef<string | null>(null);
   const heroTitleRef = useRef<HTMLHeadingElement | null>(null);
-  const [isHeroTitleVisible, setIsHeroTitleVisible] = useState(true);
   const [planCopyStatus, setPlanCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [sessionCaptures, setSessionCaptures] = useState<MasterClassRecordDto[]>([]);
   const copyFeedbackTimerRef = useRef<number | null>(null);
@@ -130,17 +131,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
     });
     return () => { active = false; };
   }, [isPremium]);
-
-  useEffect(() => {
-    const heroTitle = heroTitleRef.current;
-    if (!heroTitle || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsHeroTitleVisible(entry?.isIntersecting ?? false),
-      { rootMargin: '-56px 0px 0px 0px', threshold: 0 },
-    );
-    observer.observe(heroTitle);
-    return () => observer.disconnect();
-  }, [program?.id]);
 
   useEffect(() => {
     if (!program || shouldAutoplayVideo || openedProgramRef.current === program.id) return;
@@ -226,21 +216,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const programGateHref = buildProgramLessonGateHref(program.id, detailCurrentPath);
 
   if (programLocked) {
-    return (
-      <main className="flex min-h-dvh flex-col items-center justify-center bg-[var(--spm-bg)] px-6 text-center">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] border border-amber-200 bg-amber-50 text-amber-600">
-          <FileText className="h-7 w-7" />
-        </div>
-        <h1 className="mt-5 text-xl font-semibold text-[color:var(--spm-t)]">Lite에서 전체 수업 자료를 이용할 수 있습니다.</h1>
-        <p className="mt-2 max-w-md text-sm font-medium leading-6 text-[color:var(--spm-t2)]">
-          이 수업의 전체 지도안, 코칭 스크립트, 영상 자료는 Lite에서 열람할 수 있습니다.
-        </p>
-        <div className="mt-6 grid w-full max-w-sm gap-2 sm:grid-cols-2">
-          <Link href={programGateHref} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold focus-visible:outline-none">라이트로 이용하기</Link>
-          <Link href={detailReturnHref} className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-semibold text-[color:var(--spm-t2)]">놀이체육으로</Link>
-        </div>
-      </main>
-    );
+    return <main className="min-h-dvh bg-[var(--spm-bg)]"><LessonAccessModal title={program.title} paymentHref={programGateHref} onClose={() => router.replace(detailReturnHref)} /></main>;
   }
 
   const model = buildLessonDisplayModel(program);
@@ -262,57 +238,22 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-[var(--spm-bg)] pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-[color:var(--spm-t)] lg:pb-14">
-      <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/70 bg-[color-mix(in_srgb,var(--spm-s1)_91%,transparent)] px-3 shadow-[0_6px_24px_rgba(15,23,42,0.035)] backdrop-blur-2xl sm:gap-3 sm:px-6 lg:px-8">
-        <Link href={detailReturnHref} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-[11px] px-1 text-sm font-semibold text-[color:var(--spm-t2)] transition-colors duration-200 hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transition-none sm:justify-start sm:px-2" aria-label={fromSession ? '수업으로 돌아가기' : '놀이체육으로 돌아가기'}>
-          <ArrowLeft className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">{fromSession ? '수업으로' : '놀이체육으로'}</span>
-        </Link>
-        <p data-detail-sticky-title aria-hidden={isHeroTitleVisible} className={`min-w-0 truncate text-center text-[13px] font-semibold text-[color:var(--spm-t)] transition-opacity duration-150 motion-reduce:transition-none sm:text-[14px] ${isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'}`}>
-          {model.title}
-        </p>
-        <div className="h-11 w-11">
-          <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none lg:hidden ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : favoriteEnabled ? 'bg-white/70 ring-slate-200/70 hover:bg-white' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200/70'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favoriteEnabled ? (favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가') : 'Lite에서 즐겨찾기할 수 있습니다'} disabled={!favoriteEnabled}>
-            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-          </button>
-          <span aria-hidden className="hidden h-11 w-11 lg:block" />
-        </div>
-      </header>
-
-      <div className="mx-auto w-full max-w-[1080px] px-4 py-8 sm:px-6 sm:py-11 lg:px-8 lg:py-12">
-        <DetailLessonGuide
-          model={model}
-          heroTitleRef={heroTitleRef}
-          personalizedContext={latestProgramMemory ? (
-            <PersonalizedNote
-              label="지난 수업에서 이어갈 점"
-              date={new Date(latestProgramMemory.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
-              context={latestProgramMemory.className}
-              preview={latestProgramMemory.nextSessionNote}
-              href={`/spokedu-lab/activity?session=${encodeURIComponent(latestProgramMemory.sessionId)}&capture=1`}
-              actionLabel="지난 수업 기록 열기"
-            />
-          ) : null}
-          actions={(
-            <div className="max-lg:contents lg:mt-0">
-              <div
-                data-detail-actions
-                className="flex w-full gap-2 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[var(--spm-tabbar-clearance,0px)] max-lg:z-40 max-lg:max-w-none max-lg:border-t max-lg:border-slate-200/80 max-lg:bg-[color-mix(in_srgb,var(--spm-s1)_94%,transparent)] max-lg:px-4 max-lg:py-3 max-lg:shadow-[0_-8px_24px_rgba(15,23,42,0.08)] max-lg:backdrop-blur-xl lg:w-auto lg:justify-end"
-              >
-                <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} returnHref={fromSession ? workReturnHref : null} className={`${SPM_PRIMARY_BTN} h-11 min-h-11 rounded-[10px] px-3 text-[14px] font-semibold max-lg:flex-1 lg:w-[190px]`} />
-                <div data-detail-support-actions className="shrink-0">
-                  <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className={`${SPM_SECONDARY_BTN} min-h-11 gap-1.5 rounded-[10px] px-3 text-[13px] font-semibold`}>
-                    <Copy className="h-4 w-4 shrink-0" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
-                  </button>
-                </div>
-                <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`hidden h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none lg:inline-flex ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : favoriteEnabled ? 'bg-white ring-slate-200 hover:bg-slate-50' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favoriteEnabled ? (favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가') : 'Lite에서 즐겨찾기할 수 있습니다'} disabled={!favoriteEnabled}>
-                  <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-                </button>
-              </div>
-            </div>
-          )}
+    <main className={v2Styles.page}>
+      <div className={v2Styles.backbar}><div className={v2Styles.backbarInner}>
+        <Link href={detailReturnHref}><ArrowLeft />{fromSession ? '수업으로 돌아가기' : '놀이체육 목록으로'}</Link>
+        <span className={v2Styles.breadcrumb}>프로그램 &gt; 놀이체육 &gt; {model.title}</span>
+      </div></div>
+      <div className={v2Styles.container}>
+        <DetailLessonGuideV2 model={model} heroTitleRef={heroTitleRef} libraryHref={libraryReturnHref}
           video={{ embedUrl: videoEmbedUrl, directUrl: directVideoUrl, externalUrl: externalVideoUrl, sourceUrl: videoUrl, autoplay: shouldAutoplayVideo, onPlaybackStarted: recordVideoStarted }}
           relatedVideos={relatedVideos}
+          personalizedContext={latestProgramMemory ? <PersonalizedNote label="지난 수업에서 이어갈 점" date={new Date(latestProgramMemory.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} context={latestProgramMemory.className} preview={latestProgramMemory.nextSessionNote} href={`/spokedu-lab/activity?session=${encodeURIComponent(latestProgramMemory.sessionId)}&capture=1`} actionLabel="지난 수업 기록 열기" /> : null}
+          actions={<div className={v2Styles.actionStack}>
+            <AssignProgramToSessionButton program={program} label="내 수업에 추가" targetSessionId={fromSession ? sessionId : null} returnHref={fromSession ? workReturnHref : null} className={v2Styles.primary} />
+            <button type="button" onClick={() => void copyLessonPlan()} className={v2Styles.secondary}><Copy size={16} />{planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}</button>
+            <button type="button" className={v2Styles.favorite} disabled={!favoriteEnabled} aria-pressed={favorite} onClick={() => toggleFavoriteProgram(ownerId, program.id)}><Bookmark size={14} fill={favorite ? 'currentColor' : 'none'} />즐겨찾기</button>
+            <span role="status" className="sr-only">{planCopyStatus === 'success' ? '지도안을 복사했습니다.' : planCopyStatus === 'error' ? '복사하지 못했습니다. 다시 시도해 주세요.' : ''}</span>
+          </div>}
         />
       </div>
     </main>

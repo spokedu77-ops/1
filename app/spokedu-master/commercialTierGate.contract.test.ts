@@ -58,7 +58,7 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     const source = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
     expect(source).toContain('isProgramFullDetailLocked');
     expect(source).toContain('buildProgramLessonGateHref');
-    expect(source).toContain('라이트로 이용하기');
+    expect(source).toContain('<LessonAccessModal title={program.title} paymentHref={programGateHref}');
     expect(source).not.toContain('program.isPro && !isPremium');
     expect(source).not.toContain('/spokedu-master/payment?plan=premium');
   });

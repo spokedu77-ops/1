@@ -2,6 +2,7 @@
 
 import { Bookmark, BookOpen, CheckCircle2, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { LessonAccessLink, LessonAccessModal } from './LessonAccessModal';
 
 import { getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
@@ -56,6 +57,7 @@ export function ProgramPreviewModal({
   const model = buildLessonDisplayModel(program);
   const displayTitle = splitLessonCardTitle(model.title);
   const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
+  if (locked) return <LessonAccessModal title={program.title} paymentHref={lockHref} onClose={onClose} />;
   const footer = (
     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
       <button
@@ -66,21 +68,21 @@ export function ProgramPreviewModal({
         닫기
       </button>
       {locked ? (
-        <Link
+        <LessonAccessLink title={program.title}
           href={lockHref}
           className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
         >
           <Lock className="h-4 w-4" />
           {lockLabel}
-        </Link>
+        </LessonAccessLink>
       ) : fullDetailLocked ? (
-        <Link
+        <LessonAccessLink title={program.title}
           href={lockHref}
           className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
         >
           <Lock className="h-4 w-4" />
           라이트에서 상세 보기
-        </Link>
+        </LessonAccessLink>
       ) : (
         <Link
           href={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}

@@ -948,7 +948,7 @@ describe('training result summary', () => {
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);
     expect(MODES.basic.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([2, 1, 5, 3, 4]);
-    expect(MODES.simon.levels.map((lv) => lv.name)).toEqual(['화살표', '도형', '풍선', '이미지 테마', '카모플라쥬']);
+    expect(MODES.simon.levels.map((lv) => lv.name)).toEqual(['화살표', '도형', '풍선', '연상 이미지', '카모플라쥬']);
     // 신 카탈로그 passthrough
     expect(resolveReactTrainUiLevel(1).engineLevel).toBe(1);
     expect(resolveReactTrainUiLevel(9).engineLevel).toBe(9);

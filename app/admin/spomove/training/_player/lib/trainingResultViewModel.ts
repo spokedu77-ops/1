@@ -17,6 +17,7 @@ export type TrainingResultViewInput = {
   colorCounts: ColorStimulusCounts | null;
   stims?: number;
   shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  memoryProgress?: import('@/app/admin/spomove/training/_player/lib/memoryProgress').MemoryProgressRecord;
   roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
   moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   directionRecord?: import('./directionPresentation').DirectionPresentationRecord;
@@ -45,7 +46,7 @@ function validCounts(value: ColorStimulusCounts | null): value is ColorStimulusC
 
 // Canonical activity identities, not runtime names (balloon-pop runs as `balloon`).
 const COLOR_DISTRIBUTION_ACTIVITIES = new Set<TrainingActivityId>([
-  'wave-dodge', 'falling-bricks', 'balloon-pop',
+  'wave-dodge', 'falling-bricks', 'balloon-pop', 'hand-foot',
   'mole', 'virus-outbreak', 'motion-gate',
   'simon-shape', 'simon-theme', 'simon-camouflage', 'simon-balloon',
 ]);

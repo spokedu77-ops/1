@@ -30,6 +30,7 @@ export function MasterSessionResult({
   stims,
   directionRecord,
   shapeCompletionRecord,
+  memoryProgress,
   roundAnswers,
   moleRecord,
   goalkeeperRecord,
@@ -64,6 +65,7 @@ export function MasterSessionResult({
   stims?: number;
   directionRecord?: import('@/app/admin/spomove/training/_player/lib/directionPresentation').DirectionPresentationRecord;
   shapeCompletionRecord?: import('@/app/admin/spomove/training/_player/lib/shapeCompletionRecord').ShapeCompletionRecord;
+  memoryProgress?: import('@/app/admin/spomove/training/_player/lib/memoryProgress').MemoryProgressRecord;
   roundAnswers?: import('@/app/admin/spomove/training/_player/lib/roundAnswerRecord').RoundAnswerRecord;
   moleRecord?: import('@/app/admin/spomove/training/_player/lib/moleResultRecord').MoleResultRecord;
   goalkeeperRecord?: import('@/app/admin/spomove/training/_player/lib/goalkeeperResultRecord').GoalkeeperResultRecord;
@@ -114,6 +116,7 @@ export function MasterSessionResult({
       completionReason={completionReason}
       elapsedMs={elapsedMs}
       colorCounts={colorCounts}
+      memoryProgress={memoryProgress}
       stims={stims}
       directionRecord={directionRecord}
       shapeCompletionRecord={shapeCompletionRecord}

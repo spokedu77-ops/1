@@ -80,7 +80,8 @@ describe('official SPOMOVE runtime contract', () => {
     expect(source).toContain("level === 2 && !(flowFeatures ?? []).includes('colorGate')");
     expect(source).toContain('flowFeatures: resolvedFlowFeatures');
     expect(source).toContain("camouflagePlacement?: 'center' | 'variant'");
-    expect(source).toContain('placementMode={effectiveCamouflage}');
+    expect(source).toContain('const placementMode = resolveSimonL4CamouflagePlacementMode({');
+    expect(source).toContain('placementMode={placementMode}');
   });
 
   it('does not consume legacy or remote preset sources in the session', () => {

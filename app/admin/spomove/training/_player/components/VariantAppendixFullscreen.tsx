@@ -30,14 +30,6 @@ function getDefaultLabels(theme: AppendixTheme): string[] {
   return [...SPOMOVE_THEMED_PACK_BY_THEME[theme].slotLabels];
 }
 
-function resolveStoredLabel(theme: AppendixTheme, label: string, index: number, fallback: string): string {
-  if (theme !== 'dinosaur') return label;
-  // Correct the old swapped dinosaur names while retaining arbitrary custom labels.
-  const species = /티라노사우르스|케차코아틀루스|브라키오사우르스|트리케라톱스|스피노사우르스|스테고사우르스|파키케팔로사우르스|엘라스모사우루스|프테라노돈/;
-  const expected = SPOMOVE_DINOSAUR_LABELS[index]?.match(species)?.[0];
-  return expected && species.test(label) ? label.replace(species, expected) : label || fallback;
-}
-
 function getPackId(theme: AppendixTheme): string {
   if (theme === 'fruit') return SPOMOVE_VARIANT_PACK_ID;
   if (theme === 'dinosaur') return SPOMOVE_VARIANT_DINOSAUR_PACK_ID;
@@ -52,11 +44,12 @@ function getPackName(theme: AppendixTheme): string {
 
 async function loadStoredLabels(theme: AppendixTheme): Promise<string[] | null> {
   const supabase = getSupabaseBrowserClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('think_asset_packs')
     .select('assets_json')
     .eq('id', getPackId(theme))
     .maybeSingle();
+  if (error) throw new Error(error.message);
   const raw = data?.assets_json as { slotLabels?: unknown } | null;
   const stored = raw?.slotLabels;
   if (Array.isArray(stored) && stored.length > 0 && stored.every((s) => typeof s === 'string')) {
@@ -98,6 +91,7 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
+  const [labelsLoading, setLabelsLoading] = useState(true);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const userEditedRef = useRef(false);
@@ -107,11 +101,17 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
     const gen = ++loadGenRef.current;
     userEditedRef.current = false;
     setEditingIdx(null);
+    setLabelsLoading(true);
+    setSaveMsg(null);
     const defaults = getDefaultLabels(theme);
     void loadStoredLabels(theme).then((stored) => {
       if (loadGenRef.current !== gen || userEditedRef.current) return;
-      setLabels(stored ? defaults.map((def, i) => resolveStoredLabel(theme, stored[i] ?? def, i, def)) : defaults);
+      setLabels(defaults.map((fallback, i) => stored?.[i]?.trim() || fallback));
+      setLabelsLoading(false);
+    }).catch(() => {
+      if (loadGenRef.current === gen) setSaveMsg('오류: 저장된 이름을 불러오지 못했습니다. 다시 열어주세요.');
     });
+    return () => { loadGenRef.current += 1; };
   }, [theme]);
 
   const startEdit = (i: number, currentLabel: string) => {
@@ -246,6 +246,7 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
                 ) : (
                   <button
                     type="button"
+                      disabled={labelsLoading || saving}
                     onClick={() => startEdit(index, label)}
                     title={`${label} · 클릭하여 이름 수정`}
                     style={{
@@ -305,7 +306,7 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleSave}
-          disabled={saving}
+            disabled={saving || labelsLoading}
           style={{
             padding: '0.5rem 1.25rem',
             borderRadius: '0.6rem',

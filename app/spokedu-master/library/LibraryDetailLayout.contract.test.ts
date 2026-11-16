@@ -23,23 +23,17 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain('flex-wrap');
   });
 
-  it('uses a compact primary plus secondary action group instead of a page-wide giant CTA', () => {
-    expect(view.match(/data-detail-action=/g)).toHaveLength(1);
-    expect(view).toContain('data-detail-actions');
-    expect(view).toContain('data-detail-support-actions');
-    expect(view).toContain('max-w-[1080px]');
-    expect(view).not.toContain('max-w-[1220px]');
-    expect(view).toContain('lg:w-[190px]');
-    expect(view).toContain('max-lg:flex-1');
-    expect(view).not.toContain('min-h-11 flex-1 rounded');
+  it('uses the accepted responsive primary and two secondary actions', () => {
+    const styles = read('app/spokedu-master/library/[id]/components/DetailLessonGuideV2.module.css');
+    expect(view).toContain('actions={<div className={v2Styles.actionStack}>');
     expect(view).toContain('AssignProgramToSessionButton');
-    expect(view).not.toContain('수업 일정 관리');
-    expect(view).toContain('지도안 복사');
-    expect(view).not.toContain('data-detail-action="quick"');
-    expect(view).not.toContain('max-w-[740px]');
-    expect(view).not.toContain('h-12 w-full');
-    expect(view).toContain('max-lg:fixed');
-    expect(guide).not.toContain('data-detail-actions');
+    expect(view).toContain('className={v2Styles.primary}');
+    expect(view).toContain('className={v2Styles.secondary}');
+    expect(view).toContain('className={v2Styles.favorite}');
+    expect(view).toContain('onClick={() => void copyLessonPlan()}');
+    expect(styles).toMatch(/\.actionStack \{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+    expect(styles).toContain('.actionStack > :first-child { grid-column:1 / -1; }');
+    expect(view).not.toContain('max-lg:fixed');
   });
 
   it('keeps variations directly under the method without synthesized guidance', () => {
@@ -95,7 +89,8 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain('model.thumbnailUrl !== model.setupImageUrl');
     expect(guide).not.toContain('model.setupImageUrl ?? getVideoThumbnail');
     expect(view).toContain("action: 'video_started'");
-    expect(view).toContain('new IntersectionObserver');
+    expect(view).toContain('onPlaybackStarted: recordVideoStarted');
+    expect(view).toContain('<DetailLessonGuideV2 model={model}');
     const setupImage = guide.slice(guide.indexOf('function SetupImage'), guide.indexOf('function LessonVideo'));
     expect(setupImage).not.toContain('priority');
     expect(setupImage).toContain('(min-width: 1220px) 560px');

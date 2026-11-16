@@ -5,7 +5,7 @@ import { relativeCompassCuesPerRound } from './_player/lib/relativeCompass';
 import { catalogTrainingActivity, resolveTrainingActivity, legacyTrainingActivityFlags, trainingActivityForLevelChange, resolveTrainingSelection, resolveCatalogTrainingSelection, type TrainingActivityId } from './_player/lib/trainingActivity';
 
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
+
 import { Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -26,7 +26,7 @@ import {
   modifiedQuadrantLevelFromStage,
   colorSequenceOption,
   colorSequenceLevelFromOption,
-  type ColorSequenceOption,
+
 } from './_player/constants';
 import { trainingActivityGuide } from './_player/lib/trainingActivityGuide';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
@@ -474,7 +474,7 @@ function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
   return modeId === 'flow' && levelId === FLOW_COLOR_GATE_LEVEL_ID;
 }
 
-function isReactTrainRepetitionLevel(modeId: string, _levelId: number): boolean {
+function isReactTrainRepetitionLevel(modeId: string): boolean {
   return modeId === 'reactTrain';
 }
 
@@ -488,7 +488,7 @@ function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchS
   if (launch.activityId === 'moving-number-reader') return { ...launch, speed: normalizeNumberReaderSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeAdminTrainingRounds(launch.targetReps), intervalMode: false, accel: false };
   if (previousActivity === 'moving-number-reader') launch = { ...launch, speed: Math.min(6, launch.speed) };
   if (previousActivity === 'visual-search') launch = { ...launch, speed: Math.min(6, launch.speed) };
-  if (isReactTrainRepetitionLevel(modeId, levelId)) {
+  if (isReactTrainRepetitionLevel(modeId)) {
     return {
       ...launch,
       timeMode: 'reps',
@@ -687,72 +687,6 @@ function TrainingPortal({
   );
 }
 
-function AppManagementTab() {
-  const cards = [
-    {
-      href: '/admin/iiwarmup/assets',
-      title: 'Asset Hub',
-      desc: 'Think / Flow 에셋 업로드·관리 (챌린지는 스튜디오에서 직접)',
-    },
-    {
-      href: '/admin/spomove/training',
-      title: 'SPOMOVE',
-      desc: 'SPOMOVE 트레이닝으로 바로 진입합니다.',
-    },
-  ];
-
-  return (
-    <main style={{ maxWidth: 960, margin: '0 auto', padding: '42px 24px 0' }}>
-      <section style={{ marginBottom: 24 }}>
-        <p style={{ margin: 0, fontSize: 10, letterSpacing: '0.22em', color: T.muted, fontWeight: 800 }}>
-          SPOKEDU · APP MANAGEMENT
-        </p>
-        <h1 style={{ margin: '8px 0 0', color: T.text, fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 950, letterSpacing: '-0.04em' }}>
-          앱 관리
-        </h1>
-        <p style={{ margin: '8px 0 0', color: T.textDim, fontSize: 14, lineHeight: 1.7 }}>
-          Asset Hub와 SPOMOVE에서 수업용 도구를 관리합니다.
-        </p>
-      </section>
-
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-        {cards.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            style={{
-              display: 'block',
-              borderRadius: 18,
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              padding: 20,
-              textDecoration: 'none',
-              transition: 'border-color 160ms ease, transform 160ms ease, background 160ms ease',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = T.borderHover;
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.background = 'rgba(255,255,255,0.055)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = T.border;
-              e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.background = T.surface;
-            }}
-          >
-            <h3 style={{ margin: 0, color: T.text, fontSize: 16, fontWeight: 900 }}>{card.title}</h3>
-            <p style={{ margin: '10px 0 0', color: T.textDim, fontSize: 13, lineHeight: 1.6 }}>{card.desc}</p>
-            <span style={{ marginTop: 14, display: 'inline-block', color: '#60A5FA', fontSize: 13, fontWeight: 700 }}>
-              진입 →
-            </span>
-          </Link>
-        ))}
-      </section>
-    </main>
-  );
-}
-
 function SettingsScreen({
   modeId,
   initial,
@@ -846,7 +780,7 @@ function SettingsScreen({
   const isSimon = modeId === 'simon';
   const isFlowOrChallenge = modeId === 'flow';
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
-  const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId, levelId);
+  const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId);
   const compactSettingsMenu =
     isReactTrain ||
     isSimon || modeId === 'flanker' || isSpatial;
@@ -1050,14 +984,12 @@ function SettingsScreen({
               </div>
             </div>
             <div className="theme-options">
-              {(m?.levels ?? []).flatMap(lv => modeId === 'simon' && lv.id === 3
-                ? SPOMOVE_COLOR_THEME_ORDER.filter(theme => theme !== 'color' && theme !== 'mix').map(theme => ({ ...lv, theme: theme as SpomoveColorThemeId | undefined }))
-                : [{ ...lv, theme: undefined as SpomoveColorThemeId | undefined }]).map((lv) => {
-                const active = selectedActivity.catalogMode === modeId && selectedActivity.catalogLevel === lv.id && (!lv.theme || launch.variantColorTheme === lv.theme);
+              {(m?.levels ?? []).map((lv) => {
+                const active = selectedActivity.catalogMode === modeId && selectedActivity.catalogLevel === lv.id;
                 return (
                   <button
                     className="theme-option"
-                    key={`${lv.id}-${lv.theme ?? 'default'}`}
+                    key={lv.id}
                     type="button"
                     onClick={() => {
                       if (modeId === 'spatial' && lv.id === 8 && launch.activityId !== 'glass-bridge-memory') {
@@ -1066,7 +998,7 @@ function SettingsScreen({
                       setSelection(current => {
                         const chosen = resolveCatalogTrainingSelection(modeId, lv.id, { level: current.levelId, activityId: current.launch.activityId });
                         let next = launchSettingsForLevel(modeId, chosen.level, { ...current.launch, activityId: chosen.activityId,
-                          ...(lv.theme ? { variantColorTheme: lv.theme } : {}),
+                          ...(modeId === 'simon' && lv.id === 3 && (current.launch.variantColorTheme === 'color' || current.launch.variantColorTheme === 'mix') ? { variantColorTheme: 'fruit' as const } : {}),
                           ...(current.launch.activityId === 'glass-bridge-memory' && chosen.activityId !== 'glass-bridge-memory' ? previousMemorySettings : {}),
                           ...(chosen.activityId === 'glass-bridge-memory' && current.launch.activityId !== 'glass-bridge-memory' ? { speed: 2, targetReps: 5, glassBridgeStartLength: 3 as const } : {}),
                           ...(chosen.activityId === 'moving-number-reader' && current.launch.activityId !== 'moving-number-reader' ? { speed: 3, targetReps: 20 } : {}),
@@ -1151,7 +1083,7 @@ function SettingsScreen({
                     }}
                   >
                     <span style={{ fontSize: 13, fontWeight: 900, color: active ? accent : T.text }}>
-                      {lv.theme ? `${SPOMOVE_COLOR_THEME_LABELS[lv.theme]} 테마` : catalogLevelLabelKoEn(modeId, lv.id)}
+                      {catalogLevelLabelKoEn(modeId, lv.id)}
                     </span>
                   </button>
                 );
@@ -2736,13 +2668,13 @@ function SettingsScreen({
           ) : null}
 
           {/* 연상 색지각 테마 */}
-          {modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4 || isFront3PanelLevel(levelId)) ? (
+          {(modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4 || isFront3PanelLevel(levelId))) || (modeId === 'simon' && levelId === 3) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>연상 색지각 이미지 테마</label>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {SPOMOVE_COLOR_THEME_ORDER.map((tid) => {
+                {SPOMOVE_COLOR_THEME_ORDER.filter(tid => modeId !== 'simon' || (tid !== 'color' && tid !== 'mix')).map((tid) => {
                   const active = launch.variantColorTheme === tid;
                   return (
                     <button
@@ -2981,8 +2913,16 @@ function SpomoveTrainingPageContent() {
     router.push(TEACHER_SPOMOVE_URL);
   }, [queryTopTab, router]);
 
+  useEffect(() => {
+    if (queryTopTab === 'app') router.replace('/admin/iiwarmup/assets');
+  }, [queryTopTab, router]);
+
   const switchTopTab = useCallback(
     (next: TopTab) => {
+      if (next === 'app') {
+        router.push('/admin/iiwarmup/assets');
+        return;
+      }
       if (next === 'teacher') {
         if (typeof window !== 'undefined') {
           router.push(TEACHER_SPOMOVE_URL);
@@ -2992,11 +2932,7 @@ function SpomoveTrainingPageContent() {
       setTopTab(next);
       setPhase({ tag: 'catalog' });
       const params = new URLSearchParams(searchParams.toString());
-      if (next === 'app') {
-        params.set('tab', 'app');
-      } else {
-        params.delete('tab');
-      }
+      params.delete('tab');
       const qs = params.toString();
       const basePath = '/admin/spomove/training';
       router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false });
@@ -3064,7 +3000,7 @@ function SpomoveTrainingPageContent() {
         onTabChange={switchTopTab}
         onFilterChange={setActiveTab}
         onPick={handlePick}
-        appContent={<AppManagementTab />}
+        appContent={null}
       />
     </>
   );

@@ -87,6 +87,7 @@ const css = `
 .ttrk-title{font-size:clamp(15px,2vw,20px);font-weight:800}
 .ttrk-stop{align-self:center;margin-left:auto;padding:9px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.7);font:700 13px inherit;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;gap:6px}
 .ttrk-play{position:relative;flex:1;min-height:0;overflow:hidden}
+.ttrk-answer-action{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .ttrk-board{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
 .ttrk-quadrant{position:relative;border:1px solid rgba(255,255,255,.1);transition:background-color .2s ease,box-shadow .2s ease}
 .ttrk-quadrant.answer{z-index:1}
@@ -146,8 +147,8 @@ export function TargetTrackingReactionTraining({
     answerGateRef.current = null;
     timersRef.current.forEach(clearTimeout);
     timersRef.current.clear();
-    onCompleteRef.current({ roundAnswers: answersRef.current.map(answer => ({ ...answer })), stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
-  }, []);
+    onCompleteRef.current({ completionReason: phase === 'COUNTDOWN' ? 'cancelled' : 'stopped_early', roundAnswers: answersRef.current.map(answer => ({ ...answer })), stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
+  }, [phase]);
 
   useEffect(() => {
     let mounted = true;
@@ -250,7 +251,11 @@ export function TargetTrackingReactionTraining({
         </div>
       </div>
       <div className="ttrk-play" ref={playRef}>
-        {phase === 'WAIT_ANSWER' ? <button type="button" onClick={() => { const reveal = answerGateRef.current; answerGateRef.current = null; reveal?.(true); }} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 50, minHeight: 56, padding: '14px 28px', borderRadius: 14, border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: 'pointer' }}>정답 확인</button> : null}
+        {phase === 'WAIT_ANSWER' ? (
+          <div className="ttrk-answer-action">
+            <button type="button" onClick={() => { const reveal = answerGateRef.current; answerGateRef.current = null; reveal?.(true); }} style={{ pointerEvents: 'auto', minHeight: 56, padding: '14px 28px', borderRadius: 14, border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', fontFamily: 'inherit', fontSize: 20, fontWeight: 700, cursor: 'pointer' }}>정답 확인</button>
+          </div>
+        ) : null}
         <div className="ttrk-board">
           {QUADRANTS.map((quadrant, index) => (
             <div
