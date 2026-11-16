@@ -1,5 +1,5 @@
 #!/usr/bin/node
-/** Extend Codex sidebar webview ready wait (K2 watchdog: default 30s → 120s). */
+/** Extend Codex sidebar webview ready wait (K2 watchdog: default 30s → 600s). */
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -12,11 +12,11 @@ const needle =
   'var K2=class{constructor(e){this.onTimeout=e}timeout;disposed=!1;receivedWebviewMessage=!1;start(){if(this.disposed||this.timeout!=null)return;let e=Date.now();this.timeout=setTimeout(()=>{this.timeout=void 0,this.onTimeout({elapsedMs:Date.now()-e,receivedWebviewMessage:this.receivedWebviewMessage,timeoutMs:3e4})},3e4)}';
 
 const replacement =
-  'var K2=class{constructor(e){this.onTimeout=e}timeout;disposed=!1;receivedWebviewMessage=!1;start(){if(this.disposed||this.timeout!=null)return;let e=Date.now();this.timeout=setTimeout(()=>{this.timeout=void 0,this.onTimeout({elapsedMs:Date.now()-e,receivedWebviewMessage:this.receivedWebviewMessage,timeoutMs:12e4})},12e4)}';
+  'var K2=class{constructor(e){this.onTimeout=e}timeout;disposed=!1;receivedWebviewMessage=!1;start(){if(this.disposed||this.timeout!=null)return;let e=Date.now();this.timeout=setTimeout(()=>{this.timeout=void 0,this.onTimeout({elapsedMs:Date.now()-e,receivedWebviewMessage:this.receivedWebviewMessage,timeoutMs:6e5})},6e5)}';
 
 let c = fs.readFileSync(extJs, 'utf8');
 if (c.includes(replacement)) {
-  console.log('[patch] Codex K2 timeout already extended (120s).');
+  console.log('[patch] Codex K2 timeout already extended (600s).');
   process.exit(0);
 }
 if (!c.includes(needle)) {
@@ -25,4 +25,4 @@ if (!c.includes(needle)) {
 }
 c = c.replace(needle, replacement);
 fs.writeFileSync(extJs, c);
-console.log('[patch] Codex webview ready timeout: 30s → 120s (K2 class).');
+console.log('[patch] Codex webview ready timeout: 30s → 600s (K2 class).');
