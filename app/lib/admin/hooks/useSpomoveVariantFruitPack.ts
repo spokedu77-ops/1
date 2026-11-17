@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { uploadToStorage, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
@@ -21,7 +21,9 @@ export function useSpomoveVariantFruitPack() {
     Array.from({ length: 8 }, () => null)
   );
   const pathsRef = useRef(paths);
-  pathsRef.current = paths;
+  useLayoutEffect(() => {
+    pathsRef.current = paths;
+  });
 
   const [previewSlides, setPreviewSlides] = useState<FruitSlide[]>(() => mergeSpomoveVariantPaths(null));
   const [loading, setLoading] = useState(true);

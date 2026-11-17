@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ABSENCE_REASONS,
   FRW_SECONDS,
@@ -99,7 +99,9 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
   const [warnings, setWarnings] = useState<string[]>([]);
   const timerRef = useRef<number | null>(null);
   const formRef = useRef(form);
-  formRef.current = form;
+  useLayoutEffect(() => {
+    formRef.current = form;
+  });
 
   const childIndex = childIds.indexOf(childId);
   const prevChildId = childIndex > 0 ? childIds[childIndex - 1] : null;

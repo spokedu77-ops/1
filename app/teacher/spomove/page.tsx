@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
+import React, { useLayoutEffect, useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
@@ -2721,7 +2721,9 @@ export default function SpomovePage() {
   const [totalR, setTotalR] = useState(0);
 
   const sessionRef = useRef({ curRound, rounds, durMode, curSet, sets });
-  sessionRef.current = { curRound, rounds, durMode, curSet, sets };
+  useLayoutEffect(() => {
+    sessionRef.current = { curRound, rounds, durMode, curSet, sets };
+  });
 
   const pendingTimeoutsRef = useRef<number[]>([]);
   const touchCooldownRef = useRef(false);
@@ -2806,21 +2808,23 @@ export default function SpomovePage() {
   }, []);
 
   const advanceRef = useRef<(() => void) | null>(null);
-  advanceRef.current = () => {
-    const { curRound: cr, rounds: tr, durMode: dm } = sessionRef.current;
-    if (dm === 'round' && cr >= tr) {
-      endSet();
-      return;
-    }
-    const newStim = generateStimulus();
-    lastStimulusRef.current = newStim;
-    setStimulus(newStim);
-    setVisible(true);
-    if (dm === 'round') {
-      setCurRound((p) => p + 1);
-      setTotalR((p) => p + 1);
-    }
-  };
+  useLayoutEffect(() => {
+    advanceRef.current = () => {
+      const { curRound: cr, rounds: tr, durMode: dm } = sessionRef.current;
+      if (dm === 'round' && cr >= tr) {
+        endSet();
+        return;
+      }
+      const newStim = generateStimulus();
+      lastStimulusRef.current = newStim;
+      setStimulus(newStim);
+      setVisible(true);
+      if (dm === 'round') {
+        setCurRound((p) => p + 1);
+        setTotalR((p) => p + 1);
+      }
+    };
+  });
 
   useEffect(() => {
     if (screen !== 'game' || trans !== 'time') return;

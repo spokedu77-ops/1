@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { isNoteV2Id } from '@/app/lib/note-v2/contract';
+import { isNoteV2SameOrigin } from '@/app/lib/note-v2/request-origin';
 
 const TABLE = 'spokedu_note_v2_documents';
 const HEADERS = { 'Cache-Control': 'private, no-store, max-age=0' };
@@ -11,8 +12,7 @@ export async function PATCH(request: Request, context: Context) {
   if (!auth.ok) return auth.response;
   const { id } = await context.params;
   if (!isNoteV2Id(id)) return NextResponse.json({ error: 'INVALID_ID' }, { status: 400, headers: HEADERS });
-  const origin = request.headers.get('origin');
-  if (!origin || origin !== new URL(request.url).origin) return NextResponse.json({ error: 'ORIGIN_REJECTED' }, { status: 403, headers: HEADERS });
+  if (!isNoteV2SameOrigin(request)) return NextResponse.json({ error: 'ORIGIN_REJECTED' }, { status: 403, headers: HEADERS });
   const raw = await request.text().catch(() => '');
   if (!raw || new TextEncoder().encode(raw).length > 8192) return NextResponse.json({ error: 'INVALID_PAYLOAD_SIZE' }, { status: 413, headers: HEADERS });
   let input: unknown;

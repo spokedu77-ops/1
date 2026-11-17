@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { isNoteV2Id } from '@/app/lib/note-v2/contract';
+import { isNoteV2SameOrigin } from '@/app/lib/note-v2/request-origin';
 
 const TABLE = 'spokedu_note_v2_documents';
 const FIELDS = 'id,title,parent_id,position,created_at,updated_at,deleted_at';
 const HEADERS = { 'Cache-Control': 'private, no-store, max-age=0' };
 const BATCH = 500;
 const MAX_ROWS = 10000;
-
-function sameOrigin(request: Request): boolean {
-  const origin = request.headers.get('origin');
-  return Boolean(origin && origin === new URL(request.url).origin);
-}
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -38,7 +34,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
-  if (!sameOrigin(request)) return NextResponse.json({ error: 'ORIGIN_REJECTED' }, { status: 403, headers: HEADERS });
+  if (!isNoteV2SameOrigin(request)) return NextResponse.json({ error: 'ORIGIN_REJECTED' }, { status: 403, headers: HEADERS });
   const text = await request.text().catch(() => '');
   if (!text || new TextEncoder().encode(text).length > 8192) return NextResponse.json({ error: 'INVALID_PAYLOAD_SIZE' }, { status: 413, headers: HEADERS });
   let input: unknown;

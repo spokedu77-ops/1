@@ -26,6 +26,7 @@ export class NoteV2Autosave<T> {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private flight: Promise<void> | null = null;
   private stopped: 'error' | 'conflict' | null = null;
+  private stoppedMessage: string | undefined;
   private disposed = false;
 
   constructor(options: AutosaveOptions<T>) {
@@ -48,7 +49,7 @@ export class NoteV2Autosave<T> {
     const serialized = JSON.stringify(content);
     if (serialized === this.pending) return;
     this.pending = serialized;
-    if (this.stopped) { this.onStatus(this.stopped); return; }
+    if (this.stopped) { this.onStatus(this.stopped, this.stoppedMessage); return; }
     if (this.pending === this.confirmed && !this.flight) {
       this.clearTimer();
       this.onStatus('saved');
@@ -93,12 +94,14 @@ export class NoteV2Autosave<T> {
       if (this.disposed) return;
       if (!result.ok) {
         this.stopped = result.kind;
+        this.stoppedMessage = result.message;
         this.onStatus(result.kind, result.message);
         return;
       }
       if (result.version !== expectedVersion + 1) {
         this.stopped = 'error';
-        this.onStatus('error', '서버 버전 응답이 올바르지 않습니다.');
+        this.stoppedMessage = '서버 버전 응답이 올바르지 않습니다.';
+        this.onStatus('error', this.stoppedMessage);
         return;
       }
       this.version = result.version;
@@ -112,6 +115,7 @@ export class NoteV2Autosave<T> {
   async retry(): Promise<void> {
     if (this.disposed || this.stopped === 'conflict') return;
     this.stopped = null;
+    this.stoppedMessage = undefined;
     await this.flush();
   }
 

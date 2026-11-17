@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Menu, Plus, RotateCw, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { NoteV2Document } from '@/app/lib/note-v2/contract';
@@ -126,7 +126,9 @@ export default function NoteStage4Workspace() {
     } catch (e) { setError(e instanceof Error ? e.message : '페이지를 열 수 없습니다.'); }
     finally { leaveTask(); }
   };
-  navigateRef.current = (id: string) => navigateTo(id, 'none');
+  useLayoutEffect(() => {
+    navigateRef.current = (id: string) => navigateTo(id, 'none');
+  });
 
   useEffect(() => {
     const onPopState = () => {

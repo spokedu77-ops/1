@@ -69,12 +69,12 @@ const CLUSTERS = [
   {
     id: 'flankerSignals',
     files: ['app/admin/spomove/training/_player/lib/signals.ts'],
-    extracts: [{ start: "if (mode === 'flanker')", end: "if (mode === 'gonogo')" }],
+    extracts: [{ start: "if (mode === 'flanker')", end: "if (mode === 'simon') return null;" }],
   },
   {
     id: 'stroopSignals',
     files: ['app/admin/spomove/training/_player/lib/signals.ts'],
-    extracts: [{ start: "if (mode === 'stroop')", end: "if (mode === 'dual')" }],
+    extracts: [{ start: "if (mode === 'stroop')", end: "if (mode === 'flanker')" }],
   },
   {
     id: 'sequentialMemoryGame',

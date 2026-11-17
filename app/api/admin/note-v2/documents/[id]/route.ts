@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { isNoteV2Id, isSafeVersion, validateNoteV2Content } from '@/app/lib/note-v2/contract';
+import { isNoteV2SameOrigin } from '@/app/lib/note-v2/request-origin';
 
 const TABLE = 'spokedu_note_v2_documents';
 const HEADERS = { 'Cache-Control': 'private, no-store, max-age=0' };
@@ -28,8 +29,7 @@ export async function PUT(request: Request, context: RouteContext) {
   if (!auth.ok) return auth.response;
   const { id } = await context.params;
   if (!isNoteV2Id(id)) return NextResponse.json({ error: 'INVALID_ID' }, { status: 400, headers: HEADERS });
-  const origin = request.headers.get('origin');
-  if (!origin || origin !== new URL(request.url).origin) {
+  if (!isNoteV2SameOrigin(request)) {
     return NextResponse.json({ error: 'ORIGIN_REJECTED' }, { status: 403, headers: HEADERS });
   }
   // Bound request before parsing. Clients must not upload arbitrarily large snapshots.

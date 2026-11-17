@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useCallback, useEffect, useRef, useState } from 'react';
 import type { ConsultRow } from '../types';
 
 type LoadOptions = {
@@ -27,7 +27,9 @@ export function useConsultLeads(options?: UseConsultLeadsOptions) {
   const mutatingRef = useRef(false);
   const lastFetchAtRef = useRef(0);
   const onNewPendingRef = useRef(options?.onNewPending);
-  onNewPendingRef.current = options?.onNewPending;
+  useLayoutEffect(() => {
+    onNewPendingRef.current = options?.onNewPending;
+  });
 
   const setDetailOpen = useCallback((open: boolean) => {
     detailOpenRef.current = open;

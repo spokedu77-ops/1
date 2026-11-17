@@ -251,7 +251,7 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
     const originals = [article, ...Array.from(article.querySelectorAll<HTMLElement>('*'))];
     const copies = [clone, ...Array.from(clone.querySelectorAll<HTMLElement>('*'))];
     const inlineProps = ['color', 'background-color', 'font-family', 'font-size', 'font-weight',
-      'line-height', 'letter-spacing', 'text-align', 'margin', 'padding', 'border',
+      'line-height', 'letter-spacing', 'text-align', 'text-decoration', 'margin', 'padding', 'border',
       'border-radius', 'display', 'width', 'max-width', 'box-sizing', 'word-break'];
     originals.forEach((source, index) => {
       const computed = window.getComputedStyle(source);
@@ -262,6 +262,9 @@ export function BlogDraftEditor({ draftId }: { draftId: string }) {
         if (value) dest.style.setProperty(prop, value);
       }
     });
+    clone.querySelectorAll('[data-copy-exclude="admin"]').forEach(node => node.remove());
+    const kakaoLinks = clone.querySelectorAll('a[href*="pf.kakao.com"]');
+    if (kakaoLinks.length) clone.querySelectorAll('footer').forEach(node => node.remove());
     let externalImages = 0;
     clone.querySelectorAll('img').forEach(image => {
       // Authenticated /api images are not valid external blog image URLs.

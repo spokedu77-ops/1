@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
   uploadToStorage,
@@ -78,7 +78,9 @@ async function renderPanoToWebP(img: HTMLImageElement, w: number, h: number): Pr
 export function useSpomoveDiveEnvironments() {
   const [data, setData] = useState<DiveAssetsJson>({ themes: {} });
   const dataRef = useRef(data);
-  dataRef.current = data;
+  useLayoutEffect(() => {
+    dataRef.current = data;
+  });
 
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);

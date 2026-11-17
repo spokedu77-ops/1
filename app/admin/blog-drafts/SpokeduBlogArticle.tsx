@@ -151,6 +151,13 @@ function hasEmbeddedCustomCta(nodes: EditorNode[]): boolean {
   return nodes.some((node, index) => isClosingCustomCta(node, index, nodes));
 }
 
+function hasKakaoChannelLink(node?: EditorNode): boolean {
+  if (!node) return false;
+  const linked = (node.marks ?? []).some(mark => mark.type === "link" && /pf\.kakao\.com/i.test(String(mark.attrs?.href ?? "")));
+  if (linked) return true;
+  return (node.content ?? []).some(hasKakaoChannelLink);
+}
+
 function textOf(node?: EditorNode): string {
   if (!node) return "";
   if (node.type === "text") return node.text ?? "";
@@ -221,6 +228,7 @@ export default function SpokeduBlogArticle({
     const nodes = Array.isArray(draft.content?.content) ? draft.content.content : [];
     const cleaned = stripRepeatedClosingContact(nodes);
     const customCta = hasEmbeddedCustomCta(cleaned);
+    const kakaoCta = cleaned.some(hasKakaoChannelLink);
     const hasH1orH2 = cleaned.some(node => node.type === "heading" && Number(node.attrs?.level ?? 3) <= 2);
     const hasAnyHeading = cleaned.some(node => node.type === "heading");
     for (const node of cleaned) {
@@ -237,7 +245,7 @@ export default function SpokeduBlogArticle({
         intro.push(node);
       }
     }
-    return { intro, sections, customCta };
+    return { intro, sections, customCta, kakaoCta };
   }, [draft.content]);
 
   const cover = hero ? imageSrc(hero.src, imageUrls) : undefined;
@@ -252,9 +260,9 @@ export default function SpokeduBlogArticle({
   return <article className={styles.page}>
     <div className={styles.main}>
       <div className={styles.copyWidth}>
-        <p className={styles.kicker}>{draft.category || "수업 이야기"}</p>
+        <p className={styles.kicker} data-copy-exclude="admin">{draft.category || "수업 이야기"}</p>
         <h1 className={styles.title}>{draft.title}</h1>
-        <div className={styles.meta}>
+        <div className={styles.meta} data-copy-exclude="admin">
           <span>SPOKEDU</span>
           {locationLabel && <><span className={styles.dot} /><span>{locationLabel}</span></>}
           {displayDate && <><span className={styles.dot} /><span>{displayDate}</span></>}
@@ -274,12 +282,12 @@ export default function SpokeduBlogArticle({
         </section>)}
         {insight && !highlightUsed && <blockquote className={styles.insight}><p>{insight}</p></blockquote>}
         {/* Custom manuscript CTAs stay in the body above. Shared footer text is omitted to avoid duplication. */}
-        <footer className={styles.ctaSection}>
+        {!document.kakaoCta && <footer className={styles.ctaSection}>
           {!document.customCta && (
             <p className={styles.ctaText}><strong>SPOKEDU · 스포키듀</strong>아이와 현장의 조건에 맞는 체육수업을 설계합니다.</p>
           )}
           <a href="https://spokedu.kr" className={styles.ctaLink} target="_blank" rel="noopener noreferrer">프로그램 살펴보기 →</a>
-        </footer>
+        </footer>}
         {related.length > 0 && <aside className={styles.related}>
           <h3>관련 콘텐츠</h3>
           <div className={styles.relatedList}>

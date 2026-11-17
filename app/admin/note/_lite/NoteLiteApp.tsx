@@ -90,10 +90,12 @@ export function NoteLiteApp() {
   const dirtyRef = useRef(dirty);
   const saveTimer = useRef<number | null>(null);
   const persistTail = useRef(Promise.resolve());
-  blocksRef.current = blocks;
-  openIdRef.current = openId;
-  hydratedRef.current = hydrated;
-  dirtyRef.current = dirty;
+  useLayoutEffect(() => {
+    blocksRef.current = blocks;
+    openIdRef.current = openId;
+    hydratedRef.current = hydrated;
+    dirtyRef.current = dirty;
+  });
 
   const loadDocs = useCallback(async () => {
     setDocsLoading(true);

@@ -117,6 +117,15 @@ export type SearchDemandAudit = {
   naver_serp_verified?: boolean;
   monthly_pc_mobile_total?: string | number;
 };
+export type SearchIntentReview = {
+  checked_at?: string;
+  source_type?: string;
+  decision_reason?: string;
+  previous_keyword?: string;
+  current_primary_keyword?: string;
+  current_keyword_monthly_demand?: string;
+  previous_keyword_historical_volume?: string | number;
+};
 export type PublicationReadiness = {
   notes?: string;
   status?: string;
@@ -163,6 +172,7 @@ export type Strategy = {
   legacy_publication_decision?: LegacyPublicationDecision | null;
   publication_readiness?: PublicationReadiness | null;
   search_demand_audit_20261116?: SearchDemandAudit | null;
+  search_intent_review_20261117?: SearchIntentReview | null;
   source_revision?: number;
 };
 
@@ -293,14 +303,41 @@ type VolumeRow = {
   note?: string;
 };
 
+function sameKeyword(left?: string | null, right?: string | null): boolean {
+  return Boolean(left && right && left.trim() === right.trim());
+}
+
+/** Historical volume belongs to the keyword that was measured, never to the current primary by fallback. */
+function currentKeywordVolumeLabel(analysis: Strategy): string {
+  const primary = analysis.primary_keyword?.trim() || '';
+  const review = analysis.search_intent_review_20261117;
+  if (!primary) return '미기록';
+  if (review?.current_keyword_monthly_demand === 'not_measured') return '미측정';
+  const demand = analysis.monthly_keyword_demand;
+  if (sameKeyword(demand?.keyword, primary) && (demand?.pc != null || demand?.mobile != null || demand?.total_display)) {
+    return formatTotalDisplay(demand, demand?.pc, demand?.mobile);
+  }
+  const audit = analysis.search_demand_audit_20261116;
+  if (sameKeyword(audit?.keyword, primary) && audit?.monthly_pc_mobile_total != null && audit.monthly_pc_mobile_total !== '') {
+    return String(audit.monthly_pc_mobile_total);
+  }
+  const selected = analysis.final_keyword_selection;
+  if (sameKeyword(selected?.selected_keyword, primary) && selected?.monthly_data) {
+    const data = selected.monthly_data;
+    return data.total != null ? formatVolume(data.total) : formatTotalDisplay(null, data.pc, data.mobile);
+  }
+  return '미측정';
+}
+
 function buildVolumeRows(analysis: Strategy): VolumeRow[] {
   const rows: VolumeRow[] = [];
+  const primary = analysis.primary_keyword?.trim() || '';
   const audit = analysis.search_demand_audit_20261116;
   if (audit?.keyword || audit?.monthly_pc_mobile_total != null) {
     rows.push({
-      key: `audit-${audit.keyword || 'selected'}`,
-      keyword: audit.keyword || analysis.primary_keyword || '선정 검색어',
-      role: '현재 선정 검색어',
+      key: `audit-${audit.keyword || 'historical'}`,
+      keyword: audit.keyword || '조사 키워드 미기록',
+      role: sameKeyword(audit.keyword, primary) ? '주력 키워드 검색량' : '기존 검색량 조사',
       pc: '합산',
       mobile: '합산',
       total: audit.monthly_pc_mobile_total == null || audit.monthly_pc_mobile_total === ''
@@ -312,9 +349,9 @@ function buildVolumeRows(analysis: Strategy): VolumeRow[] {
   const demand = analysis.monthly_keyword_demand;
   if (demand?.keyword || demand?.pc != null || demand?.mobile != null) {
     rows.push({
-      key: `primary-${demand.keyword || analysis.primary_keyword}`,
-      keyword: demand.keyword || analysis.primary_keyword,
-      role: '주력 검색어',
+      key: `demand-${demand.keyword || 'recorded'}`,
+      keyword: demand.keyword || '검색어 미기록',
+      role: sameKeyword(demand.keyword, primary) ? '주력 키워드 검색량' : '다른 키워드 검색량 기록',
       pc: formatVolume(demand.pc),
       mobile: formatVolume(demand.mobile),
       total: formatTotalDisplay(demand, demand.pc, demand.mobile),
@@ -350,11 +387,11 @@ function buildVolumeRows(analysis: Strategy): VolumeRow[] {
     });
   }
   const selected = analysis.final_keyword_selection?.monthly_data;
-  if (selected?.keyword && !rows.some(row => row.keyword === selected.keyword && row.role === '최종 선정 검색어')) {
+  if (selected?.keyword && !rows.some(row => row.keyword === selected.keyword)) {
     rows.push({
       key: `final-${selected.keyword}`,
       keyword: selected.keyword,
-      role: '최종 선정 검색어',
+      role: sameKeyword(selected.keyword, primary) ? '주력 키워드 검색량' : '과거 선정 기록',
       pc: formatVolume(selected.pc),
       mobile: formatVolume(selected.mobile),
       total: selected.total != null ? formatVolume(selected.total) : formatTotalDisplay(null, selected.pc, selected.mobile),
@@ -414,7 +451,6 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
   const audit = analysis?.search_demand_audit_20261116 ?? null;
   const searchDemandRecorded = data?.searchDemandRecorded ?? Boolean(audit);
   const strategyRevisionMatch = data?.strategyRevisionMatch ?? (data ? !data.needsReview : false);
-  const keywordChanged = Boolean(audit?.keyword && analysis?.primary_keyword && audit.keyword !== analysis.primary_keyword);
   const evidence = analysis?.competitive_evidence ?? null;
   const naver = analysis?.naver_serp_snapshot ?? null;
   const trust = analysis ? evidenceTrust(analysis) : null;
@@ -425,6 +461,12 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
   const readiness = analysis?.publication_readiness ?? null;
   const legacy = analysis?.legacy_publication_decision ?? null;
   const finalSelection = analysis?.final_keyword_selection ?? null;
+  const intentReview = analysis?.search_intent_review_20261117 ?? null;
+  const currentVolume = analysis ? currentKeywordVolumeLabel(analysis) : '미측정';
+  const historicalSelection = finalSelection?.selected_keyword
+    && !sameKeyword(finalSelection.selected_keyword, analysis?.primary_keyword)
+    ? finalSelection.selected_keyword
+    : '';
   const legacyHref = safeHttpUrl(legacy?.original_url);
   const checks = [
     { label: '제목', result: title.length > 8 && title.length < 110 ? '검토 가능' : '길이·정보량 확인', detail: '주제와 독자 질문이 제목에 직접 드러나는지 확인' },
@@ -473,7 +515,22 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
         {analysis ? <>
           <div className={styles.sections}>
             <section><h3>01. 이 글을 작성한 이유</h3><p>{analysis.writing_reason}</p><p className={styles.meta}>주요 독자: {analysis.target_audience}</p></section>
-            <section><h3>02. 핵심 검색 전략</h3><p><strong>주력 검색어</strong> {analysis.primary_keyword || '미기록'}</p><p><strong>연관 검색어</strong> {relatedKeywords.join(' · ') || '없음'}</p><p><strong>검색 의도</strong> {analysis.search_intent || '미기록'}</p></section>
+            <section>
+              <h3>02. 핵심 검색 전략</h3>
+              <p><strong>현재 원고의 주력 키워드</strong> {analysis.primary_keyword || '미기록'}</p>
+              <p><strong>현재 키워드 월 검색량</strong> {currentVolume}</p>
+              {intentReview?.decision_reason && <p><strong>현재 키워드를 선택한 이유</strong> {intentReview.decision_reason}</p>}
+              {audit?.keyword && (
+                <p className={styles.meta}>
+                  기존 검색량 조사 키워드: {audit.keyword}
+                  {' · '}월 검색량 {audit.monthly_pc_mobile_total == null || audit.monthly_pc_mobile_total === '' ? '미확인' : String(audit.monthly_pc_mobile_total)}
+                  {' · '}출처 {audit.source || '미기록'}
+                  {audit.retrieved_date ? ` · 조회일 ${audit.retrieved_date}` : ''}
+                </p>
+              )}
+              <p><strong>연관 검색어</strong> {relatedKeywords.join(' · ') || '없음'}</p>
+              <p><strong>검색 의도</strong> {analysis.search_intent || '미기록'}</p>
+            </section>
             <section><h3>03. 노출에 유리할 수 있는 요소</h3>{exposureFactors.length ? <ul>{exposureFactors.map((v, i) => <li key={i}>{v}</li>)}</ul> : <p>저장된 항목이 없습니다.</p>}<p className={styles.meta}>SPOKEDU 차별점: {analysis.brand_differentiation || '미기록'}</p></section>
             <section><h3>04. 약점 · 위험 요인</h3>{risks.length ? <ul>{risks.map((v, i) => <li key={i}>{v}</li>)}</ul> : <p>저장된 항목이 없습니다.</p>}</section>
             <section><h3>05. 다음 개선 작업</h3>{improvements.length ? <ul>{improvements.map((v, i) => <li key={i}>{v}</li>)}</ul> : <p>저장된 항목이 없습니다.</p>}</section>
@@ -576,13 +633,15 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
             </div>
             {audit && (
               <div className={styles.evidenceBlock}>
-                <p><strong>현재 선정 검색어</strong> {audit.keyword || '미기록'}</p>
-                {keywordChanged && <p className={styles.meta}>기존 분석 검색어: {analysis.primary_keyword}</p>}
-                <p><strong>PC·모바일 합산</strong> {audit.monthly_pc_mobile_total == null || audit.monthly_pc_mobile_total === '' ? '미확인' : String(audit.monthly_pc_mobile_total)}</p>
+                <p><strong>현재 원고의 주력 키워드</strong> {analysis.primary_keyword || '미기록'}</p>
+                <p><strong>현재 키워드 월 검색량</strong> {currentVolume}</p>
+                <p><strong>기존 검색량 조사 키워드</strong> {audit.keyword || '미기록'}</p>
+                <p><strong>기존 키워드 월 검색량</strong> {audit.monthly_pc_mobile_total == null || audit.monthly_pc_mobile_total === '' ? '미확인' : String(audit.monthly_pc_mobile_total)}</p>
                 <p className={styles.meta}>조회일 {audit.retrieved_date || '미기록'} · 출처 {audit.source || '미기록'}</p>
-                <p className={styles.meta}>선정 이유: {audit.decision || '미기록'}</p>
+                {intentReview?.decision_reason && <p className={styles.meta}>현재 키워드를 선택한 이유: {intentReview.decision_reason}</p>}
+                <p className={styles.meta}>당시 조사 메모: {audit.decision || '미기록'}</p>
                 <p className={styles.meta}>검증 범위: {audit.evidence_quality || '미기록'}{audit.purpose ? ` · ${audit.purpose}` : ''}</p>
-                <p className={styles.meta}>이 수치는 검색량 조사 기록입니다. 네이버 실제 상위 노출 검증: {audit.naver_serp_verified ? '확인됨' : '아님'}</p>
+                <p className={styles.meta}>이 수치는 기존 검색량 조사 기록입니다. 네이버 실제 상위 노출 검증: {audit.naver_serp_verified ? '확인됨' : '아님'}</p>
               </div>
             )}
             <div className={styles.competitionHeader}>
@@ -599,8 +658,8 @@ export function BlogStrategyModal({ draftId, title, tags, content, featuredImage
             {publicationTrack && (
               <p><strong>{publicationTrack.label}</strong> {publicationTrack.detail}</p>
             )}
-            {finalSelection?.selected_keyword && (
-              <p className={styles.meta}>최종 선정 검색어: {finalSelection.selected_keyword}{finalSelection.decision_reason ? ` · ${finalSelection.decision_reason}` : ''}</p>
+            {historicalSelection && (
+              <p className={styles.meta}>과거 선정 기록: {historicalSelection}{finalSelection?.decision_reason ? ` · ${finalSelection.decision_reason}` : ''}. 현재 주력 키워드를 바꾸지 않습니다.</p>
             )}
             {legacy?.original_url && (
               <p className={styles.meta}>

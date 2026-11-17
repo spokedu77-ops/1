@@ -29,7 +29,8 @@
 .shortcuts a:nth-of-type(3) svg { color: #facc15; }
 .shortcuts a:nth-of-type(4) svg { color: #a5b4fc; }
 .shortcuts a:nth-of-type(5) svg { color: #c084fc; }
-.shortcuts a:last-child svg { color: #fb7185; }
+.shortcuts a[href="/admin/inventory"] svg { color: #fb7185; }
+.shortcuts a[href="/admin/update-log"] svg { color: #94a3b8; }
 .shortcuts .consult { border-color: #155e75; background: #08334480; color: #67e8f9; }
 .shortcuts .review { border-color: #78350f; background: #78350f26; color: #fcd34d; }
 .shortcuts .review svg { color: #fbbf24; }

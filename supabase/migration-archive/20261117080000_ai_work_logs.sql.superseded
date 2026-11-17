@@ -1,0 +1,37 @@
+-- Admin-only AI work log. Additive. No policies for anon/authenticated.
+-- Writes go through the service role after requireAdmin().
+BEGIN;
+
+CREATE TABLE public.ai_work_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  work_key text NOT NULL UNIQUE CHECK (char_length(work_key) BETWEEN 8 AND 80 AND work_key ~ '^[a-z0-9][a-z0-9_-]{7,79}$'),
+  project text NOT NULL CHECK (char_length(btrim(project)) BETWEEN 1 AND 80),
+  created_by uuid REFERENCES auth.users(id),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.ai_work_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  work_item_id uuid NOT NULL REFERENCES public.ai_work_items(id) ON DELETE CASCADE,
+  status text NOT NULL CHECK (status IN ('제안', '승인', '진행 중', '완료 보고', '검증 완료', '보류·문제')),
+  summary text NOT NULL CHECK (char_length(btrim(summary)) BETWEEN 1 AND 200),
+  detail text NOT NULL DEFAULT '' CHECK (char_length(detail) <= 8000),
+  source_label text NOT NULL DEFAULT '' CHECK (char_length(source_label) <= 200),
+  source_url text NOT NULL DEFAULT '' CHECK (char_length(source_url) <= 500),
+  evidence text NOT NULL DEFAULT '' CHECK (char_length(evidence) <= 4000),
+  created_by uuid REFERENCES auth.users(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (status <> '검증 완료' OR char_length(btrim(evidence)) > 0),
+  UNIQUE (work_item_id, status, summary)
+);
+
+CREATE INDEX ai_work_logs_item_time ON public.ai_work_logs(work_item_id, created_at DESC);
+CREATE INDEX ai_work_logs_created ON public.ai_work_logs(created_at DESC);
+CREATE INDEX ai_work_items_project ON public.ai_work_items(project);
+
+ALTER TABLE public.ai_work_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_work_logs ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.ai_work_items, public.ai_work_logs FROM anon, authenticated;
+GRANT ALL ON public.ai_work_items, public.ai_work_logs TO service_role;
+
+COMMIT;

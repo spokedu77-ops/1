@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -1357,7 +1358,9 @@ function SpomoveEditModal({
 function useSpomoveContentData() {
   const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const contentRef = useRef(contentMap);
-  contentRef.current = contentMap;
+  useLayoutEffect(() => {
+    contentRef.current = contentMap;
+  });
   const packUpdatedAtRef = useRef<string | null>(null);
   const [draftMap, setDraftMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const [loading, setLoading] = useState(true);
@@ -1612,7 +1615,9 @@ function SpomoveCatalogManager() {
 export function SpomoveContentManager() {
   const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const contentRef = useRef(contentMap);
-  contentRef.current = contentMap;
+  useLayoutEffect(() => {
+    contentRef.current = contentMap;
+  });
   const packUpdatedAtRef = useRef<string | null>(null);
   const [draftMap, setDraftMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const [loading, setLoading] = useState(true);
@@ -1773,6 +1778,15 @@ export function SpomoveContentManager() {
       setDeletingPresetId(null);
     }
   }, [persist]);
+
+  const handleSaveEditingContent = () => {
+    if (editingPresetId != null) void saveContent(editingPresetId);
+  };
+  const handleDeleteEditingContent = () => {
+    if (editingPresetId != null) {
+      void deleteContent(editingPresetId).then(() => setEditingPresetId(null));
+    }
+  };
 
   const savedCount = Object.keys(contentMap).length;
   const issuePresetCount = new Set(saveIssues.map((issue) => issue.presetId)).size;
@@ -2244,8 +2258,8 @@ export function SpomoveContentManager() {
           onTabChange={setModalTab}
           onUpdateDraft={(patch) => updateDraft(editingPresetId, patch)}
           onUpdateMovementGuide={(patch) => updateMovementGuide(editingPresetId, patch)}
-          onSave={() => { void saveContent(editingPresetId); }}
-          onDelete={() => { void deleteContent(editingPresetId).then(() => setEditingPresetId(null)); }}
+          onSave={handleSaveEditingContent}
+          onDelete={handleDeleteEditingContent}
           onClose={() => setEditingPresetId(null)}
         />
       );
@@ -2257,7 +2271,9 @@ export function SpomoveContentManager() {
 function SpomoveThumbnailManager() {
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const pathsRef = useRef(thumbnailPaths);
-  pathsRef.current = thumbnailPaths;
+  useLayoutEffect(() => {
+    pathsRef.current = thumbnailPaths;
+  });
   const packUpdatedAtRef = useRef<string | null>(null);
   const [cacheBust, setCacheBust] = useState<number | undefined>();
   const [loading, setLoading] = useState(true);
@@ -2531,7 +2547,9 @@ function SpomoveThumbnailManager() {
 function SpomoveGuideVideoManager() {
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const urlsRef = useRef(guideVideoUrls);
-  urlsRef.current = guideVideoUrls;
+  useLayoutEffect(() => {
+    urlsRef.current = guideVideoUrls;
+  });
   const packUpdatedAtRef = useRef<string | null>(null);
   const [draftUrls, setDraftUrls] = useState<SpomoveGuideVideoDraft>({});
   const [loading, setLoading] = useState(true);

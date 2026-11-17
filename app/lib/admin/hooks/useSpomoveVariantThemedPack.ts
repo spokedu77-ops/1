@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
@@ -53,7 +53,9 @@ export function useSpomoveVariantThemedPack({
 }: UseSpomoveVariantThemedPackOptions) {
   const [paths, setPaths] = useState<(string | null)[]>(() => Array.from({ length: slotCount }, () => null));
   const pathsRef = useRef(paths);
-  pathsRef.current = paths;
+  useLayoutEffect(() => {
+    pathsRef.current = paths;
+  });
   const [previewUrls, setPreviewUrls] = useState<(string | null)[]>(() =>
     Array.from({ length: slotCount }, () => null)
   );

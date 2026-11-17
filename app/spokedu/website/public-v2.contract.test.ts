@@ -96,8 +96,9 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
 
   it('keeps Home product and case destinations without the SPOMOVE EXPERIENCE section', () => {
     const doc = render('home');
-    for (const href of ['/contact', '/education', '/about', '/records']) expect(doc.querySelector(`a[href="${href}"]`)).not.toBeNull();
+    for (const href of ['/contact', '/education', '/records']) expect(doc.querySelector(`a[href="${href}"]`)).not.toBeNull();
     const sharedDestinations = JSON.stringify([siteNav, footerNavGroups, siteHeaderLabCta]);
+    expect(sharedDestinations).toContain('/about');
     for (const href of ['/private', '/spokedu-lab', '/spomove', '/spomove/catalog', '/spomat']) expect(sharedDestinations).toContain(href);
     for (const slug of ['maedong-sports-stepup', 'dongjak-spomove', 'donghaeng-special-pe'] as const) expect(doc.querySelector(`a[href="${getFieldRecordCatalogItem(slug).href}"]`)).not.toBeNull();
     expect(doc.querySelector('#spomove-experience')).toBeNull();
