@@ -88,11 +88,31 @@ const eslintConfig = defineConfig([
   },
   globalIgnores([
     '.next/**',
+    // Alternate Next.js output directories contain generated bundles, not source.
+    '.next-*/**',
     'out/**',
     'build/**',
+    '.vercel/output/**',
+    'coverage/**',
     'next-env.d.ts',
     'docs/**',
+    // Preserved audit workspaces and before-change snapshots are not maintained app code.
+    '.agents/backups/**',
+    '.spomove-audit-stage2/**',
+    '.spomove-gate-a/**',
+    '.spomove-gate-a-followup/**',
+    '.spomove-final/**',
+    '.spomove-gate-b/**',
+    '.spomove-gate-c/**',
+    '.spomove-stage3-review/**',
+    // Local QA evidence and generated automation results; keep their source scripts linted.
+    '.qa-spokedu*/**',
+    '.tmp-spokedu*/**',
     '.tmp/**',
+    'tmp/**',
+    'artifacts/**',
+    'reports/**',
+    'ops/local-automation/feedback-learning/results/**',
     'public/spomove/dive/unity/**',
   ]),
 ]);

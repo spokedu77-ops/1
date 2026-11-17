@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   typecheck:
-    name: tsc --noEmit
+    name: TypeScript + ESLint
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -47,3 +47,6 @@ jobs:
 
       - name: TypeScript
         run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint:ci
