@@ -41,3 +41,24 @@
   .web-education-program-dialog-footer { padding: 16px 20px; }
   .web-education-program-consult { width: 100%; }
 }
+
+/* Groups express presentation, never program eligibility. */
+.website-content .web-education-program-groups { display:grid; gap:48px; }
+.website-content .web-education-program-group { display:grid; grid-template-columns:minmax(0,.65fr) minmax(0,2fr); gap:40px; padding-top:32px; border-top:1px solid #cbd5e1; }
+.website-content .web-education-program-group > header h3 { color:#0b1f46; font-size:24px; line-height:1.5; font-weight:750; margin-bottom:14px; }
+.website-content .web-education-program-group > header p { color:#475569; font-size:16px; line-height:1.8; }
+.website-content .web-education-program-group .web-education-programs { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.website-content .web-education-program-group h4 { color:#0b1f46; font-size:23px; line-height:1.5; font-weight:750; }
+.website-content .web-education-program-group :is(h3,h4,p,button) { word-break:keep-all; overflow-wrap:normal; }
+.website-content .web-education-program-group .web-program-card > img { aspect-ratio:16/10; object-fit:cover; }
+.website-content .web-education-program-group .web-program-body { padding:24px; }
+.website-content .web-education-program-group .web-program-body > p { line-height:1.8; }
+.website-content .web-education-program-group .web-education-word { white-space:nowrap; }
+.website-content .web-education-program-link { min-height:48px; }
+@media(max-width:1023px) {
+ .website-content .web-education-program-group { grid-template-columns:1fr; gap:24px; }
+}
+@media(max-width:639px) {
+ .website-content .web-education-program-group .web-education-programs { grid-template-columns:1fr; }
+ .website-content .web-education-program-group h4 { font-size:22px; }
+}

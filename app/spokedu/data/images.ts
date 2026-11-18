@@ -116,7 +116,7 @@ export const SPOKEDU_IMAGES = {
       'spomat',
       'spomat-layout.png',
       'SPOMAT 2×2 — 위 빨강·노랑, 아래 초록·파랑',
-      { kind: 'product', programs: ['spomove'], allowedPages: ['home', 'programs', 'programs/spomove', 'curriculum'] },
+      { kind: 'product', programs: ['spomove'], allowedPages: ['home', 'programs', 'programs/spomove', 'curriculum'], externalSrc: '/images/spokedu/spomat-layout.png' },
     ),
   },
   home: {

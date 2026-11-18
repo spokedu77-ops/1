@@ -49,3 +49,47 @@
 @media (min-width: 1024px) {
   .website-content .web-education-showcase-copy > .font-watermark-number { margin-bottom: -60px; }
 }
+
+/* Stage 3: institution page presentation only. */
+.website-content .web-education-page :is(h1,h2,h3,h4,p,a,li) { word-break:keep-all; overflow-wrap:normal; }
+.website-content .web-education-page #brand { padding-block:88px; background:#0b1f46; color:#fff; }
+.website-content .web-education-hero-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); align-items:center; gap:48px; }
+.website-content .web-education-hero-copy { min-width:0; }
+.website-content .web-education-hero-copy h1 { color:#fff; font-size:clamp(32px,3.4vw,48px); line-height:1.4; }
+.website-content .web-education-hero-copy h1 span { color:#93c5fd; }
+.website-content .web-education-hero-copy > p { color:#d6e2f5; font-size:17px; line-height:1.85; text-align:left; }
+.website-content .web-education-hero-copy > div:last-child { justify-content:flex-start; }
+.website-content .web-education-hero-copy a { min-height:48px; white-space:normal; }
+.website-content .web-education-hero-photo { margin:0; min-width:0; }
+.website-content .web-education-hero-photo img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; border-radius:20px; }
+.website-content .web-education-hero-photo figcaption { color:#cbd5e1; margin-top:12px; font-size:13px; line-height:1.7; }
+.website-content .web-education-metrics { padding-block:48px; background:#fff; }
+.website-content .web-education-metrics > div > p { color:#475569; font-size:14px; margin-bottom:32px; }
+.website-content .web-education-metrics dd { white-space:nowrap; }
+.website-content .web-education-group-note { color:#64748b; font-size:14px; line-height:1.8; margin-top:32px; }
+.website-content .web-education-process-heading h2 { margin-top:12px; font-size:36px; font-weight:750; line-height:1.4; color:#0b1f46; }
+.website-content .web-education-operating-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:28px; list-style:none; padding:0; margin:40px 0 0; }
+.website-content .web-education-operating-steps li { min-width:0; border-top:2px solid #245dff; padding-top:20px; }
+.website-content .web-education-operating-steps li > span { color:#245dff; font-size:14px; font-weight:700; }
+.website-content .web-education-operating-steps h3 { font-size:21px; font-weight:750; line-height:1.5; margin-block:12px; }
+.website-content .web-education-operating-steps p { font-size:16px; line-height:1.85; color:#475569; }
+.website-content .web-education-process-photos { display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-top:48px; }
+.website-content .web-education-process-photos figure { margin:0; min-width:0; }
+.website-content .web-education-process-photos img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; border-radius:18px; }
+.website-content .web-education-process-photos .web-education-lab-screen { object-fit:contain; background:#f1f5f9; }
+.website-content .web-education-process-photos figcaption { margin-top:12px; color:#64748b; font-size:13px; line-height:1.7; }
+.website-content .web-education-page #process-showcase > div { display:block; }
+@media(max-width:1023px) {
+ .website-content .web-education-hero-grid { grid-template-columns:1fr; gap:36px; }
+ .website-content .web-education-hero-copy h1 { max-width:680px; }
+ .website-content .web-education-operating-steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .website-content .web-education-metrics dd { font-size:42px; }
+}
+@media(max-width:639px) {
+ .website-content .web-education-page #brand { padding-block:56px; }
+ .website-content .web-education-hero-copy h1 { font-size:30px; }
+ .website-content .web-education-hero-copy a { width:100%; }
+ .website-content .web-education-process-heading h2 { font-size:28px; }
+ .website-content .web-education-operating-steps,.website-content .web-education-process-photos { grid-template-columns:1fr; gap:28px; }
+ .website-content .web-education-metrics dd { font-size:36px; }
+}

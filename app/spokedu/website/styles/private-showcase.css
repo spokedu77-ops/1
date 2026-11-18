@@ -1,0 +1,61 @@
+/* PRIVATE-only layout; existing photos, consultation handoff and legacy anchors. */
+.website-content .web-private-page :is(h1,h2,h3,p,a,li,summary) { word-break:keep-all; overflow-wrap:normal; }
+.website-content .web-private-page #brand { padding-block:88px; background:#f1f5f9; }
+.website-content .web-private-hero-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:48px; align-items:center; }
+.website-content .web-private-hero-copy { min-width:0; }
+.website-content .web-private-hero-copy h1 { font-size:clamp(30px,3.3vw,46px); line-height:1.45; }
+.website-content .web-private-hero-copy > p { font-size:17px; line-height:1.85; margin-bottom:28px; }
+.website-content .web-private-hero-copy > div { align-items:flex-start; }
+.website-content .web-private-hero-copy > div:not(:first-child) { flex-wrap:wrap; }
+.website-content .web-private-hero-copy a { min-height:48px; white-space:normal; text-align:center; padding-inline:24px; }
+.website-content .web-private-hero-photo { min-width:0; margin:0; }
+.website-content .web-private-hero-photo img { display:block; width:100%; height:auto; aspect-ratio:4/5; object-fit:cover; border-radius:22px; }
+.website-content .web-private-hero-photo figcaption { font-size:13px; line-height:1.8; color:#64748b; margin-top:12px; }
+.website-content .web-private-page .web-private-summary { margin-top:32px; }
+.website-content .web-private-page #showcase { padding-block:88px; }
+.website-content .web-private-page #showcase > div { display:grid; gap:88px; }
+.website-content .web-private-page #showcase > div > div { margin-top:0; }
+.website-content .web-private-page #showcase .font-watermark-number { position:static; color:#bfdbfe; font-size:64px; line-height:1; margin-bottom:20px; }
+.website-content .web-private-page #showcase h2 { font-size:34px; line-height:1.45; font-weight:750; }
+.website-content .web-private-page #showcase .font-body-md { line-height:1.85; }
+.website-content .web-private-page .web-private-first-step { grid-template-columns:1fr; max-width:800px; }
+.website-content .web-private-first-step > div { grid-column:auto; }
+.website-content .web-private-page #showcase .absolute.bottom-6 { position:static; margin:0; border-radius:0; padding:20px 24px; background:#fff; box-shadow:none; }
+.website-content .web-private-page #showcase .aspect-\[16\/10\] { aspect-ratio:auto; }
+.website-content .web-private-page #showcase img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; }
+.website-content .web-private-page #class-types { padding-block:88px; }
+.website-content .web-private-page #class-types > div > .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.website-content .web-private-page #class-types > div > .grid > div:last-child { grid-column:1/-1; display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); align-items:center; }
+.website-content .web-private-page #class-types > div > .grid > div:last-child > div:first-child { display:grid; grid-template-columns:1fr 1fr; align-items:center; }
+.website-content .web-private-page #class-types .font-label-sm { white-space:normal; line-height:1.7; }
+.website-content .web-private-page #class-types .px-6.pb-6 { display:flex; align-items:flex-start; flex-direction:column; gap:16px; }
+.website-content .web-private-comparison-points { margin-top:20px; padding-left:18px; list-style:disc; color:#475569; line-height:1.85; font-size:15px; }
+.website-content .web-private-comparison-points li + li { margin-top:6px; }
+.website-content .web-private-faq { background:#f1f5f9; padding-block:72px; }
+.website-content .web-private-eyebrow { color:#245dff; font-size:13px; font-weight:700; margin-bottom:12px; }
+.website-content .web-private-faq h2 { color:#0b1f46; font-size:32px; line-height:1.5; font-weight:750; margin-bottom:32px; }
+.website-content .web-private-faq details { border-top:1px solid #cbd5e1; padding-block:8px; }
+.website-content .web-private-faq summary { padding-block:16px; min-height:52px; cursor:pointer; font-weight:650; font-size:17px; line-height:1.8; }
+.website-content .web-private-faq details > p { color:#475569; max-width:800px; font-size:16px; line-height:1.85; padding-bottom:20px; }
+.website-content .web-private-faq summary:focus-visible { outline:2px solid #245dff; outline-offset:4px; }
+@media(max-width:1023px) {
+ .website-content .web-private-hero-grid { grid-template-columns:1fr; }
+ .website-content .web-private-hero-photo { max-width:720px; }
+ .website-content .web-private-hero-photo img { aspect-ratio:16/10; }
+ .website-content .web-private-page #class-types > div > .grid > div:last-child { display:flex; }
+ .website-content .web-private-page #class-types > div > .grid > div:last-child > div:first-child { display:block; }
+}
+@media(max-width:639px) {
+ .website-content .web-private-page #brand,.website-content .web-private-page #showcase,.website-content .web-private-page #class-types,.website-content .web-private-faq { padding-block:56px; }
+ .website-content .web-private-hero-copy h1 { font-size:29px; }
+ .website-content .web-private-hero-copy a { width:100%; }
+ .website-content .web-private-hero-copy > div:not(:first-child) { width:100%; }
+ .website-content .web-private-page #showcase h2 { font-size:27px; }
+ .website-content .web-private-page #showcase > div { gap:64px; }
+ .website-content .web-private-page #showcase .font-watermark-number { font-size:48px; }
+ .website-content .web-private-page #showcase .absolute.bottom-6 { padding:16px; }
+ .website-content .web-private-page #showcase .absolute.bottom-6 > span { display:none; }
+ .website-content .web-private-page #class-types > div > .grid { grid-template-columns:1fr; }
+ .website-content .web-private-page #class-types > div > .grid > div:last-child { grid-column:auto; }
+ .website-content .web-private-faq h2 { font-size:27px; }
+}

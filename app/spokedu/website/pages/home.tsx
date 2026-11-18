@@ -28,23 +28,24 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
           </div></figure>
         </div>
       </section>
+      <section id="operating-metrics" className="home-v2-metrics" aria-label="SPOKEDU 공식 운영 실적"><div className="home-v2-container">
+        <p className="home-v2-eyebrow">SPOKEDU 현장 경험</p><h2>현장에서 쌓아온 수업 경험</h2>
+        <p className="home-v2-metrics-intro">학교와 기관 등 다양한 교육 현장에서 수업을 직접 운영하며 움직임의 경험을 넓혀 왔습니다.</p>
+        <OperatingMetrics />
+      </div></section>
       <section id="service-paths" className="home-v2-services"><div className="home-v2-container">
         <div className="home-v2-section-heading"><p className="home-v2-eyebrow">OUR SERVICES</p><h2>무엇을 찾고 계신가요?</h2><p>교육 대상과 이용 목적에 맞는 SPOKEDU의 서비스를 확인해 보세요.</p></div>
         <div className="web-home-service-grid">{homeRefinement.services.map(service => <article className="web-home-service-card" key={service.title}>
+          <figure className={`home-v2-service-photo${service.href === paths.subscription ? ' home-v2-service-screen' : ''}`}><Image unoptimized src={service.photo.src} alt={service.photo.alt} width={900} height={600} loading="lazy" /></figure>
           <span className="home-v2-pill">{service.label}</span><h3>{service.title}</h3><p>{service.body}</p><Link className="home-v2-link" href={service.href}>{service.action}<ArrowRight size={18} aria-hidden /></Link>
         </article>)}</div>
         <div className="home-v2-spomove"><div><p className="home-v2-pill">SPOKEDU 자체 개발 프로그램</p><div className="home-v2-spomove-title"><h3>SPOMOVE</h3><strong>시지각·인지·운동을 연결하는 움직임 교육</strong></div><p>화면에 제시되는 시각정보를 인식하고 적절한 반응을 선택해 신체 움직임으로 수행하는 SPOKEDU의 자체 개발 교육 프로그램입니다.</p></div><Link href={paths.spomove} className="home-v2-button">SPOMOVE 프로그램 상세 보기<ArrowRight size={18} aria-hidden /></Link></div>
       </div></section>
       <section id="showcase" className="home-v2-showcases"><div className="home-v2-container">
+        <div className="home-v2-section-heading"><p className="home-v2-eyebrow">SPOKEDU IN THE FIELD</p><h2>현장의 조건에 맞춰 수업을 설계합니다.</h2><p>서로 다른 참여 환경에 필요한 교육 방식을 실제 수업 사례와 사진으로 소개합니다.</p></div>
         {homeRefinement.showcases.map((item, i) => <article className={`home-v2-showcase home-v2-showcase-${i + 1}`} key={item.number}>
-          <div className="web-home-showcase-copy"><span className="home-v2-number" aria-hidden="true">{item.number}</span><div className="home-v2-showcase-text"><span className="home-v2-pill">{item.label}</span><h2><span>{item.title[0]}</span><span>{item.title[1]}</span></h2><p>{item.body}</p>
-            {item.number === '03' && <dl className="home-v2-move-grid" aria-label="4MOVE 교육 영역">
-              {homeRefinement.moveAreas.map(area => <div className="home-v2-move-item" key={area.name}>
-                <dt className="home-v2-move-name">{area.name}</dt>
-                <dd className="home-v2-move-description">{area.description}</dd>
-              </div>)}
-            </dl>}
-            <div className="web-home-showcase-tags">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div><Link className="home-v2-link" href={item.href}>{item.action}<ArrowRight size={18} aria-hidden /></Link></div></div>
+          <div className="web-home-showcase-copy"><span className="home-v2-number" aria-hidden="true">{item.number}</span><div className="home-v2-showcase-text"><span className="home-v2-pill">{item.label}</span><h3>{item.title.map(line => <span key={line}>{line}</span>)}</h3><p>{item.body}</p>
+            <div className="web-home-showcase-tags">{item.tags.map(tag => <span className="bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-medium" key={tag}>{tag}</span>)}</div><Link className="home-v2-link" href={item.href}>{item.action}<ArrowRight size={18} aria-hidden /></Link></div></div>
           <figure className={i === 2 ? 'home-v2-lab-frame' : 'home-v2-showcase-photo'}>
             {i === 2 && <div className="home-v2-browser"><span className="home-v2-browser-dots" aria-hidden="true"><i /><i /><i /></span><span><LockKeyhole size={12} aria-hidden />SPOKEDU LAB</span><span className="home-v2-pill">지도자 전용</span></div>}
             <Image unoptimized src={item.photo.src} alt={item.photo.alt} loading="lazy" width={i === 2 ? 1536 : 900} height={i === 2 ? 1004 : 1200} />
@@ -52,15 +53,19 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
           </figure>
         </article>)}
       </div></section>
+      <section id="four-move" className="home-v2-four-move"><div className="home-v2-container">
+        <p className="home-v2-eyebrow">SPOKEDU 4MOVE</p><h2>{homeRefinement.fourMove.title}</h2><p className="home-v2-four-move-intro">{homeRefinement.fourMove.body}</p>
+        <dl className="home-v2-move-grid" aria-label="4MOVE 교육 영역">{homeRefinement.moveAreas.map(area => <div className="home-v2-move-item" key={area.name}><dt className="home-v2-move-name">{area.name}</dt><dd className="home-v2-move-description"><strong>{area.description}</strong><p>{area.body}</p></dd></div>)}</dl>
+        <Link className="home-v2-link" href={paths.spomove}>SPOMOVE 자세히 보기<ArrowRight size={18} aria-hidden /></Link>
+      </div></section>
       <section id="field-stories" className="w-full bg-surface py-20 lg:py-28 web-home-proof">
         <div className="home-v2-container">
-          <div id="operating-metrics"><OperatingMetrics /></div>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 web-home-proof-heading">
             <div><p className="font-label-sm text-label-sm text-primary font-bold mb-2">SPOKEDU 현장 기록</p><h2 className="font-headline-lg text-headline-lg text-on-surface font-bold">다양한 교육 현장에서 이어온 SPOKEDU의 수업</h2></div>
             <Link className="text-primary-container font-label-md text-label-md" href={paths.records}>수업 사례 전체 보기 →</Link>
           </div>
           <div className="web-home-cases">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">{stories.map(record => <CaseCard key={record.slug} record={record} />)}</div>
+          <div className="home-v2-featured-grid">{stories.map(record => <div className={`home-v2-featured-card${record.thumbnailSrc ? '' : ' home-v2-case-without-photo'}`} key={record.slug}><CaseCard record={record} /></div>)}</div>
           </div>
         </div>
       </section>

@@ -1,21 +1,22 @@
 import { aboutPage } from '../../data/about-page';
-import { HeroBadge } from '../components/HeroBadge';
 import { AboutShowcase } from '../components/AboutShowcase';
 import { AboutPeople } from '../components/content-sections';
-import { PageCTA } from '../components/content-sections';
+import { PageCTA, OperatingMetrics } from '../components/content-sections';
 
 export default function AboutPage() {
   return (<main className="website-page web-stitch web-about-page w-full  bg-surface" id="main-content"><div className="flex flex-col w-full">
 
-<section id="brand" className="w-full bg-surface-container-lowest py-24 lg:py-32">
+<section id="brand" className="web-about-brand w-full py-24 lg:py-32">
 <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col items-center text-center">
-<HeroBadge>{aboutPage.intro.eyebrow}</HeroBadge>
+<p className="web-about-eyebrow">{aboutPage.intro.eyebrow}</p>
 <h1 className="web-about-hero-title font-display-hero text-display-hero text-on-surface tracking-tight mb-8"><span>{aboutPage.intro.titleLines[0]}</span><span className="text-primary-container">{aboutPage.intro.titleLines[1]}</span></h1>
 <p className="font-body-lg text-body-lg text-on-surface-variant max-w-3xl leading-relaxed">{aboutPage.intro.body}</p>
 </div>
 </section>
 
 <AboutShowcase />
+
+<section id="about-metrics" className="web-about-section web-about-metrics" aria-label="SPOKEDU 공식 운영 실적"><div className="web-about-container"><p className="web-about-eyebrow">SPOKEDU 현장 경험</p><h2>현장에서 쌓아온 수업 경험</h2><OperatingMetrics /></div></section>
 
 <section className="web-about-team w-full bg-surface-container-lowest" id="team">
 <div className="max-w-7xl mx-auto px-6 lg:px-12">
