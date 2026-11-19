@@ -6,7 +6,9 @@ import HomePage from './pages/home';
 import PrivatePage from './pages/private';
 import EducationPage from './pages/education';
 import AboutPage from './pages/about';
-import SpomovePage from './pages/spomove';
+import SpomoveServerPage, { SpomoveContent as SpomovePage } from './pages/spomove';
+import { listPublicRecordCards } from '@/app/lib/server/fieldRecords';
+import { legacyRecordCards } from '@/app/lib/field-records/cards';
 import { PUBLIC_OPERATING_METRICS } from '../data/marketing-public-metrics';
 import { PUBLIC_TEAM_ROLES, PUBLIC_PROGRAM_COPY } from '../data/public-brand-copy';
 import { aboutPage } from '../data/about-page';
@@ -19,6 +21,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
+vi.mock('@/app/lib/server/fieldRecords', () => ({ listPublicRecordCards: vi.fn(async () => []) }));
 
 const pages = { home: HomePage, private: PrivatePage, education: EducationPage, about: AboutPage, spomove: SpomovePage };
 const windows: Window[] = [];
@@ -35,14 +38,14 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     ['home', ['brand', 'operating-metrics', 'service-paths', 'showcase', 'four-move', 'field-stories', 'next-step']],
     ['private', ['brand', 'showcase', 'class-types', 'private-faq', 'inquiry']],
     ['education', ['brand', 'education-metrics', 'program-grid', 'process-showcase', 'inquiry-intro', 'inquiry']],
-    ['about', ['brand', 'approach', 'what-we-do', 'history', 'about-metrics', 'team', 'inquiry']],
-    ['spomove', ['brand', 'showcase', 'task-examples', 'inquiry']],
+    ['about', ['brand', 'approach', 'what-we-do', 'history', 'team', 'inquiry']],
+    ['spomove', ['spomove-hero', 'how-it-works', 'task-examples', 'levels', 'spomat', 'applications', 'field-case', 'lab', 'inquiry']],
   ] as const)('%s renders the approved section order without appended legacy sections', (page, sections) => {
     const doc = render(page);
     expect([...doc.querySelectorAll('main section')].filter(section => !section.parentElement?.closest('section')).map(section => section.id)).toEqual(sections);
     expect(doc.querySelectorAll('h1')).toHaveLength(1);
     expect(doc.querySelector('main')?.id).toBe('main-content');
-    if (page === 'education') expect(doc.querySelector('#inquiry form')).not.toBeNull();
+    if (page === 'education' || page === 'spomove') expect(doc.querySelector('#inquiry form')).not.toBeNull();
     else expect(doc.querySelector('form')).toBeNull();
     expect(doc.body.textContent).not.toMatch(/쿨다운 및 피드백|99\.8%|45,000\+|12,000\+|99\.4%|4\.9\/5|2,500\+/);
   });
@@ -114,7 +117,7 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     expect(doc.querySelector('#four-move')?.textContent).not.toMatch(/\b0[1-4]\b|STEP\s*[1-4]|[1-4]단계/i);
   });
 
-  it('renders all six About history years and eighteen source items with the official metrics', () => {
+  it('renders all six About history years and eighteen source items without duplicating Home metrics', () => {
     const doc = render('about');
     expect(doc.querySelectorAll('section#history')).toHaveLength(1);
     const groups = [...doc.querySelectorAll('#history [data-history-year]')];
@@ -128,10 +131,7 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
       expect([...groups[index].querySelectorAll('ul > li')].map(node => node.textContent)).toEqual([...group.items]);
     });
     expect(doc.querySelectorAll('#history [data-history-year] ul > li')).toHaveLength(18);
-    expect(doc.querySelectorAll('#about-metrics')).toHaveLength(1);
-    expect([...doc.querySelectorAll('#about-metrics dl > div')].map(node => [
-      node.querySelector('dd')?.textContent, node.querySelector('dt')?.textContent,
-    ])).toEqual(PUBLIC_OPERATING_METRICS.map(metric => [metric.value, metric.label]));
+    expect(doc.querySelectorAll('#about-metrics')).toHaveLength(0);
   });
 
   it('keeps education preparation, field operation, case links and program inquiry entry', () => {
@@ -194,7 +194,8 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     if (page === 'education') {
       expect(doc.querySelector('#inquiry-intro a[href="#inquiry"]')).not.toBeNull();
       expect(doc.querySelector('#inquiry form')).not.toBeNull();
-    } else expect(doc.querySelector(`#inquiry a[href="/contact?type=${type}"]`)).not.toBeNull();
+    } else if (page === 'spomove') expect(doc.querySelector(`.spmi-consult a[href="/contact?type=${type}"]`)).not.toBeNull();
+    else expect(doc.querySelector(`#inquiry a[href="/contact?type=${type}"]`)).not.toBeNull();
     expect(doc.querySelectorAll('#inquiry')).toHaveLength(1);
     if (page === 'private') expect(doc.querySelector('#apply #inquiry')).not.toBeNull();
   });
@@ -213,12 +214,25 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     expect(getFieldRecordCatalogItem('donghaeng-special-pe').thumbnailSrc).toBe(SPOKEDU_IMAGES.home.fieldEditorialCaseAdapted.src);
   });
 
-  it('shows four task examples without claiming they are the full feature count or measured results', () => {
+  it('shows four actual activities, three processing steps and the real typed form', () => {
     const doc = render('spomove');
-    expect([...doc.querySelectorAll('#task-examples h3')].map(node => node.textContent)).toEqual(['사이먼 효과', '플랭커', '스트룹 과제', 'DIVE']);
+    expect([...doc.querySelectorAll('#task-examples h3')].map(node => node.textContent)).toEqual(['색상 반응', '방향 반응', '연상 반응', '모션게이트']);
     expect(doc.body.textContent).toContain(PUBLIC_PROGRAM_COPY.spomat);
-    expect(doc.querySelector('#task-examples')?.textContent).toContain('과제 유형의 예시');
-    for (const href of ['/spomat', '/spomove/catalog', '/spokedu-lab']) expect(doc.querySelector(`a[href="${href}"]`)).not.toBeNull();
+    expect(doc.querySelectorAll('#task-examples img')).toHaveLength(4);
+    expect([...doc.querySelectorAll('.spmi-step')].map(node => node.textContent)).toEqual(['SEE', 'THINK', 'MOVE']);
+    for (const href of ['/spomat', '/spomove/catalog', '/spokedu-lab?view=landing']) expect(doc.querySelector(`a[href="${href}"]`)).not.toBeNull();
+  });
+
+  it('renders only SPOMOVE cases returned by the existing public-case resolver', async () => {
+    const cards = legacyRecordCards();
+    vi.mocked(listPublicRecordCards).mockResolvedValueOnce(cards);
+    const populated = renderToStaticMarkup(await SpomoveServerPage());
+    expect(populated).toContain('data-record-slug="dongjak-spomove"');
+    expect(populated).not.toContain('data-record-slug="maedong-sports-stepup"');
+    vi.mocked(listPublicRecordCards).mockResolvedValueOnce([]);
+    const unpublished = renderToStaticMarkup(await SpomoveServerPage());
+    expect(unpublished).not.toContain('data-record-slug=');
+    expect(unpublished).toContain('공개된 SPOMOVE 현장 사례를 준비하고 있습니다.');
   });
 
   it('does not silently apply the unapproved replacement photos or remove the documented duplicates', () => {

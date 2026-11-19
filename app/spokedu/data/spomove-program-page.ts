@@ -7,6 +7,43 @@ import {
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
+import { SPOKEDU_IMAGES } from './images';
+
+/** Public introduction copy; legacy fields below keep their existing consumers. */
+export const spomoveIntroduction = {
+  hero: { badge: 'SPOMOVE · 시지각 움직임 교육', lines: ['화면을 보고 선택하고', '몸으로 움직이는 체육활동'], body: PUBLIC_PROGRAM_COPY.spomove,
+    method: '시각정보 인지부터 규칙에 따른 반응 선택과 실제 움직임까지 하나의 활동으로 연결합니다.', photo: SPOKEDU_IMAGES.programs.spomoveClassConnected,
+    caption: 'SPOMOVE 실제 수업 현장', primary: 'SPOMOVE 도입 상담하기', secondary: '프로그램 구성 보기' },
+  relation: 'SPOMOVE는 SPOKEDU 4MOVE의 시지각 움직임 교육 영역입니다.',
+  flow: { eyebrow: 'HOW SPOMOVE WORKS', title: '보고 이해하고 선택한 뒤 움직입니다.', body: '화면에 나타나는 정보를 확인한 뒤 규칙에 맞는 움직임을 선택하고 몸으로 실행하는 과정을 수업 과제로 구성합니다.',
+    titles: ['시각정보 인지', '규칙 이해와 반응 선택', '신체 움직임 수행'],
+    descriptions: ['화면에 나타나는 색상·방향·도형과 과제 정보를 확인합니다.', '과제의 규칙을 이해하고 반응할 위치나 동작을 선택합니다.', '선택한 반응을 점프·이동·터치 등 실제 신체 움직임으로 수행합니다.'],
+    photo: SPOKEDU_IMAGES.programs.spomoveColorScreenField,
+    note: '수업에서는 반응 속도만 평가하지 않습니다. 규칙 이해와 움직임 수행을 함께 살피며 참여 수준에 맞춰 과제를 조정합니다.' },
+  examples: { eyebrow: 'ACTIVITY EXAMPLES', title: '실제 화면으로 보는 SPOMOVE 활동', body: '색상과 방향에 따라 반응을 선택하거나 이미지와 규칙을 연결하는 활동을 구성할 수 있습니다.', cta: 'SPOMOVE 프로그램 전체 보기',
+    items: [
+      { title: '색상 반응', body: '화면에 제시된 목표 색을 확인하고 해당 위치로 이동하거나 점프합니다.', photo: SPOKEDU_IMAGES.programs.spomoveScreenColor, kind: 'screen' },
+      { title: '방향 반응', body: '화면의 방향 정보와 주어진 규칙에 맞춰 움직일 위치를 선택합니다.', photo: SPOKEDU_IMAGES.programs.spomoveScreenDirection, kind: 'screen' },
+      { title: '연상 반응', body: '사물 이미지와 색상을 연결해 해당 위치에서 움직임으로 반응합니다.', photo: SPOKEDU_IMAGES.programs.spomoveAssocField, kind: 'field' },
+      { title: '모션게이트', body: '화면에 제시되는 이동 경로와 장애물을 확인하며 전신 움직임으로 반응합니다.', photo: SPOKEDU_IMAGES.programs.spomoveRhythmField, kind: 'field' },
+    ] },
+  levels: { eyebrow: 'LEVEL & VARIATION', title: '단순 반응에서 복합 과제까지', body: '하나의 정보에 반응하는 활동부터 여러 자극 중 목표를 선택하고 규칙을 유지하는 과제까지 단계적으로 구성합니다.',
+    distinction: '단순·선택·복합은 과제 유형입니다. SEE·THINK·MOVE의 정보처리 흐름과 구분합니다.',
+    conditionTitle: '아이와 수업 환경에 맞춰 조건을 조정합니다.',
+    conditions: ['자극 제시 시간', '목표와 방해 자극', '참여 인원과 수행 순서', '움직임 범위와 난이도'],
+    note: '과제마다 설정할 수 있는 시간과 횟수 및 난이도 범위가 다릅니다. 실제 실행 조건은 과제별 설정을 따릅니다.' },
+  mat: { title: '화면 신호를 실제 움직임으로 연결하는 4색 매트', body: 'SPOMAT은 빨강·노랑·초록·파랑의 네 칸으로 구성된 2×2 물리적 매트입니다. 화면의 과제에 따라 위치 이동과 점프·터치 등 움직임을 수행할 때 활용합니다.',
+    features: ['2×2 네 칸 구조', '위쪽 빨강·노랑 / 아래쪽 초록·파랑', '화면 규칙에 따른 이동·점프·터치'], note: PUBLIC_PROGRAM_COPY.spomat, cta: 'SPOMAT 자세히 보기' },
+  applications: { eyebrow: 'WHERE IT WORKS', title: '교육 목적과 참여 수준에 맞게 활용합니다.', body: 'SPOMOVE는 기관 수업의 한 활동으로도 사용하고 대상에 맞춘 별도 시지각 움직임 수업으로도 구성할 수 있습니다.',
+    items: [
+      { title: '학교·기관 체육교육', body: '유아·초등 대상 정규수업과 방과후·특강에서 움직임 과제로 활용합니다.', photo: SPOKEDU_IMAGES.programs.spomoveClassConnected },
+      { title: '특수·포용 체육', body: '특수교육 대상 학생과 느린학습자의 과제 이해와 참여 수준을 살펴 규칙과 제시 조건을 조정합니다.', photo: SPOKEDU_IMAGES.programs.spomoveWhoAdapted },
+      { title: '소그룹·체험 활동', body: '소규모 수업이나 체험형 활동에서 반복·협동 과제를 참여 인원에 맞춰 구성합니다.', photo: SPOKEDU_IMAGES.programs.spomoveWhoSmall },
+    ], note: '기관의 공간과 인원 및 지원 범위를 확인한 뒤 적용할 활동을 협의합니다. 모든 기관 체육수업에 SPOMOVE를 포함하는 것은 아닙니다.', cta: '기관 체육교육 살펴보기' },
+  cases: { eyebrow: 'FIELD RECORDS', title: '실제 교육 현장에서 사용하고 있습니다.', body: '기관에서 운영한 SPOMOVE 수업을 실제 현장 기록으로 확인할 수 있습니다.', cta: '전체 수업 사례 보기', empty: '공개된 SPOMOVE 현장 사례를 준비하고 있습니다.' },
+  lab: { eyebrow: 'SPOKEDU LAB', title: 'SPOMOVE 콘텐츠를 지도자의 수업 준비와 연결합니다.', body: `SPOKEDU LAB은 ${PUBLIC_PROGRAM_COPY.lab}입니다. 프로그램 탐색과 이용 조건은 LAB 서비스에서 확인할 수 있습니다.`, note: 'SPOMOVE는 움직임 프로그램이며 SPOKEDU LAB은 지도자용 플랫폼입니다. 기관 도입과 구독 이용은 구분해서 안내합니다.', cta: 'SPOKEDU LAB 살펴보기' },
+  inquiry: { eyebrow: 'CONTACT SPOKEDU', title: 'SPOMOVE를 우리 수업에 어떻게 적용할까요?', body: '교육 대상과 참여 인원 및 수업 환경을 알려주시면 기관 상황에 맞는 운영 방향을 안내합니다.', alternative: '상담 페이지에서 자세히 문의하기', note: '문의 내용과 운영 조건을 확인한 뒤 상담 가능한 범위를 안내합니다.' },
+} as const;
 
 type SpomoveMediaRequirement = {
   page: 'programs/spomove';

@@ -28,3 +28,17 @@
 @media (min-width: 1024px) {
   .website-content .web-about-team { padding-block: 80px; }
 }
+
+/* ABOUT-only identity hierarchy; existing portraits and native details remain. */
+.website-content .web-about-page #team .web-about-person-card { border:1px solid #e2e8f0; }
+.website-content .web-about-page #team .web-about-person-info { padding:20px 4px 0; }
+.website-content .web-about-page #team .web-about-person-info h3 { font-size:28px; line-height:36px; margin:0 0 4px; }
+.website-content .web-about-page #team .web-about-person-role { font-size:14px; line-height:22px; margin-bottom:16px; }
+.website-content .web-about-page #team .web-about-person-degree { font-size:15px; line-height:24px; }
+.website-content .web-about-page #team .web-about-person-responsibility { margin:8px 0 20px; font-size:16px; line-height:26px; font-weight:600; }
+.website-content .web-about-page #team .web-about-person-details > summary:focus-visible { outline:3px solid #2563eb; outline-offset:3px; border-radius:4px; }
+@media(max-width:767px) {
+ .website-content .web-about-page #team .web-about-person-info { padding-top:16px; }
+ .website-content .web-about-page #team .web-about-person-info h3 { font-size:26px; line-height:34px; }
+ .website-content .web-about-page #team .web-about-person-details > summary { font-size:15px; }
+}

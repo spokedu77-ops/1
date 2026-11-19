@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { contactPageContent } from '../contact/contact-page-data';
 import { dispatchEvidenceVisuals } from '../components/dispatch-program-lineup';
-import { spomoveActivityVisuals } from '../components/spomove-program-landing';
+import { spomoveActivityVisuals } from '../components/spomove-program-landing-legacy';
 import { aboutFounder } from './about-founder';
 import { curriculumPage } from './curriculum-page';
 import { HOME_MEDIA } from './home-media';
@@ -70,12 +70,6 @@ describe('spokedu site IA', () => {
     expect(chromeSource).toMatch(/siteHeaderLabCta/);
     expect(chromeSource).not.toMatch(/publicGlobalNav\.map/);
 
-    const homeLandingSource = readFileSync(
-      join(process.cwd(), 'app/spokedu/components/home-web/home-web-landing.tsx'),
-      'utf8',
-    );
-    expect(homeLandingSource).not.toMatch(/home-web\/site-header/);
-    expect(homeLandingSource).not.toMatch(/home-web\/site-footer/);
   });
 
   it('hides redirect-only programs from global nav while keeping path data', () => {
@@ -723,7 +717,8 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeLandingSource).not.toMatch(/HomeClassSection|HomeFieldBridge|HomeCommercialChoice|home-canonical/);
     expect(homeLandingSource).not.toMatch(/HomeAudienceGates/);
     expect(spomoveLandingSource).toMatch(/function SpomovePage/);
-    expect(spomoveLandingSource).toContain('/spomove/catalog');
+    expect(spomoveLandingSource).toContain('href={paths.spomoveCatalog}');
+    expect(SPOKEDU_PATHS.spomoveCatalog).toBe('/spomove/catalog');
     expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);
     expect(spomoveLandingSource).not.toMatch(/9,900|28,900|집중력이 향상|인지능력이 개선/);
     expect(spomovePageSource).toMatch(/SpomovePage/);

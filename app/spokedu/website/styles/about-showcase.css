@@ -50,3 +50,53 @@
  .website-content .web-about-class-guide h2 { font-size:27px; line-height:1.5; }
  .website-content .web-about-metrics dd { font-size:40px; }
 }
+
+/* Approved ABOUT correction: brand, history and actual three-person team only. */
+.website-content .web-about-page #brand { padding-block:80px; }
+.website-content .web-about-brand .web-about-eyebrow { margin-bottom:24px; }
+.website-content .web-about-hero-title { max-width:1000px; line-height:1.25; margin-bottom:24px; text-wrap:balance; }
+.website-content .web-about-page #brand > div > p:last-child { max-width:672px; line-height:1.7; text-wrap:pretty; }
+.website-content .web-about-page .web-about-timeline > li { position:relative; grid-template-columns:140px minmax(0,1fr); gap:48px; padding-block:28px; border-top:0; }
+.website-content .web-about-page .web-about-timeline > li::before { content:''; position:absolute; top:0; bottom:0; left:160px; width:1px; background:#dce3ee; }
+.website-content .web-about-page .web-about-timeline-year { font-size:32px; line-height:40px; letter-spacing:-.03em; }
+.website-content .web-about-page .web-about-timeline > li h3 { font-size:22px; line-height:32px; font-weight:700; margin-bottom:12px; }
+.website-content .web-about-page .web-about-timeline ul { font-size:16px; line-height:28px; }
+.website-content .web-about-page .web-about-timeline ul li + li { margin-top:8px; }
+@media(max-width:767px) {
+ .website-content .web-about-page #brand { padding-block:48px 56px; }
+ .website-content .web-about-brand .web-about-eyebrow { margin-bottom:20px; }
+ .website-content .web-about-hero-title { font-size:28px; line-height:1.4; margin-bottom:20px; }
+ .website-content .web-about-page #brand > div > p:last-child { font-size:16px; line-height:27px; }
+ .website-content .web-about-page .web-about-timeline > li { grid-template-columns:1fr; gap:10px; padding:20px 0 24px 20px; }
+ .website-content .web-about-page .web-about-timeline > li::before { left:0; }
+ .website-content .web-about-page .web-about-timeline-year { font-size:28px; line-height:36px; }
+ .website-content .web-about-page .web-about-timeline > li h3 { font-size:20px; line-height:28px; margin-bottom:12px; }
+ .website-content .web-about-page .web-about-timeline ul { font-size:15px; line-height:26px; padding-left:18px; }
+}
+/* Rendered mobile correction: avoid a final isolated word in long history entries. */
+@media(max-width:767px) {
+ .website-content .web-about-page .web-about-timeline ul li { text-wrap:balance; }
+}
+
+/* ABOUT feedback: quieter typography and aligned documentary photographs. */
+@font-face {
+ font-family:'ABOUT Pretendard';
+ src:url('/fonts/pretendard/PretendardVariable.woff2') format('woff2');
+ font-style:normal;
+ font-weight:100 900;
+ font-display:swap;
+}
+.website-content .web-about-page,
+.website-content .web-about-page :is(h1,h2,h3,h4,p,a,li,dt,dd,summary,span) { font-family:'ABOUT Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif; }
+.website-content .web-about-page .web-about-hero-title { font-weight:700; letter-spacing:-.025em; }
+.website-content .web-about-page .web-about-section h2 { font-weight:650; letter-spacing:-.025em; }
+.website-content .web-about-page .web-about-section h3 { font-weight:650; }
+.website-content .web-about-page #team .web-about-person-info h3 { font-weight:700; }
+.website-content .web-about-page .web-about-brand .web-about-eyebrow { display:inline-flex; align-items:center; padding:7px 16px; border:1px solid #93c5fd40; border-radius:999px; background:#ffffff0d; line-height:20px; letter-spacing:.04em; }
+.website-content .web-about-page .web-about-field-photos { grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px; align-items:start; }
+.website-content .web-about-page .web-about-field-photos figure:nth-child(2) { margin-top:0; }
+.website-content .web-about-page .web-about-field-photos img { aspect-ratio:4/3; }
+.website-content .web-about-page .web-about-field-photos figcaption { font-size:15px; line-height:24px; color:#475569; }
+@media(max-width:767px) {
+ .website-content .web-about-page .web-about-field-photos { grid-template-columns:1fr; gap:24px; }
+}

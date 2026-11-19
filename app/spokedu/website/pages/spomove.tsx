@@ -1,135 +1,67 @@
+import Image from 'next/image';
 import Link from 'next/link';
+import { listPublicRecordCards } from '@/app/lib/server/fieldRecords';
+import type { RecordCard } from '@/app/lib/field-records/cards';
+import { InlineConsultForm } from '../../contact/inline-consult-form';
+import { spomoveIntroduction as copy, spomoveProgramPage, SPOMOVE_LANDING_CASE_SLUGS } from '../../data/spomove-program-page';
+import { SPOKEDU_PATHS as paths, spokeduLabIntroductionHref } from '../../data/public-routes';
 import { ConsultationLink } from '../components/ConsultationLink';
-import { PUBLIC_PROGRAM_COPY } from '../../data/public-brand-copy';
-import { spomoveProgramPage } from '../../data/spomove-program-page';
-import { WebsiteIcon } from '../components/WebsiteIcon';
-import { SpomoveFieldPhoto, SpomatProductPhoto, SpomoveProcessingFlow } from '../components/SpomoveVisual';
-import { PageCTA } from '../components/content-sections';
+import { SpomatProductPhoto } from '../components/SpomoveVisual';
+import { CaseCard } from '../components/shared';
+import '../styles/spomove-introduction.css';
 
-export default function SpomovePage() {
-  return (<main className="website-page web-stitch web-spomove w-full bg-surface" id="main-content"><div className="flex flex-col w-full">
+function Heading({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) {
+  return <div className="spmi-heading"><p className="spmi-eyebrow">{eyebrow}</p><h2>{title}</h2>{body && <p>{body}</p>}</div>;
+}
 
-<section id="brand" className="w-full bg-surface-container-lowest py-24 lg:py-32">
-<div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col items-center text-center">
-<div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-low text-primary mb-8 shadow-sm">
-<WebsiteIcon name="verified" className="text-[18px]" />
-<span className="font-label-sm text-label-sm uppercase tracking-wider">SPOMOVE</span>
-</div>
-<h1 className="font-display-hero text-headline-lg lg:text-display-hero text-on-surface font-extrabold tracking-tight max-w-4xl whitespace-pre-line leading-tight">화면을 보고 판단하고 <span className="text-primary-container">움직이는 체육활동</span>
-</h1>
-<p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mt-8 leading-relaxed">{PUBLIC_PROGRAM_COPY.spomove}</p>
-<div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
-<ConsultationLink className="inline-flex items-center justify-center px-9 py-4 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-[0_12px_28px_rgba(37,99,235,0.24)] hover:bg-primary transition-all duration-200" href="/contact?type=spomove">SPOMOVE 도입 상담하기</ConsultationLink>
-<a className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-all duration-200" href="#showcase">SPOMOVE 수업 구조 보기</a>
-</div>
-</div>
-</section>
+export function SpomoveContent({ stories = [] }: { stories?: RecordCard[] }) {
+  return <main id="main-content" className="website-page web-stitch web-spomove spmi">
+    <section id="spomove-hero" className="spmi-hero"><div className="spmi-container spmi-split">
+      <div><p className="spmi-badge">{copy.hero.badge}</p><h1>{copy.hero.lines.map(line => <span key={line}>{line}</span>)}</h1><p className="spmi-lead">{copy.hero.body}</p><p className="spmi-method">{copy.hero.method}</p>
+        <div className="spmi-actions"><ConsultationLink className="spmi-button" href="/contact?type=spomove" data-track="spomove-hero-inquiry">{copy.hero.primary}</ConsultationLink><Link className="spmi-button spmi-secondary" href={paths.spomoveCatalog} data-track="spomove-hero-catalog">{copy.hero.secondary}</Link></div>
+      </div>
+      <figure className="spmi-hero-photo"><Image unoptimized src={copy.hero.photo.src} alt={copy.hero.photo.alt} width={1280} height={960} loading="eager" fetchPriority="high" /><figcaption>{copy.hero.caption}</figcaption></figure>
+    </div></section>
 
-<section className="w-full" id="showcase">
+    <section id="how-it-works" className="spmi-section"><div className="spmi-container">
+      <Heading {...copy.flow} /><ol className="spmi-flow">{spomoveProgramPage.flow.steps.map((step, i) => <li key={step.label}><span className="spmi-step">{step.label}</span><h3>{copy.flow.titles[i]}</h3><p>{copy.flow.descriptions[i]}</p></li>)}</ol>
+      <div className="spmi-flow-evidence"><Image unoptimized src={copy.flow.photo.src} alt={copy.flow.photo.alt} width={1280} height={960} loading="lazy" /><div><p>{copy.flow.note}</p><p className="spmi-note">{copy.relation}</p></div></div>
+    </div></section>
 
-<div className="w-full bg-surface-container-low py-24 lg:py-32">
-<div className="max-w-7xl mx-auto px-6 lg:px-12">
-<div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-<div className="lg:col-span-5 relative">
-<span className="font-watermark-number text-watermark-number text-primary-fixed block select-none pointer-events-none -mb-4 lg:-mb-8 opacity-70" aria-hidden="true">01</span>
-<h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">보고, 판단하고, <span className="text-primary-container">움직입니다.</span>
-</h2>
-<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">화면의 자극을 보고 판단하고 움직이는 SPOKEDU의 디지털 움직임 프로그램입니다.</p>
-<div className="flex flex-wrap gap-2 mt-8">
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#화면신호</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#시지각반응</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#신체수행</span>
-</div>
-<div className="mt-8 pt-4">
-<Link className="inline-flex items-center text-primary-container font-label-md text-label-md font-bold group" href="/spomove/catalog">프로그램 구성 보기</Link>
-</div>
-</div>
-<div className="lg:col-span-7">
-<SpomoveFieldPhoto />
-</div>
-</div>
-</div>
-</div>
+    <section id="task-examples" className="spmi-section spmi-dark"><div className="spmi-container">
+      <Heading {...copy.examples} /><div className="spmi-examples">{copy.examples.items.map(item => <article className={`spmi-example spmi-example-${item.kind}`} key={item.title}>
+        <figure><Image unoptimized src={item.photo.src} alt={item.photo.alt} width={1600} height={item.kind === 'screen' ? 908 : 2133} loading="lazy" /><figcaption>{item.kind === 'screen' ? '실제 프로그램 화면' : '실제 현장 수업'}</figcaption></figure>
+        <div><h3>{item.title}</h3><p>{item.body}</p></div>
+      </article>)}</div><Link className="spmi-button" href={paths.spomoveCatalog} data-track="spomove-examples-catalog">{copy.examples.cta}</Link>
+    </div></section>
 
-<div className="w-full bg-surface-container-lowest py-24 lg:py-32">
-<div className="max-w-7xl mx-auto px-6 lg:px-12">
-<div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-<div className="lg:col-span-7 order-2 lg:order-1">
-<SpomatProductPhoto />
-</div>
-<div className="lg:col-span-5 order-1 lg:order-2 relative">
-<span className="font-watermark-number text-watermark-number text-primary-fixed block select-none pointer-events-none -mb-4 lg:-mb-8 opacity-70" aria-hidden="true">02</span>
-<h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">네 가지 색으로 구분하는 <span className="text-primary-container">SPOMAT</span>
-</h2>
-<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">{PUBLIC_PROGRAM_COPY.spomat}</p>
-<div className="flex flex-wrap gap-2 mt-8">
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#4색매트</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#2×2배치</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#화면연계</span>
-</div>
-<div className="mt-8 pt-4">
-<Link className="inline-flex items-center text-primary-container font-label-md text-label-md font-bold group" href="/spomat">SPOMAT 알아보기</Link>
-</div>
-</div>
-</div>
-</div>
-</div>
+    <section id="levels" className="spmi-section"><div className="spmi-container"><Heading {...copy.levels} />
+      <div className="spmi-levels">{spomoveProgramPage.content.levels.map(level => <article key={level.id}><h3>{level.title}</h3><p>{level.body}</p><ul>{level.tags.map(tag => <li key={tag}>{tag}</li>)}</ul></article>)}</div>
+      <p className="spmi-note">{copy.levels.distinction}</p><h3>{copy.levels.conditionTitle}</h3><ul className="spmi-conditions">{copy.levels.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul><p className="spmi-note">{copy.levels.note}</p>
+    </div></section>
 
-<div className="w-full bg-surface-container-low py-24 lg:py-32">
-<div className="max-w-7xl mx-auto px-6 lg:px-12">
-<div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-<div className="lg:col-span-5 relative">
-<span className="font-watermark-number text-watermark-number text-primary-fixed block select-none pointer-events-none -mb-4 lg:-mb-8 opacity-70" aria-hidden="true">03</span>
-<h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">같은 활동도 다르게 <span className="text-primary-container">설계할 수 있습니다.</span>
-</h2>
-<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">대상과 수행 수준에 맞춰 자극 시간, 과제 구조, 참여 방식과 움직임을 조합합니다.</p>
-<div className="flex flex-wrap gap-2 mt-8">
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#맞춤커리큘럼</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#난이도조절</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold">#과제구성</span>
-</div>
-<div className="mt-8 pt-4">
-<Link className="inline-flex items-center text-primary-container font-label-md text-label-md font-bold group" href="/education">수업 유형 살펴보기<WebsiteIcon name="arrow_forward" className="ml-1 group-hover:translate-x-1 transition-transform text-[18px]" /></Link>
-</div>
-</div>
-<div className="lg:col-span-7">
-<div className="web-spomove-process-card"><SpomoveProcessingFlow /><div className="web-spomove-levels">{spomoveProgramPage.content.levels.map(level => <div key={level.id}><h3>{level.title}</h3><p>{level.body}</p></div>)}</div></div>
-</div>
-</div>
-</div>
-</div>
-<div className="w-full bg-surface-container-lowest py-24 lg:py-32">
-<div className="max-w-7xl mx-auto px-6 lg:px-12">
-<div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-<div className="lg:col-span-7 order-2 lg:order-1">
-<div className="w-full rounded-3xl bg-inverse-surface text-inverse-on-surface p-8 shadow-[0_24px_50px_rgba(40,48,68,0.18)]"><div className="flex items-center justify-between gap-4 pb-6"><span className="font-headline-sm text-headline-sm font-bold">SPOMOVE 수업 구조</span><span className="font-label-sm text-label-sm text-outline-variant">프로그램 안내 · 측정 결과 아님</span></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="p-6 rounded-2xl bg-surface-container-highest/10"><h3 className="font-label-md text-label-md text-outline-variant mb-4">화면 신호 · 반응 선택</h3><p className="font-headline-sm text-headline-sm font-bold text-primary-fixed mb-4">SEE · THINK</p><p className="font-body-sm text-body-sm text-outline-variant leading-relaxed">화면에서 색상·방향·형태·동작 자극을 확인합니다. 자극을 구분하고 어떤 움직임을 할지 판단합니다.</p></div><div className="p-6 rounded-2xl bg-surface-container-highest/10"><h3 className="font-label-md text-label-md text-outline-variant mb-4">신체 수행</h3><p className="font-headline-sm text-headline-sm font-bold text-primary-fixed mb-4">MOVE</p><p className="font-body-sm text-body-sm text-outline-variant leading-relaxed">SPOMAT과 공간 위에서 실제 움직임을 수행합니다.</p></div></div><div className="mt-4 p-5 rounded-2xl bg-surface-container-highest/10"><p className="font-body-sm text-body-sm text-outline-variant leading-relaxed">화면에서 목표를 확인하는 것만으로 끝나지 않습니다. 선택한 반응을 몸으로 실행해야 SPOMOVE 활동이 완성됩니다.</p></div></div>
-</div>
-<div className="lg:col-span-5 order-1 lg:order-2 relative">
-<span className="font-watermark-number text-watermark-number text-primary-fixed block select-none pointer-events-none -mb-4 lg:-mb-8 opacity-70" aria-hidden="true">04</span>
-<h2 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">화면 신호는 실제 움직임 수행으로 이어집니다</h2>
-<p className="font-body-md text-body-md text-on-surface-variant mt-6 leading-relaxed">화면의 색과 길을 보고 바닥에서 움직여 반응하는 콘텐츠입니다. 기관 수업에서 활용하고, 지도자는 SPOKEDU LAB에서 이용 조건을 확인할 수 있습니다.</p><p className="font-body-sm text-body-sm text-on-surface-variant mt-4">SPOKEDU LAB · {PUBLIC_PROGRAM_COPY.lab}</p>
-<div className="flex flex-wrap gap-2 mt-8">
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#화면신호</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#반응선택</span>
-<span className="px-3.5 py-1.5 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm font-semibold">#신체수행</span>
-</div>
-<div className="mt-8 pt-4">
-<Link className="inline-flex items-center text-primary-container font-label-md text-label-md font-bold group" href="/spokedu-lab">SPOKEDU LAB 둘러보기</Link>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
+    <section id="spomat" className="spmi-section spmi-tint"><div className="spmi-container spmi-split"><SpomatProductPhoto /><div>
+      <Heading eyebrow="SPOMAT" title={copy.mat.title} body={copy.mat.body} /><ul className="spmi-features">{copy.mat.features.map(text => <li key={text}>{text}</li>)}</ul><p className="spmi-note">{copy.mat.note}</p><Link className="spmi-button" href={paths.spomat} data-track="spomove-spomat-detail">{copy.mat.cta}</Link>
+    </div></div></section>
 
-<section id="task-examples" className="w-full bg-surface-container-lowest py-24 lg:py-32">
-<div className="max-w-7xl mx-auto px-6 lg:px-12">
-<div className="text-center max-w-2xl mx-auto mb-20"><p className="font-label-sm text-label-sm text-primary font-bold">과제 유형 예시</p><h2 className="font-headline-lg text-headline-lg text-on-surface font-bold mt-3">{spomoveProgramPage.cognitiveTasks.title}</h2><p className="font-body-md text-body-md text-on-surface-variant mt-4">SPOMOVE에서 활용하는 실제 과제 유형의 예시입니다.</p></div>
-<div className="grid grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 text-center">
-{[...spomoveProgramPage.cognitiveTasks.items, { title: 'DIVE', body: '화면 속 대상에 전신으로 반응합니다.' }].map(task => <article key={task.title}><h3 className="font-headline-lg text-headline-lg text-primary font-bold">{task.title}</h3><p className="font-body-md text-body-md text-on-surface-variant leading-relaxed mt-4">{task.body}</p></article>)}
-</div></div></section>
+    <section id="applications" className="spmi-section"><div className="spmi-container"><Heading {...copy.applications} /><div className="spmi-applications">
+      {copy.applications.items.map(item => <article key={item.title}><Image unoptimized src={item.photo.src} alt={item.photo.alt} width={900} height={675} loading="lazy" /><div><h3>{item.title}</h3><p>{item.body}</p></div></article>)}
+    </div><p className="spmi-note">{copy.applications.note}</p><Link className="spmi-text-link" href={paths.education}>{copy.applications.cta} →</Link></div></section>
 
+    <section id="field-case" className="spmi-section spmi-tint"><div className="spmi-container"><Heading {...copy.cases} />
+      <div className="spmi-cases">{stories.length ? stories.map(record => <CaseCard record={record} key={record.slug} />) : <p>{copy.cases.empty}</p>}</div><Link className="spmi-text-link" href={paths.records}>{copy.cases.cta} →</Link>
+    </div></section>
 
-<PageCTA page="spomove" />
-</div></main>);
+    <section id="lab" className="spmi-section"><div className="spmi-container spmi-split"><figure className="spmi-lab-image"><Image unoptimized src={spomoveProgramPage.master.visualSrc} alt="SPOKEDU LAB에서 놀이체육과 SPOMOVE 콘텐츠를 탐색하는 실제 화면" width={1536} height={1004} loading="lazy" /></figure><div>
+      <Heading {...copy.lab} /><p className="spmi-note">{copy.lab.note}</p><Link className="spmi-button" href={spokeduLabIntroductionHref()} data-track="spomove-lab-introduction">{copy.lab.cta}</Link>
+    </div></div></section>
+
+    <div className="spmi-consult"><div className="spmi-container spmi-consult-grid"><div className="spmi-consult-copy"><Heading {...copy.inquiry} /><p className="spmi-note">{copy.inquiry.note}</p><ConsultationLink className="spmi-text-link" href="/contact?type=spomove">{copy.inquiry.alternative} →</ConsultationLink></div><InlineConsultForm type="spomove" /></div></div>
+  </main>;
+}
+
+export default async function SpomovePage() {
+  const publicCards = await listPublicRecordCards();
+  const stories = SPOMOVE_LANDING_CASE_SLUGS.flatMap(slug => publicCards.filter(record => record.slug === slug));
+  return <SpomoveContent stories={stories} />;
 }

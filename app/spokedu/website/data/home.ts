@@ -6,9 +6,9 @@ export const homeRefinement = {
   hero: SPOKEDU_IMAGES.home.fieldEditorialHero,
   lead: ['학교·기관부터 개인·소그룹까지 아동의 발달 수준과', '수업 환경에 맞춘 체육교육을 직접 설계하고 운영합니다.'],
   services: [
-    { label: '학교·기관', title: '학교·기관 체육교육', body: '교육 대상과 참여 인원, 수업 공간을 고려해 활동을 구성하고 전문 지도자가 정기수업과 특강을 현장에서 직접 운영합니다.', href: SPOKEDU_PATHS.education, action: '기관·학교 체육교육 알아보기', photo: SPOKEDU_IMAGES.dispatch.groupClass, icon: 'groups' },
+    { label: '학교·기관', title: '학교·기관 체육교육', body: '교육 대상과 참여 인원 및 수업 공간을 고려해 활동을 구성합니다. 전문 지도자가 정기수업과 특강을 현장에서 직접 운영합니다.', href: SPOKEDU_PATHS.education, action: '기관·학교 체육교육 알아보기', photo: SPOKEDU_IMAGES.dispatch.groupClass, icon: 'groups' },
     { label: '개인·소그룹', title: '개인·소그룹 체육교육', body: '아이의 현재 움직임과 발달 수준을 살펴 활동의 난이도와 지도 방식을 조정합니다.', href: SPOKEDU_PATHS.private, action: '개인·소그룹 수업 알아보기', photo: SPOKEDU_IMAGES.private.oneToOne, icon: 'favorite' },
-    { label: '지도자용 수업 플랫폼', title: '체육수업 플랫폼', body: 'SPOKEDU LAB을 통해 지도자의 수업 준비와 교육 자료 활용을 지원합니다.', href: SPOKEDU_PATHS.subscription, action: 'SPOKEDU LAB 보기', photo: { src: '/images/spokedu/subscription/library-program-cards-20261008-final.png', alt: 'SPOKEDU LAB 놀이체육 프로그램 탐색 화면과 활동별 콘텐츠 카드' }, icon: 'assignment' },
+    { label: '지도자용 수업 플랫폼', title: 'SPOKEDU LAB', body: '수업 콘텐츠를 탐색하고 준비부터 진행과 기록까지 연결하는 체육 지도자용 플랫폼입니다.', href: SPOKEDU_PATHS.subscription, action: 'SPOKEDU LAB 살펴보기', photo: { src: '/images/spokedu/subscription/library-program-cards-20261008-final.png', alt: 'SPOKEDU LAB 놀이체육 프로그램 탐색 화면과 활동별 콘텐츠 카드' }, icon: 'assignment' },
   ],
   showcases: [
     { number: '01', label: '교육 설계', title: ["수업 공간과 인원에 맞춰 활동을 구성합니다."], body: "아이의 현재 움직임과 교육 목표를 확인한 뒤 공간과 참여 인원에 맞춰 과제와 교구를 조정합니다.", tags: ['#발달수준고려', '#수업조건조정', '#맞춤형활동설계'], href: SPOKEDU_PATHS.education, action: '기관·학교 체육교육 알아보기', photo: { src: '/images/spokedu/복지관_민첩성 놀이체육.jpg', alt: '지도자가 콘 사이를 달리는 아동의 움직임을 지도하는 수업' } },

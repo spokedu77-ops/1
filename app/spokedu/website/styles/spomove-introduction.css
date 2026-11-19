@@ -1,0 +1,583 @@
+/* Recovered from the last local integration stylesheet after source corruption. */
+
+@font-face {
+  font-family: SPOMOVE Pretendard;
+  src: url(/fonts/pretendard/PretendardVariable.woff2)format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+.website-content .spmi {
+  color: #0b1c30;
+  background: #fff;
+  font-family: SPOMOVE Pretendard,sans-serif;
+}
+
+.website-content .spmi :is(h1,h2,h3,p,li,a,span,label,input,textarea,button,select) {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  font-family: inherit;
+}
+
+.website-content .spmi :is(h1,h2,h3,p,figure,ol,ul) {
+  margin: 0;
+}
+
+.website-content .spmi .spmi-container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 48px;
+}
+
+.website-content .spmi .spmi-section {
+  padding-block: 72px;
+  scroll-margin-top: 100px;
+}
+
+.website-content .spmi .spmi-split {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  align-items: center;
+  gap: 48px;
+  display: grid;
+}
+
+.website-content .spmi .spmi-hero {
+  color: #fff;
+  background: #0a1628;
+  padding-block: 56px 64px;
+}
+
+.website-content .spmi .spmi-badge {
+  color: #bfdbfe;
+  background: #1e3a5f80;
+  border: 1px solid #60a5fa66;
+  border-radius: 999px;
+  margin-bottom: 24px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  display: inline-flex;
+}
+
+.website-content .spmi h1 {
+  letter-spacing: -.035em;
+  font-size: 42px;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.website-content .spmi h1 span {
+  display: block;
+}
+
+.website-content .spmi h1 span:last-child {
+  color: #93c5fd;
+}
+
+.website-content .spmi .spmi-lead {
+  color: #e2e8f0;
+  margin-top: 24px;
+  font-size: 17px;
+  line-height: 28px;
+}
+
+.website-content .spmi .spmi-method {
+  color: #cbd5e1;
+  margin-top: 16px;
+  font-size: 15px;
+  line-height: 25px;
+}
+
+.website-content .spmi .spmi-actions {
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+  display: flex;
+}
+
+.website-content .spmi .spmi-button {
+  color: #fff;
+  text-align: center;
+  background: #2563eb;
+  border: 1px solid #0000;
+  border-radius: 999px;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: 13px 22px;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 22px;
+  text-decoration: none;
+  display: inline-flex;
+}
+
+.website-content .spmi .spmi-button:hover {
+  background: #1d4ed8;
+}
+
+.website-content .spmi .spmi-secondary {
+  background: 0 0;
+  border-color: #64748b;
+}
+
+.website-content .spmi .spmi-hero-photo {
+  background: #0f223e;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.website-content .spmi .spmi-hero-photo img {
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.website-content .spmi .spmi-hero-photo figcaption {
+  color: #e2e8f0;
+  padding: 12px 18px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.website-content .spmi .spmi-heading {
+  max-width: 800px;
+  margin-bottom: 32px;
+}
+
+.website-content .spmi .spmi-eyebrow {
+  color: #1d4ed8;
+  letter-spacing: .06em;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 20px;
+}
+
+.website-content .spmi h2 {
+  letter-spacing: -.025em;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 44px;
+}
+
+.website-content .spmi .spmi-heading>p:last-child:not(:first-child) {
+  color: #475569;
+  margin-top: 16px;
+  font-size: 16px;
+  line-height: 27px;
+}
+
+.website-content .spmi h3 {
+  letter-spacing: -.02em;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 30px;
+}
+
+.website-content .spmi p {
+  font-size: 16px;
+  line-height: 27px;
+}
+
+.website-content .spmi .spmi-flow,.website-content .spmi .spmi-levels {
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 24px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+}
+
+.website-content .spmi .spmi-flow>li,.website-content .spmi .spmi-levels>article {
+  background: #fff;
+  border: 1px solid #dce3ee;
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.website-content .spmi .spmi-step {
+  color: #1d4ed8;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 22px;
+  display: block;
+}
+
+.website-content .spmi .spmi-flow h3,.website-content .spmi .spmi-levels h3 {
+  margin-bottom: 12px;
+}
+
+.website-content .spmi .spmi-flow p,.website-content .spmi .spmi-levels p {
+  color: #475569;
+}
+
+.website-content .spmi .spmi-flow-evidence {
+  grid-template-columns: 280px minmax(0,1fr);
+  align-items: center;
+  gap: 32px;
+  margin-top: 32px;
+  display: grid;
+}
+
+.website-content .spmi .spmi-flow-evidence img {
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 12px;
+  width: 100%;
+  height: auto;
+}
+
+.website-content .spmi .spmi-note {
+  color: #475569;
+  margin-block: 24px;
+  font-size: 15px;
+  line-height: 26px;
+}
+
+.website-content .spmi .spmi-tint {
+  background: #f4f6fc;
+}
+
+.website-content .spmi .spmi-dark {
+  color: #fff;
+  background: #0a1628;
+}
+
+.website-content .spmi .spmi-dark .spmi-eyebrow {
+  color: #93c5fd;
+}
+
+.website-content .spmi .spmi-dark .spmi-heading>p:last-child {
+  color: #cbd5e1;
+}
+
+.website-content .spmi .spmi-examples {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 28px;
+  margin-bottom: 32px;
+  display: grid;
+}
+
+.website-content .spmi .spmi-example {
+  background: #10213b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.website-content .spmi .spmi-example figure {
+  background: #05070e;
+}
+
+.website-content .spmi .spmi-example img {
+  aspect-ratio: 16/9;
+  object-fit: contain;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.website-content .spmi .spmi-example-field img {
+  aspect-ratio: 3/4;
+  object-fit: contain;
+  max-height: 520px;
+}
+
+.website-content .spmi .spmi-example figcaption {
+  color: #cbd5e1;
+  background: #0a1628;
+  padding: 10px 20px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.website-content .spmi .spmi-example>div {
+  padding: 24px;
+}
+
+.website-content .spmi .spmi-example h3 {
+  margin-bottom: 8px;
+}
+
+.website-content .spmi .spmi-example p {
+  color: #cbd5e1;
+}
+
+.website-content .spmi .spmi-levels ul,.website-content .spmi .spmi-conditions {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+}
+
+.website-content .spmi .spmi-levels ul li {
+  color: #1d4ed8;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.website-content .spmi .spmi-levels ul li+li:before {
+  content: "· ";
+}
+
+.website-content .spmi .spmi-conditions li {
+  background: #eef2ff;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.website-content .spmi .web-spomat-product {
+  box-shadow: none;
+  background: 0 0;
+  border: 0;
+  margin: 0;
+}
+
+.website-content .spmi .web-spomat-product>div {
+  background: #fff;
+  border-radius: 16px;
+  justify-content: center;
+  padding: 32px;
+  display: flex;
+}
+
+.website-content .spmi .web-spomat-product img {
+  object-fit: contain;
+  width: 100%;
+  max-width: 322px;
+  height: auto;
+  display: block;
+}
+
+.website-content .spmi .web-spomat-product figcaption {
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 0;
+  font-size: 14px;
+  line-height: 22px;
+  display: flex;
+}
+
+.website-content .spmi .spmi-features {
+  color: #334155;
+  padding-left: 20px;
+  font-size: 16px;
+  line-height: 28px;
+}
+
+.website-content .spmi .spmi-applications {
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  align-items: start;
+  gap: 24px;
+  display: grid;
+}
+
+.website-content .spmi .spmi-applications article {
+  border: 1px solid #dce3ee;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.website-content .spmi .spmi-applications img {
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.website-content .spmi .spmi-applications article>div {
+  padding: 24px;
+}
+
+.website-content .spmi .spmi-applications h3 {
+  margin-bottom: 12px;
+}
+
+.website-content .spmi .spmi-applications p {
+  color: #475569;
+}
+
+.website-content .spmi .spmi-text-link {
+  color: #1d4ed8;
+  align-items: center;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
+  display: inline-flex;
+}
+
+.website-content .spmi .spmi-cases .web-case-card {
+  box-shadow: none;
+  border: 1px solid #dce3ee;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  display: grid;
+}
+
+.website-content .spmi .spmi-cases .web-case-image {
+  aspect-ratio: 4/3;
+  display: block;
+}
+
+.website-content .spmi .spmi-cases img {
+  object-fit: cover;
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+}
+
+.website-content .spmi .spmi-cases .web-case-body {
+  padding: 32px;
+}
+
+.website-content .spmi .spmi-cases .web-case-meta {
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.website-content .spmi .spmi-lab-image {
+  background: #f4f6fc;
+  border: 1px solid #dce3ee;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.website-content .spmi .spmi-lab-image img {
+  object-fit: contain;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.website-content .spmi .spmi-consult {
+  color: #fff;
+  background: #0a1628;
+  padding-block: 64px;
+}
+
+.website-content .spmi .spmi-consult-grid {
+  grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr);
+  align-items: start;
+  gap: 48px;
+  display: grid;
+}
+
+.website-content .spmi .spmi-consult-copy {
+  padding-top: 24px;
+}
+
+.website-content .spmi .spmi-consult-copy .spmi-eyebrow,.website-content .spmi .spmi-consult-copy .spmi-text-link {
+  color: #93c5fd;
+}
+
+.website-content .spmi .spmi-consult-copy .spmi-heading>p:last-child,.website-content .spmi .spmi-consult-copy .spmi-note {
+  color: #cbd5e1;
+}
+
+.website-content .spmi #inquiry {
+  color: #0f172a;
+  padding: 0;
+  scroll-margin-top: 100px;
+}
+
+.website-content .spmi #inquiry>div {
+  max-width: none;
+  padding: 0;
+}
+
+.website-content .spmi :is(a,button,input,textarea,select,summary):focus-visible {
+  outline-offset: 3px;
+  outline: 3px solid #60a5fa;
+}
+
+@media (max-width:1023px) {
+  .website-content .spmi .spmi-container {
+    padding-inline: 24px;
+  }
+  .website-content .spmi .spmi-split,.website-content .spmi .spmi-consult-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .website-content .spmi .spmi-hero-photo {
+    max-width: 720px;
+  }
+  .website-content .spmi .spmi-flow,.website-content .spmi .spmi-levels {
+    gap: 16px;
+  }
+  .website-content .spmi .spmi-flow>li,.website-content .spmi .spmi-levels>article {
+    padding: 20px;
+  }
+  .website-content .spmi .spmi-applications {
+    gap: 16px;
+  }
+  .website-content .spmi .spmi-applications article>div {
+    padding: 20px;
+  }
+}
+
+@media (max-width:639px) {
+  .website-content .spmi .spmi-section {
+    padding-block: 48px;
+  }
+  .website-content .spmi .spmi-hero {
+    padding-block: 32px 40px;
+  }
+  .website-content .spmi h1 {
+    letter-spacing: -.035em;
+    font-size: 28px;
+    line-height: 1.4;
+  }
+  .website-content .spmi h2 {
+    font-size: 26px;
+    line-height: 36px;
+  }
+  .website-content .spmi h3 {
+    font-size: 21px;
+    line-height: 29px;
+  }
+  .website-content .spmi .spmi-lead {
+    margin-top: 20px;
+    font-size: 16px;
+    line-height: 27px;
+  }
+  .website-content .spmi .spmi-actions {
+    flex-direction: column;
+  }
+  .website-content .spmi .spmi-actions>a {
+    width: 100%;
+  }
+  .website-content .spmi .spmi-flow,.website-content .spmi .spmi-levels,.website-content .spmi .spmi-examples,.website-content .spmi .spmi-applications,.website-content .spmi .spmi-flow-evidence {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .website-content .spmi .spmi-flow-evidence img {
+    max-width: 420px;
+  }
+  .website-content .spmi .spmi-heading {
+    margin-bottom: 24px;
+  }
+  .website-content .spmi .spmi-example>div,.website-content .spmi .spmi-applications article>div {
+    padding: 20px;
+  }
+  .website-content .spmi .spmi-cases .web-case-card {
+    display: flex;
+  }
+  .website-content .spmi .spmi-cases .web-case-body {
+    padding: 24px;
+  }
+  .website-content .spmi .spmi-consult {
+    padding-block: 48px;
+  }
+}

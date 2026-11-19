@@ -13,6 +13,7 @@ import { homeRefinement } from '../data/home';
 import '../styles/home-refinement.css';
 
 export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug => legacyRecordCards().filter(item => item.slug === slug)) }: { stories?: RecordCard[] } = {}) {
+  const renderStory = (record: RecordCard) => <div className={`home-v2-featured-card${record.thumbnailSrc ? '' : ' home-v2-case-without-photo'}`} key={record.slug}><CaseCard record={record} /></div>;
   return <main id="main-content" className="website-page web-stitch web-home home-v2">
     <HomeStructuredData heroSrc={homeRefinement.hero.src} />
     <div className="flex flex-col w-full">
@@ -20,7 +21,7 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
         <div className="home-v2-container home-v2-hero-content">
           <HeroBadge>체육교육 전문 솔루션</HeroBadge>
           <h1 className="web-home-headline"><span>아이와 현장의 조건에 맞춰</span><span>움직이고 싶게 만드는</span><span>체육수업을 설계합니다.</span></h1>
-          <p className="home-v2-lead">{homeRefinement.lead[0]}<br />{homeRefinement.lead[1]}</p>
+          <p className="home-v2-lead">{homeRefinement.lead[0]}{' '}{homeRefinement.lead[1]}</p>
           <div className="home-v2-actions"><Link className="home-v2-button" href={paths.contact}>수업 상담하기<ArrowRight size={18} aria-hidden /></Link><Link className="home-v2-button home-v2-secondary" href="#service-paths">수업 유형 살펴보기</Link></div>
           <figure className="home-v2-hero-frame"><div className="home-v2-hero-photo">
             <Image unoptimized loading="eager" src={homeRefinement.hero.src} alt={homeRefinement.hero.alt} width={2400} height={1800} fetchPriority="high" />
@@ -34,10 +35,10 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
         <OperatingMetrics />
       </div></section>
       <section id="service-paths" className="home-v2-services"><div className="home-v2-container">
-        <div className="home-v2-section-heading"><p className="home-v2-eyebrow">OUR SERVICES</p><h2>무엇을 찾고 계신가요?</h2><p>교육 대상과 이용 목적에 맞는 SPOKEDU의 서비스를 확인해 보세요.</p></div>
+        <div className="home-v2-section-heading"><p className="home-v2-eyebrow">SPOKEDU SERVICES</p><h2>아이와 현장에 맞는 체육수업을 만나보세요.</h2><p>학교·기관 수업부터 개인·소그룹 지도와 지도자용 플랫폼까지 목적에 맞는 서비스를 확인할 수 있습니다.</p></div>
         <div className="web-home-service-grid">{homeRefinement.services.map(service => <article className="web-home-service-card" key={service.title}>
           <figure className={`home-v2-service-photo${service.href === paths.subscription ? ' home-v2-service-screen' : ''}`}><Image unoptimized src={service.photo.src} alt={service.photo.alt} width={900} height={600} loading="lazy" /></figure>
-          <span className="home-v2-pill">{service.label}</span><h3>{service.title}</h3><p>{service.body}</p><Link className="home-v2-link" href={service.href}>{service.action}<ArrowRight size={18} aria-hidden /></Link>
+          <div className="home-v2-service-copy"><span className="home-v2-pill">{service.label}</span><h3>{service.title}</h3><p>{service.body}</p><Link className="home-v2-link" href={service.href}>{service.action}<ArrowRight size={18} aria-hidden /></Link></div>
         </article>)}</div>
         <div className="home-v2-spomove"><div><p className="home-v2-pill">SPOKEDU 자체 개발 프로그램</p><div className="home-v2-spomove-title"><h3>SPOMOVE</h3><strong>시지각·인지·운동을 연결하는 움직임 교육</strong></div><p>화면에 제시되는 시각정보를 인식하고 적절한 반응을 선택해 신체 움직임으로 수행하는 SPOKEDU의 자체 개발 교육 프로그램입니다.</p></div><Link href={paths.spomove} className="home-v2-button">SPOMOVE 프로그램 상세 보기<ArrowRight size={18} aria-hidden /></Link></div>
       </div></section>
@@ -49,7 +50,7 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
           <figure className={i === 2 ? 'home-v2-lab-frame' : 'home-v2-showcase-photo'}>
             {i === 2 && <div className="home-v2-browser"><span className="home-v2-browser-dots" aria-hidden="true"><i /><i /><i /></span><span><LockKeyhole size={12} aria-hidden />SPOKEDU LAB</span><span className="home-v2-pill">지도자 전용</span></div>}
             <Image unoptimized src={item.photo.src} alt={item.photo.alt} loading="lazy" width={i === 2 ? 1536 : 900} height={i === 2 ? 1004 : 1200} />
-            {i < 2 && <><span className="home-v2-photo-badge">{i === 0 ? '실제 체육수업 현장' : '시지각 움직임·맞춤형 체육'}</span><figcaption className="home-v2-photo-caption"><span><BadgeCheck size={18} aria-hidden />{i === 0 ? '교구를 활용한 움직임·민첩성 놀이체육' : '참여 수준에 맞춰 조정하는 실제 수업'}</span><small>FIELD RECORD #{item.number}</small></figcaption></>}
+            {i < 2 && <figcaption className="home-v2-photo-caption"><span><BadgeCheck size={18} aria-hidden />{i === 0 ? '교구를 활용한 움직임·민첩성 놀이체육' : '참여 수준에 맞춰 조정하는 실제 수업'}</span></figcaption>}
           </figure>
         </article>)}
       </div></section>
@@ -65,7 +66,10 @@ export default function HomePage({ stories = MIGRATED_RECORD_SLUGS.flatMap(slug 
             <Link className="text-primary-container font-label-md text-label-md" href={paths.records}>수업 사례 전체 보기 →</Link>
           </div>
           <div className="web-home-cases">
-          <div className="home-v2-featured-grid">{stories.map(record => <div className={`home-v2-featured-card${record.thumbnailSrc ? '' : ' home-v2-case-without-photo'}`} key={record.slug}><CaseCard record={record} /></div>)}</div>
+          {stories.length > 0 ? <div className={`home-v2-featured-grid${stories.length === 1 ? ' home-v2-featured-single' : ''}`}>
+            {renderStory(stories[0])}
+            {stories.length > 1 && <div className="home-v2-secondary-cases">{stories.slice(1).map(renderStory)}</div>}
+          </div> : <p className="home-v2-empty-cases">공개된 대표 사례가 없습니다.</p>}
           </div>
         </div>
       </section>

@@ -9,8 +9,8 @@ export function AboutPeopleCards() {
           <Image unoptimized src={person.photo} alt={`${person.name} ${person.role}`} width={1200} height={1500} sizes="(max-width: 767px) calc(100vw - 88px), (max-width: 1279px) 30vw, 350px" loading="lazy" style={{ objectPosition: person.photoObjectPosition, transform: `scale(${person.photoScale})` }} />
         </div>
         <div className="web-about-person-info">
-          <p className="web-about-person-role">{person.role}</p>
           <h3>{person.name}</h3>
+          <p className="web-about-person-role">{person.role}</p>
           <p className="web-about-person-degree">{person.degree}</p>
           <p className="web-about-person-responsibility">{person.mainRole}</p>
           <details className="web-about-person-details">

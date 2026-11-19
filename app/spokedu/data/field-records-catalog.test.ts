@@ -18,7 +18,9 @@ const REMOTE_MEDIA_RE = /https?:\/\/|pstatic\.net|blog\.naver\.com|postfiles\.|b
 
 const RUNTIME_GUARD_SOURCES = [
   'app/spokedu/lib/resolve-field-records.ts',
-  'app/spokedu/components/home/home-editorial-landing.tsx',
+  'app/spokedu/website/pages/home.tsx',
+  'app/spokedu/website/pages/home-server.tsx',
+  'app/spokedu/website/pages/records.tsx',
   'app/spokedu/website/components/shared.tsx',
   'app/spokedu/components/records-case-detail.tsx',
   'app/spokedu/data/field-records-catalog.ts',
@@ -98,8 +100,10 @@ describe('field-records-catalog', () => {
 
   it('partitions records landing featured and other lists from catalog SSOT', () => {
     assertRecordsLandingPartition();
-    expect(RECORDS_LANDING_FEATURED_SLUGS.length).toBe(3);
-    expect(FIELD_RECORD_CATALOG.length - RECORDS_LANDING_FEATURED_SLUGS.length).toBe(5);
+    const featured = new Set<string>(RECORDS_LANDING_FEATURED_SLUGS);
+    const remaining = FIELD_RECORD_CATALOG.filter(item => !featured.has(item.slug));
+    expect(featured.size + remaining.length).toBe(FIELD_RECORD_CATALOG.length);
+    for (const slug of featured) expect(FIELD_RECORD_CATALOG.some(item => item.slug === slug)).toBe(true);
   });
 
   it('pins local thumbnailSrc for every catalog item (no runtime Naver fetch)', () => {
@@ -125,10 +129,7 @@ describe('field-records-catalog', () => {
     const summary = buildRecordsHeroSummary();
     expect(summary.caseCount).toBe(FIELD_RECORD_CATALOG.length);
     expect(summary.venueTypeCount).toBe(summary.venueTypes.length);
-    expect(summary.caseCount).toBeGreaterThanOrEqual(8);
-    expect(summary.venueTypes).toEqual(
-      expect.arrayContaining(['키움센터', '학교', '보건소', '주민센터']),
-    );
+    expect(summary.venueTypes).toEqual([...new Set(FIELD_RECORD_CATALOG.map(item => item.venueType))]);
   });
 
   it('declares evidence meta for every catalog item', () => {

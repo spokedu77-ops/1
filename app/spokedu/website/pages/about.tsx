@@ -1,7 +1,7 @@
 import { aboutPage } from '../../data/about-page';
 import { AboutShowcase } from '../components/AboutShowcase';
 import { AboutPeople } from '../components/content-sections';
-import { PageCTA, OperatingMetrics } from '../components/content-sections';
+import { PageCTA } from '../components/content-sections';
 
 export default function AboutPage() {
   return (<main className="website-page web-stitch web-about-page w-full  bg-surface" id="main-content"><div className="flex flex-col w-full">
@@ -15,8 +15,6 @@ export default function AboutPage() {
 </section>
 
 <AboutShowcase />
-
-<section id="about-metrics" className="web-about-section web-about-metrics" aria-label="SPOKEDU 공식 운영 실적"><div className="web-about-container"><p className="web-about-eyebrow">SPOKEDU 현장 경험</p><h2>현장에서 쌓아온 수업 경험</h2><OperatingMetrics /></div></section>
 
 <section className="web-about-team w-full bg-surface-container-lowest" id="team">
 <div className="max-w-7xl mx-auto px-6 lg:px-12">
