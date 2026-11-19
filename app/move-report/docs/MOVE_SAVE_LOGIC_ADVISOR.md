@@ -1,4 +1,6 @@
-# MOVE 리포트「저장」로직 정리 (자문용)
+# MOVE 리포트「저장」로직 참고 (구현 코드 우선)
+
+이 문서는 구현 참고이며 별도 작업 지시서나 고정 요구사항이 아니다. 현재 동작은 아래 연결된 코드에서 확인한다. 과거 흐름 설명을 사용자 요청보다 우선하지 않는다.
 
 ## 목표
 
@@ -8,7 +10,7 @@
 ## 데이터·UI 소스
 
 - 캡처 대상 DOM: [`../components/ShareResultCard.tsx`](../components/ShareResultCard.tsx)를 화면 밖(`opacity:0`, `fixed`)에 렌더링하고 ref로 잡음 — [`../components/ShareAndCollect.tsx`](../components/ShareAndCollect.tsx) 하단 `cardRef`.
-- PNG 생성: [`../lib/shareCard.ts`](../lib/shareCard.ts)의 `makeShareCardBlob` → **html2canvas**로 `canvas` → `toBlob('image/png')` (실패 시 `toDataURL` 폴백).
+- PNG 생성: [`../lib/shareCard.ts`](../lib/shareCard.ts)의 `makeShareCardBlob` → **html-to-image**의 `toBlob`. 과거 html2canvas 경로는 현재 사용하지 않는다. 구체적인 재시도·실패 처리는 코드가 기준이다.
 
 ## 현재「앨범에 저장」버튼 동작 (고정안)
 

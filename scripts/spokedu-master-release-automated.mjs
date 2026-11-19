@@ -105,7 +105,9 @@ function main() {
   });
 
   console.log('[release-automated] running verification-report...');
-  const verification = runNode('scripts/spokedu-master-commercial-verification-report.mjs', [BASE]);
+  const verification = productionBuild.ok
+    ? runNode('scripts/spokedu-master-commercial-verification-report.mjs', [BASE, '--build-already-passed'])
+    : { ok: false, exitCode: productionBuild.exitCode, durationMs: 0, stdout: '', stderr: 'Verification not run: production build failed in this invocation.' };
   steps.push({
     id: 'verification_report',
     ok: verification.ok,

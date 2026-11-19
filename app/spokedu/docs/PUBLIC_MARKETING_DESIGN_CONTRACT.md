@@ -2,6 +2,8 @@
 
 Status: implementation authorized by the user's canonical Stitch restoration request on 2026-11-06. Git publishing and production deployment are not authorized.
 
+Authority maintenance (2026-11-20): the status above records that request's scope and authorization, not a permanent ban on later work. The user's newer explicit request/reference governs its affected scope. This document must not reinstate an older page composition, photo mapping, font or CTA against a subsequent approved change. Runtime navigation/route values remain code-owned; dated QA and source comparisons are evidence, not standing work instructions.
+
 ## Reference and scope
 
 The approved visual reference is the original code.html AND screen.png in

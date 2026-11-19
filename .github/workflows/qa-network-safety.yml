@@ -27,8 +27,7 @@ jobs:
             'scripts/spokedu-home-commercial-qa.mjs',
             'scripts/spokedu-home-editorial-qa.mjs',
             'scripts/spokedu-home-launch-closure.mjs',
-            'scripts/spokedu-public-shell-qa.mjs',
-            'scripts/spokedu-public-typography-qa.mjs',
+            'scripts/lib/spokedu-public-qa.mjs',
             'docs/design/phase-2a/run-phase2a-audit.mjs',
           ];
           for (const path of paths) {
@@ -37,6 +36,12 @@ jobs:
               throw new Error(`QA guard missing from ${path}`);
             }
             if (/\?\?\s*['"`]https:\/\/(?:www\.)?spokedu\.kr/.test(code)) throw new Error(`Production default in ${path}`);
+          }
+          for (const path of ['scripts/spokedu-public-shell-qa.mjs', 'scripts/spokedu-public-typography-qa.mjs']) {
+            const code = readFileSync(path, 'utf8');
+            if (!code.includes("from './lib/spokedu-public-qa.mjs'") || !code.includes('runPublicQa()')) {
+              throw new Error(`QA wrapper no longer delegates to guarded runner: ${path}`);
+            }
           }
           console.log('QA guard presence and defaults: PASS');
           EOF

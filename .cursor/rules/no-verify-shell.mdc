@@ -1,13 +1,8 @@
 ---
-description: 검증용 셸 명령(npm, tsc 등) 실행 금지 — 시간 낭비 방지
+description: 검증 실행 권한은 AGENTS.md, 검사 선택은 docs/TESTING.md를 따름
 alwaysApply: true
 ---
 
-# 검증용 셸 명령 사용 금지
+# Verification pointer
 
-- **에이전트는 검증·빌드만을 위한 터미널 명령을 실행하지 않는다.**
-  예: `npm run lint`, `npm test`, `npm run build`, `npx tsc`, `eslint`, 임의의 `npm`/`npx` 검증 등.
-- 예외는 `AGENTS.md` Verification과 같다. 다음 중 하나일 때만 허용한다:
-  - 사용자가 **명시적으로** 해당 명령 실행을 요청한 경우
-  - 승인된 Sprint Brief가 해당 검증을 **명시적으로** 요구하는 경우
-- 코드 품질 확인은 **파일 읽기, 린트/진단 도구(ReadLints 등), 정적 검토**로 대체한다.
+Follow `/AGENTS.md` Verification and `/docs/TESTING.md`. This file adds no independent prohibition, permission, or mandatory full-suite gate. The user's current explicit authorization takes precedence over historical reports and commands.

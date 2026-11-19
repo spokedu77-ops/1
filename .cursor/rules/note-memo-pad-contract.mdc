@@ -1,9 +1,0 @@
----
-description: 구 admin/note 메모장 계약 — 폐기. noteLiteInvariants가 SSOT
-globs: app/admin/note/**/*
-alwaysApply: false
----
-
-# 폐기
-
-`noteMemoPadContract` / op-log 메모장 계약은 제거되었다. 코드 SSOT: `app/lib/note/noteLiteInvariants.ts`.

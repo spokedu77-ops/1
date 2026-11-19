@@ -14,6 +14,14 @@ For any SPOKEDU MASTER task, enter through this file, then read the canonical do
 
 Code owns executable truth where the Product Contract identifies a code SSOT. Do not copy pricing, entitlement, navigation, route, or persistence truth into prose.
 
+## Current request and historical material
+
+- The user's current explicit request governs the approved scope. An older rule, test, report, work-log entry, or completed sprint is not a veto over that request. Preserve protected data/security/product invariants; do not preserve obsolete presentation or implementation by accident.
+- Read the current authority for the affected area only. Visual System and Surface Matrix apply to UI work; historical QA entries are evidence of a dated run, not today's requirements or a work gate.
+- Archived/superseded documents, source snapshots, previous PASS counts and generated QA reports are reference material only. Do not load them as standing instructions or execute their commands automatically.
+- When a test contradicts an approved change, trace the behavior it protects. Update or remove obsolete assertions; never change the product merely to satisfy an old CSS string, component name, layout or fixed catalog count.
+- Do not ask the user to approve an already authorized action again because an old document says otherwise. If an actual protected invariant is at issue, identify the exact conflict.
+
 Think globally. Decide explicitly. Implement only approved scope.
 
 Within an approved scope, resolve decisions in this order:
@@ -56,6 +64,8 @@ SPOKEDU image work and image-related visual QA must run against the local enviro
 An approved implementation scope may authorize the verification it needs, including targeted unit or contract tests, TypeScript checks, lint for changed files, rendered QA, and responsive screenshot comparison. Keep verification targeted to that approval.
 
 Static verification is not a rendered visual PASS. A visual PASS requires populated desktop and mobile review and, when a Target Reference exists, side-by-side review. Rendered visual status is governed by the Visual System and Surface Matrix.
+
+Current test/QA maintenance policy: [docs/TESTING.md](docs/TESTING.md). Choose checks for the changed behavior. Do not run a release/payment/restore QA chain for a routine UI or documentation change. Report passed, failed, skipped and unverified scope separately; old reports and artificial scores are not current evidence.
 
 ## AI work log (local integration)
 

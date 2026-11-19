@@ -1,30 +1,13 @@
 ---
-description: SPOKEDU public website SSOT — brand, page jobs, nav, CTA, wrap, LAB (not customer MASTER label).
+description: Public website adapter ? current request, current contracts and code-owned navigation
 globs: app/spokedu/**,app/(spokedu-public)/**,app/info/**,app/sitemap.ts,next.config.ts
 alwaysApply: false
 ---
 
-# SPOKEDU public website
+# Public website entry
 
-Full contract: [docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md](docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md)
+Follow `/AGENTS.md` and the user's current approved request. Read `/docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md` for product meaning and `/app/spokedu/docs/PUBLIC_MARKETING_DESIGN_CONTRACT.md` for the applicable approved visual reference. A newer explicit reference/request supersedes older visual composition within its scope.
 
-## Do
+Navigation labels/order and header/footer actions are owned by `app/spokedu/data/site.ts`; canonical route values by `app/spokedu/data/public-routes.ts`; route compatibility by `next.config.ts`. Do not restore a historical menu or CTA from this adapter or an old QA script. Page structure, CSS classes and internal component names are not protected behavior.
 
-- One brand journey, not per-page decoration.
-- Two purchase axes: 체육교육 (`/education`) and **SPOKEDU LAB** 구독 (`/spokedu-lab`). SPOMOVE = content/IP. SPOMAT = execution tool.
-- **공식 구독 브랜드:** `SPOKEDU LAB`. **정본 URL:** `/spokedu-lab`. `/subscription`·`/curriculum` = 레거시 리다이렉트 only.
-- MASTER는 내부 호환·결제·실행 코드명일 수 있으나 **고객-facing 카피·헤더·푸터에 MASTER 브랜드 노출 금지.**
-- Header: 체육교육 → SPOKEDU LAB → SPOMOVE → 운영 사례 + `[상담하기]`. Do not add About / SPOMAT / Partners / 개인·소그룹 as primary nav.
-- Institution canonical: `/education` (하단 `DispatchProposalForm`, `#contact`). Legacy `/info/curriculum` → `/education?program=spomove#contact` (query preserved).
-- Private canonical: `/private#apply`. Legacy `/info/private` → redirect (no fake live counters).
-- `/info/gym` 강동 랜딩 유지; leads → internal API → `consultations` (Sheets optional server sync).
-- Korean display = keep-all + strict + balance. Body = keep-all + strict + pretty.
-- CTA grammar and motion tokens match Home. Hover only `@media (hover:hover) and (pointer:fine)`.
-- 운영 사례 = `FIELD_RECORD_CATALOG` SSOT. Unverified counts, 100% guarantees, causal claims: forbidden.
-
-## Do not
-
-- Touch MASTER payment/auth runtime while doing public-only remediation (except shared business footer fields already in contract tests).
-- Redesign Education structure away from legacy `/info/dispatch` content contract without PO.
-- Commit, push, branch, reset, restore, revert unless the user names that action.
-- Change unrelated working-tree files.
+Preserve real content, acquisition/consent and existing handoffs. Do not change LAB authentication, entitlement, payment or customer-data persistence during public-only work. Never invent operating metrics, student outcomes or staff. Git/deployment authority and check selection come from AGENTS.md and docs/TESTING.md; this adapter adds no separate work gate.

@@ -1,9 +1,0 @@
----
-description: 구 admin/note 편집 계약 — 폐기. 라이트 메모장만 유효
-globs: app/admin/note/**/*
-alwaysApply: false
----
-
-# 폐기
-
-C1–C6 구 에디터 계약은 코드와 함께 제거되었다. `/admin/note`는 라이트 메모장만 따른다.

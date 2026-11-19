@@ -1,9 +1,0 @@
----
-description: 구 admin/note 동기화 규칙 — 폐기. 라이트 메모장만 유효
-globs: app/admin/note/**/*
-alwaysApply: false
----
-
-# 폐기
-
-구 Notion 에디터 동기화 파이프라인은 제거되었다. `/admin/note`는 `app/lib/note/noteLiteInvariants.ts`와 `_lite`만 따른다.

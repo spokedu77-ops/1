@@ -65,6 +65,7 @@ qa-screenshots/
 
 # Temporary local artifacts
 .tmp/
+/.tmp-eslint-app.json
 /tmp/
 # High-res bake originals (web derivatives only go to public/)
 /assets-source/**

@@ -6,6 +6,6 @@ alwaysApply: false
 
 # admin/note 배포 안전
 
-사용자가 배포·Vercel·build를 명시하면 그때만 빌드 검증을 한다.
+검증과 Git/배포 권한은 `/AGENTS.md`를 따른다. 별도 노트 전용 빌드 허용/금지 규칙을 추가하지 않는다.
 
 라이트 경로: `app/admin/note/page.tsx`, `app/admin/note/_lite`, `app/api/admin/note/documents`, `app/api/admin/note/lite`.

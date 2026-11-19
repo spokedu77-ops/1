@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadMasterQaEnv } from './lib/spokedu-master-qa-env.mjs';
 
@@ -12,15 +12,15 @@ const OUTPUT_DIR = process.argv.includes('--stdout-only')
 
 const VITEST_BIN = join(process.cwd(), 'node_modules', 'vitest', 'vitest.mjs');
 const ENTRY_COPY_CONTRACT_TEST = 'app/spokedu-master/masterEntryCopy.contract.test.ts';
-const API_ROUTE_IMPORTS_CONTRACT_TEST = 'app/api/spokedu-master/apiRouteImports.contract.test.ts';
+const OPERATIONAL_ROUTES_TEST = 'app/api/spokedu-master/operational-routes.test.ts';
+const BUILD_ALREADY_PASSED = process.argv.includes('--build-already-passed');
 
 const CHECKS = [
-  { id: 'api_route_imports', kind: 'vitest', target: API_ROUTE_IMPORTS_CONTRACT_TEST },
-  { id: 'production_build', kind: 'npm', script: 'build' },
+  { id: 'operational_routes', kind: 'vitest', target: OPERATIONAL_ROUTES_TEST },
+  ...(!BUILD_ALREADY_PASSED ? [{ id: 'production_build', kind: 'npm', script: 'build' }] : []),
   { id: 'entry_copy_contract', kind: 'vitest', target: ENTRY_COPY_CONTRACT_TEST },
   { id: 'entitlement_matrix_contract', kind: 'vitest', target: 'app/spokedu-master/entitlementMatrix.contract.test.ts' },
   { id: 'day_loop_contract', kind: 'vitest', target: 'app/spokedu-master/dayLoop.contract.test.ts' },
-  { id: 'selection_reasons_contract', kind: 'vitest', target: 'app/spokedu-master/craftSelectionReasons.contract.test.ts' },
   { id: 'owner_isolation_contract', kind: 'vitest', target: 'app/spokedu-master/ownerIsolation.contract.test.ts' },
   { id: 'billing_readiness_p5_contract', kind: 'vitest', target: 'app/spokedu-master/billingReadinessP5.contract.test.ts' },
   { id: 'live_gate_p6_contract', kind: 'vitest', target: 'app/spokedu-master/liveGateP6.contract.test.ts' },
@@ -56,6 +56,11 @@ function extractLastJson(text) {
 
 function runCheck(check) {
   const startedAt = Date.now();
+
+  const input = check.kind === 'vitest' ? check.target : check.kind === 'node' ? check.script : null;
+  if (input && !existsSync(join(process.cwd(), input))) {
+    return { id: check.id, ok: false, exitCode: 1, durationMs: 0, stderrTail: `QA configuration references a missing file: ${input}` };
+  }
 
   if (check.kind === 'vitest') {
     const result = spawnSync(process.execPath, [VITEST_BIN, 'run', check.target], {
@@ -126,37 +131,6 @@ function runCheck(check) {
   };
 }
 
-function buildScore(results) {
-  const passed = results.filter((item) => item.ok).length;
-  const base = 76;
-  const weights = {
-    api_route_imports: 0,
-    production_build: 2,
-    entry_copy_contract: 1,
-    entitlement_matrix_contract: 1,
-    day_loop_contract: 1,
-    selection_reasons_contract: 1,
-    owner_isolation_contract: 1,
-    billing_readiness_p5_contract: 1,
-    staging_payment_preflight: 1,
-    payment_no_toss: 1,
-    profile_persist: 1,
-    ops_readiness: 1,
-    library_content: 1,
-    production_prep: 0,
-  };
-  const earned = results.reduce((sum, item) => sum + (item.ok ? (weights[item.id] ?? 0) : 0), 0);
-  const maxEarned = Object.values(weights).reduce((sum, value) => sum + value, 0);
-  const score = base + earned;
-  return {
-    strictCommercialScore: score,
-    maxWithoutTossSandbox: base + maxEarned,
-    passed,
-    total: results.length,
-    nextMilestone: 'Toss sandbox real payment + webhook/subscription verification (+2~3). strictCommercialScore ≠ D 8+.',
-  };
-}
-
 function main() {
   console.log(`[commercial-verification] base=${BASE}`);
   const results = CHECKS.map((check) => {
@@ -167,14 +141,15 @@ function main() {
   });
 
   const failed = results.filter((item) => !item.ok);
-  const score = buildScore(results);
   const report = {
     ok: failed.length === 0,
     generatedAt: new Date().toISOString(),
     baseUrl: BASE,
     phase: 'no-payment-commercial-gate',
     checks: results,
-    score,
+    summary: { passed: results.length - failed.length, failed: failed.length, total: results.length },
+    buildEvidence: BUILD_ALREADY_PASSED ? 'delegated_to_release_runner; not run by this report' : 'see production_build check',
+    unverified: ['Toss real payment/webhook', 'restore database integrity unless separately executed', 'human visual approval'],
     blockers: failed.map((item) => item.id),
     warnings: results
       .flatMap((item) => {

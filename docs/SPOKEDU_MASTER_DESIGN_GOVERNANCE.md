@@ -26,10 +26,10 @@ Canonical entry order is `AGENTS.md` → Product Contract → Visual System → 
 | `docs/SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md` | POINTER | Superseded decision pointer |
 | `docs/SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md` | HISTORICAL EVIDENCE | Product audit evidence, not authority |
 | `.cursor/rules/spokedu-master-product-governance.mdc` | KEEP / ENFORCEMENT | Points to repository entry and canonical contracts |
-| `.cursor/rules/spokedu-master-work-principles.mdc` | POINTER | No local philosophy |
-| `.cursor/rules/spokedu-master-cta-unity.mdc` | POINTER | No local CTA grammar |
 | `.cursor/rules/preserve-existing-behavior.mdc` | NARROW / ENFORCEMENT | Protects behavior and invariants, not visual implementation |
 | `.cursor/rules/no-verify-shell.mdc` | KEEP | Verification guardrail |
+
+The duplicate work-principles/CTA adapters and three retired Note-contract adapters were removed on 2026-11-20. AGENTS.md, the single MASTER adapter, and the scoped Note data-preservation rule own entry guidance. Historical inventory entries are not instructions to recreate removed rules.
 
 Archived audits and static tests cannot declare rendered visual PASS. Rendered status belongs only in the Surface Matrix and requires the evidence defined by the Visual System. A status is a QA ledger entry, never a work gate.
 

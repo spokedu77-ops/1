@@ -1,7 +1,7 @@
 ---
 description: admin/note 라이트 메모장 — 본문·순서 침묵 유실 금지
 globs: app/admin/note/**/*,app/lib/note/noteLiteInvariants.ts,app/api/admin/note/**
-alwaysApply: true
+alwaysApply: false
 ---
 
 # admin/note — 데이터 보존

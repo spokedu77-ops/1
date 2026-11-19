@@ -1,12 +1,12 @@
 ---
-description: 수업·세션 관리 기본 틀 및 연기/그룹 플로우 수정 금지
+description: 수업·세션 변경 시 승인 범위와 데이터·상태 전이 보존
 globs: app/admin/classes-shared/**,app/admin/classes/**,app/admin/classes-v2/**,app/api/admin/teachers-classes/**,app/api/admin/postpone-notices/**,app/api/sessions/auto-finish/route.ts
 alwaysApply: false
 ---
 
-# 수업·세션 관리 핵심 로직 수정 금지
+# 수업·세션 변경 범위
 
 - **대상**: admin 수업 관리(classes), 세션(sessions) CRUD, 연기/복구(handlePostponeCascade, handleUndoPostpone), 그룹(group_id) 관련 플로우 및 훅(useClassManagement 등).
-- **원칙**: 위 영역의 기본 틀·플로우·데이터 구조는 리팩터링하거나 “개선” 목적으로 건드리지 않는다.
-- **예외**: 사용자가 명시적으로 요청한 버그 수정만 해당 파일에서 **최소 변경**으로 수행한다. 이때 동작만 고치고, 구조 변경·타입 대규모 수정·추가 기능은 하지 않는다.
-- **데이터 이슈**: “그룹 정보가 없습니다” 등 DB 데이터(group_id NULL 등) 문제는 코드 변경 대신 SQL/데이터 보정으로 해결하는 것을 우선한다.
+- 사용자가 승인한 기능·UI·버그 수정·구조 개선은 그 범위에서 수행한다. 과거 구현 형태나 이 파일 이름을 이유로 금지하지 않는다.
+- 기존 고객 데이터, 소유자/기관 격리, 권한, 연기/복구와 그룹의 의미를 보존한다. MASTER Session은 현행 Product Contract의 상태 전이를 따른다.
+- 데이터 이슈는 호출자·응답·저장 상태를 확인해 원인을 구분한다. 정리 작업을 이유로 운영 SQL 보정이나 마이그레이션을 실행하지 않는다.

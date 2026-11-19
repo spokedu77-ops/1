@@ -5,6 +5,8 @@ REVISION: Public V2.1 Before design restoration (2026-11-05), preserving V2 appr
 SCOPE: SPOKEDU public website
 APPLIES TO: Home / Education / Private / SPOMOVE / Subscription / Records / Record Detail / Contact / About / SPOMAT / Partners
 
+Authority maintenance (2026-11-20): the revision/date above describes its historical baseline. The user's current approved request and newer approved visual references govern the affected scope. Read the current route/navigation code before applying historical copy or component names. Old audit PASSes and completed briefs are not current execution instructions or approval to publish.
+
 Agent pointer: `.cursor/rules/spokedu-public-website.mdc`
 
 페이지를 개별적으로 예쁘게 만드는 것이 아니라, SPOKEDU라는 하나의 브랜드와 하나의 사용자 여정을 만든다.
