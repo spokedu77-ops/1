@@ -6,7 +6,6 @@ const database = `spokedu_stage2c_qa_${process.pid}`;
 const teacher = (n) => `70000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const session = (n) => `80000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const teachers = Array.from({ length: 8 }, (_, index) => teacher(index + 1));
-const autoReason = '트리거: sessions.status sync';
 const assistants = (...ids) => `EXTRA_TEACHERS:${JSON.stringify(ids.map((id) => ({ id, price: 10000 })))}`;
 const results = [];
 const record = (name, pass, evidence) => results.push({ name, pass, evidence });

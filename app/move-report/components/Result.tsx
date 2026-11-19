@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComputeResult } from '../types';
 import Radar from './Radar';
@@ -53,6 +54,7 @@ export default function Result({
   variant = 'parent',
   resetLabel,
 }: ResultProps) {
+  const router = useRouter();
   const { profile: p, bd, displayName, key } = result;
   const ui = useMemo(() => getMoveReportUi(locale), [locale]);
   const t = ui.result;
@@ -80,8 +82,8 @@ export default function Result({
       eventName: 'move_report_private_consult_clicked',
       meta: { profileKey: key },
     });
-    window.location.href = '/private#apply';
-  }, [key, displayName, p]);
+    router.push('/private#apply');
+  }, [key, displayName, p, router]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

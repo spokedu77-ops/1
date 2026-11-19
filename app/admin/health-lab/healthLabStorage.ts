@@ -65,10 +65,6 @@ function isStoredAttempt(value: unknown, knownOnly: boolean): value is MissionAt
   );
 }
 
-function isAttempt(value: unknown): value is MissionAttempt {
-  return isStoredAttempt(value, true);
-}
-
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function isHabitLog(value: unknown): value is HabitLog {

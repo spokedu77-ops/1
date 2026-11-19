@@ -996,7 +996,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     updateHudRound();
     if (targetKeyRef.current) targetKeyRef.current.textContent = `${tierBadge(cartTier)} · ${tierHudTitle(cartTier)}`;
 
-    const setStatus = (text: string, _color: string) => {
+    const setStatus = (text: string) => {
       if (!statusRef.current) return;
       statusRef.current.textContent = text;
 
@@ -1024,14 +1024,14 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       g.phaseStartMs = performance.now();
       display.visible = true;
       const prepHint = cartTier === 3 ? '식을 계산하고 맞는 문을 찾으세요' : '목표 숫자가 있는 문을 찾으세요';
-      setStatus(`${prepHint} · ${Math.ceil(g.prepMs / 1000)}초 후 출발`, '#f59e0b');
+      setStatus(`${prepHint} · ${Math.ceil(g.prepMs / 1000)}초 후 출발`);
 
       let remaining = Math.ceil(g.prepMs / 1000);
       const tick = () => {
         if (!g.running || g.phase !== 'PREP') return;
         remaining -= 1;
         if (remaining > 0) {
-          setStatus(`${prepHint} · ${remaining}초 후 출발`, '#f59e0b');
+          setStatus(`${prepHint} · ${remaining}초 후 출발`);
           g.roundTimer = setTimeout(tick, 1000);
         }
       };
@@ -1041,7 +1041,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         if (!gRef.current?.running) return;
         g.phase = 'TRANSIT';
         g.phaseStartMs = performance.now();
-        setStatus('이동 중 · 기차 목표 확인', '#10b981');
+        setStatus('이동 중 · 기차 목표 확인');
         activeRailPath = buildRailPath(targetDoor.x);
       }, g.prepMs);
     };
@@ -1085,7 +1085,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
           g.phase = 'ARRIVE';
           g.phaseStartMs = performance.now();
           triggerColorFlash(g.targetDoorIdx);
-          setStatus(cartTier === 3 ? '정답 문 도착' : '도착', '#6b7280');
+          setStatus(cartTier === 3 ? '정답 문 도착' : '도착');
           g.roundTimer = setTimeout(() => {
             if (!gRef.current?.running) return;
             if (g.rounds >= g.targetRounds) {

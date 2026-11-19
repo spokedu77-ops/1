@@ -26,7 +26,7 @@
     "lint:all": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:rules": "eslint . --format json -o eslint-report.json && node scripts/eslint-rule-count.mjs eslint-report.json",
-    "lint:ci": "eslint . --max-warnings 102",
+    "lint:ci": "eslint . --max-warnings 0",
     "test": "vitest run",
     "test:full": "vitest run",
     "test:spokedu-master:core": "vitest run --config vitest.spokedu-master-core.config.mts",

@@ -172,7 +172,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid curriculum payload' }, { status: 400 });
   }
 
-  const { display_order: _ignored, ...patch } = row;
+  const patch = Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'display_order'));
   const supabase = getServiceSupabase();
   const { error } = await supabase.from('curriculum').update(patch).eq('id', id);
   if (error) {

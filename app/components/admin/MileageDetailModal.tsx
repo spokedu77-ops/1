@@ -258,13 +258,7 @@ export default function MileageDetailModal({
     }, tierFeeMap);
   }, [
     hideAppliedFeePreview,
-    teacher.name,
-    teacher.session_count,
-    teacher.logCount,
-    teacher.fee_private,
-    teacher.fee_group,
-    teacher.fee_center_main,
-    teacher.fee_center_assist,
+    teacher,
     tierFeeMap,
   ]);
 

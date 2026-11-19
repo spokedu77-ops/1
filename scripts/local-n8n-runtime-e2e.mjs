@@ -1,7 +1,7 @@
 /**
  * Stage 5 — n8n workflow runtime E2E (local Docker Supabase + Next 3099 + n8n).
  */
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pg from 'pg';

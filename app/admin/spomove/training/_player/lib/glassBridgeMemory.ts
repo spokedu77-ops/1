@@ -40,7 +40,9 @@ export type GlassBridgeState = {
   difficulty: GlassBridgeDifficulty;
 };
 
-export function normalizeGlassBridgeLength(_value?: number): 3 {
+export function normalizeGlassBridgeLength(value?: number): 3 {
+  // Retain legacy callers; the authored bridge always contains three tiles.
+  void value;
   return 3;
 }
 export function normalizeGlassBridgeSeconds(value?: number, difficulty: GlassBridgeDifficulty = 'hard') {

@@ -5,7 +5,6 @@ const root = new URL('../', import.meta.url);
 const adminUrl = process.env.STAGE2A_PG_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const database = `spokedu_stage2a_package_qa_${process.pid}`;
 const version = '20261026163542';
-const autoReason = '트리거: sessions.status sync';
 const ids = {
   main: '30000000-0000-4000-8000-000000000001',
   assistant: '30000000-0000-4000-8000-000000000002',

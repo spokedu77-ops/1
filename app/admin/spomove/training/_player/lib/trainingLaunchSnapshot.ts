@@ -12,8 +12,8 @@ type SnapshotSettings = Omit<MemoryGameAutoLaunch, 'timeMode' | 'flowFeatures' |
 
 export function settingsToExitResume(settings: SnapshotSettings): TrainingExitResume {
   // Preserve every setting, including future additions; detach mutable collections.
-  const { mode: _mode, level, ...launch } = structuredClone(settings);
-  const selection = resolveTrainingSelection(settings.mode, level, { activityId: settings.activityId });
+  const { mode, level, ...launch } = structuredClone(settings);
+  const selection = resolveTrainingSelection(mode, level, { activityId: settings.activityId });
   return {
     modeId: selection.mode,
     levelId: selection.level,

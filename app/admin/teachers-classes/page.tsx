@@ -463,24 +463,6 @@ function FeedbackReviewTab({
     }
   };
 
-  const getSessionTypeBadgeLabel = (sessionType: Session['session_type']): string => {
-    switch (sessionType) {
-      case 'regular_center':
-      case 'one_day_center':
-      case 'special_lecture':
-        return '센터 수업';
-      case 'one_day':
-        return '원데이 수업';
-      case 'one_day_private':
-      case 'regular_private':
-        return '개인 수업';
-      case 'regular_group':
-        return '그룹 수업';
-      default:
-        return '개인 수업';
-    }
-  };
-
   const [sessions, setSessions] = useState<Session[]>([]);
   const [feedbackScope, setFeedbackScope] = useState<'private' | 'center'>('private');
   const [selectedCoachId, setSelectedCoachId] = useState('all');
@@ -862,37 +844,6 @@ function FeedbackReviewTab({
     void refreshCorrectionJobState(session.id);
     
     setIsModalOpen(true);
-  };
-
-  const handleRequestAiCorrection = async () => {
-    if (!selectedEvent) return;
-    setCorrectionActionLoading(true);
-    try {
-      const res = await fetch('/api/admin/automation/feedback-correction/enqueue', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: selectedEvent.id }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        job?: { id: string; status: string };
-        runGrant?: string | null;
-      };
-      if (!res.ok) throw new Error(data.error ?? 'enqueue_failed');
-      setCorrectionJobActive(data.job ? { id: data.job.id, status: data.job.status } : { id: '', status: 'pending' });
-      setCorrectionJobReadyId(null);
-      if (data.job?.id && data.runGrant) {
-        toast.success('AI 교정 요청을 등록했습니다. 이 PC에서 바로 실행합니다.');
-        await requestLocalRun(data.job.id, data.runGrant);
-      } else {
-        toast.success('AI 교정 요청을 대기열에 등록했습니다. PC가 켜지면 자동 처리됩니다.');
-      }
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'AI 교정 요청에 실패했습니다.');
-    } finally {
-      setCorrectionActionLoading(false);
-    }
   };
 
   const handleResumeLocalRun = async () => {

@@ -74,7 +74,6 @@ export default function CoachDashboardClient({ slug: rawSlug }: { slug: string }
 
   const onCsv = useCallback(() => {
     void trackMoveReportEvent({ eventName: 'move_report_coach_csv_downloaded', meta: { slug } });
-    window.location.href = `/api/move-report/coach-dashboard?slug=${encodeURIComponent(slug)}&format=csv`;
   }, [slug]);
 
   if (!isValidCoachSlugFormat(slug)) {
@@ -174,9 +173,9 @@ export default function CoachDashboardClient({ slug: rawSlug }: { slug: string }
         </section>
 
         <div className="mr-coach-actions">
-          <button type="button" className="btn-ghost" onClick={onCsv}>
+          <a className="btn-ghost" href={`/api/move-report/coach-dashboard?slug=${encodeURIComponent(slug)}&format=csv`} onClick={onCsv}>
             CSV 다운로드
-          </button>
+          </a>
           <button type="button" className="btn-ghost" onClick={() => void load()}>
             새로고침
           </button>

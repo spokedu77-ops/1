@@ -25,7 +25,9 @@ describe('activity identity across legacy and catalog boundaries', () => {
         shapeCompletionDifficulty: 'easy', shapeCompletionResponseSeconds: 6,
       });
       // New callers need only the stable identity, without legacy boolean flags.
-      const { relativeCompassEnabled: _relative, shapeCompletionEnabled: _shape, ...launch } = resume.launch;
+      const launch = { ...resume.launch };
+      delete launch.relativeCompassEnabled;
+      delete launch.shapeCompletionEnabled;
       id = resolveTrainingActivity('basic', resume.levelId, JSON.parse(JSON.stringify(launch)));
       expect(id).toBe(activityId);
       expect(resultLevelLabel('basic', level, id)).toBe(`${level}번`);

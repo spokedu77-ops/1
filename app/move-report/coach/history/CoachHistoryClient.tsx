@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import Result, { type ResultTab } from '../../components/Result';
 import { coachUi } from '../../i18n/coachUi';
@@ -13,6 +14,7 @@ import {
 } from '../../lib/coachObserveHistory';
 
 export default function CoachHistoryClient() {
+  const router = useRouter();
   const t = coachUi.history;
   const [items, setItems] = useState<CoachObserveHistoryItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export default function CoachHistoryClient() {
           }}
           resetLabel="목록으로"
           onAnotherChild={() => {
-            window.location.href = '/move-report/coach/observe';
+            router.push('/move-report/coach/observe');
           }}
           flash={flash}
           showEducatorCta={false}

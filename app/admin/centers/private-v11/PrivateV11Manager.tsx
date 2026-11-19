@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { CONSUMING, daysSince, getHeadlineStats, getPaymentInfo, getSessionInfo, getWeekDays, isScheduledOn, getPrivateSchedules, getPrivateSchedulesOn, formatPrivatePhone, defaultPrivateEndTime } from './core';
@@ -72,7 +72,6 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
   const [reportId,setReportId]=useState<string|null>(null);
   const [showSettings,setShowSettings]=useState(false);
   const [savingText,setSavingText]=useState('');
-  const [backupDue,setBackupDue]=useState(false);
   const unitOpeningHash=useRef('');const logOpeningHash=useRef('');
   useEffect(()=>{onDirtyChange?.(editUnit!==null||editLog!==null||busy);},[editUnit,editLog,busy,onDirtyChange]);
   useEffect(()=>{if(!editUnit&&!editLog&&!busy)return;const guard=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',guard);return()=>window.removeEventListener('beforeunload',guard);},[editUnit,editLog,busy]);
@@ -81,7 +80,7 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
   const reportDialog=useDialog(reportId!==null);
   const settingsDialog=useDialog(showSettings);
 
-  const loadScheduleGroups=async()=>{
+  const loadScheduleGroups=useCallback(async()=>{
     setScheduleLoading(true);setScheduleError('');
     try{
       const response=await fetch('/api/admin/private-v11?scope=schedule-preview',{credentials:'include',cache:'no-store'});
@@ -90,20 +89,17 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
       setScheduleGroups(result.groups);
     }catch(reason){setScheduleError(reason instanceof Error?reason.message:'수업 일정을 불러오지 못했습니다.');}
     finally{setScheduleLoading(false);}
-  };
-  const load=async()=>{
+  },[]);
+  const load=useCallback(async()=>{
     setLoading(true);setError('');
     try{const response=await fetch('/api/admin/private-v11',{credentials:'include',cache:'no-store'});
       const json=await response.json().catch(()=>({error:'응답 오류'})) as {data?:PrivateSnapshot;teachers?:PrivateTeacher[];error?:string};
       if(!response.ok||!json.data)throw new Error(json.error??`조회 실패 (${response.status})`);
       setDb(json.data);setTeachers(json.teachers??[]);void loadScheduleGroups();
-      const previous=localStorage.getItem('spokedu.private.v11.last-backup');
-      const days=previous?Math.floor((Date.now()-new Date(previous).getTime())/86400000):Infinity;
-      setBackupDue(json.data.units.length>0&&(!previous||days>=7));
     }catch(e){setError(e instanceof Error?e.message:'DB 조회 실패');}
     finally{setLoading(false);}
-  };
-  useEffect(()=>{void load();try{const raw=window.localStorage.getItem('spokedu.private.v11.display.settings');if(raw){const obj=JSON.parse(raw) as Record<string,boolean>;setSettings(prev=>Object.fromEntries(Object.keys(prev).map(k=>[k,typeof obj[k]==='boolean'?obj[k]:prev[k as ModuleKey]])) as Record<ModuleKey,boolean>);}}catch{/* display preference only */}},[]);
+  },[loadScheduleGroups]);
+  useEffect(()=>{void load();try{const raw=window.localStorage.getItem('spokedu.private.v11.display.settings');if(raw){const obj=JSON.parse(raw) as Record<string,boolean>;setSettings(prev=>Object.fromEntries(Object.keys(prev).map(k=>[k,typeof obj[k]==='boolean'?obj[k]:prev[k as ModuleKey]])) as Record<ModuleKey,boolean>);}}catch{/* display preference only */}},[load]);
   const toggleSetting=(key:ModuleKey)=>setSettings(old=>{const next={...old,[key]:!old[key]};try{localStorage.setItem('spokedu.private.v11.display.settings',JSON.stringify(next));}catch{}return next;});
   const refresh=async()=>{await load();};
   const change=async(body:Record<string,unknown>,message:string)=>{
@@ -240,12 +236,8 @@ export default function PrivateV11Manager({onDirtyChange}:{onDirtyChange?:(dirty
   const copy=(s:string)=>navigator.clipboard.writeText(s).then(()=>toast.success('복사되었습니다.')).catch(()=>toast.error('클립보드 접근에 실패했습니다.'));
   const feedback=(l:LessonLog)=>{const u=unitMap.get(l.studentId),info=u?sessionInfo(u.id):null;return `[SPOKEDU 피드백]\n■ 학생: ${u?.name??'수강생'} (${u?.subject||'체육'})\n■ 일자: ${l.date} (${l.attended})\n${settings.enrollment&&info?.ready?`■ 잔여: ${info.remain}/${info.total}회\n`:''}■ 교구: ${l.equipment||'기본'}\n\n[프로그램]\n${l.content||'-'}\n\n[피드백]\n${l.homework||'오늘 수업 안전하게 마쳤습니다!'}\n\n- 스포키듀 -`;};
   const reportText=()=>{if(!currentUnit)return '';const info=sessionInfo(currentUnit.id);return `[SPOKEDU ${today().slice(0,7).replace('-','년 ')}월 리포트]\n■ 학생: ${currentUnit.name} (${currentUnit.subject||'체육'})\n■ 수업: ${reportLogs.length}회\n${settings.enrollment&&info.ready?`■ 잔여: ${info.remain}/${info.total}회\n`:''}[기록]\n${reportLogs.map(l=>`· ${l.date} (${l.attended}) ${l.content}`).join('\n')||'없음'}\n\n- 스포키듀 -`;};
-  const exportJson=()=>{download(JSON.stringify({students:db.units.map(u=>({...u,guardianIds:db.links.filter(l=>l.unitId===u.id).map(l=>l.guardianId)})),guardians:db.guardians,enrollments:db.enrollments,logs:db.logs},null,2),`SPOKEDU_백업_${today()}.json`,'application/json');try{localStorage.setItem('spokedu.private.v11.last-backup',new Date().toISOString());}catch{}setBackupDue(false);};
-  const exportCsv=()=>{
-    const headers=['이름','연령','수업형태','담당코치','보호자관계','보호자연락처','동네','장소','주소','종목','요일','시간','반복','상태','기준총회차','사용회차','잔여회차','총금액(만)','입금액(만)','미납(만)','다음결제','최근수업일','메모','성별','체육관방문','우천수업','연결일정ID','회차기준'];
-    const rows=active.map(u=>{const sess=sessionInfo(u.id),pay=getPaymentInfo(u.id,db.enrollments,today()),g=guardianOf(u);return [u.name,u.ageGrade,u.classType,u.coach,g?.relation,g?.phone,u.neighborhood,u.placeType,u.address,u.subject,getPrivateSchedules(u).map(slot=>DAYS[slot.day]).join('·'),getPrivateSchedules(u).map(slot=>`${DAYS[slot.day]} ${slot.start}${slot.end?'~'+slot.end:''} ${slot.coach}`).join(' / '),u.weekPattern,u.status,sess.ready?sess.total:'',sess.ready?sess.used:'',sess.ready?sess.remain:'',pay.totalAmount,pay.paidAmount,pay.unpaidAmount,pay.upcoming,u.lastClassDate,u.memo,u.gender==='male'?'남':u.gender==='female'?'여':u.gender==='mixed'?'혼성':'미등록',u.attendsGym==null?'미확인':u.attendsGym?'예':'아니요',u.rainAvailable==null?'미확인':u.rainAvailable?'가능':'불가',(u.scheduleGroupIds??[]).join(' / '),sess.source==='schedule'?'연결 일정':'등록·일지'];});
-    download('\ufeff'+[headers,...rows].map(row=>row.map(safeCsvCell).join(',')).join('\n'),`SPOKEDU_수강생_${today()}.csv`,'text/csv;charset=utf-8');
-  };
+
+
   const exportLogs=()=>{const headers=['날짜','학생','출석','교구','내용','피드백','발송'];download('\ufeff'+[headers,...filteredLogs.map(l=>[l.date,unitMap.get(l.studentId)?.name,l.attended,l.equipment,l.content,l.homework,l.sentAt?'발송':'미발송'])].map(row=>row.map(safeCsvCell).join(',')).join('\n'),`SPOKEDU_수업일지_${today()}.csv`,'text/csv;charset=utf-8');};
 
   useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(!(e.ctrlKey||e.metaKey))return;if(e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector<HTMLInputElement>('.private-v11 #privateSearch')?.focus();}if(e.key.toLowerCase()==='n'){e.preventDefault();openUnit();}};document.addEventListener('keydown',handler);return()=>document.removeEventListener('keydown',handler);},[db]); // eslint-disable-line react-hooks/exhaustive-deps

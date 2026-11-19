@@ -53,6 +53,7 @@ export function BeatRushTraining({ durationSec, speedSec, effectsEnabled, onComp
     const canvas = canvasRef.current;
     const host = hostRef.current;
     const space = spaceRef.current;
+    const world = worldRef.current;
     if (!canvas || !host || !space) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -265,7 +266,7 @@ export function BeatRushTraining({ durationSec, speedSec, effectsEnabled, onComp
     const stopCountdown = runReactTrainStartCountdown({ onTick: setCountdown, onDone: () => {
       if (!running) return; last = performance.now(); raf = requestAnimationFrame(loop);
     } });
-    return () => { running = false; stopCountdown(); unbind(); if (raf !== null) cancelAnimationFrame(raf); finishRef.current = () => {}; sceneRef.current = null; impactAudioRef.current = null; impactAudio.stop(); if (worldRef.current) worldRef.current.style.transform = 'none'; diveScene.dispose(); };
+    return () => { running = false; stopCountdown(); unbind(); if (raf !== null) cancelAnimationFrame(raf); finishRef.current = () => {}; sceneRef.current = null; impactAudioRef.current = null; impactAudio.stop(); if (world) world.style.transform = 'none'; diveScene.dispose(); };
   }, [duration, speedSec]);
 
   return <div className="beat-rush">
