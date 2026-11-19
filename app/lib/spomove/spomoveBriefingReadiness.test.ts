@@ -1,3 +1,4 @@
+import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from '@/app/spokedu-master/spomove/spomovePublicCatalogOrder';
 import { describe, expect, it } from 'vitest';
 
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
@@ -96,13 +97,13 @@ describe('active catalog briefing coverage', () => {
   it('derives active catalog count from SSOT without hardcoding in runtime helper', () => {
     const active = listActiveSpomoveCatalog();
     expect(active).toHaveLength(OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset).length);
-    expect(active).toHaveLength(72);
+    expect(active).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
   });
 
   it('summarizes empty CMS as missing for the active denominator', () => {
     const summary = buildSpomoveBriefingCoverage({});
-    expect(summary.activeCount).toBe(72);
-    expect(summary.byReadiness.missing).toBe(72);
+    expect(summary.activeCount).toBe(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
+    expect(summary.byReadiness.missing).toBe(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     expect(summary.byReadiness.ready).toBe(0);
   });
 });
@@ -152,6 +153,6 @@ describe('editorial pilot content', () => {
     }
     const summary = buildSpomoveBriefingCoverage(map);
     expect(summary.byReadiness.ready).toBe(7);
-    expect(summary.byReadiness.missing).toBe(65);
+    expect(summary.byReadiness.missing).toBe(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length - SPOMOVE_EDITORIAL_PILOT_PRESET_IDS.length);
   });
 });

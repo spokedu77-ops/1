@@ -6,7 +6,7 @@ import type { SpomoveGuideSeedBase } from './spomoveGuideSeedMerge';
  * Public runtime must NOT import this as fallback — CMS is SSOT after Admin save.
  */
 
-export type SpomoveDiveCluster = 'standard' | 'color-gate';
+export type SpomoveDiveCluster = 'standard' | 'color-gate' | 'beat-rush';
 
 export type SpomoveDiveGuideSeed = SpomoveGuideSeedBase & {
   cluster: SpomoveDiveCluster;
@@ -61,7 +61,28 @@ const COLOR_GATE: SpomoveDiveGuideSeed = {
   },
 };
 
-export const SPOMOVE_DIVE_GUIDE_SEEDS: readonly SpomoveDiveGuideSeed[] = [STANDARD, COLOR_GATE];
+const BEAT_RUSH: SpomoveDiveGuideSeed = {
+  presetId: 'dive-beat-rush',
+  cluster: 'beat-rush',
+  movementGuide: {
+    movement: null,
+    objective: '블럭의 색과 도착 시점을 확인하고 같은 색 매트로 이동합니다.',
+    teachingPoints: [
+      '기본 2×2 매트에서 색의 위치를 먼저 익힙니다. 화면 레인의 순서대로 매트를 재배치하지 않습니다.',
+      '블럭 앞면이 도착선에 닿는 순간에 이동하고 긴 블럭 동안 같은 자리에서 잔발 스텝을 이어 갑니다.',
+      '화면 기록은 제시한 블럭 수입니다. 실제 움직임의 정확도와 안전한 이동은 교사가 확인합니다.',
+    ],
+    instruction: '다가오는 블럭의 색을 확인합니다.\n블럭 앞면이 도착선에 닿으면 같은 색 매트로 이동합니다.\n긴 블럭이 지나가는 동안 같은 자리에서 가볍게 잔발 스텝을 이어 갑니다.',
+    coachScript: '색 먼저 확인! 선에 닿으면 이동! 긴 블럭은 그 자리에서 가볍게!',
+    focusTags: tags('choiceReaction', 'movementCoordination', 'attentionShift'),
+    easier: '접근 시간을 길게 설정하고 걸어서 색과 위치를 연결합니다.',
+    harder: '안전한 이동이 유지되는 범위에서 접근 시간을 줄입니다.',
+    successCriteria: '교사가 색 선택, 도착 시점과 이동 자세를 확인합니다.',
+    commonMistake: '블럭이 도착하기 전에 움직이거나 화면 레인 순서와 실제 매트 위치를 혼동합니다.',
+  },
+};
+
+export const SPOMOVE_DIVE_GUIDE_SEEDS: readonly SpomoveDiveGuideSeed[] = [STANDARD, COLOR_GATE, BEAT_RUSH];
 
 export const SPOMOVE_DIVE_SEED_PRESET_IDS = SPOMOVE_DIVE_GUIDE_SEEDS.map((entry) => entry.presetId);
 

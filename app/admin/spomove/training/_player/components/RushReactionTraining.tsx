@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 
@@ -124,6 +125,8 @@ export function RushReactionTraining({ targetReps, speedSec, onComplete }: Props
     if (g.raf != null) cancelAnimationFrame(g.raf);
     onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
+
+  useEngineStopRequest(stopGame);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

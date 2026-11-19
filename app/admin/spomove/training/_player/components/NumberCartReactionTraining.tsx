@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import promptStyles from './TrainingPrompt.module.css';
 import { TrainingRuntimeHud } from './TrainingRuntimeHud';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -346,6 +347,8 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     if (g.roundTimer) clearTimeout(g.roundTimer);
     onCompleteRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
+
+  useEngineStopRequest(stopGame);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

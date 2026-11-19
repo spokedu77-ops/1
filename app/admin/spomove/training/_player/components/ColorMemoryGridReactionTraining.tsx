@@ -7,6 +7,7 @@
  * — 원샷 REVEAL: 원래 색 → 바뀐 색
  */
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
@@ -198,6 +199,8 @@ export function ColorMemoryGridReactionTraining({
       stoppedEarly,
     });
   }, []);
+
+  useEngineStopRequest(() => complete(true));
 
   useEffect(() => {
     const cv = cvRef.current;

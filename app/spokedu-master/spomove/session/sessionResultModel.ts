@@ -95,7 +95,7 @@ export function officialPresetToTrainingResultConfig(preset: OfficialSpomovePres
       mode,
       level,
       timeMode: 'time',
-      duration: 60,
+      duration: preset.id === 'dive-beat-rush' ? (preset.engine.flowDuration ?? 60) : 60,
       targetReps: preset.rounds,
       flowDuration: preset.engine.flowDuration ?? 25,
     };

@@ -117,7 +117,7 @@ export const SPOMOVE_PUBLIC_CATALOG_ORDER = {
     'sequential-memory-custom-10color-exp',
     'sequential-memory-color-number-exp',
   ],
-  dive: ['dive-standard', 'dive-color-gate-61'],
+  dive: ['dive-standard', 'dive-color-gate-61', 'dive-beat-rush'],
 } as const satisfies Record<SpomovePublicProgramGroup, readonly string[]>;
 
 /** Flat public catalog: group order × within-group order (72 IDs). */

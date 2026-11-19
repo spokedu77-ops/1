@@ -196,6 +196,14 @@ export const MODES: Record<string, SpomoveMode> = {
     ],
   },
 
+  sports: {
+    id: 'sports', title: '스포츠 테마', en: 'Sports Theme', icon: '⚔', accent: '#A78BFA', coreCode: 'VM',
+    tag: '스포츠 동작 · 색상 반응', desc: '화면의 색과 도착 타이밍에 맞춰 스포츠 동작을 수행합니다.',
+    levels: [
+      { id: 1, name: '펜싱 · 런지', enName: 'Flash Lunge', desc: '중앙으로 다가오는 코어의 색을 확인하고, 같은 색 매트를 내디디며 런지와 찌르기를 수행합니다.' },
+      { id: 2, name: '검도 · 일도양단', enName: 'Kendo Slash', desc: '다가오는 장벽의 색을 확인하고, 같은 색 매트를 밟으며 화면의 검기 방향으로 베기 동작을 수행합니다.' },
+    ],
+  },
   // ── Legacy / Hidden (removed from catalog — engine code retained in signals.ts for core5) ──
   flow: {
     id: 'flow',
@@ -209,6 +217,7 @@ export const MODES: Record<string, SpomoveMode> = {
     levels: [
       { id: 1, name: '액션 무브', enName: 'Action Move', desc: 'DIVE 전체 시퀀스를 진행합니다.' },
       { id: 2, name: '모션 게이트', enName: 'Motion Gate', desc: '브릿지 없이 공유 배경에서 색 포즈 관문만 진행합니다.' },
+      { id: 3, name: '비트 러시', enName: 'Beat Rush', desc: '우주 레인의 블럭이 도착선에 닿으면 같은 색 매트로 이동하고, 긴 블럭은 잔발 스텝으로 이어 갑니다.' },
     ],
   },
 };
@@ -232,6 +241,7 @@ export const SPOMOVE_CATALOG_SLOT_IDS = [
 /** 3대 축 그리드 밖, 카탈로그 맨 하단에 단독 노출하는 프로그램 */
 export const SPOMOVE_BOTTOM_CATALOG_SLOT_IDS = [
   'flow', // 다이브 / Dive Mode
+  'sports',
 ] as const;
 
 export type ReactTrainUiLevelDefaults = {

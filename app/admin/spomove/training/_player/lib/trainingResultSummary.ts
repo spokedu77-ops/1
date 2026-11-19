@@ -62,6 +62,7 @@ export function addColorIdsToCounts(counts: ColorStimulusCounts, colorIds: strin
 
 /** Execution rules needed to describe the activity accurately on Result. */
 export type TrainingResultRuleSettings = {
+  numberReaderTiming?: 'progressive';
   shapeCompletionResponseSeconds?: number;
   relativeCompassResponseSeconds?: number;
   colorMemoryGridSize?: 3 | 4 | 5;
@@ -100,6 +101,7 @@ export type TrainingResultConfig = TrainingResultRuleSettings & {
 };
 
 export function describeSessionVolume(cfg: TrainingResultConfig): string {
+  if (cfg.activityId === 'beat-rush' || (cfg.mode === 'flow' && cfg.level === 3)) return `${cfg.duration}초`;
   if (cfg.adminRounds && cfg.timeMode === 'reps') return `${cfg.targetReps}라운드`;
   if (cfg.activityId === 'glass-bridge-memory' || (cfg.mode === 'spatial' && cfg.level === 8)) return `${cfg.targetReps}라운드`;
   if (cfg.activityId === 'moving-number-reader' || (cfg.mode === 'reactTrain' && cfg.level === 15)) return `${cfg.targetReps}회`;
@@ -178,6 +180,7 @@ export function settingsToTrainingResultConfig(cfg: TrainingResultRuleSettings &
   flowDuration?: number;
 }): TrainingResultConfig {
   return {
+    numberReaderTiming: cfg.numberReaderTiming,
     colorMemoryGridSize: cfg.colorMemoryGridSize,
     colorMemoryGridMode: cfg.colorMemoryGridMode,
     glassBridgeDifficulty: cfg.glassBridgeDifficulty,

@@ -7,7 +7,7 @@ export type TrainingResultKind = 'color' | 'direction' | 'zone' | 'number' | 'se
 export const TRAINING_RESULT_KINDS = {
   'direction-cue': 'direction', 'quadrant-cue': 'color', 'full-screen-cue': 'color', 'two-panel-cue': 'color',
   'three-panel-cue': 'color', 'random-panel-cue': 'color', 'relative-compass': 'direction', 'shape-completion': 'zone',
-  'hand-foot': 'color', 'wave-dodge': 'color', 'falling-bricks': 'color', 'balloon-pop': 'color',
+  'sports-fencing': 'color', 'sports-kendo': 'color', 'beat-rush': 'color', 'hand-foot': 'color', 'wave-dodge': 'color', 'falling-bricks': 'color', 'balloon-pop': 'color',
   mole: 'color', 'number-cart': 'zone', 'color-tracker': 'zone',
   goalkeeper: 'zone', 'virus-outbreak': 'color', 'moving-number-reader': 'number', 'target-tracking': 'zone',
   'simon-shape': 'color', 'simon-arrow': 'direction', 'simon-theme': 'color', 'simon-camouflage': 'color', 'simon-balloon': 'color',

@@ -160,6 +160,7 @@ export function resolveSpomoveExecutionVolume(
   const { preset, cueSeconds } = input;
   const { mode, level } = preset.engine;
   const rounds = input.rounds ?? preset.rounds;
+  if (preset.id === 'dive-beat-rush') return timeVolume(input.flowDurationSec ?? preset.engine.flowDuration ?? 60);
 
   if (preset.programGroup !== 'sequential-memory' && preset.id !== 'dive-standard') {
     return repsVolume(rounds);

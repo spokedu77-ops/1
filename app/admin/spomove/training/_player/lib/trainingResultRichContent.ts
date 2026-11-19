@@ -550,13 +550,15 @@ export function resolveTrainingResultRichContent(
   if (selection.activityId === 'moving-number-reader') {
     const description = '움직이는 숫자 캡슐을 눈으로 추적하고 숫자에 해당하는 구역으로 이동하는 활동입니다.';
     const measured = options?.stims ?? colorTotal;
+    const flightLabel = cfg.numberReaderTiming === 'progressive' ? '1.1→0.35초 자동 가속' : `${cfg.speed ?? 3}초`;
+    const phaseLabel = cfg.numberReaderTiming === 'progressive' ? '준비 1.5초 · 이동 3.4→2초 · 공개 2.5초' : '준비 1.5초 · 이동 3초 · 공개 2.5초';
     const content = applyMasterCompletionTruth({
       praise, praiseSub, activityFeel, elapsedLabel,
-      volumeLabel: `${cfg.targetReps}회 · 비행 ${cfg.speed ?? 3}초 · 제시 ${measured}회`,
-      sessionHighlight: `움직이는 숫자 판별 · ${cfg.targetReps}회 · 비행 ${cfg.speed ?? 3}초`,
+      volumeLabel: `${cfg.targetReps}회 · 비행 ${flightLabel} · 제시 ${measured}회`,
+      sessionHighlight: `움직이는 숫자 판별 · ${cfg.targetReps}회 · 비행 ${flightLabel}`,
       sessionSnapshot: [
-        { id: 'flight', label: '캡슐 비행 시간', value: `${cfg.speed ?? 3}초` },
-        { id: 'timing', label: '별도 단계 시간', value: '준비 1.5초 · 이동 3초 · 공개 2.5초' },
+        { id: 'flight', label: '캡슐 비행 시간', value: flightLabel },
+        { id: 'timing', label: '별도 단계 시간', value: phaseLabel },
         { id: 'presented', label: '실제 제시 횟수', value: `${measured}회` },
       ],
       colorDominantLine: null, programTitle: '움직이는 숫자 판별', phaseName: '움직이는 숫자 추적과 구역 선택',

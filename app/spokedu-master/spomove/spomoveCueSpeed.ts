@@ -88,7 +88,7 @@ export function formatSpomoveCueLabel(preset: OfficialSpomovePreset, cueSeconds:
  * 골키퍼(10)는 비행 시간(초)으로 cueSeconds를 사용한다.
  */
 export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean {
-  if (preset.id === 'dive-color-gate-61') return true;
+  if (preset.id === 'dive-color-gate-61' || preset.id === 'dive-beat-rush') return true;
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') return false;
   // 순차 기억 · 순간 기억만 자극 속도(기억 시간) 허용
   if (preset.engine.mode === 'spatial' && preset.engine.level === 7) return true;

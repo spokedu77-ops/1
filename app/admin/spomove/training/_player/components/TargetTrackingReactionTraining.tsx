@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { spomoveClearTimeout as clearTimeout, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
@@ -149,6 +150,8 @@ export function TargetTrackingReactionTraining({
     timersRef.current.clear();
     onCompleteRef.current({ completionReason: phase === 'COUNTDOWN' ? 'cancelled' : 'stopped_early', roundAnswers: answersRef.current.map(answer => ({ ...answer })), stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
   }, [phase]);
+
+  useEngineStopRequest(stop);
 
   useEffect(() => {
     let mounted = true;

@@ -1,3 +1,4 @@
+import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from '@/app/spokedu-master/spomove/spomovePublicCatalogOrder';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -38,6 +39,7 @@ function expectedVolume(
   const { mode, level } = preset.engine;
   const cue = preset.cueSeconds;
   const rounds = preset.rounds;
+  if (preset.id === 'dive-beat-rush') return { kind: 'time', label: '60초', count: 0, durationSec: 60, interval: null };
   if (preset.programGroup !== 'sequential-memory' && preset.id !== 'dive-standard') {
     return { kind: 'reps', label: `${rounds}회`, count: rounds, durationSec: 0, interval: null };
   }
@@ -101,7 +103,7 @@ describe('resolveSpomoveExecutionVolume', () => {
   const presets = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset);
 
   it('classifies every public preset the same way the engine ends', () => {
-    expect(presets).toHaveLength(72);
+    expect(presets).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     const counts = { reps: 0, time: 0, rounds: 0, stage: 0, builtIn: 0, interval: 0 };
     for (const preset of presets) {
       const interval = defaultInterval(preset);
@@ -121,7 +123,7 @@ describe('resolveSpomoveExecutionVolume', () => {
       expect(actual.label).toBe(expected.label);
       counts[actual.kind] += 1;
     }
-    expect(counts).toEqual({ reps: 65, time: 0, rounds: 5, stage: 1, builtIn: 1, interval: 0 });
+    expect(counts).toEqual({ reps: 65, time: 1, rounds: 5, stage: 1, builtIn: 1, interval: 0 });
     expect(counts.stage + counts.builtIn).toBe(2);
   });
 

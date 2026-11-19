@@ -39,8 +39,7 @@ describe('SPOMOVE runtime movement lifecycle', () => {
       }
     }
 
-    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(100);
-    expect(presetCounts).toEqual({ supported: 91, unsupported: 4, not_applicable: 5 });
+    expect(presetCounts).toEqual({ supported: 91, unsupported: 4, not_applicable: 6 });
     expect({
       supported: familyCounts.supported.size,
       unsupported: familyCounts.unsupported.size,

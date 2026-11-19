@@ -47,7 +47,7 @@ export function TrainingDashboard({ tab, filter, onTabChange, onFilterChange, on
           </section>
           <section aria-labelledby="training-title">
             <div className={styles.toolbar}>
-              <h2 id="training-title">트레이닝 선택 <span>6개 프로그램 · DIVE 3D</span></h2>
+              <h2 id="training-title">트레이닝 선택 <span>8개 섹터 · 스포츠 테마</span></h2>
               <div className={styles.filters} aria-label="훈련 영역 필터">
                 {(['ALL', 'response', 'attention', 'executive'] as const).map(id => <button key={id} type="button" aria-pressed={filter === id} onClick={() => onFilterChange(id)}>{id === 'ALL' ? '전체' : groups[id]}</button>)}
               </div>
@@ -64,6 +64,11 @@ export function TrainingDashboard({ tab, filter, onTabChange, onFilterChange, on
                 <div className={styles.cardHeader}><span className={styles.icon} aria-hidden>◇</span><div><div className={styles.titleRow}><h3>DIVE 3D</h3><span className={styles.badge}>몰입 훈련</span></div><p>Interactive Sports</p></div></div>
                 <p className={styles.description}>화면 속에서 달리고, 점프하고, 장애물을 피하는 전신 움직임 훈련입니다.</p>
                 <button className={styles.start} type="button" onClick={() => onPick('flow')}>입장 및 설정 <span aria-hidden>→</span></button>
+              </article>
+              <article className={styles.card} data-program="sports" style={{ '--course-color': '#a78bfa' } as CSSProperties}>
+                <div className={styles.cardHeader}><span className={styles.icon} aria-hidden>⚔</span><div><div className={styles.titleRow}><h3>스포츠 테마</h3><span className={styles.badge}>스포츠 동작</span></div><p>Sports Theme</p></div></div>
+                <p className={styles.description}>1번 펜싱 · 런지, 2번 검도 · 일도양단. 색과 타이밍을 읽고 스포츠 동작으로 반응합니다.</p>
+                <button className={styles.start} type="button" onClick={() => onPick('sports')}>스포츠 테마 설정 <span aria-hidden>→</span></button>
               </article>
             </div>
           </section>

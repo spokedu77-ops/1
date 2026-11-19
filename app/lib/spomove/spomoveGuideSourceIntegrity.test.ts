@@ -1,3 +1,4 @@
+import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from '@/app/spokedu-master/spomove/spomovePublicCatalogOrder';
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -71,7 +72,7 @@ describe('SPOMOVE guide source digest generation', () => {
 
   it('covers every cluster id used by active presets', () => {
     const active = listActiveSpomoveCatalog();
-    expect(active.length).toBe(72);
+    expect(active.length).toBe(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     for (const preset of active) {
       const clusters = resolveSpomoveGuideSourceClustersForPreset(preset);
       expect(clusters.length).toBeGreaterThan(0);
@@ -338,7 +339,7 @@ describe('source baseline bootstrap (merge-only)', () => {
       content[preset.id] = samplePublishedReady(preset);
     }
     const plan = planSpomoveGuideSourceBaseline({ presets: active, content });
-    expect(plan.filter((r) => r.bootstrapEligible)).toHaveLength(72);
+    expect(plan.filter((r) => r.bootstrapEligible)).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
 
     const eligibleIds = plan.filter((r) => r.bootstrapEligible).map((r) => r.presetId);
     const applied = applySpomoveGuideSourceBaseline({
@@ -347,8 +348,8 @@ describe('source baseline bootstrap (merge-only)', () => {
       eligiblePresetIds: eligibleIds,
       reviewedAt: '2026-08-24T00:00:00.000Z',
     });
-    expect(applied.changedPresetIds).toHaveLength(72);
-    expect(applied.afterEntryCount).toBe(72);
+    expect(applied.changedPresetIds).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
+    expect(applied.afterEntryCount).toBe(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
 
     for (const preset of active) {
       expect(applied.guideBodyAfterById[preset.id]).toBe(applied.guideBodyBeforeById[preset.id]);

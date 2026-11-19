@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { TrainingRuntimeHud } from './TrainingRuntimeHud';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
@@ -368,6 +369,8 @@ export function GoalkeeperReactionTraining({
     g.timeouts.clear();
     onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true, goalkeeperRecord: snapshotGoalkeeperResult(g) });
   }, []);
+
+  useEngineStopRequest(stopGame);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

@@ -26,7 +26,7 @@ const publicDifficultyPairs = [
 
 describe("SPOMOVE-MASTER-CARD-UX-P1-01", () => {
   it("keeps public 72 catalog order from P0", () => {
-    expect(publicLibrary).toHaveLength(72);
+    expect(publicLibrary).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     expect(publicLibrary.map((preset) => preset.id)).toEqual([
       ...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER,
     ]);

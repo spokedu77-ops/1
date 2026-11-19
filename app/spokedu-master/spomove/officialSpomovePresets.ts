@@ -133,7 +133,7 @@ export type OfficialSpomovePreset = {
   internalCandidate?: boolean;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 48;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 49;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -1535,6 +1535,33 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '진행 방식', value: '랜덤 혼합' },
       { label: '세션', value: '60초' },
       { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+  {
+    id: 'dive-beat-rush',
+    activityId: 'beat-rush',
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    sortOrder: 44,
+    title: '비트 러시',
+    en: 'Beat Rush',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'dive',
+    programTitle: 'DIVE',
+    engine: { mode: 'flow', level: 3, flowDuration: 60 },
+    description: '우주 레인 위 블럭 앞면이 도착선에 닿으면 같은 색 매트로 이동합니다. 긴 블럭은 같은 자리에서 가볍게 잔발 스텝을 이어 갑니다.',
+    salesCopy: '다가오는 색 블럭에 맞춰 이동하는 우주 리듬 활동',
+    cueSeconds: 3,
+    rounds: 20,
+    recommendedUse: '색상 반응, 이동 타이밍, 리듬 스텝',
+    isReady: true,
+    settingSummary: '60초 · 블럭 접근 3초 · 긴 블럭 잔발 스텝',
+    settingChips: ['60초', '4색 레인', '잔발 스텝'],
+    executionFacts: [
+      { label: '신호', value: '블럭 앞면이 도착선에 닿는 순간' },
+      { label: '반응', value: '같은 색 매트로 이동 · 긴 블럭은 잔발 스텝' },
+      { label: '기록', value: '도착한 블럭 수 · 긴 블럭도 1회' },
     ],
   },
   {

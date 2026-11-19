@@ -167,6 +167,10 @@ export function SettingsBriefing({
           </div>
         </section>
       ) : null}
+      {preset.id === 'dive-beat-rush' ? <section aria-label="훈련 시간">
+        <p className="text-sm font-semibold text-white">훈련 시간</p>
+        <div className="mt-2 grid grid-cols-4 gap-2">{[30, 60, 120, 180].map(seconds => <button key={seconds} type="button" aria-pressed={flowDuration === seconds} onClick={() => onFlowDurationChange(seconds)} className={`min-h-10 rounded-xl border text-sm font-bold ${flowDuration === seconds ? 'border-2 border-white bg-[var(--spm-acc)] text-white' : 'border-white/15 bg-black/30 text-white/70'}`}>{seconds < 60 ? `${seconds}초` : `${seconds / 60}분`}</button>)}</div>
+      </section> : null}
       {showRandomSequenceCue ? (
         <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] rounded-2xl p-2.5">
           <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">자극 시간</p>
@@ -178,6 +182,7 @@ export function SettingsBriefing({
       ) : showCueSpeed ? (
         <section aria-label="자극 속도">
           <p className="text-sm font-semibold text-white">자극 속도</p>
+          {preset.id === 'dive-beat-rush' ? <p className="mt-1 text-[12px] font-semibold text-white/55">블럭이 도착선까지 오는 시간입니다. 긴 블럭에서는 같은 색 매트에서 잔발 스텝을 이어 갑니다.</p> : null}
           {preset.engine.mode === 'spatial' && preset.engine.level === 7 ? (
             <p className="mt-1 text-[12px] font-semibold text-white/55">
               첫 그리드를 보여주는 시간입니다. 답 고르기는 3초 고정입니다.

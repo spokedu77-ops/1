@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
@@ -378,6 +379,8 @@ export function ColorTrackerReactionTraining({
     setShowRevealBtn(false);
     onCompleteRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
+
+  useEngineStopRequest(stopGame);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

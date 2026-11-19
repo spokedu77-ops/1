@@ -1,3 +1,4 @@
+import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from '@/app/spokedu-master/spomove/spomovePublicCatalogOrder';
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -122,6 +123,6 @@ describe('SPOMOVE Pilot CMS apply contract', () => {
   });
 
   it('keeps active catalog denominator derived from SSOT', () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset)).toHaveLength(72);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset)).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
   });
 });

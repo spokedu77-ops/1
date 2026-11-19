@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { snapshotMoleResult } from '../lib/moleResultRecord';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
@@ -266,6 +267,8 @@ export function RobloxMoleReactionTraining({
     clearSpawnTimers();
     onCompleteRef.current({ moleRecord: snapshotMoleResult(g), stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, [clearSpawnTimers]);
+
+  useEngineStopRequest(stopGame);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

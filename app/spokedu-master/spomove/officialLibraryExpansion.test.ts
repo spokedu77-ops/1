@@ -111,7 +111,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
   it('그룹별 개수가 확장 목표와 일치한다', () => {
 
-    expect(activeLibrary).toHaveLength(72);
+    expect(activeLibrary).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
 
     expect(byGroup('reaction-cognition')).toHaveLength(23);
 
@@ -125,7 +125,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(byGroup('sequential-memory')).toHaveLength(6);
 
-    expect(byGroup('dive')).toHaveLength(2);
+    expect(byGroup('dive').map(preset => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_ORDER.dive]);
 
     expect(byGroup('bonus')).toHaveLength(0);
 
@@ -162,6 +162,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(dive.map((p) => p.id).sort()).toEqual([
 
+      'dive-beat-rush',
       'dive-color-gate-61',
 
       'dive-random',

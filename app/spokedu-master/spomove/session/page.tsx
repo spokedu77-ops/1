@@ -329,7 +329,7 @@ function SpomoveSessionContent() {
   );
 
   const repetitionSelectable = Boolean(
-    officialPreset && officialPreset.programGroup !== 'sequential-memory' && officialPreset.id !== 'dive-standard',
+    officialPreset && officialPreset.programGroup !== 'sequential-memory' && officialPreset.id !== 'dive-standard' && officialPreset.id !== 'dive-beat-rush',
   );
   const requestedRepetitions = useMemo(() => {
     const parsed = Number(searchParams.get('rounds'));
@@ -353,9 +353,12 @@ function SpomoveSessionContent() {
 
   useEffect(() => {
     if (bgmLoading || selectedBgmPath) return;
+    // The catalog selection is adopted by the idle effect below. Do not turn
+    // an explicit Beat Rush music choice off during that one-render handoff.
+    if (officialPreset?.activityId === 'beat-rush' && defaultSelectedBgmPath) return;
     if (audioMode === 'full') setAudioMode('effects');
     else if (audioMode === 'music') setAudioMode('silent');
-  }, [audioMode, bgmLoading, selectedBgmPath]);
+  }, [audioMode, bgmLoading, selectedBgmPath, officialPreset?.activityId, defaultSelectedBgmPath]);
   const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>(() =>
     officialPreset?.id === 'dive-standard'
       ? 'space'
@@ -367,7 +370,7 @@ function SpomoveSessionContent() {
   });
   const [flowDuration, setFlowDuration] = useState(() => {
     const parsed = Number(searchParams.get('flowDuration'));
-    return [15, 20, 25, 30, 35].includes(parsed) ? parsed : (officialPreset?.engine.flowDuration ?? 20);
+    return (officialPreset?.id === 'dive-beat-rush' ? [30, 60, 120, 180] : [15, 20, 25, 30, 35]).includes(parsed) ? parsed : (officialPreset?.engine.flowDuration ?? 20);
   });
   const [flowIncludeBonus, setFlowIncludeBonus] = useState(() => searchParams.get('flowBonus') == null
     ? (officialPreset?.engine.flowIncludeBonus ?? true)
@@ -414,6 +417,7 @@ function SpomoveSessionContent() {
   const startLockedRef = useRef(false);
   const finishLockedRef = useRef(false);
   const stopRequestLockedRef = useRef(false);
+  const [stopRequested, setStopRequested] = useState(false);
   const sessionStartedAtRef = useRef<number | null>(null);
   const runStartedAtIsoRef = useRef<string | null>(null);
   const [sessionResult, setSessionResult] = useState<(EngineCompletePayload & SpomoveMovementResult) | null>(null);
@@ -423,6 +427,7 @@ function SpomoveSessionContent() {
   const [recoverySnapshot, setRecoverySnapshot] = useState<SpomoveActiveRunSnapshotV1 | null>(null);
   const [recoveryChecked, setRecoveryChecked] = useState(false);
   const runIdRef = useRef<string | null>(null);
+  const [renderedRunId, setRenderedRunId] = useState<string | null>(null);
   const runtimeScrollReleaseRef = useRef<(() => void) | null>(null);
   const unlockViewportScroll = useCallback(() => {
     runtimeScrollReleaseRef.current?.();
@@ -507,7 +512,7 @@ function SpomoveSessionContent() {
       rounds: sessionRounds,
       interval: !repetitionSelectable && timing?.pattern === 'interval' ? timing : null,
       diveEnvironmentTheme,
-      flowDurationSec: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
+      flowDurationSec: officialPreset.id === 'dive-beat-rush' || isDiveActionMoveUnityTheme(diveEnvironmentTheme)
         ? flowDuration
         : officialPreset.engine.flowDuration,
       flowIncludeBonus: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
@@ -636,7 +641,7 @@ function SpomoveSessionContent() {
       ? 'space'
       : normalizeDiveThemeId(config.diveEnvironmentTheme));
     setSportsArenaFeatures(config.sportsArenaFeatures);
-    setFlowDuration([15, 20, 25, 30, 35].includes(config.flowDuration)
+    setFlowDuration((officialPreset.id === 'dive-beat-rush' ? [30, 60, 120, 180] : [15, 20, 25, 30, 35]).includes(config.flowDuration)
       ? config.flowDuration
       : (officialPreset.engine.flowDuration ?? 20));
     setFlowIncludeBonus(config.flowIncludeBonus);
@@ -696,8 +701,8 @@ function SpomoveSessionContent() {
     if (!officialPreset) return;
     stopBgm();
     if (audioChannels.effectsEnabled) getAudioCtx();
-    // flow 모드: MemoryGameApp 내부 BGM이 처리하므로 session-level BgmPlayer 생략
-    const wantsSessionBgm = Boolean(audioChannels.bgmEnabled && selectedBgmPath && officialPreset.engine.mode !== 'flow');
+    // Beat Rush renders directly; the other DIVE engines own their audio internally.
+    const wantsSessionBgm = Boolean(audioChannels.bgmEnabled && selectedBgmPath && (officialPreset.engine.mode !== 'flow' || officialPreset.activityId === 'beat-rush'));
     if (wantsSessionBgm && selectedBgmPath) {
       const player = new BgmPlayer();
       player.init(getPublicUrl(selectedBgmPath), SPOMOVE_BGM_VOLUME);
@@ -752,7 +757,7 @@ function SpomoveSessionContent() {
       // ignore
     }
     await bgmPlayerRef.current?.play();
-    const flowAudioReady = officialPreset?.engine.mode === 'flow'
+    const flowAudioReady = officialPreset?.engine.mode === 'flow' && officialPreset.activityId !== 'beat-rush'
       ? await resumeFlowAudioContext()
       : true;
     const fullscreenBlocked = launchMode === 'projector' && !document.fullscreenElement;
@@ -761,7 +766,7 @@ function SpomoveSessionContent() {
     else if (fullscreenBlocked) setActivationBlocked('fullscreenBlocked');
     else if (audioBlocked) setActivationBlocked('audioBlocked');
     else setActivationBlocked(null);
-  }, [audioChannels.effectsEnabled, launchMode, officialPreset?.engine.mode]);
+  }, [audioChannels.effectsEnabled, launchMode, officialPreset]);
 
   const startOfficialSession = useCallback(async () => {
     if (
@@ -777,6 +782,7 @@ function SpomoveSessionContent() {
     startLockedRef.current = true;
     finishLockedRef.current = false;
     stopRequestLockedRef.current = false;
+    setStopRequested(false);
     setMovementSheetOpen(false);
     setSessionResult(null);
     sessionStartedAtRef.current = null;
@@ -785,11 +791,12 @@ function SpomoveSessionContent() {
     setMovementState(nextMovementState);
     const nextRunId = createSpomoveRunId();
     runIdRef.current = nextRunId;
+    setRenderedRunId(nextRunId);
 
     // Prime Flow/DIVE audio while this handler still owns the user's tap.
     // Creating or resuming its AudioContext after fullscreen/engine loading is
     // too late on iPad Safari and leaves the visual session running silently.
-    const flowAudioActivation = officialPreset.engine.mode === 'flow'
+    const flowAudioActivation = officialPreset.engine.mode === 'flow' && officialPreset.activityId !== 'beat-rush'
       && (audioChannels.bgmEnabled || audioChannels.effectsEnabled)
       ? primeFlowAudioContext()
       : Promise.resolve(true);
@@ -820,9 +827,9 @@ function SpomoveSessionContent() {
     officialPreset,
   ]);
 
-  const finishSession = useCallback((completionReason: SpomoveCompletionReason, payload?: EngineCompletePayload) => {
+  const finishSession = useCallback((completionReason: SpomoveCompletionReason, payload: EngineCompletePayload | undefined, expectedRunId: string | null) => {
     const activeRunId = runIdRef.current;
-    if (!officialPreset || !activeRunId || finishLockedRef.current) return;
+    if (!officialPreset || !activeRunId || activeRunId !== expectedRunId || finishLockedRef.current) return;
     finishLockedRef.current = true;
     stopRequestLockedRef.current = false;
     stopBgm();
@@ -875,6 +882,23 @@ function SpomoveSessionContent() {
     stopBgm,
     unlockViewportScroll,
   ]);
+
+  const requestEngineStop = useCallback((expectedRunId: string | null) => {
+    if (expectedRunId !== runIdRef.current || finishLockedRef.current || stopRequestLockedRef.current) return;
+    stopRequestLockedRef.current = true;
+    setStopRequested(true);
+  }, []);
+
+  useEffect(() => {
+    if (!stopRequested || finishLockedRef.current) return;
+    const requestedRunId = runIdRef.current;
+    // A missing/unresponsive engine must not become a successful empty STOP result.
+    // This is a native timer so a paused runtime can still fail closed.
+    const timeout = window.setTimeout(() => {
+      finishSession('failed', undefined, requestedRunId);
+    }, 5_000);
+    return () => window.clearTimeout(timeout);
+  }, [finishSession, stopRequested]);
 
   const resumeSession = useCallback(() => {
     if (finishLockedRef.current || !canResumeSpomoveRuntime(runtimeStateRef.current)) return;
@@ -1023,6 +1047,7 @@ function SpomoveSessionContent() {
     startLockedRef.current = false;
     finishLockedRef.current = false;
     stopRequestLockedRef.current = false;
+    setStopRequested(false);
     setMovementSheetOpen(false);
     setSessionResult(null);
     resetSpomoveRuntimeClock();
@@ -1139,10 +1164,12 @@ function SpomoveSessionContent() {
     return (
       <div className="relative h-dvh overflow-hidden bg-black">
         <EngineRouter
+          key={renderedRunId}
+          stopRequested={stopRequested}
           runtimeState={state}
           activityId={officialPreset.activityId}
           durationSec={
-            officialPreset.engine.mode === 'reactTrain' ||
+            officialPreset.id === 'dive-beat-rush' ? flowDuration : officialPreset.engine.mode === 'reactTrain' ||
             (officialPreset.engine.mode === 'spatial' && officialPreset.engine.level === 7)
               ? standardSpomoveDurationSec(effectiveCueSeconds, sessionRounds)
               : undefined
@@ -1198,9 +1225,9 @@ function SpomoveSessionContent() {
                 }
               : null
           }
-          onExit={() => finishSession('stopped_early')}
+          onExit={() => requestEngineStop(renderedRunId)}
           onComplete={(payload) => {
-            finishSession(payload.completionReason, payload);
+            finishSession(payload.completionReason, payload, renderedRunId);
           }}
         />
         {activationBlocked ? createPortal(
@@ -1222,7 +1249,7 @@ function SpomoveSessionContent() {
               <p className="mt-2 text-sm font-semibold text-white/60">준비가 되면 같은 지점에서 계속하세요.</p>
               <div className="mt-5 grid gap-2">
                 <button type="button" autoFocus onClick={resumeSession} className="min-h-12 rounded-xl bg-white text-sm font-extrabold text-slate-950">계속하기</button>
-                <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
+                <button type="button" onClick={() => requestEngineStop(renderedRunId)} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
               </div>
             </section>
           </div>,

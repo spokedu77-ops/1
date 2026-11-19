@@ -7,6 +7,7 @@
  * — 정답 = 가장 많거나(적게) 증식한 4색 중 하나 (회색 돌연변이는 무시)
  */
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import promptStyles from './TrainingPrompt.module.css';
 import { TrainingRuntimeHud } from './TrainingRuntimeHud';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -236,6 +237,8 @@ export function VirusOutbreakReactionTraining({
       laneCount: [...g.laneCount],
     });
   }, []);
+
+  useEngineStopRequest(() => complete(true));
 
   useEffect(() => {
     const cv = cvRef.current;

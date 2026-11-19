@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
@@ -119,6 +120,8 @@ export function RelativeCompassReactionTraining({
   const stop = useCallback(() => {
     finish(true);
   }, [finish]);
+
+  useEngineStopRequest(stop);
 
   useEffect(() => {
     let mounted = true;

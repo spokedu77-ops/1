@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { emptyColorStimulusCounts, type ColorStimulusCounts } from '../lib/trainingResultSummary';
-import { createNumberReaderTrial, normalizeNumberReaderReps, normalizeNumberReaderSeconds,
-  numberReaderPhaseSeconds, NUMBER_READER_ZONES, type NumberReaderPhase } from '../lib/movingNumberReader';
+import { createNumberReaderTrial, normalizeNumberReaderReps, normalizeNumberReaderSeconds, NUMBER_READER_ZONES,
+  numberReaderFlightSeconds, numberReaderPhaseSeconds, type NumberReaderPhase } from '../lib/movingNumberReader';
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { drawNumberReaderFrame } from '../lib/movingNumberReaderCanvas';
 import { ReactTrainStartCountdownOverlay, REACT_TRAIN_START_COUNTDOWN_SEC, runReactTrainStartCountdown } from '../lib/reactTrainStartCountdown';
 import { spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame,
@@ -13,23 +14,28 @@ import { spomovePerformance as performance, spomoveRequestAnimationFrame as requ
 type Props = {
   targetReps: number;
   flightSeconds: number;
+  difficulty?: 'easy' | 'hard';
   onProgress: (presented: number, counts: ColorStimulusCounts) => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function MovingNumberReaderTraining({ targetReps, flightSeconds, onProgress, onComplete }: Props) {
+export function MovingNumberReaderTraining({ targetReps, flightSeconds, difficulty = 'easy', onProgress, onComplete }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stopRef = useRef<(() => void) | null>(null);
   const callbacks = useRef({ onProgress, onComplete });
   useEffect(() => { callbacks.current = { onProgress, onComplete }; }, [onProgress, onComplete]);
-  const [hud, setHud] = useState({ phase: 'READY' as NumberReaderPhase, round: 1, remaining: 1.5, number: 0 });
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const total = normalizeNumberReaderReps(targetReps);
-  const seconds = normalizeNumberReaderSeconds(flightSeconds);
+  const fixedSeconds = normalizeNumberReaderSeconds(flightSeconds);
+  const progressive = difficulty === 'hard';
+  useEngineStopRequest(() => stopRef.current?.());
 
   useEffect(() => {
     const canvas = canvasRef.current!; const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('숫자 캡슐 Canvas를 시작할 수 없습니다.');
+    const style = getComputedStyle(canvas);
+    const bodyFont = style.fontFamily || 'sans-serif';
+    const numberFont = style.getPropertyValue('--spm-font-display').trim() || bodyFont;
     let done = false; let started = false; let frame = 0; let round = 1; let presented = 0;
     let phase: NumberReaderPhase = 'READY'; let phaseStart = performance.now();
     let trial = createNumberReaderTrial(); let shown = false; let flightStarted = false;
@@ -52,7 +58,7 @@ export function MovingNumberReaderTraining({ targetReps, flightSeconds, onProgre
       if (done) return;
       if (!started) { frame = requestAnimationFrame(safeTick); return; }
       const now = performance.now();
-      if (now - phaseStart >= numberReaderPhaseSeconds(phase, seconds) * 1000) {
+      if (now - phaseStart >= numberReaderPhaseSeconds(phase, fixedSeconds, round, progressive) * 1000) {
         if (phase === 'READY') { phase = 'FLY'; flightStarted = true; }
         else if (phase === 'FLY') {
           // A suspended renderer must never count a flight nobody could see.
@@ -66,34 +72,40 @@ export function MovingNumberReaderTraining({ targetReps, flightSeconds, onProgre
         phaseStart = now;
       }
       const elapsed = (now - phaseStart) / 1000;
-      const duration = numberReaderPhaseSeconds(phase, seconds);
-      const visible = drawNumberReaderFrame(ctx, width, height, trial, round, phase, elapsed / duration, now, seconds);
+      const duration = numberReaderPhaseSeconds(phase, fixedSeconds, round, progressive);
+      const seconds = progressive ? numberReaderFlightSeconds(round) : fixedSeconds;
+      const visible = drawNumberReaderFrame(ctx, width, height, trial, round, phase, elapsed / duration, now, seconds, bodyFont, numberFont, progressive);
       if (visible && !shown) {
         shown = true; presented += 1;
         const id = NUMBER_READER_ZONES[trial.number - 1]!.id;
         counts = { ...counts, [id]: counts[id] + 1 };
         callbacks.current.onProgress(presented, counts);
       }
-      setHud({ phase, round, remaining: Math.max(0, duration - elapsed), number: phase === 'REVEAL' ? trial.number : 0 });
+      canvas.dataset.phase = phase; canvas.dataset.round = String(round);
+      canvas.dataset.flightSeconds = seconds.toFixed(2);
+      canvas.dataset.progress = String(Math.min(1, elapsed / duration));
+      canvas.dataset.presented = String(presented);
+      canvas.dataset.pillars = phase === 'FLY' ? String(round < 3 ? 0 : round < 5 ? 1 : 3) : '0';
+      canvas.dataset.phaseSeconds = String(duration);
+      canvas.dataset.difficulty = difficulty;
+      canvas.setAttribute('aria-label', phase === 'READY' ? `소닉 리더 ${round} / ${total}회 · 물체 추적 준비`
+        : phase === 'FLY' ? `소닉 리더 ${round} / ${total}회 · 숫자 캡슐 추적`
+          : phase === 'ACTION' ? `소닉 리더 ${round} / ${total}회 · 방금 본 숫자의 구역으로 이동`
+            : `소닉 리더 ${round} / ${total}회 · 정답 ${trial.number}구역`);
+      if (phase === 'REVEAL') canvas.dataset.answer = String(trial.number);
+      else delete canvas.dataset.answer;
       frame = requestAnimationFrame(safeTick);
     };
     const safeTick = () => { try { tick(); } catch { finish('failed'); } };
     const stopCountdown = runReactTrainStartCountdown({ onTick:setCountdown, onDone:() => { started = true; phaseStart = performance.now(); } });
     frame = requestAnimationFrame(safeTick);
     return () => { done = true; stopCountdown(); cancelAnimationFrame(frame); observer.disconnect(); stopRef.current = null; };
-  }, [seconds, total]);
+  }, [total, fixedSeconds, progressive, difficulty]);
 
-  return <section aria-label="움직이는 숫자 판별 실행" style={{ position:'relative', height: '100%', display: 'flex', flexDirection: 'column', background: '#020617', color: '#fff' }}>
+  return <section aria-label="움직이는 숫자 판별 실행" className="sonic-reader" style={{ position:'relative', height: '100%', overflow: 'hidden', background: '#020617', color: '#fff', fontFamily: 'var(--spm-font-body)' }}>
+    <style>{`.sonic-reader-stop{position:absolute;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:90;min-height:44px;padding:8px 16px;border:1px solid #64748b80;border-radius:12px;background:#0f172ad9;color:#fff;font:600 13px var(--spm-font-body);backdrop-filter:blur(10px)}.sonic-reader-stop:focus-visible{outline:3px solid #38bdf8;outline-offset:3px}`}</style>
     <ReactTrainStartCountdownOverlay countdown={countdown} />
-    <header style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: '12px 16px', alignItems: 'center', flexShrink: 0 }}>
-      <strong>움직이는 숫자 판별</strong><span>{hud.round} / {total}회</span>
-      <span style={{ marginLeft: 'auto', color: '#7dd3fc' }}>비행 {seconds}초</span>
-      <button type="button" onClick={() => stopRef.current?.()} style={{ minHeight: 44, padding: '8px 16px', border: '1px solid #64748b', borderRadius: 8, color: '#fff', background: 'transparent' }}>중간 종료</button>
-    </header>
-    <div role="status" style={{ padding: '8px 12px', textAlign: 'center', minHeight: 68, fontWeight: 800, fontSize: 'clamp(16px,2.2vw,28px)' }}>
-      {hud.phase === 'READY' ? '물체 추적 준비' : hud.phase === 'FLY' ? '캡슐 안의 숫자를 읽으세요' : hud.phase === 'ACTION' ? '방금 본 숫자의 구역으로 이동하세요' : `정답 · ${hud.number}번 ${NUMBER_READER_ZONES[hud.number - 1]?.name ?? ''} 구역`}
-      <div style={{ fontSize: 13, marginTop: 6, color: '#94a3b8' }}>{hud.phase} · {hud.remaining.toFixed(1)}초</div>
-    </div>
-    <canvas ref={canvasRef} aria-label="숫자 캡슐 비행 화면: 1 좌상 빨강, 2 우상 노랑, 3 좌하 초록, 4 우하 파랑" style={{ display: 'block', width: '100%', flex: '1 1 0', minHeight: 0 }} />
+    <button type="button" className="sonic-reader-stop" onClick={() => stopRef.current?.()}>중간 종료</button>
+    <canvas ref={canvasRef} aria-label="숫자 캡슐 비행 화면: 1 좌상 빨강, 2 우상 노랑, 3 좌하 초록, 4 우하 파랑" style={{ display: 'block', width: '100%', height: '100%' }} />
   </section>;
 }

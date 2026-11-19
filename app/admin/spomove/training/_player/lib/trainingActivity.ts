@@ -2,7 +2,7 @@ import { MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, resolveReact
 
 export type TrainingRuntime =
   | 'signals' | 'sequence-memory' | 'color-number-memory' | 'color-number-quiz' | 'instant-memory'
-  | 'flow' | 'rush' | 'falling-bricks' | 'balloon' | 'mole'
+  | 'sports' | 'beat-rush' | 'flow' | 'rush' | 'falling-bricks' | 'balloon' | 'mole'
   | 'number-cart' | 'color-tracker' | 'goalkeeper' | 'virus' | 'shell-tracking'
   | 'glass-bridge-memory' | 'moving-number-reader' | 'visual-search' | 'relative-compass' | 'shape-completion' | 'simon-camouflage' | 'simon-balloon';
 
@@ -29,6 +29,9 @@ export const TRAINING_ACTIVITIES = {
   'relative-compass': { routes: [route('basic', 7)], catalog: catalog('basic', 7), runtime: 'relative-compass', explicitOnly: true },
   'shape-completion': { routes: [route('basic', 8)], catalog: catalog('basic', 8), runtime: 'shape-completion', explicitOnly: true },
   'hand-foot': { routes: [route('basic', 7, 8, 9, 10), route('reactTrain', 201)], catalog: catalog('reactTrain', 201), runtime: 'signals' },
+  'sports-fencing': { routes: [route('sports', 1)], catalog: catalog('sports', 1), runtime: 'sports' },
+  'sports-kendo': { routes: [route('sports', 2)], catalog: catalog('sports', 2), runtime: 'sports' },
+  'beat-rush': { routes: [route('flow', 3)], catalog: catalog('flow', 3), runtime: 'beat-rush', title: '비트 러시' },
   'wave-dodge': { routes: [route('reactTrain', 1)], catalog: catalog('reactTrain', 1), runtime: 'rush' },
   'falling-bricks': { routes: [route('reactTrain', 2)], catalog: catalog('reactTrain', 2), runtime: 'falling-bricks' },
   'balloon-pop': { routes: [route('reactTrain', 3)], catalog: catalog('reactTrain', 3), runtime: 'balloon' },

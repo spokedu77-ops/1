@@ -231,6 +231,7 @@ function buildVariantLabel(preset: OfficialSpomovePreset): string {
 }
 
 function buildDurationLabel(preset: OfficialSpomovePreset): string {
+  if (preset.id === 'dive-beat-rush') return `${preset.engine.flowDuration ?? 60}초 · 블럭 접근 ${preset.cueSeconds}초`;
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
     return `세션 ${preset.engine.flowDuration ?? 25}초`;
   }

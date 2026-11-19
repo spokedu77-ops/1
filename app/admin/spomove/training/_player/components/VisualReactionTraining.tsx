@@ -1,5 +1,6 @@
 'use client';
 
+import { useEngineStopRequest } from '../lib/engineStopRequest';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
@@ -679,6 +680,8 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       completionReason: g.started ? 'stopped_early' : 'cancelled',
     });
   }, []);
+
+  useEngineStopRequest(stopGame);
 
   const triggerStim = useCallback(
     (lane: number, x: number, y: number) => {

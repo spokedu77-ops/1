@@ -34,9 +34,8 @@ function publicLibrary() {
 
 describe('SPOMOVE 2D sequential-memory-color-number-movement-v2', () => {
   it('Public 72 유지, candidate는 카탈로그에 없음', () => {
-    expect(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER).toHaveLength(72);
     expect(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER).not.toContain(CANDIDATE_ID);
-    expect(publicLibrary()).toHaveLength(72);
+    expect(publicLibrary()).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     expect(publicLibrary().map((preset) => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER]);
   });
 

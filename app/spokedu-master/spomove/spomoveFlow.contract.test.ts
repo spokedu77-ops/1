@@ -266,8 +266,9 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).toContain("type SpomoveRuntimeState as SessionState");
     expect(session).toContain("state === 'running' || state === 'paused'");
     expect(session).not.toContain("currentMovement={");
-    expect(session).toContain("finishSession('stopped_early')");
-    expect(session).toContain("finishSession(payload.completionReason, payload)");
+    expect(session).toContain("requestEngineStop(renderedRunId)");
+    expect(session).toContain("stopRequested={stopRequested}");
+    expect(session).toContain("finishSession(payload.completionReason, payload, renderedRunId)");
     expect(session).toContain("MasterSessionResult");
     expect(masterResult).toContain("resolveSpomoveCompletionPresentation(completionReason)");
     expect(masterResult).toContain("completionReason={completionReason}");

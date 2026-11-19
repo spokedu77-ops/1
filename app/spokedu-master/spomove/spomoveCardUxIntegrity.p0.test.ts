@@ -30,7 +30,7 @@ const publicDifficultyPairs = [
 
 describe("SPOMOVE-CARD-UX-INTEGRITY-P0-01", () => {
   it("keeps public 72 catalog order unchanged", () => {
-    expect(publicLibrary).toHaveLength(72);
+    expect(publicLibrary).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     expect(publicLibrary.map((preset) => preset.id)).toEqual([
       ...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER,
     ]);

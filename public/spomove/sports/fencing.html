@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPOKEDU - FLASH LUNGE</title>
+
+    <style>
+
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #020202; overflow: hidden;
+            font-family: 'Cinzel', 'Black Han Sans', sans-serif;
+            color: white; user-select: none;
+        }
+
+        #gameCanvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+            filter: contrast(1.4) brightness(1.2) saturate(1.5);
+            transition: filter 0.1s;
+        }
+
+        .shadow-overlay {
+            position: absolute; inset: 0; z-index: 10; pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.95) 100%);
+            box-shadow: inset 0 0 150px rgba(0,0,0,1);
+        }
+
+        #ui-layer {
+            position: absolute; inset: 0; z-index: 20; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        .thrust-text {
+            font-family: 'Black Han Sans'; text-align: center; line-height: 1.1;
+            text-shadow: 0 0 40px currentColor, 0 0 20px currentColor; color: #fff;
+            transform: scale(0.1) rotate(5deg); opacity: 0;
+            transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            letter-spacing: 5px; position: absolute; top: 40%; left: 50%;
+        }
+        .thrust-text.show { transform: translate(-50%, -50%) scale(1) rotate(5deg); opacity: 1; }
+
+        #start-screen {
+            position: absolute; inset: 0; background: #000; z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .en-garde-btn {
+            background: transparent; color: #fff; border: 2px solid #fff; pointer-events: auto;
+            box-shadow: 0 0 30px rgba(255,255,255,0.3), inset 0 0 15px rgba(255,255,255,0.1);
+            padding: 20px 80px; font-size: 3rem; font-weight: 900; cursor: pointer;
+            font-family: 'Cinzel'; transition: 0.1s; letter-spacing: 5px;
+        }
+        .en-garde-btn:hover { background: #fff; color: #000; transform: scale(1.05); }
+
+        #pierce-flash {
+            position: absolute; inset: 0; background: #fff; z-index: 40;
+            opacity: 0; pointer-events: none; mix-blend-mode: exclusion;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <h2 class="text-3xl text-gray-400 tracking-[0.5em] font-bold mb-4 font-['Cinzel']">EN GARDE</h2>
+        <h1 class="text-7xl md:text-[9rem] font-black text-center text-white leading-none mb-12" style="text-shadow: 0 0 40px #fff;">FLASH<br>LUNGE</h1>
+        <button id="start-btn" class="en-garde-btn">LUNGE</button>
+        <div class="mt-16 text-center font-['Black_Han_Sans'] text-2xl text-gray-400 space-y-3">
+            <p>적의 심장이 <span class="text-white text-3xl">일직선으로</span> 밀고 들어옵니다.</p>
+            <p>코앞에 도달하는 찰나,</p>
+            <p class="text-cyan-400 text-3xl mt-4">같은 색의 매트를 내딛으며 <span class="text-white text-4xl">정중앙을 꿰뚫으세요!</span></p>
+        </div>
+    </div>
+
+    <div class="shadow-overlay"></div>
+    <div id="pierce-flash"></div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div class="flex justify-between p-8 text-2xl font-bold tracking-widest text-gray-500 font-['Cinzel']">
+            <div>PIERCED <span id="kill-count" class="text-white text-4xl ml-2">0</span></div>
+        </div>
+        <div id="main-msg" class="thrust-text text-[8rem]">꿰뚫었다!</div>
+    </div>
+
+    <script>
+ window.__sportCue=3;window.__sportReduced=false;window.__sportNow=0;
+ const sportFrames=new Map(),sportTimers=new Map();let sportId=0;
+ window.requestAnimationFrame=cb=>{const id=++sportId;sportFrames.set(id,cb);return id};
+ window.cancelAnimationFrame=id=>sportFrames.delete(id);
+ window.setTimeout=(cb,ms=0)=>{const id=++sportId;sportTimers.set(id,{cb,due:window.__sportNow+ms});return id};
+ window.clearTimeout=id=>sportTimers.delete(id);
+ </script><script>
+        // ==========================================
+        // 1. 오디오 엔진
+        // ==========================================
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playApproach(duration) {
+            return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(300, t); osc.frequency.exponentialRampToValueAtTime(1200, t + duration);
+            gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.4, t + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t); osc.stop(t + duration);
+        }
+
+        function playThrustSound() {
+            return;
+            const t = audioCtx.currentTime;
+
+            // 날카롭게 찢고 들어가는 소리 (레이피어 특유의 예리함)
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(3000, t); osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
+            gain.gain.setValueAtTime(1.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t); osc.stop(t + 0.2);
+
+            // 유리/크리스탈 박살나는 소리
+            const nBuf = audioCtx.createBuffer(1, audioCtx.sampleRate*0.2, audioCtx.sampleRate);
+            const nData = nBuf.getChannelData(0); for(let i=0; i<nData.length; i++) nData[i] = Math.random()*2-1;
+            const noise = audioCtx.createBufferSource(); noise.buffer = nBuf;
+            const nFilter = audioCtx.createBiquadFilter(); nFilter.type = 'highpass'; nFilter.frequency.value = 3000;
+            const nGain = audioCtx.createGain(); nGain.gain.setValueAtTime(2, t); nGain.gain.exponentialRampToValueAtTime(0.01, t+0.2);
+            noise.connect(nFilter); nFilter.connect(nGain); nGain.connect(audioCtx.destination); noise.start(t);
+
+            // 관통 후 터지는 충격파 (Sub Bass)
+            const sub = audioCtx.createOscillator(); const subGain = audioCtx.createGain();
+            sub.type = 'sine'; sub.frequency.setValueAtTime(200, t); sub.frequency.exponentialRampToValueAtTime(10, t+0.5);
+            subGain.gain.setValueAtTime(4, t); subGain.gain.exponentialRampToValueAtTime(0.01, t+0.5);
+            sub.connect(subGain); subGain.connect(audioCtx.destination); sub.start(t); sub.stop(t+0.5);
+        }
+
+        // ==========================================
+        // 2. 3D 렌더링 & 펜싱 물리 엔진
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        let width, height, cx, cy;
+
+        let screenShake = 0;
+        let hitStopFrames = 0;
+        let kills = 0;
+        let gameActive = false;
+
+        // 런지 시 카메라 줌 효과 변수
+        let camZoom = 1.0;
+        let targetCamZoom = 1.0;
+
+        const FOV = Math.min(800, window.innerWidth * 1.2, window.innerHeight * 1.2);
+
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+            cx = width / 2; cy = height / 2;
+        }
+        window.addEventListener('resize', resize); resize();
+
+        function project(x, y, z) {
+            if(z < 1) return { scale: 0 };
+            const scale = (FOV / z) * camZoom; // 줌 적용
+            return { x: cx + x * scale, y: cy + y * scale, scale: scale };
+        }
+
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.replace('#', ''), 16);
+            return `${(bigint >> 16) & 255}, ${(bigint >> 8) & 255}, ${bigint & 255}`;
+        }
+
+        const COLORS = ['#FF1A40', '#FFCC00', '#00FF66', '#00CCFF'];
+
+        let targets = [];
+        let shatteredShards = [];
+        let thrustEffects = [];
+        let shockwaves = [];
+
+        // 찌르기 이펙트 (우측 하단에서 화면 중앙으로 뻗어나가는 펜싱검)
+        class ThrustBlade {
+            constructor(color) {
+                this.color = color;
+                this.life = 1.0;
+            }
+            update() { this.life -= 0.1; }
+            draw(ctx) {
+                if(this.life <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.globalCompositeOperation = 'lighter';
+
+                // 우측 하단 -> 정중앙 찌르기 궤적
+                ctx.beginPath();
+                ctx.moveTo(width, height);
+                ctx.lineTo(cx, cy);
+
+                // 빛나는 레이피어 날
+                ctx.strokeStyle = this.color; ctx.lineWidth = 60 * this.life;
+                ctx.lineCap = 'round';
+                // 렉 방지를 위해 검의 그림자(glow) 삭제
+                ctx.stroke();
+
+                // 날카로운 코어 (흰색)
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 15 * this.life; ctx.stroke();
+
+                // 창끝 십자 섬광 (Cross Glint)
+                ctx.translate(cx, cy);
+                ctx.beginPath();
+                ctx.moveTo(-200 * this.life, 0); ctx.lineTo(200 * this.life, 0);
+                ctx.moveTo(0, -200 * this.life); ctx.lineTo(0, 200 * this.life);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 5 * this.life; ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
+        // 공간 충격파 링
+        class Shockwave {
+            constructor(x, y, z, color) {
+                this.x = x; this.y = y; this.z = z; this.color = color;
+                this.radius = 10;
+                this.life = 1.0;
+            }
+            update() {
+                this.radius += 100;
+                this.life -= 0.1;
+            }
+            draw(ctx) {
+                if(this.life <= 0) return;
+                const p = project(this.x, this.y, this.z);
+                if(p.scale <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, this.radius * p.scale, 0, Math.PI*2);
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 20 * p.scale * this.life;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // 중앙에서 방사형으로 터지는 유리 파편
+        class Shard {
+            constructor(x, y, z, hexColor, size) {
+                this.x = x; this.y = y; this.z = z;
+                this.hexColor = hexColor;
+                this.size = size;
+
+                // 정중앙에서 바깥으로 뻗어나가는 방사형 속도
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 40 + 20;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.vz = (Math.random() - 0.5) * 50;
+
+                this.rot = 0;
+                this.rotSpeed = (Math.random() - 0.5) * 0.2;
+                this.life = 1.0;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy; this.z += this.vz;
+                this.vx *= 0.95; this.vy *= 0.95;
+                this.rot += this.rotSpeed;
+                this.life -= 0.04;
+            }
+            draw(ctx) {
+                if (this.life <= 0) return;
+                const proj = project(this.x, this.y, this.z);
+                if (proj.scale <= 0) return;
+
+                ctx.save();
+                ctx.translate(proj.x, proj.y);
+                ctx.rotate(this.rot);
+                ctx.scale(proj.scale, proj.scale);
+
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = `rgba(${hexToRgb(this.hexColor)}, 0.8)`; // 그림자 제거 대신 색을 선명하게
+                ctx.strokeStyle = this.hexColor;
+                ctx.lineWidth = 2;
+
+                // 저사양 기기 렌더링 과부하(Lag)의 주범인 shadowBlur 제거
+
+                // 날카로운 유리 파편 모양 (다각형)
+                ctx.beginPath();
+                ctx.moveTo(0, -this.size);
+                ctx.lineTo(this.size*0.7, this.size*0.7);
+                ctx.lineTo(-this.size*0.7, this.size*0.7);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
+        // 중앙에서 뻗어나가는 충격파 라인 (거미줄 균열)
+        function drawCracks(ctx, hexColor) {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            // 렉 방지를 위해 그림자(shadowBlur) 제거
+            ctx.beginPath();
+            // 정중앙에서 방사형으로 쩍쩍 갈라지는 선
+            for(let i=0; i<8; i++) {
+                const angle = (i / 8) * Math.PI * 2 + (Math.random()*0.2);
+                const len = 150 + Math.random() * 100;
+                ctx.moveTo(0, 0);
+                // 지그재그 균열
+                ctx.lineTo(Math.cos(angle)*len*0.5 + (Math.random()-0.5)*20, Math.sin(angle)*len*0.5 + (Math.random()-0.5)*20);
+                ctx.lineTo(Math.cos(angle)*len, Math.sin(angle)*len);
+            }
+            ctx.stroke();
+        }
+
+        // 정중앙으로 밀고 들어오는 적의 코어
+        class PierceTarget {
+            constructor() {
+                this.hex = COLORS[Math.floor(Math.random() * 4)];
+                this.x = 0; this.y = 0; // 항상 정중앙
+                this.z = 5000;
+
+                this.targetZ = 300; // 눈앞 타격점
+
+                this.flyTime = 0;
+                this.maxFlyTime = window.__sportCue * 60; // 꽤 빠른 템포로 날아옴
+
+                playApproach(this.maxFlyTime / 60);
+                this.state = 'APPROACHING';
+                this.cracked = false;
+            }
+
+            update() {
+                if (this.state === 'APPROACHING') {
+                    this.flyTime++;
+                    const t = this.flyTime / this.maxFlyTime;
+
+                    // 눈앞에서 멈칫하는 감속(Ease-out) 제거 -> 자비없이 일직선으로 꽂히는 등속 이동
+                    this.z = 5000 - (5000 - this.targetZ) * t;
+
+                    // 회전/나선형 궤적 제거: 정중앙으로 곧게 다가옴 (펜싱의 직진성 극대화)
+                    this.x = 0;
+                    this.y = 0;
+
+                    // 타격 타이밍 도달
+                    if (t >= 1.0) {
+                        this.executeThrust();
+                    }
+                }
+            }
+
+            executeThrust() {
+                // 1. 역동적인 히트 스톱 (시간 정지 대폭 축소 -> 바로 터지는 속도감)
+                hitStopFrames = 3;
+                this.cracked = true;
+
+                // [디벨롭] 찌르기의 핵심: 카메라가 목표를 향해 미친듯이 빨려들어감 (관통)
+                targetCamZoom = window.__sportReduced ? 1 : 1.12;
+                setTimeout(() => targetCamZoom = 1.0, 150); // 금방 원상복구
+
+                // 화면 흑백 고대비 반전 (카타르시스 극대화)
+                canvas.style.filter = "invert(1) contrast(3) saturate(0)";
+                setTimeout(() => { canvas.style.filter = "contrast(1.4) brightness(1.2) saturate(1.5)"; }, 100);
+
+                // 2. 타격 피드백
+                playThrustSound();
+                screenShake = window.__sportReduced ? 0 : 8;
+
+                const bFlash = document.getElementById('pierce-flash');
+                bFlash.style.backgroundColor = this.hex;
+                bFlash.style.opacity = '0.8'; setTimeout(() => bFlash.style.opacity = '0', 100);
+
+                // 3. 레이피어 및 충격파 생성
+                thrustEffects.push(new ThrustBlade(this.hex));
+                shockwaves.push(new Shockwave(this.x, this.y, this.z, this.hex));
+
+                // 4. 중앙에서 뻗어나가는 방사형 파편 폭발 (저사양 렉 방지를 위해 60 -> 25개로 최적화)
+                for(let i=0; i<25; i++) {
+                    shatteredShards.push(new Shard(this.x, this.y, this.z, this.hex, Math.random()*50 + 10));
+                }
+
+                // 5. 메시지 연출
+                const msg = document.getElementById('main-msg');
+                msg.style.color = this.hex;
+                msg.style.textShadow = `0 0 40px ${this.hex}`;
+                msg.classList.add('show');
+                setTimeout(() => msg.classList.remove('show'), 300);
+
+                kills++; window.__sportHit(COLORS.indexOf(this.hex));
+                document.getElementById('kill-count').innerText = kills;
+
+                // 폭발 처리 완료 후 렌더링 리스트에서 제거되도록 상태 변경
+                this.state = 'DESTROYED';
+            }
+
+            draw(ctx) {
+                if (this.state === 'DESTROYED') return;
+
+                const proj = project(this.x, this.y, this.z);
+                if (proj.scale <= 0) return;
+
+                ctx.save();
+                ctx.translate(proj.x, proj.y);
+                ctx.scale(proj.scale, proj.scale);
+
+                ctx.globalCompositeOperation = 'lighter';
+
+                // 다이아몬드(마름모) 형태의 타겟
+                const size = 150;
+                ctx.beginPath();
+                ctx.moveTo(0, -size); ctx.lineTo(size, 0); ctx.lineTo(0, size); ctx.lineTo(-size, 0);
+                ctx.closePath();
+
+                ctx.fillStyle = `rgba(${hexToRgb(this.hex)}, 0.2)`;
+                ctx.fill();
+
+                // 외곽선 (그림자 제거로 최적화)
+                ctx.strokeStyle = this.hex; ctx.lineWidth = 8; ctx.stroke();
+
+                // 중앙 코어
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI*2); ctx.fill();
+
+                // 찌르기 직후(히트스톱) 거미줄 균열 표시
+                if (this.cracked) {
+                    drawCracks(ctx, this.hex);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // ==========================================
+        // 3. 메인 게임 루프 & 타임라인
+        // ==========================================
+        function drawSpeedTunnel() {
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            // 중앙 집중형 방사선 (속도감)
+            for(let a=0; a<Math.PI*2; a+=Math.PI/6) {
+                const startP = project(Math.cos(a)*100, Math.sin(a)*100, 10);
+                const endP = project(Math.cos(a)*3000, Math.sin(a)*3000, 5000);
+                if(startP.scale>0 && endP.scale>0) {
+                    ctx.moveTo(startP.x, startP.y); ctx.lineTo(endP.x, endP.y);
+                }
+            }
+
+            // 다가오는 링
+            const moveZ = (window.__sportNow % 500);
+            for(let z=0; z<5000; z+=500) {
+                let actualZ = z - moveZ;
+                if(actualZ < 10) continue;
+
+                const p = project(0, 0, actualZ);
+                if(p.scale > 0) {
+                    const radius = 2000 * p.scale;
+                    ctx.moveTo(p.x + radius, p.y);
+                    ctx.arc(p.x, p.y, radius, 0, Math.PI*2);
+                }
+            }
+            ctx.stroke();
+        }
+
+        let sequence = [];
+        let currentStep = 0;
+        let startTime = 0;
+
+        function createTargetPattern(timeOffset) {
+            return [
+                { t: timeOffset, action: () => {
+                    targets.push(new PierceTarget());
+                }}
+            ];
+        }
+
+        function buildSequence() {
+            sequence = [];
+            let t = 1.0;
+
+            // 워밍업
+            for(let i=0; i<3; i++) {
+                sequence.push(...createTargetPattern(t));
+                t += 2.0;
+            }
+
+            // 맹공격
+            for(let i=0; i<15; i++) {
+                sequence.push(...createTargetPattern(t));
+                t += Math.max(0.8, 1.8 - (i * 0.1));
+            }
+
+            sequence.push({ t: t + 3.0, action: () => {
+                document.getElementById('start-screen').style.display = 'flex';
+                gameActive = false;
+            }});
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (hitStopFrames > 0) {
+                hitStopFrames--;
+                return;
+            }
+
+            // 카메라 줌 부드러운 보간 (런지 이펙트)
+            camZoom += (targetCamZoom - camZoom) * 0.3;
+
+            // 잔상 효과
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(2, 2, 4, 0.4)';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+
+            if (screenShake > 0) {
+                ctx.translate((Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
+                screenShake *= 0.8; if(screenShake < 0.5) screenShake = 0;
+            }
+
+            drawSpeedTunnel();
+
+            // 물체들 업데이트 및 렌더링
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const target = targets[i];
+                target.update();
+                if (target.state === 'DESTROYED') {
+                    targets.splice(i, 1);
+                } else {
+                    target.draw(ctx);
+                }
+            }
+
+            for (let i = shatteredShards.length - 1; i >= 0; i--) {
+                const shard = shatteredShards[i];
+                shard.update(); shard.draw(ctx);
+                if (shard.life <= 0) shatteredShards.splice(i, 1);
+            }
+
+            for (let i = shockwaves.length - 1; i >= 0; i--) {
+                shockwaves[i].update(); shockwaves[i].draw(ctx);
+                if (shockwaves[i].life <= 0) shockwaves.splice(i, 1);
+            }
+
+            for (let i = thrustEffects.length - 1; i >= 0; i--) {
+                thrustEffects[i].update(); thrustEffects[i].draw(ctx);
+                if (thrustEffects[i].life <= 0) thrustEffects.splice(i, 1);
+            }
+
+            ctx.restore();
+
+            if(gameActive) {
+                const now = (window.__sportNow - startTime) / 1000;
+                if (currentStep < sequence.length && now >= sequence[currentStep].t) {
+                    sequence[currentStep].action();
+                    currentStep++;
+                }
+            }
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => document.getElementById('start-screen').style.display = 'none', 300);
+
+            gameActive = true;
+            kills = 0; document.getElementById('kill-count').innerText = '0';
+            targets = []; shatteredShards = []; thrustEffects = []; shockwaves = [];
+
+            camZoom = 1.0; targetCamZoom = 1.0;
+
+            buildSequence();
+            startTime = window.__sportNow;
+            currentStep = 0;
+        });
+
+        requestAnimationFrame(animate);
+    </script>
+<style>#start-screen,#ui-layer>div:first-child{display:none!important}.thrust-text,.slash-text{font-size:clamp(36px,9vw,128px);white-space:nowrap}.shadow-overlay{box-shadow:inset 0 0 70px #0009}#pierce-flash,#blade-flash{opacity:0!important}</style><script>
+ let sportStarted=false,sportSpawned=0,sportPassed=0,sportDue=0,sportTotal=20,sportAccumulator=0;
+ window.__sportHit=index=>{sportPassed++;sportDue=window.__sportNow+900;parent.postMessage({type:'spomove-sport-hit',index},'*')};
+ const sportSendReady=()=>parent.postMessage({type:'spomove-sport-ready'},'*');
+ addEventListener('message',event=>{
+ if(event.source!==parent||!event.data||typeof event.data.type!=='string')return;
+ const data=event.data;
+ if(data.type==='spomove-sport-hello'){sportSendReady();return}
+ if(data.type==='spomove-sport-config'){
+ window.__sportCue=Math.max(1,Math.min(6,Number(data.seconds)||3));sportTotal=Math.max(1,Math.min(30,Number(data.rounds)||20));window.__sportReduced=!!data.reduced;return}
+ if(data.type==='spomove-sport-stop'){sportStarted=false;sportFrames.clear();sportTimers.clear();return}
+ if(data.type==='spomove-sport-start'){sportStarted=true;gameActive=false;sportDue=500;return}
+ if(data.type!=='spomove-sport-tick'||!sportStarted)return;
+ sportAccumulator+=Math.max(0,Math.min(.1,Number(data.delta)||0));
+ while(sportAccumulator>=1/60){
+ sportAccumulator-=1/60;window.__sportNow+=1000/60;
+ if(sportSpawned<sportTotal&&targets.length===0&&window.__sportNow>=sportDue){targets.push(new PierceTarget());sportSpawned++;sportDue=Infinity}
+ for(const [id,timer] of [...sportTimers])if(timer.due<=window.__sportNow){sportTimers.delete(id);timer.cb()}
+ const frames=[...sportFrames.values()];sportFrames.clear();for(const frame of frames)frame(window.__sportNow);
+ if(sportPassed===sportTotal&&window.__sportNow>=sportDue){sportStarted=false;parent.postMessage({type:'spomove-sport-complete'},'*');break}
+ }
+ });addEventListener('error',()=>parent.postMessage({type:'spomove-sport-failed'},'*'));sportSendReady();
+ </script></body>
+</html>

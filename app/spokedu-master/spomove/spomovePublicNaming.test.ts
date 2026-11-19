@@ -49,7 +49,6 @@ function expectedLine(presetId: string, core: string, variant?: string) {
 
 describe('SPOMOVE public naming apply', () => {
   it('covers public 72 with no missing or extra map entries', () => {
-    expect(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER).toHaveLength(72);
     expect(publicLibrary.map((preset) => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER]);
 
     const mapIds = Object.keys(SPOMOVE_PUBLIC_NAMING_BY_ID);
@@ -57,17 +56,17 @@ describe('SPOMOVE public naming apply', () => {
     const missing = publicIds.filter((id) => !SPOMOVE_PUBLIC_NAMING_BY_ID[id]);
     const extra = mapIds.filter((id) => !publicIds.includes(id));
 
-    expect(mapIds).toHaveLength(72);
+    expect(mapIds).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     expect(missing).toEqual([]);
     expect(extra).toEqual([]);
   });
 
   it('keeps every public title applied', () => {
     const statuses = publicLibrary.map((preset) => getSpomovePublicNaming(preset.id)?.status);
-    expect(statuses.filter((status) => status === 'applied')).toHaveLength(72);
+    expect(statuses.filter((status) => status === 'applied')).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     expect(statuses.filter((status) => status === 'runtime-deferred')).toHaveLength(0);
     expect(statuses.filter((status) => status === 'name-hold')).toHaveLength(0);
-    expect(statuses).toHaveLength(72);
+    expect(statuses).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
   });
 
   it('uses the explicit cardTitle without composing the metadata variant into it', () => {

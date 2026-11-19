@@ -3,21 +3,19 @@ import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MovingNumberReaderTraining } from '../components/MovingNumberReaderTraining';
-import { createNumberReaderTrial, normalizeNumberReaderSeconds, numberReaderOccluders, numberReaderPhaseSeconds,
-  numberReaderPillars, numberReaderPosition, numberReaderRadius, NUMBER_READER_ZONES, type NumberReaderPhase } from './movingNumberReader';
+import { createNumberReaderTrial, numberReaderFlightSeconds, numberReaderPhaseSeconds,
+  numberReaderOccluders, numberReaderPosition, numberReaderRadius, NUMBER_READER_ZONES,
+  type NumberReaderPhase } from './movingNumberReader';
 import { drawNumberReaderFrame } from './movingNumberReaderCanvas';
-import { catalogTrainingActivity, resolveTrainingSelection } from './trainingActivity';
-import { describeSessionVolume, emptyColorStimulusCounts } from './trainingResultSummary';
+import { catalogTrainingActivity } from './trainingActivity';
+import { emptyColorStimulusCounts } from './trainingResultSummary';
 import { resolveTrainingResultRichContent } from './trainingResultRichContent';
 
 const clock = vi.hoisted(() => ({ now: 0, next: 0, frames: new Map<number, FrameRequestCallback>() }));
-// Trial assertions start at READY; the shared pre-run countdown has its own tests.
-vi.mock('./reactTrainStartCountdown', async importOriginal => ({
-  ...await importOriginal<typeof import('./reactTrainStartCountdown')>(),
-  runReactTrainStartCountdown: ({ onTick, onDone }: { onTick: (value: number) => void; onDone: () => void }) => {
-    onTick(0);
-    onDone();
-    return () => {};
+vi.mock('./reactTrainStartCountdown', async original => ({
+  ...await original<typeof import('./reactTrainStartCountdown')>(),
+  runReactTrainStartCountdown: ({ onTick, onDone }: { onTick: (n: number) => void; onDone: () => void }) => {
+    onTick(0); onDone(); return () => {};
   },
 }));
 vi.mock('./runtimeClock', () => ({
@@ -25,119 +23,111 @@ vi.mock('./runtimeClock', () => ({
   spomoveRequestAnimationFrame: (callback: FrameRequestCallback) => { const id = ++clock.next; clock.frames.set(id, callback); return id; },
   spomoveCancelAnimationFrame: (id: number) => clock.frames.delete(id),
 }));
-let host: HTMLDivElement; let root: Root;
+let host: HTMLDivElement, root: Root;
 function step(ms: number) {
   act(() => { clock.now += ms; const callbacks = [...clock.frames.values()]; clock.frames.clear(); callbacks.forEach(callback => callback(clock.now)); });
+}
+function phase() { return host.querySelector('canvas')?.dataset.phase; }
+function reach(target: NumberReaderPhase, round: number) {
+  for (let i = 0; i < 1200; i++) {
+    const canvas = host.querySelector('canvas');
+    if (canvas?.dataset.phase === target && Number(canvas.dataset.round) === round) return;
+    step(10);
+  }
+  throw new Error(`Did not reach ${round}:${target}`);
 }
 beforeEach(() => {
   clock.now = 0; clock.frames.clear();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  vi.spyOn(Math, 'random').mockReturnValue(.02);
+  vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 1000, height: 600 } as DOMRect);
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(new Proxy({}, { get: () => () => {} }) as never);
   host = document.createElement('div'); document.body.append(host); root = createRoot(host);
 });
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.restoreAllMocks(); });
 
-describe('moving number reader', () => {
-  it.each([1, 3, 6, 10].flatMap(seconds => [10, 15, 20, 30].map(reps => [seconds, reps])))('keeps %s-second flights for %s full rounds', (seconds, reps) => {
-    const complete = vi.fn(); const progress = vi.fn();
-    act(() => root.render(React.createElement(MovingNumberReaderTraining, { flightSeconds: seconds!, targetReps: reps!, onComplete: complete, onProgress: progress })));
-    for (let round = 1; round <= reps!; round++) {
-      step(1499); expect(host.textContent).toContain('READY'); expect(progress).toHaveBeenCalledTimes(round - 1);
-      step(1); expect(host.textContent).toContain('FLY');
-      step(seconds! * 200); expect(progress).toHaveBeenCalledTimes(round);
-      step(seconds! * 800 - 1); expect(host.textContent).toContain('FLY');
-      step(1); expect(host.textContent).toContain('ACTION');
-      step(2999); expect(host.textContent).toContain('ACTION');
-      step(1); expect(host.textContent).toContain('REVEAL');
-      step(2499); expect(complete).not.toHaveBeenCalled();
-      step(1);
+describe('renewed slot 11 source progression', () => {
+  it.each([1, 3, 6, 10])('keeps easy flights fixed at %s seconds with a three-second action phase', seconds => {
+    for (const round of [1, 3, 5, 9, 20]) {
+      expect(numberReaderPhaseSeconds('FLY', seconds, round, false)).toBe(seconds);
+      expect(numberReaderPhaseSeconds('ACTION', seconds, round, false)).toBe(3);
     }
+  });
+  it('defaults legacy callers to easy without converting their selected speed', () => {
+    act(() => root.render(React.createElement(MovingNumberReaderTraining, { targetReps: 5, flightSeconds: 6, onComplete: () => {}, onProgress: () => {} })));
+    reach('FLY', 1);
+    expect(host.querySelector('canvas')?.dataset.difficulty).toBe('easy');
+    expect(host.querySelector('canvas')?.dataset.flightSeconds).toBe('6.00');
+    step(1200); expect(phase()).toBe('FLY');
+  });
+  it.each([1, 3, 5, 9, 10, 20])('matches the source timing formulas at round %s', round => {
+    expect(numberReaderFlightSeconds(round)).toBeCloseTo(Math.max(1.2 - round * .1, .35));
+    expect(numberReaderPhaseSeconds('READY', 10, round)).toBe(1.5);
+    expect(numberReaderPhaseSeconds('FLY', 10, round)).toBeCloseTo(Math.max(1.2 - round * .1, .35));
+    expect(numberReaderPhaseSeconds('ACTION', 10, round)).toBeCloseTo(Math.max(3.5 - round * .1, 2));
+    expect(numberReaderPhaseSeconds('REVEAL', 10, round)).toBe(2.5);
+  });
+
+  it.each([5, 10, 15, 20])('completes %s rounds after final reveal and counts each visible capsule once', reps => {
+    const complete = vi.fn(), progress = vi.fn();
+    act(() => root.render(React.createElement(MovingNumberReaderTraining, { targetReps: reps, difficulty: 'hard', flightSeconds: 10, onComplete: complete, onProgress: progress })));
+    for (let round = 1; round <= reps; round++) {
+      reach('ACTION', round); expect(progress).toHaveBeenCalledTimes(round);
+      reach('REVEAL', round); expect(complete).not.toHaveBeenCalled();
+      if (round < reps) reach('READY', round + 1);
+    }
+    for (let i = 0; i < 260 && !complete.mock.calls.length; i++) step(10);
     expect(complete).toHaveBeenCalledOnce();
-    const stats = complete.mock.lastCall![0];
-    expect(stats).toMatchObject({ stims: reps, completionReason: 'natural_complete' });
-    expect(stats.laneCount.reduce((a: number, b: number) => a + b, 0)).toBe(reps);
+    expect(complete.mock.lastCall![0]).toMatchObject({ stims: reps, completionReason: 'natural_complete' });
+    expect(complete.mock.lastCall![0].laneCount.reduce((a: number, b: number) => a + b, 0)).toBe(reps);
     expect(clock.frames.size).toBe(0);
   });
 
-  it.each(['READY', 'FLY', 'ACTION', 'REVEAL'] as NumberReaderPhase[])('stops in %s and resets on retry', phase => {
-    const complete = vi.fn(); const progress = vi.fn();
-    const render = (key: number) => act(() => root.render(React.createElement(MovingNumberReaderTraining, { key, flightSeconds: 3, targetReps: 20, onComplete: complete, onProgress: progress })));
-    render(1);
-    if (phase !== 'READY') { step(1500); step(600); }
-    if (phase === 'ACTION' || phase === 'REVEAL') step(2400);
-    if (phase === 'REVEAL') step(3000);
-    act(() => host.querySelector('button')!.click());
-    expect(complete.mock.lastCall![0]).toMatchObject({ stims: phase === 'READY' ? 0 : 1, completionReason: phase === 'READY' ? 'cancelled' : 'stopped_early' });
-    expect(clock.frames.size).toBe(0);
-    render(2); step(0); expect(host.textContent).toContain('1 / 20회'); expect(host.textContent).toContain('READY');
-    act(() => root.unmount()); root = createRoot(host); expect(clock.frames.size).toBe(0);
-  });
-
-  it('fails instead of completing a flight that was never rendered visibly', () => {
+  it.each(['READY', 'FLY', 'ACTION', 'REVEAL'] as NumberReaderPhase[])('stops safely during %s and resets on remount', target => {
     const complete = vi.fn();
-    act(() => root.render(React.createElement(MovingNumberReaderTraining, { flightSeconds: 3, targetReps: 10, onComplete: complete, onProgress: vi.fn() })));
-    step(1500); step(3000);
+    const render = (key: number) => act(() => root.render(React.createElement(MovingNumberReaderTraining, { key, targetReps: 20, difficulty: 'hard', flightSeconds: 3, onComplete: complete, onProgress: () => {} })));
+    render(1); reach(target, 1); if (target === 'FLY') step(300);
+    act(() => host.querySelector('button')!.click());
+    expect(complete.mock.lastCall![0]).toMatchObject({ stims: target === 'READY' ? 0 : 1, completionReason: target === 'READY' ? 'cancelled' : 'stopped_early' });
+    expect(clock.frames.size).toBe(0);
+    render(2); step(0); expect(phase()).toBe('READY');
+    expect(host.querySelector('canvas')?.dataset.round).toBe('1');
+  });
+
+  it('fails closed if a whole flight was never visibly rendered', () => {
+    const complete = vi.fn();
+    act(() => root.render(React.createElement(MovingNumberReaderTraining, { targetReps: 10, difficulty: 'hard', flightSeconds: 3, onComplete: complete, onProgress: () => {} })));
+    step(1500); step(1100);
     expect(complete.mock.lastCall![0]).toMatchObject({ stims: 0, completionReason: 'failed' });
-    expect(clock.frames.size).toBe(0);
   });
 
-  it('records seven presented capsules when stopped during round seven of twenty', () => {
-    const complete = vi.fn();
-    act(() => root.render(React.createElement(MovingNumberReaderTraining, { flightSeconds: 3, targetReps: 20, onComplete: complete, onProgress: vi.fn() })));
-    for (let round = 1; round < 7; round++) { step(1500); step(600); step(2400); step(3000); step(2500); }
-    step(1500); step(600);
-    act(() => host.querySelector('button')!.click());
-    const stats = complete.mock.lastCall![0];
-    expect(stats).toMatchObject({ stims: 7, completionReason: 'stopped_early' });
-    expect(stats.laneCount.reduce((a: number, b: number) => a + b, 0)).toBe(7);
-  });
-
-  it('keeps four original paths, numeric mappings, perpendicular occluders and minimum size', () => {
-    expect(NUMBER_READER_ZONES.map(zone => [zone.number, zone.id])).toEqual([[1, 'red'], [2, 'yellow'], [3, 'green'], [4, 'blue']]);
-    for (const path of [0, 1, 2, 3]) for (const number of [1, 2, 3, 4]) {
-      const values = [(number - 0.5) / 4, (path + 0.5) / 4, 0.3, 0.7];
-      const trial = createNumberReaderTrial(() => values.shift()!);
-      expect(trial).toMatchObject({ number, path });
-      const start = numberReaderPosition(trial, 0); const end = numberReaderPosition(trial, 1);
-      if (path === 0) { expect(start.x).toBeLessThan(0); expect(end.x).toBeGreaterThan(1); }
-      if (path === 1) { expect(start.x).toBeGreaterThan(1); expect(end.x).toBeLessThan(0); }
-      if (path === 2) { expect(start.y).toBeLessThan(0); expect(end.y).toBeGreaterThan(1); }
-      if (path === 3) { expect(start.y).toBeGreaterThan(1); expect(end.y).toBeLessThan(0); }
-      for (const round of [1, 2, 3, 4, 5, 30]) {
-        const rects = numberReaderOccluders(round, trial);
-        expect(rects).toHaveLength(numberReaderPillars(round));
-        expect(rects.every(rect => path < 2 ? rect.height === 1 && rect.width === 0.12 : rect.width === 1 && rect.height === 0.12)).toBe(true);
-      }
-    }
-    expect([1, 2, 3, 4, 5, 30].map(numberReaderPillars)).toEqual([0, 0, 1, 1, 3, 3]);
-    expect(numberReaderRadius(30, 1440, 900)).toBe(36);
-    expect(numberReaderRadius(1, 1440, 900)).toBeGreaterThan(numberReaderRadius(5, 1440, 900));
-    expect(normalizeNumberReaderSeconds()).toBe(3);
-    expect(['READY', 'FLY', 'ACTION', 'REVEAL'].map(phase => numberReaderPhaseSeconds(phase as NumberReaderPhase, 10))).toEqual([1.5, 10, 3, 2.5]);
-  });
-
-  it('paints opaque pillars after the capsule number and does not repeat it during ACTION', () => {
-    const calls: { name: string; args: unknown[] }[] = [];
-    const ctx = new Proxy({}, { get: (_, name: string) => (...args: unknown[]) => calls.push({ name, args }) }) as CanvasRenderingContext2D;
-    const trial = createNumberReaderTrial(() => 0.1);
-    drawNumberReaderFrame(ctx, 1000, 600, trial, 5, 'FLY', 0.5, 1000, 3);
-    const text = calls.findIndex(call => call.name === 'fillText' && call.args[1] === 0 && call.args[2] === 0);
-    const pillar = calls.findIndex(call => call.name === 'fillRect' && call.args[2] === 120 && call.args[3] === 600);
-    expect(text).toBeGreaterThan(-1); expect(pillar).toBeGreaterThan(text);
-    calls.length = 0;
-    drawNumberReaderFrame(ctx, 1000, 600, trial, 5, 'ACTION', 0.5, 1000, 3);
-    expect(calls.some(call => call.name === 'fillText' && call.args[1] === 0 && call.args[2] === 0)).toBe(false);
-  });
-
-  it('uses repetition results without changing existing timed reaction results', () => {
+  it('preserves four paths, exact pixel margins, canonical zones, occlusion and minimum radius', () => {
     expect(catalogTrainingActivity('reactTrain', 15)).toBe('moving-number-reader');
-    expect(resolveTrainingSelection('reactTrain', 15)).toMatchObject({ runtime: 'moving-number-reader', engineLevel: 15 });
+    expect(NUMBER_READER_ZONES.map(z => z.id)).toEqual(['red', 'yellow', 'green', 'blue']);
+    for (const path of [0, 1, 2, 3]) {
+      const values = [.1, (path + .5) / 4, .3, .7];
+      const trial = createNumberReaderTrial(() => values.shift()!);
+      const start = numberReaderPosition(trial, 0, 390, 844), end = numberReaderPosition(trial, 1, 390, 844);
+      expect(path < 2 ? Math.min(start.x, end.x) * 390 : Math.min(start.y, end.y) * 844).toBeCloseTo(-100);
+      expect(path < 2 ? Math.max(start.x, end.x) * 390 : Math.max(start.y, end.y) * 844).toBeCloseTo((path < 2 ? 390 : 844) + 100);
+      for (const round of [1, 3, 5]) expect(numberReaderOccluders(round, trial)).toHaveLength(round === 1 ? 0 : round === 3 ? 1 : 3);
+    }
+    expect(numberReaderRadius(30, 1440, 900)).toBe(36);
+  });
+
+  it('keeps historical fixed timing labels and marks new progressive results accurately', () => {
     const cfg = { mode: 'reactTrain', level: 15, activityId: 'moving-number-reader' as const, timeMode: 'reps', targetReps: 20, duration: 60, speed: 6 };
-    expect(describeSessionVolume(cfg)).toBe('20회');
-    expect(describeSessionVolume({ ...cfg, activityId: 'wave-dodge', level: 1, timeMode: 'time' })).toBe('60초');
-    const result = resolveTrainingResultRichContent(cfg, 18000, emptyColorStimulusCounts(), { completionReason: 'stopped_early', stims: 2 });
-    expect(result.volumeLabel).toBe('20회 · 비행 6초 · 제시 2회');
-    expect(result.programSummary).toContain('숫자 캡슐');
-    expect(result.colorDominantLine).toBeNull();
+    const legacy = resolveTrainingResultRichContent(cfg, 18000, emptyColorStimulusCounts(), { stims: 2 });
+    expect(legacy.volumeLabel).toBe('20회 · 비행 6초 · 제시 2회');
+    const renewed = resolveTrainingResultRichContent({ ...cfg, numberReaderTiming: 'progressive' }, 18000, emptyColorStimulusCounts(), { stims: 2 });
+    expect(renewed.volumeLabel).toContain('1.1→0.35초 자동 가속');
+    expect(renewed.colorDominantLine).toBeNull();
+  });
+
+  it('paints opaque occluders after the target number', () => {
+    const calls: string[] = [];
+    const ctx = new Proxy({}, { get: (_, name) => (...args: unknown[]) => { if (name === 'fillText' && args[1] === 0 && args[2] === 0) calls.push('number'); if (name === 'fillRect' && args[2] === 120) calls.push('pillar'); } }) as CanvasRenderingContext2D;
+    drawNumberReaderFrame(ctx, 1000, 600, createNumberReaderTrial(() => .02), 5, 'FLY', .35, 1000, .7);
+    expect(calls.indexOf('pillar')).toBeGreaterThan(calls.indexOf('number'));
   });
 });

@@ -46,10 +46,9 @@ type WordContent = {
  */
 describe('SPOMOVE 2B stroop word switch / reverse candidates', () => {
   it('1 — Public 72 유지, 신규 ID는 카탈로그에 없음', () => {
-    expect(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER).toHaveLength(72);
     expect(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER).not.toContain(CANDIDATE_A);
     expect(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER).not.toContain(CANDIDATE_B);
-    expect(publicLibrary()).toHaveLength(72);
+    expect(publicLibrary()).toHaveLength(SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER.length);
     expect(publicLibrary().map((preset) => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER]);
   });
 

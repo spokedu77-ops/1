@@ -179,6 +179,7 @@ function flowFeatureActions(features: OfficialFlowFeatureKey[] | undefined): Spo
 }
 
 function keyActionsForPreset(preset: OfficialSpomovePreset): SpomoveKeyAction[] {
+  if (preset.id === 'dive-beat-rush') return ['padMove', 'inPlaceStep'];
   if (preset.engine.mode === 'flow' || preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
     return uniqueActions(flowFeatureActions(preset.engine.flowFeatures));
   }

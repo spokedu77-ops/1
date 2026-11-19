@@ -1,6 +1,6 @@
 'use client';
+import { EngineStopRequestContext, useEngineStopRequest } from '@/app/admin/spomove/training/_player/lib/engineStopRequest';
 import { emptyMemoryProgress } from '@/app/admin/spomove/training/_player/lib/memoryProgress';
-import { memoryRoundAnswers } from '@/app/admin/spomove/training/_player/lib/roundAnswerRecord';
 
 import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import { setSpomoveRuntimePaused } from '@/app/admin/spomove/training/_player/lib/runtimeClock';
@@ -36,6 +36,10 @@ const CamouflageReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining').then((m) => ({
     default: m.CamouflageReactionTraining,
   })),
+);
+
+const BeatRushTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/BeatRushTraining').then(m => ({ default: m.BeatRushTraining })),
 );
 
 const RushReactionTraining = lazy(() =>
@@ -118,6 +122,8 @@ export function preloadSpomoveEngine(
     ]);
     case 'signals': case 'relative-compass': case 'shape-completion': case 'virus': case 'shell-tracking':
       return import('@/app/admin/spomove/training/_player/MemoryGameApp');
+    case 'sports': throw new Error('Sports themes are Admin-only');
+    case 'beat-rush': return import('@/app/admin/spomove/training/_player/components/BeatRushTraining');
     case 'rush': return import('@/app/admin/spomove/training/_player/components/RushReactionTraining');
     case 'mole': return import('@/app/admin/spomove/training/_player/components/RobloxMoleReactionTraining');
     case 'number-cart': return import('@/app/admin/spomove/training/_player/components/NumberCartReactionTraining');
@@ -150,6 +156,7 @@ export type EngineCompletePayload = {
 
 type Props = {
   runtimeState: 'running' | 'paused';
+  stopRequested?: boolean;
   activityId?: TrainingActivityId;
   mode: OfficialSpomoveEngineMode;
   level: number;
@@ -329,6 +336,18 @@ function EngineRuntime({
     },
     [level, mode, onComplete, selection.activityId],
   );
+
+  useEngineStopRequest(() => {
+    const memoryProgress = memoryProgressRef.current;
+    onComplete({ completionReason: memoryProgress.presentedItems > 0 ? 'stopped_early' : 'cancelled',
+      engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
+      memoryProgress, roundAnswers: memoryProgress.roundAnswers,
+      ...(selection.activityId === 'sequence-memory' ? { stims: memoryProgress.completedPresentations } : {}) });
+  }, ['sequence-memory', 'color-number-memory', 'color-number-quiz'].includes(runtime));
+
+  if (runtime === 'beat-rush') {
+    return <Suspense fallback={<LoadingOverlay />}><BeatRushTraining durationSec={durationSec ?? 60} speedSec={speedSec ?? 3} effectsEnabled={effectsEnabled} onComplete={handleReactTrainComplete} /></Suspense>;
+  }
 
   if (runtime === 'simon-camouflage') {
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 5);
@@ -557,7 +576,7 @@ function EngineRuntime({
     const handleSpatialComplete = (patterns?: unknown[][]) => {
       onComplete({
         memoryProgress: memoryProgressRef.current,
-        roundAnswers: memoryRoundAnswers(patterns), completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
+        roundAnswers: memoryProgressRef.current.roundAnswers, completionReason: 'natural_complete', engineMode: mode, engineLevel: level, activityId: selection.activityId, colorCounts: null,
         ...(selection.activityId === 'sequence-memory' && Array.isArray(patterns) ? { stims: patterns.length } : {}),
       });
     };
@@ -683,7 +702,9 @@ export function EngineRouter(runtimeProps: Props) {
     <TrainingRunErrorBoundary onError={() => runtimeProps.onComplete({
       completionReason: 'failed', engineMode: runtimeProps.mode, engineLevel: runtimeProps.level,
     })}>
-      <EngineRuntime {...runtimeProps} />
+      <EngineStopRequestContext.Provider value={runtimeProps.stopRequested ?? false}>
+        <EngineRuntime {...runtimeProps} />
+      </EngineStopRequestContext.Provider>
     </TrainingRunErrorBoundary>
   );
 }

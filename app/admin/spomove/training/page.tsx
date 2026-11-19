@@ -34,7 +34,6 @@ import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryG
 import { useViewportScrollLock } from './_player/lib/lockViewportScroll';
 import { TrainingDashboard } from './TrainingDashboard';
 import { normalizeGlassBridgeLength, normalizeGlassBridgeSeconds, normalizeGlassBridgeRounds, normalizeGlassBridgeDifficulty } from './_player/lib/glassBridgeMemory';
-import { normalizeNumberReaderSeconds } from './_player/lib/movingNumberReader';
 import { normalizeSearchSeconds, normalizeSearchStage, normalizeSearchTargetCount } from './_player/lib/visualSearch';
 import { ADMIN_TRAINING_ROUNDS, normalizeAdminTrainingRounds } from './_player/lib/adminTrainingRounds';
 import { SpeedSelector } from './_player/components/SpeedSelector';
@@ -248,6 +247,7 @@ type ColorGateSelectableCategory = Exclude<ColorGateCategoryFilter, 'all'> | 'to
 type ColorGateDifficultySelection = 'single' | 'compound' | 'family';
 
 type LaunchSettings = {
+  numberReaderDifficulty: 'easy' | 'hard';
   visualSearchStage: 1 | 2;
   visualSearchTargetCount: 1 | 2;
   speed: number;
@@ -324,6 +324,7 @@ type LaunchSettings = {
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
+  numberReaderDifficulty: 'easy',
   visualSearchStage: 1,
   visualSearchTargetCount: 1,
   glassBridgeDifficulty: 'easy',
@@ -386,6 +387,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
 
 function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings, mode: string, level: number): LaunchSettings {
   return {
+    numberReaderDifficulty: auto.numberReaderDifficulty === 'hard' ? 'hard' : 'easy',
     speed: auto.speed ?? fallback.speed,
     timeMode: auto.timeMode ?? fallback.timeMode,
     duration: auto.duration ?? fallback.duration,
@@ -481,13 +483,15 @@ function isReactTrainRepetitionLevel(modeId: string): boolean {
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
   const previousActivity = launch.activityId;
   launch = { ...launch, targetReps: normalizeAdminTrainingRounds(launch.targetReps), activityId: trainingActivityForLevelChange(modeId, levelId, launch.activityId) };
+  if (launch.activityId === 'beat-rush') return { ...launch, speed: Math.min(6, Math.max(1, launch.speed)), timeMode: 'time', duration: [30, 60, 120, 180].includes(launch.duration) ? launch.duration : 60, intervalMode: false, accel: false };
   if (launch.activityId === 'virus-outbreak') return { ...launch, timeMode: 'reps', intervalMode: false, accel: false };
   if (launch.activityId === 'glass-bridge-memory') return { ...launch, glassBridgeStartLength: normalizeGlassBridgeLength(launch.glassBridgeStartLength), speed: normalizeGlassBridgeSeconds(launch.speed, launch.glassBridgeDifficulty), targetReps: normalizeGlassBridgeRounds(launch.targetReps), timeMode: 'reps', intervalMode: false, accel: false };
   if (previousActivity === 'glass-bridge-memory') launch = { ...launch, speed: Math.min(6, launch.speed) };
   if (launch.activityId === 'visual-search') return { ...launch, visualSearchStage: normalizeSearchStage(launch.visualSearchStage), visualSearchTargetCount: normalizeSearchTargetCount(launch.visualSearchStage, launch.visualSearchTargetCount), speed: normalizeSearchSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeAdminTrainingRounds(launch.targetReps), intervalMode: false, accel: false };
-  if (launch.activityId === 'moving-number-reader') return { ...launch, speed: normalizeNumberReaderSeconds(launch.speed), timeMode: 'reps', targetReps: normalizeAdminTrainingRounds(launch.targetReps), intervalMode: false, accel: false };
+  if (launch.activityId === 'moving-number-reader') return { ...launch, timeMode: 'reps', targetReps: normalizeAdminTrainingRounds(launch.targetReps), intervalMode: false, accel: false };
   if (previousActivity === 'moving-number-reader') launch = { ...launch, speed: Math.min(6, launch.speed) };
   if (previousActivity === 'visual-search') launch = { ...launch, speed: Math.min(6, launch.speed) };
+  if (modeId === 'sports') return { ...launch, speed: Math.max(1, Math.min(6, launch.speed)), timeMode: 'reps', intervalMode: false, accel: false };
   if (isReactTrainRepetitionLevel(modeId)) {
     return {
       ...launch,
@@ -606,6 +610,7 @@ function TrainingPortal({
   if (typeof document === 'undefined') return null;
 
   const autoLaunch: MemoryGameAutoLaunch = {
+    numberReaderDifficulty: launch.numberReaderDifficulty,
     speed: launch.speed,
     timeMode: launch.timeMode,
     duration: launch.duration,
@@ -675,7 +680,7 @@ function TrainingPortal({
     }}>
       <MemoryGameApp
         adminMemorySettings
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.colorGateCategories.join(',')}-${launch.colorGateDifficulties.join(',')}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.activityId}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.numberReaderDifficulty}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.colorGateCategories.join(',')}-${launch.colorGateDifficulties.join(',')}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.activityId}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -778,7 +783,7 @@ function SettingsScreen({
   const isReactTrain = modeId === 'reactTrain';
   const isSpatial = modeId === 'spatial';
   const isSimon = modeId === 'simon';
-  const isFlowOrChallenge = modeId === 'flow';
+  const isFlowOrChallenge = modeId === 'flow' && launch.activityId !== 'beat-rush';
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
   const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId);
   const compactSettingsMenu =
@@ -913,8 +918,8 @@ function SettingsScreen({
             </button>
             {guideOpen ? (
               <div style={{ padding: '12px 14px 16px', borderTop: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.02)' }}>
-                {launch.activityId !== 'visual-search' && launch.activityId !== 'moving-number-reader' && launch.activityId !== 'glass-bridge-memory' && <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />}
-                {launch.activityId === 'glass-bridge-memory' ? (
+                {modeId !== 'sports' && launch.activityId !== 'visual-search' && launch.activityId !== 'moving-number-reader' && launch.activityId !== 'glass-bridge-memory' && <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />}
+                {modeId === 'sports' ? <div style={{ fontSize: 13, lineHeight: 1.7, color: T.text }}><p>{guidePhase?.goal}</p><p>{guidePhase?.screen}</p><p>{guidePhase?.coach}</p><p style={{ color: T.textDim }}>{guidePhase?.pitfall}</p></div> : launch.activityId === 'glass-bridge-memory' ? (
                   <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
                     순서대로 점등되는 세로 유리 발판의 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직입니다.
                     순서를 기억한 뒤 교사가 이동한 색을 한 칸씩 선택합니다. 맞으면 성공 연출, 틀리면 유리 파괴 연출과 함께 해당 칸의 정답을 공개하고 다음 발판으로 진행합니다.
@@ -923,7 +928,9 @@ function SettingsScreen({
                 ) : launch.activityId === 'moving-number-reader' ? (
                   <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
                     움직이는 숫자 캡슐을 눈으로 추적하고 숫자에 해당하는 구역으로 이동하는 활동입니다.
-                    준비 1.5초 → 설정된 비행 시간 → 이동 3초 → 정답 공개 2.5초로 진행합니다.
+                    {launch.numberReaderDifficulty === 'hard'
+                      ? '어려움은 준비 1.5초 → 자동 가속 비행 → 이동 → 정답 공개 2.5초로 진행합니다. 비행은 1.1초에서 최저 0.35초까지, 이동은 3.4초에서 최저 2초까지 라운드마다 짧아집니다.'
+                      : '쉬움은 준비 1.5초 → 설정한 비행 시간 → 이동 3초 → 정답 공개 2.5초로 진행합니다. 설정한 비행 속도는 끝까지 유지됩니다.'}
                     3회차부터 가림막 1개, 5회차부터 3개가 등장하고 캡슐 크기는 점차 줄어듭니다.
                     1은 왼쪽 위 빨강, 2는 오른쪽 위 노랑, 3은 왼쪽 아래 초록, 4는 오른쪽 아래 파랑입니다.
                   </p>
@@ -1987,7 +1994,18 @@ function SettingsScreen({
             {launch.glassBridgeDifficulty === 'easy' && <p style={{ fontSize: 12, color: T.textDim, lineHeight: 1.6 }}>모든 발판의 색을 {launch.speed}초 동안 함께 본 뒤, 가려진 정답을 한 칸씩 맞춥니다.</p>}
           </section>}
           {/* 속도 / 순간 기억 기억 시간 */}
-          {(!isFlowOrChallenge || isColorGateTheme) && !(launch.activityId === 'relative-compass' || launch.activityId === 'shape-completion') && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {modeId === 'sports' ? <p style={{ color: T.textDim, fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>신호 속도는 목표가 다가오는 시간입니다. 3초 카운트다운 뒤 시작하며, 목표 도착을 1라운드로 집계합니다. 실제 동작 성공 여부는 교사가 확인합니다.</p> : null}
+          {launch.activityId === 'moving-number-reader' ? <section style={{ marginBottom: 20 }}>
+            <p style={{ color: T.text, fontWeight: 800, fontSize: 13 }}>난이도</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8 }}>
+              {([['easy', '쉬움 · 고정 속도'], ['hard', '어려움 · 자동 가속']] as const).map(([difficulty, label]) => <button key={difficulty} type="button" aria-pressed={launch.numberReaderDifficulty === difficulty} onClick={() => setLaunch(current => ({ ...current, numberReaderDifficulty: difficulty }))} style={{ ...diveAdminChoiceStyle(launch.numberReaderDifficulty === difficulty, accent), minHeight: 48, padding: '10px 8px', fontSize: 13, fontWeight: 800 }}>{label}</button>)}
+            </div>
+          </section> : null}
+          {launch.activityId === 'moving-number-reader' && launch.numberReaderDifficulty === 'hard' ? <section style={{ marginBottom: 26, padding: 16, borderRadius: 14, border: `1px solid ${accent}55`, background: `${accent}0c` }}>
+            <strong style={{ color: T.text, fontSize: 14 }}>원본 자동 진행</strong>
+            <p style={{ margin: '8px 0 0', color: T.textDim, fontSize: 13, lineHeight: 1.7 }}>비행 1.1초 → 0.35초 · 이동 3.4초 → 2초<br />3라운드부터 가림막 1개 · 5라운드부터 3개<br />캡슐 크기도 라운드마다 줄어듭니다.</p>
+          </section> : null}
+          {(launch.activityId !== 'moving-number-reader' || launch.numberReaderDifficulty !== 'hard') && (!isFlowOrChallenge || isColorGateTheme) && !(launch.activityId === 'relative-compass' || launch.activityId === 'shape-completion') && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: isColorGateTheme ? 10 : 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isColorGateTheme ? 6 : 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -2471,10 +2489,10 @@ function SettingsScreen({
           {/* 분량/시간 */}
           {!isFlowOrChallenge && <section style={{ marginBottom: 26 }}>
             <label style={{ display: 'block', marginBottom: 10, fontSize: 11, fontWeight: 800, color: T.muted }}>
-              {isReactTrain && !isReactTrainRepetition && ![8, 9, 13, 14].includes(reactTrainEngineLevelForUi(levelId)) ? '훈련 시간' : '목표 라운드'}
+              {(launch.activityId === 'beat-rush' || (isReactTrain && !isReactTrainRepetition && ![8, 9, 13, 14].includes(reactTrainEngineLevelForUi(levelId)))) ? '훈련 시간' : '목표 라운드'}
             </label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {isReactTrain && !isReactTrainRepetition && ![8, 9, 13, 14].includes(reactTrainEngineLevelForUi(levelId))
+              {(launch.activityId === 'beat-rush' || (isReactTrain && !isReactTrainRepetition && ![8, 9, 13, 14].includes(reactTrainEngineLevelForUi(levelId))))
                 ? [30, 60, 120, 180].map(sec => <button key={sec} type="button" aria-pressed={launch.duration === sec} onClick={() => setLaunch(s => ({ ...s, timeMode: 'time', duration: sec }))}
                     style={{ ...diveAdminChoiceStyle(launch.duration === sec, accent), flex: '1 1 64px', padding: '11px 10px' }}>{sec < 60 ? `${sec}초` : `${sec / 60}분`}</button>)
                 : ADMIN_TRAINING_ROUNDS.map(r => <button key={r} type="button" aria-pressed={launch.targetReps === r} onClick={() => setLaunch(s => ({ ...s, timeMode: 'reps', targetReps: r }))}

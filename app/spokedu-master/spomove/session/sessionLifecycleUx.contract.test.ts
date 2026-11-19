@@ -42,9 +42,10 @@ describe("SPOMOVE session lifecycle UX", () => {
     expect(activation).toContain("createPortal");
   });
 
-  it("moves an engine STOP directly to the stopped-early result", () => {
-    expect(page).toContain("onExit={() => finishSession('stopped_early')}");
-    expect(page).toContain("finishSession(payload.completionReason, payload)");
+  it("requests the engine STOP snapshot before presenting the result", () => {
+    expect(page).toContain("requestEngineStop(renderedRunId)");
+    expect(page).toContain("stopRequested={stopRequested}");
+    expect(page).toContain("finishSession(payload.completionReason, payload, renderedRunId)");
     expect(page).not.toContain("수업을 종료할까요?");
     expect(page).not.toContain("setExitConfirmationOpen");
     expect(page).not.toContain("onClick={continueSession}");

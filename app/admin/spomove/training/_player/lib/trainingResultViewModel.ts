@@ -46,7 +46,7 @@ function validCounts(value: ColorStimulusCounts | null): value is ColorStimulusC
 
 // Canonical activity identities, not runtime names (balloon-pop runs as `balloon`).
 const COLOR_DISTRIBUTION_ACTIVITIES = new Set<TrainingActivityId>([
-  'wave-dodge', 'falling-bricks', 'balloon-pop', 'hand-foot',
+  'sports-fencing', 'sports-kendo', 'beat-rush', 'wave-dodge', 'falling-bricks', 'balloon-pop', 'hand-foot',
   'mole', 'virus-outbreak', 'motion-gate',
   'simon-shape', 'simon-theme', 'simon-camouflage', 'simon-balloon',
 ]);
@@ -175,7 +175,13 @@ export function buildTrainingResultViewModel(input: TrainingResultViewInput) {
   }
   if (cfg.adminRounds && cfg.timeMode === 'reps') volume = `${cfg.targetReps}라운드`;
   if (id === 'glass-bridge-memory') volume = `${cfg.targetReps}라운드`;
-  if (cfg.speed != null && id !== 'glass-bridge-memory' && id !== 'sequence-memory' && !dive) {
+  if (numberReader && cfg.numberReaderTiming === 'progressive') {
+    setting('difficulty', '난이도', '어려움 · 자동 가속');
+    setting('timing', '비행 자동 가속', '1.1→0.35초');
+    setting('response', '이동 시간', '3.4→2초');
+  }
+  if (numberReader && cfg.numberReaderTiming !== 'progressive') setting('difficulty', '난이도', '쉬움 · 고정 속도');
+  if (cfg.speed != null && !(numberReader && cfg.numberReaderTiming === 'progressive') && id !== 'glass-bridge-memory' && id !== 'sequence-memory' && !dive) {
     setting('cue', id === 'virus-outbreak' ? '설정 관찰 시간' : id === 'shape-completion' || id === 'relative-compass' ? '설정 반응 시간' : numberReader ? '설정 비행 시간' : search ? '설정 탐색 시간' : '설정 자극 시간', `${cfg.speed}초`);
   }
   if (input.sessionSettings?.primary.trim()) {

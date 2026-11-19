@@ -129,6 +129,7 @@ export const SPOMOVE_PUBLIC_NAMING_BY_ID: Record<string, SpomovePublicNaming> = 
   }),
   'sequential-memory-full-reveal-54': entry('한눈에 색 배치 기억하기 (3X3)', CORE.memoryTask, 'applied'),
 
+  'dive-beat-rush': entry('비트 러시', CORE.dive, 'applied'),
   'dive-standard': entry('액션 무브', CORE.dive, 'applied'),
   'dive-color-gate-61': entry('모션 게이트', CORE.dive, 'applied'),
 };

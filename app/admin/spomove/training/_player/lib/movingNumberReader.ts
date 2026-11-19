@@ -21,8 +21,13 @@ export function normalizeNumberReaderReps(value?: number) {
   return [5, 10, 15, 20, 30].includes(value ?? 0) ? value! : 20;
 }
 
-export function numberReaderPhaseSeconds(phase: NumberReaderPhase, flightSeconds: number) {
-  return phase === 'READY' ? 1.5 : phase === 'FLY' ? normalizeNumberReaderSeconds(flightSeconds) : phase === 'ACTION' ? 3 : 2.5;
+export function numberReaderFlightSeconds(round: number) {
+  return Math.max(1.2 - Math.max(1, round) * .1, .35);
+}
+
+export function numberReaderPhaseSeconds(phase: NumberReaderPhase, flightSeconds?: number, round = 1, progressive = true) {
+  return phase === 'READY' ? 1.5 : phase === 'FLY' ? (progressive ? numberReaderFlightSeconds(round) : normalizeNumberReaderSeconds(flightSeconds))
+    : phase === 'ACTION' ? (progressive ? Math.max(3.5 - Math.max(1, round) * .1, 2) : 3) : 2.5;
 }
 
 export function createNumberReaderTrial(random = Math.random): NumberReaderTrial {
@@ -38,8 +43,17 @@ export function createNumberReaderTrial(random = Math.random): NumberReaderTrial
   return { number, path, start: start!, end: end! };
 }
 
-export function numberReaderPosition(trial: NumberReaderTrial, progress: number) {
+export function numberReaderPosition(trial: NumberReaderTrial, progress: number, width?: number, height?: number) {
   const t = Math.max(0, Math.min(1, progress));
+  if (width && height) {
+    // Keep the source's 100 CSS-pixel offscreen margin on every viewport.
+    const start = { ...trial.start }, end = { ...trial.end };
+    if (trial.path === 0) { start.x = -100 / width; end.x = 1 + 100 / width; }
+    else if (trial.path === 1) { start.x = 1 + 100 / width; end.x = -100 / width; }
+    else if (trial.path === 2) { start.y = -100 / height; end.y = 1 + 100 / height; }
+    else { start.y = 1 + 100 / height; end.y = -100 / height; }
+    return { x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t };
+  }
   return { x: trial.start.x + (trial.end.x - trial.start.x) * t,
     y: trial.start.y + (trial.end.y - trial.start.y) * t };
 }

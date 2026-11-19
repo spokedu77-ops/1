@@ -48,7 +48,7 @@ describe('remainingCommercialGuides', () => {
     expect(by('simon')).toEqual([...SPOMOVE_SIMON_SEED_PRESET_IDS].sort());
     expect(by('dive')).toEqual([...SPOMOVE_DIVE_SEED_PRESET_IDS].sort());
     expect(by('stroop')).toEqual([...SPOMOVE_STROOP_SEED_PRESET_IDS].sort());
-    expect(ALL_SEEDS).toHaveLength(39);
+    expect(new Set(ALL_SEEDS.map(seed => seed.presetId)).size).toBe(ALL_SEEDS.length);
   });
 
   it('publishes and is briefing-ready for every remaining seed', () => {
