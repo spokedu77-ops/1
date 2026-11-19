@@ -1,10 +1,7 @@
-import type { WorkEvent, WorkStatus } from '@/app/lib/admin/updateLog/contract';
+import type { WorkEvent } from '@/app/lib/admin/updateLog/contract';
 
 export type TimelineWork = { key: string; project: string; latest: WorkEvent; history: WorkEvent[] };
-export type StatusFilter = '' | 'in_progress' | 'reported' | 'verified' | 'attention';
-export function needsAttention(status: WorkStatus) {
-  return status === 'proposed' || status === 'reported' || status === 'blocked';
-}
+export type StatusFilter = '' | 'in_progress' | 'reported' | 'verified' | 'blocked';
 // Preserve PostgreSQL microsecond ordering when JS millisecond timestamps tie.
 export function compareTimelineEvents(a: WorkEvent, b: WorkEvent) {
   const micros = (value: string) => Number((value.match(/\.(\d+)/)?.[1] ?? '').padEnd(6, '0').slice(3, 6));
@@ -28,12 +25,12 @@ export function collectTimeline(events: WorkEvent[]): TimelineWork[] {
   }).sort((a, b) => compareTimelineEvents(b.latest, a.latest) || a.key.localeCompare(b.key));
 }
 export function timelineStats(works: TimelineWork[]) {
-  return { total: works.length, inProgress: works.filter(work => work.latest.status === 'in_progress').length, attention: works.filter(work => needsAttention(work.latest.status)).length };
+  return { total: works.length, inProgress: works.filter(work => work.latest.status === 'in_progress').length, blocked: works.filter(work => work.latest.status === 'blocked').length };
 }
 export function filterTimeline(works: TimelineWork[], project: string, status: StatusFilter, search: string) {
   const query = search.trim().normalize('NFKC').toLocaleLowerCase('ko');
   return works.filter(work => (!project || work.project === project)
-    && (!status || (status === 'attention' ? needsAttention(work.latest.status) : work.latest.status === status))
+    && (!status || work.latest.status === status)
     && (!query || work.history.some(event => [event.project, event.summary, event.details, event.verificationNote].join(' ').normalize('NFKC').toLocaleLowerCase('ko').includes(query))));
 }
 export function seoulDay(timestamp: string) {

@@ -26,8 +26,31 @@ describe('update log timeline', () => {
   });
   it('counts unique latest work and separates in-progress from unverified reports', () => {
     const works = collectTimeline([event('a', 'one', 'in_progress', '2026-11-17T01:00:00Z'), event('b', 'one', 'verified', '2026-11-17T02:00:00Z'), event('c', 'two', 'reported', '2026-11-17T03:00:00Z'), event('d', 'three', 'blocked', '2026-11-17T04:00:00Z'), event('e', 'four', 'in_progress', '2026-11-17T05:00:00Z'), event('f', 'five', 'proposed', '2026-11-17T06:00:00Z')]);
-    expect(timelineStats(works)).toEqual({ total: 5, inProgress: 1, attention: 3 });
-    expect(filterTimeline(works, '', 'attention', '')).toHaveLength(3);
+    expect(timelineStats(works)).toEqual({ total: 5, inProgress: 1, blocked: 1 });
+    expect(filterTimeline(works, '', 'blocked', '').map(work => work.latest.workKey)).toEqual(['three']);
+  });
+  it('excludes resolved problems while preserving all history', () => {
+    const works = collectTimeline([
+      event('a', 'resolved', 'blocked', '2026-11-17T01:00:00Z'),
+      event('b', 'resolved', 'reported', '2026-11-17T02:00:00Z'),
+      event('c', 'resolved', 'verified', '2026-11-17T03:00:00Z'),
+    ]);
+    expect(timelineStats(works)).toEqual({ total: 1, inProgress: 0, blocked: 0 });
+    expect(filterTimeline(works, '', 'blocked', '')).toEqual([]);
+    expect(filterTimeline(works, '', 'verified', '')).toEqual(works);
+    expect(works[0].history.map(item => item.status)).toEqual(['blocked', 'reported', 'verified']);
+  });
+  it('includes only blocked among all six statuses without reclassifying proposals or reports', () => {
+    const statuses = ['proposed', 'approved', 'in_progress', 'reported', 'verified', 'blocked'] as const;
+    const works = collectTimeline(statuses.map((status, index) => event(String(index), status, status, '2026-11-17T01:00:00Z')));
+    expect(timelineStats(works)).toEqual({ total: 6, inProgress: 1, blocked: 1 });
+    expect(filterTimeline(works, '', 'blocked', '').map(work => work.latest.status)).toEqual(['blocked']);
+    expect(filterTimeline(works, '', 'reported', '').map(work => work.latest.status)).toEqual(['reported']);
+    expect(filterTimeline(works, '', 'verified', '').map(work => work.latest.status)).toEqual(['verified']);
+    expect(works.find(work => work.latest.workKey === 'proposed')?.latest.status).toBe('proposed');
+    expect(works.find(work => work.latest.workKey === 'approved')?.latest.status).toBe('approved');
+    const pending = works.filter(work => ['proposed', 'approved', 'reported'].includes(work.latest.status));
+    expect(timelineStats(pending)).toEqual({ total: 3, inProgress: 0, blocked: 0 });
   });
   it('searches recorded history, evidence and details without searching raw task IDs', () => {
     const works = collectTimeline([event('a', 'SECRET-ID', 'approved', '2026-11-17T01:00:00Z', { details: '모바일 메뉴 승인' }), event('b', 'SECRET-ID', 'verified', '2026-11-17T02:00:00Z', { verificationNote: 'CHROME 390px' })]);
@@ -39,6 +62,6 @@ describe('update log timeline', () => {
   });
   it('supports an empty log without inventing work', () => {
     expect(collectTimeline([])).toEqual([]);
-    expect(timelineStats([])).toEqual({ total: 0, inProgress: 0, attention: 0 });
+    expect(timelineStats([])).toEqual({ total: 0, inProgress: 0, blocked: 0 });
   });
 });

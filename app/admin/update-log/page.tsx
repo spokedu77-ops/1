@@ -107,15 +107,15 @@ export default function UpdateLogPage() {
       <dl className={styles.metrics}>
         <div><dt>전체 작업</dt><dd>{count(stats.total)}</dd></div>
         <div><dt>진행 중</dt><dd>{count(stats.inProgress)}</dd></div>
-        <div><dt>확인 필요</dt><dd>{count(stats.attention)}</dd></div>
+        <div><dt>보류·문제</dt><dd>{count(stats.blocked)}</dd></div>
       </dl>
-      <p className={styles.metricNote}>작업별 최신 상태 기준 · 확인 필요: 제안, 완료 보고, 보류·문제</p>
+      <p className={styles.metricNote}>작업별 최신 상태 기준</p>
     </section>
     {data && !data.complete && <p role="note" className={styles.coverage}>최신 {data.eventLimit.toLocaleString('ko-KR')}개 이벤트의 조회 범위입니다. 작업 수는 확인된 최소값이며, 프로젝트·상태·검색도 조회 범위에 한정됩니다. 작업을 펼치면 해당 작업의 전체 이력을 조회합니다.</p>}
     <section className={styles.timeline} aria-label="작업 타임라인" aria-busy={loading}>
       <div className={styles.filters}>
         <label>프로젝트<select aria-label="프로젝트" value={project} onChange={event => { setProject(event.target.value); setShown(PAGE_SIZE); }}><option value="">전체 프로젝트</option>{projects.map(item => <option key={item} value={item}>{item}</option>)}</select></label>
-        <label>상태<select aria-label="상태" value={status} onChange={event => { setStatus(event.target.value as StatusFilter); setShown(PAGE_SIZE); }}><option value="">전체 상태</option><option value="in_progress">진행 중</option><option value="reported">완료 보고</option><option value="verified">검증 완료</option><option value="attention">확인 필요</option></select></label>
+        <label>상태<select aria-label="상태" value={status} onChange={event => { setStatus(event.target.value as StatusFilter); setShown(PAGE_SIZE); }}><option value="">전체 상태</option><option value="in_progress">진행 중</option><option value="reported">완료 보고</option><option value="verified">검증 완료</option><option value="blocked">보류·문제</option></select></label>
         <label className={styles.search}>검색<span><Search size={16} aria-hidden="true" /><input type="search" value={search} onChange={event => { setSearch(event.target.value); setShown(PAGE_SIZE); }} placeholder="작업 요약 및 관련 내용" /></span></label>
       </div>
       {loading ? <div role="status" className={styles.empty}>작업 기록을 불러오는 중입니다.</div>
