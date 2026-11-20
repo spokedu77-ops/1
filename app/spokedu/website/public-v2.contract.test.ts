@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { Window } from 'happy-dom';
 import HomePage from './pages/home';
 import PrivatePage from './pages/private';
-import EducationPage from './pages/education';
+import EducationServerPage, { EducationContent } from './pages/education';
 import AboutPage from './pages/about';
 import SpomoveServerPage, { SpomoveContent as SpomovePage } from './pages/spomove';
 import { listPublicRecordCards } from '@/app/lib/server/fieldRecords';
@@ -23,6 +23,7 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/app/lib/server/fieldRecords', () => ({ listPublicRecordCards: vi.fn(async () => []) }));
 
+const EducationPage = () => createElement(EducationContent, { stories: legacyRecordCards() });
 const pages = { home: HomePage, private: PrivatePage, education: EducationPage, about: AboutPage, spomove: SpomovePage };
 const windows: Window[] = [];
 function render(page: keyof typeof pages) {
@@ -37,7 +38,7 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
   it.each([
     ['home', ['brand', 'operating-metrics', 'service-paths', 'showcase', 'four-move', 'field-stories', 'next-step']],
     ['private', ['brand', 'showcase', 'class-types', 'private-faq', 'inquiry']],
-    ['education', ['brand', 'education-metrics', 'program-grid', 'process-showcase', 'inquiry-intro', 'inquiry']],
+    ['education', ['brand', 'education-metrics', 'program-grid', 'process-showcase', 'field-stories', 'inquiry']],
     ['about', ['brand', 'approach', 'what-we-do', 'history', 'team', 'inquiry']],
     ['spomove', ['spomove-hero', 'how-it-works', 'task-examples', 'levels', 'spomat', 'applications', 'field-case', 'lab', 'inquiry']],
   ] as const)('%s renders the approved section order without appended legacy sections', (page, sections) => {
@@ -137,13 +138,24 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
   it('keeps education preparation, field operation, case links and program inquiry entry', () => {
     const doc = render('education');
     expect([...doc.querySelectorAll('#process-showcase h3')].map(node => node.textContent)).toEqual([
-      '기관 조건 확인', '수업 구성 및 준비', '현장 수업 운영', '관찰과 기록 공유', '실제 기관 운영 사례',
+      '조건 확인', '수업안 및 준비 범위 구성', '현장 운영 및 활동 조정', '필요한 사항 기록·공유',
     ]);
     const text = doc.querySelector('#process-showcase')?.textContent ?? '';
-    for (const phrase of ['지도자', '수업을 진행', '관찰', '다음 회차', '기관별 협의 범위']) expect(text).toContain(phrase);
-    expect(doc.querySelectorAll('.web-education-case-links a')).toHaveLength(3);
+    for (const phrase of ['지도자', '수업을 진행', '관찰', '다음 회기', '기관과 협의한 범위']) expect(text).toContain(phrase);
+    expect(doc.querySelectorAll('#field-stories [data-record-slug] a')).toHaveLength(3);
+    expect(doc.querySelectorAll('#field-stories img')).toHaveLength(3);
+    expect(doc.querySelector('#field-stories a[href="/records"]')?.textContent).toContain('전체 수업 사례 보기');
+    for (const slug of ['maedong-sports-stepup', 'dongjak-spomove', 'donghaeng-special-pe'] as const) {
+      const link = doc.querySelector(`#field-stories [data-record-slug="${slug}"] a`);
+      const record = getFieldRecordCatalogItem(slug);
+      expect(link?.getAttribute('href')).toBe(record.href);
+      if (record.href.startsWith('https://')) {
+        expect(link?.getAttribute('target')).toBe('_blank');
+        expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
+      }
+    }
     expect(doc.querySelector('#process-follow-up')).toBeNull();
-    expect(doc.querySelectorAll('#process-showcase img')).toHaveLength(2);
+    expect(doc.querySelectorAll('#process-showcase img')).toHaveLength(0);
     expect(doc.querySelectorAll('#program-grid .web-program-card')).toHaveLength(6);
     const groupedPrograms = educationProgramGroups.flatMap(group => group.programIds.map(id => educationPrograms.find(program => program.id === id)!));
     expect([...doc.querySelectorAll('#program-grid .web-program-card h4')].map(node => node.textContent)).toEqual(groupedPrograms.map(program => program.name));
@@ -155,7 +167,7 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     const groups = [...doc.querySelectorAll('.web-education-program-group')];
     expect(groups).toHaveLength(3);
     expect(groups.map(group => group.querySelector('header h3')?.textContent)).toEqual([
-      '기관 정규·프로그램 교육', '대상 맞춤·포용 교육', '행사·체험 프로그램',
+      '정기·방과후 수업', '특수·포용 및 맞춤 체육', '특강·캠프 및 행사',
     ]);
     const cards = [...doc.querySelectorAll('[data-program-id]')];
     expect(cards.map(card => card.getAttribute('data-program-id')).sort()).toEqual(educationPrograms.map(program => program.id).sort());
@@ -165,7 +177,10 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
       expect(card?.querySelector('.web-education-program-description')?.textContent).toBe(program.description);
       expect(card?.querySelector('.web-education-program-application')?.textContent).toBe(program.application);
     });
-    expect(doc.querySelector('.web-education-group-note')?.textContent).toContain('다른 운영 형태에서도 조합');
+    expect(doc.querySelector('.web-education-group-note')?.textContent).toContain('운영 형태는 기관 조건에 따라 달라질 수 있습니다');
+    expect(groups.map(group => [...group.querySelectorAll('[data-program-id]')].map(card => card.getAttribute('data-program-id')))).toEqual([
+      ['monthly-sports', 'spomove'], ['inclusive', 'custom-class'], ['mini-olympics', 'custom-booth'],
+    ]);
     expect(doc.querySelectorAll('#process-showcase .web-education-operating-steps > li')).toHaveLength(4);
     expect(doc.querySelector('#brand a[href="#program-grid"]')).not.toBeNull();
     expect(doc.querySelector('#brand a[href="#inquiry"]')).not.toBeNull();
@@ -192,7 +207,10 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
   it.each([['private', 'private'], ['education', 'dispatch'], ['spomove', 'spomove']] as const)('%s keeps its typed consultation destination', (page, type) => {
     const doc = render(page);
     if (page === 'education') {
-      expect(doc.querySelector('#inquiry-intro a[href="#inquiry"]')).not.toBeNull();
+      expect(doc.querySelector('#inquiry-intro')).toBeNull();
+      expect(doc.querySelector('.web-education-consult-copy h2')?.textContent).toBe('우리 기관에 맞는 체육수업을함께 구성해 보세요.');
+      expect(doc.querySelector('#brand a.bg-primary-container')?.getAttribute('href')).toBe('#inquiry');
+      expect(doc.querySelector('#brand a[href="#program-grid"]')?.textContent?.trim()).toBe('운영 프로그램 살펴보기');
       expect(doc.querySelector('#inquiry form')).not.toBeNull();
     } else if (page === 'spomove') expect(doc.querySelector(`.spmi-consult a[href="/contact?type=${type}"]`)).not.toBeNull();
     else expect(doc.querySelector(`#inquiry a[href="/contact?type=${type}"]`)).not.toBeNull();
@@ -233,6 +251,24 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     const unpublished = renderToStaticMarkup(await SpomoveServerPage());
     expect(unpublished).not.toContain('data-record-slug=');
     expect(unpublished).toContain('공개된 SPOMOVE 현장 사례를 준비하고 있습니다.');
+  });
+
+  it('shows only published EDUCATION cases and never restores a removed CMS image', async () => {
+    const cards = legacyRecordCards();
+    vi.mocked(listPublicRecordCards).mockResolvedValueOnce(cards);
+    expect(renderToStaticMarkup(await EducationServerPage())).toContain('data-record-slug="dongjak-spomove"');
+    vi.mocked(listPublicRecordCards).mockResolvedValueOnce(cards.filter(record => record.slug !== 'dongjak-spomove'));
+    expect(renderToStaticMarkup(await EducationServerPage())).not.toContain('data-record-slug="dongjak-spomove"');
+    vi.mocked(listPublicRecordCards).mockResolvedValueOnce([]);
+    const empty = renderToStaticMarkup(await EducationServerPage());
+    expect(empty).not.toContain('data-record-slug=');
+    expect(empty).toContain('공개된 기관 수업 사례를 준비하고 있습니다.');
+    const withoutPhoto = cards.filter(record => record.slug === 'dongjak-spomove').map(record => ({ ...record, thumbnailSrc: undefined }));
+    const window = new Window();
+    windows.push(window);
+    window.document.body.innerHTML = renderToStaticMarkup(createElement(EducationContent, { stories: withoutPhoto }));
+    expect(window.document.querySelector('[data-record-slug="dongjak-spomove"] img')).toBeNull();
+    expect(window.document.querySelectorAll('#inquiry')).toHaveLength(1);
   });
 
   it('does not silently apply the unapproved replacement photos or remove the documented duplicates', () => {

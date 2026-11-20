@@ -40,13 +40,14 @@ export const educationPrograms = [
 
 /** Presentation groups only; programs can be combined across operating formats. */
 export const educationProgramGroups = [
-  { id: 'regular', title: '기관 정규·프로그램 교육', description: '기관의 일정에 맞춰 다양한 스포츠와 시지각 움직임 활동을 구성합니다.', programIds: ['spomove', 'monthly-sports'] },
-  { id: 'inclusive', title: '대상 맞춤·포용 교육', description: '참여자의 수행 수준과 필요한 지원을 고려해 수업을 조정합니다.', programIds: ['inclusive', 'custom-class'] },
-  { id: 'events', title: '행사·체험 프로그램', description: '행사의 목적과 참여 규모에 맞춰 스포츠 활동과 동선을 구성합니다.', programIds: ['mini-olympics', 'custom-booth'] },
+  { id: 'regular', title: '정기·방과후 수업', description: '학기 일정에 맞춰 기본 움직임과 스포츠 활동을 이어갑니다. 정기수업과 방과후 환경에 맞게 회기별 활동을 구성합니다.', label: '학교·키움센터·방과후 운영', programIds: ['monthly-sports', 'spomove'] },
+  { id: 'inclusive', title: '특수·포용 및 맞춤 체육', description: '참여자의 운동 수행 수준과 규칙 이해 정도를 고려합니다. 공간과 인원에 맞춰 난이도와 참여 방식을 조정합니다.', label: '특수학급·통합반·복지기관 운영', programIds: ['inclusive', 'custom-class'] },
+  { id: 'events', title: '특강·캠프 및 행사', description: '하루 또는 단기 일정에 맞춰 스포츠 미션과 협동 활동을 구성합니다. 참여 규모와 이동 동선도 함께 고려합니다.', label: '기관 행사·축제·원데이 운영', programIds: ['mini-olympics', 'custom-booth'] },
 ] as const satisfies ReadonlyArray<{
   id: string;
   title: string;
   description: string;
+  label: string;
   programIds: readonly (typeof educationPrograms)[number]['id'][];
 }>;
 
@@ -55,10 +56,10 @@ export function getEducationProgram(id: string | null) {
 }
 
 export const educationOperatingSteps = [
-  { title: '기관 조건 확인', body: '교육 대상과 참여 인원, 수업 공간, 운영 목적을 확인합니다.' },
-  { title: '수업 구성 및 준비', body: '기관 조건을 바탕으로 활동의 난이도와 진행 방식, 교구 및 준비 범위를 구성합니다.' },
-  { title: '현장 수업 운영', body: '기관과 협의한 기준에 맞춰 지도자가 수업을 진행하며 참여 방식과 움직임 수행, 규칙 이해 등을 관찰합니다.' },
-  { title: '관찰과 기록 공유', body: '관찰한 내용을 다음 회차의 활동 구성에 반영합니다. 기록과 결과 공유는 기관별 협의 범위에 따라 진행합니다.' },
+  { title: '조건 확인', body: '교육 대상과 참여 인원, 수업 공간, 일정 및 운영 목적을 먼저 확인합니다.', keys: '대상 · 인원 · 공간 · 일정' },
+  { title: '수업안 및 준비 범위 구성', body: '확인한 조건을 바탕으로 프로그램과 회기별 활동을 구성하고 지도자와 교구의 준비 범위를 협의합니다.', keys: '프로그램 · 회기 · 지도자 · 교구' },
+  { title: '현장 운영 및 활동 조정', body: '담당 지도자가 수업을 진행하며 참여 수준과 이동 동선을 살핍니다. 필요한 경우 규칙과 활동 난이도를 조정합니다.', keys: '진행 · 참여 관찰 · 현장 조정' },
+  { title: '필요한 사항 기록·공유', body: '수업 중 관찰한 내용과 다음 회기에 필요한 조정 사항은 기관과 협의한 범위에서 기록하고 공유합니다.', keys: '관찰 · 피드백 · 다음 회기' },
 ] as const;
 
 export function educationProgramImageAlt(item: (typeof educationPrograms)[number]) {

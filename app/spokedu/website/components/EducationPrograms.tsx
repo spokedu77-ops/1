@@ -56,8 +56,8 @@ export function EducationPrograms() {
   }
 
   return <>
-    <div className="web-education-program-groups">{educationProgramGroups.map(group => <section className="web-education-program-group" key={group.id} aria-labelledby={`education-group-${group.id}`}>
-      <header><h3 id={`education-group-${group.id}`}>{group.title}</h3><p>{group.description}</p></header>
+    <div className="web-education-program-groups">{educationProgramGroups.map((group, index) => <section className="web-education-program-group" key={group.id} aria-labelledby={`education-group-${group.id}`}>
+      <header><span className="web-education-group-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><h3 id={`education-group-${group.id}`}>{group.title}</h3><p>{group.description}</p><p className="web-education-group-label">{group.label}</p></header>
       <div className="web-card-grid web-education-programs">{group.programIds.map(id => educationPrograms.find(program => program.id === id)!).map(program => <article className="web-program-card" key={program.id} data-program-id={program.id}>
       <Image unoptimized src={program.image} alt={educationProgramImageAlt(program)} loading="lazy" width={720} height={480} />
       <div className="web-program-body">

@@ -43,22 +43,32 @@
 }
 
 /* Groups express presentation, never program eligibility. */
-.website-content .web-education-program-groups { display:grid; gap:48px; }
-.website-content .web-education-program-group { display:grid; grid-template-columns:minmax(0,.65fr) minmax(0,2fr); gap:40px; padding-top:32px; border-top:1px solid #cbd5e1; }
+.website-content .web-education-program-groups { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; align-items:start; }
+.website-content .web-education-program-group { display:flex; flex-direction:column; gap:28px; min-width:0; padding:28px 24px; border:1px solid #dce3ef; border-radius:20px; background:#fff; }
+.website-content .web-education-group-number { display:block; margin-bottom:12px; color:#245dff; font-size:13px; font-weight:700; }
+.website-content .web-education-program-group > header { min-height:252px; }
 .website-content .web-education-program-group > header h3 { color:#0b1f46; font-size:24px; line-height:1.5; font-weight:750; margin-bottom:14px; }
 .website-content .web-education-program-group > header p { color:#475569; font-size:16px; line-height:1.8; }
-.website-content .web-education-program-group .web-education-programs { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.website-content .web-education-program-group > header .web-education-group-label { margin-top:16px; color:#245dff; font-size:12px; }
+.website-content .web-education-program-group .web-education-programs { grid-template-columns:1fr; gap:28px; }
+.website-content .web-education-program-group .web-program-card { min-width:0; border:0; border-radius:0; box-shadow:none; background:transparent; overflow:visible; }
 .website-content .web-education-program-group h4 { color:#0b1f46; font-size:23px; line-height:1.5; font-weight:750; }
 .website-content .web-education-program-group :is(h3,h4,p,button) { word-break:keep-all; overflow-wrap:normal; }
-.website-content .web-education-program-group .web-program-card > img { aspect-ratio:16/10; object-fit:cover; }
-.website-content .web-education-program-group .web-program-body { padding:24px; }
+.website-content .web-education-program-group .web-program-card > img { width:100%; height:auto; aspect-ratio:16/10; object-fit:cover; border-radius:12px; }
+.website-content .web-education-program-group .web-program-body { padding:20px 0 0; }
+.website-content .web-education-program-group .web-program-card + .web-program-card { padding-top:28px; border-top:1px solid #dce3ef; }
 .website-content .web-education-program-group .web-program-body > p { line-height:1.8; }
 .website-content .web-education-program-group .web-education-word { white-space:nowrap; }
 .website-content .web-education-program-link { min-height:48px; }
 @media(max-width:1023px) {
- .website-content .web-education-program-group { grid-template-columns:1fr; gap:24px; }
+ .website-content .web-education-program-groups { grid-template-columns:1fr; gap:28px; }
+ .website-content .web-education-program-group > header { min-height:0; }
+ .website-content .web-education-program-group .web-education-programs { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .website-content .web-education-program-group .web-program-card + .web-program-card { padding-top:0; border-top:0; }
 }
 @media(max-width:639px) {
  .website-content .web-education-program-group .web-education-programs { grid-template-columns:1fr; }
+ .website-content .web-education-program-group { padding:24px 20px; }
+ .website-content .web-education-program-group .web-program-card + .web-program-card { padding-top:28px; border-top:1px solid #dce3ef; }
  .website-content .web-education-program-group h4 { font-size:22px; }
 }
