@@ -10,6 +10,11 @@ import { canTeacherEditSession } from '@/app/lib/server/teacherSessionAccess';
 import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
 import { isFutureSessionDay } from '@/app/lib/server/sessionFeedbackGuard';
 import {
+  CENTER_SESSION_FILES_BUCKET,
+  parseSessionFilesStorageRef,
+  centerSessionFileSignError,
+} from '@/app/lib/server/centerSessionFileStorage';
+import {
   type FeedbackFields,
   fieldsToTemplateText,
 } from '@/app/lib/feedbackValidation';
@@ -186,6 +191,29 @@ export async function POST(req: Request) {
       if (missingFields.length > 0) {
         const msg = missingFields.map((f) => fieldNames[f]).join(', ');
         return NextResponse.json({ error: `다음 필드를 작성해주세요: ${msg}` }, { status: 400 });
+      }
+    }
+
+    // URL 문자열만으로 저장 성공을 선언하지 않는다. 실제 객체가 존재하고
+    // 다운로드 권한을 발급할 수 있어야 피드백 저장으로 진행한다.
+    if (isCenterType) {
+      for (const fileUrl of centerFileUrls) {
+        const ref = parseSessionFilesStorageRef(fileUrl);
+        if (!ref || ref.bucket !== CENTER_SESSION_FILES_BUCKET) {
+          return NextResponse.json({ error: '첨부파일 저장소 주소가 올바르지 않습니다.' }, { status: 400 });
+        }
+        const { data: signed, error: signError } = await svc.storage
+          .from(CENTER_SESSION_FILES_BUCKET)
+          .createSignedUrl(ref.objectPath, 60);
+        if (signError || !signed?.signedUrl) {
+          const failure = centerSessionFileSignError(signError);
+          return NextResponse.json(
+            { error: failure.status === 404
+              ? '첨부파일 원본을 확인할 수 없어 저장하지 않았습니다. 파일 업로드 상태를 확인해주세요.'
+              : '첨부파일 저장 상태를 확인하지 못했습니다. 잠시 후 다시 저장해주세요.' },
+            { status: failure.status === 404 ? 409 : 503 },
+          );
+        }
       }
     }
 

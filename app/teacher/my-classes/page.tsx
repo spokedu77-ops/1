@@ -144,29 +144,6 @@ function previousPlanListAt(content: string, sessionStartAt: string): Date | nul
 
 const SESSION_FILES_BUCKET = 'session-files';
 
-/** Supabase Storage 공개/서명 URL에서 `session-files` 버킷 기준 객체 경로 */
-function sessionFilesObjectPathFromPublicUrl(fileUrl: string): string | null {
-  try {
-    const u = new URL(fileUrl.trim());
-    const m = u.pathname.match(
-      new RegExp(`^/storage/v1/object/(?:public|sign|authenticated)/${SESSION_FILES_BUCKET}/(.+)$`),
-    );
-    if (!m?.[1]) return null;
-    return m[1]
-      .split('/')
-      .map((seg) => {
-        try {
-          return decodeURIComponent(seg);
-        } catch {
-          return seg;
-        }
-      })
-      .join('/');
-  } catch {
-    return null;
-  }
-}
-
 function MyClassesContent() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -849,22 +826,8 @@ function MyClassesContent() {
                           </span>
                           <button
                             type="button"
-                            onClick={async () => {
-                              if (supabase && url) {
-                                const path = sessionFilesObjectPathFromPublicUrl(url);
-                                if (path) {
-                                  const response = await fetch('/api/teacher/session-file-upload', {
-                                    method: 'DELETE',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ sessionId: selectedEvent.id, bucket: SESSION_FILES_BUCKET, path }),
-                                  });
-                                  if (!response.ok) {
-                                    const payload = (await response.json().catch(() => ({}))) as { error?: string };
-                                    toast.error(payload.error || '파일 삭제에 실패했습니다.');
-                                    return;
-                                  }
-                                }
-                              }
+                            onClick={() => {
+                              // 저장 성공 전에는 원본을 지우지 않는다. 취소/저장 실패 시 기존 첨부를 보존한다.
                               setFileUrls((prev) => prev.filter((_, idx) => idx !== i));
                               setRemovedFileUrls((prev) => (prev.includes(url) ? prev : [...prev, url]));
                               setFeedbackFields((prev) => ({

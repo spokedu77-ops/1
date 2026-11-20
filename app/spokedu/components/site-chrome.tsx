@@ -11,6 +11,7 @@ import {
   footerNavGroups,
   getSocialLinks,
   siteHeaderCta,
+  siteHeaderUploadCta,
   siteHeaderLabCta,
   siteNav,
   type SiteNavEntry,
@@ -334,6 +335,7 @@ export function SiteHeader() {
     );
   };
 
+  const uploadActive = isLinkActive(pathname, siteHeaderUploadCta.href, siteHeaderUploadCta.matchPrefix);
   const ctaActive = isLinkActive(pathname, siteHeaderCta.href, siteHeaderCta.matchPrefix);
   const labActive = isLinkActive(pathname, siteHeaderLabCta.href, siteHeaderLabCta.matchPrefix);
 
@@ -361,6 +363,20 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex h-10 items-center gap-2">
+            <NavAnchor
+              href={siteHeaderUploadCta.href}
+              trackLabel={siteHeaderUploadCta.trackLabel}
+              active={uploadActive}
+              className={`hidden h-10 px-4.5 text-sm font-semibold rounded-full sm:inline-flex items-center justify-center whitespace-nowrap border bg-white leading-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                menuOpen
+                  ? 'pointer-events-none invisible'
+                  : uploadActive
+                      ? 'border-[#245DFF] bg-blue-50 text-[#245DFF] focus-visible:outline-[#245DFF]'
+                      : 'border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-600 focus-visible:outline-[#245DFF]'
+              }`}
+            >
+              {siteHeaderUploadCta.label}
+            </NavAnchor>
             <NavAnchor
               href={siteHeaderLabCta.href}
               trackLabel={siteHeaderLabCta.trackLabel}
@@ -437,6 +453,15 @@ export function SiteHeader() {
         <nav className="flex h-full flex-col overflow-y-auto px-5 py-4 sm:pt-1">
           {siteNav.map(renderMobileEntry)}
           <div className="mt-4 grid gap-2">
+            <NavAnchor
+              href={siteHeaderUploadCta.href}
+              trackLabel={`mobile-${siteHeaderUploadCta.trackLabel}`}
+              active={uploadActive}
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/30 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              onNavigate={closeMenus}
+            >
+              {siteHeaderUploadCta.label}
+            </NavAnchor>
             <NavAnchor
               href={siteHeaderLabCta.href}
               trackLabel={`mobile-${siteHeaderLabCta.trackLabel}`}

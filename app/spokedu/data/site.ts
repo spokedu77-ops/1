@@ -122,6 +122,13 @@ export const siteHeaderLabCta = {
   matchPrefix: '/spokedu-lab',
 } as const;
 
+export const siteHeaderUploadCta = {
+  label: '자료 올리기',
+  href: '/upload/class-media',
+  trackLabel: 'header-class-media-upload',
+  matchPrefix: '/upload/class-media',
+} as const;
+
 export const siteHeaderCta = {
   key: 'contact',
   label: '문의하기',

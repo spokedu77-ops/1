@@ -109,6 +109,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // 구버전 화면도 저장 전에 이 DELETE를 호출한다. 문서는 보존하고
+    // 첨부 해제는 session-feedback의 저장 트랜잭션에서만 처리한다.
+    if (bucket === CENTER_SESSION_FILES_BUCKET) {
+      return NextResponse.json({ ok: true, retained: true });
+    }
+
     const { error } = await service.storage.from(bucket).remove([path]);
     if (error) throw error;
     return NextResponse.json({ ok: true });

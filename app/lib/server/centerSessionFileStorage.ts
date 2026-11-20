@@ -93,6 +93,15 @@ export type CenterSessionFileResolved = {
 
 export type ResolveCenterSessionFileError = { error: string; status: number };
 
+/** Storage는 누락 객체를 HTTP 400 + statusCode 404로 반환할 수도 있다. */
+export function centerSessionFileSignError(error: unknown): ResolveCenterSessionFileError {
+  const storageError = error as { status?: number; statusCode?: string | number; message?: string } | null;
+  if (String(storageError?.statusCode) === '404' || storageError?.status === 404 || storageError?.message === 'Object not found') {
+    return { error: '첨부파일 원본이 저장소에 없습니다. 담당 강사에게 파일 재첨부를 요청해주세요.', status: 404 };
+  }
+  return { error: '스토리지 접근 URL을 만들지 못했습니다. 잠시 후 다시 시도해주세요.', status: 502 };
+}
+
 /**
  * 피드백 검수 센터 첨부: 세션·URL·스토리지 ref 검증 후 객체 경로 반환.
  * `/api/admin/storage/center-session-file` 프록시에서 사용.

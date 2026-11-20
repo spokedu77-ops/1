@@ -367,7 +367,7 @@ async function downloadCenterSessionFileAsKoreanName(params: {
   });
   if (!linkRes.ok) {
     const payload = (await linkRes.json().catch(() => ({}))) as { error?: string };
-    throw new Error(payload.error || `다운로드 준비 실패 (${linkRes.status})`);
+    throw new Error(payload.error || `다운로드 준비 실패 (${linkRes.status})`, { cause: linkRes.status });
   }
   const json = (await linkRes.json()) as { signedUrl?: string; filename?: string };
   const signedUrl = typeof json.signedUrl === 'string' ? json.signedUrl.trim() : '';
@@ -440,7 +440,9 @@ function FeedbackReviewTab({
       devLogger.warn('[FeedbackReviewTab] center file download', err);
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(msg);
-      window.open(url, '_blank', 'noopener,noreferrer');
+      if (!(err instanceof Error && err.cause === 404)) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
     } finally {
       setDownloadingCenterFileIndex(null);
     }

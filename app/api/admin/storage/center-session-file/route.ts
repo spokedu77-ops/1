@@ -3,6 +3,7 @@ import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   CENTER_SESSION_FILES_BUCKET,
+  centerSessionFileSignError,
   resolveCenterSessionFileForAdmin,
 } from '@/app/lib/server/centerSessionFileStorage';
 
@@ -100,7 +101,8 @@ export async function POST(req: NextRequest) {
 
     if (signErr || !signed?.signedUrl) {
       devLogger.error('[center-session-file] createSignedUrl', signErr);
-      return NextResponse.json({ error: '스토리지 접근 URL을 만들지 못했습니다.' }, { status: 502 });
+      const failure = centerSessionFileSignError(signErr);
+      return NextResponse.json({ error: failure.error }, { status: failure.status });
     }
 
     const rangeHdr = `bytes=${byteStart}-${byteEnd}`;

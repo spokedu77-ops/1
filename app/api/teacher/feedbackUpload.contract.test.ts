@@ -17,12 +17,24 @@ describe('teacher center feedback upload contract', () => {
     expect(teacherPage).not.toContain(".from(bucket).upload(");
   });
 
-  it('deletes owned session files through the authenticated server endpoint', () => {
+  it('retains center originals and submits attachment removal only with feedback saving', () => {
     expect(uploadRoute).toContain('export async function DELETE');
     expect(uploadRoute).toContain("path.startsWith(`${sessionId}/`)");
     expect(uploadRoute).toContain('canTeacherEditSession(user.id, row)');
-    expect(teacherPage).toContain("method: 'DELETE'");
+    expect(uploadRoute).toContain('if (bucket === CENTER_SESSION_FILES_BUCKET)');
+    expect(uploadRoute.indexOf('return NextResponse.json({ ok: true, retained: true })')).toBeLessThan(uploadRoute.indexOf('.remove([path])'));
+    expect(teacherPage).not.toContain("method: 'DELETE'");
+    expect(teacherPage).toContain('removedFileUrls');
+    expect(feedbackRoute).toContain('removedSet.has(url)');
     expect(teacherPage).not.toContain('supabase.storage.from(SESSION_FILES_BUCKET).remove');
+  });
+
+  it('checks that center attachment objects can be signed before persisting feedback', () => {
+    expect(feedbackRoute).toContain('parseSessionFilesStorageRef(fileUrl)');
+    expect(feedbackRoute).toContain('ref.bucket !== CENTER_SESSION_FILES_BUCKET');
+    expect(feedbackRoute).toContain('createSignedUrl(ref.objectPath, 60)');
+    expect(feedbackRoute).toContain('if (signError || !signed?.signedUrl)');
+    expect(feedbackRoute.indexOf('createSignedUrl(ref.objectPath, 60)')).toBeLessThan(feedbackRoute.indexOf(".rpc('teacher_save_session_feedback'"));
   });
 
   it('uses one shared main-or-assistant permission contract on both endpoints', () => {
