@@ -59,6 +59,23 @@ describe('submitInquiry', () => {
     expect(body.acquisition.submitPath).toBe(`${window.location.pathname}${window.location.search}`);
   });
 
+  it('preserves multiple institutional programs, other details, dates and support needs through failure and retry', async () => {
+    const payload: InquiryPayload = {
+      ...basePrivatePayload, type: 'dispatch', phone: '', email: 'institution@example.invalid',
+      organizationName: '모의 기관', targetAge: '', expectedParticipants: '', preferredOperation: '',
+      educationPrograms: ['spomove', 'monthly-sports', 'other'], otherProgram: '협동 놀이',
+      startDate: '2026-12-01', endDate: '2026-12-31', specialNeeds: '미정',
+    };
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{"ok":false}', { status: 500 }));
+    expect(await submitInquiry(payload)).toEqual({ ok: false, mode: 'temp' });
+    expect(JSON.parse(window.localStorage.getItem(TEMP_INQUIRY_STORAGE_KEY)!).payload).toEqual(payload);
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+    expect(body).toMatchObject({ phone: '', email: payload.email, programs: ['SPOMOVE', '월간 스포츠', '기타: 협동 놀이'], startDate: '2026-12-01', endDate: '2026-12-31', specialNeeds: '미정', privacy_consent: true });
+    expect(body.inquiry).toContain('기타 희망 프로그램: 협동 놀이');
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{"ok":true}', { status: 200 }));
+    expect(await submitInquiry(payload)).toEqual({ ok: true, mode: 'api' });
+  });
+
   it('returns ok when API succeeds', async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), { status: 200 }),

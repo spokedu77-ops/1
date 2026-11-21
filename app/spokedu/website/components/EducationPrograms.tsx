@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { ArrowRight, X } from 'lucide-react';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { educationPrograms, educationProgramGroups, educationProgramImageAlt, educationProgramModalContent } from '../data/education';
+import { educationPrograms, educationProgramPresentation, educationProgramImageAlt, educationProgramModalContent } from '../data/education';
 import '../styles/education-programs.css';
 
 type Program = (typeof educationPrograms)[number];
@@ -56,17 +56,17 @@ export function EducationPrograms() {
   }
 
   return <>
-    <div className="web-education-program-groups">{educationProgramGroups.map((group, index) => <section className="web-education-program-group" key={group.id} aria-labelledby={`education-group-${group.id}`}>
-      <header><span className="web-education-group-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><h3 id={`education-group-${group.id}`}>{group.title}</h3><p>{group.description}</p><p className="web-education-group-label">{group.label}</p></header>
-      <div className="web-card-grid web-education-programs">{group.programIds.map(id => educationPrograms.find(program => program.id === id)!).map(program => <article className="web-program-card" key={program.id} data-program-id={program.id}>
-      <Image unoptimized src={program.image} alt={educationProgramImageAlt(program)} loading="lazy" width={720} height={480} />
+    <div className="web-card-grid web-education-programs">{educationPrograms.map(program => <article className="web-program-card" key={program.id} data-program-id={program.id}>
+      <div className="web-education-program-photo"><Image unoptimized src={program.image} alt={educationProgramImageAlt(program)} loading="lazy" width={720} height={480} /><span>{educationProgramPresentation[program.id].audience}</span></div>
       <div className="web-program-body">
-        <span className="web-tag">{program.badge}</span><h4>{program.name}</h4><p className="web-education-program-description">{program.description.split(' ').map((word, index) => <span key={`${program.id}-${index}`}>{index > 0 ? ' ' : ''}<span className="web-education-word">{word}</span></span>)}</p>
-        <p className="web-education-program-application">{program.application}</p>
-        <button type="button" className="web-text-link web-education-program-link" aria-haspopup="dialog" onClick={event => open(program, event.currentTarget)}>프로그램 자세히 보기 <span aria-hidden="true">→</span><span className="sr-only"> — {program.name}</span></button>
+        <h3>{program.name}</h3>
+        <p className="web-education-program-description">{program.description}</p>
+        <div className="web-education-program-footer">
+          <p className="web-education-program-example">{educationProgramPresentation[program.id].example}</p>
+          <button type="button" className="web-text-link web-education-program-link" aria-haspopup="dialog" onClick={event => open(program, event.currentTarget)}>프로그램 자세히 보기 <span aria-hidden="true">→</span><span className="sr-only"> — {program.name}</span></button>
+        </div>
       </div>
     </article>)}</div>
-    </section>)}</div>
     <dialog ref={dialogRef} className="web-education-program-dialog" aria-labelledby="education-program-title" onClose={restoreFocus}
       onPointerDown={event => { backdropPointerDownRef.current = isBackdrop(event); }}
       onPointerUp={event => {

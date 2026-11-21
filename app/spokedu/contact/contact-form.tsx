@@ -1,6 +1,8 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Phone, MessageCircle } from 'lucide-react';
+import { brandChannels } from '../data/brand';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { brandContactLinks, brandProfile, type ContactInquiryType } from '../data/site';
 import {
@@ -21,6 +23,7 @@ import { submitInquiry } from './inquiry-submit';
 import { V0PrivacyConsent } from '../components/v0-privacy-consent';
 import { parseSpomoveOperationLabel } from '../data/commercial-routes';
 import { resolveContactInquiryType } from './resolve-contact-inquiry-type';
+import { EducationInquiryFields } from '../website/components/EducationInquiryFields';
 import { getEducationProgram } from '../website/data/education';
 import { createFormStartedTracker, trackCommercialEvent } from '../lib/commercial-events';
 import { externalLinkProps } from '../lib/external-link';
@@ -215,17 +218,22 @@ function CommonFields({
   inquiryTypeLabel,
   minimal = false,
   educationLayout = false,
+  organizationName = '',
+  onOrganizationChange,
   onChange,
 }: {
   values: InquiryCommonFields;
   inquiryTypeLabel: string;
   minimal?: boolean;
   educationLayout?: boolean;
+  organizationName?: string;
+  onOrganizationChange?: (value: string) => void;
   onChange: (patch: Partial<InquiryCommonFields>) => void;
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <Field label={educationLayout ? '담당자명' : '이름'} required>
+      {educationLayout && <Field label="기관명" required><input required autoComplete="organization" value={organizationName} onChange={event => onOrganizationChange?.(event.target.value)} className={inputClass} /></Field>}
+      <div className="contents"><Field label={educationLayout ? '담당자명' : '이름'} required>
         <input
           required
           autoComplete="name"
@@ -234,9 +242,11 @@ function CommonFields({
           className={inputClass}
         />
       </Field>
-      <Field label="연락처" required>
+      </div>
+      {educationLayout && <p className="web-education-contact-callout sm:col-span-2">전화번호·이메일 중 하나 이상을 입력해 주세요. 남겨주신 연락처로 기관에 맞는 상담을 안내드립니다.</p>}
+      <Field label="연락처" required={!educationLayout || !values.email.trim()}>
         <input
-          required
+          required={!educationLayout || !values.email.trim()}
           type="tel"
           inputMode="tel"
           autoComplete="tel"
@@ -245,9 +255,10 @@ function CommonFields({
           className={inputClass}
         />
       </Field>
-      <Field label="이메일">
+      <Field label="이메일" required={educationLayout && !values.phone.trim()}>
         <input
           type="email"
+          required={educationLayout && !values.phone.trim()}
           inputMode="email"
           autoComplete="email"
           value={values.email}
@@ -255,9 +266,9 @@ function CommonFields({
           className={inputClass}
         />
       </Field>
-      <Field label="희망 지역" required={!minimal}>
+      <Field label="희망 지역" required={!minimal && !educationLayout}>
         <input
-          required={!minimal}
+          required={!minimal && !educationLayout}
           placeholder="예: 서울 강남, 경기 성남"
           value={values.preferredRegion}
           onChange={(e) => onChange({ preferredRegion: e.target.value })}
@@ -372,6 +383,11 @@ function applyPayloadToForms(payload: InquiryPayload, handlers: {
   }
   if (payload.type === 'dispatch') {
     handlers.setDispatchForm({
+      educationPrograms: payload.educationPrograms,
+      otherProgram: payload.otherProgram,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      specialNeeds: payload.specialNeeds,
       name: payload.name,
       phone: payload.phone,
       email: payload.email,
@@ -437,7 +453,6 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
-  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const markFormStartedRef = useRef(createFormStartedTracker('other', 'contact_form'));
   const [inquiryType, setInquiryType] = useState<InquiryType | null>(inlineType ?? null);
   const [submitting, setSubmitting] = useState(false);
@@ -447,6 +462,10 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
   const [storedDraft, setStoredDraft] = useState<StoredInquiryDraft | null>(null);
   const [privateForm, setPrivateForm] = useState<PrivateInquiryFields>(PRIVATE_DEFAULT);
   const [dispatchForm, setDispatchForm] = useState<DispatchInquiryFields>(DISPATCH_DEFAULT);
+  const selectedProgramId = dispatchForm.educationPrograms?.[0] ?? null;
+  const setSelectedProgramId = useCallback((id: string | null) => {
+    setDispatchForm(previous => ({ ...previous, educationPrograms: id ? [id] : [], otherProgram: '' }));
+  }, [setDispatchForm]);
   const [spomoveForm, setSpomoveForm] = useState<SpomoveInquiryFields>(SPOMOVE_DEFAULT);
   const [curriculumForm, setCurriculumForm] = useState<CurriculumInquiryFields>(CURRICULUM_DEFAULT);
   const [otherForm, setOtherForm] = useState<OtherInquiryFields>(OTHER_DEFAULT);
@@ -460,7 +479,7 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
     }
     window.addEventListener('spokedu:education-program', selectProgram);
     return () => window.removeEventListener('spokedu:education-program', selectProgram);
-  }, [educationProgramSelection, inlineType]);
+  }, [educationProgramSelection, inlineType, setSelectedProgramId]);
 
   useEffect(() => {
     if (!inquiryType) return;
@@ -531,7 +550,7 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
             : 'SPOMOVE 도입·운영 상담을 요청합니다.'),
       }));
     }
-  }, [searchParams, inlineType, isEducationInquiry]);
+  }, [searchParams, inlineType, isEducationInquiry, setSelectedProgramId]);
 
   const activeOption = useMemo(
     () => contactTypeOptions.find((option) => option.id === inquiryType) ?? null,
@@ -551,7 +570,7 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
   function buildPayload(): InquiryPayload {
     const createdAt = new Date().toISOString();
     if (inquiryType === 'private') return { type: 'private', createdAt, ...privateForm };
-    if (inquiryType === 'dispatch') return { type: 'dispatch', createdAt, ...dispatchForm, message: isEducationInquiry ? appendProgramInterest(dispatchForm.message, selectedProgramId) : dispatchForm.message };
+    if (inquiryType === 'dispatch') return { type: 'dispatch', createdAt, ...dispatchForm };
     if (inquiryType === 'spomove') return { type: 'spomove', createdAt, ...spomoveForm };
     if (inquiryType === 'curriculum') return { type: 'curriculum', createdAt, ...curriculumForm };
     return { type: 'other', createdAt, ...otherForm };
@@ -592,6 +611,10 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
     event.preventDefault();
     if (!inquiryType || !activeOption || submitting || submittingRef.current || !privacyConsent) return;
 
+    if (isEducationInquiry && !(dispatchForm.educationPrograms?.length)) {
+      setNotice({ kind: 'error', text: '희망 프로그램을 하나 이상 선택해 주세요.', showFallback: false });
+      return;
+    }
     setNotice(null);
     submittingRef.current = true;
     setSubmitting(true);
@@ -749,7 +772,7 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
 
             <div className="space-y-3">
               <p className="text-sm font-bold text-slate-900">기본 정보</p>
-              <CommonFields educationLayout={isEducationInquiry} minimal={!!inlineType && inquiryType === 'spomove'} values={commonValues} inquiryTypeLabel={inquiryTypeLabel} onChange={onCommonChange} />
+              <CommonFields organizationName={dispatchForm.organizationName} onOrganizationChange={organizationName => { markFormStartedRef.current(); setDispatchForm(previous => ({ ...previous, organizationName })); }} educationLayout={isEducationInquiry} minimal={!!inlineType && inquiryType === 'spomove'} values={commonValues} inquiryTypeLabel={inquiryTypeLabel} onChange={onCommonChange} />
             </div>
 
             {inquiryType === 'private' ? (
@@ -798,7 +821,8 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
               </div>
             ) : null}
 
-            {inquiryType === 'dispatch' ? (
+            {inquiryType === 'dispatch' && isEducationInquiry && <><EducationInquiryFields values={dispatchForm} onChange={patch => { markFormStartedRef.current(); setDispatchForm(previous => ({ ...previous, ...patch })); }} /></>}
+            {inquiryType === 'dispatch' && !isEducationInquiry ? (
               <InstitutionFields
                 values={dispatchForm}
                 onChange={(patch) => {
@@ -927,7 +951,7 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
             {isEducationInquiry && <div className="web-education-inquiry-message">
               <p className="text-sm font-bold text-slate-900">문의 내용</p>
               {getEducationProgram(selectedProgramId) && <div className="web-education-inquiry-selection" aria-live="polite">
-                <span>관심 프로그램: <strong>{getEducationProgram(selectedProgramId)!.name}</strong></span>
+                <span>관심 프로그램: <strong>{(dispatchForm.educationPrograms ?? []).map(id => getEducationProgram(id)?.name ?? '기타').join(', ')}</strong></span>
                 <button type="button" onClick={() => setSelectedProgramId(null)}>선택 해제</button>
               </div>}
               <Field label="문의 내용 및 관심 프로그램" required>
@@ -983,6 +1007,7 @@ export default function SpokeduContactForm({ inlineType, educationProgramSelecti
                 </button>
               </div>
             ) : null}
+            {isEducationInquiry && <div className="web-education-direct-contact"><a href={brandContactLinks.phone}><Phone size={16} aria-hidden="true" />전화 상담 {brandProfile.phone}</a><a href={brandChannels.find(channel => channel.key === 'kakao-channel')!.href} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} aria-hidden="true" />카카오 채널 B2B 상담</a></div>}
           </form>
           ) : (
             <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">

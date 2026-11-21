@@ -53,6 +53,25 @@ vi.mock('@/app/lib/server/leadEnvelope', async (importOriginal) => {
 });
 
 describe('dispatch/leads education v0 minimal payload', () => {
+  it.each([
+    { phone: '', email: 'institution@example.invalid', status: 200 },
+    { phone: '01099998888', email: '', status: 200 },
+    { phone: '', email: '', status: 400 },
+    { phone: '', email: 'invalid-email', status: 400 },
+  ])('validates institutional contact alternatives: $phone / $email', async ({ phone, email, status }) => {
+    const { POST } = await import('./route');
+    const req = new NextRequest('http://localhost/api/dispatch/leads', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'dispatch', organization: '모의 기관', manager: '모의 담당자', phone, email,
+        programs: ['SPOMOVE', '월간 스포츠'], inquiry: '운영 문의',
+        source: 'spokedu-contact-dispatch', privacy_consent: true,
+        cta_intent_id: 'dispatch_proposal', acquisition: { entrySurface: 'direct' },
+      }),
+    });
+    expect((await POST(req)).status).toBe(status);
+  });
+
   it('accepts 5-field body without legacy dates/location/ages', async () => {
     const { POST } = await import('./route');
     const req = new NextRequest('http://localhost/api/dispatch/leads', {

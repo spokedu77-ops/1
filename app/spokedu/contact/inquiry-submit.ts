@@ -1,3 +1,4 @@
+import { getEducationProgram } from '../website/data/education';
 import { storeInquiryDraft } from './inquiry-draft';
 import { getAcquisitionContext } from '../lib/acquisition';
 import type {
@@ -31,6 +32,7 @@ function formatPrivateContent(payload: PrivateInquiryPayload): string {
 function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
   return [
     '[기관 프로그램 문의]',
+    ...(payload.educationPrograms?.length ? [`관심 프로그램: ${payload.educationPrograms.map(id => id === 'other' ? `기타: ${payload.otherProgram ?? ''}` : getEducationProgram(id)?.name ?? id).join(', ')}`] : []),
     `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
     `이메일: ${payload.email}`,
@@ -40,6 +42,10 @@ function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
     `대상 연령: ${payload.targetAge}`,
     `예상 인원: ${payload.expectedParticipants}`,
     `희망 운영 형태: ${payload.preferredOperation}`,
+    ...(payload.otherProgram ? [`기타 희망 프로그램: ${payload.otherProgram}`] : []),
+    ...(payload.startDate ? [`희망 시작일: ${payload.startDate}`] : []),
+    ...(payload.endDate ? [`희망 종료일: ${payload.endDate}`] : []),
+    ...(payload.specialNeeds ? [`특수 아동 참여 여부: ${payload.specialNeeds}`] : []),
     `createdAt: ${payload.createdAt}`,
   ].join('\n');
 }
@@ -130,12 +136,12 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
         phone: payload.phone,
         email: payload.email,
         location: payload.preferredRegion,
-        startDate: '',
-        endDate: '',
+        startDate: payload.startDate ?? '',
+        endDate: payload.endDate ?? '',
         headcount: payload.expectedParticipants,
-        specialNeeds: payload.message,
+        specialNeeds: payload.specialNeeds ?? payload.message,
         inquiry: formatDispatchInquiry(payload),
-        programs: payload.preferredOperation ? [payload.preferredOperation] : [],
+        programs: payload.educationPrograms?.length ? payload.educationPrograms.map(id => id === 'other' ? `기타: ${payload.otherProgram ?? ''}` : getEducationProgram(id)?.name ?? id) : payload.preferredOperation ? [payload.preferredOperation] : [],
         targetAge: payload.targetAge ? [payload.targetAge] : [],
         source: 'spokedu-contact-dispatch',
         cta_intent_id: 'dispatch_proposal',

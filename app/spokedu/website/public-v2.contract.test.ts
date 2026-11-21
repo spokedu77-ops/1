@@ -14,7 +14,7 @@ import { PUBLIC_TEAM_ROLES, PUBLIC_PROGRAM_COPY } from '../data/public-brand-cop
 import { aboutPage } from '../data/about-page';
 import { getFieldRecordCatalogItem } from '../data/field-records-catalog';
 import { SPOKEDU_IMAGES } from '../data/images';
-import { educationPrograms, educationProgramGroups } from './data/education';
+import { educationPrograms, educationProgramPresentation, educationReviews, educationComparison, educationFaq, educationOperatingSteps } from './data/education';
 import { siteNav, footerNavGroups, siteHeaderLabCta } from '../data/site';
 
 vi.mock('next/navigation', () => ({
@@ -23,7 +23,7 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/app/lib/server/fieldRecords', () => ({ listPublicRecordCards: vi.fn(async () => []) }));
 
-const EducationPage = () => createElement(EducationContent, { stories: legacyRecordCards() });
+const EducationPage = () => createElement(EducationContent);
 const pages = { home: HomePage, private: PrivatePage, education: EducationPage, about: AboutPage, spomove: SpomovePage };
 const windows: Window[] = [];
 function render(page: keyof typeof pages) {
@@ -38,7 +38,7 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
   it.each([
     ['home', ['brand', 'operating-metrics', 'service-paths', 'showcase', 'four-move', 'field-stories', 'next-step']],
     ['private', ['brand', 'showcase', 'class-types', 'private-faq', 'inquiry']],
-    ['education', ['brand', 'education-metrics', 'program-grid', 'process-showcase', 'field-stories', 'inquiry']],
+    ['education', ['brand', 'education-metrics', 'reviews', 'comparison', 'program-grid', 'process-showcase', 'education-faq', 'inquiry']],
     ['about', ['brand', 'approach', 'what-we-do', 'history', 'team', 'inquiry']],
     ['spomove', ['spomove-hero', 'how-it-works', 'task-examples', 'levels', 'spomat', 'applications', 'field-case', 'lab', 'inquiry']],
   ] as const)('%s renders the approved section order without appended legacy sections', (page, sections) => {
@@ -138,51 +138,41 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
   it('keeps education preparation, field operation, case links and program inquiry entry', () => {
     const doc = render('education');
     expect([...doc.querySelectorAll('#process-showcase h3')].map(node => node.textContent)).toEqual([
-      '조건 확인', '수업안 및 준비 범위 구성', '현장 운영 및 활동 조정', '필요한 사항 기록·공유',
+      ...educationOperatingSteps.map(step => step.title),
     ]);
     const text = doc.querySelector('#process-showcase')?.textContent ?? '';
-    for (const phrase of ['지도자', '수업을 진행', '관찰', '다음 회기', '기관과 협의한 범위']) expect(text).toContain(phrase);
-    expect(doc.querySelectorAll('#field-stories [data-record-slug] a')).toHaveLength(3);
-    expect(doc.querySelectorAll('#field-stories img')).toHaveLength(3);
-    expect(doc.querySelector('#field-stories a[href="/records"]')?.textContent).toContain('전체 수업 사례 보기');
-    for (const slug of ['maedong-sports-stepup', 'dongjak-spomove', 'donghaeng-special-pe'] as const) {
-      const link = doc.querySelector(`#field-stories [data-record-slug="${slug}"] a`);
-      const record = getFieldRecordCatalogItem(slug);
-      expect(link?.getAttribute('href')).toBe(record.href);
-      if (record.href.startsWith('https://')) {
-        expect(link?.getAttribute('target')).toBe('_blank');
-        expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
-      }
-    }
+    for (const phrase of ['지도자', '수업을 진행', '교육 환경', '운영 조건', '협의']) expect(text).toContain(phrase);
+    expect(doc.querySelector('#field-stories')).toBeNull();
     expect(doc.querySelector('#process-follow-up')).toBeNull();
     expect(doc.querySelectorAll('#process-showcase img')).toHaveLength(0);
     expect(doc.querySelectorAll('#program-grid .web-program-card')).toHaveLength(6);
-    const groupedPrograms = educationProgramGroups.flatMap(group => group.programIds.map(id => educationPrograms.find(program => program.id === id)!));
-    expect([...doc.querySelectorAll('#program-grid .web-program-card h4')].map(node => node.textContent)).toEqual(groupedPrograms.map(program => program.name));
+    const groupedPrograms = educationPrograms;
+    expect([...doc.querySelectorAll('#program-grid .web-program-card h3')].map(node => node.textContent)).toEqual(groupedPrograms.map(program => program.name));
     expect(doc.querySelectorAll('#program-grid button[aria-haspopup="dialog"]')).toHaveLength(educationPrograms.length);
   });
 
-  it('groups all six education programs once without replacing their content or inquiry entry', () => {
+  it('restores the ordered six-program lineup, reviews, comparison and FAQ without replacing inquiry behavior', () => {
     const doc = render('education');
-    const groups = [...doc.querySelectorAll('.web-education-program-group')];
-    expect(groups).toHaveLength(3);
-    expect(groups.map(group => group.querySelector('header h3')?.textContent)).toEqual([
-      '정기·방과후 수업', '특수·포용 및 맞춤 체육', '특강·캠프 및 행사',
-    ]);
+    expect(doc.querySelector('.web-education-program-group')).toBeNull();
     const cards = [...doc.querySelectorAll('[data-program-id]')];
     expect(cards.map(card => card.getAttribute('data-program-id')).sort()).toEqual(educationPrograms.map(program => program.id).sort());
     educationPrograms.forEach(program => {
       const card = doc.querySelector(`[data-program-id="${program.id}"]`);
       expect(card?.querySelector('img')?.getAttribute('src')).toBe(program.image);
       expect(card?.querySelector('.web-education-program-description')?.textContent).toBe(program.description);
-      expect(card?.querySelector('.web-education-program-application')?.textContent).toBe(program.application);
+      expect(card?.querySelector('.web-education-program-features')).toBeNull();
+      expect(card?.querySelector('.web-program-body > .web-tag')).toBeNull();
+      expect(card?.querySelector('.web-education-program-example')?.textContent).toBe(educationProgramPresentation[program.id].example);
     });
     expect(doc.querySelector('.web-education-group-note')?.textContent).toContain('운영 형태는 기관 조건에 따라 달라질 수 있습니다');
-    expect(groups.map(group => [...group.querySelectorAll('[data-program-id]')].map(card => card.getAttribute('data-program-id')))).toEqual([
-      ['monthly-sports', 'spomove'], ['inclusive', 'custom-class'], ['mini-olympics', 'custom-booth'],
-    ]);
-    expect(doc.querySelectorAll('#process-showcase .web-education-operating-steps > li')).toHaveLength(4);
-    expect(doc.querySelector('#brand a[href="#program-grid"]')).not.toBeNull();
+    expect(cards.map(card => card.getAttribute('data-program-id'))).toEqual(educationPrograms.map(program => program.id));
+    expect(doc.querySelectorAll('#reviews blockquote')).toHaveLength(3);
+    expect([...doc.querySelectorAll('#reviews blockquote')].map(node => node.textContent)).toEqual(educationReviews.map(review => review.body));
+    expect([...doc.querySelectorAll('#reviews h3')].map(node => node.textContent)).toEqual(educationReviews.map(review => review.title));
+    expect([...doc.querySelectorAll('#comparison tbody th')].map(node => node.textContent)).toEqual(educationComparison.map(row => row.title));
+    expect(doc.querySelectorAll('#education-faq details')).toHaveLength(educationFaq.length);
+    expect(doc.querySelectorAll('#process-showcase .web-education-operating-steps > li')).toHaveLength(5);
+    expect(doc.querySelector('#brand a[href="#comparison"]')).not.toBeNull();
     expect(doc.querySelector('#brand a[href="#inquiry"]')).not.toBeNull();
     expect(doc.querySelectorAll('#inquiry form')).toHaveLength(1);
     expect([...doc.querySelectorAll('#education-metrics dl > div')].map(node => [node.querySelector('dd')?.textContent, node.querySelector('dt')?.textContent])).toEqual(PUBLIC_OPERATING_METRICS.map(metric => [metric.value, metric.label]));
@@ -210,7 +200,7 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
       expect(doc.querySelector('#inquiry-intro')).toBeNull();
       expect(doc.querySelector('.web-education-consult-copy h2')?.textContent).toBe('우리 기관에 맞는 체육수업을함께 구성해 보세요.');
       expect(doc.querySelector('#brand a.bg-primary-container')?.getAttribute('href')).toBe('#inquiry');
-      expect(doc.querySelector('#brand a[href="#program-grid"]')?.textContent?.trim()).toBe('운영 프로그램 살펴보기');
+      expect(doc.querySelector('#brand a[href="#comparison"]')?.textContent?.trim()).toBe('스포키듀 차별성 보기');
       expect(doc.querySelector('#inquiry form')).not.toBeNull();
     } else if (page === 'spomove') expect(doc.querySelector(`.spmi-consult a[href="/contact?type=${type}"]`)).not.toBeNull();
     else expect(doc.querySelector(`#inquiry a[href="/contact?type=${type}"]`)).not.toBeNull();
@@ -253,22 +243,17 @@ describe('Canonical Stitch public page structure and preserved handoffs', () => 
     expect(unpublished).toContain('공개된 SPOMOVE 현장 사례를 준비하고 있습니다.');
   });
 
-  it('shows only published EDUCATION cases and never restores a removed CMS image', async () => {
-    const cards = legacyRecordCards();
-    vi.mocked(listPublicRecordCards).mockResolvedValueOnce(cards);
-    expect(renderToStaticMarkup(await EducationServerPage())).toContain('data-record-slug="dongjak-spomove"');
-    vi.mocked(listPublicRecordCards).mockResolvedValueOnce(cards.filter(record => record.slug !== 'dongjak-spomove'));
-    expect(renderToStaticMarkup(await EducationServerPage())).not.toContain('data-record-slug="dongjak-spomove"');
-    vi.mocked(listPublicRecordCards).mockResolvedValueOnce([]);
-    const empty = renderToStaticMarkup(await EducationServerPage());
-    expect(empty).not.toContain('data-record-slug=');
-    expect(empty).toContain('공개된 기관 수업 사례를 준비하고 있습니다.');
-    const withoutPhoto = cards.filter(record => record.slug === 'dongjak-spomove').map(record => ({ ...record, thumbnailSrc: undefined }));
-    const window = new Window();
-    windows.push(window);
-    window.document.body.innerHTML = renderToStaticMarkup(createElement(EducationContent, { stories: withoutPhoto }));
-    expect(window.document.querySelector('[data-record-slug="dongjak-spomove"] img')).toBeNull();
-    expect(window.document.querySelectorAll('#inquiry')).toHaveLength(1);
+  it('removes the duplicate education cases without fetching the CMS and keeps one inquiry', () => {
+    vi.mocked(listPublicRecordCards).mockClear();
+    const markup = renderToStaticMarkup(EducationServerPage());
+    expect(listPublicRecordCards).not.toHaveBeenCalled();
+    expect(markup).not.toContain('data-record-slug=');
+    const doc = render('education');
+    expect(doc.querySelectorAll('#inquiry form')).toHaveLength(1);
+    expect(doc.querySelectorAll('.web-education-review-avatar')).toHaveLength(3);
+    expect(doc.querySelectorAll('.web-education-step-duration')).toHaveLength(5);
+    expect(doc.querySelectorAll('.web-education-program-choices input[type="checkbox"]')).toHaveLength(7);
+    expect(doc.querySelector('.web-education-floating-cta')?.hasAttribute('hidden')).toBe(true);
   });
 
   it('does not silently apply the unapproved replacement photos or remove the documented duplicates', () => {

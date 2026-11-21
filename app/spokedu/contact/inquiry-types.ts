@@ -16,6 +16,11 @@ export type PrivateInquiryFields = InquiryCommonFields & {
 };
 
 export type DispatchInquiryFields = InquiryCommonFields & {
+  educationPrograms?: string[];
+  otherProgram?: string;
+  startDate?: string;
+  endDate?: string;
+  specialNeeds?: string;
   organizationName: string;
   targetAge: string;
   expectedParticipants: string;
