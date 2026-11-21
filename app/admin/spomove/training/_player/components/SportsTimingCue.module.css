@@ -1,0 +1,12 @@
+﻿.cue { position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; overflow:hidden; }
+.cue[hidden] { display:none; }
+.dial { position:relative; width:min(40vw,44vh,360px); aspect-ratio:1; }
+.reference,.approach { position:absolute; inset:0; border-radius:50%; }
+.reference { border:1px solid rgb(226 232 240 / 12%); }
+.approach { border:1.5px solid rgb(248 250 252 / 25%); transform:scale(var(--cue-scale,2.2)); }
+.cue[data-state='now'] .reference { border:1.5px solid rgb(248 250 252 / 55%); }
+.cue[data-state='now'] .approach { border-color:rgb(248 250 252 / 35%); }
+.cue[data-variant='kendo'] .reference { border-color:rgb(226 232 240 / 8%); }
+.cue[data-variant='kendo'] .approach { border-width:1px; border-color:rgb(248 250 252 / 14%); }
+.cue[data-variant='kendo'][data-state='now'] .reference { border-color:rgb(248 250 252 / 30%); }
+.cue[data-variant='kendo'][data-state='now'] .approach { border-color:rgb(248 250 252 / 20%); }

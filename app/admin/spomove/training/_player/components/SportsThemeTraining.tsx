@@ -7,6 +7,7 @@ import { spomoveRequestAnimationFrame as requestAnimationFrame, spomoveCancelAni
 import { emptyColorStimulusCounts, type ColorStimulusCounts } from '../lib/trainingResultSummary';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { BeatRushImpactAudio } from './BeatRushImpactAudio';
+import timingStyles from './SportsTimingCue.module.css';
 
 type Props = { variant: 'fencing' | 'kendo'; speedSec: number; targetReps: number; effectsEnabled: boolean;
   onProgress: (count: number, counts: ColorStimulusCounts) => void; onComplete: (stats: ReactTrainCompleteStats) => void };
@@ -14,6 +15,7 @@ type Props = { variant: 'fencing' | 'kendo'; speedSec: number; targetReps: numbe
 /** Isolate the supplied canvas renderer; the host owns clock, audio and results. */
 export function SportsThemeTraining({ variant, speedSec, targetReps, effectsEnabled, onProgress, onComplete }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const timingRef = useRef<HTMLDivElement>(null);
   const stopRef = useRef<() => void>(() => {});
   const callbacks = useRef({ onProgress, onComplete, effectsEnabled });
   useEffect(() => { callbacks.current = { onProgress, onComplete, effectsEnabled }; }, [onProgress, onComplete, effectsEnabled]);
@@ -27,11 +29,14 @@ export function SportsThemeTraining({ variant, speedSec, targetReps, effectsEnab
     let ended = false, started = false, passed = 0, raf = 0, last = 0, lastArrival = 0;
     let counts = emptyColorStimulusCounts();
     let cancelCountdown = () => {};
+    let timingTimeout: ReturnType<typeof setTimeout> | undefined;
     const sound = new BeatRushImpactAudio();
     const send = (message: object) => frameRef.current?.contentWindow?.postMessage(message, '*');
     const finish = (reason: ReactTrainCompleteStats['completionReason']) => {
       if (ended) return;
       ended = true; cancelCountdown(); cancelAnimationFrame(raf); sound.stop(); send({ type: 'spomove-sport-stop' });
+      clearTimeout(timingTimeout);
+      if (timingRef.current) timingRef.current.hidden = true;
       callbacks.current.onComplete({ stims: passed, maxCombo: 0, laneCount: [counts.red, counts.blue, counts.green, counts.yellow], completionReason: reason });
     };
     stopRef.current = () => finish(passed > 0 ? 'stopped_early' : 'cancelled');
@@ -51,8 +56,22 @@ export function SportsThemeTraining({ variant, speedSec, targetReps, effectsEnab
         cancelCountdown = runReactTrainStartCountdown({ onTick: setCountdown, onDone: () => {
           if (ended) return; send({ type: 'spomove-sport-start' }); last = lastArrival = performance.now(); raf = requestAnimationFrame(tick);
         } });
+      } else if (data.type === 'spomove-sport-timing') {
+        if (!Number.isFinite(data.progress) || data.progress < 0 || data.progress > 1) return;
+        const cue = timingRef.current;
+        if (cue) {
+          clearTimeout(timingTimeout);
+          cue.hidden = false; cue.dataset.state = 'approach';
+          cue.style.setProperty('--cue-scale', String(1 + 1.2 * (1 - data.progress)));
+        }
       } else if (data.type === 'spomove-sport-hit') {
         if (!Number.isInteger(data.index) || data.index < 0 || data.index > 3 || passed >= total) { finish('failed'); return; }
+        const cue = timingRef.current;
+        if (cue) {
+          clearTimeout(timingTimeout);
+          cue.hidden = false; cue.dataset.state = 'now'; cue.style.setProperty('--cue-scale', '1');
+          timingTimeout = setTimeout(() => { cue.hidden = true; }, 180);
+        }
         passed++; lastArrival = performance.now(); const color = (['red', 'yellow', 'green', 'blue'] as const)[data.index]!;
         counts = { ...counts, [color]: counts[color] + 1 }; setCount(passed);
         callbacks.current.onProgress(passed, counts);
@@ -63,13 +82,17 @@ export function SportsThemeTraining({ variant, speedSec, targetReps, effectsEnab
     window.addEventListener('message', receive);
     const timeout = window.setTimeout(() => { if (!started) finish('failed'); }, 15000);
     send({ type: 'spomove-sport-hello' });
-    return () => { ended = true; window.clearTimeout(timeout); cancelCountdown(); cancelAnimationFrame(raf); sound.stop(); send({ type: 'spomove-sport-stop' }); window.removeEventListener('message', receive); stopRef.current = () => {}; };
+    return () => { ended = true; clearTimeout(timingTimeout); window.clearTimeout(timeout); cancelCountdown(); cancelAnimationFrame(raf); sound.stop(); send({ type: 'spomove-sport-stop' }); window.removeEventListener('message', receive); stopRef.current = () => {}; };
   }, [variant, seconds, total]);
 
   return <section className="sports-training" style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', background: '#020617', color: 'white', fontFamily: 'var(--spm-font-body)' }}>
     <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', minHeight: 68 }}><strong>{title}</strong><span style={{ marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>{count} / {total}</span><button type="button" onClick={() => stopRef.current()} style={{ minHeight: 44, borderRadius: 10, padding: '8px 14px', border: '1px solid #64748b', background: 'transparent', color: 'white' }}>STOP</button></header>
     <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
       <iframe ref={frameRef} title={`${title} 실행 화면`} sandbox="allow-scripts" src={`/spomove/sports/${variant}.html`} onLoad={() => frameRef.current?.contentWindow?.postMessage({ type: 'spomove-sport-hello' }, '*')} style={{ display: 'block', width: '100%', height: '100%', border: 0, pointerEvents: 'none' }} />
+      <div ref={timingRef} hidden className={timingStyles.cue} data-sports-timing data-variant={variant} data-state="approach" aria-label="원이 겹치는 순간 동작하는 타이밍 안내">
+        <div className={timingStyles.dial}><div className={timingStyles.reference} /><div className={timingStyles.approach} />
+        </div>
+      </div>
       {ready ? <ReactTrainStartCountdownOverlay countdown={countdown} /> : <div role="status" style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: '#020617' }}>실행 화면 준비 중…</div>}
     </div>
     <progress value={count} max={total} aria-label="제시 진행" style={{ height: 5, width: '100%', accentColor: '#38bdf8', flexShrink: 0 }} />

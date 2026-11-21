@@ -337,6 +337,7 @@
                 if (this.state === 'APPROACHING') {
                     this.flyTime++;
                     const t = this.flyTime / this.maxFlyTime;
+                    parent.postMessage({type:'spomove-sport-timing',progress:Math.min(1,t)},'*');
 
                     // 눈앞에서 멈칫하는 감속(Ease-out) 제거 -> 자비없이 일직선으로 꽂히는 등속 이동
                     this.z = 5000 - (5000 - this.targetZ) * t;

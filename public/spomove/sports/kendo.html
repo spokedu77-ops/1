@@ -392,6 +392,7 @@
             update() {
                 this.flyTime++;
                 const t = this.flyTime / this.maxFlyTime;
+                parent.postMessage({type:'spomove-sport-timing',progress:Math.min(1,t)},'*');
 
                 // 점점 가속하며 다가옴 (Ease-In)
                 const easeIn = Math.pow(t, 3);
