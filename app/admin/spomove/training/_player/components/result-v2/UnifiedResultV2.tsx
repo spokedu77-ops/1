@@ -19,6 +19,7 @@ import { InstantMemoryRecordV2 } from './InstantMemoryRecordV2';
 import { TeacherInputRecordV2 } from './TeacherInputRecordV2';
 import { TimeConfigurationRecordV2 } from './TimeConfigurationRecordV2';
 import { RecordV2Details } from './RecordV2Details';
+import { ActionMoveFeedback } from './ActionMoveFeedback';
 import { CARDINAL_DIRECTIONS } from '../../lib/directionPresentation';
 import styles from './ResultV2.module.css';
 import details from './RecordV2Details.module.css';
@@ -27,6 +28,7 @@ const BADGES = { color: '색상별 제시 기록', direction: '방향별 제시 
 export function UnifiedResultV2(props: TrainingResultV2Input & { seed: number; theme: string; student?: { name: string } | null; resultActions?: ReactNode; resultNotice?: ReactNode; footer?: ReactNode; onBack: () => void; onRetry: () => void }) {
   const model = buildTrainingResultV2Model(props, props.seed);
   const { kind, vm } = model;
+  if (model.id === 'action-move') return <ActionMoveFeedback model={model} theme={props.theme} session={props.diveActionMove} student={props.student} onBack={props.onBack} onRetry={props.onRetry} resultActions={props.resultActions} resultNotice={props.resultNotice} footer={props.footer} />;
   const featureTitle = kind === 'color' ? '가장 많이 제시된 색상' : kind === 'direction' ? '가장 많이 제시된 방향' : kind === 'zone' ? model.id === 'goalkeeper' || model.id === 'number-cart' ? '가장 많이 도착한 구역' : '가장 많이 제시된 구역' : kind === 'number' ? '가장 많이 제시된 숫자' : '기록 요약';
   const [status, title] = RESULT_V2_TITLES[vm.reason];
   const { facts: recordFacts, settings: recordSettings } = selectV2RecordDetails(model);
