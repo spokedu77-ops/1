@@ -6,7 +6,7 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
 import { clampRoundIndex } from '@/app/admin/classes-shared/lib/roundFields';
-import { BookOpen, Box, Building2, CheckCircle, ClipboardList, FlaskConical, MessageSquare, Pin, RefreshCw, Plus, ScrollText, Users, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { BookOpen, Box, Building2, CheckCircle, MessageSquare, Pin, RefreshCw, Plus, Users, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './AdminDashboard.module.css';
 import VatCalculator from '@/app/components/admin/VatCalculator';
@@ -517,13 +517,10 @@ export default function SpokeduHQDashboard() {
   };
   const bucketLabels: Record<ClassTimeBucket, string> = { upcoming: '예정', ongoing: '진행', done: '완료', postponed: '연기', cancelled: '취소' };
   const shortcuts = [
-    { name: '업무 노트', href: '/admin/note', icon: ClipboardList },
     { name: '기관·개인 관리', href: '/admin/centers', icon: Building2 },
     { name: '강사 관리', href: '/admin/users', icon: Users },
     { name: '커리큘럼 관리', href: '/admin/curriculum', icon: BookOpen },
     { name: '교구·재고', href: '/admin/inventory', icon: Box },
-    { name: '업데이트 로그', href: '/admin/update-log', icon: ScrollText },
-    { name: 'Health Lab', href: '/admin/health-lab', icon: FlaskConical },
   ];
 
   const scheduleChanges = [
