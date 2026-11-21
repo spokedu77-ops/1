@@ -20,6 +20,7 @@ const host = process.env.DEV_LOCAL_HOST || '127.0.0.1';
 const baseUrl = `http://${host}:${port}`;
 const checkOnly = process.argv.includes('--check');
 const skipKill = process.argv.includes('--no-kill-port');
+const allowOfflineAuth = process.argv.includes('--allow-offline-auth');
 
 process.chdir(repoRoot);
 
@@ -117,6 +118,10 @@ async function ensureAuthReachable() {
     }
     log('Supabase auth connection verified.');
   } catch (error) {
+    if (allowOfflineAuth && !checkOnly) {
+      log('Supabase auth connection unavailable; starting local server with --allow-offline-auth. Login and data access still require Supabase connectivity.');
+      return;
+    }
     const codes = [error?.cause?.code, ...(error?.cause?.errors ?? []).map((item) => item.code)];
     if (codes.includes('EACCES') || codes.includes('EPERM')) {
       fail('Supabase auth connection blocked by process permissions. Restart npm run dev:local with network access; login cannot work in this sandbox.', 2);
@@ -182,7 +187,7 @@ async function waitForHttpReady(ms = 120_000) {
   const start = Date.now();
   while (Date.now() - start < ms) {
     try {
-      const res = await fetch(`${baseUrl}/`, { redirect: 'follow' });
+      const res = await fetch(`${baseUrl}${allowOfflineAuth ? '/admin/inventory' : '/'}`, { redirect: 'follow', signal: AbortSignal.timeout(10_000) });
       const html = await res.text();
       if (res.ok && (html.includes('__next') || html.includes('_next'))) return true;
     } catch {
@@ -195,7 +200,7 @@ async function waitForHttpReady(ms = 120_000) {
 
 async function isAlreadyHealthy() {
   try {
-    const res = await fetch(`${baseUrl}/`, { redirect: 'follow' });
+    const res = await fetch(`${baseUrl}${allowOfflineAuth ? '/admin/inventory' : '/'}`, { redirect: 'follow', signal: AbortSignal.timeout(5_000) });
     const html = await res.text();
     return res.ok && (html.includes('__next') || html.includes('_next'));
   } catch {
