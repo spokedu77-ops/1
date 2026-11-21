@@ -6,7 +6,35 @@
  * 저장소에 없으므로 요청하지 않는다. 엔트리가 없으면 색 스카이박스로 둔다.
  */
 
-export const DIVE_THEME_IDS = ['space', 'theme2', 'theme3', 'theme4', 'theme5'] as const;
+export const DIVE_THEME_IDS = ['space', 'ocean', 'theme2', 'theme3', 'theme4', 'theme5'] as const;
+export const LEGACY_DIVE_THEME_IDS = ['theme2', 'theme3', 'theme4', 'theme5'] as const;
+export type DiveActiveThemeId = 'space' | 'ocean';
+export const SPACE_OBSTACLE_DEFAULTS = {
+  punch: '/spomove/dive/space/obstacles/83b53102-66de-49df-abf6-1a9abd539fce.png',
+  duck: '/spomove/dive/space/obstacles/f1b34531-7710-4fae-86ce-3a15a111089e.png',
+  kick: '/spomove/dive/space/obstacles/b1297343-359e-47ec-a592-a4fbd95945b4.png',
+  reach: '/spomove/dive/space/obstacles/d6ff454c-bba9-45e5-aba7-45040bd7f8ad.png',
+} as const;
+export const OCEAN_DUCK_SHARK_FRAMES = [
+  '/spomove/dive/ocean/obstacles/ocean_duck_shark_01.png',
+  '/spomove/dive/ocean/obstacles/ocean_duck_shark_02.png',
+  '/spomove/dive/ocean/obstacles/ocean_duck_shark_03.png',
+  '/spomove/dive/ocean/obstacles/ocean_duck_shark_04.png',
+] as const;
+export const OCEAN_OBSTACLE_DEFAULTS = {
+  duck: OCEAN_DUCK_SHARK_FRAMES[0],
+  punch: '/spomove/dive/ocean/obstacles/ocean_punch_treasure_chest.png',
+  kick: '/spomove/dive/ocean/obstacles/ocean_kick_barrel.png',
+  reach: '/spomove/dive/ocean/obstacles/ocean_reach_vault_door.png',
+} as const;
+export type OceanObstacleKind = keyof typeof OCEAN_OBSTACLE_DEFAULTS;
+export type OceanObstacleUrls = Record<OceanObstacleKind, string>;
+export type DiveObstacleKind = OceanObstacleKind;
+export type DiveObstacleUrls = OceanObstacleUrls;
+
+export function getDiveObstacleDefaults(theme: DiveActiveThemeId): DiveObstacleUrls {
+  return theme === 'ocean' ? OCEAN_OBSTACLE_DEFAULTS : SPACE_OBSTACLE_DEFAULTS;
+}
 
 export type DiveThemeId = (typeof DIVE_THEME_IDS)[number];
 
@@ -21,15 +49,13 @@ export type DiveThemeEntry = {
   hasHighRes: boolean;
   /** 파노라마 정면 방향 오프셋 (°, -180 ~ +180, 기본 0) */
   yawDeg?: number;
+  obstacles?: Partial<Record<OceanObstacleKind, string>>;
 };
 
-/** Admin UI 표시 라벨 (이름 확정 전 임시) */
-export const DIVE_THEME_UI: ReadonlyArray<{ id: DiveThemeId; label: string }> = [
+/** Active selection order. Legacy IDs above remain storage/history identities only. */
+export const DIVE_THEME_UI: ReadonlyArray<{ id: DiveActiveThemeId; label: string }> = [
   { id: 'space', label: 'SPACE' },
-  { id: 'theme2', label: '놀이공원' },
-  { id: 'theme3', label: '정글' },
-  { id: 'theme4', label: '테마 4' },
-  { id: 'theme5', label: '테마 5' },
+  { id: 'ocean', label: 'OCEAN' },
 ];
 
 export type DiveActionMoveUnityTheme = 'theme2' | 'theme3';
@@ -52,10 +78,22 @@ export function isDiveThemeId(value: unknown): value is DiveThemeId {
   return typeof value === 'string' && (DIVE_THEME_IDS as readonly string[]).includes(value);
 }
 
-/** 구 flowColorTheme / 잘못된 값 → space 기본 */
+/** Legacy/invalid launch settings fall back to SPACE, never reinterpret them as OCEAN. */
 export function normalizeDiveThemeId(value: unknown): DiveThemeId {
-  if (isDiveThemeId(value)) return value;
+  if (value === 'space' || value === 'ocean') return value;
   return 'space';
+}
+
+export function resolveOceanObstacleUrls(entry: DiveThemeEntry | null | undefined,
+  getPreviewUrl: (path: string | null | undefined) => string | null): OceanObstacleUrls {
+  return resolveDiveObstacleUrls('ocean', entry, getPreviewUrl);
+}
+
+export function resolveDiveObstacleUrls(theme: DiveActiveThemeId, entry: DiveThemeEntry | null | undefined,
+  getPreviewUrl: (path: string | null | undefined) => string | null): DiveObstacleUrls {
+  return Object.fromEntries(Object.entries(getDiveObstacleDefaults(theme)).map(([kind, fallback]) =>
+    [kind, getPreviewUrl(entry?.obstacles?.[kind as OceanObstacleKind]) ?? fallback],
+  )) as OceanObstacleUrls;
 }
 
 export type DivePanoramaUrls = {
@@ -63,6 +101,11 @@ export type DivePanoramaUrls = {
   lowUrl?: string;
   yawDeg: number;
 };
+export type DivePanoramaStatus = 'loading' | 'ready' | 'unregistered' | 'failed';
+
+export function hasDivePanorama(entry: DiveThemeEntry | null | undefined): boolean {
+  return Boolean(entry?.panoramaLowPath || (entry?.hasHighRes && entry.panoramaPath));
+}
 
 export function resolveDivePanoramaUrls(
   _themeId: DiveThemeId,

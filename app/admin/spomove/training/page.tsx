@@ -55,7 +55,9 @@ import {
   formatDiveActionMoveDuration,
   formatDiveActionMoveDurationDetail,
 } from '@/app/lib/spomove/diveActionMoveTiming';
-import { DIVE_THEME_UI, isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import { isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import { DiveThemeSelector } from '@/app/components/spomove/DiveThemeSelector';
+import { resolveDiveThemePresentation } from './_player/flow-lab/engine/modules/diveThemePresentation';
 import { VariantAppendixFullscreen } from './_player/components/VariantAppendixFullscreen';
 import { ColorGatePoseAppendix } from './_player/components/ColorGatePoseAppendix';
 import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
@@ -749,7 +751,7 @@ function SettingsScreen({
     setFlowPresets(next);
     setFlowPresetError(null);
   };
-  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], sportsArenaFeatures: [...(p.sportsArenaFeatures ?? [])], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all', colorGateCategories: p.colorGateCategories ?? s.colorGateCategories, colorGateDifficulties: p.colorGateDifficulties ?? s.colorGateDifficulties }));
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], sportsArenaFeatures: [...(p.sportsArenaFeatures ?? [])], diveEnvironmentTheme: normalizeDiveThemeId(p.environmentTheme), flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all', colorGateCategories: p.colorGateCategories ?? s.colorGateCategories, colorGateDifficulties: p.colorGateDifficulties ?? s.colorGateDifficulties }));
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
     const result = saveFlowPresets(next);
@@ -919,7 +921,15 @@ function SettingsScreen({
             {guideOpen ? (
               <div style={{ padding: '12px 14px 16px', borderTop: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.02)' }}>
                 {modeId !== 'sports' && launch.activityId !== 'visual-search' && launch.activityId !== 'moving-number-reader' && launch.activityId !== 'glass-bridge-memory' && <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />}
-                {modeId === 'sports' ? <div style={{ fontSize: 13, lineHeight: 1.7, color: T.text }}><p>{guidePhase?.goal}</p><p>{guidePhase?.screen}</p><p>{guidePhase?.coach}</p><p style={{ color: T.textDim }}>{guidePhase?.pitfall}</p></div> : launch.activityId === 'glass-bridge-memory' ? (
+                {modeId === 'flow' && levelId === 1 ? (
+                  <div style={{ fontSize: 13, lineHeight: 1.7, color: T.text }}>
+                    <p>{guidePhase?.goal ?? guideBlock?.intro}</p>
+                    {(['jump', 'faster', 'punch', 'duck', 'kick', 'reach', 'bonus'] as const).map(key => {
+                      const copy = resolveDiveThemePresentation(launch.diveEnvironmentTheme === 'ocean' ? 'ocean' : 'space', key);
+                      return <p key={key}><strong>{copy.icon} {copy.label}</strong><br /><span style={{ whiteSpace: 'pre-line' }}>{copy.shortInstruction}</span></p>;
+                    })}
+                  </div>
+                ) : modeId === 'sports' ? <div style={{ fontSize: 13, lineHeight: 1.7, color: T.text }}><p>{guidePhase?.goal}</p><p>{guidePhase?.screen}</p><p>{guidePhase?.coach}</p><p style={{ color: T.textDim }}>{guidePhase?.pitfall}</p></div> : launch.activityId === 'glass-bridge-memory' ? (
                   <p style={{ margin: '10px 0', fontSize: 12, color: T.text, lineHeight: 1.65 }}>
                     순서대로 점등되는 세로 유리 발판의 색상을 기억하고 실제 SPOMAT에서 같은 순서로 움직입니다.
                     순서를 기억한 뒤 교사가 이동한 색을 한 칸씩 선택합니다. 맞으면 성공 연출, 틀리면 유리 파괴 연출과 함께 해당 칸의 정답을 공개하고 다음 발판으로 진행합니다.
@@ -2260,37 +2270,11 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* Flow 전용: Hub 파노라마 환경 테마 */}
-          {isFlowOrChallenge ? (
-            <section style={{ marginBottom: 12 }}>
-              <div style={{ marginBottom: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>환경 테마</label>
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {DIVE_THEME_UI.map(({ id, label }) => {
-                  const active = launch.diveEnvironmentTheme === id;
-                  const hasHub = Boolean(diveEnvData.themes[id]);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, diveEnvironmentTheme: id, flowDuration: isDiveActionMoveUnityTheme(id) && !ACTION_MOVE_STAGE_SECONDS.includes(s.flowDuration as (typeof ACTION_MOVE_STAGE_SECONDS)[number]) ? DEFAULT_ACTION_MOVE_STAGE_SEC : s.flowDuration }))}
-                      style={{
-                        ...diveAdminChoiceStyle(active, accent),
-                        flex: '1 1 88px',
-                        padding: '8px 10px',
-                        textAlign: 'center',
-                        whiteSpace: 'nowrap',
-                        wordBreak: 'keep-all',
-                      }}
-                      title={hasHub ? 'Hub 파노라마' : '정적 폴백'}
-                    >
-                      <div style={{ fontWeight: 900, fontSize: 12, lineHeight: 1.2 }}>{active ? '✓ ' : ''}{label}</div>
-                      {!hasHub ? <div style={{ fontSize: 9, color: T.muted, marginTop: 2 }}>폴백</div> : null}
-                    </button>
-                  );
-                })}
-              </div>
+          {modeId === 'flow' ? (
+            <section style={{ marginBottom: 12 }} aria-label="DIVE environment">
+              <DiveThemeSelector value={launch.diveEnvironmentTheme}
+                onChange={diveEnvironmentTheme => setLaunch(current => ({ ...current, diveEnvironmentTheme }))}
+                themes={diveEnvData.themes} />
             </section>
           ) : null}
 
@@ -2374,10 +2358,9 @@ function SettingsScreen({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
                 {(
                   [
-                    { key: 'punch' as FlowFeatureKey, icon: '👊', label: '박스 펀치' },
-                    { key: 'kick'  as FlowFeatureKey, icon: '🦵', label: '롤링 배럴 킥' },
-                    { key: 'duck'  as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기' },
-                    { key: 'reach' as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기' },
+                    ...(['punch', 'kick', 'duck', 'reach'] as const).map(key => ({
+                      key, ...resolveDiveThemePresentation(launch.diveEnvironmentTheme === 'ocean' ? 'ocean' : 'space', key),
+                    })),
                   ]
                 ).map(({ key, icon, label }) => {
                   const active = launch.flowFeatures.includes(key);

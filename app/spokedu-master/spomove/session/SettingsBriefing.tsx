@@ -6,7 +6,8 @@ import {
   formatDiveActionMoveDuration,
   formatDiveActionMoveDurationDetail,
 } from '@/app/lib/spomove/diveActionMoveTiming';
-import { DIVE_THEME_UI, isDiveActionMoveUnityTheme, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import { isDiveActionMoveUnityTheme, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import { DiveEnvironmentSelector } from '@/app/components/spomove/DiveThemeSelector';
 
 import {
   formatSpomoveCueLabel,
@@ -236,16 +237,10 @@ export function SettingsBriefing({
         </section>
       ) : null}
 
-      {preset.engine.mode === 'flow' && preset.engine.level === 1 && preset.id !== 'dive-standard' ? (
+      {preset.programGroup === 'dive' ? (
         <section aria-label="DIVE 환경 테마">
           <p className="text-sm font-semibold text-white">환경 테마</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {DIVE_THEME_UI.map(({ id, label }) => (
-              <button key={id} type="button" onClick={() => onDiveEnvironmentThemeChange(id)} aria-pressed={diveEnvironmentTheme === id} className={`min-h-11 rounded-xl px-4 text-sm font-bold ${diveEnvironmentTheme === id ? 'bg-[var(--spm-acc)] text-white' : 'border border-white/15 bg-black/30 text-white/80'}`}>
-                {label}
-              </button>
-            ))}
-          </div>
+          <div className="mt-2"><DiveEnvironmentSelector value={diveEnvironmentTheme} onChange={onDiveEnvironmentThemeChange} /></div>
         </section>
       ) : null}
       {preset.engine.mode === 'flow' && preset.engine.level === 1 && isDiveActionMoveUnityTheme(diveEnvironmentTheme) ? (

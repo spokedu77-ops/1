@@ -10,6 +10,8 @@
 
 import { FLOW_MODULES } from './flowModules';
 import type { FlowModuleKey } from './flowModules';
+import type { DiveActiveThemeId } from '@/app/lib/spomove/diveThemes';
+import { resolveDiveStagePresentation, type DiveThemePresentation } from './diveThemePresentation';
 import {
   COLOR_GATE_POSE_SEQUENCE,
   type ColorGatePoseKey,
@@ -40,6 +42,7 @@ export interface FlowStageConfig {
 }
 
 export interface FlowStagePreview {
+  presentation: DiveThemePresentation;
   stageNum: number;
   label: string;
   modules: FlowModuleKey[];
@@ -51,6 +54,7 @@ export interface FlowStagePreview {
 export type FlowStageLayout = 'sequential' | 'random';
 
 export interface FlowStageBuildOptions {
+  themeId?: DiveActiveThemeId;
   layout?: FlowStageLayout;
   /** sequential 모드에서 BONUS 스테이지 포함 여부 (기본 true) */
   includeBonus?: boolean;
@@ -132,6 +136,10 @@ export function buildStages(
 ): FlowStageConfig[] {
   const layout = options?.layout ?? 'sequential';
   const includeBonus = options?.includeBonus ?? true;
+  const present = (stages: FlowStageConfig[]) => stages.map(stage => {
+    const presentation = resolveDiveStagePresentation(options?.themeId ?? 'space', stage);
+    return { ...stage, cueWord: presentation.cueWord, shortInstruction: presentation.shortInstruction };
+  });
   const obstacleModules = selectedModules.filter((k) => k !== 'colorGate');
   const hasColorGate = selectedModules.includes('colorGate');
   const isColorGateOnly = hasColorGate && obstacleModules.length === 0;
@@ -140,11 +148,11 @@ export function buildStages(
   const baseMod = FLOW_MODULES.jump;
 
   if (isColorGateOnly) {
-    return buildColorGateStages(0, 2, durationSec);
+    return present(buildColorGateStages(0, 2, durationSec));
   }
 
   if (layout === 'random') {
-    return buildRandomDiveStages(durationSec, obstacleModules);
+    return present(buildRandomDiveStages(durationSec, obstacleModules));
   }
 
   stages.push({
@@ -203,14 +211,16 @@ export function buildStages(
     });
   }
 
-  return stages;
+  return present(stages);
 }
 
 export function buildStagePreview(
   selectedModules: FlowModuleKey[],
+  options?: FlowStageBuildOptions,
 ): FlowStagePreview[] {
-  const stages = buildStages(selectedModules, 0);
+  const stages = buildStages(selectedModules, 0, options);
   return stages.map((s) => ({
+    presentation: resolveDiveStagePresentation(options?.themeId ?? 'space', s),
     stageNum: s.stageNum,
     label: s.label,
     modules: [...s.activeModules],

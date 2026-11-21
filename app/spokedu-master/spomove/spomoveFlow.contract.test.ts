@@ -232,12 +232,6 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(settingsBriefing).not.toContain("적용될 설정");
   });
 
-  it("runs Action Move with the SPACE theme without a theme picker", () => {
-    expect(session).toContain("officialPreset?.id === 'dive-standard'");
-    expect(session).toContain("officialPreset.id === 'dive-standard'");
-    expect(settingsBriefing).toContain("preset.id !== 'dive-standard'");
-  });
-
   it("reproduces recent same-settings or downgrades the label", () => {
     expect(hub).toContain("canReproduceSpomoveSameSettings");
     expect(hub).toContain("같은 설정으로 시작");

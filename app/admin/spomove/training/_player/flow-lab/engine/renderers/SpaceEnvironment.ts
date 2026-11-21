@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import type { DivePanoramaStatus } from '@/app/lib/spomove/diveThemes';
 import type { QualityTier } from '../AdaptiveQuality';
 import {
   LEGACY_PANO_VERTEX,
   LEGACY_PANO_FRAGMENT,
   LEGACY_PANO_SPHERE_RADIUS,
   LEGACY_PANO_ROTATION_DT60_CW,
+  OCEAN_PANO_VERTEX,
+  OCEAN_PANO_FRAGMENT,
 } from '../../visuals/LegacyPanoramaShader';
 import type { SpaceEnvUpdateInput } from './EnvironmentThemeConfig';
 import {
@@ -28,6 +31,8 @@ export interface SpaceEnvironmentConfig {
   qualityTier: QualityTier;
   /** 파노라마 초기 정면 방향 오프셋 (°, -180 ~ +180) */
   yawDeg?:     number;
+  ocean?: boolean;
+  onPanoramaStatus?: (status: DivePanoramaStatus) => void;
   /** 테스트 전용: THREE.TextureLoader 대체 */
   _loadFn?:    (url: string) => Promise<THREE.Texture>;
 }
@@ -41,15 +46,20 @@ export class SpaceEnvironment {
   private starLayers:  THREE.Points[] = [];
   private panoRotation = 0;
   private uTime        = 0;
+  private ocean = false;
+  private loadGeneration = 0;
+  private onPanoramaStatus?: (status: DivePanoramaStatus) => void;
   private loadFn:      (url: string) => Promise<THREE.Texture>;
 
   constructor(cfg: SpaceEnvironmentConfig) {
     this.scene        = cfg.scene;
+    this.ocean = cfg.ocean ?? false;
+    this.onPanoramaStatus = cfg.onPanoramaStatus;
     this.panoRotation = ((cfg.yawDeg ?? 0) * Math.PI) / 180;
     this.loadFn  = cfg._loadFn ?? ((url) => new Promise<THREE.Texture>((res, rej) => {
       new THREE.TextureLoader().load(url, res, undefined, rej);
     }));
-    this.buildStarLayers(cfg.qualityTier);
+    if (!this.ocean) this.buildStarLayers(cfg.qualityTier);
     this.buildPanoSphere();
   }
 
@@ -80,13 +90,13 @@ export class SpaceEnvironment {
 
   private buildPanoSphere(): void {
     // 기본 텍스처 (파노라마 로딩 전 빈 화면 방지)
-    this.defaultTex = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+    this.defaultTex = new THREE.DataTexture(new Uint8Array(this.ocean ? [6, 65, 100, 255] : [0, 0, 0, 255]), 1, 1);
     this.defaultTex.needsUpdate = true;
 
     const geo = new THREE.SphereGeometry(LEGACY_PANO_SPHERE_RADIUS, 64, 32);
     this.shaderMat = new THREE.ShaderMaterial({
-      vertexShader:   LEGACY_PANO_VERTEX,
-      fragmentShader: LEGACY_PANO_FRAGMENT,
+      vertexShader:   this.ocean ? OCEAN_PANO_VERTEX : LEGACY_PANO_VERTEX,
+      fragmentShader: this.ocean ? OCEAN_PANO_FRAGMENT : LEGACY_PANO_FRAGMENT,
       uniforms: {
         map:            { value: this.defaultTex },
         uTime:          { value: 0 },
@@ -103,7 +113,13 @@ export class SpaceEnvironment {
   }
 
   async loadPanorama(highUrl?: string, lowUrl?: string): Promise<void> {
-    if (!highUrl && !lowUrl) return;
+    const generation = ++this.loadGeneration;
+    if (!highUrl && !lowUrl) {
+      this.useFallback();
+      this.onPanoramaStatus?.('unregistered');
+      return;
+    }
+    this.onPanoramaStatus?.('loading');
 
     let tex: THREE.Texture | null = null;
     if (highUrl) {
@@ -118,13 +134,14 @@ export class SpaceEnvironment {
       try { tex = await this.loadFn(lowUrl); } catch { /* color fallback */ }
     }
 
-    if (!this.shaderMat) {
+    if (!this.shaderMat || generation !== this.loadGeneration) {
       // dispose 이후에 텍스처 로드 완료된 경우
       if (tex) tex.dispose();
       return;
     }
 
     if (tex) {
+      if (this.ocean) { tex.colorSpace = THREE.SRGBColorSpace; tex.needsUpdate = true; }
       if (this.panoTex) {
         this.panoTex.dispose();
       } else if (this.defaultTex) {
@@ -134,7 +151,21 @@ export class SpaceEnvironment {
       }
       this.panoTex = tex;
       this.shaderMat.uniforms['map'].value = tex;
+      this.onPanoramaStatus?.('ready');
+    } else {
+      this.useFallback();
+      this.onPanoramaStatus?.('failed');
     }
+  }
+
+  private useFallback(): void {
+    if (!this.shaderMat) return;
+    this.panoTex?.dispose(); this.panoTex = null;
+    if (!this.defaultTex) {
+      this.defaultTex = new THREE.DataTexture(new Uint8Array(this.ocean ? [6, 65, 100, 255] : [0, 0, 0, 255]), 1, 1);
+      this.defaultTex.needsUpdate = true;
+    }
+    this.shaderMat.uniforms['map'].value = this.defaultTex;
   }
 
   setYawDeg(yawDeg = 0): void {

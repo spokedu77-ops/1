@@ -360,9 +360,7 @@ function SpomoveSessionContent() {
     else if (audioMode === 'music') setAudioMode('silent');
   }, [audioMode, bgmLoading, selectedBgmPath, officialPreset?.activityId, defaultSelectedBgmPath]);
   const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>(() =>
-    officialPreset?.id === 'dive-standard'
-      ? 'space'
-      : normalizeDiveThemeId(searchParams.get('diveTheme')),
+    normalizeDiveThemeId(searchParams.get('diveTheme')),
   );
   const [sportsArenaFeatures, setSportsArenaFeatures] = useState<SportsArenaFeatureKey[]>(() => {
     const values = (searchParams.get('sports') ?? '').split(',');
@@ -377,7 +375,6 @@ function SpomoveSessionContent() {
     : searchParams.get('flowBonus') === '1');
   const handleDiveEnvironmentThemeChange = useCallback((theme: DiveThemeId) => {
     setDiveEnvironmentTheme(theme);
-    if (isDiveActionMoveUnityTheme(theme)) setFlowDuration((seconds) => [15, 20, 25, 30, 35].includes(seconds) ? seconds : 20);
   }, []);
 
   useEffect(() => {
@@ -637,9 +634,7 @@ function SpomoveSessionContent() {
       [10, 15, 20, 30].includes(config.rounds)
     ) setSessionRounds(config.rounds);
     if (config.operationLayerStatus !== 'legacyDisabled' && config.operation) setOperationCandidate(config.operation);
-    setDiveEnvironmentTheme(officialPreset.id === 'dive-standard'
-      ? 'space'
-      : normalizeDiveThemeId(config.diveEnvironmentTheme));
+    setDiveEnvironmentTheme(normalizeDiveThemeId(config.diveEnvironmentTheme));
     setSportsArenaFeatures(config.sportsArenaFeatures);
     setFlowDuration((officialPreset.id === 'dive-beat-rush' ? [30, 60, 120, 180] : [15, 20, 25, 30, 35]).includes(config.flowDuration)
       ? config.flowDuration

@@ -4,7 +4,6 @@ import { useLayoutEffect, useCallback, useEffect, useRef, useState } from 'react
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
   uploadToStorage,
-  deleteFromStorage,
   getPublicUrl,
   withPublicUrlCacheBust,
 } from '@/app/lib/admin/assets/storageClient';
@@ -14,6 +13,8 @@ import {
   type DiveThemeEntry,
   DIVE_THEME_IDS,
   isDiveThemeId,
+  type OceanObstacleKind,
+  type DiveActiveThemeId,
 } from '@/app/lib/spomove/diveThemes';
 
 export type { DiveThemeId, DiveThemeEntry };
@@ -31,6 +32,7 @@ const LOW_H  = 1024;
 
 type DiveAssetsJson = {
   themes: Partial<Record<DiveThemeId, DiveThemeEntry>>;
+  [key: string]: unknown;
 };
 
 function normalizeDiveJson(raw: unknown): DiveAssetsJson {
@@ -43,8 +45,12 @@ function normalizeDiveJson(raw: unknown): DiveAssetsJson {
         themes[id] = entry;
       }
     }
+    // The existing Hub's verified ocean panorama was authored in slot theme4.
+    // Import its background into the new identity on read; never reinterpret saved
+    // game theme IDs or delete/change the original legacy slot.
+    if (!themes.ocean && themes.theme4) themes.ocean = { ...themes.theme4 };
   }
-  return { themes };
+  return { ...(d ?? {}), themes: { ...d?.themes, ...themes } };
 }
 
 function loadImageEl(file: File): Promise<HTMLImageElement> {
@@ -78,6 +84,7 @@ async function renderPanoToWebP(img: HTMLImageElement, w: number, h: number): Pr
 export function useSpomoveDiveEnvironments() {
   const [data, setData] = useState<DiveAssetsJson>({ themes: {} });
   const dataRef = useRef(data);
+  const versionRef = useRef<string | undefined>(undefined);
   useLayoutEffect(() => {
     dataRef.current = data;
   });
@@ -99,6 +106,8 @@ export function useSpomoveDiveEnvironments() {
         .maybeSingle();
       if (e && e.code !== 'PGRST116') { setError(e.message); return; }
       setData(normalizeDiveJson(row?.assets_json));
+      dataRef.current = normalizeDiveJson(row?.assets_json);
+      versionRef.current = row?.updated_at ?? undefined;
       setCacheBust(row?.updated_at ? new Date(row.updated_at as string).getTime() : undefined);
     } catch (err) {
       setError((err as Error).message);
@@ -122,10 +131,12 @@ export function useSpomoveDiveEnvironments() {
           name: PACK_NAME,
           theme: 'spomove',
           assets_json: next,
+          expected_updated_at: versionRef.current,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string; updated_at?: string };
       if (!res.ok) throw new Error(body.error ?? res.statusText);
+      versionRef.current = body.updated_at;
       setData(next);
       dataRef.current = next;
       setCacheBust(body.updated_at ? new Date(body.updated_at).getTime() : Date.now());
@@ -191,9 +202,11 @@ export function useSpomoveDiveEnvironments() {
     await uploadToStorage(lowPath, lowBlob, 'image/webp');
 
     const next: DiveAssetsJson = {
+      ...dataRef.current,
       themes: {
         ...dataRef.current.themes,
         [themeId]: {
+          ...dataRef.current.themes[themeId],
           panoramaPath:    highPath,
           panoramaLowPath: lowPath,
           width:           storedW,
@@ -210,24 +223,38 @@ export function useSpomoveDiveEnvironments() {
   const remove = useCallback(async (themeId: DiveThemeId) => {
     const entry = dataRef.current.themes[themeId];
     if (!entry) return;
-    try { await deleteFromStorage(entry.panoramaPath); } catch { /* ignore */ }
-    try { await deleteFromStorage(entry.panoramaLowPath); } catch { /* ignore */ }
-
-    const cleanThemes: Partial<Record<DiveThemeId, DiveThemeEntry>> = { ...dataRef.current.themes };
-    delete cleanThemes[themeId];
-    await persist({ themes: cleanThemes });
+    // Unregister the selected panorama while retaining shared Storage originals.
+    const cleanThemes = { ...dataRef.current.themes, [themeId]: {
+      ...entry, panoramaPath: '', panoramaLowPath: '', hasHighRes: false, width: 0, height: 0, fileSize: 0,
+    } };
+    await persist({ ...dataRef.current, themes: cleanThemes });
   }, [persist]);
 
   const saveYaw = useCallback(async (themeId: DiveThemeId, yawDeg: number) => {
     const current = dataRef.current.themes[themeId];
     if (!current) return;
     const next: DiveAssetsJson = {
+      ...dataRef.current,
       themes: {
         ...dataRef.current.themes,
         [themeId]: { ...current, yawDeg },
       },
     };
     await persist(next);
+  }, [persist]);
+
+  const uploadObstacle = useCallback(async (kind: OceanObstacleKind, file: File, theme: DiveActiveThemeId = 'ocean') => {
+    if (!['duck', 'punch', 'kick', 'reach'].includes(kind)) throw new Error('알 수 없는 장애물');
+    if (file.type !== 'image/png') throw new Error('투명 배경 PNG를 선택해 주세요.');
+    if (file.size > 10 * 1024 * 1024) throw new Error('10MB 이하 PNG를 선택해 주세요.');
+    await loadImageEl(file); // Decode validation; preserve original bytes, alpha and aspect ratio.
+    const path = `themes/iiwarmup/spomove_dive/${theme}/obstacles/${kind}-${crypto.randomUUID()}.png`;
+    await uploadToStorage(path, file, 'image/png');
+    const current = dataRef.current.themes[theme];
+    const entry: DiveThemeEntry = current ?? { panoramaPath: '', panoramaLowPath: '', hasHighRes: false, width: 0, height: 0, fileSize: 0, updatedAt: 0 };
+    await persist({ ...dataRef.current, themes: { ...dataRef.current.themes, [theme]: {
+      ...entry, updatedAt: Date.now(), obstacles: { ...entry.obstacles, [kind]: path },
+    } } });
   }, [persist]);
 
   const getPreviewUrl = useCallback((path: string | null | undefined): string | null => {
@@ -248,6 +275,7 @@ export function useSpomoveDiveEnvironments() {
     upload,
     remove,
     saveYaw,
+    uploadObstacle,
     getPreviewUrl,
     setError,
   };

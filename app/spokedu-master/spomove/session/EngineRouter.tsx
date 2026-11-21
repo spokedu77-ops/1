@@ -346,7 +346,7 @@ function EngineRuntime({
   }, ['sequence-memory', 'color-number-memory', 'color-number-quiz'].includes(runtime));
 
   if (runtime === 'beat-rush') {
-    return <Suspense fallback={<LoadingOverlay />}><BeatRushTraining durationSec={durationSec ?? 60} speedSec={speedSec ?? 3} effectsEnabled={effectsEnabled} onComplete={handleReactTrainComplete} /></Suspense>;
+    return <Suspense fallback={<LoadingOverlay />}><BeatRushTraining environmentTheme={diveEnvironmentTheme} durationSec={durationSec ?? 60} speedSec={speedSec ?? 3} effectsEnabled={effectsEnabled} onComplete={handleReactTrainComplete} /></Suspense>;
   }
 
   if (runtime === 'simon-camouflage') {

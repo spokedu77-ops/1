@@ -11,9 +11,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { BgmRetryButton } from '../components/BgmRetryButton';
 import { FlowEngine, type FlowGamePhase, type FlowStats } from './engine/FlowEngine';
-import { FLOW_MODULES } from './engine/modules/flowModules';
+import { resolveDiveThemePresentation, resolveDiveStagePresentation } from './engine/modules/diveThemePresentation';
 import type { FlowStageConfig } from './engine/modules/stageBuilder';
 import ColorGateHud from './components/ColorGateHud';
+import type { DiveObstacleUrls, DivePanoramaStatus } from '@/app/lib/spomove/diveThemes';
+import { DiveBackgroundNotice } from '@/app/components/spomove/DiveThemeSelector';
 import {
   COLOR_GATE_TARGET_COUNT,
   COLOR_GATE_POSE_LABELS,
@@ -23,6 +25,8 @@ import {
 } from './engine/modules/colorGateGuides';
 
 interface FlowGameClientProps {
+  environmentTheme?: 'space' | 'ocean';
+  obstacleUrls?: DiveObstacleUrls;
   stages:            FlowStageConfig[];
   motionScale?:      number;
   bgmPath?:          string;
@@ -65,6 +69,8 @@ const S = {
 };
 
 export default function FlowGameClient({
+  environmentTheme = 'space',
+  obstacleUrls,
   stages,
   motionScale = 1,
   bgmPath,
@@ -96,6 +102,7 @@ export default function FlowGameClient({
   const [totalProgress, setTotalProgress] = useState(0);
   const [initError,     setInitError]    = useState<string | null>(null);
   const [bgmIssue, setBgmIssue] = useState(false);
+  const [panoramaStatus, setPanoramaStatus] = useState<DivePanoramaStatus>('loading');
   /** retry 트리거 — 증가할 때마다 엔진 useEffect가 재실행되어 새 엔진을 생성한다 */
   const [initKey,       setInitKey]      = useState(0);
   const [gateColorId,   setGateColorId]  = useState<GateColorId | null>(null);
@@ -145,6 +152,7 @@ export default function FlowGameClient({
       engine = new FlowEngine(
         canvas,
         {
+          onPanoramaStatus: status => { if (mountedRef.current) setPanoramaStatus(status); },
           onPhaseChange:  (p) => { if (mountedRef.current) setPhase(p); },
           onCountdown:    (n) => { if (mountedRef.current) setCountdown(n); },
           onStageChange:  (idx) => {
@@ -183,7 +191,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, motionScale, bgmPath, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, colorGateCategories, colorGateDifficulties },
+        { stages, environmentTheme, obstacleUrls, motionScale, bgmPath, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, colorGateCategories, colorGateDifficulties },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -223,11 +231,15 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, motionScale, bgmEnabled, sfxEnabled, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, colorGateCategories, colorGateDifficulties, initKey]); // bgmPath와 파노라마는 late-load로 처리한다.
+  }, [stages.length, environmentTheme, motionScale, bgmEnabled, sfxEnabled, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, colorGateCategories, colorGateDifficulties, initKey]); // bgmPath와 파노라마는 late-load로 처리한다.
 
   useEffect(() => {
     void engineRef.current?.updatePanorama(panoramaHighUrl, panoramaLowUrl, panoramaYawDeg);
   }, [panoramaHighUrl, panoramaLowUrl, panoramaYawDeg]);
+
+  useEffect(() => {
+    if (obstacleUrls) void engineRef.current?.updateObstacleImages(obstacleUrls);
+  }, [obstacleUrls]);
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 
@@ -245,6 +257,7 @@ export default function FlowGameClient({
   // ── 현재 스테이지 ───────────────────────────────────────────────────────────
 
   const currentStage = stages[stageIdx];
+  const currentPresentation = currentStage ? resolveDiveStagePresentation(environmentTheme, currentStage) : null;
 
   const colorGateHud = currentStage?.isColorGate
     && gateColorId
@@ -292,6 +305,7 @@ export default function FlowGameClient({
 
   return (
     <div style={S.root}>
+      <DiveBackgroundNotice theme={environmentTheme} status={panoramaStatus} />
       {bgmIssue && bgmEnabled ? <BgmRetryButton onRetry={() => engineRef.current?.retryBgm() ?? Promise.resolve()} /> : null}
 
       {/* Three.js 렌더 타겟 */}
@@ -394,7 +408,7 @@ export default function FlowGameClient({
               textShadow: `0 0 30px ${currentStage.color}, 3px 3px 0 #000`,
               wordBreak: 'keep-all', whiteSpace: 'nowrap',
             }}>
-              {currentStage.cueWord}
+              {currentPresentation?.cueWord}
             </h2>
             <p style={{
               fontSize: 'clamp(0.85rem, 2.4vw, 1rem)',
@@ -407,14 +421,14 @@ export default function FlowGameClient({
               overflowWrap: 'break-word',
               whiteSpace: 'pre-line',
             }}>
-              {currentStage.shortInstruction}
+              {currentPresentation?.shortInstruction}
             </p>
             <div style={{
               display: 'flex', gap: '0.4rem', flexWrap: 'wrap',
               justifyContent: 'center', width: '100%',
             }}>
               {[...currentStage.activeModules].filter(k => k !== 'jump').map((key) => {
-                const mod = FLOW_MODULES[key];
+                const mod = resolveDiveThemePresentation(environmentTheme, key);
                 return (
                   <span key={key} style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.2rem 0.7rem', borderRadius: '9999px', border: `1px solid ${mod.colorBorder}`, color: mod.color, background: mod.colorBg }}>
                     {mod.icon} {mod.tag}
@@ -462,7 +476,7 @@ export default function FlowGameClient({
               textShadow: '0 0 30px #22d3ee, 3px 3px 0 #000',
               wordBreak: 'keep-all', whiteSpace: 'nowrap',
             }}>
-              빨라진다!
+              {resolveDiveThemePresentation(environmentTheme, 'faster').cueWord}
             </h2>
             <p style={{
               fontSize: 'clamp(0.8rem, 2.2vw, 0.95rem)',
@@ -474,7 +488,7 @@ export default function FlowGameClient({
               overflowWrap: 'break-word',
               whiteSpace: 'pre-line',
             }}>
-              속도가 올라갑니다{'\n'}리듬 잃지 마세요!
+              {resolveDiveThemePresentation(environmentTheme, 'faster').shortInstruction}
             </p>
           </div>
         </div>
@@ -491,8 +505,8 @@ export default function FlowGameClient({
           }}>
             {countdown > 0 ? countdown : 'GO!'}
           </div>
-          <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
-            준비하세요
+          <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)', whiteSpace: 'pre-line', textAlign: 'center' }}>
+            {currentStage?.isColorGate ? '준비하세요' : currentPresentation?.shortInstruction}
           </p>
         </div>
       )}
@@ -524,7 +538,7 @@ export default function FlowGameClient({
           {/* 스테이지별 경험 배지 */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 340, marginBottom: '2.2rem' }}>
             {stages.map((s, si) => {
-              const mod      = s.isColorGate ? FLOW_MODULES.colorGate : FLOW_MODULES[s.newModule];
+              const mod      = resolveDiveStagePresentation(environmentTheme, s);
               const done     = si < stats.stagesCompleted;
               return (
                 <span key={s.stageIndex} style={{

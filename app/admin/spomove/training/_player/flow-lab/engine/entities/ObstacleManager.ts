@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import type { FlowModuleKey } from '../modules/flowModules';
+import type { DiveObstacleVisuals } from '../renderers/DiveObstacleVisuals';
 
 // ─── 상수 ────────────────────────────────────────────────────────────────────
 
@@ -126,6 +127,7 @@ export class ObstacleManager {
     bridgeLength: number,
     cb: ObstacleCallbacks = {},
     glbTemplates?: ObstacleGlbTemplates,
+    private obstacleVisuals?: DiveObstacleVisuals,
   ) {
     this.scene = scene;
     this.bridgeLength = bridgeLength;
@@ -173,6 +175,7 @@ export class ObstacleManager {
     if (reward) this.goldSpawned++;
 
     const group = this.makeBox(isReach, reward);
+    this.obstacleVisuals?.attach(group, isReach ? 'reach' : 'punch');
     const yPos = isReach ? 0 : PUNCH_ANCHOR_Y;
     const localZ = isReach ? -(this.bridgeLength * 0.25) : -(this.bridgeLength * 0.1);
     group.position.set(0, yPos, localZ);
@@ -189,6 +192,7 @@ export class ObstacleManager {
     bridge.hasBox = true;
 
     const group = this.makeKickBarrel();
+    this.obstacleVisuals?.attach(group, 'kick');
     const localZ = -(this.bridgeLength * 0.12);
     group.position.set(0, KICK_ANCHOR_Y, localZ);
     bridge.mesh.add(group);
@@ -717,6 +721,7 @@ export class ObstacleManager {
       group.add(ship);
     }
 
+    this.obstacleVisuals?.attach(group, 'duck');
     group.position.set(0, UFO_HEIGHT, -(this.bridgeLength * 0.2));
     bridge.mesh.add(group);
     this.ufos.push({
@@ -900,6 +905,7 @@ export class ObstacleManager {
       });
 
       const wz = ufo.mesh.getWorldPosition(this._tmpVec).z;
+      this.obstacleVisuals?.updateDuck(ufo.mesh, playerWorldZ - wz);
 
       // UFO 600 units 앞에서 경고 → 더 긴 반응 시간
       if (!ufo.warned && wz > playerWorldZ - 600) {

@@ -8,6 +8,9 @@
  */
 
 import * as THREE from 'three';
+import { getDiveObstacleDefaults, type DiveObstacleUrls, type DivePanoramaStatus } from '@/app/lib/spomove/diveThemes';
+import { DiveObstacleVisuals } from './renderers/DiveObstacleVisuals';
+import { OceanDecorations } from './renderers/OceanDecorations';
 import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../../lib/runtimeClock';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FlowCamera, type FlowCameraUpdateInput } from './FlowCamera';
@@ -99,6 +102,7 @@ const THEMES: Record<string, {
 export type FlowGamePhase = 'idle' | 'countdown' | 'stage-intro' | 'speed-intro' | 'playing' | 'complete';
 
 export interface FlowEngineCallbacks {
+  onPanoramaStatus?: (status: DivePanoramaStatus) => void;
   onBgmIssue:     (issue: boolean) => void;
   onPhaseChange:  (phase: FlowGamePhase) => void;
   onCountdown:    (n: number) => void;
@@ -129,6 +133,8 @@ export interface FlowStats {
 }
 
 export interface FlowEngineOptions {
+  environmentTheme?: 'space' | 'ocean';
+  obstacleUrls?: DiveObstacleUrls;
   stages:            FlowStageConfig[];
   motionScale?:      number;
   bgmPath?:          string;
@@ -154,6 +160,8 @@ interface BridgeObj extends FlowBridge {
 // ─── 엔진 ────────────────────────────────────────────────────────────────────
 
 export class FlowEngine {
+  private obstacleVisuals: DiveObstacleVisuals | null = null;
+  private oceanDecorations: OceanDecorations | null = null;
   private canvas: HTMLCanvasElement;
   private cb:     Partial<FlowEngineCallbacks>;
   private bgmPath = '';
@@ -272,7 +280,8 @@ export class FlowEngine {
   }
 
   private async init3D(): Promise<void> {
-    const theme = THEMES['space']!;
+    const ocean = this.opts.environmentTheme === 'ocean';
+    const theme = THEMES[ocean ? 'ocean' : 'space']!;
     const tier = this.aq.getTier();
     const useEnhancedBridge = this.aq.getUseEnhancedBridge();
 
@@ -300,26 +309,32 @@ export class FlowEngine {
       scene:       this.scene,
       qualityTier: tier,
       yawDeg:      this.opts.panoramaYawDeg,
+      ocean,
+      onPanoramaStatus: status => { if (!this.disposed) this.cb.onPanoramaStatus?.(status); },
     });
     const panoLow = this.opts.panoramaLowUrl;
     const panoHigh = this.opts.panoramaHighUrl;
-    if (panoLow || panoHigh) {
-      void this.spaceEnv.loadPanorama(panoHigh, panoLow);
-    }
+    void this.spaceEnv.loadPanorama(panoHigh, panoLow);
 
     this.coloredSpeedLines = new ColoredSpeedLines(this.scene, tier);
-    this.decorAsteroids = new DecorativeAsteroids(this.scene, tier);
+    if (ocean) this.oceanDecorations = new OceanDecorations(this.scene, tier);
+    else this.decorAsteroids = new DecorativeAsteroids(this.scene, tier);
     this.punchVFX = new PunchVFX(this.scene);
 
     if (this.aq.getUseSpeedVFX()) {
       this.speedVFX = new SpeedVFX(this.scene);
     }
 
-    const trackScene = await this.loadGlbScenes();
+    if (this.stageList.some(stage => !stage.isColorGate)) {
+      const obstacleTheme = ocean ? 'ocean' : 'space';
+      this.obstacleVisuals = new DiveObstacleVisuals(obstacleTheme);
+      await this.obstacleVisuals.load(this.opts.obstacleUrls ?? getDiveObstacleDefaults(obstacleTheme));
+    }
+    const trackScene = ocean ? null : await this.loadGlbScenes();
     if (this.disposed || !this.scene) return;
 
     this.bridgeRenderer = new BridgeRenderer(this.scene, useEnhancedBridge, trackScene);
-    this.arenaRenderer = new ArenaRenderer(this.scene, tier);
+    if (!ocean) this.arenaRenderer = new ArenaRenderer(this.scene, tier);
 
     if (this.aq.getUseBloom()) {
       this.postFX = new PostProcessingRenderer(
@@ -392,7 +407,7 @@ export class FlowEngine {
       },
       onFlash:            () => { this.flashPulseValue = Math.min(1, this.flashPulseValue + 0.75); },
       getShardScale:      () => this.aq.getShardScale(),
-    }, glbTemplates);
+    }, glbTemplates, this.obstacleVisuals ?? undefined);
 
     if (this.stageList[0]?.isColorGate) {
       this.setTrackLanesVisible(false);
@@ -413,6 +428,11 @@ export class FlowEngine {
     if (!environment || this.disposed) return;
     environment.setYawDeg(yawDeg);
     await environment.loadPanorama(highUrl, lowUrl);
+  }
+
+  async updateObstacleImages(urls: DiveObstacleUrls): Promise<void> {
+    this.opts.obstacleUrls = urls;
+    if (!this.disposed) await this.obstacleVisuals?.load(urls);
   }
 
   private async loadGlbScenes(): Promise<THREE.Object3D | null> {
@@ -1009,6 +1029,7 @@ export class FlowEngine {
     // ── 스피드라인 / SpeedVFX / 장식 소행성 ───────────────────────────────
     this.coloredSpeedLines?.update(this.currentSpeed, this.stageIdx, dt60M);
     this.decorAsteroids?.update(dt60M, this.currentSpeed);
+    this.oceanDecorations?.update(dt60M, this.currentSpeed);
     if (this.speedVFX) {
       this.speedVFX.update(this.currentSpeed, this.stageIdx, dt60M);
     }
@@ -1112,6 +1133,10 @@ export class FlowEngine {
 
   dispose(): void {
     this.disposed = true;
+    this.obstacleVisuals?.dispose();
+    this.obstacleVisuals = null;
+    this.oceanDecorations?.dispose();
+    this.oceanDecorations = null;
     this.stop();
     this.colorGates?.dispose();
     this.colorGates = null;

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
-import { resolveDivePanoramaUrls } from '@/app/lib/spomove/diveThemes';
+import { resolveDivePanoramaUrls, type DiveThemeId, type DivePanoramaStatus } from '@/app/lib/spomove/diveThemes';
+import { DiveBackgroundNotice } from '@/app/components/spomove/DiveThemeSelector';
 import { BeatRushDiveScene } from './BeatRushDiveScene';
 import { BeatRushImpactAudio } from './BeatRushImpactAudio';
 import { useEngineStopRequest } from '../lib/engineStopRequest';
@@ -23,9 +24,11 @@ const LANES = [
 ] as const;
 type Note = { lane: number; age: number; hold: number; presented: boolean; lastPulse?: number; lastBeat?: number };
 type Spark = { lane: number; age: number; angle: number; speed: number; size: number };
-type Props = { durationSec: number; speedSec: number; effectsEnabled: boolean; onComplete: (stats: ReactTrainCompleteStats) => void };
+type Props = { environmentTheme?: DiveThemeId; durationSec: number; speedSec: number; effectsEnabled: boolean; onComplete: (stats: ReactTrainCompleteStats) => void };
 
-export function BeatRushTraining({ durationSec, speedSec, effectsEnabled, onComplete }: Props) {
+export function BeatRushTraining({ environmentTheme = 'space', durationSec, speedSec, effectsEnabled, onComplete }: Props) {
+  const theme = environmentTheme === 'ocean' ? 'ocean' : 'space';
+  const [panoramaStatus, setPanoramaStatus] = useState<DivePanoramaStatus>('loading');
   const worldRef = useRef<HTMLDivElement>(null);
   const impactAudioRef = useRef<BeatRushImpactAudio | null>(null);
   const effectsRef = useRef(effectsEnabled);
@@ -34,7 +37,7 @@ export function BeatRushTraining({ durationSec, speedSec, effectsEnabled, onComp
   const spaceRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<BeatRushDiveScene | null>(null);
   const { data: environments, getPreviewUrl } = useSpomoveDiveEnvironments();
-  const panorama = useMemo(() => resolveDivePanoramaUrls('space', environments.themes.space, getPreviewUrl), [environments.themes.space, getPreviewUrl]);
+  const panorama = useMemo(() => resolveDivePanoramaUrls(theme, environments.themes[theme], getPreviewUrl), [theme, environments.themes, getPreviewUrl]);
   const panoramaRef = useRef(panorama);
   useEffect(() => { panoramaRef.current = panorama; sceneRef.current?.setPanorama(panorama); }, [panorama]);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -57,7 +60,7 @@ export function BeatRushTraining({ durationSec, speedSec, effectsEnabled, onComp
     if (!canvas || !host || !space) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const diveScene = new BeatRushDiveScene(space);
+    const diveScene = new BeatRushDiveScene(space, theme, setPanoramaStatus);
     sceneRef.current = diveScene;
     diveScene.setPanorama(panoramaRef.current);
     const fontFamily = getComputedStyle(host).fontFamily;
@@ -267,7 +270,7 @@ export function BeatRushTraining({ durationSec, speedSec, effectsEnabled, onComp
       if (!running) return; last = performance.now(); raf = requestAnimationFrame(loop);
     } });
     return () => { running = false; stopCountdown(); unbind(); if (raf !== null) cancelAnimationFrame(raf); finishRef.current = () => {}; sceneRef.current = null; impactAudioRef.current = null; impactAudio.stop(); if (world) world.style.transform = 'none'; diveScene.dispose(); };
-  }, [duration, speedSec]);
+  }, [duration, speedSec, theme]);
 
   return <div className="beat-rush">
     <style>{`
@@ -283,7 +286,7 @@ export function BeatRushTraining({ durationSec, speedSec, effectsEnabled, onComp
       ${REACT_TRAIN_VIEWPORT_CSS}
     `}</style>
     <header><strong>비트 러시</strong><span aria-label="제시한 블럭 수">{presented} BLOCKS</span><output aria-label="남은 시간">{Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}</output><button type="button" onClick={stop}>STOP</button></header>
-    <div className="beat-rush-stage" ref={hostRef}><div className="beat-rush-world" ref={worldRef}><canvas ref={spaceRef} aria-hidden="true" /><canvas ref={canvasRef} aria-label="다이브 우주 공간을 전진하며 빨강, 노랑, 초록, 파랑 레인의 블럭을 통과합니다" /></div><ReactTrainStartCountdownOverlay countdown={countdown} /><div className="beat-rush-hint" data-hold={holding}><b>{holding ? 'STEP' : 'HIT ZONE'}</b><span>{holding ? '같은 색 매트에서 가볍게 잔발 스텝' : '도착선에 닿으면 같은 색 매트로 이동'}</span></div></div>
+    <div className="beat-rush-stage" ref={hostRef}><div className="beat-rush-world" ref={worldRef}><canvas ref={spaceRef} aria-hidden="true" /><canvas ref={canvasRef} aria-label={`다이브 ${theme === 'ocean' ? '바다' : '우주'} 공간을 전진하며 빨강, 노랑, 초록, 파랑 레인의 블럭을 통과합니다`} /></div><DiveBackgroundNotice theme={theme} status={panoramaStatus} /><ReactTrainStartCountdownOverlay countdown={countdown} /><div className="beat-rush-hint" data-hold={holding}><b>{holding ? 'STEP' : 'HIT ZONE'}</b><span>{holding ? '같은 색 매트에서 가볍게 잔발 스텝' : '도착선에 닿으면 같은 색 매트로 이동'}</span></div></div>
     <progress value={duration - remaining} max={duration} aria-label="활동 시간 진행" />
   </div>;
 }

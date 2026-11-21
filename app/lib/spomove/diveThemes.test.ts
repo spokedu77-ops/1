@@ -5,6 +5,9 @@ import {
   isDiveActionMoveUnityTheme,
   resolveDivePanoramaUrls,
   resolveDiveUnityThemeId,
+  normalizeDiveThemeId,
+  resolveOceanObstacleUrls,
+  OCEAN_OBSTACLE_DEFAULTS,
   type DiveThemeEntry,
 } from './diveThemes';
 
@@ -57,10 +60,15 @@ describe('DIVE Action Move Unity themes', () => {
     expect(isDiveActionMoveUnityTheme('space')).toBe(false);
   });
 
-  it('shows the approved Korean labels without changing internal ids', () => {
-    expect(DIVE_THEME_UI).toEqual(expect.arrayContaining([
-      { id: 'theme2', label: '놀이공원' },
-      { id: 'theme3', label: '정글' },
-    ]));
+  it('only offers SPACE and OCEAN while retaining historical Unity identity', () => {
+    expect(DIVE_THEME_UI.map(theme => theme.id)).toEqual(['space', 'ocean']);
+    expect(normalizeDiveThemeId('theme2')).toBe('space');
+    expect(normalizeDiveThemeId('theme3')).toBe('space');
+    expect(normalizeDiveThemeId('ocean')).toBe('ocean');
+  });
+
+  it('overrides one obstacle independently and falls back per missing slot', () => {
+    const urls = resolveOceanObstacleUrls(entry({ obstacles: { duck: 'custom.png' } }), path => path ? `https://cdn.example/${path}` : null);
+    expect(urls).toEqual({ ...OCEAN_OBSTACLE_DEFAULTS, duck: 'https://cdn.example/custom.png' });
   });
 });

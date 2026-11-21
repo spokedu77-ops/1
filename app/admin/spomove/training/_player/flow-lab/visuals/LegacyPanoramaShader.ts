@@ -2,7 +2,7 @@
  * [LAB] Legacy IIWarmup Flow — 파노라마 셰이더 참고 코드
  *
  * 출처: app/program/iiwarmup/flow/engine/FlowEngine.ts (백업 태그: backup-pre-dive-flow-consolidation-20260625-1200)
- * 상태: 미연결 — flow-lab 런타임에 아직 적용되지 않음. 참고용 보존.
+ * SPACE 런타임은 기존 투영을 유지한다. OCEAN은 아래 별도 셰이더를 사용한다.
  * 적용 방법: THREE.SphereGeometry + THREE.ShaderMaterial(uniforms 아래 참고)로 파노라마 구 생성
  */
 
@@ -43,6 +43,27 @@ export const LEGACY_PANO_FRAGMENT = `
     float n = fract(sin(dot(gl_FragCoord.xy + uTime * 60.0, vec2(12.9898, 78.233))) * 43758.5453);
     c.rgb += (n - 0.5) * 0.01 * uGrainScale;
     gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+  }
+`;
+
+/** OCEAN uses a single upright equirectangular sample over the entire sphere. */
+export const OCEAN_PANO_VERTEX = `
+  varying vec3 vPanoDirection;
+  void main() {
+    vPanoDirection = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+export const OCEAN_PANO_FRAGMENT = `
+  uniform sampler2D map;
+  uniform float uPanoRotation;
+  varying vec3 vPanoDirection;
+  void main() {
+    vec3 d = normalize(vPanoDirection);
+    float u = fract((atan(d.x, -d.z) + 3.14159265 + uPanoRotation) / 6.2831853);
+    float v = 0.5 + asin(clamp(d.y, -1.0, 1.0)) / 3.14159265;
+    gl_FragColor = texture2D(map, vec2(u, v));
+    #include <colorspace_fragment>
   }
 `;
 

@@ -17,6 +17,6 @@ export const SPOMOVE_GUIDE_SOURCE_DIGESTS: SpomoveGuideSourceDigestMap = {
   sequentialMemoryGame: '69a066ea6733b774',
   sequentialMemoryL4: 'a4a9581280c48dbe',
   sequentialMemoryL5: '5f7eaf18e7150e8a',
-  diveFlow: '09ce638221b4850b',
-  engineRouter: 'f155e2901f8e99e5',
+  diveFlow: 'f744e1ce05f85ddc',
+  engineRouter: '04a610e93e538fa7',
 };

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { SpaceEnvironment } from '../flow-lab/engine/renderers/SpaceEnvironment';
 import { ColoredSpeedLines } from '../flow-lab/engine/renderers/ColoredSpeedLines';
 import { DecorativeAsteroids } from '../flow-lab/engine/renderers/DecorativeAsteroids';
-import type { DivePanoramaUrls } from '@/app/lib/spomove/diveThemes';
+import { OceanDecorations } from '../flow-lab/engine/renderers/OceanDecorations';
+import type { DivePanoramaUrls, DiveActiveThemeId, DivePanoramaStatus } from '@/app/lib/spomove/diveThemes';
 
 /** The existing DIVE sky, panorama shader and forward-motion decorations.
  * Camera orientation stays steady; movement comes from the world passing it.
@@ -13,10 +14,11 @@ export class BeatRushDiveScene {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly environment: SpaceEnvironment;
   private readonly speedLines: ColoredSpeedLines;
-  private readonly asteroids: DecorativeAsteroids;
+  private readonly asteroids: DecorativeAsteroids | null;
+  private readonly oceanDecorations: OceanDecorations | null;
   private disposed = false;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, theme: DiveActiveThemeId = 'space', onPanoramaStatus?: (status: DivePanoramaStatus) => void) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this.scene.background = new THREE.Color('#02040d');
@@ -27,9 +29,10 @@ export class BeatRushDiveScene {
     const light = new THREE.PointLight(0xbad7ff, 15, 12000);
     light.position.set(0, 2000, 800);
     this.scene.add(light);
-    this.environment = new SpaceEnvironment({ scene: this.scene, qualityTier: 'MED' });
+    this.environment = new SpaceEnvironment({ scene: this.scene, qualityTier: 'MED', ocean: theme === 'ocean', onPanoramaStatus });
     this.speedLines = new ColoredSpeedLines(this.scene, 'LOW');
-    this.asteroids = new DecorativeAsteroids(this.scene, 'LOW');
+    this.asteroids = theme === 'space' ? new DecorativeAsteroids(this.scene, 'LOW') : null;
+    this.oceanDecorations = theme === 'ocean' ? new OceanDecorations(this.scene, 'LOW') : null;
   }
 
   resize(width: number, height: number) {
@@ -51,7 +54,8 @@ export class BeatRushDiveScene {
     if (visualDt > 0) {
       this.environment.update({ dt: visualDt, speed: .45, cameraX: 0, isIntroPhase: false });
       this.speedLines.update(.45, 0, visualDt * 60);
-      this.asteroids.update(visualDt * 60, .45);
+      this.asteroids?.update(visualDt * 60, .45);
+      this.oceanDecorations?.update(visualDt * 60, .45);
     }
     this.renderer.render(this.scene, this.camera);
   }
@@ -59,7 +63,8 @@ export class BeatRushDiveScene {
   dispose() {
     this.disposed = true;
     this.speedLines.dispose();
-    this.asteroids.dispose();
+    this.asteroids?.dispose();
+    this.oceanDecorations?.dispose();
     this.environment.dispose();
     this.scene.traverse(object => {
       const mesh = object as THREE.Mesh;
