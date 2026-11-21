@@ -91,7 +91,7 @@ const T = {
   textDim:     'rgba(255,255,255,0.48)',
 };
 
-type TabCode = 'ALL' | 'response' | 'attention' | 'executive';
+type TabCode = import('./trainingCatalog').TrainingFilter;
 
 
 type TopTab = 'training' | 'teacher' | 'app';
@@ -709,7 +709,7 @@ function SettingsScreen({
   onBack: () => void;
 }) {
   const m = MODES[modeId];
-  const accent = m?.accent ?? '#F97316';
+  const accent = modeId === 'flow' ? '#22D3EE' : m?.accent ?? '#F97316';
 
   const [selection, setSelection] = useState(() => {
     const levelId = typeof initialLevelId === 'number' ? initialLevelId : (m?.levels?.[0]?.id ?? 1);
@@ -785,7 +785,11 @@ function SettingsScreen({
   const isReactTrain = modeId === 'reactTrain';
   const isSpatial = modeId === 'spatial';
   const isSimon = modeId === 'simon';
-  const isFlowOrChallenge = modeId === 'flow' && launch.activityId !== 'beat-rush';
+  const isDiveFamily = modeId === 'flow';
+  const isBeatRush = isDiveFamily && launch.activityId === 'beat-rush';
+  const isMotionGate = isDiveFamily && isFlowColorGateLevel(modeId, levelId);
+  const isActionMove = isDiveFamily && !isBeatRush && !isMotionGate;
+  const isFlowOrChallenge = isActionMove || isMotionGate;
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
   const isReactTrainRepetition = isReactTrainRepetitionLevel(modeId);
   const compactSettingsMenu =
@@ -815,6 +819,14 @@ function SettingsScreen({
         .settings-body.dive-fit .settings-columns {
           gap: 12px;
         }
+        .dive-descriptor { margin: 6px 0 0; font-size: 12px; color: #94a3b8; }
+        .settings-body.dive-fit { word-break: keep-all; overflow-wrap: anywhere; }
+        .settings-body.dive-fit .settings-column {
+          padding: 16px; border: 1px solid #ffffff18; border-radius: 14px; background: #111b2b80;
+        }
+        .settings-body.dive-fit .settings-column > section { margin-bottom: 16px !important; }
+        .settings-body.dive-fit .theme-options { gap: 8px; }
+        .settings-body.dive-fit .theme-option { min-height: 52px !important; }
         .settings-body.compact-menu { padding: 14px 20px 18px; }
         .settings-body.compact-menu .settings-shell > h1 { font-size: 18px !important; }
         .settings-body.compact-menu .settings-shell > p { margin-top: 4px !important; line-height: 1.35 !important; }
@@ -886,22 +898,23 @@ function SettingsScreen({
         </span>
       </header>
 
-      <div className={`settings-body${isFlowOrChallenge ? ' dive-fit' : ''}${compactSettingsMenu ? ' compact-menu' : ''}`}>
+      <div className={`settings-body${isDiveFamily ? ' dive-fit' : ''}${compactSettingsMenu ? ' compact-menu' : ''}`}>
         <div className="settings-shell">
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
             트레이닝 설정
           </h1>
-          {isFlowOrChallenge ? null : (
+          {isDiveFamily ? <p className="dive-descriptor">DIVE · 움직임 반응 훈련</p> : (
           <p style={{ margin: '10px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
             자극 속도·분량(또는 시간)을 맞춘 뒤 시작하세요. 아래에서 상세 가이드를 펼칠 수 있습니다.
           </p>
           )}
 
           {/* 가이드 */}
-          <div className="settings-guide" style={{ marginTop: isFlowOrChallenge ? 10 : 18, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div className="settings-guide" style={{ marginTop: isDiveFamily ? 10 : 18, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
             <button
               type="button"
               onClick={() => setGuideOpen((v) => !v)}
+              aria-expanded={guideOpen}
               style={{
                 width: '100%', textAlign: 'left', padding: '12px 14px',
                 background: T.card, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
@@ -910,7 +923,7 @@ function SettingsScreen({
             >
               <span style={{ color: accent, fontSize: 11, fontWeight: 800, width: 18 }}>{guideOpen ? '▼' : '▶'}</span>
               <span style={{ fontSize: 13, fontWeight: 700 }}>
-                {isFlowOrChallenge ? '활동 안내 · DIVE' : (
+                {isDiveFamily ? '활동 안내 · DIVE' : (
                   <>
                     엔진 · 난이도 안내 {guideBlock ? `· ${modeLabelKoEn(modeId)}` : ''}
                     <span style={{ fontWeight: 600, color: T.muted }}> ({`${selectedActivity.number ? `${selectedActivity.number}번 : ` : ''}${selectedActivity.title}`})</span>
@@ -921,7 +934,13 @@ function SettingsScreen({
             {guideOpen ? (
               <div style={{ padding: '12px 14px 16px', borderTop: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.02)' }}>
                 {modeId !== 'sports' && launch.activityId !== 'visual-search' && launch.activityId !== 'moving-number-reader' && launch.activityId !== 'glass-bridge-memory' && <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />}
-                {modeId === 'flow' && levelId === 1 ? (
+                {isBeatRush || isMotionGate ? (
+                  <div style={{ fontSize: 13, lineHeight: 1.7, color: T.text }}>
+                    <p>{guidePhase?.goal ?? guideBlock?.intro}</p>
+                    <p>{guidePhase?.screen}</p><p>{guidePhase?.action}</p><p>{guidePhase?.coach}</p>
+                    {guidePhase?.pitfall ? <p>{guidePhase.pitfall}</p> : null}
+                  </div>
+                ) : isActionMove ? (
                   <div style={{ fontSize: 13, lineHeight: 1.7, color: T.text }}>
                     <p>{guidePhase?.goal ?? guideBlock?.intro}</p>
                     {(['jump', 'faster', 'punch', 'duck', 'kick', 'reach', 'bonus'] as const).map(key => {
@@ -987,15 +1006,15 @@ function SettingsScreen({
             ) : null}
           </div>
 
-          <div className="settings-divider" style={{ height: 1, background: T.border, margin: isFlowOrChallenge ? '10px 0 12px' : '18px 0 20px' }} />
+          <div className="settings-divider" style={{ height: 1, background: T.border, margin: isDiveFamily ? '10px 0 12px' : '18px 0 20px' }} />
 
           <div className="settings-columns">
             <div className="settings-column">
 
           {/* 세부 테마 */}
-          <section style={{ marginBottom: isFlowOrChallenge ? 10 : 18 }}>
+          <section style={{ marginBottom: isDiveFamily ? 10 : 18 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>{isFlowOrChallenge ? '활동 유형' : '세부 테마'}</label>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>{isDiveFamily ? '활동 유형' : '세부 테마'}</label>
               <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
                 {`${selectedActivity.number ? `${selectedActivity.number}번 : ` : ''}${selectedActivity.title}`}
               </div>
@@ -1100,7 +1119,7 @@ function SettingsScreen({
                     }}
                   >
                     <span style={{ fontSize: 13, fontWeight: 900, color: active ? accent : T.text }}>
-                      {catalogLevelLabelKoEn(modeId, lv.id)}
+                      {isDiveFamily ? ({ 1: '1번 · 액션 무브 (Action Move)', 2: '2번 · 모션 게이트 (Motion Gate)', 3: '3번 · 비트 러시 (Beat Rush)' } as Record<number, string>)[lv.id] ?? catalogLevelLabelKoEn(modeId, lv.id) : catalogLevelLabelKoEn(modeId, lv.id)}
                     </span>
                   </button>
                 );
@@ -1136,6 +1155,14 @@ function SettingsScreen({
             )}
           </section>
 
+          {modeId === 'flow' ? (
+            <section style={{ marginBottom: 12 }} aria-label="DIVE environment">
+              <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 800, color: T.muted }}>환경 테마</p>
+              <DiveThemeSelector value={launch.diveEnvironmentTheme}
+                onChange={diveEnvironmentTheme => setLaunch(current => ({ ...current, diveEnvironmentTheme }))}
+                themes={diveEnvData.themes} />
+            </section>
+          ) : null}
             </div>
             <div className="settings-column">
 
@@ -2270,13 +2297,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {modeId === 'flow' ? (
-            <section style={{ marginBottom: 12 }} aria-label="DIVE environment">
-              <DiveThemeSelector value={launch.diveEnvironmentTheme}
-                onChange={diveEnvironmentTheme => setLaunch(current => ({ ...current, diveEnvironmentTheme }))}
-                themes={diveEnvData.themes} />
-            </section>
-          ) : null}
+
 
           {isColorGateTheme ? (
             <section style={{ marginBottom: 12 }}>
@@ -2863,8 +2884,8 @@ function SettingsScreen({
             }}
             style={{
               width: '100%',
-              padding: isFlowOrChallenge ? '12px 20px' : '17px 24px',
-              borderRadius: isFlowOrChallenge ? 12 : 14,
+              padding: isDiveFamily ? '12px 20px' : '17px 24px',
+              borderRadius: isDiveFamily ? 12 : 14,
               border: 'none',
               background: accent,
               color: '#000',

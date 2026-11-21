@@ -22,10 +22,18 @@ export function trainingActivityGuide(mode: string, level: number, input: Traini
   if (id === 'beat-rush') return {
     activityId: id, num: '', name: '비트 러시',
     goal: '다가오는 블럭의 색을 구별하고 도착 시점에 같은 색 매트로 이동합니다.',
-    screen: '고정된 우주 배경의 4색 레인에서 블럭 앞면이 도착선에 닿습니다. 긴 블럭은 잔발 스텝 신호입니다.',
+    screen: '선택한 환경 배경의 4색 레인에서 블럭 앞면이 도착선에 닿습니다. 긴 블럭은 잔발 스텝 신호입니다.',
     action: '색에 맞춰 이동하고 긴 블럭 동안 같은 자리에서 가볍게 잔발 스텝을 이어 갑니다.',
     coach: '먼저 걸어서 색과 위치를 익힌 뒤 접근 시간을 조절하세요.',
     pitfall: '기록은 제시한 블럭 수이며 실제 동작 성공 여부를 측정하지 않습니다.',
+  };
+  if (id === 'motion-gate') return {
+    activityId: id, num: '2', name: '모션 게이트',
+    goal: '다가오는 색상 관문의 신호를 보고 같은 색 매트에서 안내된 포즈를 수행합니다.',
+    screen: '선택한 카테고리와 난이도의 동작이 색상 관문과 함께 제시됩니다. 설정한 통과 시간과 반복 횟수로 진행합니다.',
+    action: '관문의 색과 동작 안내를 확인하고, 해당 매트에서 포즈를 취합니다. 투게더·패밀리는 함께 동작합니다.',
+    coach: '동작 소개에서 자세를 먼저 익히고 참여자 사이의 간격을 확보하세요.',
+    pitfall: '기록은 제시한 관문의 수이며 실제 포즈의 정확도를 자동 측정하지 않습니다.',
   };
   return GUIDE_BLOCKS.flatMap(block => block.phases).find(phase => phase.activityId === id || phase.activityIds?.includes(id));
 }

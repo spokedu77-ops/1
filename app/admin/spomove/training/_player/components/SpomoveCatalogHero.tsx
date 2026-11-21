@@ -174,10 +174,10 @@ export function SpomoveCatalogHero({ compact = false }: { compact?: boolean }) {
                 decoding="async"
               />
             </button>
-            <button type="button" onClick={showPreviousBanner} aria-label="이전 배너" style={bannerArrowStyle('left')}>
+            <button type="button" onClick={showPreviousBanner} aria-label="이전 배너" style={bannerArrowStyle('left', compact)}>
               ‹
             </button>
-            <button type="button" onClick={showNextBanner} aria-label="다음 배너" style={bannerArrowStyle('right')}>
+            <button type="button" onClick={showNextBanner} aria-label="다음 배너" style={bannerArrowStyle('right', compact)}>
               ›
             </button>
           </div>
@@ -190,12 +190,12 @@ export function SpomoveCatalogHero({ compact = false }: { compact?: boolean }) {
                 aria-label={`${index + 1}번 배너 보기`}
                 aria-current={activeBannerIndex === index ? 'true' : undefined}
                 style={{
-                  width: activeBannerIndex === index ? 22 : 8,
-                  height: 8,
+                  width: compact ? 44 : activeBannerIndex === index ? 22 : 8,
+                  height: compact ? 44 : 8,
                   padding: 0,
                   border: 0,
                   borderRadius: 999,
-                  background: activeBannerIndex === index ? '#F97316' : 'rgba(255,255,255,0.28)',
+                  background: compact ? `radial-gradient(ellipse 4px 4px at center, ${activeBannerIndex === index ? '#F97316' : 'rgba(255,255,255,0.28)'} 95%, transparent)` : activeBannerIndex === index ? '#F97316' : 'rgba(255,255,255,0.28)',
                   cursor: 'pointer',
                   transition: 'width 160ms ease, background 160ms ease',
                 }}
@@ -293,20 +293,20 @@ export function SpomoveCatalogHero({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function bannerArrowStyle(side: 'left' | 'right') {
+function bannerArrowStyle(side: 'left' | 'right', compact = false) {
   return {
     position: 'absolute' as const,
     top: '50%',
-    [side]: 12,
+    [side]: compact ? 2 : 12,
     transform: 'translateY(-50%)',
-    width: 42,
-    height: 42,
+    width: compact ? 44 : 42,
+    height: compact ? 44 : 42,
     padding: 0,
-    border: '1px solid rgba(255,255,255,0.32)',
+    border: compact ? 'none' : '1px solid rgba(255,255,255,0.32)',
     borderRadius: '50%',
-    background: 'rgba(2,6,23,0.62)',
+    background: compact ? 'radial-gradient(circle, rgba(2,6,23,0.62) 45%, transparent 47%)' : 'rgba(2,6,23,0.62)',
     color: '#fff',
-    fontSize: 31,
+    fontSize: compact ? 22 : 31,
     lineHeight: '36px',
     cursor: 'pointer',
     backdropFilter: 'blur(6px)',
