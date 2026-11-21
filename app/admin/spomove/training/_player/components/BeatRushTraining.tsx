@@ -17,10 +17,10 @@ import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 // Visual lane order follows the reference; result indices retain the canonical
 // red/blue/green/yellow order used by laneCountToColorStimulusCounts.
 const LANES = [
-  { color: '#ff4268', name: '빨강', resultIndex: 0 },
-  { color: '#ffda45', name: '노랑', resultIndex: 3 },
-  { color: '#39e6a0', name: '초록', resultIndex: 2 },
-  { color: '#489bff', name: '파랑', resultIndex: 1 },
+  { color: '#ff4268', floor: '#481b32', name: '빨강', resultIndex: 0 },
+  { color: '#ffda45', floor: '#463a16', name: '노랑', resultIndex: 3 },
+  { color: '#39e6a0', floor: '#123e34', name: '초록', resultIndex: 2 },
+  { color: '#66b3ff', floor: '#142e58', name: '파랑', resultIndex: 1 },
 ] as const;
 type Note = { lane: number; age: number; hold: number; presented: boolean; lastPulse?: number; lastBeat?: number };
 type Spark = { lane: number; age: number; angle: number; speed: number; size: number };
@@ -77,6 +77,7 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
     let width = 0, height = 0, dpr = 1, elapsed = 0, spawned = 0, count = 0;
     let running = true, raf: number | null = null, last = 0, lastLane = -1;
     let flashLane = -1, flashAge = 1;
+    let motionX = 0, motionY = 0;
     let lastSecond = duration;
     const resize = () => {
       if (!host.clientWidth || !host.clientHeight) return;
@@ -103,7 +104,7 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
         y: height * .43 + height * (height < 450 ? .30 : .40) * scale, scale };
     };
     const laneEnd = (laneX: number) => ({ x: width / 2 + laneX * width * .44 * ((1 - .43) / (height < 450 ? .30 : .40)), y: height });
-    const polygon = (points: Array<{ x: number; y: number }>, fill: string, stroke?: string) => {
+    const polygon = (points: Array<{ x: number; y: number }>, fill: string | CanvasGradient, stroke?: string) => {
       ctx.beginPath();
       points.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
       ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
@@ -112,8 +113,20 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
     const draw = () => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
+      // Opaque floor masks the panorama only inside the four-lane track.
+      // Dark color families keep even the blue blocks readable over OCEAN.
+      polygon([point(0, -1), point(0, 1), laneEnd(1), laneEnd(-1)], '#071222');
+      LANES.forEach((lane, index) => {
+        const left = -1 + index * .5, right = left + .5;
+        const floor = ctx.createLinearGradient(0, point(0, 0).y, 0, height);
+        floor.addColorStop(0, '#0b1528');
+        floor.addColorStop(.4, lane.floor);
+        floor.addColorStop(1, lane.floor);
+        polygon([point(0, left), point(0, right), laneEnd(right), laneEnd(left)], floor);
+      });
       // Ground markings and side beacons flow from the eye-level horizon,
-      // past the strike line and below the viewer. No continuous camera bob.
+      // past the strike line and below the viewer. Both canvases share the
+      // world-layer movement so blocks remain aligned with the arrival line.
       const phase = elapsed / (travel * 2) * (reducedMotion ? .35 : 1);
       for (let i = 0; i < 18; i++) {
         const depth = ((i / 18 + phase) % 1) * 1.065;
@@ -129,7 +142,6 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
       LANES.forEach((lane, index) => {
         const left = -1 + index * .5, right = left + .5;
         const laneShape = [point(0, left), point(0, right), laneEnd(right), laneEnd(left)];
-        polygon(laneShape, lane.color + '0c');
         const activeHold = notes.some(n => n.lane === index && n.presented && n.age < travel + n.hold);
         const impact = flashLane === index ? Math.max(0, 1 - flashAge / .65) : 0;
         if (impact || activeHold) {
@@ -147,8 +159,9 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
         // A recessed landing pad with a crisp luminous strike edge.
         ctx.fillStyle = '#081322';
         ctx.beginPath(); ctx.roundRect(a.x, a.y - 9, b.x - a.x, 20, 7); ctx.fill();
-        ctx.strokeStyle = lane.color; ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.fillStyle = lane.color; ctx.fillRect(a.x + 5, a.y - 2, Math.max(1, b.x - a.x - 10), 4);
+        ctx.strokeStyle = lane.color; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.fillStyle = lane.color; ctx.fillRect(a.x + 5, a.y - 3, Math.max(1, b.x - a.x - 10), 6);
+        ctx.fillStyle = '#f0f7ff'; ctx.fillRect(a.x + 5, a.y - 1, Math.max(1, b.x - a.x - 10), 2);
         ctx.shadowBlur = 20;
         if (impact > 0) {
           const burst = 1 - impact;
@@ -182,9 +195,11 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
         polygon([{ x: bl.x, y: bl.y - backLift }, { x: br.x, y: br.y - backLift }, { x: fr.x, y: fr.y - lift }, { x: fl.x, y: fl.y - lift }], color, color);
         ctx.fillStyle = color;
         ctx.fillRect(fl.x, fl.y - lift, fr.x - fl.x, lift);
-        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.strokeRect(fl.x, fl.y - lift, fr.x - fl.x, lift);
+        ctx.fillStyle = '#ffffff30';
+        ctx.fillRect(fl.x, fl.y - lift, fr.x - fl.x, lift * .3);
+        ctx.strokeStyle = '#eef7ff'; ctx.lineWidth = 2; ctx.strokeRect(fl.x, fl.y - lift, fr.x - fl.x, lift);
         // Bright top edge and inset rails make the block a solid, readable shape.
-        ctx.strokeStyle = color; ctx.lineWidth = Math.max(1, fl.scale * 2);
+        ctx.strokeStyle = '#e4f2ff'; ctx.lineWidth = Math.max(1, fl.scale * 2);
         ctx.beginPath(); ctx.moveTo(bl.x, bl.y - backLift); ctx.lineTo(fl.x, fl.y - lift); ctx.lineTo(fr.x, fr.y - lift); ctx.lineTo(br.x, br.y - backLift); ctx.stroke();
         if (note.hold) {
           for (let p = back + .035; p < front; p += .055) {
@@ -253,11 +268,29 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
       }
       setHolding(isHolding);
       if (worldRef.current) {
-        const envelope = reducedMotion ? 0 : Math.max(0, 1 - flashAge / .16);
-        const amplitude = Math.min(2.6, width * .0045) * envelope;
-        worldRef.current.style.transform = envelope > 0
-          ? `translate3d(${Math.sin(flashAge * 95) * amplitude}px,${Math.sin(flashAge * 70) * amplitude * .55}px,0)`
-          : 'none';
+        if (reducedMotion) {
+          motionX = 0; motionY = 0;
+          worldRef.current.style.transform = 'none';
+        } else {
+          // Reference: sustained horizontal shake throughout long notes,
+          // plus the original sin(time * 8) bass bounce between arrivals.
+          // Analytic waves avoid consuming the note scheduler's randomness.
+          const responsive = Math.min(1, width / 900);
+          const impact = Math.max(0, 1 - flashAge / .24);
+          const holdX = isHolding ? (Math.sin(elapsed * 61) + .5 * Math.sin(elapsed * 97)) * 12 : 0;
+          const targetX = (holdX + Math.sin(flashAge * 95) * 10 * impact) * responsive;
+          const targetY = (Math.sin(elapsed * 8) * 3.5
+            + (isHolding ? Math.sin(elapsed * 49) * 4 : 0)
+            + Math.sin(flashAge * 70) * 5 * impact) * responsive;
+          const follow = 1 - Math.exp(-45 * Math.min(step, .05));
+          motionX += (targetX - motionX) * follow;
+          motionY += (targetY - motionY) * follow;
+          const maxX = Math.min(24, width * .022), maxY = Math.min(14, height * .018);
+          const x = Math.max(-maxX, Math.min(maxX, motionX));
+          const y = Math.max(-maxY, Math.min(maxY, motionY));
+          // Overscan conceals the canvas edges during stronger translation.
+          worldRef.current.style.transform = `translate3d(${x}px,${y}px,0) scale(1.06)`;
+        }
       }
       diveScene.render(step, reducedMotion);
       draw();
@@ -278,7 +311,7 @@ export function BeatRushTraining({ environmentTheme = 'space', durationSec, spee
       .beat-rush *{box-sizing:border-box}.beat-rush header{display:flex;align-items:center;gap:clamp(6px,2vw,16px);padding:calc(12px + env(safe-area-inset-top)) clamp(14px,3vw,32px) 12px;border-bottom:1px solid #ffffff18;background:#080c1c}.beat-rush header>span{font-size:clamp(10px,1.3vw,14px);color:#a9c6ec;white-space:nowrap}.beat-rush header>strong{white-space:nowrap}
       .beat-rush strong{font-size:clamp(16px,2vw,24px)}.beat-rush output{margin-left:auto;font:700 clamp(20px,3vw,32px) var(--spm-font-display);font-variant-numeric:tabular-nums}
       .beat-rush button{min-height:44px;padding:8px 16px;border:1px solid #ffffff40;border-radius:10px;background:transparent;color:white;cursor:pointer}.beat-rush button:focus-visible{outline:3px solid #68cfff;outline-offset:3px}
-      .beat-rush-stage{position:relative;flex:1;min-height:0}.beat-rush-world{position:absolute;inset:0;pointer-events:none}.beat-rush canvas{position:absolute;width:100%;height:100%;inset:0}
+      .beat-rush-stage{position:relative;flex:1;min-height:0;overflow:hidden}.beat-rush-world{position:absolute;inset:0;pointer-events:none}.beat-rush canvas{position:absolute;width:100%;height:100%;inset:0}
       .beat-rush-hint{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px);display:flex;align-items:center;gap:10px;padding:11px 18px;border:1px solid #82bfff30;border-radius:16px;background:linear-gradient(110deg,#101d36e8,#080d20e8);box-shadow:0 8px 32px #0005,inset 0 1px #ffffff0d;backdrop-filter:blur(12px);text-align:center;font-size:clamp(11px,1.3vw,15px);color:#d5e0f5;pointer-events:none}
       .beat-rush-hint b{flex-shrink:0;font:700 10px var(--spm-font-display);letter-spacing:.12em;border-radius:7px;padding:5px 8px;background:#53baff18;color:#91d4ff}.beat-rush-hint[data-hold=true]{border-color:#91d4ff88;box-shadow:0 0 28px #53baff1a}.beat-rush-hint span{line-height:1.5}
       @media(max-height:500px){.beat-rush-hint{padding:6px 12px;bottom:6px}.beat-rush-hint b{display:none}}
